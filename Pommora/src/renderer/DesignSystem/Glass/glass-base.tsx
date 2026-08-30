@@ -1,9 +1,7 @@
 import type { CSSProperties } from 'react'
 import { shadowLiftVar, shadowStandardVar } from '../Tokens/color.css'
 
-/** The Pommora glass recipe — a clear, slightly-dimmed blur with a glassy edge: a crisp top specular,
- *  a hairline inner ring, and soft light pooling at the lower rim — made parametric so each tier is
- *  the same recipe at its own dim and fill. Layout (size / position / radius) is the consumer's. */
+/** The Pommora glass recipe — a clear, slightly-dimmed blur with a glassy edge: a crisp top specular, hairline inner ring, and soft light pooling at the lower rim — made parametric so each tier is the same recipe at its own dim and fill. Layout (size / position / radius) is the consumer's. */
 export interface FrostParams {
   blur: number
   brightness: number
@@ -21,10 +19,7 @@ export interface FrostParams {
   shadow?: string
 }
 
-/** KNOB — how much `--bg-window` sits behind the frost on anything that carries a body. ONE figure:
- *  a window and a picker opening over another pane want the same thing for the same reason, and two
- *  numbers required to match are two numbers that eventually don't. Short of 1 on purpose — an
- *  opaque pane still computes its backdrop blur, paying for a frost nothing can see through. */
+/** KNOB — how much `--bg-window` sits behind the frost on anything that carries a body. ONE figure: a window and a picker opening over another pane want the same thing for the same reason, and two numbers required to match are two numbers that eventually don't.*/
 export const SOLID_FILL = 0.9
 
 export const SURFACE_FROST: FrostParams = {
@@ -43,9 +38,7 @@ export const SURFACE_FROST: FrostParams = {
  *  when a caller asks for `solid`. The chrome is the pane's own; only the fill is added. */
 export const WINDOW_FROST: FrostParams = { ...SURFACE_FROST, fill: SOLID_FILL }
 
-/** The drag ghost's glass — filled and edge-free, so the chip stays legible mid-flight and
- *  reads as lifted rather than framed. Its own fill: a chip in flight stays lighter than a resting
- *  surface so the drop target reads through it. */
+/** The drag ghost's glass — filled and edge-free, so the chip stays legible mid-flight and reads as lifted rather than framed. Its own fill: a chip in flight stays lighter than a resting surface so the drop target reads through it. */
 export const GHOST_FROST: FrostParams = {
   blur: 6,
   brightness: 100,
@@ -56,7 +49,7 @@ export const GHOST_FROST: FrostParams = {
   lowerRim: 0,
   depth: 0,
   rimBlur: 0,
-  fill: 0.78,
+  fill: 0.75,
   shadow: shadowLiftVar,
 }
 
@@ -93,9 +86,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
   }
 }
 
-/** The outline's second pass, inward — a tinted edge on a 1px border reads far fainter than the same
- *  color on the thicker borders tiles and embeds wear, and widening the border would shift
- *  everything inside it, so the weight goes where nothing can move. */
+/** The outline's second pass, inward — a tinted edge on a 1px border reads far fainter than the same color on the thicker borders tiles and embeds wear, and widening the border would shift everything inside it, so the weight goes where nothing can move. */
 export const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
 /** The pane tier — the chrome panes' clear 5%-dim frost, the brightest glass in the app. */
