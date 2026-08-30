@@ -122,6 +122,7 @@ export function ExcludedDirectoriesRow({
                       icon="plus"
                       label="Add Exclusion"
                       className={x.addButton}
+                      paddingX="0"
                       disabled={drafting}
                       onClick={() => setDrafting(true)}
                     />
