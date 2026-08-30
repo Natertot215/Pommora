@@ -50,7 +50,7 @@ export function PathField({
       trailing={<BrowseButton label={browseLabel} onBrowse={onBrowse} />}
     >
       {segments.length > 0 ? (
-        <NavTrail segments={segments} className={fieldTrail} />
+        <NavTrail segments={segments} variant="option" className={fieldTrail} />
       ) : (
         <span className={placeholder}>{empty}</span>
       )}

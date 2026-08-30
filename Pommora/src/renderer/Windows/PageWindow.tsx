@@ -174,7 +174,7 @@ function PageWindowBody({
       title={
         <WindowTabStrip
           index={resolveIndex}
-          title={<NavTrail segments={trail} emphasize className="page-window-crumbs" />}
+          title={<NavTrail segments={trail} selected className="page-window-crumbs" />}
         />
       }
       actions={
