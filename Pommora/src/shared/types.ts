@@ -67,17 +67,16 @@ export interface TrashCrumb {
   title: string
 }
 
-/** A `.trash` bundle as the trash browser reads it. Main owns the parse: the renderer never sees a
- *  `.deleted` suffix, a folder stamp, or the record union. The artifact-less `property` record
- *  carries none of these facts and becomes no row at all. */
-/** What a Clear Exclusion Cache pass removed: pages rewritten, container sidecars deleted, and
- *  pages the sweep could not admit and so left untouched. */
+/** What a Clear Exclusion Cache pass did: pages rewritten, container sidecars deleted, pages refused. */
 export interface ClearReport {
   pages: number
   sidecars: number
   refused: number
 }
 
+/** A `.trash` bundle as the trash browser reads it. Main owns the parse: the renderer never sees a
+ *  `.deleted` suffix, a folder stamp, or the record union. The artifact-less `property` record
+ *  carries none of these facts and becomes no row at all. */
 export interface TrashRow {
   /** Nexus-relative bundle path — the reference both trash actions take. */
   bundlePath: string
