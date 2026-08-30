@@ -109,6 +109,15 @@ describe('ExcludedDirectoriesRow', () => {
     const removes = byLabel('Remove exclusion')
     expect(removes.length).toBe(2)
     await act(async () => removes[0].click())
+    // Removal collapses first; the write fires when the fold's transition ends.
+    const reveal = document.querySelector<HTMLElement>('[data-reveal]')
+    await act(async () => {
+      reveal?.dispatchEvent(
+        Object.assign(new Event('transitionend', { bubbles: true }), {
+          propertyName: 'grid-template-rows',
+        }),
+      )
+    })
     expect(setExclusions).toHaveBeenCalledWith(['Vault A'])
   })
 
