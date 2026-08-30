@@ -41,6 +41,7 @@ import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresenc
 import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
+import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import './settingsWindow.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a frame carrying a
@@ -88,6 +89,9 @@ type Row =
     })
   | (RowText & {
       kind: 'path'
+    })
+  | (RowText & {
+      kind: 'exclusions'
     })
   | (RowText & {
       kind: 'color'
@@ -368,6 +372,16 @@ const FRAMES = roster([
         ],
       },
       {
+        title: 'Exclusions',
+        rows: [
+          {
+            kind: 'exclusions',
+            label: 'Excluded Directories',
+            hint: 'Excluded folders will not be recognized by the app; removing a folder from exclusion will re-index.',
+          },
+        ],
+      },
+      {
         title: 'Deletion',
         rows: [
           {
@@ -629,6 +643,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <DeviceRow row={row} />
     case 'path':
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
+    case 'exclusions':
+      return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
     case 'color':
       return <ColorRow row={row} />
   }

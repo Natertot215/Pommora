@@ -63,6 +63,7 @@ export function PickerMenu({
   footer,
   maxHeight,
   bareSurface = false,
+  dismissOnOutside = true,
   manageFocus = true,
   contentClassName,
   style,
@@ -85,6 +86,9 @@ export function PickerMenu({
   footer?: ReactNode
   maxHeight?: number
   bareSurface?: boolean
+  /** Whether a click outside the pane dismisses it. The Escape handler is independent, so a pane
+   *  with this off still closes on Escape (or however its trigger toggles `open`). */
+  dismissOnOutside?: boolean
   manageFocus?: boolean
   contentClassName?: string
   style?: CSSProperties
@@ -352,7 +356,7 @@ export function PickerMenu({
       <span ref={markerRef} aria-hidden style={{ display: 'none' }} />
       {createPortal(
         <>
-          {onDismiss && !closing ? (
+          {onDismiss && !closing && dismissOnOutside ? (
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-catching backdrop — Escape is the keyboard dismissal
             <div
               className={s.backdrop}
