@@ -4,8 +4,6 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 
 const c = colorVars.color
 
-const ADD_INDENT = '25px'
-
 export const manageCluster = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -20,14 +18,14 @@ export const count = style({
 export const paneList = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '4px',
+  gap: '6px',
   padding: 'var(--surface-inset)',
 })
 
 export const paneRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: '6px',
+  gap: '4px',
 })
 
 export const field = style({
@@ -39,7 +37,7 @@ export const removeButton = style({
   flex: '0 0 auto',
   border: 'none',
   background: 'none',
-  padding: '3px',
+  padding: '4px',
   borderRadius: '4px',
   display: 'inline-flex',
   alignItems: 'center',
@@ -51,8 +49,7 @@ export const removeButton = style({
 
 export const addRow = style({
   display: 'flex',
-  paddingTop: '2px',
-  paddingLeft: ADD_INDENT,
+  paddingTop: '4px',
 })
 
 export const addButton = style({ color: c.label.secondary })
