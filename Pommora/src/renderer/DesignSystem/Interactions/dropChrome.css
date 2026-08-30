@@ -28,6 +28,16 @@
   background: var(--drag-line);
 }
 
+/* The landing slot — the box the lifted thing will occupy. A surface supplies only geometry. */
+.drop-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: var(--drop-slot-radius, 12px);
+  background: var(--drop-slot-fill);
+}
+
 /* The frost half of the ghost (fill, blur, lift shadow) comes from GHOST_FROST via DragGhost. */
 .drag-ghost {
   position: fixed;

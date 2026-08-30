@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-30-2026              | PM-119 | The Card Trail & The Landing Slot                    |
 | 08-29-2026              | PM-118 | The Disclosure Lock                                  |
 | 08-29-2026              | PM-117 | Index Exclusion Interface                            |
 | 08-27-2026              | PM-116 | The Store Split |
@@ -122,6 +123,19 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-119 || The Card Trail & The Landing Slot
+
+**DATE:** 08-30-2026
+
+A card's location trail moved onto the card chassis. `CardTrail` renders its own `.card-trail` wrapper carrying the divider and the clearance above it, so the NavGallery and the Cards view emit one markup, and `cards.css` holds the four numbers that shape a card's text column: `--card-inset`, the single horizontal start the title, the trail, and the trail's divider all share, `--card-pad-top`, `--card-pad-bottom`, and `--card-trail-gap`. CardsView's `.card-loc-zone` and the `--trail-pad` that `navTrail.css.ts` read for it came out. The trail row is reserved at `--card-trail-h` whether or not a card has a path, since a locked card's thumb takes whatever height the text below it leaves — a path-less card had been growing its thumb by the missing row and breaking a grid row's level — and an empty trail drops the seam to transparent rather than removing the border, so the reservation holds its exact height. `--state-drag` came out with its last consumer; the card families read `--state-ghost`.
+
+`.cards-view.is-compact .card-text:has(.card-trail)` and `.cards-view .card:not(.is-locked) .card-text` are both four class components, so the later rule had been winning `min-height` and the compact foot allowance never reached a card. The `:has` rule now defines `--card-foot-h` and the base rule consumes it, which takes cascade order out of the question.
+
+**The Landing Slot:** The drop preview a dragged card lands on was a rect the cross-list engine painted inline, absent from every zone the single-zone engine serves. `.drop-slot` in `dropChrome.css` is now the one rect, filled by `--drop-slot-fill` at accent's tertiary tint and rounded through `--drop-slot-radius`; `group.tsx` and SurfacePM's `.spm-placement` both wear it, SurfacePM keeping the tile corner. `engine.tsx` surfaces the landing box it already held as `useDropSlot`, and the card chassis paints it through `CardDropSlot`, which the NavGallery's two zones and the Set Cards row render — the affordance belongs to cards rather than to every zone the engine serves. `dropChrome.css` moved from `main.tsx` onto `DropLine.tsx` and the `drag.tsx` seam, which is what carries it into the showcase build.
+
+- **Commits:** `%%HASH%%`
+- **Diff:** Net +41 | +91 / −50
 
 #### PM-118 || The Disclosure Lock
 
@@ -410,7 +424,7 @@ Every Feature doc, Framework, and the PRD rewrote to one documentation standard,
 #### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
 
-`--radius-full` took the pill radius nine surfaces had been spelling as a literal, and is the radius scale's first member. The opacity dims became bare numbers of their own: `--state-ghost` had aliased `--tint-primary`, the share `tintAt` mixes colors at, so a change to chip-fill strength moved the drag fade on sixteen surfaces; it now holds `0.65` beside `--state-drag` at `0.85` and `--state-disabled` at `0.5`, the three reading as one ramp. `--state-drag` was minted for the dim both card families wrote raw, which `--state-ghost` does not cover — a source whose lifted clone floats alongside it. `design-system/card-tokens.css` took the floor, gaps, thumb share, and cover zoom that `.nav-gallery` and `.cards-view` had each declared, leaving each scope only what differs, and that resolved `--card-min`: `.nav-view` had set a larger floor on an ancestor of the grid while `.nav-gallery` set a smaller one nearer it, so the ancestor's value had never rendered and its declaration came out.
+`--radius-full` took the pill radius nine surfaces had been spelling as a literal, and is the radius scale's first member. The opacity dims became bare numbers of their own: `--state-ghost` had aliased `--tint-primary`, the share `tintAt` mixes colors at, so a change to chip-fill strength moved the drag fade on sixteen surfaces; it now holds `0.65` beside `--state-disabled` at `0.5`, the two reading as one ramp. `design-system/card-tokens.css` took the floor, gaps, thumb share, and cover zoom that `.nav-gallery` and `.cards-view` had each declared, leaving each scope only what differs, and that resolved `--card-min`: `.nav-view` had set a larger floor on an ancestor of the grid while `.nav-gallery` set a smaller one nearer it, so the ancestor's value had never rendered and its declaration came out.
 
 `AUTOSCROLL_KNOBS` replaced the six auto-scroll defaults that `autoscroll.css` and `readParams` had each spelled, with the `:root` block now generated from the map the loop reads its fallbacks from. `separator.line` was byte-identical to `separator.border`; its six consumers moved to `separator. border`, which was deleted. `notchedPane.css.ts` gave up a hand-rolled drop-shadow hex for `--shadow-standard`, and the mix percentages in `MarkdownPM/Styles.css` and `photoCropModal.css.ts` moved onto `TINT_STEPS`. Incorrect comments were restated against their values, and `tokens/README.md`, which described six files that had never shipped, was deleted.
 

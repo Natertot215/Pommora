@@ -80,7 +80,6 @@ The Pommora design system — the code counterpart of the Figma "Pommora - React
 | Hover    | `state.hover` · `--state-hover`       | `system-grey` @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
 | Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
-| Drag     | `STATE_OPACITY.drag` · `--state-drag`         | `0.85`             |
 | Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
 | Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
 
@@ -167,6 +166,7 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Accent            | `--accent`                                  | `applyAccent`                              |
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
+| Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
 | Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
 | Code              | `--code`                                    | `--solid-red` @ 85%                        |
@@ -396,7 +396,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
 | Drag engine  | `SortableZone` · `DragGroup` · `GroupZone` · `useDragItem` · `useGroupedDragItem` · `reorder` · `arraySwap` | The in-house DND. |
 | Zone engine  | `Zone` · `useZoneItem` · `reflow`                       | The layout engine beneath the sortable zone (`engine.tsx`). |
-| Drop chrome  | `DropLine` · `DragGhost` · `dropChrome.css` · `ghost.css` | The insertion line, dot, and the glass drag chip.    |
+| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `dropChrome.css` · `ghost.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
 | Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
 | Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |

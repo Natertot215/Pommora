@@ -10,7 +10,6 @@ export const trail = style([
     display: 'flex',
     alignItems: 'center',
     minWidth: 0,
-    paddingBlock: 'var(--trail-pad, 0px)',
     color: c.label.secondary,
     vars: { '--nav-trail-glyph': c.label.tertiary },
   },

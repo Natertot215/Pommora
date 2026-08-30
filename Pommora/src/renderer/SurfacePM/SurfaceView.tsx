@@ -570,7 +570,7 @@ export function SurfaceView({
           const slot = geometry.tiles.get(tileDrag.id)
           return slot ? (
             <div
-              className="spm-placement"
+              className="spm-placement drop-slot"
               style={{
                 transform: `translate(${slot.x}px, ${slot.y}px)`,
                 width: slot.w,

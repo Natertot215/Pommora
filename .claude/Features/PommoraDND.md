@@ -37,7 +37,7 @@ One gesture runs at a time. A press becomes a drag only once it travels far enou
 
 ### Displacement
 
-The first of the engine's two drop treatments: neighbors reflow to open the gap the item will land in. Two engines sit behind the seam for it, sharing types and the measure-once, decide-then-animate model. The **single-zone** engine (`engine.tsx`) serves lists, grids, tables, and each tree level, where the dragged item moves in place with its transform following the pointer. The **cross-list** engine (`group.tsx`) serves the Cards view: a `DragGroup` owns the one active drag across its zones, the lifted card renders as a fixed portal overlay under the cursor to escape column clipping, and every column shifts by one slot-pitch to show where the card would land.
+The first of the engine's two drop treatments: neighbors reflow to open the gap the item will land in. Two engines sit behind the seam for it, sharing types and the measure-once, decide-then-animate model. The **single-zone** engine (`engine.tsx`) serves lists, grids, tables, and each tree level, where the dragged item moves in place with its transform following the pointer. The **cross-list** engine (`group.tsx`) serves the Cards view: a `DragGroup` owns the one active drag across its zones, the lifted card renders as a fixed portal overlay under the cursor to escape column clipping, and every column shifts by one slot-pitch to show where the card would land. Either engine can name the box the item will land in — the cross-list one paints it itself, the single-zone one hands it to whoever asked through `useDropSlot` — and both wear the one `.drop-slot` rect, which the card chassis renders as `CardDropSlot` and SurfacePM as its tile placement.
 
 ### Insertion Line
 

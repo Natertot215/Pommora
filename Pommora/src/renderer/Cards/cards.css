@@ -7,8 +7,14 @@
   /* KNOB — the reflow thumb's fixed height; the card grows below it. Same `-base` pattern. */
   --card-thumb-h-base: 100px;
   --card-thumb-h: var(--card-thumb-h-base);
-  --thumb-share: 65%; /* KNOB — a locked card's image share of its height; the title area takes the rest */
+  --thumb-share: 65%; /* KNOB — a locked card's image share of its height; it yields whatever the text below needs */
   --preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
+  --card-inset: 8px; /* KNOB — the card's single horizontal inset; the title, the trail, and the trail's divider all start here. */
+  --card-pad-top: 8px; /* KNOB — clearance under the thumb divider */
+  --card-pad-bottom: 6px; /* KNOB — clearance below whatever ends the card */
+  --card-trail-gap: 8px; /* KNOB — divider → trail */
+  /* KNOB — the trail row's reserved height. Held open even on a card with no path, so one row's thumbs never differ by whether a card sits at its collection's root. */
+  --card-trail-h: 14px;
 }
 
 /* auto-fit stretches cards to fill the row (no empty tracks to pad); is-fill holds the empty
@@ -35,7 +41,7 @@
   align-self: start;
 }
 .card.is-dragging {
-  opacity: var(--state-drag);
+  opacity: var(--state-ghost);
 }
 
 .card-body {
@@ -63,7 +69,7 @@
   background: var(--fill-tertiary);
 }
 .card.is-locked .card-thumb {
-  flex-basis: var(--thumb-share);
+  flex: 1 1 var(--thumb-share);
 }
 
 .card-thumb img {
@@ -86,7 +92,6 @@
   align-items: center;
   justify-content: center;
   color: var(--label-tertiary);
-  background: var(--fill-quaternary);
 }
 
 .card-pin {
@@ -116,12 +121,13 @@
   flex-direction: column;
   justify-content: flex-start;
   gap: 4px;
-  padding: 8px 8px;
+  padding: var(--card-pad-top) var(--card-inset) var(--card-pad-bottom);
   min-width: 0;
   background: var(--state-muted);
   border-top: var(--width-150) solid var(--border-base);
 }
 .card.is-locked .card-text {
+  flex: 0 0 auto;
   min-height: 0;
 }
 
@@ -131,7 +137,6 @@
   align-items: center;
   min-width: 0;
   --over-scroll-fade: var(--fade-base);
-  padding-block: 1px;
   gap: 6px;
   color: var(--label-primary);
 }
@@ -146,7 +151,20 @@
   flex: 0 0 auto;
   color: var(--label-secondary);
 }
+.card-trail {
+  display: flex;
+  min-width: 0;
+  min-height: calc(var(--card-trail-h) + var(--card-trail-gap) + var(--width-150));
+  margin-top: auto;
+  padding-top: var(--card-trail-gap);
+  border-top: var(--width-150) solid var(--border-base);
+}
+/* No path, no seam — the row still reserves its height so the thumbs above it stay level. */
+.card-trail:empty {
+  border-top-color: transparent;
+}
 .card-loc {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   --over-scroll-fade: var(--fade-base);
 }
