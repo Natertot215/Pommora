@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
@@ -26,7 +26,7 @@ import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-
 import { PICKER_MAX_HEIGHT, treePane } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { duration as motion, ms } from '@renderer/DesignSystem/Animation'
+import { useEntrance } from '@renderer/DesignSystem/Animation'
 import { CalendarPicker } from '@renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '@renderer/Properties/contextIdentity'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
@@ -66,28 +66,6 @@ const ACTIVE_OPTIONS: PickerChoice<'on' | 'off'>[] = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
 ]
-
-const DISCLOSURE_MS = ms(motion.fast)
-
-function RevealRow({
-  animate = false,
-  children,
-}: {
-  animate?: boolean
-  children: React.ReactNode
-}): React.JSX.Element {
-  const [entered, setEntered] = useState(!animate)
-  useLayoutEffect(() => {
-    if (entered) return undefined
-    const id = requestAnimationFrame(() => setEntered(true))
-    return () => cancelAnimationFrame(id)
-  }, [entered])
-  return (
-    <Reveal open={entered} fill>
-      {children}
-    </Reveal>
-  )
-}
 
 const emptyPicker = (label: string): React.JSX.Element => <MenuCaption>{label}</MenuCaption>
 
@@ -407,7 +385,6 @@ export function FilterFrame({
   const saveView = useSaveView(source)
   const [draft, setDraft] = useState<Connector | null | false>(false)
 
-  const [justAdded, setJustAdded] = useState<number | null>(null)
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
 
   const propRef = useRef(view)
@@ -439,6 +416,8 @@ export function FilterFrame({
 
   const setEnabled = (next: boolean): void =>
     commit({ ...writtenRef.current, filter_enabled: next })
+
+  const entering = useEntrance(rows, (_, i) => String(i))
 
   const contextIds = contextIdsOf(tree)
   const targets = filterTargets(schema, tree, (source.sets?.length ?? 0) > 0)
@@ -482,9 +461,7 @@ export function FilterFrame({
   const completeDraft = (targetId: string): void => {
     const current = liveRows()
     setDraft(false)
-    setJustAdded(current.length)
     setPendingMode(null)
-    window.setTimeout(() => setJustAdded(null), DISCLOSURE_MS)
     save(mode, [
       ...current,
       {
@@ -608,7 +585,7 @@ export function FilterFrame({
       <CheckboxGlyph checked={o.impliedValue === 'true'} color={checkboxColor} />
     )
     return (
-      <RevealRow key={index} animate={index === justAdded}>
+      <Reveal key={index} open enterOnMount={entering(String(index))} fill>
         <div className={fp.ruleRow}>
           <span className={fp.whatCell}>
             {row.connector !== null && (
@@ -689,13 +666,13 @@ export function FilterFrame({
             <Icon name="x" size="caption" />
           </button>
         </div>
-      </RevealRow>
+      </Reveal>
     )
   }
 
   const lead = rows.length === 0
   const draftRow = (draft !== false || lead) && (
-    <RevealRow animate={!lead}>
+    <Reveal open enterOnMount={!lead} fill>
       <div className={fp.ruleRow}>
         <span className={fp.whatCell}>
           {!lead && (
@@ -731,7 +708,7 @@ export function FilterFrame({
           </button>
         )}
       </div>
-    </RevealRow>
+    </Reveal>
   )
 
   return (

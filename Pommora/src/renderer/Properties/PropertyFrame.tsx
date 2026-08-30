@@ -38,8 +38,7 @@ import {
   titleInput,
   actionRow,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { duration } from '@renderer/DesignSystem/Animation'
+import { Reveal, duration, useEntrance } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { InlineEditHeader } from '../Frames/InlineEditHeader'
@@ -86,6 +85,8 @@ function ListGroups({
   onRenameCancel: () => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = useFrameRegions()
+  const enteringAssigned = useEntrance(assigned, (d) => d.id)
+  const enteringAll = useEntrance(unassigned, (d) => d.id)
   const title = (d: PropertyDefinition): ReactNode => (
     <RenamableLabel
       renames="row"
@@ -103,20 +104,22 @@ function ListGroups({
           <MenuCaption>No properties yet.</MenuCaption>
         ) : (
           assigned.map((d) => (
-            <RowShell key={d.id} id={d.id}>
-              <MenuItem
-                leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
-                detail={propertyTypeLabel(d.type)}
-                trailing={<Icon name="chevron-right" />}
-                onClick={() => onOpenEditor(d.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  onRowMenu(d, 'assigned')
-                }}
-              >
-                {title(d)}
-              </MenuItem>
-            </RowShell>
+            <Reveal key={d.id} open enterOnMount={enteringAssigned(d.id)} fill>
+              <RowShell id={d.id}>
+                <MenuItem
+                  leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
+                  detail={propertyTypeLabel(d.type)}
+                  trailing={<Icon name="chevron-right" />}
+                  onClick={() => onOpenEditor(d.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    onRowMenu(d, 'assigned')
+                  }}
+                >
+                  {title(d)}
+                </MenuItem>
+              </RowShell>
+            </Reveal>
           ))
         )}
       </div>
@@ -134,27 +137,29 @@ function ListGroups({
         <Reveal open={allOpen} duration={duration.base}>
           <div>
             {unassigned.map((d) => (
-              <RowShell key={d.id} id={d.id}>
-                <MenuItem
-                  className={s.allRow}
-                  leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    onRowMenu(d, 'all')
-                  }}
-                  trailing={
-                    <AccessoryButton
-                      icon="plus"
-                      size={s.ICON.rowPlus}
-                      ariaLabel={`Assign ${d.name}`}
-                      create
-                      onClick={() => onAssign(d.id)}
-                    />
-                  }
-                >
-                  {title(d)}
-                </MenuItem>
-              </RowShell>
+              <Reveal key={d.id} open enterOnMount={enteringAll(d.id)} fill>
+                <RowShell id={d.id}>
+                  <MenuItem
+                    className={s.allRow}
+                    leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      onRowMenu(d, 'all')
+                    }}
+                    trailing={
+                      <AccessoryButton
+                        icon="plus"
+                        size={s.ICON.rowPlus}
+                        ariaLabel={`Assign ${d.name}`}
+                        create
+                        onClick={() => onAssign(d.id)}
+                      />
+                    }
+                  >
+                    {title(d)}
+                  </MenuItem>
+                </RowShell>
+              </Reveal>
             ))}
           </div>
         </Reveal>

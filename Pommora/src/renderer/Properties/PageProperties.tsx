@@ -25,6 +25,7 @@ import {
   usePropertyRows,
   type Editing,
 } from '@renderer/Properties/Editing/usePropertyRows'
+import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
 
@@ -71,6 +72,14 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     valueMenu: valueMenuShared,
     contextRows,
   } = usePropertyRows(page, fm, setFm)
+  const isShown = (def: PropertyDefinition): boolean =>
+    revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[propertyKey(def)] !== undefined
+  const shownIds = [
+    ...contextRows.filter((t) => !setAside.has(t.id)).map((t) => t.id),
+    ...schema.filter(isShown).map((d) => d.id),
+  ]
+  const entering = useEntrance(shownIds, (id) => id, fm !== null)
+
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const editRow = (def: PropertyDefinition, el: HTMLElement, from?: EventTarget | null): void =>
     editRowShared(
@@ -135,8 +144,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     (schema.find((d) => d.id === editing.id) ??
       (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
-  const isShown = (def: PropertyDefinition): boolean =>
-    revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
 
@@ -159,80 +166,81 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
               {group.map(({ def, id, label, icon }) => {
                 const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
                 return (
-                  // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-                  <div
-                    key={id}
-                    className={s.row}
-                    data-page-prop={id}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      void rowMenu(id, label, resolveFieldValue(row, id, schema))
-                    }}
-                  >
-                    <span className={side}>
-                      <Icon name={icon} size="control" />
-                    </span>
-                    <span className={s.label}>{label}</span>
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
-                    <span
-                      className={s.value}
+                  <Reveal key={id} open enterOnMount={entering(id)} fill>
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+                    <div
+                      className={s.row}
+                      data-page-prop={id}
                       onContextMenu={(e) => {
-                        if (
-                          !valueMenuShared(id, resolveFieldValue(row, id, schema), e.target, {
-                            emptyRow,
-                            setEditing,
-                          })
-                        )
-                          return
                         e.preventDefault()
-                        e.stopPropagation()
-                      }}
-                      onClick={(e) => {
-                        if (def) return editRow(def, e.currentTarget, e.target)
-                        triggerRef.current = e.currentTarget
-                        setEditing({ id, mode: 'picker' })
+                        void rowMenu(id, label, resolveFieldValue(row, id, schema))
                       }}
                     >
-                      {editing?.id === id && editing.mode === 'editor' && def ? (
-                        <PropertyEditor
-                          initial={(() => {
-                            const v = resolveFieldValue(row, id, schema)
-                            if (v.kind === 'number') return String(v.value)
-                            if (v.kind === 'url') return linkEditText(v.value)
-                            return ''
-                          })()}
-                          numeric={def.type === 'number'}
-                          validate={def.type === 'url' ? validateLink : undefined}
-                          onCommit={(raw) => {
-                            const cur = resolveFieldValue(row, id, schema)
-                            const next =
-                              def.type === 'url'
-                                ? urlValueFromEdit(
-                                    raw.trim(),
-                                    cur.kind === 'url' ? cur.value : undefined,
-                                    resolveTitle,
-                                  )
-                                : parseEditorValue(def.type, raw)
-                            if (next !== undefined) commitValue(id, next)
-                            setEditing(null)
-                          }}
-                          onCancel={() => setEditing(null)}
-                        />
-                      ) : (
-                        (Cell({
-                          row,
-                          column,
-                          ctx,
-                          hideIcon: false,
-                          style: { look: 'standard' },
-                          remove: def
-                            ? (next) => commitValue(id, next)
-                            : (next) =>
-                                commitContext(id, next?.kind === 'context' ? next.value : []),
-                        }) ?? <EmptyValue className={s.empty} />)
-                      )}
-                    </span>
-                  </div>
+                      <span className={side}>
+                        <Icon name={icon} size="control" />
+                      </span>
+                      <span className={s.label}>{label}</span>
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
+                      <span
+                        className={s.value}
+                        onContextMenu={(e) => {
+                          if (
+                            !valueMenuShared(id, resolveFieldValue(row, id, schema), e.target, {
+                              emptyRow,
+                              setEditing,
+                            })
+                          )
+                            return
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                        onClick={(e) => {
+                          if (def) return editRow(def, e.currentTarget, e.target)
+                          triggerRef.current = e.currentTarget
+                          setEditing({ id, mode: 'picker' })
+                        }}
+                      >
+                        {editing?.id === id && editing.mode === 'editor' && def ? (
+                          <PropertyEditor
+                            initial={(() => {
+                              const v = resolveFieldValue(row, id, schema)
+                              if (v.kind === 'number') return String(v.value)
+                              if (v.kind === 'url') return linkEditText(v.value)
+                              return ''
+                            })()}
+                            numeric={def.type === 'number'}
+                            validate={def.type === 'url' ? validateLink : undefined}
+                            onCommit={(raw) => {
+                              const cur = resolveFieldValue(row, id, schema)
+                              const next =
+                                def.type === 'url'
+                                  ? urlValueFromEdit(
+                                      raw.trim(),
+                                      cur.kind === 'url' ? cur.value : undefined,
+                                      resolveTitle,
+                                    )
+                                  : parseEditorValue(def.type, raw)
+                              if (next !== undefined) commitValue(id, next)
+                              setEditing(null)
+                            }}
+                            onCancel={() => setEditing(null)}
+                          />
+                        ) : (
+                          (Cell({
+                            row,
+                            column,
+                            ctx,
+                            hideIcon: false,
+                            style: { look: 'standard' },
+                            remove: def
+                              ? (next) => commitValue(id, next)
+                              : (next) =>
+                                  commitContext(id, next?.kind === 'context' ? next.value : []),
+                          }) ?? <EmptyValue className={s.empty} />)
+                        )}
+                      </span>
+                    </div>
+                  </Reveal>
                 )
               })}
             </div>
