@@ -110,6 +110,14 @@ export function writeAssetDirectory(root: string, dir: string): Promise<void> {
   )
 }
 
+/** The user's excluded folders. An empty list deletes the key rather than storing `[]` — absent
+ *  is what "nothing excluded" means, and the reader answers it either way. */
+export function writeExcludedFolders(root: string, folders: string[]): Promise<void> {
+  return updateSettings(root, ({ excluded_folders: _drop, ...rest }) =>
+    folders.length ? { ...rest, excluded_folders: folders } : rest,
+  )
+}
+
 /** Read the React-owned `navViewModes` foreign key from settings.json (null when absent/malformed). */
 export async function readNavViewModes(root: string): Promise<NavViewModes | null> {
   const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
