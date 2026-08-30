@@ -40,6 +40,7 @@ How to run, test, and not break the app while working on it. For how the app its
 - **"No result" (`null`) and "no index" (empty array) are distinct types** — collapsing them loses the distinction the caller needs.
 - **Containment is not reachability** — an entity inside a folder chain isn't necessarily reachable through it; check the actual path, not the prefix.
 - **A path normalizer that drops empty segments still must drop `..`** — otherwise a normalized path can escape its root.
+- **Only an `envelope`-kind IPC handler catches a throw into `{ok:false}`** — a `window`-kind handler is `return entry.fn(...)` with no net (`ipc.ts`), so any throw inside it (an `fs` call, a live-leaf read, a re-seed) rejects across the boundary and breaks "IPC never throws." A `window` handler doing real work self-wraps in try/catch → `fail(errText(e))`, the way the sibling picker channels do; and a destructive `rm` loop is best-effort (`.then(ok, fail)` per file) so one unremovable file doesn't abort the pass.
 
 ### Lint & Accessibility
 
