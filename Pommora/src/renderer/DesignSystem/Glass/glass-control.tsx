@@ -1,9 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { Glass, type GlassOptics } from '@samasante/liquid-glass'
 
-/** Apple "Liquid Glass" via @samasante/liquid-glass — real edge refraction over the live app, not
- *  a flat frost. CONTROL_OPTICS is the tuned look; layout is the consumer's. The small-control
- *  variant (the switch knob) is GlassSegment; menus use GlassSurface. */
+/** Apple "Liquid Glass" via @samasante/liquid-glass — real edge refraction over the live app, not a flat frost. CONTROL_OPTICS is the tuned look; layout is the consumer's. The small-control variant (the switch knob) is GlassSegment; menus use GlassSurface. */
 export const CONTROL_OPTICS: Partial<GlassOptics> = {
   strength: 0.0,
   depth: 0.3,
@@ -23,7 +21,7 @@ export const CONTROL_OPTICS: Partial<GlassOptics> = {
   sheenFalloff: 1.5,
   sheenAngle: 90,
   splay: 0,
-  mapSize: 256,
+  mapSize: 255,
   clipToShape: true,
   softEdge: true,
   sheenDark: false,
@@ -47,8 +45,7 @@ export function GlassControls({
   )
 }
 
-/** The SAME @samasante/liquid-glass material as GlassControls — real edge refraction, not a CSS
- *  frost — tuned for small on-control segments (full brightness, zero depth) like the switch knob. */
+/** The SAME @samasante/liquid-glass material as GlassControls — real edge refraction, not a CSS frost — tuned for small on-control segments (full brightness, zero depth) like the switch knob. */
 const SEGMENT_OPTICS = { ...CONTROL_OPTICS, brightness: 0, depth: 0 }
 
 export function GlassSegment({
