@@ -1,6 +1,4 @@
-// A plain module, NOT `.css.ts`: vanilla-extract only lets a stylesheet export plain values, so a
-// helper that BUILDS a declaration lives beside the stylesheet rather than inside it — `.css.ts`
-// files still import from here freely; the restriction is only on what a stylesheet exports.
+// A plain module, NOT `.css.ts`: vanilla-extract only lets a stylesheet export plain values, so a helper that BUILDS a declaration lives beside the stylesheet rather than inside it — `.css.ts` files still import from here freely; the restriction is only on what a stylesheet exports.
 import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 
@@ -13,7 +11,7 @@ export const FIELD_RING_VAR = 'var(--field-ring, transparent)'
 
 /** What `--field-ring` paints, at a given thickness — compose this instead of restating the
  *  shadow, so the channel and its geometry can never drift apart. */
-export const fieldRing = (width = 1): string => `inset 0 0 0 ${width}px ${FIELD_RING_VAR}`
+export const fieldRing = (width = 2): string => `inset 0 0 0 ${width}px ${FIELD_RING_VAR}`
 
 /** The error preset on the channel — no transition: a state, not a gesture. */
 export const errorRing = (): { vars: Record<string, string> } => ({

@@ -55,7 +55,7 @@ export const borderedField = style([
     border: 'none',
     justifyContent: 'flex-start',
     textAlign: 'left',
-    color: c.label.control,
+    color: c.label.primary,
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     vars: { '--field-ring': c.border.base },
