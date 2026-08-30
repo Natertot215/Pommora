@@ -3,8 +3,6 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 
 const c = colorVars.color
 
-/** The count sitting beside the Manage button, and the cluster the two share in the row's trailing
- *  slot. */
 export const manageCluster = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -16,7 +14,6 @@ export const count = style({
   fontVariantNumeric: 'tabular-nums',
 })
 
-/** The pane's field column, gutter-matched to any other MenuSurface through the shared inset. */
 export const paneList = style({
   display: 'flex',
   flexDirection: 'column',
@@ -30,7 +27,6 @@ export const paneRow = style({
   gap: '6px',
 })
 
-/** The field takes the row's width; the remove control sits at its trailing edge. */
 export const field = style({
   flex: '1 1 auto',
   minWidth: 0,
@@ -40,16 +36,16 @@ export const removeButton = style({
   flex: '0 0 auto',
   border: 'none',
   background: 'none',
-  padding: 0,
+  padding: '3px',
+  borderRadius: '4px',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   color: c.label.secondary,
   cursor: 'default',
-  selectors: { '&:hover': { color: c.label.primary } },
+  selectors: { '&:hover': { background: c.state.hover } },
 })
 
-/** The Add row sits below the last field, left-aligned with the column. */
 export const addRow = style({
   display: 'flex',
   paddingTop: '2px',

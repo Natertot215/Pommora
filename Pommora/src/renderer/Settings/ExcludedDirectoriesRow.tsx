@@ -7,8 +7,7 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import * as x from './exclusionRows.css'
 
-/** KNOB — the Manage pane's width floor and ceiling. A short path holds the floor; a deeply nested
- *  one scrolls inside the ceiling rather than widening past it. */
+// KNOB — the Manage pane's width floor and ceiling.
 const PANE_MIN_W = 250
 const PANE_MAX_W = 500
 
@@ -30,16 +29,20 @@ export function ExcludedDirectoriesRow({
     setDrafting(false)
   }
 
-  // Every edit writes the whole list; a refusal leaves the tree — and so the rendered list —
-  // untouched, so nothing needs a local rollback.
-  const replaceAt = (i: number, next: string): void => {
-    void setExclusions(
-      next ? stored.map((f, idx) => (idx === i ? next : f)) : stored.filter((_, idx) => idx !== i),
+  const commit = async (list: string[]): Promise<boolean> => {
+    const r = await setExclusions(list)
+    if (!r.ok) await window.nexus.showError(r.error.message)
+    return r.ok
+  }
+  // Keyed by folder, not index, so a concurrent list reorder can't land a commit against a neighbor.
+  const replaceFolder = (folder: string, next: string): void => {
+    void commit(
+      next ? stored.map((f) => (f === folder ? next : f)) : stored.filter((f) => f !== folder),
     )
   }
-  const commitDraft = (next: string): void => {
-    if (next) void setExclusions([...stored, next])
-    setDrafting(false)
+  const commitDraft = async (next: string): Promise<void> => {
+    if (next && (await commit([...stored, next]))) setDrafting(false)
+    else if (!next) setDrafting(false)
   }
   const browse = (apply: (picked: string) => void): void => {
     void window.nexus.chooseExclusion().then((r) => {
@@ -91,36 +94,41 @@ export function ExcludedDirectoriesRow({
                 pressed={open}
                 onClick={() => setOpen((o) => !o)}
               />
-              {open ? (
-                <PickerMenu
-                  open={open}
-                  onDismiss={dismiss}
-                  triggerRef={triggerRef}
-                  bareSurface
-                  dismissOnOutside={false}
-                  style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
-                >
-                  <div className={x.paneList}>
-                    {stored.map((folder, i) =>
-                      fieldRow(
-                        folder,
-                        (next) => replaceAt(i, next),
-                        () => replaceAt(i, ''),
-                        `f${i}`,
-                      ),
-                    )}
-                    {drafting ? fieldRow('', commitDraft, () => setDrafting(false), 'draft') : null}
-                    <div className={x.addRow}>
-                      <Button
-                        icon="plus"
-                        label="Add Exclusion"
-                        disabled={drafting}
-                        onClick={() => setDrafting(true)}
-                      />
-                    </div>
+              <PickerMenu
+                open={open}
+                onDismiss={dismiss}
+                triggerRef={triggerRef}
+                bareSurface
+                dismissOnOutside={false}
+                style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
+              >
+                <div className={x.paneList}>
+                  {stored.map((folder) =>
+                    fieldRow(
+                      folder,
+                      (next) => replaceFolder(folder, next),
+                      () => replaceFolder(folder, ''),
+                      folder,
+                    ),
+                  )}
+                  {drafting
+                    ? fieldRow(
+                        '',
+                        (n) => void commitDraft(n),
+                        () => setDrafting(false),
+                        'draft',
+                      )
+                    : null}
+                  <div className={x.addRow}>
+                    <Button
+                      icon="plus"
+                      label="Add Exclusion"
+                      disabled={drafting}
+                      onClick={() => setDrafting(true)}
+                    />
                   </div>
-                </PickerMenu>
-              ) : null}
+                </div>
+              </PickerMenu>
             </span>
           ),
         },

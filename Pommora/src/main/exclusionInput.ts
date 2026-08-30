@@ -17,8 +17,9 @@ export function sanitizeExclusions(folders: unknown): Result<string[]> {
     const raw = entry.trim()
     const refusal = excludedFolderRefusal(raw)
     if (refusal) return fail('invalid-path', refusal)
-    const rel = rootSegs(raw).join('/')
-    const key = rel.split('/').map(normalizeSeg).join('/')
+    const segs = rootSegs(raw)
+    const rel = segs.join('/')
+    const key = segs.map(normalizeSeg).join('/')
     if (seen.has(key)) continue
     seen.add(key)
     out.push(rel)
