@@ -189,6 +189,18 @@ export async function showContextMenu(
 
   items.push({ label: 'Delete', click: () => void confirmDelete() })
   items.push({ type: 'separator' })
+  if (target.kind === 'collection' || target.kind === 'set') {
+    items.push({
+      label: target.disclosureLocked ? 'Unlock Folder' : 'Lock Folder',
+      click: () =>
+        void run({
+          op: 'setDisclosureLock',
+          path: target.path,
+          kind: target.kind as 'collection' | 'set',
+          locked: !target.disclosureLocked,
+        }),
+    })
+  }
   items.push({ label: 'Reveal Location', click: () => void reveal() })
 
   // Resolve on dismissal, not at pop — a fire-and-forget caller ignores it, but a surface

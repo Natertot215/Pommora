@@ -79,7 +79,7 @@ import {
 } from 'lucide-react'
 import { forwardRef } from 'react'
 import type { EntityIconKind } from '@shared/types'
-import { CardsGrid, ListRounded, LockSolid, ProgressCheck } from './customGlyphs'
+import { CardsGrid, ListRounded, LockFilled, LockOutline, ProgressCheck } from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
 import { lucideGlyph } from './AllSymbols'
 import { size as sizeTokens, type IconSize } from '../Tokens/size.css'
@@ -167,7 +167,8 @@ export const icons = {
   'cards-grid': CardsGrid,
   'progress-check': ProgressCheck,
   'columns-3-cog': Columns3Cog,
-  lock: LockSolid,
+  locked: LockFilled,
+  'lock-open': LockOutline,
   ...fileTypeGlyphs,
 } satisfies Record<string, LucideIcon>
 

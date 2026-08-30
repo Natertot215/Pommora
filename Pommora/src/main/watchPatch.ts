@@ -350,6 +350,7 @@ export async function patchContainerFromDisk(
     pages: resolveOrder(node.pages, asStringArray(meta.page_order), fb),
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
+    disclosureLocked: meta.disclosure_locked === true,
   }
   const next =
     node.kind === 'collection'

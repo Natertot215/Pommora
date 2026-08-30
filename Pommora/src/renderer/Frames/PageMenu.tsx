@@ -72,7 +72,7 @@ export function PageMenu(): React.JSX.Element | null {
           <MenuFooting
             leading={
               <Button size="button-inline" aria-label="Lock" className={footerLockAction} disabled>
-                <Icon name="lock" size="control" className={lockIcon} />
+                <Icon name="lock-open" size="control" className={lockIcon} />
                 Lock
               </Button>
             }

@@ -224,6 +224,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           case 'setIcon':
             patched = patchNodeInTree(cur, req.path, { icon: req.icon })
             break
+          case 'setDisclosureLock':
+            patched = patchNodeInTree(cur, req.path, { disclosureLocked: req.locked })
+            break
           case 'setHeadingIconHidden':
             patched =
               req.kind === 'homepage'

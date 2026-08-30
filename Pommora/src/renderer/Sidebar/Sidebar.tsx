@@ -1,5 +1,7 @@
 import {
+  Children,
   createContext,
+  isValidElement,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -51,6 +53,7 @@ function showContextFor(node: {
   id: string
   path: string
   title: string
+  disclosureLocked?: boolean
 }): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
@@ -60,6 +63,7 @@ function showContextFor(node: {
     path: node.path,
     title: node.title,
     alreadyOpen,
+    disclosureLocked: node.disclosureLocked,
     host: 'sidebar',
     ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
   })
@@ -196,6 +200,10 @@ function Disclosure({
   rename,
   dragId,
   onBodyContextMenu,
+  locked = false,
+  onSetLock,
+  selfPath,
+  directChildren,
   children,
 }: {
   icon: string
@@ -210,6 +218,10 @@ function Disclosure({
   rename?: RenameTarget
   dragId?: string
   onBodyContextMenu?: () => void
+  locked?: boolean
+  onSetLock?: (locked: boolean) => void
+  selfPath?: string
+  directChildren?: { id: string; path: string }[]
   children: React.ReactNode
 }): React.JSX.Element {
   const [open, setOpen] = useState(() =>
@@ -230,28 +242,116 @@ function Disclosure({
       settleClick.current = false
       return
     }
+    // Locked + open still folds normally — the lock only engages on the next fold, not this one.
+    if (locked && !open) {
+      onSelect?.()
+      return
+    }
     setAndSave(!open)
   }
+  // Lingers the open-lock glyph after an unlock so a mistaken toggle can be undone before the pointer leaves.
+  const [justUnlocked, setJustUnlocked] = useState(false)
+  const hovered = useRef(false)
+  const prevLocked = useRef(locked)
+  useEffect(() => {
+    if (prevLocked.current && !locked && hovered.current) setJustUnlocked(true)
+    if (locked) setJustUnlocked(false)
+    prevLocked.current = locked
+  }, [locked])
   const renamingChild = useSession((s) =>
     rename ? s.renamingPath?.startsWith(`${rename.path}/`) === true : false,
   )
   useEffect(() => {
-    if (renamingChild && !open) setAndSave(true)
-  }, [renamingChild, open])
+    if (renamingChild && !open && !locked) setAndSave(true)
+  }, [renamingChild, open, locked])
+
+  // Peek reveals a locked folder's newcomer without unlocking it; naming holds it open, a drop lingers.
+  const [peekId, setPeekId] = useState<string | null>(null)
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const clearPeekTimer = (): void => {
+    if (peekTimer.current) clearTimeout(peekTimer.current)
+    peekTimer.current = undefined
+  }
+  const stopPeek = (): void => {
+    clearPeekTimer()
+    setPeekId(null)
+  }
+  const lingerPeek = (id: string): void => {
+    clearPeekTimer()
+    setPeekId(id)
+    peekTimer.current = setTimeout(stopPeek, PEEK_LINGER_MS)
+  }
+  const renamingPath = useSession((s) => s.renamingPath)
+  const namingChildId =
+    locked && renamingPath
+      ? (directChildren?.find((c) => c.path === renamingPath)?.id ?? null)
+      : null
+  const prevNaming = useRef<string | null>(null)
+  useEffect(() => {
+    if (namingChildId) {
+      clearPeekTimer()
+      setPeekId(namingChildId)
+    } else if (prevNaming.current) lingerPeek(prevNaming.current)
+    prevNaming.current = namingChildId
+  }, [namingChildId])
+  const peekNonce = useSession((s) => s.peekSignal?.nonce)
+  useEffect(() => {
+    const sig = useSession.getState().peekSignal
+    if (locked && sig && sig.parentPath === selfPath) lingerPeek(sig.childId)
+  }, [peekNonce])
+  useEffect(() => {
+    if (!locked) stopPeek()
+  }, [locked])
+  useEffect(() => clearPeekTimer, [])
+  const peekOnly = locked && !open && peekId !== null
+  const headerEl = useRef<HTMLDivElement | null>(null)
+  const childrenEl = useRef<HTMLDivElement | null>(null)
+  // A move into the peeked child isn't a dismiss — only leaving both header and children collapses it.
+  const dismissOnLeave = (e: React.MouseEvent): void => {
+    if (!peekTimer.current) return
+    const to = e.relatedTarget as Node | null
+    if (headerEl.current?.contains(to) || childrenEl.current?.contains(to)) return
+    stopPeek()
+  }
   const openView = onSelect
     ? (e: React.MouseEvent): void => {
         e.stopPropagation()
         onSelect()
       }
     : undefined
+  const lockToggle =
+    locked || justUnlocked ? (
+      <button
+        type="button"
+        className={cx('row-lock', justUnlocked && 'row-lock-persist')}
+        aria-label={locked ? 'Unlock folder' : 'Lock folder'}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          onSetLock?.(!locked)
+        }}
+      >
+        <Icon name={locked ? 'locked' : 'lock-open'} size="control" />
+      </button>
+    ) : undefined
   const header = (
     <MenuItem
+      ref={headerEl}
       className="row"
       selected={selected}
       indent={depth}
       onClick={toggle}
       onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
+      onMouseEnter={() => {
+        hovered.current = true
+      }}
+      onMouseLeave={(e) => {
+        hovered.current = false
+        setJustUnlocked(false)
+        dismissOnLeave(e)
+      }}
+      trailing={lockToggle}
       leading={
         <Icon
           name="chevron-right"
@@ -271,16 +371,21 @@ function Disclosure({
   return (
     <>
       {dragId ? (
-        <DragRow id={dragId} springOpen={{ collapsed: !open, onExpand: () => setAndSave(true) }}>
+        <DragRow
+          id={dragId}
+          springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setAndSave(true) }}
+        >
           {header}
         </DragRow>
       ) : (
         header
       )}
-      <Reveal open={open} fill>
+      <Reveal open={open || peekOnly} fill>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div
-          className="children"
+          ref={childrenEl}
+          className={cx('children', peekOnly && 'children-peek')}
+          onMouseLeave={dismissOnLeave}
           onContextMenu={
             onBodyContextMenu
               ? (e) => {
@@ -291,7 +396,11 @@ function Disclosure({
               : undefined
           }
         >
-          {children}
+          {peekOnly && peekId !== null
+            ? Children.toArray(children).filter(
+                (c) => isValidElement(c) && String(c.key).endsWith(peekId),
+              )
+            : children}
         </div>
       </Reveal>
     </>
@@ -350,6 +459,7 @@ function PageRow({
 
 const SIDEBAR_GHOST_DWELL_MS = 2500 // KNOB
 const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
+const PEEK_LINGER_MS = 2500 // KNOB
 
 const NO_GHOST: { anchorId: string | null; closing: boolean } = { anchorId: null, closing: false }
 
@@ -398,15 +508,25 @@ function ContainerRow({
   depth,
   selected,
   onSelect,
+  directChildren,
   children,
 }: {
-  node: { id: string; icon?: string; title: string; path: string; kind: MutableKind }
+  node: {
+    id: string
+    icon?: string
+    title: string
+    path: string
+    kind: MutableKind
+    disclosureLocked?: boolean
+  }
   depth: number
   selected?: boolean
   onSelect?: () => void
+  directChildren: { id: string; path: string }[]
   children: React.ReactNode
 }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const mutate = useSession((s) => s.mutate)
   const icon = entityIcon(
     node.kind === 'collection' ? 'collection' : 'set',
     node.icon,
@@ -426,6 +546,17 @@ function ContainerRow({
       onSelect={onSelect}
       onContextMenu={() => showContextFor(node)}
       rename={{ path: node.path, kind: node.kind }}
+      selfPath={node.path}
+      directChildren={directChildren}
+      locked={node.disclosureLocked === true}
+      onSetLock={(locked) =>
+        void mutate({
+          op: 'setDisclosureLock',
+          path: node.path,
+          kind: node.kind as 'collection' | 'set',
+          locked,
+        })
+      }
     >
       {children}
     </Disclosure>
@@ -462,6 +593,7 @@ function SetRow({
       depth={depth}
       selected={selectable && isSetSelected(selection, set.id)}
       onSelect={selectable ? () => onSelectSet(set) : undefined}
+      directChildren={[...(set.sets ?? []), ...set.pages].map((c) => ({ id: c.id, path: c.path }))}
     >
       {placeChildren(
         (set.sets ?? []).map((s) => (
@@ -512,6 +644,7 @@ function CollectionRow({
       depth={depth}
       selected={isCollectionSelected(selection, col.id)}
       onSelect={() => onSelectCollection(col)}
+      directChildren={[...col.sets, ...col.pages].map((c) => ({ id: c.id, path: c.path }))}
     >
       {placeChildren(
         col.sets.map((s) => (
@@ -620,8 +753,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'page', id: page.id, path: page.path })
   }
 
-  const onCommit = (req: MutateRequest): void => void mutate(req)
-
   const newContextMenu = (): void => {
     void useSession
       .getState()
@@ -659,6 +790,19 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   })
   const dndIndexRef = useRef(dndIndex)
   dndIndexRef.current = dndIndex
+
+  const signalPeek = useSession((s) => s.signalPeek)
+  const onCommit = (req: MutateRequest): void => {
+    // Pulses the landing container so a locked one can peek the newcomer; id resolves via the pre-move path.
+    if (req.op === 'movePage' || req.op === 'moveSet') {
+      for (const [cid, e] of dndIndexRef.current.byId)
+        if (e.path === req.path) {
+          signalPeek(req.newParentPath, cid)
+          break
+        }
+    }
+    void mutate(req)
+  }
   const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
   useEffect(() => {
     if (mode !== 'collections') clearGhost()

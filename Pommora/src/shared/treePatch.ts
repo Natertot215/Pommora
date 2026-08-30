@@ -75,6 +75,7 @@ export function makeSetNode(f: {
   pages?: PageNode[]
   views?: SavedView[]
   viewButton?: ViewButton
+  disclosureLocked?: boolean
 }): SetNode {
   return {
     kind: 'set',
@@ -88,6 +89,7 @@ export function makeSetNode(f: {
     pages: f.pages ?? [],
     views: f.views,
     viewButton: f.viewButton,
+    disclosureLocked: f.disclosureLocked ?? false,
   }
 }
 
@@ -104,6 +106,7 @@ export function makeCollectionNode(f: {
   views?: SavedView[]
   openIn?: OpenIn
   viewButton?: ViewButton
+  disclosureLocked?: boolean
 }): CollectionNode {
   return {
     kind: 'collection',
@@ -119,6 +122,7 @@ export function makeCollectionNode(f: {
     views: f.views,
     openIn: f.openIn,
     viewButton: f.viewButton,
+    disclosureLocked: f.disclosureLocked ?? false,
   }
 }
 
@@ -511,7 +515,7 @@ export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | nul
 export function patchNodeInTree(
   tree: NexusTree,
   path: string,
-  patch: { icon?: string | null; headingIconHidden?: boolean },
+  patch: { icon?: string | null; headingIconHidden?: boolean; disclosureLocked?: boolean },
 ): NexusTree | null {
   return updateNodeInTree(tree, path, (node) => {
     const next = { ...node }
@@ -519,6 +523,8 @@ export function patchNodeInTree(
     // `stabilize` counts keys, so deleting one reads as drift.
     if ('icon' in patch) next.icon = patch.icon ?? undefined
     if (patch.headingIconHidden !== undefined) next.headingIconHidden = patch.headingIconHidden
+    if ('disclosureLocked' in patch && (next.kind === 'collection' || next.kind === 'set'))
+      next.disclosureLocked = patch.disclosureLocked
     return next
   })
 }

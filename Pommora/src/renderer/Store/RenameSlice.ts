@@ -37,6 +37,10 @@ export interface RenameSlice {
   iconPath: string | null
   beginIcon: (path: string) => void
   endIcon: () => void
+  /** A one-shot "an item just landed inside this container" pulse — a disclosure-locked folder
+   *  reads it to briefly reveal only that child. The nonce re-fires it for the same child. */
+  peekSignal: { parentPath: string; childId: string; nonce: number } | null
+  signalPeek: (parentPath: string, childId: string) => void
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives.
    *  `host` carries the gesture's surface into the naming fence. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
@@ -160,6 +164,9 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   iconPath: null,
   beginIcon: (path) => set({ iconPath: path }),
   endIcon: () => set({ iconPath: null }),
+  peekSignal: null,
+  signalPeek: (parentPath, childId) =>
+    set((s) => ({ peekSignal: { parentPath, childId, nonce: (s.peekSignal?.nonce ?? 0) + 1 } })),
 
   newPageAdjacent: async (path, where, host) => {
     const tree = get().tree

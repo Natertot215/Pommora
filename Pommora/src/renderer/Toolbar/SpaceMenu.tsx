@@ -86,6 +86,7 @@ export function SpaceMenu(): React.JSX.Element | null {
                   <FooterLockButton
                     verb={lockLabel(locked)}
                     noun="board"
+                    locked={locked}
                     onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
                   />
                 }

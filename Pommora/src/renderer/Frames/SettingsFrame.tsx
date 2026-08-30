@@ -187,7 +187,7 @@ export function SettingsFrame(): React.JSX.Element | null {
           }
           trailing={
             <AccessoryButton
-              icon="lock"
+              icon={scope.locked ? 'locked' : 'lock-open'}
               size="control"
               box={20}
               ariaLabel={lockLabel(scope.locked, 'view configuration')}

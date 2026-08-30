@@ -199,11 +199,16 @@ export function TileHandleMenu({
             leading={
               containerLocked ? (
                 <span className={`${footerLockAction} ${rowDisabled}`} title="Locked by the board">
-                  <Icon name="lock" size={GLYPH} className={lockIcon} />
+                  <Icon name="locked" size={GLYPH} className={lockIcon} />
                   Locked
                 </span>
               ) : (
-                <FooterLockButton verb={lockLabel(locked)} noun="tile" onToggle={onToggleLock} />
+                <FooterLockButton
+                  verb={lockLabel(locked)}
+                  noun="tile"
+                  locked={locked}
+                  onToggle={onToggleLock}
+                />
               )
             }
           />
