@@ -64,6 +64,8 @@ type MenuItemProps = {
   onContextMenu?: (e: MouseEvent) => void
   onPointerDown?: (e: React.PointerEvent) => void
   onMouseDown?: (e: MouseEvent) => void
+  onMouseEnter?: (e: React.MouseEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
   className?: string
   children: ReactNode
 }
@@ -84,6 +86,8 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
     onContextMenu,
     onPointerDown,
     onMouseDown,
+    onMouseEnter,
+    onMouseLeave,
     className,
     children,
   },
@@ -113,6 +117,8 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
       onContextMenu={onContextMenu}
       onPointerDown={onPointerDown}
       onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={s.titleWrap}>
@@ -213,10 +219,12 @@ export const AccessoryButton = forwardRef<
 export function FooterLockButton({
   verb,
   noun,
+  locked,
   onToggle,
 }: {
   verb: string
   noun: string
+  locked: boolean
   onToggle: () => void
 }): React.JSX.Element {
   return (
@@ -226,7 +234,7 @@ export function FooterLockButton({
       className={s.footerLockAction}
       onClick={onToggle}
     >
-      <Icon name="lock" size="control" className={s.lockIcon} />
+      <Icon name={locked ? 'locked' : 'lock-open'} size="control" className={s.lockIcon} />
       {verb}
     </Button>
   )

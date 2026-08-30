@@ -55,9 +55,9 @@ export const asTablerGlyph = (glyph: LucideIcon): LucideIcon => {
 
 export const ProgressCheck = asTablerGlyph(IconProgressCheck as unknown as LucideIcon)
 
-// Drawn to the reference image's proportions (body ~15/24 wide, shackle stroke ~2.6).
-export const LockSolid = forwardRef<SVGSVGElement, LucideProps>(
-  ({ size = 24, color, ...rest }, ref) => (
+// Drawn to the reference image's proportions (body ~15/24 wide, shackle stroke ~2.5).
+const lockGlyph = (filled: boolean): LucideIcon =>
+  forwardRef<SVGSVGElement, LucideProps>(({ size = 24, color, ...rest }, ref) => (
     <svg
       ref={ref}
       aria-hidden="true"
@@ -70,10 +70,33 @@ export const LockSolid = forwardRef<SVGSVGElement, LucideProps>(
       <path
         d="M7.2 12 V7.7 a4.8 4.8 0 0 1 9.6 0 V12"
         stroke="currentColor"
-        strokeWidth="2.6"
+        strokeWidth="2.5"
         fill="none"
       />
-      <rect x="4.5" y="10.6" width="15" height="10.8" rx="2.6" fill="currentColor" stroke="none" />
+      {filled ? (
+        <rect
+          x="4.5"
+          y="10.6"
+          width="15"
+          height="10.8"
+          rx="2.6"
+          fill="currentColor"
+          stroke="none"
+        />
+      ) : (
+        <rect
+          x="5.75"
+          y="11.85"
+          width="12.5"
+          height="8.3"
+          rx="1.9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+        />
+      )}
     </svg>
-  ),
-) as unknown as LucideIcon
+  )) as unknown as LucideIcon
+
+export const LockFilled = lockGlyph(true)
+export const LockOutline = lockGlyph(false)

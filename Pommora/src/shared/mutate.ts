@@ -111,6 +111,8 @@ export type MutateRequest =
   // A page carries it in `.md` frontmatter `icon`; a container/context in its JSON sidecar.
   // `null` clears it. Property + view icons ride their own writers, not this op.
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
+  // A folder's sidebar disclosure lock. `false` deletes the sidecar key (no stored default).
+  | { op: 'setDisclosureLock'; path: string; kind: MutableContainerKind; locked: boolean }
   // One property on a page's `.md` frontmatter root, under the wrapped key its definition's
   // name builds; `null` clears it. Drives table cross-group reassignment + inline edits.
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
@@ -157,6 +159,8 @@ export interface ContextTarget extends PageMoveContext {
   id?: string
   /** Whether the entity is already open in a tab — flips the item label to "Open" (focus). */
   alreadyOpen?: boolean
+  /** A container's current disclosure-lock state — flips the menu item to "Unlock Folder". */
+  disclosureLocked?: boolean
   /** The surface that popped the menu — echoed into `begin-rename` so the field opens where
    *  the gesture happened; absent, the fence resolves by rank. */
   host?: RenameHost

@@ -618,6 +618,18 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       return ok({})
     }
 
+    case 'setDisclosureLock': {
+      const resolved = await resolveUnderRoot(root, req.path)
+      if (!resolved.ok) return resolved
+      const cfgPath = sidecarPath(resolved.value, req.kind)
+      const written = await rmwJsonStrict(cfgPath, (cur) => {
+        if (typeof cur.id !== 'string') throw new Error('That item has no id.')
+        return setOrDrop(cur, 'disclosure_locked', req.locked)
+      })
+      if (!written.ok) return written
+      return ok({})
+    }
+
     case 'setProperty': {
       // Routed through the one page-value writer so a cell edit and an option cascade stamp the
       // page identically. Drives table cross-group reassignment.

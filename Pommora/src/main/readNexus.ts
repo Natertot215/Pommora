@@ -492,6 +492,7 @@ async function readSet(
     pages: resolveOrder(pages, asStringArray(meta.page_order), fb),
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
+    disclosureLocked: meta.disclosure_locked === true,
   })
 }
 
@@ -537,6 +538,7 @@ async function readPageCollection(
     views: parseViews(meta.views),
     openIn: coerceOpenIn(meta.open_in),
     viewButton: coerceViewButton(meta.view_button),
+    disclosureLocked: meta.disclosure_locked === true,
   })
 }
 

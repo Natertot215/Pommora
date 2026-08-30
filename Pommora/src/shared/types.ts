@@ -338,6 +338,8 @@ export interface SetNode extends PathNode {
   views?: SavedView[]
   /** Per-container ViewDropdown presentation (sidecar `view_button`). */
   viewButton?: ViewButton
+  /** Sidebar disclosure is blocked while set (sidecar `disclosure_locked`). */
+  disclosureLocked?: boolean
 }
 
 export interface CollectionNode extends PathNode {
@@ -353,6 +355,8 @@ export interface CollectionNode extends PathNode {
   openIn?: OpenIn
   /** Per-container ViewDropdown presentation (sidecar `view_button`). */
   viewButton?: ViewButton
+  /** Sidebar disclosure is blocked while set (sidecar `disclosure_locked`). */
+  disclosureLocked?: boolean
 }
 
 /** The asset root's files, keyed by normalized basename — what a `[[Name.png]]` reference
