@@ -60,7 +60,8 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => manageButton().click())
     expect(addButton()).toBeDefined()
     await act(async () => manageButton().click())
-    expect(addButton()).toBeUndefined()
+    // The pane rides a Bloom-out exit before it unmounts, so read the trigger's open state.
+    expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
   it('does not dismiss on an outside click — no backdrop is mounted', async () => {
@@ -80,7 +81,7 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     })
-    expect(addButton()).toBeUndefined()
+    expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
   it('Add Exclusion appends a blank field row', async () => {
