@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-29-2026              | PM-118 | The Disclosure Lock                                  |
 | 08-29-2026              | PM-117 | Index Exclusion Interface                            |
 | 08-27-2026              | PM-116 | The Store Split |
 | 08-25-2026              | PM-115 | The ImagePicker                                      |
@@ -121,6 +122,15 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-118 || The Disclosure Lock
+
+**DATE:** 08-29-2026
+
+A sidebar folder can be locked so a click stops disclosing it — for containers whose long child lists make an accidental expansion costly, where the row is meant to open a view rather than unfold. Right-clicking a Collection or Set offers **Lock Folder**, and the state rides that folder's own sidecar as `disclosure_locked`, so it travels with the folder rather than the machine. A locked row wears a trailing lock glyph that reveals on hover, and just after an unlock it lingers as an open-lock affordance so a mistaken unlock can be re-locked before the pointer leaves. While locked and closed, a row click is blocked from disclosing — a view-containing folder opens its view instead, a plain one stays inert; a folder locked while open still folds that one time, the lock engaging on the next fold rather than this one. An escape hatch keeps a locked folder usable: dragging an item in, or creating a page inside, briefly reveals only that newcomer for 2500ms without unlocking — the timer starting on a create's name-confirmation, and the reveal collapsing early the moment the pointer leaves the folder's region. Landing this exposed a second node-builder — the incremental write-confirm path in `watchPatch` rebuilt the container node without the new field, reverting every lock until a reload, and was taught to carry it. The same pass standardized every lock icon in the app onto one filled/outline pair drawn from Pommora's own SF-style glyph — `locked` filled when active, `lock-open` outlined when not — replacing the single always-solid glyph the tile, board, and settings locks had shared.
+
+- **Commits:** `c89104e0`
+- **Diff:** Net +273 | +303 / −30
 
 #### PM-117 || Index Exclusion Interface
 

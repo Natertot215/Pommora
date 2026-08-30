@@ -47,6 +47,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
               <FooterLockButton
                 verb={lockLabel(locked)}
                 noun="board"
+                locked={locked}
                 onToggle={() => void setLocked(!locked)}
               />
             }

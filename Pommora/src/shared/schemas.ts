@@ -50,6 +50,7 @@ export const pageCollectionSidecar = baseSidecar.extend({
   views: z.array(savedView).optional(),
   open_in: openInField,
   view_button: viewButtonField,
+  disclosure_locked: z.boolean().optional(),
 })
 
 // `_pageset.json` is the RECURSIVE level at any depth. Parentage is the folder nesting itself,
@@ -61,6 +62,7 @@ export const pageSetSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   views: z.array(savedView).optional(),
   view_button: viewButtonField,
+  disclosure_locked: z.boolean().optional(),
 })
 
 /** Page (.md) frontmatter. Context links are parenthesized TITLE keys (`(Projects):`)

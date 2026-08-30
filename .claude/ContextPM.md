@@ -12,7 +12,6 @@
 
 ### Immediate Work
 
-- [ ] **The framework** — the exploration has reported; once the open forks are ruled (the CSS-form question, the masked-knob roster, the naming batches, the ten §3 rulings), rewrite [[RendererRework]] §2 into ordered phases with gates. Directed cleanups keep landing ahead of it.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **A shared list-removal collapse motion.** The exclusion pane's Manage rows are the seed: a row reveals in on add and collapses out on delete through `Reveal` (`open={!closing}`, the write deferred to `onCollapsed`, a closing-set that prunes on data change and batches concurrent removals off a ref). It lives inline in `ExcludedDirectoriesRow` for now and belongs in `DesignSystem/Animation` as a `useListRemoval` hook — every editable list should delete this way. Adopt it there and in `FilterFrame`'s rule rows, which animate reveal-in only and delete instantly today. (Deliberately seeded in one place, not a stray one-off.)
 
@@ -79,8 +78,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
+- [ ] MarkdownPM numbered list auto-resolution on deletion seems to have regressed. 
+- [ ] NavView in gallery mode doesn't show the card's accent-tinted drop hint, unlike all other card-based surfaces. 
 
 ### Recent Work
+
 
 #### PM-115 || The ImagePicker
 
@@ -93,14 +95,6 @@ The `file` property type is complete — the tenth and last. A value is a bare a
 #### PM-112 || Variable Asset Directories
 
 The nexus asset directory became a folder the user picks, and a stored image became an ordinary named file in it. A banner keeps whatever name it had on disk and is named from Pommora by `[[That File.png]]`, which is the same reference Obsidian writes — so one folder serves both applications and neither owns it. Resolution is renderer-side against a map main patches from watch events and pushes, which is what makes a file arriving in a synced folder repaint what names it without a walk; nothing is persisted about an asset but its filename, so a sync eviction and re-download is a non-event and an external rename phantoms rather than being chased. The live nexus migrated: every reference the old writer minted moved out of `.nexus/assets`, byte-identical copies collapsed to one, invented `banner-<token>` names were replaced by their owners', and the folder was emptied through the trash. A replace now deletes only what Pommora minted under its own root — the configured folder is the user's, and a file there may be referenced from a note this app cannot see.
-
-#### PM-111 || Footnotes
-
-MarkdownPM reads and writes GFM reference footnotes: markers in the body, a trailing run of citations at the document's end, plain GFM left on disk. The section's boundary is derived once and read by every layer that needs it, which is what lets a marker draw the number its position earns rather than the label it carries, and lets the counter exclude a section the editor is drawing. The section hides behind a per-page override that the Subfield's control and the divider both write, and every creation and deletion ends with a single dispatch that renumbers the labels, reorders the rows, and reverts the whole on one undo. A transaction-layer guard relocates any change that would leave text standing after the section, that being the one edit which turns every citation on the page back into literal text; whitespace alone is refused rather than relocated. The section's disclosure is one-page-keyed: the Subfield's control, the divider, a marker jump, the Page Window, and the hover pane all resolve and write, so a page draws the same way wherever it is shown.
-
-#### PM-110 || A Link Property Reaches A Page
-
-A Link property can now name a page, not just a web address. Pasting `[[Title]]` — what Copy Link puts on the clipboard — or a markdown link whose target resolves to a page commits as that connection under the page's own capitalization, aliases carried through, while a title no page answers to is refused as a malformed address is; the value then reads in the connection color and clicks through to the page rather than a browser, the three link formats standing down. The rename cascade was widened to match: it rewrites connections held in frontmatter alongside those in bodies, and the content index records what frontmatter names, so a page whose only inbound reference is a property value is reachable at all. Travelling with it, the link right-click menu left main's inline template-building for one shared model that the editor, table cells, card values and both inspector panes now pop — an address gaining Open Preview and Open Browser, an open item dropping where its own surface already shows that page, and a property surface closing on Clear while Remove stays on the property rather than the value it holds.
 
 ### Guidelines
 

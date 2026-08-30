@@ -24,7 +24,6 @@
 
 #### Next Session
 
-1. **Close the Exclusions Phase 2 live pass** — needs a full dev restart (new `src/main` IPC), then Clear a real excluded folder both toggle ways; the confirm copy knob is `clearConfirmCopy` in `exclusionScan.ts`.
 2. **Resume the Renderer Rework** — the larger folder moves (`Core/`, `Interface/` absorbing `Sidebar/`, the tile world, casing renames), the open forks, then the framework. See [[ContextPM]] / [[RendererRework]].
 3. **The Space dropdown** — carried.
 

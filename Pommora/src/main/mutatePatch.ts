@@ -143,6 +143,8 @@ async function routeMutation(
     case 'setIcon':
       // A Context's icon lives in its registry — a structural walk input.
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
+    case 'setDisclosureLock':
+      return (await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh'
     // A banner replace drops the old image's crop through dropReplacedAsset — a crops.json write
     // the app's own watcher never sees — so the writer re-reads that leaf itself.
     case 'setBanner':

@@ -82,7 +82,7 @@ The Icon Picker a user opens to assign an entity's icon (`DesignSystem/Pickers/I
 
 #### Known Issues
 
-- **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set; registry-first resolution renders Pommora's glyph instead of the one the picker cell showed.
+- **Two curated keys shadow real Lucide ids.** `table` and `lock-open` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set; registry-first resolution renders Pommora's glyph instead of the one the picker cell showed.
 
 [^1]: [[DesignSystemPM]] §Geometry
 [^2]: [[ConfigurationPM]] §Personalization
