@@ -176,7 +176,7 @@ The `personalization` object in `settings.json` holds every key the Settings win
 | `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
 | `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |
 
-Three more keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip (hand-edited);[^8] the profile — `profile_image`, `profile_icon`, `profile_subtitle` — written from the ribbon's identity menu; and the app-owned `subfield` and `navViewModes` blocks the Subfield and the navigation surfaces persist their own state in. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip.
+Three more keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane;[^8] the profile — `profile_image`, `profile_icon`, `profile_subtitle` — written from the ribbon's identity menu; and the app-owned `subfield` and `navViewModes` blocks the Subfield and the navigation surfaces persist their own state in. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip.
 
 ### App Configuration (Per-Device)
 
@@ -186,7 +186,7 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 
 #### Pending
 
-- **Knobs without a row** — default icons, the placement keys, and excluded folders are hand-set in `settings.json`, with the watcher applying the change live; all are wireable through the existing setter.
+- **Knobs without a row** — default icons and the placement keys are hand-set in `settings.json`, with the watcher applying the change live; both are wireable through the existing setter.
 - **Scopes without a renderer setter** — the per-device app config has no IPC a UI could write through. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
 - **Two names for one date form** — the Trash column's menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form.
