@@ -142,6 +142,7 @@ export function readPersonalization(raw: unknown): Personalization {
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
     permanentDelete: bool(p.permanentDelete),
+    preservePropertiesOnClear: bool(p.preservePropertiesOnClear),
     dateFormat: DATE_FORMATS.find((f) => f === p.dateFormat),
     timeFormat: p.timeFormat === 'twentyFourHour' ? 'twentyFourHour' : undefined,
     trashDateFormat: DATE_FORMATS.find((f) => f === p.trashDateFormat),

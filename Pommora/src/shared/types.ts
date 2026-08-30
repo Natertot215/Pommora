@@ -155,6 +155,10 @@ export interface Personalization {
   /** What emptying an item from the trash means. Absent = the artifact goes to the operating
    *  system's trash and the OS owns the last undo; true erases it from the machine outright. */
   permanentDelete?: boolean
+  /** What clearing an excluded folder's cache does to the properties a page holds. Absent = keep
+   *  them, unwrapped to plain frontmatter; false erases them outright with the rest of the app's
+   *  bookkeeping. Read as `!== false` so absent means preserve. */
+  preservePropertiesOnClear?: boolean
   /** The nexus's own date form — the live fallback every date renders through unless its column
    *  overrides it. Absent = `full`, the form the app has always seeded. */
   dateFormat?: DateFormat
