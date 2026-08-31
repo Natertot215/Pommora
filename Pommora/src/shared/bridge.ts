@@ -37,7 +37,6 @@ import type {
   LinkConfig,
   NumberConfig,
   PropertyDefinition,
-  PropertyType,
   StatusGroup,
 } from './properties'
 import type { PageFrontmatter } from './schemas'
@@ -175,15 +174,6 @@ export interface Asks {
   'schema:delete': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
   'schema:assign': {
     args: [containerPath: string, propertyId: string, toIndex?: number]
-    reply: Result<null>
-  }
-  'schema:changeType': {
-    args: [
-      containerPath: string,
-      propertyId: string,
-      newType: PropertyType,
-      opts?: { dropConflictingValues?: boolean },
-    ]
     reply: Result<null>
   }
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }

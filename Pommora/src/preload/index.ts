@@ -71,7 +71,6 @@ const api = {
     reorder: ask('schema:reorder'),
     delete: ask('schema:delete'),
     assign: ask('schema:assign'),
-    changeType: ask('schema:changeType'),
   },
   // Nexus-wide property ops (registry-level, no container scope). `property.delete` is the
   // global destructive op (snapshot, scrub every collection, purge caches, drop the def);
