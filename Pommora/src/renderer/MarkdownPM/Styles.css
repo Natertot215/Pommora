@@ -439,7 +439,6 @@
 }
 .outliner-lines .md-outliner-rail {
   --outliner-width: var(--list-outline-width);
-  --outliner-color: var(--list-outline-color);
   --outliner-gap: var(--list-outline-gap);
   --outliner-gap-top: var(--outliner-gap);
   --outliner-gap-bottom: var(--outliner-gap);
@@ -460,7 +459,7 @@
     1px
   );
   width: var(--outliner-width);
-  background: var(--outliner-color);
+  background: var(--list-outline-color);
   pointer-events: none;
 }
 .outliner-lines .md-outliner-bullet {
