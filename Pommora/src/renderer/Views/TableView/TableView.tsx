@@ -9,18 +9,13 @@ import { parseStyleAction } from '@shared/columnMenu'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { parentOf } from '@shared/treePatch'
-import { resolveContainerSchema } from '../Pipeline/pickView'
-import { flattenContainer, groupsStructurally, subtreeIds } from '../Pipeline/group'
-import { resolveView } from '../Pipeline/resolveView'
-import { useValuesEpoch } from '../useValuesEpoch'
-import { contextOptionsFor as contextOptionsForSpaces } from '@renderer/Properties/contextOptions'
-import { contextIdsOf } from '@renderer/Properties/contextIdentity'
+import { subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
-import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
 import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { sharedValueClickAction } from '@renderer/Properties/Assignment/valueClick'
+import type { ViewHostApi } from '../useViewHost'
 import {
   fileChipIndex,
   pickFileInto,
@@ -30,20 +25,11 @@ import { useSession } from '../../store'
 import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { findCollectionForSet } from '@renderer/Interface/Scope'
 import { isOpenInTabs } from '../../Tabs/tabsModel'
-import { useActiveView } from '../useActiveView'
-import { useViewOrders } from '../useViewOrders'
-import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import type { SetTreeNode } from '../Pipeline/group'
-import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
-import { writeContextValue } from '../contextCellWrite'
-import {
-  buildSetIcons,
-  buildSetNames,
-  buildSetPaths,
-} from '@renderer/Properties/Assignment/cellResolve'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands, propertyOrderAfterDrop, reparentFsOrder } from '../bandDndModel'
-import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
+import { bandReorderPatch } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
@@ -56,8 +42,7 @@ import { clampWidth, widthFor } from '@renderer/Tables/columnWidths'
 import { alignFor } from '@renderer/Tables/columnAlign'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { reorderColumns } from '@renderer/Tables/columnReorder'
-import { mergeOverrides, mergeStyleRecords } from './viewMerge'
-import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from './reassign'
+import { groupKeyToValue } from './reassign'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { IconPicker } from '@renderer/Settings/IconPicker'
@@ -75,7 +60,6 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@renderer/DesignSystem/Interactions/ghostAnchor'
-import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { openWebLink } from '@renderer/Links/openWebLink'
@@ -88,7 +72,6 @@ import {
 } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
-import { sameIds } from '../creationOrder'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
@@ -121,55 +104,61 @@ function DatetimeCellPicker({
   )
 }
 
-export function TableView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
+export function TableView({
+  source,
+  host,
+}: {
+  source: CollectionNode | SetNode
+  host: ViewHostApi
+}): React.JSX.Element {
+  const {
+    schema,
+    view,
+    liveView,
+    values,
+    setValueOverride,
+    columns,
+    groups,
+    setTree,
+    ctx,
+    contextIds,
+    setNames,
+    setIcons,
+    setPaths,
+    rowById,
+    rowBand,
+    collapsed,
+    toggleCollapse,
+    structuralGrouping,
+    subGrouped,
+    groupPropId,
+    groupPropType,
+    canReassign,
+    canReorderWithin,
+    canRelocate,
+    structuralOrder,
+    dragDisabled,
+    viewOrders,
+    persistViewOrder,
+    setManualOverride,
+    setOrderOverride,
+    setHiddenOverride,
+    persistView,
+    commitBand,
+    setStylePatch,
+    setProperty,
+    commitValue,
+    contextOptionsFor,
+    creation,
+    mutate,
+    select,
+  } = host
   const styleFor = useStyleFor()
-  const tree = useSession((s) => s.tree)
-  const assetMap = useSession((s) => s.assetMap)
   const selection = useSession((s) => s.selection)
-  const select = useSession((s) => s.select)
-  // The store's one write path — main confirms it by patching its live tree and pushing, so a
-  // table reorder / reassign propagates to the sidebar without waiting on the fs watcher.
-  const mutate = useSession((s) => s.mutate)
-  const saveView = useSaveView(source)
-  const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
-  // Optimistic property patches keyed by page id (cross-group reassignment): the loaded values
-  // never re-read on a write, so a reassigned row re-groups only because this patch feeds the pipeline.
-  const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
-
-  // Lazy value load on container open; `canceled` guards a fast container swap.
-  // (The active-view pointer is the shared store slice — read via useActiveView, not fetched here.)
-  useEffect(() => {
-    let canceled = false
-    setValueOverride(null) // canonical values for the new container supersede any optimistic patches
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!canceled) setValues(v)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [source.path])
-
-  useValuesEpoch(source.path, setValues, setValueOverride)
-
-  const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
-  const { view } = useActiveView(source, schema)
-  const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
-  // Local override layer — reorder + resize + hide + collapse apply instantly, persist async (watcher
-  // confirms). Order + hidden go in `liveView` (the pipeline reads them); width stays a separate
-  // override so a resize doesn't re-run the pipeline. All re-seed on view change.
-  const [orderOverride, setOrderOverride] = useState<string[] | null>(null)
+  // Local column layers — resize + align apply instantly and stay OUT of `liveView` so a resize
+  // doesn't re-run the pipeline; the fold ref carries them into every host persist.
   const [widthOverride, setWidthOverride] = useState<Record<string, number>>({})
   const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
-  const [styleOverride, setStyleOverride] = useState<Record<string, ColumnStyle>>({})
-  const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
-  const { bandPatch, commitBand, resetBand } = useBandOrdering(
-    (patch) => persistView(patch),
-    groupingKeyOf(view),
-  )
-  const [manualOverride, setManualOverride] = useState<string[] | null>(null)
-  const [collapsed, setCollapsed] = useState<Set<string>>(
-    () => new Set(view.collapsed_groups ?? []),
-  )
   const [collapsing, setCollapsing] = useState<string | null>(null)
   // Columns whose tracks are sliding to a wider per-style min after a look change: enables the
   // same grid-template-columns transition as Hide for one beat, cleared on transitionend. Populated by
@@ -191,7 +180,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Columns fit → the rounded content-inset look; columns overflow → the right inset flattens and
   // the table h-scrolls to the glass edge (the left gutter holds). One read per pane resize /
   // track-set change — never per scroll or per pointermove.
-  const viewRef = useRef<HTMLDivElement>(null)
   const [overflowing, setOverflowing] = useState(false)
   // The column sum (pre-zoom px), readable from the overflow check without a stale closure. The
   // check compares THIS against the box — a scrollWidth read floors at clientWidth, so any
@@ -228,107 +216,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     lastRename.current = { rowId: editing.rowId, colId: editing.colId, nonce: editing.nonce ?? 0 }
   }
   useEffect(() => {
-    setOrderOverride(null)
     setWidthOverride({})
     setAlignOverride({})
-    setStyleOverride({})
-    setHiddenOverride(null)
-    resetBand()
-    setManualOverride(null)
     setCollapsing(null)
     setColDrag(null)
-    setCollapsed(new Set(view.collapsed_groups ?? []))
   }, [view.id])
-  // A fresh tree (a sidebar reorder, or this table's own write round-tripping back) carries the canonical
-  // page_order, so drop the optimistic MANUAL ORDER it was masking — order round-trips through source.pages,
-  // so canon has caught up. VALUES deliberately do NOT reset here: a PageNode carries no property value and
-  // loadValues never re-reads mid-session, so clearing valueOverride on a `source`-identity change would
-  // revert a just-assigned value to the frozen pre-write `values` whenever a watcher echo re-mints `source`
-  // (the ~1/10 assign-vanish). The value override clears+reloads only on a real container switch, above.
-  useEffect(() => {
-    setManualOverride(null)
-  }, [source])
-  // The Visibility pane writes property_order / hidden_properties from OUTSIDE this component. Once the
-  // canonical view catches an override up (this table's own write round-tripped), drop it — a pinned
-  // override would mask the pane's later writes and fold stale state back over them on the next persist.
-  useEffect(() => {
-    if (orderOverride && sameIds(orderOverride, view.property_order)) setOrderOverride(null)
-    if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
-  }, [view, orderOverride, hiddenOverride])
-  const liveView = useMemo(() => {
-    if (!orderOverride && !hiddenOverride && !bandPatch) return view
-    return {
-      ...view,
-      property_order: orderOverride ?? view.property_order,
-      hidden_properties: hiddenOverride ?? view.hidden_properties,
-      ...bandPatch,
-    }
-  }, [view, orderOverride, hiddenOverride, bandPatch])
-  // Manual row order (viewOrders cache) is the sort tiebreaker — passed to the pipeline when
-  // the view is sorted or grouped (an unsorted, ungrouped view otherwise reads canonical page_order). A
-  // live `manualOverride` also feeds it so an unsorted-flat reorder shows instantly (before its page_order
-  // write round-trips the fs) rather than snapping back.
-  // Effective count only — a dead criterion (deleted property) sorts by nothing and must not
-  // retire row drag or flip the manual-order gates.
-  const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), [liveView.sort, schema])
-  const sortedOrGrouped = sortKeys > 0 || liveView.group != null
-  // The grouped property + whether a cross-group drop can reassign it: status/select/checkbox map
-  // a group key straight to a value; a date bucket doesn't, so date grouping isn't reassignable.
-  // The property lives in TWO homes: top-level property grouping, or the view-level sub-group
-  // bucketing inside structural bands.
-  // EFFECTIVE mode, the pipeline's own predicate — a dead-property grouping renders structural
-  // bands, so the drag writers (page_order vs viewOrders; location set_order vs group_order) must
-  // agree with what's actually drawn.
-  const structuralGrouping = groupsStructurally(liveView.group, schema)
-  const subGrouped = structuralGrouping && liveView.sub_group !== undefined
-  const groupPropId =
-    liveView.group?.kind === 'property'
-      ? liveView.group.property_id
-      : subGrouped
-        ? liveView.sub_group?.property_id
-        : undefined
-  const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
-  const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
-  // Within-group reorder is possible whenever the order is manually meaningful — anything but a multi-key
-  // sort. Unsorted structural/flat views write the canonical on-disk page_order (reorderTo → movePage);
-  // single-sorted / property-grouped views write the per-view manual tiebreaker (viewOrders). Cross-group
-  // reassignment is independent of the sort count.
-  const canReorderWithin = sortKeys < 2
-  // Plain location grouping (no sub-group): the bands ARE folders, so a cross-band row drop MOVES the
-  // page into that Set. The sub-grouped case already moves on a set-dimension change (reassignRow).
-  const canRelocate = structuralGrouping && !subGrouped
-  const structuralOrder = groupPropId === undefined && sortKeys === 0
-  // A held viewOrder mask never feeds a structural paint — the rows draw in tree order, and the
-  // mask stays the sorted/grouped tiebreaker.
-  const manualOrder = resolveManualOrder(
-    sortedOrGrouped,
-    manualOverride,
-    structuralOrder ? undefined : viewOrders[view.id],
-  )
-  const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
-  // Optimistic property patches feed the pipeline so a reassigned row re-groups before the watcher round-trips.
-  const effectiveValues = useMemo(
-    () => (valueOverride ? { ...values, ...valueOverride } : values),
-    [values, valueOverride],
-  )
-  const contextIds = contextIdsOf(tree)
-  const { columns, groups, setTree } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(source, effectiveValues)
-    return {
-      ...resolveView({ rows, setTree, view: liveView, schema, manualOrder, contextIds }),
-      setTree,
-    }
-  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
-  const ctx = useMemo(
-    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contexts, schema, assetMap],
-  )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
   // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime
   // width:100% pins it, and nothing here needs to fire). Each fires one cheap read, never per-scroll.
   useEffect(() => {
-    const el = viewRef.current
+    const el = host.seam.viewRootRef.current
     if (!el) return
     const check = (): void => {
       const cs = getComputedStyle(el)
@@ -346,13 +243,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (grid) ro.observe(grid)
     return () => ro.disconnect()
     // Re-bind when the loading/empty returns give way to the real grid (the nodes remount without ctx changing).
-  }, [ctx === null, groups.length === 0])
-  const setNames = useMemo(() => buildSetNames(source), [source])
-  const setIcons = useMemo(() => buildSetIcons(source), [source])
+  }, [groups.length === 0])
 
   // The visible band list (headers only) — BandDnd's hit-test universe, snapshot at drag activation.
   const bands = useMemo(() => flattenBands(groups, collapsed), [groups, collapsed])
-  const setPaths = useMemo(() => buildSetPaths(source), [source])
   const bandLabel = (id: string): string => {
     const find = (gs: ResolvedGroup[]): ResolvedGroup | undefined => {
       for (const g of gs) {
@@ -478,24 +372,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     })()
   }
 
-  // Persist the saved view + every live override (order + collapse) + a patch, so no one mutation
-  // clobbers another's unsaved state — the reorder/resize data-loss class this guards against.
-  // Adopt-only: if this fires while the entry-mint is still in flight, it awaits the minted id and
-  // saves against it — never mints a rival default from its own sentinel. Order/width/align/collapse/
-  // style all show through a live override; main's confirming push reconciles the rest.
-  const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
-    void saveView(
-      mergeOverrides(liveView, widthOverride, alignOverride, collapsed, patch, styleOverride),
-      { viewState: opts?.viewState },
-    )
-  }
-  const toggleCollapse = (key: string): void => {
-    const next = new Set(collapsed)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setCollapsed(next)
-    persistView({ collapsed_groups: [...next] }, { viewState: true })
-  }
   const reorderColumn = (activeId: string, overId: string): void => {
     const next = reorderColumns(
       columns.map((c) => c.id),
@@ -566,16 +442,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // watcher push removed mid-gesture.
   const resolveAlign = (id: string): ColumnAlign =>
     alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
-  const resolveStyle = (id: string): ColumnStyle => ({
-    ...styleFor(id, schema, liveView),
-    ...styleOverride[id],
-  })
+  const resolveStyle = (id: string): ColumnStyle => styleFor(id, schema, liveView)
   const { alignById, styleById } = useMemo(
     () => ({
       alignById: new Map<string, ColumnAlign>(columns.map((c) => [c.id, resolveAlign(c.id)])),
       styleById: new Map<string, ColumnStyle>(columns.map((c) => [c.id, resolveStyle(c.id)])),
     }),
-    [columns, schema, liveView, alignOverride, styleOverride, contextIds],
+    [columns, schema, liveView, alignOverride, contextIds],
   )
   const colAlign = (id: string): ColumnAlign => alignById.get(id) ?? resolveAlign(id)
   // A column header's glyph, gated by the per-view Column Icons toggle (`hide_column_icons`), which
@@ -609,15 +482,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
   }
   const colStyle = (id: string): ColumnStyle => styleById.get(id) ?? resolveStyle(id)
-  // Set one style key: applies live via the override, persists per-key into column_styles — the align
-  // pattern; the patch carries the not-yet-committed value so a state-batch can't drop it.
-  const setColumnStyle = (id: string, key: keyof ColumnStyle & string, value: string): void => {
-    const merged = { ...styleOverride[id], [key]: value } as ColumnStyle
-    setStyleOverride((prev) => ({ ...prev, [id]: merged }))
-    persistView({
-      column_styles: mergeStyleRecords(liveView.column_styles, { ...styleOverride, [id]: merged }),
-    })
-  }
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
     setAlignOverride((prev) => ({ ...prev, [id]: align }))
     persistView({
@@ -657,35 +521,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action?.startsWith('style:')) {
       const parsed = parseStyleAction(action)
-      if (parsed) setColumnStyle(id, parsed.key, parsed.value)
+      if (parsed) setStylePatch(id, parsed.key, parsed.value)
     }
-  }
-  // One typed property write: patch the row's loaded frontmatter optimistically
-  // (loadValues never re-runs mid-session), then setProperty — the reassignRow pattern.
-  const commitCellValue = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    const patched = applyValueAtRoot(
-      row.frontmatter as Record<string, unknown>,
-      def,
-      value,
-    ) as PageFrontmatter
-    setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
-    void mutate({ op: 'setProperty', path: row.path, propertyId, value })
-  }
-  const contextOptionsFor = (
-    col: ResolvedColumn,
-  ): Array<{ value: string; label: string; color?: string; icon?: string }> | null => {
-    if (col.kind !== 'context' || !tree) return null
-    return contextOptionsForSpaces(col.id, tree)
-  }
-  const commitContextValue = (row: ViewRow, colId: string, ids: string[]): void => {
-    writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
-  }
-  const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
-    if (col.kind === 'context' && next?.kind === 'context')
-      commitContextValue(row, col.id, next.value)
-    else commitCellValue(row, col.id, next)
   }
   // Acting stops propagation so the row's select doesn't also fire; anything else bubbles.
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
@@ -723,12 +560,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const shared = sharedValueClickAction(t, value)
     if (shared) {
       e.stopPropagation()
-      if (shared.kind === 'commit') commitCellValue(row, col.id, shared.value)
+      if (shared.kind === 'commit') setProperty(row, col.id, shared.value)
       // A file value is filled through the OS dialog: a chip replaces the file it names and opens
       // at that file's own folder, the value's own area adds and opens at the property's Directory.
       else if (shared.kind === 'file') {
         if (def)
-          pickFileInto(def, value, fileChipIndex(e.target), (n) => commitCellValue(row, col.id, n))
+          pickFileInto(def, value, fileChipIndex(e.target), (n) => setProperty(row, col.id, n))
       } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
@@ -779,11 +616,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const t = declaredType(col.id, schema)
     if (t === 'number') {
       if (trimmed === '') {
-        commitCellValue(row, col.id, null)
+        setProperty(row, col.id, null)
         return
       }
       const n = Number.parseFloat(trimmed)
-      if (!Number.isNaN(n)) commitCellValue(row, col.id, { kind: 'number', value: n })
+      if (!Number.isNaN(n)) setProperty(row, col.id, { kind: 'number', value: n })
     } else if (t === 'url') {
       // Edit rewrites the URL but rides the current alias along (urlValueFromEdit); empty clears.
       const cur = resolveFieldValue(row, col.id, schema)
@@ -792,7 +629,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         cur.kind === 'url' ? cur.value : undefined,
         resolveTitle,
       )
-      if (next !== undefined) commitCellValue(row, col.id, next)
+      if (next !== undefined) setProperty(row, col.id, next)
     }
   }
   // The inline text/number editor, mounted in the editing cell and REPLACING its content. The value
@@ -824,20 +661,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
   }
 
-  // Every row's live ViewRow by id — the table-level picker resolves its editing cell (and reads a
-  // multi-select's fresh value on each toggle) through this, not a captured-stale row.
-  const rowById = useMemo(() => {
-    const m = new Map<string, ViewRow>()
-    const walk = (gs: ResolvedGroup[]): void => {
-      for (const g of gs) {
-        for (const r of g.items) m.set(r.id, r)
-        if (g.children) walk(g.children)
-      }
-    }
-    walk(groups)
-    return m
-  }, [groups])
-
   // ONE self-managed picker/datetime pane for the whole table, hung off the editing cell (triggerElRef)
   // and portaled to a body top layer, so it escapes the table's overflow clip (`.table-view` is an
   // overflow-x scroller, which clips y too). `open` blooms it in on a picker cell, out when editing
@@ -858,7 +681,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
           <DatetimeValuePicker
             value={v}
             dateFormat={colStyle(col.id).date_format}
-            onCommit={(nv) => commitCellValue(row, col.id, nv)}
+            onCommit={(nv) => setProperty(row, col.id, nv)}
           />
         </DatetimeCellPicker>
       )
@@ -879,11 +702,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         triggerRef={triggerElRef}
         look={colStyle(col.id).look}
         {...(contextOptions ? { contextOptions } : {})}
-        onCommit={(v) =>
-          col.kind === 'context' && v?.kind === 'context'
-            ? commitContextValue(row, col.id, v.value)
-            : commitCellValue(row, col.id, v)
-        }
+        onCommit={(v) => commitValue(row, col, v)}
         onDismiss={dismiss}
       />
     )
@@ -913,10 +732,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
           trailing={divisor !== undefined ? `/ ${divisor}` : undefined}
           onCommit={(text) => {
             const trimmed = text.trim()
-            if (trimmed === '') commitCellValue(row, col.id, null)
+            if (trimmed === '') setProperty(row, col.id, null)
             else {
               const n = Number.parseFloat(trimmed)
-              if (!Number.isNaN(n)) commitCellValue(row, col.id, { kind: 'number', value: n })
+              if (!Number.isNaN(n)) setProperty(row, col.id, { kind: 'number', value: n })
             }
             setEditing(null)
           }}
@@ -934,7 +753,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         value={linkAlias(raw) ?? ''}
         accent={solidColorCss(linkDef?.link_color)}
         onCommit={(alias) => {
-          commitCellValue(row, col.id, urlValueFromRename(alias, raw))
+          setProperty(row, col.id, urlValueFromRename(alias, raw))
           setEditing(null)
         }}
         onDismiss={() => setEditing(null)}
@@ -963,7 +782,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (dt === 'url') {
       const v = resolveFieldValue(row, col.id, schema)
       const target = linkValueMenuTarget(v.kind === 'url' ? v.value : '', (action) => {
-        if (action === 'link:clear') return commitCellValue(row, col.id, null)
+        if (action === 'link:clear') return setProperty(row, col.id, null)
         if (action === 'editLink')
           return setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
         if (action !== 'rename') return
@@ -1001,7 +820,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         schema.find((d) => d.id === col.id),
         resolveFieldValue(row, col.id, schema),
         chip,
-        (n) => commitCellValue(row, col.id, n),
+        (n) => setProperty(row, col.id, n),
       )
     )
       return
@@ -1025,11 +844,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       renameNonce.current += 1
       setEditing({ rowId: row.id, colId: col.id, mode: 'rename', nonce: renameNonce.current })
     } else if (action === 'cell:clear') {
-      if (col.kind === 'context') commitContextValue(row, col.id, [])
-      else commitCellValue(row, col.id, null)
+      commitValue(row, col, null)
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
-      if (parsed) setColumnStyle(col.id, parsed.key, parsed.value)
+      if (parsed) setStylePatch(col.id, parsed.key, parsed.value)
     }
   }
 
@@ -1097,8 +915,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const titleCol = columns.find((c) => c.kind === 'title')
-  const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue, titleCol })
-  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue, titleCol }
+  const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, commitValue, titleCol })
+  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, commitValue, titleCol }
   // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
   // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
@@ -1125,42 +943,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (titleColId)
       setEditing({ rowId: created.id, colId: titleColId, mode: 'editor', fromCreate: true })
   }
-  // The shared creation engine. The config getter runs at gesture time AND at the create's
-  // reply — every binding it closes over must initialize above the loading/empty returns, or a
-  // reply landing on an early-returned render (a concurrent actor emptied the view mid-create)
-  // reads a TDZ binding and throws.
-  const {
-    bandAdd,
-    createAdjacent: newPageAdjacent,
-    containerPages,
-  } = useViewCreation(() => ({
-    source,
-    view: liveView,
-    schema,
-    values,
-    setValueOverride,
-    effectiveValues,
-    structuralOrder,
-    viewOrders,
-    persistViewOrder,
-    setManualOverride,
-    rowBand: rowGroup,
-    bandBucket: (key: string) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key),
-    canReassign,
-    groupPropId,
-    groupPropType,
-    setPaths,
-    collapsed,
-    toggleCollapse,
-    viewRootRef: viewRef,
-    onCreated: openCreateRename,
-  }))
+  const { bandAdd, createAdjacent: newPageAdjacent, containerPages } = creation
   const cellApi = useMemo<RowCellApi>(
     () => ({
       menu: (row, col, e) => void cellApiRef.current.openCellMenu(row, col, e),
       click: (row, col, e) => cellApiRef.current.onCellClick(row, col, e),
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
-      remove: (row, col, next) => cellApiRef.current.removeCellValue(row, col, next),
+      remove: (row, col, next) => cellApiRef.current.commitValue(row, col, next),
       // The grip pops the title cell's own menu — one menu for the row, wherever it's asked for.
       grip: (row, e) => {
         const col = cellApiRef.current.titleCol
@@ -1185,7 +974,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Memoized so a selection / resize / drag-frame render doesn't re-walk every group and rebuild both
   // Maps. Lives ABOVE the empty/loading returns — a hook after a conditional return crashes React the
   // moment the condition flips (an empty collection gaining its first page).
-  const { dataRows, rowPath, rowGroup } = useMemo(() => {
+  const { dataRows, rowPath } = useMemo(() => {
     const rows: { id: string; path: string; groupKey: string }[] = []
     const collect = (g: ResolvedGroup): void => {
       for (const r of g.items) rows.push({ id: r.id, path: r.path, groupKey: g.key })
@@ -1195,7 +984,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     return {
       dataRows: rows,
       rowPath: new Map(rows.map((r) => [r.id, r.path] as const)),
-      rowGroup: new Map(rows.map((r) => [r.id, r.groupKey] as const)),
     }
   }, [groups])
 
@@ -1211,7 +999,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     return m
   }, [groups])
 
-  if (!ctx) return <div className="table-empty">Loading…</div>
+  host.seam.foldOverrides.current = (v) => ({
+    ...v,
+    column_widths: { ...v.column_widths, ...widthOverride },
+    column_alignments: { ...v.column_alignments, ...alignOverride },
+  })
+  host.seam.bandBucket.current = (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key)
+  host.seam.onCreated.current = openCreateRename
+
   if (groups.length === 0) return <div className="table-empty">No pages here</div>
   // The Apple table model: EVERY column — title included —
   // holds its resolved width. While the sum fits the pane the trailing filler eats the slack (the capped,
@@ -1388,7 +1183,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (!groupPropId || !path) return
     if (subGrouped) {
       const dest = subTargets.get(destGroupKey)
-      const cur = subTargets.get(rowGroup.get(pageId) ?? '')
+      const cur = subTargets.get(rowBand.get(pageId) ?? '')
       if (!dest) return
       const destPath = dest.setId === null ? source.path : setPaths.get(dest.setId)
       if (!destPath) return
@@ -1440,7 +1235,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const reorderTo = (orderIds: string[], groupKey: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
-      const groupPages = orderIds.filter((id) => rowGroup.get(id) === groupKey)
+      const groupPages = orderIds.filter((id) => rowBand.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
       if (firstPath) {
         const containerPath = parentOf(firstPath)
@@ -1565,7 +1360,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
 
   return (
-    <div ref={viewRef} className={cx('table table-view', overflowing && 'overflowing')}>
+    <div
+      ref={(el) => {
+        host.seam.viewRootRef.current = el
+      }}
+      className={cx('table table-view', overflowing && 'overflowing')}
+    >
       <IconPicker
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}

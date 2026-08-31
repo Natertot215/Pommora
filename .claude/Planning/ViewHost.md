@@ -158,7 +158,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 
 **Why:** The seat itself. Table converts in the same task because a host with no consumer is unverifiable dead code, and Table is the renderer whose semantics the host adopts (its reset keys, its fold law, its catch-up drop are the documented-deliberate side of every drift pair).
 
-**Now** — `TableView.tsx:126-330` and its writers/creation ranges hold the full preamble (≈355 lines: store reads, value stack, schema+view, viewOrders, order/hidden/style/manual overrides, band ordering, collapse, resets, `liveView`, sort/group gates, pipeline call, ctx/set maps, writers, `persistView` via `mergeOverrides`, creation config); `ViewHost.tsx` computes `schema` and `view` and throws both away. Comment baseline recorded here: `grep -c '^\s*//'` per touched file, summed.
+**Now** — `TableView.tsx:126-330` and its writers/creation ranges hold the full preamble (≈355 lines: store reads, value stack, schema+view, viewOrders, order/hidden/style/manual overrides, band ordering, collapse, resets, `liveView`, sort/group gates, pipeline call, ctx/set maps, writers, `persistView` via `mergeOverrides`, creation config); `ViewHost.tsx` computes `schema` and `view` and throws both away. Comment baseline recorded: `grep -c '^[[:space:]]*//\|^[[:space:]]*\*\|^[[:space:]]*/\*'` (macOS grep has no `\s`) — TableView 335 · CardsView 4 · ViewHost 0 · sum 339.
 
 **Becomes** — `Views/useViewHost.ts` (new, ~300 lines):
 
@@ -205,8 +205,20 @@ export interface ViewHostApi {
   creation: ViewCreation
   mutate: (req: MutateRequest) => Promise<boolean>
   select: SessionState['select']; tree: NexusTree
+  // The renderer's upward slots — ViewHost mints the refs, the seam reads through them, the
+  // renderer assigns on render (fold/bandBucket/onCreated) and attaches viewRootRef to its root.
+  seam: {
+    foldOverrides: { current: (v: SavedView) => SavedView }
+    bandBucket: { current: (key: string) => string | null }
+    viewRootRef: { current: HTMLElement | null }
+    onCreated: { current: (created: { id: string; path: string }) => void }
+  }
 }
-export function useViewHost(source: CollectionNode | SetNode, seam: ViewHostSeam): ViewHostApi | null
+export function useViewHost(
+  source: CollectionNode | SetNode,
+  seam: ViewHostSeam,
+  upward: ViewHostApi['seam'],
+): ViewHostApi | null
 ```
 
 The hook composes the existing shared hooks and owns no new mechanism. Its contract, stated here once: it returns null while values/ctx load (the component decides what loading paints, and a renderer therefore receives `ctx` non-null by construction); `view` is raw and `liveView` folds the host's order/hidden/style patches plus `bandPatch`; `columns` is the pipeline's output — the one column resolution; `refreshValues` is the direct `loadValues` re-read Cards' cover editor completes through; `creation` is `useViewCreation`'s api. The persist law generalizes `mergeOverrides`' precedence: `saveView((seam.foldOverrides?.current ?? identity)(fold(liveView, collapsed)))` with the explicit patch spread last and styles folded per-key through `mergeStyleRecords`; `foldOverrides` is read at fire time, identity by default.
@@ -372,8 +384,8 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 - [x] **Phase 1** — Final Addresses · base `da5ce413` · gate: simplifier merged one duplicate import (ViewTile), flagged the ledger hook's failed-commit nudge + regex edges (Nathan's infra, reported) and ContextPM's stale `ViewRenderer` line (Task 8's)
   - [x] Task 1 — Editing → Assignment · `d06541f5`
   - [x] Task 2 — ViewRenderer → ViewHost · `b3fa93a6`
-- [ ] **Phase 2** — The Host
-  - [ ] Task 3 — useViewHost + Table · `<commit>`
+- [ ] **Phase 2** — The Host · base `29377f5f`
+  - [x] Task 3 — useViewHost + Table · `<commit>`
   - [ ] Task 4 — Cards converts · `<commit>`
   - [ ] Task 5 — root states · `<commit>`
 - [ ] **Phase 3** — Closeout
@@ -389,6 +401,12 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- The fence lacked the upward channel its own prose required ("seam callbacks come up from the renderer via a ref established on mount") — `ViewHostApi` grew the `seam` ref carrier and the hook a third `upward` param; the five-field `ViewHostSeam` renderer contract is unchanged.
+- Gate parenthesization, recorded reading: the `locationFsOrder` gate applies only under `seam.flattenStructural` — `canReorderWithin = sortKeys < 2 && !(flattenStructural && locationFsOrder)`, and `manualOrder` is `undefined` under location order only when flattened. The ungated reading would retire Table row-reorder on a type-switched view still carrying `sort[0] = LOCATION_SORT`.
+- Table's `rowGroup` consolidated into `host.rowBand` (identical semantics; the plan's "Table keeps rowGroup" would have left two definitions).
+- The style catch-up drop (a `stylePatch` entry drops when `view.column_styles` matches key-for-key) built in Task 3 — Task 4's stale-patch pin needs the mechanism to exist, and neither renderer had it.
+- Task 3 intermediate: unconverted Cards mounts beside the running hook for one commit (a second `loadValues`, idempotent); ViewHost's Loading seat wears `table-empty` until Task 5 renames it.
 
 ### Lessons
 
