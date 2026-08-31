@@ -230,5 +230,6 @@ export function commitEdit(
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
 }
 
-// Row cap — how many suggestions are ranked before the rest are dropped.
-export const AC_MAX = 6
+// KNOB — how many suggestions are ranked before the rest are dropped; the pane's own max-height
+// decides how many of them are visible at once, and the list scrolls to the rest.
+export const AC_MAX = 20
