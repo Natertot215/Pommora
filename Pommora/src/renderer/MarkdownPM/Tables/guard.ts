@@ -1,7 +1,9 @@
-import { EditorState } from '@codemirror/state'
+import { EditorState, Prec } from '@codemirror/state'
 import type { DocScan } from '../Decorations/intent'
 import { docScan } from '../Editor/docCache'
+import { parseListMarkerPrefixed } from '../Detect'
 import { parseDelimiter } from './codec'
+import { decodePayload } from './clipboard'
 import { tableSelfEdit } from './sync'
 
 // A GFM table is its own block only while a blank line fences it; with the separator gone, two tables fuse
@@ -19,6 +21,30 @@ export function fusedTableCount(scan: DocScan): number {
   }
   return n
 }
+
+// A multi-line table-shaped clipboard refuses to land where a table cannot live: on a list line, or
+// in the citations section — its rows would only mangle the construct they fall into. Prec.high so
+// the raw paste is judged where it was aimed, ahead of the citation guard's relocation rescue.
+export const tablePasteGuard = Prec.high(
+  EditorState.transactionFilter.of((tr) => {
+    if (!tr.docChanged || !tr.isUserEvent('input.paste')) return tr
+    const scan = docScan(tr.startState.doc)
+    const tailStart =
+      scan.citations.firstLine < scan.lines.length
+        ? scan.lineStarts[scan.citations.firstLine]
+        : Infinity
+    let refused = false
+    tr.changes.iterChanges((fromA, _toA, _fromB, _toB, inserted) => {
+      if (refused) return
+      // Trimmed: a block paste often rides a newline on either side of the table it carries.
+      const text = inserted.toString().trim()
+      if (!text.includes('\n') || !decodePayload(text)) return
+      const line = tr.startState.doc.lineAt(fromA)
+      if (fromA >= tailStart || parseListMarkerPrefixed(line.text)) refused = true
+    })
+    return refused ? [] : tr
+  }),
+)
 
 // Refuse deletions — and paste-shaped inserts — that would fuse two tables. Single-char typing passes
 // through untouched (a typed row of dashes is content the user is building); a MULTI-LINE insert landing

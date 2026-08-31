@@ -55,6 +55,7 @@ export function CellEditor({
   initial,
   onCommit,
   onNavigate,
+  onTablePaste,
   onUndo,
   onRedo,
   caretCoords,
@@ -66,6 +67,8 @@ export function CellEditor({
   initial: string
   onCommit: (text: string) => void
   onNavigate: (dir: NavDir) => void
+  /** True claims the paste as a structural fill; false lets it paste as the text it is. */
+  onTablePaste?: (text: string) => boolean
   onUndo: () => void
   onRedo: () => void
   // The cell only mounts when it's the active cell, so it focuses itself: at the click point if one was
@@ -94,6 +97,8 @@ export function CellEditor({
   // every other value this editor takes from its host.
   const ordinalOfRef = useRef(ordinalOf)
   ordinalOfRef.current = ordinalOf
+  const onTablePasteRef = useRef(onTablePaste)
+  onTablePasteRef.current = onTablePaste
 
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
@@ -126,6 +131,17 @@ export function CellEditor({
           // A link in a cell is a link: it follows, previews, and carries its own menu, the same as
           // one in the body — both syntaxes of it. Nothing else pops a menu over a cell: the table
           // widget reports as non-editable, so the prose menu stands down across the whole of it.
+          // Ahead of pasteLink: a pipe-shaped clipboard is structural before it is cell text.
+          Prec.highest(
+            EditorView.domEventHandlers({
+              paste(event) {
+                const text = event.clipboardData?.getData('text/plain')
+                if (!text || !onTablePasteRef.current?.(text)) return false
+                event.preventDefault()
+                return true
+              },
+            }),
+          ),
           markdownLinkClicks(() => connections?.()),
           connectionClicks(() => connections?.()),
           linkRest,

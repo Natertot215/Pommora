@@ -10,7 +10,8 @@ import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
 import { StaticCell } from './cellStatic'
-import { cellToDisplay } from './codec'
+import { cellToDisplay, cellToSource } from './codec'
+import { decodePayload, encodeRect, rectGrid, type TablePayload } from './clipboard'
 import { foldLabel } from '../Detect'
 import { clamp } from '@renderer/DesignSystem/Util/clamp'
 import { nextCell, type NavDir } from './navigate'
@@ -34,6 +35,32 @@ interface Drag {
   from: number
   to: number
   delta: number
+}
+
+// Visual grid positions throughout: row 0 IS the heading row.
+interface GridPos {
+  r: number
+  c: number
+}
+interface Rect {
+  r0: number
+  c0: number
+  r1: number
+  c1: number
+}
+const normRect = (a: GridPos, h: GridPos): Rect => ({
+  r0: Math.min(a.r, h.r),
+  c0: Math.min(a.c, h.c),
+  r1: Math.max(a.r, h.r),
+  c1: Math.max(a.c, h.c),
+})
+
+/** Off the DOM indices — a `td`/`th` knows its position without a geometry lookup. */
+function cellPosOf(target: EventTarget | null): GridPos | null {
+  const cell = (target as HTMLElement | null)?.closest?.('td, th') as HTMLTableCellElement | null
+  const tr = cell?.parentElement as HTMLTableRowElement | null
+  if (!cell || !tr) return null
+  return { r: tr.rowIndex, c: cell.cellIndex }
 }
 
 // A live column-boundary resize: pixel-exact preview of the two adjacent columns while dragging; the dash
@@ -76,6 +103,10 @@ export function MarkdownTable({
   onReorder,
   onResize,
   onAppend,
+  onClearCells,
+  onFill,
+  onCopyText,
+  readClipboard,
   onMenu,
   onTableDrag,
   onCite,
@@ -95,6 +126,11 @@ export function MarkdownTable({
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
+  /** Blank the cells a selection rectangle covers (visual rows; 0 = heading). */
+  onClearCells?: (r0: number, c0: number, r1: number, c1: number) => void
+  onFill?: (row: number, col: number, payload: TablePayload) => void
+  onCopyText?: (text: string) => void
+  readClipboard?: () => Promise<string>
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
   /** Go to the citation a marker in a cell binds to — the page around the table owns it. */
@@ -140,6 +176,116 @@ export function MarkdownTable({
   // two are separate documents, so the half that reached the cell is the half a shortcut can act on.
   // Which end of the cell it anchors at is the direction the sweep came from.
   const sweepFrom = useRef<'start' | 'end' | null>(null)
+
+  const [sel, setSel] = useState<{ a: GridPos; h: GridPos } | null>(null)
+  const [sweeping, setSweeping] = useState(false)
+  // The click ending a sweep would enter the cell it released over and collapse the rectangle it
+  // just drew — spend it before the cells see it.
+  const suppressClick = useRef(false)
+  const [hover, setHover] = useState<GridPos | null>(null)
+
+  const startSweep = (e: React.PointerEvent<HTMLTableElement>): void => {
+    if (e.button !== 0) return
+    const start = cellPosOf(e.target)
+    const wrap = wrapRef.current
+    if (!start || !wrap) return
+    // A press back into the already-active cell re-hides the append strips — the activation effect
+    // only fires when `active` changes, and this press changes nothing.
+    if (active) setAddsHidden(true)
+    const b = wrap.getBoundingClientRect()
+    let engaged = false
+    let head = start
+    const onMove = (ev: PointerEvent): void => {
+      const at: GridPos = {
+        r: slotAt('row', geomRef.current, ev.clientY - b.top),
+        c: slotAt('col', geomRef.current, ev.clientX - b.left),
+      }
+      if (!engaged) {
+        if (at.r === start.r && at.c === start.c) return
+        engaged = true
+        setActive(null)
+        window.getSelection()?.removeAllRanges()
+        setSweeping(true)
+      }
+      if (at.r !== head.r || at.c !== head.c) {
+        head = at
+        setSel({ a: start, h: at })
+      }
+    }
+    const onUp = (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setSweeping(false)
+      if (engaged) suppressClick.current = true
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const [addsHidden, setAddsHidden] = useState(false)
+
+  // A cell and a rectangle are exclusive seats — whichever arrives drops the other.
+  useEffect(() => {
+    if (!active) return
+    setSel(null)
+    setAddsHidden(true)
+  }, [active])
+
+  useEffect(() => {
+    if (!sel) return
+    const onDown = (e: PointerEvent): void => {
+      if (wrapRef.current?.contains(e.target as Node)) return
+      setSel(null)
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => document.removeEventListener('pointerdown', onDown, true)
+  }, [sel])
+
+  const rect = useMemo(() => (sel ? normRect(sel.a, sel.h) : null), [sel])
+
+  // Captured ahead of the page editor, which still holds focus and would answer the same keys.
+  useEffect(() => {
+    if (!rect) return
+    const claim = (e: KeyboardEvent): void => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    const clear = (): void => onClearCells?.(rect.r0, rect.c0, rect.r1, rect.c1)
+    const onKey = (e: KeyboardEvent): void => {
+      const mod = e.metaKey || e.ctrlKey
+      if (e.key === 'Escape') {
+        claim(e)
+        setSel(null)
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        claim(e)
+        clear()
+      } else if (mod && (e.key === 'c' || e.key === 'x')) {
+        claim(e)
+        onCopyText?.(encodeRect(rectGrid(model, rect.r0, rect.c0, rect.r1, rect.c1)))
+        if (e.key === 'x') clear()
+      } else if (mod && e.key === 'v') {
+        claim(e)
+        void readClipboard?.().then((text) => {
+          if (!text) return
+          const payload = decodePayload(text) ?? {
+            kind: 'rect' as const,
+            grid: [[cellToSource(text)]],
+          }
+          if (payload.kind !== 'table') onFill?.(rect.r0, rect.c0, payload)
+        })
+      }
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
+  }, [rect, model, onClearCells, onCopyText, onFill, readClipboard])
+
+  const selected = (r: number, c: number): boolean =>
+    rect !== null && r >= rect.r0 && r <= rect.r1 && c >= rect.c0 && c <= rect.c1
+
+  const trackHover = (e: React.MouseEvent): void => {
+    const at = cellPosOf(e.target)
+    if (at) setHover((cur) => (cur && cur.r === at.r && cur.c === at.c ? cur : at))
+  }
 
   // The numbering, read back into a lookup once per change rather than per cell.
   const ordinalOf = useMemo(() => {
@@ -370,8 +516,18 @@ export function MarkdownTable({
           caretCoords={caretCoords.current}
           initialSelect={initialSelect.current}
           sweepFrom={sweepFrom.current}
-          onCommit={(t) => onCellCommit(row, col, t)}
+          onCommit={(t) => {
+            setAddsHidden(true)
+            onCellCommit(row, col, t)
+          }}
           onNavigate={(dir) => navigate(row, col, dir)}
+          onTablePaste={(text) => {
+            const payload = decodePayload(text)
+            if (!payload) return false
+            // A whole-table payload is inert inside a table — consumed so it can't splat as text.
+            if (payload.kind !== 'table') onFill?.(row, col, payload)
+            return true
+          }}
           onUndo={onUndo}
           onRedo={onRedo}
         />
@@ -439,14 +595,27 @@ export function MarkdownTable({
   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only affordances — grip reveal and the rectangle sweep; the keyboard's route into the grid is its cells.
+    // biome-ignore lint/a11y/useKeyWithMouseEvents: hover only steers which grip shows; keyboard focus never rests on the wrap
     <div
-      className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}`}
+      className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}${addsHidden ? ' mdpm-tbl-adds-off' : ''}`}
       ref={wrapRef}
       // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
       onContextMenuCapture={dismissHoverCard}
+      onMouseOver={trackHover}
+      onMouseLeave={() => {
+        setHover(null)
+        setAddsHidden(false)
+      }}
+      onClickCapture={(e) => {
+        if (!suppressClick.current) return
+        suppressClick.current = false
+        e.preventDefault()
+        e.stopPropagation()
+      }}
     >
-      <table className="mdpm-tbl" ref={tableRef}>
+      <table className="mdpm-tbl" ref={tableRef} onPointerDownCapture={startSweep}>
         <colgroup>
           {model.columns.map((_, i) => (
             <col key={i} style={{ width: colWidth(i) }} />
@@ -457,7 +626,7 @@ export function MarkdownTable({
             {model.header.map((text, ci) => (
               <th
                 key={ci}
-                className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}`}
+                className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}${selected(0, ci) ? ' mdpm-tbl-selected' : ''}`}
                 style={{ transform: shift(drag, 'col', ci, colW(ci)) }}
               >
                 {cell(0, ci, text)}
@@ -475,7 +644,7 @@ export function MarkdownTable({
               {row.map((text, ci) => (
                 <td
                   key={ci}
-                  className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}${headingColumn && ci === 0 ? ' mdpm-tbl-heading-col' : ''}`}
+                  className={`mdpm-tbl-cell ${alignClass(model.columns[ci]?.align ?? null)}${colDragged(ci) ? ' mdpm-tbl-subject' : ''}${headingColumn && ci === 0 ? ' mdpm-tbl-heading-col' : ''}${selected(ri + 1, ci) ? ' mdpm-tbl-selected' : ''}`}
                   style={{ transform: shift(drag, 'col', ci, colW(ci)) }}
                 >
                   {cell(ri + 1, ci, text)}
@@ -489,7 +658,7 @@ export function MarkdownTable({
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`col-${i}`}
-          className="mdpm-tbl-grip-zone mdpm-tbl-grip-col"
+          className={`mdpm-tbl-grip-zone mdpm-tbl-grip-col${hover?.r === 0 && hover.c === i ? ' mdpm-tbl-grip-hot' : ''}`}
           style={{ left: c.left, width: c.width }}
           onMouseDown={swallowCaret}
           onPointerDown={(e) => startDrag(e, 'col', i)}
@@ -510,7 +679,7 @@ export function MarkdownTable({
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`row-${j}`}
-          className="mdpm-tbl-grip-zone mdpm-tbl-grip-row"
+          className={`mdpm-tbl-grip-zone mdpm-tbl-grip-row${hover?.r === j ? ' mdpm-tbl-grip-hot' : ''}`}
           style={{ top: r.top, height: r.height }}
           onMouseDown={swallowCaret}
           onPointerDown={(e) => (j === 0 ? onTableDrag(e.nativeEvent) : startDrag(e, 'row', j))}
