@@ -50,6 +50,8 @@ The interaction layer in `DesignSystem/Interactions/` and `Animation/`: content-
 
 **Reveal.** `Animation/Reveal.tsx` is the canonical body open and close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `fast` token, mounting at 0fr and unmounting on `transitionend`, that stops clipping once open so overhanging affordances aren't cut off. It backs the sidebar's nested trees, the settings panes, and the heading-fold body. Disclosure chevrons rotate through the shared `dropOutline` on the same beat, so rotate and unfold land together.
 
+**Entrance.** `Animation/useEntrance.ts` names which rows in a list arrived since the last render, so the list hands `enterOnMount` to those alone and a new row discloses in on the same unfold. It compares key sets rather than array identity, so a list rebuilt on every render still reports an arrival once, and a surface's first render seeds silently — an opening pane presents rather than cascading. The exclusion pane, filter rules, page-property rows, option chips, and the property frame's lists all disclose new rows on it.
+
 **PaneSlide.** The sidebar's and the inspector's in-out: the `--io` progress carries a pane home from its parked edge while the body beside it gives up the width, on the base tokens.
 
 **FrameSlide.** `DesignSystem/Menus/frame-slide.tsx` is the two-slot push and back every frame runs on — root and detail on the base tokens — and it nests. Both slots stay mounted and measured, so the target size is known the instant the active slot flips; a slot needing a ceiling or a pinned footer wraps its content in the shared menu scroll frame.
