@@ -8,7 +8,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode, SetNode } from '@shared/types'
-import type { SavedView } from '@shared/views'
+import { LOCATION_SORT, type SavedView } from '@shared/views'
 import { useSession } from '../store'
 import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
@@ -221,5 +221,77 @@ describe('the reset keys', () => {
     expect(saved.property_order).not.toEqual(['prop_status', '_title'])
     expect(saved.collapsed_groups).toEqual([])
     expect(saved.column_styles?.prop_status).toBeUndefined()
+  })
+})
+
+/** A[pA] — one Set so structural grouping has a band to relocate into. */
+const setCollection = (view?: Partial<SavedView>): CollectionNode =>
+  ({
+    kind: 'collection',
+    id: 'col1',
+    title: 'Col',
+    path: 'Col',
+    sets: [
+      {
+        kind: 'set',
+        id: 'sA',
+        title: 'A',
+        path: 'Col/A',
+        pages: [page('pA', 'In A', 'Col/A/In A.md')],
+        sets: [],
+      },
+    ],
+    pages: [page('pLoose', 'Loose', 'Col/Loose.md')],
+    properties: [statusDef],
+    views: [
+      {
+        id: 'view_1',
+        name: 'Cards',
+        type: 'cards',
+        property_order: ['_title', 'prop_status'],
+        hidden_properties: [],
+        group: { kind: 'structural' },
+        ...view,
+      },
+    ],
+  }) as unknown as CollectionNode
+
+describe('the cards seam (flattenStructural)', () => {
+  it('a type-switched view still carrying sub_group never arms reassign — relocation stays the only cross-band write', async () => {
+    const carried = setCollection({
+      sub_group: { property_id: 'prop_status', order_mode: 'manual' },
+    })
+    await mount(carried, seamWith({ flattenStructural: true }))
+    expect(api?.subGrouped).toBe(false)
+    expect(api?.groupPropId).toBeUndefined()
+    expect(api?.canReassign).toBe(false)
+    expect(api?.canRelocate).toBe(true)
+    await mount(carried, seamWith({ flattenStructural: false }))
+    expect(api?.subGrouped).toBe(true)
+    expect(api?.groupPropId).toBe('prop_status')
+  })
+
+  it('location fs order retires reorder only under the flattened seam', async () => {
+    const located = setCollection({
+      group: { kind: 'flat' },
+      sort: [{ property_id: LOCATION_SORT, direction: 'asc' }],
+    } as unknown as Partial<SavedView>)
+    await mount(located, seamWith({ flattenStructural: true }))
+    expect(api?.canReorderWithin).toBe(false)
+    expect(api?.manualOrder).toBeUndefined()
+    await mount(located, seamWith({ flattenStructural: false }))
+    expect(api?.canReorderWithin).toBe(true)
+  })
+
+  it('a cards persist mid-collapse keeps the collapse, and a caught-up style patch dies', async () => {
+    const seam = seamWith({ flattenStructural: true })
+    await mount(setCollection(), seam)
+    act(() => api?.toggleCollapse('sA'))
+    await act(async () => api?.persistView({}))
+    expect(lastSavedView().collapsed_groups).toEqual(['sA'])
+    act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
+    expect(api?.liveView).not.toBe(api?.view)
+    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), seam)
+    expect(api?.liveView).toBe(api?.view)
   })
 })
