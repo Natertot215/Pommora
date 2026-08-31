@@ -15,7 +15,7 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 **Ordering constraints (the only hard ones):**
 
-- Bundle 6 (the view host) lands before any third view renderer is attempted, and after the value layer's folder stops moving ([[RendererRework]] §2 Filing) so the host seats imports at their final address.
+- Bundle 6 (the view host) landed before any third view renderer; a new renderer mounts `useViewHost` and writes presentation only.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
 - Bundle 9 (the `ViewTile` rebuild) lands after the Tiles merge (Blocks + Embeds → `SurfacePM/`, [[RendererRework]]) seats the file at its final address.
 
@@ -93,13 +93,13 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 **Verification:** gates + new slice tests; app open — tab switch with a dirty editor (edits survive), cold swap, parked tab with a playing web tile survives a flip, preview open beside a different active page, pin/unpin, restore on relaunch.
 **Retires:** ContextPM Boring Work "Per-tab page state is modelled as global singletons" and "The store split."
 
-#### II. Bundle 6 — One View Host in `ViewRenderer` · its own session · net ≈ −150
+#### II. Bundle 6 — One View Host in `ViewHost` · its own session · landed 08-31-2026
 
-- [ ] **`useViewHost(source)` seats in `ViewRenderer`** and owns: value load/override/epoch, schema, active view, viewOrders + manual order, band ordering + the shared drop arm, collapse state, the pipeline invocation, ctx/set maps, commit writers, creation-engine wiring — and the loading/empty/error decision, decided once for every renderer. Table keeps its column machinery and gestures; Cards keeps its grid and pickers. The host's persist accepts Table's column-override merge (`mergeOverrides`, `TableView.tsx:466-471`); the two files' drifted override-reset keys unify by construction.
-- [ ] **The empty state's wording** is a design call made in this session, at the single seat.
+- [x] **`useViewHost(source, seam)` seats in `ViewHost`** and owns: value load/override/epoch, schema, active view, viewOrders + manual order, the optimistic order/hidden/style layers, band ordering, collapse state, the pipeline invocation, ctx/set maps, the writers, the persist fold (`mergeOverrides`, now `Views/viewMerge.ts`, with a renderer fold-ref for Table's widths and alignments), creation-engine wiring, and the loading/empty decision. Table keeps its column machinery and gestures; Cards keeps its grid and pickers; the drift between them closed by construction. *Landed — the honest net was positive (the API and two destructures cost more lines than the second copy of the preamble paid back); the error state stays open in ContextPM.*
+- [x] **The empty state's wording** — "Loading…" / "No pages here", at the seat; a Cards view over Sets keeps its blank pane with Set Cards off.
 
 **Verification:** the queue's own list — both renderers, grouped and ungrouped, band drag, collapse, value edit, view switch in each; plus loading/empty on a slow and an empty Collection.
-**Retires:** ContextPM Open Call "Cards has no loading or empty state."
+**Retired:** the ContextPM Open Call on Cards' missing loading and empty states; the load-error leg stays there, narrowed.
 
 #### II. Bundle 7 — The `main/index.ts` Split · one session · net ≈ −100
 

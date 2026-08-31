@@ -25,7 +25,7 @@ Eight statements that decide where anything goes. Each is testable with a grep; 
 - **R1 — DesignSystem holds reusable pieces; feature folders hold surfaces.** A *piece* is a reusable primitive — a control, field, material, menu, or selector — and lives in `DesignSystem/`, **even when it reads app state to do its job**: `ImagePicker` reads the session's asset map and `PickerControl` reaches `nativeMenus`, and neither is evicted for it — a selector that can't see what it selects isn't a selector. A *surface* is feature-specific — it renders a particular view, entity, or route — and lives in a feature folder. The former "`DesignSystem/**` imports nothing from `@renderer/*`" mandate is dropped (Nathan, 08-28): it flagged violations that break nothing. The real constraint is that the Showcase still builds from these sources, which it does. `Symbols/` reads `EntityIconKind` from `@shared`. *Test:* `npm run build:showcase` passes.
 - **R2 — Consumers decide the folder.** A module consumed from three or more top-level folders with no plurality in any one is shared: a piece to `DesignSystem/`, a model or glue to `Core/`, an app-bound wrapper to `Utilities/`. A module with every consumer in one other folder belongs in that folder. *Test:* a file with zero importers in its own folder has failed this rule. *Today:* `Settings/IconPicker`, `Links/connectionMenu`.
 - **R3 — A folder is named for what it holds, and no name appears twice.** A folder holding one file is a file, and a folder earns itself only when a domain has enough files to need one — flat until then, never a subfolder built ahead of the need. *Test:* `find . -type d | xargs -n1 basename | sort | uniq -d` returns nothing under `renderer/`. *Today:* `Tables` (root vs `MarkdownPM/`).
-- **R4 — Properties is the value layer; Tables and Views import it downward.** `Properties/` holds the schema surface and the value vocabulary alike — resolution at its root, the formatters, cell, pickers, checkbox glyph, and column naming under `Editing/`, the per-type option editors under `Editors/`. `Tables/` is the tabular chrome and column mechanics; `Views/` the saved-view pipeline and renderers; `Cards/` the card chassis. *Test:* `grep -rl "@renderer/Views/\|@renderer/Tables/" Properties/` lists only `PropertyFrame.tsx` (the ruled Style-radio edge); `grep -rl "@renderer/Views/" Tables/ Cards/` returns nothing.
+- **R4 — Properties is the value layer; Tables and Views import it downward.** `Properties/` holds the schema surface and the value vocabulary alike — resolution at its root, the formatters, cell, pickers, checkbox glyph, and column naming under `Assignment/`, the per-type option editors under `Editors/`. `Tables/` is the tabular chrome and column mechanics; `Views/` the saved-view pipeline and renderers; `Cards/` the card chassis. *Test:* `grep -rl "@renderer/Views/\|@renderer/Tables/" Properties/` lists only `PropertyFrame.tsx` (the ruled Style-radio edge); `grep -rl "@renderer/Views/" Tables/ Cards/` returns nothing.
 - **R5 — The style form follows the class-name contract.** Plain `.css` is for a sheet that paints class names it does not emit — CodeMirror decorations, imperative DOM, a cross-module contract like the resize strips. Everything else is `.css.ts`. A `style` prop carries only a value computed this frame or a custom-property assignment. *Test:* `grep -rn "style={{" | grep -E "[0-9]+[,}]|'#|display:"` lists the six static sites and nothing else.
 - **R6 — The name says what it is.** PascalCase iff the primary export is a React component; kebab-case otherwise — stylesheets and operation files alike, beside the component they dress; folders PascalCase or Train-Case. A recipe family — `Glass/`, `Menus/` — names its parts `family-part` in kebab, because the files are parts of one thing. Floating surfaces use the five words: Window, Pane, Menu, Frame, Picker. `Dnd` is the identifier spelling of `PommoraDND`; `PM` appears in `MarkdownPM` and `SurfacePM`, both product names. *Test:* `find . -type d -name '[a-z]*'` returns nothing under `renderer/`. The stylesheets and lowerCamel operation files still awaiting kebab-case are §2's casing row.
 - **R7 — The root holds entries and global sheets.** `index.html`, `main.tsx`, `App.tsx`, `styles.css`, `Carets.css`, `env.d.ts`, and nothing else; app-core modules live in `Core/`. *Test:* `ls renderer/*.ts*` lists two files. *Today:* twelve.
@@ -59,7 +59,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // MarkdownPM                       | • The editor; subfolders capitalize; otherwise untouched
 ├── // Navigation                       | • The nav layer — NavWindow is a Window
 │   └── …
-├── // Properties                       | • The value layer — resolution at the root, Editing/ and Editors/ beneath
+├── // Properties                       | • The value layer — resolution at the root, Assignment/ and Editors/ beneath
 ├── // Settings                         | • The Settings window alone
 ├── // Showcase                         | • A deployed site, not a piece
 ├── // Store                            | • The session's seven slices
@@ -70,7 +70,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Toolbar                          | • The main window's toolbar — stays root
 ├── // Utilities                        | • App-bound components — EntityIcon (folds the old EntityGlyph), useNexusIcon
 ├── // Views                            | • Saved-view presentation; TableView/ and CardView/ hold only the view layer
-│   └── …                               | • Pipeline, GroupBand, ViewRenderer
+│   └── …                               | • Pipeline, GroupBand, ViewHost + useViewHost
 ├── // Windows                          | • The floating family — PageWindow, WebWindow, NavWindow on window-base, the tab strip, windowMorph
 ├── // testing                          | • The shared test harnesses
 └── index.html · App.tsx · main.tsx · styles.css · Carets.css · env.d.ts
@@ -176,7 +176,7 @@ What's left of the method is the **framework**: §2 rewritten from the decisions
 
 ### 5. Pointers
 
-- **[[Codebase-Cleanup-Checklist]]** — the process-side half: `persist()`, the view host, the `main/index.ts` split, the drag adapters' frame. Bundle 6 (the view host) waits until the value layer's folder stops moving.
+- **[[Codebase-Cleanup-Checklist]]** — the process-side half: `persist()`, the `main/index.ts` split, the drag adapters' frame; the view host landed 08-31-2026.
 - **[[MenuRecipe]]** — landed 08-28; its Open Calls and Sequenced After are rows above; the plan is history.
 - **[[DesignSystemPM]]** — the vocabulary and the token ledger; every token this document proposes to add, rename, or retire lands there in the same commit.
 - **[[ContextPM]]** — Current Focus names which row is active; Immediate Work holds the rows in flight; nothing about the arc's scope lives outside these two.

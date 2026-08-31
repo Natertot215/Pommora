@@ -1,6 +1,6 @@
 ## ViewHost — One View Host in the View Seat (Bundle 6)
 
-> **Status:** ratified — in execution (08-31-2026; review round 1 folded clean) · Spec: [[Codebase-Cleanup-Checklist]] Bundle 6 + the session's rulings (08-31-2026) · Execute tasks in order.
+> **Status:** landed 08-31-2026 — Closeout written; Nathan's own pass outstanding · Spec: [[Codebase-Cleanup-Checklist]] Bundle 6 + the session's rulings (08-31-2026) · Execute tasks in order.
 > History arc: **"The Single ViewHost"** — one short paragraph.
 > Citations name files and symbols; re-derive before editing. All paths are `Pommora/src/renderer/` unless rooted.
 
@@ -78,7 +78,7 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 - `ViewRenderer` → expect 0. Legitimate hits: none. Control: `ViewHost` → ≥ 6.
 - `Properties/Editing` → expect 0 (source + docs). Control: `Properties/Assignment` → ≥ 22.
 - `table-empty` → expect 0. Legitimate hits: none (class renamed `view-empty`). Control: `view-empty` → ≥ 4.
-- `resolveColumns` importers outside `Pipeline/` → expect exactly `HiddenFrame.tsx` and `useViewHost.ts`. Control: `resolveView(` → ≥ 1.
+- `resolveColumns` importers outside `Pipeline/` → expect exactly `HiddenFrame.tsx` (the host consumes the pipeline's `columns`, so it never imports the resolver). Control: `resolveView(` → ≥ 1.
 
 ---
 
@@ -388,10 +388,10 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
   - [x] Task 3 — useViewHost + Table · `c9501341`
   - [x] Task 4 — Cards converts · `443f0f7a`
   - [x] Task 5 — root states · `17a43efd`
-- [ ] **Phase 3** — Closeout
-  - [x] Task 6 — comment pass + attack · `<commit>` · comments 339 → 307 summed (host 21, Table 280, Cards 4, seat 2); attack: 3 Low / 11 killed — the unkeyed content-view seat painted one frame of the prior container's layers (the old renderer key had reset them synchronously) → `ContainerView` keys `ViewHost` by `source.id`, the inner renderer keys retire; the seat's duplicate schema walk → the seat reads the view type with an empty schema (a minted default is a table regardless); the locked-tile hide/reveal pin (a refused write under an optimistic layer) recorded for Nathan — Table's `commitHide` has carried the same composition all along
-  - [ ] Task 7 — claim verified · `<commit>`
-  - [ ] Task 8 — the record · `<commit>`
+- [x] **Phase 3** — Closeout
+  - [x] Task 6 — comment pass + attack · `d53a3ca6` · comments 339 → 307 summed (host 21, Table 280, Cards 4, seat 2); attack: 3 Low / 11 killed — the unkeyed content-view seat painted one frame of the prior container's layers (the old renderer key had reset them synchronously) → `ContainerView` keys `ViewHost` by `source.id`, the inner renderer keys retire; the seat's duplicate schema walk → the seat reads the view type with an empty schema (a minted default is a table regardless); the locked-tile hide/reveal pin (a refused write under an optimistic layer) recorded for Nathan — Table's `commitHide` has carried the same composition all along
+  - [x] Task 7 — claim verified · see Closeout
+  - [x] Task 8 — the record · the closing commit
 
 ### Rulings
 
@@ -407,6 +407,10 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 - Gate parenthesization, recorded reading: the `locationFsOrder` gate applies only under `seam.flattenStructural` — `canReorderWithin = sortKeys < 2 && !(flattenStructural && locationFsOrder)`, and `manualOrder` is `undefined` under location order only when flattened. The ungated reading would retire Table row-reorder on a type-switched view still carrying `sort[0] = LOCATION_SORT`.
 - Table's `rowGroup` consolidated into `host.rowBand` (identical semantics; the plan's "Table keeps rowGroup" would have left two definitions).
 - The style catch-up drop (a `stylePatch` entry drops when `view.column_styles` matches key-for-key) built in Task 3 — Task 4's stale-patch pin needs the mechanism to exist, and neither renderer had it.
+- `ViewHostApi` is inferred from the hook's return (`NonNullable<ReturnType<typeof useViewHost>>`) rather than declared as the fenced interface — the interface and the return literal were two definitions of one shape, and the hook's return is the one with a writer; `ViewHostUpward` names the upward-ref carrier the hook takes. The gate-2 simplifier also dropped `sortKeys`/`sortedOrGrouped` from the API (no reader) and the renderers' `source` prop (`host.source` carries it).
+- Three whys were authored new, not hoisted: the `[source.id, view.id]` sentinel law in the host, the `setChrome` exemption at the seat, and the empty-schema type read at the seat — each states a constraint the code cannot show; the net count still fell 339 → 309.
+- The net line count landed at **+38 code lines** (loc.py, comments/blanks/tests excluded; +596 / −558), not the plan's −150 to −280: the second copy of the preamble (≈230 lines in Cards) was the only text that vanished, while the host's API shape, its return literal, and two renderer destructures are new plumbing the renderers never carried. The plan's Inherited Reasoning had the direction right (seams cost lines) and the magnitude wrong.
+- `ContainerView` keys `ViewHost` by `source.id` (the attack's one reachable break — the old renderer key had reset the layers synchronously; the unkeyed seat painted one stale frame); the renderer keys inside `ViewHost` retired with it. The seat reads only the view type, through an empty schema, so it no longer repeats the host's schema walk.
 - Task 3 intermediate: unconverted Cards mounts beside the running hook for one commit (a second `loadValues`, idempotent); ViewHost's Loading seat wears `table-empty` until Task 5 renames it.
 
 ### Lessons
@@ -418,6 +422,10 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 - Any refused-write surface, if silence is ever un-ruled; the load-error root state with it.
 
 ### Closeout
+
+**Delivery Claim (08-31-2026).** Bundle 6 as ratified: `useViewHost(source, seam, upward)` in `Views/useViewHost.ts`, seated in `Views/ViewHost.tsx`, owns the value stack + epoch, schema, active view, viewOrders + manual order, the optimistic order/hidden/style layers with a sameIds/key-for-key catch-up drop, band ordering, collapse, the pipeline invocation (seam-controlled `flattenStructural`) and its ctx/set/row/band maps, the value and context writers, hide/reveal, `persistView` under the `mergeOverrides` law with a fire-time renderer fold, the creation engine's config, and the loading/empty decision — each once. Table keeps widths/aligns, resize/drag/edit machinery, `dataRows`/`rowPath`/`subTargets`, its band-drop router; Cards keeps set-card order, zoom, FLIP, pickers, its card drop. The renderer seam is the five fields; a List view sketch needs the host, the seam, and presentation. Cards adopted collapse-on-save, the optimistic layers, the catch-up drop, live-view gates and creation, and lost `resolveColumns`. Root states: "Loading…" / "No pages here" at the seat, Cards-with-Sets exempt. `Properties/Editing` → `Assignment`; `ViewRenderer` → `ViewHost`; `viewMerge` → `Views/`. Pins: 12 in `useViewHost.test.tsx` (fold law, fire-time fold, reset keys incl. the sentinel leak, catch-up, hide-then-hide, the cards seam's type-switch and location gates, the root seat); `bandCommits` + `cellGestures` re-harnessed through `ViewHost` unweakened. Gates: typecheck 0 · lint clean · 304 files / 3751 tests. Comments 339 → 309 (three whys authored new — the sentinel reset law, `setChrome`, the seat's empty-schema read — recorded in Deviations); KNOB/`(Nathan's call)` intact. Dead vocabulary at zero (`ViewRenderer`, `Properties/Editing`, `table-empty`; `resolveColumns` outside `Pipeline/` = `HiddenFrame` only). Net **+38** code lines across `src` (Views & Properties +39, Surfaces −1; +596 / −558) — the plan's range was wrong. Live pass (Gate 2, the real Nexus): collapse round-trip, cell picker + value edit, cards mount, view switch both ways, the empty seat — band and card drags, a slow-Collection load, the in-tile empty state, and the Cards screenshots were **not** driven and sit on Nathan's own pass. Not shipped: the load-error root state (recorded open in ContextPM); the locked-tile hide/reveal pin (Nathan's call, recorded in Rulings).
+
+**Verifier (08-31-2026, neutral):** TRUE clause by clause; two counts corrected above (309 comments, the +38/+39 split); the live-pass gap and the authored whys were omissions, now stated.
 
 ---
 
