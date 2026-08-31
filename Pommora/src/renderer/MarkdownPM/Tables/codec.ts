@@ -15,7 +15,7 @@ export interface RowSplit {
 // otherwise be read as escaping one. A backslash carrying anything else is ordinary markdown the
 // cell is passing through — `a \* b` is an escaped asterisk to every reader, and doubling it here
 // would rewrite a hand-authored file into `a \\* b` the first time it passed through the editor.
-// Inverse pair — escape on commit (sync.ts), unescape at the cell-display boundary (TableView). The
+// Inverse pair — escape on commit (sync.ts), unescape at the cell-display boundary (MarkdownTable). The
 // model + segments stay in raw source form; only the editable display is unescaped.
 export const escapeCell = (s: string): string => s.replace(/\\(?=[\\|])|\|/g, (m) => `\\${m}`)
 export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')

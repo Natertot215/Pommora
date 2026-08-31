@@ -78,7 +78,7 @@ export function applySavedHeadingCols(view: EditorView, indices: number[]): void
 }
 
 // Cached after the first lazy import; parked on the DOM node so rebuilt widget instances can find it.
-let TableViewComp: typeof import('./TableView').TableView | undefined
+let MarkdownTableComp: typeof import('./MarkdownTable').MarkdownTable | undefined
 interface TableDom extends HTMLElement {
   _root?: Root
   _height?: HeightBox
@@ -162,7 +162,7 @@ class TableWidget extends WidgetType {
   }
 
   private renderInto(dom: TableDom, view: EditorView): void {
-    const TV = TableViewComp
+    const TV = MarkdownTableComp
     if (!TV) return
     const commit = (row: number, col: number, text: string): void => {
       const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
@@ -272,11 +272,11 @@ class TableWidget extends WidgetType {
     const dom = document.createElement('div') as TableDom
     dom.className = 'mdpm-tbl-widget'
     // Lazy-import keeps this module unit-testable (render chain pulls design-system code the test env can't build).
-    if (TableViewComp) {
+    if (MarkdownTableComp) {
       this.renderInto(dom, view)
     } else {
-      void import('./TableView').then(({ TableView }) => {
-        TableViewComp = TableView
+      void import('./MarkdownTable').then(({ MarkdownTable }) => {
+        MarkdownTableComp = MarkdownTable
         if (this.destroyed) return
         this.renderInto(dom, view)
       })
@@ -287,7 +287,7 @@ class TableWidget extends WidgetType {
   // Re-renders the existing React root in place (avoids CM destroy+recreate which re-mounts cell editors).
   // Returns false before the first async render has created the root — CM recreates in that case.
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    if (!TableViewComp || !(dom as TableDom)._root) return false
+    if (!MarkdownTableComp || !(dom as TableDom)._root) return false
     this.renderInto(dom as TableDom, view)
     return true
   }

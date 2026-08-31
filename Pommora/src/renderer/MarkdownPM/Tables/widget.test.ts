@@ -14,7 +14,7 @@ import type { TableModel } from './model'
 const make = (doc: string): number => buildWidgetDecorations(EditorState.create({ doc })).size
 
 // Reach the widget field's live decoration set (via the decorations facet) and return the first table
-// widget's stored text + model — what TableView renders its static cells from.
+// widget's stored text + model — what MarkdownTable renders its static cells from.
 function firstTableWidget(state: EditorState): {
   text: string
   model: TableModel

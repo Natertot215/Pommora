@@ -5,7 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture, stubRect } from '@renderer/Testing/pointerHarness'
-import { TableView } from './TableView'
+import { MarkdownTable } from './MarkdownTable'
 import type { TableModel } from './model'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -54,7 +54,7 @@ async function mount(
   root = createRoot(container)
   await act(async () => {
     root.render(
-      createElement(TableView, {
+      createElement(MarkdownTable, {
         model,
         onCellCommit: () => {},
         onExit: () => {},
