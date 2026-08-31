@@ -6,7 +6,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { LOCATION_SORT, type SavedView } from '@shared/views'
 import { useSession } from '../store'
-import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
+import { useViewHost, type ViewHostApi } from './useViewHost'
 import { ViewHost } from './ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
@@ -89,29 +89,16 @@ let root: Root
 let saveSpy: ReturnType<typeof vi.fn>
 let api: ViewHostApi | null = null
 
-const seamWith = (over?: Partial<ViewHostSeam>): ViewHostSeam => ({
-  flattenStructural: false,
-  bandBucket: (key) => key,
-  viewRootRef: { current: null },
-  onCreated: () => {},
-  ...over,
-})
+let upward: ViewHostApi['seam']
 
-const upward: ViewHostApi['seam'] = {
-  foldOverrides: { current: (v) => v },
-  bandBucket: { current: (key) => key },
-  viewRootRef: { current: null },
-  onCreated: { current: () => {} },
-}
-
-function Probe({ source, seam }: { source: CollectionNode | SetNode; seam: ViewHostSeam }): null {
-  api = useViewHost(source, seam, upward)
+function Probe({ source, flatten }: { source: CollectionNode | SetNode; flatten: boolean }): null {
+  api = useViewHost(source, flatten, upward)
   return null
 }
 
-const mount = async (source: CollectionNode | SetNode, seam: ViewHostSeam): Promise<void> => {
+const mount = async (source: CollectionNode | SetNode, flatten = false): Promise<void> => {
   await act(async () => {
-    root.render(<Probe source={source} seam={seam} />)
+    root.render(<Probe source={source} flatten={flatten} />)
   })
   await act(async () => {})
 }
@@ -121,6 +108,12 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   api = null
+  upward = {
+    foldOverrides: { current: (v) => v },
+    bandBucket: { current: (key) => key },
+    viewRootRef: { current: null },
+    onCreated: { current: () => {} },
+  }
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     loadValues: async () => VALUES,
@@ -142,16 +135,11 @@ const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedVi
 
 describe('the persist fold', () => {
   it('one save carries collapse + a live style patch + the fold ref, the explicit patch winning', async () => {
-    const foldOverrides = {
-      current: (v: SavedView): SavedView => ({
-        ...v,
-        column_widths: { ...v.column_widths, prop_status: 120 },
-      }),
-    }
-    await mount(
-      collection({ column_styles: { prop_status: { look: 'compact' } } }),
-      seamWith({ foldOverrides }),
-    )
+    upward.foldOverrides.current = (v) => ({
+      ...v,
+      column_widths: { ...v.column_widths, prop_status: 120 },
+    })
+    await mount(collection({ column_styles: { prop_status: { look: 'compact' } } }))
     act(() => api?.toggleCollapse('g1'))
     act(() => api?.setStylePatch('prop_status', 'date_format', 'relative'))
     act(() => api?.persistView({ hide_borders: true, column_widths: { prop_status: 90 } }))
@@ -163,9 +151,8 @@ describe('the persist fold', () => {
   })
 
   it('a persist fired after a round-trip reads the fire-time fold, not the mount closure', async () => {
-    const foldOverrides = { current: (v: SavedView): SavedView => v }
-    await mount(collection(), seamWith({ foldOverrides }))
-    foldOverrides.current = (v) => ({
+    await mount(collection())
+    upward.foldOverrides.current = (v) => ({
       ...v,
       column_widths: { ...v.column_widths, prop_status: 240 },
     })
@@ -176,33 +163,29 @@ describe('the persist fold', () => {
 
 describe('the reset keys', () => {
   it('manualOverride drops on a source-identity echo while valueOverride survives it', async () => {
-    const seam = seamWith()
-    await mount(collection(), seam)
+    await mount(collection())
     act(() => api?.setManualOverride(['p2', 'p1']))
     act(() => api?.setValueOverride({ p2: { id: 'p2' } as never }))
     expect(api?.manualOrder).toEqual(['p2', 'p1'])
-    await mount(collection(), seam) // same content, new object — the watcher echo
+    await mount(collection()) // same content, new object — the watcher echo
     expect(api?.manualOrder).toBeUndefined()
     expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
   })
 
   it('hide-then-hide: the second write still carries the first', async () => {
-    const seam = seamWith()
-    await mount(collection(), seam)
+    await mount(collection())
     act(() => api?.hideProperty('prop_status'))
     await act(async () => api?.hideProperty('_title'))
     expect(lastSavedView().hidden_properties).toEqual(['prop_status', '_title'])
   })
 
   it('the order/hidden catch-up drop fires on sameIds', async () => {
-    const seam = seamWith()
-    await mount(collection(), seam)
+    await mount(collection())
     act(() => api?.setOrderOverride(['prop_status', '_title']))
     act(() => api?.setHiddenOverride(['prop_status']))
     expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
     await mount(
       collection({ property_order: ['prop_status', '_title'], hidden_properties: ['prop_status'] }),
-      seam,
     )
     expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
     act(() => api?.setOrderOverride(['_title', 'prop_status']))
@@ -211,13 +194,12 @@ describe('the reset keys', () => {
 
   it('sibling sub-Sets sharing the sentinel: navigating A → B resets every host layer, and B first-persists clean', async () => {
     const { a, b } = deepSets()
-    const seam = seamWith()
-    await mount(a, seam)
+    await mount(a)
     act(() => api?.setOrderOverride(['prop_status', '_title']))
     act(() => api?.setStylePatch('prop_status', 'look', 'label'))
     act(() => api?.toggleCollapse('gA'))
     expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
-    await mount(b, seam)
+    await mount(b)
     expect(api?.liveView.property_order).not.toEqual(['prop_status', '_title'])
     expect(api?.collapsed.size).toBe(0)
     saveSpy.mockClear()
@@ -266,12 +248,12 @@ describe('the cards seam (flattenStructural)', () => {
     const carried = setCollection({
       sub_group: { property_id: 'prop_status', order_mode: 'manual' },
     })
-    await mount(carried, seamWith({ flattenStructural: true }))
+    await mount(carried, true)
     expect(api?.subGrouped).toBe(false)
     expect(api?.groupPropId).toBeUndefined()
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
-    await mount(carried, seamWith({ flattenStructural: false }))
+    await mount(carried, false)
     expect(api?.subGrouped).toBe(true)
     expect(api?.groupPropId).toBe('prop_status')
   })
@@ -281,22 +263,21 @@ describe('the cards seam (flattenStructural)', () => {
       group: { kind: 'flat' },
       sort: [{ property_id: LOCATION_SORT, direction: 'asc' }],
     } as unknown as Partial<SavedView>)
-    await mount(located, seamWith({ flattenStructural: true }))
+    await mount(located, true)
     expect(api?.canReorderWithin).toBe(false)
     expect(api?.manualOrder).toBeUndefined()
-    await mount(located, seamWith({ flattenStructural: false }))
+    await mount(located, false)
     expect(api?.canReorderWithin).toBe(true)
   })
 
   it('a cards persist mid-collapse keeps the collapse, and a caught-up style patch dies', async () => {
-    const seam = seamWith({ flattenStructural: true })
-    await mount(setCollection(), seam)
+    await mount(setCollection(), true)
     act(() => api?.toggleCollapse('sA'))
     await act(async () => api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
     expect(api?.liveView).not.toBe(api?.view)
-    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), seam)
+    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), true)
     expect(api?.liveView).toBe(api?.view)
   })
 })
