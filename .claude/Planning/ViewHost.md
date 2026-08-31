@@ -31,9 +31,7 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 - `valueOverride` clears only on a real `source.path` switch, never on `source` identity — the assign-vanish guard (`TableView.tsx:243-249`) → the host preserves those exact dependency arrays (Task 3).
 - `bandPatch` deliberately survives a source-identity swap (`useBandOrdering.ts` header) → the host consumes `useBandOrdering` as-is, never re-implements it.
 - The pipeline reads `liveView`, and the order/hidden/style patches feed `liveView` → those layers must be host-owned or Table's optimistic paint dies (Requirement 2's forcing fact).
-- Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`) → the empty predicate must also check `source.sets`, or a sets-only container loses its set cards / band grid (Task 5).
 - `useViewCreation`'s `getCfg` runs at gesture time and at the create's reply (`useViewCreation.ts:73-78`) → the host's fold ref and creation config both read fire-time state, never a render closure (Tasks 3, 4's crossing test).
-- `viewMint.ts` holds deliberate module-level in-flight state wired at `store.ts:47-48` → the host calls `useSaveView`, never absorbs the mint.
 - Tile-embed awareness lives inside `useActiveView` (scope short-circuit) and `useSaveView` (write target) → the host inherits both; no new scope plumbing.
 
 **Inherited Reasoning**
@@ -90,12 +88,9 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 
 **Why:** Nathan's ruling closed RendererRework's last value-layer row: the folder that does the actual value editing is named for the act — Assignment. Landing it first means the host's imports (Task 3) seat at their final address, honoring the checklist's ordering constraint instead of deferring it.
 
-**Now** — `grep -rl "Properties/Editing" Pommora/src/renderer --include='*.ts*'` → 22 files:
+**Now** — `grep -rl "Properties/Editing" Pommora/src/renderer --include='*.ts*'` → 22 files. `Properties/Editing/` is the value-editing surface (Cell, PropertyEditor, PropertyPicker, cellResolve, formatValue, columnLabel, …); `Properties/Editors/` holds the per-type definition editors and is unchanged:
 
 ```ts
-// Properties/Editing/ — Cell.tsx, PropertyEditor.tsx, PropertyPicker.tsx, cellResolve.ts,
-// formatValue.ts, columnLabel.ts, … (the value-editing surface)
-// Properties/Editors/ — CheckboxEditor.tsx, StatusEditor.tsx, … (unchanged: definition editors)
 import { buildSetNames, buildSetIcons, buildSetPaths } from '@renderer/Properties/Editing/cellResolve'
 ```
 
@@ -123,10 +118,9 @@ import { buildSetNames, buildSetIcons, buildSetPaths } from '@renderer/Propertie
 
 **Why:** The ruled collision row ("rename when `Views/` is next opened") — this bundle is that opening; Nathan ruled the name `ViewHost`, 08-31-2026.
 
-**Now** — `Views/ViewRenderer.tsx` (18 lines), two callers:
+**Now** — `Views/ViewRenderer.tsx` (18 lines), callers at `Interface/ContainerView.tsx:9` and `SurfacePM/ViewTile.tsx:553`:
 
 ```ts
-// Views/ViewRenderer.tsx · Interface/ContainerView.tsx:9 · SurfacePM/ViewTile.tsx:553
 export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element
 ```
 
@@ -166,9 +160,8 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 **Becomes** — `Views/useViewHost.ts` (new, ~300 lines):
 
 ```ts
-// Views/useViewHost.ts (new) — composes the existing hooks; owns no new mechanism
 export interface ViewHostSeam {
-  foldOverrides?: { current: (v: SavedView) => SavedView }  // fire-time; identity default
+  foldOverrides?: { current: (v: SavedView) => SavedView }
   bandBucket: (key: string) => string | null
   viewRootRef: { readonly current: HTMLElement | null }
   onCreated: (created: { id: string; path: string }) => void
@@ -176,15 +169,15 @@ export interface ViewHostSeam {
 export interface ViewHostApi {
   source: CollectionNode | SetNode
   schema: PropertyDefinition[]
-  view: SavedView            // raw
-  liveView: SavedView        // + host order/hidden/style patches + bandPatch
+  view: SavedView
+  liveView: SavedView
   values: Record<string, PageFrontmatter>
   effectiveValues: Record<string, PageFrontmatter>
   setValueOverride: Dispatch<SetStateAction<Record<string, PageFrontmatter> | null>>
-  columns: ResolvedColumn[]  // the pipeline's — the ONE column resolution
+  columns: ResolvedColumn[]
   groups: ResolvedGroup[]
   setTree: SetTreeNode[]
-  ctx: ResolveContext        // non-null by construction: the root gates on it
+  ctx: ResolveContext
   contextIds: string[]
   setNames: Map<string, string>; setIcons: Map<string, string | undefined>; setPaths: Map<string, string>
   rowById: Map<string, ViewRow>; rowBand: Map<string, string>
@@ -204,18 +197,14 @@ export interface ViewHostApi {
   setProperty: (row: ViewRow, propertyId: string, value: PropertyValue | null) => void
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   contextOptionsFor: (column: ResolvedColumn) => ContextOption[] | null
-  creation: ViewCreation     // bandAdd · createAdjacent · createAfter · containerPages
+  creation: ViewCreation
   mutate: (req: MutateRequest) => Promise<boolean>
   select: SessionState['select']; tree: NexusTree
 }
 export function useViewHost(source: CollectionNode | SetNode, seam: ViewHostSeam): ViewHostApi | null
-// null while values/ctx are loading — the component decides what loading paints.
-// persistView law: saveView((seam.foldOverrides?.current ?? id)(fold(liveView, collapsed)) with
-// patch spread last and styles per-key (mergeStyleRecords) — mergeOverrides' precedence, generalized.
-// Resets: host layers on [view.id]; manualOverride on [source] identity; valueOverride only on
-// [source.path] — the assign-vanish split, byte-for-byte the dep arrays TableView carries today.
-// flattenStructural + the locationFsOrder manual-order gate derive from view.type === 'cards'.
 ```
+
+The hook composes the existing shared hooks and owns no new mechanism. Its contract, stated here once: it returns null while values/ctx load (the component decides what loading paints, and a renderer therefore receives `ctx` non-null by construction); `view` is raw and `liveView` folds the host's order/hidden/style patches plus `bandPatch`; `columns` is the pipeline's output — the one column resolution; `creation` is `useViewCreation`'s api. The persist law generalizes `mergeOverrides`' precedence: `saveView((seam.foldOverrides?.current ?? identity)(fold(liveView, collapsed)))` with the explicit patch spread last and styles folded per-key through `mergeStyleRecords`; `foldOverrides` is read at fire time, identity by default. Host layers reset on `[view.id]`, `manualOverride` on `[source]` identity, `valueOverride` only on `[source.path]` — byte-for-byte the dependency arrays TableView carries today. `flattenStructural` and the `locationFsOrder` manual-order gate derive from `view.type === 'cards'`.
 
 `ViewHost.tsx` calls the hook per mounted renderer type and passes `host`; the seam callbacks come up from the renderer via a ref established on mount (the `getCfg` pattern `useViewCreation` already uses). `TableView` becomes `({ source, host }: { source: …; host: ViewHostApi })`: its preamble ranges delete; it keeps `widthOverride`/`alignOverride`, resize/drag/edit machinery, `dataRows`/`rowPath`/`rowGroup`/`subTargets`, its `onBandDrop` router, and assigns `host`'s fold ref to fold width/align. `viewMerge.ts` moves to `Views/viewMerge.ts` (the host consumes it; `TableView/` keeps nothing shared). Table-side tests re-harness to mount through `ViewHost`.
 
@@ -263,14 +252,11 @@ export function useViewHost(source: CollectionNode | SetNode, seam: ViewHostSeam
 
 **Why:** The loading/empty decision made once, at the seat, for every current and future renderer — the bundle's second checkbox, wording ratified.
 
-**Now** — `TableView.tsx:1214-1215`:
+**Now** — `TableView.tsx:1214-1215`; CardsView has no loading or empty state and renders an empty grid unconditionally. `.table-empty` is styled in `TableView/TableView.css:22` and `Tables/table-tokens.css:8,54`, and re-styled inside a tile at `SurfacePM/viewTile.css.ts:167`:
 
 ```tsx
 if (!ctx) return <div className="table-empty">Loading…</div>
 if (groups.length === 0) return <div className="table-empty">No pages here</div>
-// CardsView: no loading state, no empty state — renders an empty grid unconditionally
-// .table-empty styled in TableView/TableView.css:22, Tables/table-tokens.css:8,54,
-// re-styled in a tile at SurfacePM/viewTile.css.ts:167
 ```
 
 **Becomes** — in `ViewHost.tsx`, before any renderer mounts; Table's returns delete:
@@ -279,9 +265,9 @@ if (groups.length === 0) return <div className="table-empty">No pages here</div>
 if (!host) return <div className="view-empty">Loading…</div>
 if (host.groups.length === 0 && (source.sets?.length ?? 0) === 0)
   return <div className="view-empty">No pages here</div>
-// sets-only container → the renderer mounts: Cards paints set cards, Table its band grid
-// (Table's property-grouped sets-only corner changes from the message to an empty grid — disclosed, accepted)
 ```
+
+Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so the predicate's second clause is what decides the sets-only container: it mounts its renderer — Cards paints its set cards, Table its band grid; Table's property-grouped, sets-only corner changes from the message to an empty grid (disclosed, accepted).
 
 `.view-empty` styled once beside `ViewHost.tsx` (`view-host.css.ts`, per R5 — no class painted by an un-emitting sheet remains); the tile override at `viewTile.css.ts:167` renames with it; the `table-empty` rules delete from both sheets.
 
