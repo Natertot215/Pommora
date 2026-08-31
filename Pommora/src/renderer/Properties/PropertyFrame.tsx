@@ -424,6 +424,7 @@ export function PropertyFrame({
           value={def.name}
           icon={def.icon}
           iconRef={iconRef}
+          iconOpen={iconOpen}
           onIconClick={() => setIconOpen(true)}
           onCommit={(next) => void rename(def.id, next)}
         />
