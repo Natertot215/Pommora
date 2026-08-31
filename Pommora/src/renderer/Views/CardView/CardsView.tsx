@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
+import type { ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, type SavedView } from '@shared/views'
@@ -92,14 +92,9 @@ const coverOf = (row: ViewRow): string | undefined =>
 
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
-export function CardsView({
-  source,
-  host,
-}: {
-  source: CollectionNode | SetNode
-  host: ViewHostApi
-}): React.JSX.Element {
+export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
+    source,
     view,
     liveView,
     effectiveValues,
@@ -114,7 +109,7 @@ export function CardsView({
     rowBand,
     collapsed,
     toggleCollapse,
-    structuralGrouping,
+    structuralGrouping: structural,
     groupPropId,
     groupPropType,
     canReassign,
@@ -161,7 +156,6 @@ export function CardsView({
   }
 
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const structural = structuralGrouping
   const flatMode = view.group?.kind === 'flat'
 
   const banner: CardBanner = view.card_banner ?? 'cover'
@@ -200,7 +194,7 @@ export function CardsView({
     iconPickersOpen.current += open ? 1 : -1
   }
   const ghostRowmate = (enteringId: string): boolean => {
-    const root = rootRef.current
+    const root = host.seam.viewRootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
     const cardEl = root?.querySelector(`[data-rid="${CSS.escape(enteringId)}"]`)
     if (!ghostEl || !cardEl) return false
@@ -280,7 +274,7 @@ export function CardsView({
   const [ghostShown, setGhostShown] = useState<string | null>(null)
   useLayoutEffect(() => {
     if (ghostLiveId === ghostShown) return
-    const root = rootRef.current
+    const root = host.seam.viewRootRef.current
     const hardGone = ghostShown !== null && ghostApi.ghost === null
     if (root && !hardGone) {
       const m = new Map<Element, DOMRect>()
@@ -293,7 +287,7 @@ export function CardsView({
   useLayoutEffect(() => {
     const prev = flipPrev.current
     flipPrev.current = null
-    const root = rootRef.current
+    const root = host.seam.viewRootRef.current
     if (prev && root) {
       const z = effectiveZoom || 1
       for (const el of root.querySelectorAll('.card-displace, .group-band')) {
@@ -357,7 +351,6 @@ export function CardsView({
     })
     if (patch) commitBand(patch)
   }
-  const cardDragEnabled = !dragDisabled
   const bandRowsWithout = (bandKey: string, activeId: string): ViewRow[] =>
     flattenGroups(groups.filter((g) => g.key === bandKey)).filter((r) => r.id !== activeId)
   const structuralSlotFor = (zoneId: string, index: number, activeId: string): number | null => {
@@ -443,10 +436,9 @@ export function CardsView({
     if (row) setProperty(row, groupPropId, groupKeyToValue(toZone, groupPropType))
   }
 
-  const rootRef = useRef<HTMLDivElement>(null)
   const [effectiveZoom, setEffectiveZoom] = useState(1)
   useEffect(() => {
-    const el = rootRef.current
+    const el = host.seam.viewRootRef.current
     if (!el) return
     const measure = (): void => {
       setEffectiveZoom(Number.parseFloat(getComputedStyle(el).zoom) || 1)
@@ -461,7 +453,6 @@ export function CardsView({
     <GhostSuppress.Provider value={ghostApi.suppressWrap}>
       <div
         ref={(el) => {
-          rootRef.current = el
           host.seam.viewRootRef.current = el
         }}
         className={cx('cards-view', banner === 'none' && 'is-compact')}
@@ -562,7 +553,7 @@ export function CardsView({
                           columns={columns}
                           ctx={ctx}
                           loc={locByRow.get(row.id)}
-                          draggable={cardDragEnabled}
+                          draggable={!dragDisabled}
                           onCommitValue={cardApi.onCommitValue}
                           onStyle={cardApi.onStyle}
                           onOpen={cardApi.onOpen}
