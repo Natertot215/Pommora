@@ -45,7 +45,7 @@ import { navKey } from '@renderer/Navigation/navRecents'
 import { findCollectionForSet } from '@renderer/Interface/Scope'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
-import { mergeStyleRecords } from '../TableView/viewMerge'
+import { mergeStyleRecords } from '../viewMerge'
 import { resolveColumns } from '../Pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
