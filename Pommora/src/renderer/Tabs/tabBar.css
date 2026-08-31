@@ -12,7 +12,6 @@
   --tab-pad-x: 12px;
   --tab-gap: 6px;
   --tab-divider-h: 16px;
-  --tab-over-scroll: var(--fade-base);
   --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */
   --tab-nav-slide: 10px; /* Back/Forward content slide-in distance */
 
@@ -79,7 +78,7 @@
 
 /* ---- unpinned strip: the shared over-scroll on the inline axis ---- */
 .tab-scroll {
-  --over-scroll-fade: var(--tab-over-scroll);
+  --over-scroll-fade: var(--fade-base);
   position: relative;
   flex: 1;
   min-width: 0;

@@ -22,7 +22,6 @@
   gap: 0;
 }
 .subfield-crumbs {
-  --path-chevron-color: var(--label-secondary);
   overflow: hidden;
   font: inherit;
   color: inherit;
