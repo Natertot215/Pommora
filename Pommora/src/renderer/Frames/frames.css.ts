@@ -53,6 +53,7 @@ export const header = style({
 export const iconButton = style({
   flex: '0 0 auto',
   width: `${SIZE.iconPickerButton}px`,
+  color: c.label.secondary,
   boxShadow: fieldRing(),
   selectors: {
     '&[aria-pressed="true"]': { vars: { '--field-ring': tintAt('var(--accent)', 'secondary') } },
