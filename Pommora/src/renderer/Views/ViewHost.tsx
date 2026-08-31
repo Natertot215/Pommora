@@ -1,21 +1,20 @@
 import { useMemo, useRef } from 'react'
+import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { useSession } from '../store'
 import { useActiveView } from './useActiveView'
 import { TableView } from './TableView/TableView'
-import { resolveContainerSchema } from './Pipeline/pickView'
 import { CardsView } from './CardView/CardsView'
 import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
 import './view-host.css'
 
 const identity = (v: SavedView): SavedView => v
+const NO_SCHEMA: PropertyDefinition[] = []
 
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
-  const { view } = useActiveView(source, schema)
-  const isCards = view.type === 'cards'
+  // Only the type is needed to seat a renderer, and a minted default is a table whatever the
+  // schema — so the seat skips the schema walk the host itself performs.
+  const isCards = useActiveView(source, NO_SCHEMA).view.type === 'cards'
   const upward = useRef<ViewHostApi['seam']>({
     foldOverrides: { current: identity },
     bandBucket: { current: (key) => key },
@@ -38,9 +37,5 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   const setChrome = isCards && (source.sets?.length ?? 0) > 0
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
-  return isCards ? (
-    <CardsView key={source.id} host={host} />
-  ) : (
-    <TableView key={source.id} host={host} />
-  )
+  return isCards ? <CardsView host={host} /> : <TableView host={host} />
 }
