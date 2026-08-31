@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-31-2026              | PM-120 | The Single ViewHost                                  |
 | 08-30-2026              | PM-119 | The Card Trail & The Landing Slot                    |
 | 08-29-2026              | PM-118 | The Disclosure Lock                                  |
 | 08-29-2026              | PM-117 | Index Exclusion Interface                            |
@@ -123,6 +124,15 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-120 || The Single ViewHost
+
+**DATE:** 08-31-2026
+
+Everything `TableView` and `CardsView` each computed before drawing — the value stack and its optimistic override, the schema and active view, the per-machine manual order, the optimistic `property_order` / `hidden_properties` / `column_styles` layers and the band-order layer, collapse, the pipeline invocation and its row and band lookups, the value and context writers, the persist fold, and the creation engine's config — moved into one hook, `Views/useViewHost.ts`, seated in `Views/ViewHost.tsx` (the renamed `ViewRenderer`) and handed to the mounted renderer as a single `host` object; a renderer contributes presentation and a five-field seam (a fire-time fold for its local layers, `flattenStructural`, the band-bucket resolver, its scroll root, the naming surface a create opens). Cards thereby took Table's documented side of every drift pair — collapse riding each save, the `sameIds` catch-up drop, gates and creation reading the live view, its parallel `resolveColumns` call gone — and both renderers' loading and empty states are decided once at the seat, "Loading…" and "No pages here", with a Cards view over Sets keeping its blank pane. Host layers reset on the container id and view id together, since sibling sub-Sets share the default view's sentinel id; hide and reveal compute from the live view and show at once; the content-view seat is keyed by its container so a navigation never paints the prior container's layers; `viewMerge` moved up to `Views/`, and `Properties/Editing/` became `Properties/Assignment/`. The net grew rather than shrank — the API surface and two destructures cost more than the second copy of the preamble returned.
+
+- **Commits:** `d06541f5^..8d3d6bfe`
+- **Diff:** Net +38 | +596 / −558
 
 #### PM-119 || The Card Trail & The Landing Slot
 

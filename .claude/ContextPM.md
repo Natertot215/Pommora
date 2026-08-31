@@ -41,7 +41,7 @@ The behavioral half — correctness, performance, and the structural moves insid
 Findings where the correct answer isn't established in the codebase — design and product decisions, not cleanup. Each is cheap once it's decided.
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
-- [ ] **Cards has no loading or empty state**, where Table returns both; a blank grid is indistinguishable from broken. Loading versus empty versus error is a real distinction and wants one decision in `ViewRenderer` rather than one per renderer.
+- [ ] **A failed `loadValues` paints "No pages here"**, since the view host decides loading and empty but has no error state; a third root state at the seat, once the refused-write silence ruling is revisited.
 - [ ] **Two retention budgets act on the same guests and neither knows it.** Parked page surfaces cap at 2 tabs, hidden web guests at 5, and parking routes every tile inside a parked surface through the hidden-guest path — two parked tabs holding four web tiles each already exceeds the guest cap, so the LRU tears down the live sessions parking exists to preserve. One budget with tiers, or the numbers chosen together.
 
 #### II. Next-Feature Candidates
@@ -78,6 +78,10 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
 
 ### Recent Work
+
+#### PM-120 || The Single ViewHost
+
+Both view renderers now mount through one seat. `Views/useViewHost.ts` owns everything a renderer needs before it can draw — the value stack and override layer, schema and active view, manual order, the optimistic order/hidden/style and band layers, collapse, the pipeline invocation and its lookups, the writers, the persist fold, and the creation engine — and `Views/ViewHost.tsx` seats it, decides loading and empty once, and passes a single `host` object; `TableView` keeps its column machinery and gestures, `CardsView` its grid and pickers, and each contributes a five-field seam. The four observable drift defects between the two files closed by construction, Cards adopting Table's documented side of each. A new renderer (List, Gallery, Calendar, Timeline) mounts the host and writes presentation only. `Properties/Editing/` is `Properties/Assignment/`.
 
 
 #### PM-115 || The ImagePicker
