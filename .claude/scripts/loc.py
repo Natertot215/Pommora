@@ -175,7 +175,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HISTORY_JSON = os.path.join(HERE, "loc-history.json")
 LEDGER_HTML = os.path.join(HERE, "Line-Ledger.html")
 DATA_TAG = re.compile(r'(<script id="data" type="application/json">).*?(</script>)', re.S)
-LEDGER_URL = "https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485"
+LEDGER_URL = "https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401"
 
 
 def measure_commit(rev: str) -> dict[str, int]:
