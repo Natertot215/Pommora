@@ -6,7 +6,7 @@ import { TableView } from './TableView/TableView'
 import { resolveContainerSchema } from './Pipeline/pickView'
 import { CardsView } from './CardView/CardsView'
 
-export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
+export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)

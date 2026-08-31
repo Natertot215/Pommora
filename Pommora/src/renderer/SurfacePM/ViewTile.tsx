@@ -29,7 +29,7 @@ import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findSet } from '@renderer/Interface/Scope'
 import { resolveContainerSchema } from '@renderer/Views/Pipeline/pickView'
-import { ViewRenderer } from '@renderer/Views/ViewRenderer'
+import { ViewHost } from '@renderer/Views/ViewHost'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { resolveViewWrite, ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
@@ -550,7 +550,7 @@ export function ViewTile({
             className={s.slideWrap}
             style={{ '--slide-from': slideFrom } as React.CSSProperties}
           >
-            <ViewRenderer key={source.id} source={source} />
+            <ViewHost key={source.id} source={source} />
           </div>
         </div>
         <PickerMenu
