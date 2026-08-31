@@ -531,6 +531,7 @@ export function MarkdownEditor({
         open={ac !== null}
         candidates={candidates}
         index={acIndex}
+        form={ac?.form ?? 'link'}
         caretX={ac?.caretX ?? 0}
         caretTop={ac?.caretTop ?? 0}
         caretBottom={ac?.caretBottom ?? 0}

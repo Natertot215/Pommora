@@ -959,7 +959,7 @@
   user-select: none;
 }
 
-.mdpm-ac {
+.mdpm-ac-slot {
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */
 }
