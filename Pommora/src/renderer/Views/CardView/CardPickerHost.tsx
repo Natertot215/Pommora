@@ -11,15 +11,15 @@ import { linkEditText, urlValueFromEdit } from '@shared/linkValue'
 import { resolveTitle } from '@renderer/Links/linkResolve'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
 import { useSession } from '../../store'
-import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
+import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { CardAddPicker } from './CardAddPicker'
 import {
   addColumn,
   addEntriesFor,
   type AddEntry,
-} from '@renderer/Properties/Editing/cardValueInput'
+} from '@renderer/Properties/Assignment/cardValueInput'
 
 /** A value's request to open its picker — the anchor is the clicked value span. */
 export type ValuePickerRequest = {

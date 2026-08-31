@@ -11,14 +11,14 @@ import {
   PropertyOptionRows,
   pickSemantics,
   syntheticContextDef,
-} from '@renderer/Properties/Editing/PropertyPicker'
+} from '@renderer/Properties/Assignment/PropertyPicker'
 import type { ContextOption } from '@renderer/Properties/contextOptions'
-import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
+import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
 import {
   type AddEntry,
   orderAddableEntries,
   parseEditorValue,
-} from '@renderer/Properties/Editing/cardValueInput'
+} from '@renderer/Properties/Assignment/cardValueInput'
 
 function ValuePane({
   def,

@@ -9,14 +9,18 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Fields/SegmentRun'
 import { resolveFileValue } from '@renderer/Assets/assetUrl'
-import { fileValueWithout } from '@renderer/Properties/Editing/filePick'
+import { fileValueWithout } from '@renderer/Properties/Assignment/filePick'
 import { declaredType, fileName, resolveFieldValue } from '@renderer/Properties/value'
-import { formatDate, formatNumber, numberDivisor } from '@renderer/Properties/Editing/formatValue'
-import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
-import { findOption } from '@renderer/Properties/Editing/cellResolve'
-import { LinkCell } from '@renderer/Properties/Editing/LinkCell'
+import {
+  formatDate,
+  formatNumber,
+  numberDivisor,
+} from '@renderer/Properties/Assignment/formatValue'
+import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
+import { findOption } from '@renderer/Properties/Assignment/cellResolve'
+import { LinkCell } from '@renderer/Properties/Assignment/LinkCell'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { CheckboxGlyph } from '@renderer/Properties/Editing/checkboxLook'
+import { CheckboxGlyph } from '@renderer/Properties/Assignment/checkboxLook'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { FileChip, SpaceChip } from '@renderer/DesignSystem/Labels'
 
