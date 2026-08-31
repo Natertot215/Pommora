@@ -37,7 +37,6 @@ beforeEach(() => {
       reorder: vi.fn(async () => ({ ok: true, value: null })),
       delete: vi.fn(async () => ({ ok: true, value: null })),
       assign: vi.fn(async () => ({ ok: true, value: null })),
-      changeType: vi.fn(async () => ({ ok: true, value: null })),
     },
     property: { delete: vi.fn(async () => ({ ok: true, value: null })) },
     views: { save: saveSpy },

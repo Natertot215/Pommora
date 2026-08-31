@@ -135,12 +135,7 @@ import {
 import type { FileConfig, LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
-import {
-  LINK_DISPLAYS,
-  NUMBER_FAMILIES,
-  propertyDefinition,
-  propertyType,
-} from '@shared/properties'
+import { LINK_DISPLAYS, NUMBER_FAMILIES, propertyDefinition } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
@@ -560,7 +555,7 @@ async function resolveViewContainer(
 
 // Registry+assignment-backed: defs live nexus-wide in `.nexus/properties.json`; a Collection's
 // sidecar holds the assigned prop-ids. Keeps its pre-V2 names/args so the renderer is untouched —
-// add = create-in-registry + assign, rename/changeType = global def edit, delete = Remove (strip
+// add = create-in-registry + assign, rename = global def edit, delete = Remove (strip
 // values + cache restorably on the sidecar; the word Delete means property:delete only), reorder =
 // assignment-order move, assign = append + restore-from-cache. containerPath is the schema-owning
 // Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
@@ -1430,23 +1425,6 @@ serveBridge(
           return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
         const r = await reorderRegistry(root, propertyId, toIndex)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
-
-    'schema:changeType': {
-      kind: 'envelope',
-      fn: async (containerPath: unknown, propertyId: unknown, newType: unknown, opts: unknown) => {
-        const c = await resolveSchemaFolder(containerPath)
-        if (!c.ok) return c
-        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        const parsedType = propertyType.safeParse(newType)
-        if (!parsedType.success) return fail('operation-failed', 'Invalid property type.')
-        // V2: a global def edit — values keep their old shape until the lossy cross-assigner
-        // strip lands with the assign-surface UI (opts.dropConflictingValues is accepted, unused).
-        void opts
-        const r = await editProperty(c.value.root, propertyId, { type: parsedType.data })
         if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
