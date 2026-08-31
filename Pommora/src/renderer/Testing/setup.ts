@@ -23,3 +23,9 @@ if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
     disconnect(): void {}
   }
 }
+
+// jsdom has no scroller, so the API a list calls to follow its selection is absent — a no-op is
+// the honest stand-in, since there is nothing to scroll.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}

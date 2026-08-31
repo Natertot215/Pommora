@@ -5,7 +5,14 @@ import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
+import { useKeepInView } from '@renderer/DesignSystem/Interactions/useKeepInView'
+import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import { ancestryOf } from '@renderer/treeIndex'
+import { useSession } from '@renderer/store'
 import type { AcRow } from './autocomplete'
+
+const NO_TRAIL: TrailSegment[] = []
 
 interface Props {
   open: boolean
@@ -30,12 +37,22 @@ export function AutocompletePane({
   query,
   onPick,
 }: Props): React.JSX.Element {
+  const tree = useSession((s) => s.tree)
   const live = open && candidates.length > 0
   const last = useRef({ candidates, index, caretX, caretTop, caretBottom, bounds, query })
   if (live) last.current = { candidates, index, caretX, caretTop, caretBottom, bounds, query }
 
   const v = last.current
   const matchLen = v.query.length
+  const keepInView = useKeepInView(v.index)
+
+  // Where the page lives, drawn from the same ancestry every location trail reads — the row's own
+  // title is the leaf, so the caption stops at its containers. An alias names no place of its own.
+  const locationOf = (row: AcRow): TrailSegment[] => {
+    if (!tree || !row.isPage || !row.pageId) return NO_TRAIL
+    const chain = ancestryOf(tree, { kind: 'page', id: row.pageId })
+    return chain ? chain.slice(0, -1).map((n) => ({ title: n.title })) : NO_TRAIL
+  }
   return (
     // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return
     // and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the
@@ -56,8 +73,17 @@ export function AutocompletePane({
       {v.candidates.map((row, i) => (
         <MenuItem
           key={row.value}
+          ref={i === v.index ? keepInView : undefined}
           className={hoverRemoveHost}
           selected={i === v.index}
+          subLabel={
+            <NavTrail
+              segments={locationOf(row)}
+              overScroll={false}
+              iconSize="subline"
+              className={text.subline.standard}
+            />
+          }
           leading={
             row.isPage ? (
               <EntityIcon kind="page" size="body" />
