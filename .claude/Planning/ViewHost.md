@@ -373,7 +373,7 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 
 #### Gate 3 — closed
 
-- [ ] All of Gate 2's standing checks re-affirmed over the full range; Progress complete; Closeout written.
+- [x] All of Gate 2's standing checks re-affirmed over the full range; Progress complete; Closeout written.
 
 ---
 
