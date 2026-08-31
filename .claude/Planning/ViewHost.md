@@ -386,8 +386,8 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
   - [x] Task 2 — ViewRenderer → ViewHost · `b3fa93a6`
 - [ ] **Phase 2** — The Host · base `29377f5f`
   - [x] Task 3 — useViewHost + Table · `c9501341`
-  - [x] Task 4 — Cards converts · `<commit>`
-  - [ ] Task 5 — root states · `<commit>`
+  - [x] Task 4 — Cards converts · `443f0f7a`
+  - [x] Task 5 — root states · `<commit>`
 - [ ] **Phase 3** — Closeout
   - [ ] Task 6 — comment pass + attack · `<commit>`
   - [ ] Task 7 — claim verified · `<commit>`

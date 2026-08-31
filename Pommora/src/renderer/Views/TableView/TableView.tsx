@@ -242,8 +242,7 @@ export function TableView({
     const grid = el.querySelector('.table-grid')
     if (grid) ro.observe(grid)
     return () => ro.disconnect()
-    // Re-bind when the loading/empty returns give way to the real grid (the nodes remount without ctx changing).
-  }, [groups.length === 0])
+  }, [])
 
   // The visible band list (headers only) — BandDnd's hit-test universe, snapshot at drag activation.
   const bands = useMemo(() => flattenBands(groups, collapsed), [groups, collapsed])
@@ -1007,7 +1006,6 @@ export function TableView({
   host.seam.bandBucket.current = (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key)
   host.seam.onCreated.current = openCreateRename
 
-  if (groups.length === 0) return <div className="table-empty">No pages here</div>
   // The Apple table model: EVERY column — title included —
   // holds its resolved width. While the sum fits the pane the trailing filler eats the slack (the capped,
   // content-inset look); the moment any resize/add pushes the sum past the pane, the grid extends beyond

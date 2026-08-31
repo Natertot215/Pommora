@@ -4,8 +4,7 @@
    the class every tabular surface wears, so the vars stay table-owned (no global leak); a host
    rebinds what it needs — the heading fill and divider, the cell padding — in its own scope.
    ============================================================================ */
-.table,
-.table-empty {
+.table {
   /* — Density — */
   --zoom: 1; /* One knob scales text + chips + padding + widths together. */
 
@@ -49,7 +48,4 @@
     --bg-window
   ); /* opaque backing so the dragged column glides as one solid band, not see-through */
   --col-shift-ease: var(--duration-fast) var(--ease-base); /* neighbor columns slide to open the gap on this curve */
-
-  /* — Empty state — */
-  --empty-pad-y: 24px; /* vertical padding of the "No pages here" / "Loading…" placeholder */
 }

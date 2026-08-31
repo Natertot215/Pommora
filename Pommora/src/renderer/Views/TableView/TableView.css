@@ -19,12 +19,6 @@
   --table-right-inset: 0px;
 }
 
-.table-empty {
-  color: var(--label-primary);
-  opacity: var(--state-inactive);
-  padding: var(--empty-pad-y) 0;
-}
-
 /* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a
    grid reading --cols. min-width (the summed column widths, inline) makes it scroll; width:100% lets
    the trailing 1fr filler track eat slack. */

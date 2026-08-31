@@ -11,6 +11,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import { LOCATION_SORT, type SavedView } from '@shared/views'
 import { useSession } from '../store'
 import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
+import { ViewHost } from './ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -293,5 +294,42 @@ describe('the cards seam (flattenStructural)', () => {
     expect(api?.liveView).not.toBe(api?.view)
     await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), seam)
     expect(api?.liveView).toBe(api?.view)
+  })
+})
+
+describe('the root seat', () => {
+  const mountSeat = async (source: CollectionNode): Promise<void> => {
+    await act(async () => {
+      root.render(<ViewHost source={source} />)
+    })
+    await act(async () => {})
+  }
+
+  it('paints Loading… while the host is null', async () => {
+    useSession.setState({ tree: null as never })
+    await mountSeat(collection())
+    expect(host.textContent).toContain('Loading…')
+  })
+
+  it('paints No pages here when the pipeline yields no groups', async () => {
+    const empty = collection()
+    ;(empty as unknown as { pages: unknown[] }).pages = []
+    await mountSeat(empty)
+    expect(host.textContent).toContain('No pages here')
+  })
+
+  it('a cards view with Sets present mounts the renderer instead — the Set Cards toggle is irrelevant', async () => {
+    const source = setCollection({
+      hide_empty_groups: true,
+      set_cards: false,
+    } as unknown as Partial<SavedView>)
+    ;(source as unknown as { pages: unknown[] }).pages = []
+    ;(source.sets?.[0] as unknown as { pages: unknown[] }).pages = []
+    useSession.setState({
+      tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
+    })
+    await mountSeat(source)
+    expect(host.textContent).not.toContain('No pages here')
+    expect(host.querySelector('.cards-view')).toBeTruthy()
   })
 })
