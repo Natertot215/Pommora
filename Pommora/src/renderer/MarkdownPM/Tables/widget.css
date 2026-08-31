@@ -65,7 +65,8 @@
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-base, ease);
 }
-.mdpm-tbl-grip-zone:hover .mdpm-tbl-grip {
+.mdpm-tbl-grip-zone:hover .mdpm-tbl-grip,
+.mdpm-tbl-grip-hot .mdpm-tbl-grip {
   opacity: 1;
 }
 
@@ -94,6 +95,10 @@
 }
 .mdpm-tbl-add:hover {
   background: var(--state-hover);
+}
+.mdpm-tbl-wrap.mdpm-tbl-adds-off .mdpm-tbl-add {
+  opacity: 0;
+  pointer-events: none;
 }
 /* Bridges the approach gap so crossing it doesn't drop the wrap's hover before the strip is reached. */
 .mdpm-tbl-add::before {
@@ -169,6 +174,15 @@
 .mdpm-tbl tbody .mdpm-tbl-cell.mdpm-tbl-heading-col {
   background: var(--fill-quinary);
   font-weight: var(--weight-emphasized);
+}
+
+.mdpm-tbl-sweeping {
+  user-select: none;
+  cursor: default;
+}
+/* Specificity: outweighs the thead and heading-column fills. */
+.mdpm-tbl-wrap .mdpm-tbl .mdpm-tbl-cell.mdpm-tbl-selected {
+  background: var(--accent-fill);
 }
 
 .mdpm-tbl-align-center {

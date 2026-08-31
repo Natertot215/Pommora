@@ -8,12 +8,9 @@
 
 **Where the tree stands.** The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` standing on the design system alone; `DesignSystem/Glass/` is the material in four tiers and `DesignSystem/Menus/` the menu recipe in kebab parts. The five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface. The rulings taken so far are in the atlas's Settled list.
 
-**The Menu recipe landed 08-28-2026** through [[MenuRecipe]]: every row in the renderer is one recipe, two sizes chosen per pane, `NavList` and the Trash are menus, and the Settings window and every frame render through `menu-index.tsx`. The recipe's Open Calls and its Part 2 are rows in [[RendererRework]]. The Codebase Cleanup — the behavioral half — follows once the refactor stops moving its files.
-
 ### Immediate Work
 
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
-- [ ] **A shared list-removal collapse motion.** The exclusion pane's Manage rows are the seed: a row reveals in on add and collapses out on delete through `Reveal` (`open={!closing}`, the write deferred to `onCollapsed`, a closing-set that prunes on data change and batches concurrent removals off a ref). It lives inline in `ExcludedDirectoriesRow` for now and belongs in `DesignSystem/Animation` as a `useListRemoval` hook — every editable list should delete this way. Adopt it there and in `FilterFrame`'s rule rows, which animate reveal-in only and delete instantly today. (Deliberately seeded in one place, not a stray one-off.)
 
 ### Pending Focuses
 
@@ -71,14 +68,13 @@ Findings where the correct answer isn't established in the codebase — design a
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
 - [ ] **Fire-and-forget writes have no seam.** Sixty-three channels return the `Result` envelope and the renderer checks `.ok` at thirty-two sites. The gap is a coherent family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `blocks.writeMarkdown` and nine more — every one called as `void window.nexus.x(…)` with the failure discarded, so a locked file or a full disk shows the new fold state, column widths and tile heights and persists none of them until restart. One `persist()` helper makes handling the default; the pattern has been copied sixteen times. Whether silence is acceptable for this class is an Open Call above.
-- [ ] **Table perf ceilings.** Tables render every row with no virtualization, so a very long collection will eventually feel it; and a value edited outside the app doesn't live-refresh an open table.
+- [ ] **Table perf ceilings.** Tables render every row without virtualization, so a very long collection will eventually feel it, and a value edited outside the app doesn't live-refresh an open table.
 - [ ] **Scroll waits by timer, and the signal can't simply replace it.** `revealPageOffset` sleeps for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
 
 ### Known Issues
 
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
-- [ ] MarkdownPM numbered list auto-resolution on deletion seems to have regressed.
 
 ### Recent Work
 

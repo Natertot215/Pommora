@@ -152,10 +152,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **`Properties/Editing/` vs `Properties/Editors/`** — two folders of property editors in two vocabularies, with `DatetimeValuePicker` / `DateTimeEditor` / `propertyFrame.datetime.test` split on the same word. *Status:* audit proposes.
 - [ ] **`ViewRenderer`** collides with `src/renderer` and the `@renderer` alias; View wins. *Status:* ruled; rename when `Views/` is next opened.
 
-#### Behavior
-
-- [ ] **The pending DesignSystemPM items** — an inactive label tone (empty-state text between secondary and tertiary; interim consumers read tertiary); type gaps (no tracking scale, no Markdown element mapping, no multi-line clamp). *Status:* in scope (Nathan, 08-28); the exploration proposes each.
-
 ---
 
 ### 3. Open Rulings
@@ -166,7 +162,6 @@ The calls only Nathan can make; each deletes a row above when taken, and is take
 2. **`Interface/`'s scope** — does it absorb `Sidebar/`?
 4. **The `PropertyFrame` Style-radio edge** — name and keep, or lift the section?
 5. **The two token verdicts** — `text.callout` as the table-header step; the `surface.*` trio beside Ramp?
-6. **The Menu recipe's five Open Calls.**
 7. **The cursor convention** — `default` except links?
 8. **The three "preview" strings** — what word replaces it?
 9. **Scope of the rework itself** — taken: everything is in scope, behavior included, the DesignSystemPM pending items with it.

@@ -22,31 +22,48 @@ export type TableMenuAction =
   | 'align:left'
   | 'align:center'
   | 'align:right'
+  | 'col:copy'
   | 'col:insert-left'
   | 'col:insert-right'
   | 'col:clear'
   | 'col:delete'
   | 'col:toggle-heading'
+  | 'row:copy'
   | 'row:insert-above'
   | 'row:insert-below'
   | 'row:clear'
   | 'row:delete'
+  | 'table:copy-outline'
+  | 'table:copy-content'
+  | 'table:clear-header'
+  | 'table:clear'
   | 'table:delete'
 
 /** The rows a table grip's menu offers, by where the click landed. The Align row leads a nested
  *  list — one row per alignment, the current one checked — and the heading-column toggle is offered
- *  on the first column alone, since only it can read as the header. */
+ *  on the first column alone, since only it can read as the header. The heading row's grip speaks
+ *  for the whole table, so its Clear Row means that row's own cells. */
 export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuAction>[] {
-  if (ctx.kind === 'header') return [{ label: 'Delete Table', action: 'table:delete' }]
+  if (ctx.kind === 'header')
+    return [
+      { label: 'Copy Outline', action: 'table:copy-outline' },
+      { label: 'Copy Content', action: 'table:copy-content' },
+      { label: 'Clear Row', action: 'table:clear-header', separatorBefore: true },
+      { label: 'Clear Table', action: 'table:clear' },
+      { label: 'Delete', action: 'table:delete', separatorBefore: true },
+    ]
   if (ctx.kind === 'row')
     return [
-      { label: 'Insert Row Above', action: 'row:insert-above' },
+      { label: 'Copy', action: 'row:copy' },
+      { label: 'Insert Row Above', action: 'row:insert-above', separatorBefore: true },
       { label: 'Insert Row Below', action: 'row:insert-below' },
       { label: 'Clear', action: 'row:clear', separatorBefore: true },
       { label: 'Delete', action: 'row:delete' },
     ]
   return [
+    { label: 'Copy', action: 'col:copy' },
     {
+      separatorBefore: true,
       label: 'Align',
       action: 'align:left',
       submenu: COLUMN_ALIGNS.map((a) => ({

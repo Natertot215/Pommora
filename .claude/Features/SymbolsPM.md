@@ -51,7 +51,7 @@ Which glyph each recurring concept uses. The app decides these — the frames in
 | Status | `progress-check` |
 | Link | `link` |
 | File | `file-chart-column` |
-| Context | the Context entity's own glyph (`layout-grid`) |
+| Context | `layout-grid` |
 | Select | `send` |
 | Multi-Select | `tags` |
 | Last Edited | `history` |
