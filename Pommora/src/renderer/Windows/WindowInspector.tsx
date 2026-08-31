@@ -10,23 +10,23 @@ import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScro
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
-import { Cell } from '@renderer/Properties/Editing/Cell'
+import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { contextOptionsFor } from '@renderer/Properties/contextOptions'
-import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
-import { parseEditorValue } from '@renderer/Properties/Editing/cardValueInput'
+import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
+import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Pickers/TextPicker'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
-import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
+import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { resolveFieldValue } from '@renderer/Properties/value'
 import { fetchPageDetail, readPageDetail } from '../Store/TabState'
 import {
   propertyIcon,
   usePropertyRows,
   type Editing,
-} from '@renderer/Properties/Editing/usePropertyRows'
+} from '@renderer/Properties/Assignment/usePropertyRows'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/

@@ -8,7 +8,7 @@ import {
   orderAddableEntries,
   parseEditorValue,
   shownColumnsFor,
-} from '@renderer/Properties/Editing/cardValueInput'
+} from '@renderer/Properties/Assignment/cardValueInput'
 
 describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {

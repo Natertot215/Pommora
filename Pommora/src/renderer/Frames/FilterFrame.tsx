@@ -31,11 +31,11 @@ import { CalendarPicker } from '@renderer/DesignSystem/Pickers/CalendarPicker/Ca
 import { contextIdsOf, isContextColumnId } from '@renderer/Properties/contextIdentity'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { useSession } from '../store'
-import { condensedDate, formatDate } from '@renderer/Properties/Editing/formatValue'
+import { condensedDate, formatDate } from '@renderer/Properties/Assignment/formatValue'
 import { contextOptionsFor, type ContextOption } from '@renderer/Properties/contextOptions'
 import { declaredType } from '@renderer/Properties/value'
-import { toggleValue } from '@renderer/Properties/Editing/PropertyPicker'
-import { CheckboxGlyph } from '@renderer/Properties/Editing/checkboxLook'
+import { toggleValue } from '@renderer/Properties/Assignment/PropertyPicker'
+import { CheckboxGlyph } from '@renderer/Properties/Assignment/checkboxLook'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '../SurfacePM/ViewTileScope'
@@ -55,7 +55,7 @@ import {
 } from './filterModel'
 import * as fp from './filterFrame.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
-import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
+import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },

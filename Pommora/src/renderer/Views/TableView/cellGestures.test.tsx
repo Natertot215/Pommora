@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode } from '@shared/types'
 import { useSession } from '../../store'
-import { PropertyPicker } from '@renderer/Properties/Editing/PropertyPicker'
+import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
 import { TableView } from './TableView'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
