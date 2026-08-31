@@ -16,8 +16,8 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 1. `useViewHost(source)` in `Views/useViewHost.ts`, seated in `Views/ViewHost.tsx` (the renamed `ViewRenderer`), owning the machinery enumerated in the Goal — each piece existing exactly once.
 2. The optimistic `property_order` / `hidden_properties` / `column_styles` patch layers are host-owned generic layers; Cards thereby gains the optimistic behavior, the `sameIds` catch-up drop, and collapse riding every save (signed behavior changes). Width/align stay Table-local.
 3. `persistView` preserves the `mergeOverrides` law for both renderers: host layers + collapse fold into every save, a renderer's fold adds its local layers at fire time, the explicit patch wins last, styles fold per-key.
-4. The renderer seam is exactly `foldOverrides?` · `bandBucket` · `viewRootRef` · `onCreated` plus presentation; everything else arrives on `host`.
-5. Loading and empty decided once at the root: "Loading…" while `ctx` is null; "No pages here" when the pipeline yields no groups and the container has no Sets; a sets-only container mounts its renderer (Cards' set cards, Table's band grid). Write silence stands.
+4. The renderer seam is exactly `foldOverrides?` · `flattenStructural` · `bandBucket` · `viewRootRef` · `onCreated` plus presentation; everything else arrives on `host`. (`flattenStructural` is a seam field, not a `view.type` switch inside the host — a future renderer chooses its structural shape without editing the host.)
+5. Loading and empty decided once at the root: "Loading…" while `ctx` is null; "No pages here" when the pipeline yields no groups, unless the renderer will still paint set chrome (Cards with Set Cards on and Sets present). Write silence stands.
 6. `Properties/Editing/` → `Properties/Assignment/` and `ViewRenderer` → `ViewHost` land first, so the host seats imports at final addresses (RendererRework's ruled rows, taken 08-31-2026).
 7. Cards' parallel `resolveColumns` call dies; the pipeline's `columns` output is the one column resolution renderers consume.
 8. Net comment-line count across the touched Views files strictly decreases; zero newly-authored comments (relocated whys allowed); `KNOB` markers survive.
@@ -47,7 +47,7 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 - `Views/ViewRenderer.tsx` · `Views/TableView/TableView.tsx` (1867) · `Views/CardView/CardsView.tsx` (1354) — the duplication and its drift.
 - `Views/useActiveView.ts` · `useValuesEpoch.ts` · `useViewOrders.ts` · `useBandOrdering.ts` · `useViewCreation.ts` · `contextCellWrite.ts` · `TableView/viewMerge.ts` — the already-shared hooks the host composes.
 - `Views/Pipeline/` — pure; the host invokes, never absorbs.
-- `SurfacePM/ViewTileScope.ts` + `ViewTile.tsx:553` — the second mount path and the lock gate.
+- `SurfacePM/ViewTileScope.tsx` + `ViewTile.tsx:553` — the second mount path and the lock gate.
 
 **Environment:** Plan directory `.claude/Planning/`. Explorer: Explore. Simplification: `code-simplifier` + `comment-killer-agent`. Attack: `build-breaking-agent`. Code review: `feature-dev:code-reviewer`. Neutral verifier: general-purpose. Gates: `npm run typecheck` · `npm run test` · `npm run lint`, run from `Pommora/`, exit codes read directly — never piped.
 
@@ -164,6 +164,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 ```ts
 export interface ViewHostSeam {
   foldOverrides?: { current: (v: SavedView) => SavedView }
+  flattenStructural: boolean
   bandBucket: (key: string) => string | null
   viewRootRef: { readonly current: HTMLElement | null }
   onCreated: (created: { id: string; path: string }) => void
@@ -199,6 +200,7 @@ export interface ViewHostApi {
   setProperty: (row: ViewRow, propertyId: string, value: PropertyValue | null) => void
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   contextOptionsFor: (column: ResolvedColumn) => ContextOption[] | null
+  refreshValues: () => void
   creation: ViewCreation
   mutate: (req: MutateRequest) => Promise<boolean>
   select: SessionState['select']; tree: NexusTree
@@ -206,9 +208,13 @@ export interface ViewHostApi {
 export function useViewHost(source: CollectionNode | SetNode, seam: ViewHostSeam): ViewHostApi | null
 ```
 
-The hook composes the existing shared hooks and owns no new mechanism. Its contract, stated here once: it returns null while values/ctx load (the component decides what loading paints, and a renderer therefore receives `ctx` non-null by construction); `view` is raw and `liveView` folds the host's order/hidden/style patches plus `bandPatch`; `columns` is the pipeline's output — the one column resolution; `creation` is `useViewCreation`'s api. The persist law generalizes `mergeOverrides`' precedence: `saveView((seam.foldOverrides?.current ?? identity)(fold(liveView, collapsed)))` with the explicit patch spread last and styles folded per-key through `mergeStyleRecords`; `foldOverrides` is read at fire time, identity by default. Host layers reset on `[view.id]`, `manualOverride` on `[source]` identity, `valueOverride` only on `[source.path]` — byte-for-byte the dependency arrays TableView carries today. `flattenStructural` and the `locationFsOrder` manual-order gate derive from `view.type === 'cards'`.
+The hook composes the existing shared hooks and owns no new mechanism. Its contract, stated here once: it returns null while values/ctx load (the component decides what loading paints, and a renderer therefore receives `ctx` non-null by construction); `view` is raw and `liveView` folds the host's order/hidden/style patches plus `bandPatch`; `columns` is the pipeline's output — the one column resolution; `refreshValues` is the direct `loadValues` re-read Cards' cover editor completes through; `creation` is `useViewCreation`'s api. The persist law generalizes `mergeOverrides`' precedence: `saveView((seam.foldOverrides?.current ?? identity)(fold(liveView, collapsed)))` with the explicit patch spread last and styles folded per-key through `mergeStyleRecords`; `foldOverrides` is read at fire time, identity by default.
 
-`ViewHost.tsx` calls the hook per mounted renderer type and passes `host`; the seam callbacks come up from the renderer via a ref established on mount (the `getCfg` pattern `useViewCreation` already uses). `TableView` becomes `({ source, host }: { source: …; host: ViewHostApi })`: its preamble ranges delete; it keeps `widthOverride`/`alignOverride`, resize/drag/edit machinery, `dataRows`/`rowPath`/`rowGroup`/`subTargets`, its `onBandDrop` router, and assigns `host`'s fold ref to fold width/align. `viewMerge.ts` moves to `Views/viewMerge.ts` (the host consumes it; `TableView/` keeps nothing shared). Table-side tests re-harness to mount through `ViewHost`.
+Reset keys: host layers reset on `[source.id, view.id]` — the id **strings**, never `[source]` object identity (which would break `useBandOrdering`'s documented echo-survival). `source.id` must be in the array because `view.id` is not unique per container: `pickView` falls back to the `DEFAULT_VIEW_ID` sentinel and `ensureContainerView` mints real ids only for Collections and depth-1 Sets, so every deeper Set shares one sentinel id and `ViewHost` itself is unkeyed — on `[view.id]` alone, host layers would leak between sibling sub-Sets and a later persist would write one container's config into the other's sidecar. `manualOverride` resets on `[source]` identity (Table's documented canon-caught-up drop), `valueOverride` only on `[source.path]` — byte-for-byte the dependency arrays TableView carries today.
+
+Gate formulas take the seam's shape, not Table's raw text: `subGrouped = structuralGrouping && liveView.sub_group !== undefined && !seam.flattenStructural` (a flattened paint never sub-groups, so a cards view still carrying `sub_group` from a type switch must not reassign against it), and `canReorderWithin = sortKeys < 2 && !locationFsOrder`, with the `locationFsOrder` manual-order gate applying under `seam.flattenStructural`.
+
+`ViewHost.tsx` calls the hook per mounted renderer type and passes `host`; the seam callbacks come up from the renderer via a ref established on mount (the `getCfg` pattern `useViewCreation` already uses). `TableView` becomes `({ source, host }: { source: …; host: ViewHostApi })`: its preamble ranges delete; it keeps `widthOverride`/`alignOverride`, resize/drag/edit machinery, `dataRows`/`rowPath`/`rowGroup`/`subTargets`, its `onBandDrop` router, and assigns `host`'s fold ref to fold width/align. `viewMerge.ts` and `viewMerge.test.ts` move to `Views/` (the host consumes it; `TableView/` keeps nothing shared). The two suites that actually mount a renderer — `bandCommits.test.tsx` and `cellGestures.test.tsx` — re-harness to mount through `ViewHost`; the model and chrome suites (`useBandOrdering`, `bandDndModel`, `creationOrder`, `BandDnd`, `GroupBand`, `ViewTileScope`) never touch a renderer and need no work.
 
 **Assumed by:** Task 4 (Cards consumes the same `ViewHostApi`), Task 5 (the root states read the hook's null/groups), Task 7 (comment baseline).
 
@@ -217,9 +223,10 @@ The hook composes the existing shared hooks and owns no new mechanism. Its contr
 **Verify — automated**
 
 - [ ] Red-green: a new `useViewHost` pin fails before the hook exists (module not found), then greens — covering: persist folds collapse + a live style patch + the fold-ref's width into one save with an explicit patch winning; `manualOverride` drops on a `source`-identity swap while `valueOverride` survives it; the order/hidden catch-up drop fires on `sameIds`.
+- [ ] The sub-Set leak pin: two sibling sub-Sets sharing the `DEFAULT_VIEW_ID` sentinel — navigating A → B resets every host layer (red with a `[view.id]`-only reset, green with `[source.id, view.id]`), and B's first persist carries none of A's config.
 - [ ] Crossing test: a persist fired after a simulated round-trip reads the fire-time fold, not the mount closure (the `useBandOrdering` hazard, now at the host's seam).
-- [ ] Full gates green; the pre-existing Table suites (`bandCommits`, `cellGestures`, `useBandOrdering`, `bandDndModel`, `creationOrder`, `BandDnd`, `GroupBand`, `ViewTileScope`) green, re-harnessed but assertions unweakened.
-- [ ] `grep -c '^\s*//' TableView.tsx` strictly below its Task 3 baseline.
+- [ ] Full gates green; `bandCommits` and `cellGestures` green re-harnessed, assertions unweakened; the untouched Views suites green unmodified.
+- [ ] Comment metric (full-line `//` + block-comment lines: `grep -c '^\s*//\|^\s*\*\|^\s*/\*'`) strictly below the Task 3 baseline for `TableView.tsx`.
 
 **Verify — user**
 
@@ -239,8 +246,9 @@ The hook composes the existing shared hooks and owns no new mechanism. Its contr
 
 **Verify — automated**
 
-- [ ] Inverted-in-same-commit pins for the signed changes: a Cards persist mid-collapse keeps the collapse (fails against the old bare spread); Cards' held manual order survives a `source`-identity echo; a pane-side style write is not masked by a stale patch once canon catches up.
-- [ ] Full gates green; Cards suites re-harnessed, assertions unweakened.
+- [ ] Inverted-in-same-commit pins for the signed changes: a Cards persist mid-collapse keeps the collapse (fails against the old bare spread); Cards' held manual order now **drops** on a `source`-identity echo — Table's documented canon-caught-up drop (`TableView.tsx:242-250`), the side Nathan signed — while a held `valueOverride` and `bandPatch` survive that same echo; a pane-side style write is not masked by a stale patch once canon catches up.
+- [ ] The type-switch gate pin: a cards view still carrying `sub_group` (minted by `LayoutFrame.setType`'s in-place `{ type }` write) — a cross-band card drop relocates the file and never writes a Set id into the sub-group property (red against Table's raw gate formulas).
+- [ ] Full gates green. No Cards component suite exists today — the pins above are the Cards net, mounted through `ViewHost`.
 - [ ] `grep -n "resolveColumns" CardsView.tsx` → 0. Control: `grep -rn "resolveColumns" Pommora/src/renderer/Frames/HiddenFrame.tsx | wc -l` → 2.
 - [ ] The paper test, written into the phase gate note: List view = host + four seam fields + presentation; any needed fifth field is a plan defect to report, not patch.
 
@@ -264,12 +272,13 @@ if (groups.length === 0) return <div className="table-empty">No pages here</div>
 **Becomes** — in `ViewHost.tsx`, before any renderer mounts; Table's returns delete:
 
 ```tsx
+const setChrome =
+  view.type === 'cards' && (view.set_cards ?? true) && (source.sets?.length ?? 0) > 0
 if (!host) return <div className="view-empty">Loading…</div>
-if (host.groups.length === 0 && (source.sets?.length ?? 0) === 0)
-  return <div className="view-empty">No pages here</div>
+if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
 ```
 
-Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so the predicate's second clause is what decides the sets-only container: it mounts its renderer — Cards paints its set cards, Table its band grid; Table's property-grouped, sets-only corner changes from the message to an empty grid (disclosed, accepted).
+The exemption asks what the renderer will still paint, not what the source contains: Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so they exempt only when Set Cards is on and Sets exist; Table paints nothing when `groups` is empty (the pipeline's filter/hide-empty prunes included — `resolveView.ts:78-81`), so it keeps the message everywhere it shows one today. Empty Sets are otherwise present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so an unfiltered sets-only container mounts with its bands intact. `--empty-pad-y`'s only writer dies with the `table-empty` rules — its one read inlines as a raw `24px` KNOB in `view-host.css.ts`.
 
 `.view-empty` styled once beside `ViewHost.tsx` (`view-host.css.ts`, per R5 — no class painted by an un-emitting sheet remains); the tile override at `viewTile.css.ts:167` renames with it; the `table-empty` rules delete from both sheets.
 
@@ -277,7 +286,7 @@ Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so 
 
 **Verify — automated**
 
-- [ ] Red-green: a `ViewHost` mount test — null host paints "Loading…", empty groups + no sets paints "No pages here", sets-only mounts the renderer — red before the seat, green after.
+- [ ] Red-green: a `ViewHost` mount test — null host paints "Loading…"; empty groups paints "No pages here"; a cards view with Set Cards on and Sets present mounts the renderer instead; the same view with Set Cards off gets the message — red before the seat, green after.
 - [ ] `grep -rn "table-empty" Pommora/src` → 0. Control: `grep -rn "view-empty" Pommora/src | wc -l` → ≥ 4.
 - [ ] Full gates green.
 
@@ -339,7 +348,7 @@ Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so 
 
 **Why:** The checklist cycle's step 4–5: what landed leaves no stale account behind.
 
-**Becomes** — Made False's every row executed: ViewTypesPM reconciled to the host account; ContextPM's Open Call deleted; Bundle 6 struck with its true landing note; RendererRework's two rows deleted and its target tree redrawn (its Working Rules: no tombstones); History entry per History-Format; Line-Ledger refreshed (`loc.py --history`, republish); the Dead Vocabulary sweep run against its controls; net code-only line count reported.
+**Becomes** — Made False's every row executed: ViewTypesPM reconciled to the host account; ContextPM's Open Call deleted, with a narrowed successor line for the leg this bundle doesn't ship (a failed `loadValues` still paints "No pages here" — the error state stays open); Bundle 6 struck with its true landing note; RendererRework's two rows deleted and its target tree redrawn (its Working Rules: no tombstones); History entry per History-Format; Line-Ledger refreshed (`loc.py --history`, republish); the Dead Vocabulary sweep run against its controls; net code-only line count reported.
 
 **Verify — automated**
 
@@ -374,7 +383,8 @@ Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so 
 
 ### Rulings
 
-- 08-31-2026, Nathan: wording "Loading…" / "No pages here", shared at the root · no refused-write feedback · Cards' unification behavior changes signed · host-owned fold contract · `ViewHost` the name · `Assignment` the folder · proceed ahead of any further RendererRework motion.
+- 08-31-2026, Nathan: wording "Loading…" / "No pages here", shared at the root · no refused-write feedback · Cards' unification behavior changes signed · host-owned fold contract · `ViewHost` the name · `Assignment` the folder · proceed ahead of any further RendererRework motion · every phase gate's simplification review dual-briefed to flag non-simplicity bugs.
+- 08-31-2026, review round 1 (build-breaking, post-simplification): six findings + four smaller, all verified at their cited lines and folded — the sub-Set reset leak (`[source.id, view.id]`), the type-switch gate corruption (seam-shaped formulas), `refreshValues` on the API, the Task 4 pin inversion corrected (Cards adopts Table's echo-drop), the renderer-aware empty exemption (`setChrome`), the true test census. None rejected. Two unknowns routed to the user pass (the unmount-transition beat; a create reply into an unmounted renderer is a silent no-op with trivial damage — accepted).
 
 ### Open Against Later Tasks
 
@@ -384,9 +394,9 @@ Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so 
 
 ### Sequenced After
 
-- List/Gallery/Calendar/Timeline on the host's row model (the checklist's own endgame line).
+- List/Gallery/Calendar/Timeline on the host's row model (the checklist's own endgame line). Calendar/Timeline will want empty chrome of their own — the `setChrome` seam is where that decision extends.
 - Virtualization, in the same seat.
-- Any refused-write surface, if silence is ever un-ruled.
+- Any refused-write surface, if silence is ever un-ruled; the load-error root state with it.
 
 ### Closeout
 
@@ -421,7 +431,8 @@ Everything else is the standard below.
 
 - [ ] Table and Cards driven by hand: grouped and ungrouped, band drag, collapse, value edit, view switch in each.
 - [ ] Cards' new loading and empty states, in the main pane and inside a dashboard tile.
-- [ ] The disclosed corner: a property-grouped, sets-only container now renders Table's empty grid instead of "No pages here".
+- [ ] The exemption corners: a sets-only container in Cards with Set Cards on (set cards, no message) and off (the message); a filter matching nothing shows the message in both renderers.
+- [ ] The unmount transition: on a wide table, apply a filter matching nothing, clear it — the overflow/inset regime settles without a visible mis-beat (the renderer now unmounts where it used to early-return).
 
 **The record**
 
