@@ -8,6 +8,7 @@ import { markdownDecorations } from './Editor/decorations'
 import { markdownInput } from './Editor/input'
 import { tableWidgetExtension, applySavedHeadingCols, type TableHeadingColsApi } from './Tables'
 import { listDragExtension } from './Editor/listDrag'
+import { listRenumberOnDelete } from './Editor/ListRenumber'
 import { blockHandles, blockGripHover } from './Editor/blockHandles'
 import {
   blockDragExtension,
@@ -283,6 +284,7 @@ export function MarkdownEditor({
       }),
       // Grab a list glyph (•, number, or checkbox) to drag-reorder the item; click toggles/places caret.
       listDragExtension,
+      listRenumberOnDelete,
       // Block-drag rail handles: a hover grip on each draggable block's first line (paragraph/code/quote/list).
       blockHandles,
       // Reveal each grip only while the pointer is in its gutter strip (not over the line's text); the hot-line
