@@ -11,6 +11,7 @@ export function InlineEditHeader({
   iconRef,
   onCommit,
   onIconClick,
+  iconOpen,
   outline,
   readOnly = false,
   editing: editingProp,
@@ -21,6 +22,7 @@ export function InlineEditHeader({
   iconRef?: Ref<HTMLButtonElement>
   onCommit: (next: string) => void
   onIconClick?: () => void
+  iconOpen?: boolean
   outline?: string
   /** A locked view embed sets this — an editable field whose commit can't land is the failure
    *  mode this prevents. */
@@ -49,6 +51,7 @@ export function InlineEditHeader({
         paddingX="0"
         className={s.iconButton}
         aria-label="Edit icon"
+        pressed={iconOpen}
         disabled={readOnly || !onIconClick}
         onClick={onIconClick}
       >

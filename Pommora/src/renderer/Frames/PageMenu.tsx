@@ -51,6 +51,7 @@ export function PageMenu(): React.JSX.Element | null {
         value={pageDetail.title}
         icon={entityIcon('page', ownIcon, defaultIcons)}
         iconRef={iconRef}
+        iconOpen={iconOpen}
         onIconClick={() => setIconOpen(true)}
         onCommit={(next) => void submitRename(pageDetail.path, 'page', next)}
       />

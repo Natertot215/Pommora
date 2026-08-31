@@ -103,6 +103,7 @@ export function SpaceMenu(): React.JSX.Element | null {
                 outline={solid ? tintAt(solid, 'secondary') : undefined}
                 editing={renaming}
                 onEditingChange={setRenaming}
+                iconOpen={pickerOpen}
                 onIconClick={() => setPickerOpen(true)}
                 onCommit={(next) => {
                   if (next && next !== node.name)

@@ -13,6 +13,7 @@ import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeTo
 import { menuAnchor } from '@renderer/DesignSystem/Menus/menu-anchor'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { fieldRing } from '@renderer/DesignSystem/Fields/fieldRing'
+import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 const c = colorVars.color
 
 // KNOBS — every ViewFrame tunable, grouped by what it controls.
@@ -52,8 +53,10 @@ export const header = style({
 export const iconButton = style({
   flex: '0 0 auto',
   width: `${SIZE.iconPickerButton}px`,
-  color: c.label.tertiary,
   boxShadow: fieldRing(),
+  selectors: {
+    '&[aria-pressed="true"]': { vars: { '--field-ring': tintAt('var(--accent)', 'secondary') } },
+  },
 })
 
 export const titleField = style({ flex: '1 1 auto', minWidth: 0 })

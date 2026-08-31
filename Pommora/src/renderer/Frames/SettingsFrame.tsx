@@ -147,6 +147,7 @@ export function SettingsFrame(): React.JSX.Element | null {
           scope ? iconNameOr(view.icon, 'table') : entityIcon(node.kind, node.icon, defaultIcons)
         }
         iconRef={iconRef}
+        iconOpen={iconOpen}
         onIconClick={() => setIconOpen(true)}
         onCommit={(next) => {
           // The header is the VIEW's identity in scope — renaming the source
