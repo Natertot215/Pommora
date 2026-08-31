@@ -44,7 +44,7 @@ import { navKey } from '@renderer/Navigation/navRecents'
 import { findCollectionForSet } from '@renderer/Interface/Scope'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import type { ViewHostApi } from '../useViewHost'
-import { flattenContainer, subtreeIds } from '../Pipeline/group'
+import { subtreeIds } from '../Pipeline/group'
 import {
   GHOST_DWELL_MS,
   GHOST_TRAVEL_HOLD_MS,
@@ -56,7 +56,6 @@ import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { groupKeyToValue } from '../TableView/reassign'
-import { resolveBandHead } from '../GroupBand'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands } from '../bandDndModel'
@@ -97,16 +96,17 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     source,
     view,
     liveView,
-    effectiveValues,
     columns,
     groups,
     setTree,
+    rows,
     ctx,
     setNames,
     setIcons,
     setPaths,
     rowById,
     rowBand,
+    bandLabel,
     collapsed,
     toggleCollapse,
     structuralGrouping: structural,
@@ -321,10 +321,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     () => (flatMode ? [] : flattenBands(groups, collapsed)),
     [flatMode, groups, collapsed],
   )
-  const bandLabel = (id: string): string => {
-    const g = groups.find((x) => x.key === id)
-    return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
-  }
   const onBandDrop = (draggedId: string, drop: BandDrop): void => {
     if (drop.kind !== 'reorder') return
     const dragged = bands.find((b) => b.id === draggedId)
@@ -391,8 +387,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       const sibAfter = bandRowsWithout(bandKey, activeId)
         .slice(toIndex)
         .find((r) => parentOf(r.path) === parent)
-      const all = flattenContainer(source, effectiveValues).rows
-      const current = all.filter((r) => parentOf(r.path) === parent).map((r) => r.id)
+      const current = rows.filter((r) => parentOf(r.path) === parent).map((r) => r.id)
       const sibIds = current.filter((id) => id !== activeId)
       const order = spliceBeside(sibIds, sibAfter?.id ?? null, activeId, 'above')
       setManualOverride(full)
@@ -416,13 +411,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (row && destPath && destPath !== parentOf(row.path)) {
         const isDestSibling = (r: ViewRow): boolean =>
           parentOf(r.path) === destPath && r.id !== activeId
-        const all = flattenContainer(source, effectiveValues).rows
-        const destIds = all.filter(isDestSibling).map((r) => r.id)
+        const destIds = rows.filter(isDestSibling).map((r) => r.id)
         const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))
         const beforeId = bandRows[toIndex]?.id ?? null
         const sibBefore = bandRows.slice(toIndex).find(isDestSibling)?.id ?? null
         const order = spliceBeside(destIds, sibBefore, activeId, 'above')
-        const allIds = all.map((r) => r.id)
+        const allIds = rows.map((r) => r.id)
         const spliceLive = (existing: string[] | undefined): string[] =>
           tieOrderWith(existing, allIds, activeId, beforeId, 'above')
         setManualOverride((m) => (m ? spliceLive(m) : m))

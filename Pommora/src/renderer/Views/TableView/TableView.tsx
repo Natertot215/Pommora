@@ -36,7 +36,6 @@ import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { PropertyTypeIcon } from '@renderer/Properties/PropertyTypes'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { resolveBandHead } from '../GroupBand'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import { clampWidth, widthFor } from '@renderer/Tables/columnWidths'
 import { alignFor } from '@renderer/Tables/columnAlign'
@@ -122,6 +121,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setPaths,
     rowById,
     rowBand,
+    bandLabel,
     collapsed,
     toggleCollapse,
     structuralGrouping,
@@ -241,18 +241,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // The visible band list (headers only) — BandDnd's hit-test universe, snapshot at drag activation.
   const bands = useMemo(() => flattenBands(groups, collapsed), [groups, collapsed])
-  const bandLabel = (id: string): string => {
-    const find = (gs: ResolvedGroup[]): ResolvedGroup | undefined => {
-      for (const g of gs) {
-        if (g.key === id) return g
-        const hit = g.children && find(g.children)
-        if (hit) return hit
-      }
-      return undefined
-    }
-    const g = find(groups)
-    return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
-  }
   const childIdsOf = (nodes: SetTreeNode[], id: string): string[] | null => {
     for (const n of nodes) {
       if (n.id === id) return n.children.map((c) => c.id)
