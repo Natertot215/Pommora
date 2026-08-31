@@ -1,4 +1,4 @@
-import { useMemo, type PointerEvent as ReactPointerEvent } from 'react'
+import { useMemo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useStatusReorder } from './useStatusReorder'
 
 // The flat list is the one-group case of the grouped one — same gesture, same frozen-geometry
@@ -9,6 +9,7 @@ const FLAT_GROUP = 'flat'
 
 export function useOptionReorder(
   order: string[],
+  labelFor: (value: string) => string,
   onReorder: (value: string, toIndex: number) => void,
 ): {
   containerRef: (el: HTMLDivElement | null) => void
@@ -16,12 +17,11 @@ export function useOptionReorder(
   onRowPointerDown: (value: string, e: ReactPointerEvent) => void
   dragging: string | null
   lineTop: number | null
-  /** The floating drag-chip coords (DragGhost) — null until the gesture activates. */
-  ghost: { x: number; y: number } | null
+  ghost: ReactNode
 } {
   // Identity-stable for as long as `order` is, which is the grouped hook's re-snapshot trigger.
   const groups = useMemo(() => [{ id: FLAT_GROUP, values: order }], [order])
-  const grouped = useStatusReorder(groups, (value, _toGroupId, toIndex) =>
+  const grouped = useStatusReorder(groups, labelFor, (value, _toGroupId, toIndex) =>
     onReorder(value, toIndex),
   )
 
