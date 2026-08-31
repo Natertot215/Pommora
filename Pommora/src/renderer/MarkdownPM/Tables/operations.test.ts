@@ -10,6 +10,11 @@ import {
   moveColumn,
   clearColumn,
   clearRow,
+  clearHeader,
+  clearTable,
+  clearRect,
+  fillCells,
+  fillColumn,
 } from './operations'
 import type { TableModel } from './model'
 
@@ -108,6 +113,75 @@ describe('operations', () => {
     const m = moveColumn(base, 0, 2)
     expect(m.header).toEqual(['b', 'c', 'a'])
     expect(m.rows[0]).toEqual(['2', '3', '1'])
+  })
+
+  it('clearHeader blanks the heading row alone', () => {
+    const m = clearHeader(base)
+    expect(m.header).toEqual(['', '', ''])
+    expect(m.rows[0]).toEqual(['1', '2', '3'])
+  })
+
+  it('clearTable blanks every cell, heading row included', () => {
+    const m = clearTable(base)
+    expect(m.header).toEqual(['', '', ''])
+    expect(m.rows[0]).toEqual(['', '', ''])
+  })
+
+  it('clearRect blanks the covered cells only, header row addressable as row 0', () => {
+    const two: TableModel = {
+      ...base,
+      rows: [
+        ['1', '2', '3'],
+        ['4', '5', '6'],
+      ],
+    }
+    const m = clearRect(two, 0, 1, 1, 2)
+    expect(m.header).toEqual(['a', '', ''])
+    expect(m.rows).toEqual([
+      ['1', '', ''],
+      ['4', '5', '6'],
+    ])
+  })
+
+  it('fillCells writes a grid from its anchor, leaving the rest', () => {
+    const m = fillCells(base, 1, 1, [['x', 'y']])
+    expect(m.header).toEqual(['a', 'b', 'c'])
+    expect(m.rows[0]).toEqual(['1', 'x', 'y'])
+  })
+
+  it('fillCells grows the table when the grid runs past its edge', () => {
+    const m = fillCells(base, 1, 2, [
+      ['x', 'y'],
+      ['z', 'w'],
+    ])
+    expect(m.columns.length).toBe(4)
+    expect(m.rows).toEqual([
+      ['1', '2', 'x', 'y'],
+      ['', '', 'z', 'w'],
+    ])
+  })
+
+  it('fillCells anchored on the header row writes into it', () => {
+    const m = fillCells(base, 0, 0, [['H'], ['B']])
+    expect(m.header).toEqual(['H', 'b', 'c'])
+    expect(m.rows[0]).toEqual(['B', '2', '3'])
+  })
+
+  it('fillColumn fills the body from the anchor and takes an empty header only', () => {
+    const kept = fillColumn(base, 1, 1, 'New', ['x', 'y'])
+    expect(kept.header).toEqual(['a', 'b', 'c'])
+    expect(kept.rows).toEqual([
+      ['1', 'x', '3'],
+      ['', 'y', ''],
+    ])
+    const blank: TableModel = { ...base, header: ['a', '', 'c'] }
+    expect(fillColumn(blank, 1, 1, 'New', ['x']).header).toEqual(['a', 'New', 'c'])
+  })
+
+  it('fillColumn anchored on the header row starts its body at row one', () => {
+    const m = fillColumn(base, 0, 0, '', ['x'])
+    expect(m.header).toEqual(['a', 'b', 'c'])
+    expect(m.rows[0]).toEqual(['x', '2', '3'])
   })
 
   it('moveRow reorders body rows', () => {

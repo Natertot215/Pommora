@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { scanDoc } from '../Decorations/intent'
-import { fusedTableCount as fusedIn, tableMergeGuard } from './guard'
+import { citationGuard } from '../Editor/citationGuard'
+import { fusedTableCount as fusedIn, tableMergeGuard, tablePasteGuard } from './guard'
 
 const fusedTableCount = (doc: string): number => fusedIn(scanDoc(doc))
 
@@ -34,5 +35,41 @@ describe('tableMergeGuard — the transaction filter that refuses a fusing delet
   it('allows a deletion that does not fuse tables', () => {
     const next = guarded(sep).update({ changes: { from: 2, to: 3 } }).state
     expect(next.doc.toString()).not.toBe(sep)
+  })
+})
+
+describe('tablePasteGuard — a table-shaped paste refuses lists and the citations section', () => {
+  const paste = (doc: string, at: number, text: string): string =>
+    EditorState.create({ doc, extensions: [tablePasteGuard, citationGuard] })
+      .update({
+        changes: { from: at, to: at, insert: text },
+        userEvent: 'input.paste',
+      })
+      .state.doc.toString()
+
+  const listDoc = '- one\n- two'
+  const citeDoc = 'body\n\n[^a]: first'
+
+  it('refuses a whole table pasted onto a list line', () => {
+    expect(paste(listDoc, listDoc.length, `\n${t1}`)).toBe(listDoc)
+    expect(paste(listDoc, 2, `${t1}\n`)).toBe(listDoc)
+  })
+
+  it('refuses a whole table pasted into the citations section — no relocation rescue', () => {
+    expect(paste(citeDoc, citeDoc.length, `\n${t1}`)).toBe(citeDoc)
+  })
+
+  it('lets a table paste land in plain prose, and plain text land in a list', () => {
+    const prose = 'above\n\nbelow'
+    expect(paste(prose, 6, `${t1}\n`)).toContain('| A | B |')
+    expect(paste(listDoc, 5, ' more')).toBe('- one more\n- two')
+  })
+
+  it('only a paste is judged — a typed or programmatic multi-line insert passes', () => {
+    const next = EditorState.create({
+      doc: listDoc,
+      extensions: [tablePasteGuard],
+    }).update({ changes: { from: 2, to: 2, insert: `${t1}\n` } }).state
+    expect(next.doc.toString()).not.toBe(listDoc)
   })
 })

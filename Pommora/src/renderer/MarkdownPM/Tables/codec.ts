@@ -91,7 +91,7 @@ export function parseTable(src: string): TableModel | null {
   return normalize({ columns, header, rows })
 }
 
-function delimCell(c: Column): string {
+export function delimCell(c: Column): string {
   const bar = '-'.repeat(Math.max(1, c.dashes))
   return c.align === 'center'
     ? `:${bar}:`
@@ -101,11 +101,11 @@ function delimCell(c: Column): string {
         ? `:${bar}`
         : bar
 }
+
+export const pipeRow = (cells: string[]): string => `| ${cells.join(' | ')} |`
+
 export function serialize(m: TableModel): string {
   // Cells arrive in source form — a model is only ever built from lines — so the `<br>` rule stays
   // where the display boundary owns it, in cellToSource.
-  const row = (cells: string[]): string => `| ${cells.join(' | ')} |`
-  return [row(m.header), `| ${m.columns.map(delimCell).join(' | ')} |`, ...m.rows.map(row)].join(
-    '\n',
-  )
+  return [pipeRow(m.header), pipeRow(m.columns.map(delimCell)), ...m.rows.map(pipeRow)].join('\n')
 }

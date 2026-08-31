@@ -29,9 +29,15 @@ import {
   deleteRow,
   clearColumn,
   clearRow,
+  clearHeader,
+  clearTable,
+  clearRect,
+  fillCells,
+  fillColumn,
   resizeColumns,
 } from './operations'
-import { tableMergeGuard } from './guard'
+import { encodeColumn, encodeRect, serializeOutline, type TablePayload } from './clipboard'
+import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from './model'
 import type { ConnectionsApi } from '../Connections'
 import type { TableMenuAction, TableMenuContext } from '@shared/tableMenu'
@@ -124,8 +130,41 @@ function transformFor(
       return (m) => clearRow(m, index - 1)
     case 'row:delete':
       return (m) => deleteRow(m, index - 1)
+    case 'table:clear-header':
+      return clearHeader
+    case 'table:clear':
+      return clearTable
     case 'table:delete':
     case 'col:toggle-heading': // handled in onMenu (a .nexus/ toggle, not a source transform)
+    case 'col:copy': // the copies are reads — resolved in onMenu, against the live region
+    case 'row:copy':
+    case 'table:copy-outline':
+    case 'table:copy-content':
+      return null
+  }
+}
+
+/** Null for every non-copy action. */
+function copyTextFor(
+  action: TableMenuAction,
+  index: number,
+  source: string,
+  model: TableModel,
+): string | null {
+  switch (action) {
+    case 'row:copy':
+      return encodeRect([model.rows[index - 1] ?? []])
+    case 'col:copy':
+      return encodeColumn(
+        model.header[index] ?? '',
+        model.columns[index] ?? { align: null, dashes: 1 },
+        model.rows.map((r) => r[index] ?? ''),
+      )
+    case 'table:copy-content':
+      return source
+    case 'table:copy-outline':
+      return serializeOutline(model)
+    default:
       return null
   }
 }
@@ -173,32 +212,39 @@ class TableWidget extends WidgetType {
       if (!region) return
       focusAt(view, dir === 'before' ? region.from : region.to)
     }
-    const reorder = (axis: 'col' | 'row', from: number, to: number): boolean => {
-      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
-        axis === 'col' ? moveColumn(m, from, to) : moveRow(m, from - 1, to - 1),
-      )
-      if (!change) return false // no-op (identical/empty columns) — nothing dispatched
+    // False where the transform serializes to a no-op — nothing dispatched, so a live drag has to
+    // clear its own preview.
+    const structural = (transform: (m: TableModel) => TableModel): boolean => {
+      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, transform)
+      if (!change) return false
       view.dispatch({ changes: change })
       return true
     }
+    const reorder = (axis: 'col' | 'row', from: number, to: number): boolean =>
+      structural((m) => (axis === 'col' ? moveColumn(m, from, to) : moveRow(m, from - 1, to - 1)))
     // End-append only: new indices land past every existing cell, so a mounted cell editor keeps its
     // {row, col} and the main caret maps cleanly past the grown region.
     const append = (axis: 'col' | 'row'): void => {
-      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
+      structural((m) =>
         axis === 'col'
           ? insertColumn(m, m.columns.length - 1, 'right')
           : insertRow(m, m.rows.length - 1, 'below'),
       )
-      if (change) view.dispatch({ changes: change })
     }
-    const resize = (widths: number[]): boolean => {
-      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
-        resizeColumns(m, widths),
+    const resize = (widths: number[]): boolean => structural((m) => resizeColumns(m, widths))
+    const clearCells = (r0: number, c0: number, r1: number, c1: number): void => {
+      structural((m) => clearRect(m, r0, c0, r1, c1))
+    }
+    const fill = (row: number, col: number, payload: TablePayload): void => {
+      structural((m) =>
+        payload.kind === 'column'
+          ? fillColumn(m, row, col, payload.header, payload.body)
+          : payload.kind === 'rect'
+            ? fillCells(m, row, col, payload.grid)
+            : m,
       )
-      if (!change) return false // the same serialization — nothing dispatched
-      view.dispatch({ changes: change })
-      return true
     }
+    const toClipboard = (text: string): void => void window.nexus.writeClipboard(text)
     // The heading-row action grip drags the whole table block (left-press → block drag; right-click → menu).
     const tableDrag = (e: PointerEvent): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
@@ -216,6 +262,16 @@ class TableWidget extends WidgetType {
         const scan = docScan(view.state.doc)
         const region = scan.tables[this.tableIndex]
         if (!region) return
+        const copy = copyTextFor(
+          action,
+          ctx.index,
+          scan.text.slice(region.from, region.to),
+          modelFromRegion(region),
+        )
+        if (copy !== null) {
+          toClipboard(copy)
+          return
+        }
         // Delete Table, or deleting the LAST column (deleting it would leave a 0-column table that no longer
         // parses) → remove the whole region. Every other action is a model transform over the region.
         if (
@@ -258,6 +314,10 @@ class TableWidget extends WidgetType {
         onReorder={reorder}
         onResize={resize}
         onAppend={append}
+        onClearCells={clearCells}
+        onFill={fill}
+        onCopyText={toClipboard}
+        readClipboard={() => window.nexus.readClipboard()}
         onMenu={onMenu}
         onTableDrag={tableDrag}
         onCite={(label) => travelToCitation(view, label)}
@@ -484,6 +544,7 @@ export function tableWidgetExtension(
     headingColField,
     widgetField,
     tableMergeGuard,
+    tablePasteGuard,
     EditorView.atomicRanges.of((view) => view.state.field(widgetField)),
     connections ? tableConnections.of(connections) : [],
     onHeadingColsChange ? persist : [],
