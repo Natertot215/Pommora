@@ -384,10 +384,10 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 - [x] **Phase 1** — Final Addresses · base `da5ce413` · gate: simplifier merged one duplicate import (ViewTile), flagged the ledger hook's failed-commit nudge + regex edges (Nathan's infra, reported) and ContextPM's stale `ViewRenderer` line (Task 8's)
   - [x] Task 1 — Editing → Assignment · `d06541f5`
   - [x] Task 2 — ViewRenderer → ViewHost · `b3fa93a6`
-- [ ] **Phase 2** — The Host · base `29377f5f`
+- [x] **Phase 2** — The Host · base `4c78b186` · gate 2: simplifier −18 lines (api sheds unread fields, source prop dies into host.source, one root-ref holder) + flagged the optimistic-base PageID drop (fixed: base = effectiveValues ?? row.frontmatter, `0cdceb79`); reviewer found hide/reveal writing from the stale saved view (fixed live-based + optimistic, pinned, `0435033c`); live pass driven on the real Nexus (Ideas + Index): collapse round-trip persists, cell picker + value edit commit optimistically and on disk, cards mount + view switch both ways, the empty seat paints — every touched value and timestamp restored byte-exact
   - [x] Task 3 — useViewHost + Table · `c9501341`
   - [x] Task 4 — Cards converts · `443f0f7a`
-  - [x] Task 5 — root states · `<commit>`
+  - [x] Task 5 — root states · `17a43efd`
 - [ ] **Phase 3** — Closeout
   - [ ] Task 6 — comment pass + attack · `<commit>`
   - [ ] Task 7 — claim verified · `<commit>`
