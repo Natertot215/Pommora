@@ -20,15 +20,18 @@ one, and the hook says so.
 
 `check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must agree with the code files its SOURCE line names — each backticked token in a row's second column and each literal value in its third must appear in those files. Exit 0 means the tables agree; drift is listed per table.
 
-Both run automatically after each commit through the checked-in Claude Code hook
-`../hooks/line-ledger.mjs`, wired as a `PostToolUse` hook on the Bash tool in `../settings.json`: it
-reads the tool payload, and when the command was a `git commit` it runs `loc.py --update` and
-`check-atlas.mjs`. Being versioned and settings-declared, it needs no per-clone install step — but
-it only sees commits Claude itself makes through the Bash tool, not ones run straight from a
-terminal.
+Both run after every commit through the versioned git hook `../hooks/post-commit`, which runs
+`loc.py --update` and `check-atlas.mjs` and amends the refreshed ledger into the commit it measures.
+Because it is a native git hook rather than a tool-side one, it sees every commit — a terminal, an
+editor, or any agent — not only the ones made through a particular tool. Git looks for hooks under
+`.git/hooks` by default, so one command per clone points it at the versioned directory instead:
+
+```
+git config core.hooksPath .claude/hooks
+```
 
 `Line-Ledger.html` reads that data and is published at
-https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485. The hook keeps the local file
-current; publishing it to that URL is a separate step, and the hook's output says so.
+https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401. The hook keeps the local file
+current on every commit; re-publishing it to that URL is a separate step.
 
 `loc-history.json` is the data the page currently holds.

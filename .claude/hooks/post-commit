@@ -1,0 +1,36 @@
+#!/bin/sh
+# Git post-commit hook: refresh the line ledger after every commit, whoever makes it.
+#
+# Folds the new HEAD into loc-history.json + the ledger page (loc.py --update), then re-checks the
+# token atlas, then amends the refresh into the commit it measures — the numbers travel with the
+# code they describe rather than riding whatever lands next and leaving the tree dirty in between.
+# The amend re-fires this hook; POMMORA_LEDGER_HOOK, inherited by the amend's git child, makes that
+# second pass a no-op. Quiet during a rebase or merge replay — those cycle many commits and only the
+# last one's numbers survive. Republishing the page to its artifact URL stays a separate, manual step.
+[ -n "$POMMORA_LEDGER_HOOK" ] && exit 0
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$ROOT" || exit 0
+
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+if [ -n "$GIT_DIR" ] && { [ -d "$GIT_DIR/rebase-merge" ] || [ -d "$GIT_DIR/rebase-apply" ] || [ -f "$GIT_DIR/MERGE_HEAD" ]; }; then
+  exit 0
+fi
+
+python3 .claude/scripts/loc.py --update || echo "line ledger: skipped (loc.py --update failed)" >&2
+
+LEDGER=".claude/scripts/loc-history.json .claude/scripts/Line-Ledger.html"
+if [ -n "$(git diff --name-only -- $LEDGER)" ]; then
+  # Amending a commit the remote already holds would rewrite published history — leave the refresh
+  # in the tree and let the next commit carry it.
+  UP=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)
+  if [ -n "$UP" ] && git merge-base --is-ancestor HEAD "$UP" 2>/dev/null; then
+    echo "line ledger: HEAD is already on $UP — refresh left uncommitted" >&2
+  else
+    # Named paths, never -A: a parallel session's work is not ours to sweep in.
+    git add -- $LEDGER && POMMORA_LEDGER_HOOK=1 git commit --amend --no-edit --no-verify
+  fi
+fi
+
+node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the Features SOURCE tables disagree with the code" >&2
+exit 0
