@@ -34,7 +34,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   const host = useViewHost(source, seam, upward)
   if (!host) return <div className="table-empty">Loading…</div>
   return isCards ? (
-    <CardsView key={source.id} source={source} />
+    <CardsView key={source.id} source={source} host={host} />
   ) : (
     <TableView key={source.id} source={source} host={host} />
   )
