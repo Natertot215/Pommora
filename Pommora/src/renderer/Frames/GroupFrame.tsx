@@ -25,7 +25,6 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol, side } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
-import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
@@ -450,6 +449,8 @@ export function CustomList({
   const dnd = useGroupingListDrag({
     bands,
     nestable: false,
+    labelFor: (id) => byValue.get(id)?.label ?? id,
+    lineClassName: gp.dropLineInset,
     onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
   })
   if (!def) return null
@@ -476,14 +477,8 @@ export function CustomList({
           </div>,
         ]
       })}
-      {dnd.line && (
-        <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />
-      )}
-      <DragGhost
-        x={dnd.ghost?.x ?? null}
-        y={dnd.ghost?.y ?? null}
-        label={dnd.draggingId ? (byValue.get(dnd.draggingId)?.label ?? dnd.draggingId) : null}
-      />
+      {dnd.line}
+      {dnd.ghost}
     </div>
   )
 }
@@ -670,7 +665,28 @@ function LocationHierarchy({
     })()
   }
 
-  const dnd = useGroupingListDrag({ bands, nestable: true, onDrop })
+  const labelFor = (id: string): string => {
+    if (id.startsWith('sub:')) {
+      const value = id.split(':').slice(2).join(':')
+      return subChips.find((o) => o.value === value)?.label ?? value
+    }
+    const bySet = (sets: SetNode[]): string | null => {
+      for (const s of sets) {
+        if (s.id === id) return s.title
+        const hit = bySet(s.sets ?? [])
+        if (hit) return hit
+      }
+      return null
+    }
+    return bySet(source.sets ?? []) ?? id
+  }
+  const dnd = useGroupingListDrag({
+    bands,
+    nestable: true,
+    labelFor,
+    lineClassName: gp.dropLineInset,
+    onDrop,
+  })
   const subType = subDef?.type === 'status' ? 'status' : 'select'
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => {
@@ -736,30 +752,11 @@ function LocationHierarchy({
     )
   }
 
-  const ghostLabel = (): string | null => {
-    const id = dnd.draggingId
-    if (!id) return null
-    if (id.startsWith('sub:')) {
-      const value = id.split(':').slice(2).join(':')
-      return subChips.find((o) => o.value === value)?.label ?? value
-    }
-    const bySet = (sets: SetNode[]): string | null => {
-      for (const s of sets) {
-        if (s.id === id) return s.title
-        const hit = bySet(s.sets ?? [])
-        if (hit) return hit
-      }
-      return null
-    }
-    return bySet(source.sets ?? [])
-  }
   return (
     <div ref={dnd.containerRef} className="drop-line-host">
       {(source.sets ?? []).map(renderSet)}
-      {dnd.line && (
-        <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />
-      )}
-      <DragGhost x={dnd.ghost?.x ?? null} y={dnd.ghost?.y ?? null} label={ghostLabel()} />
+      {dnd.line}
+      {dnd.ghost}
     </div>
   )
 }

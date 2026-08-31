@@ -113,7 +113,7 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 8 — The Drag Adapters' Frame · one session, app open · net ≈ −270
 
-- [ ] **`useInsertionDrag` over `usePointerGesture`** owns point tracking, ghost position, autoscroll arm/teardown, snapshot invalidation, and announcements; the eight adapters (`paneDnd`, `BandDnd`, `tableDnd`, `OutlineDnd`, `groupingDnd`, `sidebarDnd`, `useOptionReorder`, `useStatusReorder`) pass their drop model and wording, one adapter at a time with the app open.
+- [x] **`useInsertionDrag` over `usePointerGesture`** owns point tracking, ghost position, autoscroll arm/teardown, snapshot invalidation, and announcements; the eight adapters (`paneDnd`, `BandDnd`, `tableDnd`, `OutlineDnd`, `groupingDnd`, `sidebarDnd`, `useOptionReorder`, `useStatusReorder`) pass their drop model and wording, one adapter at a time with the app open. *Landed — seven real implementations (`useOptionReorder` was already an adapter over `useStatusReorder`); every gesture driven live with edge-autoscroll and announcements checked, break-review passed.*
 
 **Verification:** every gesture driven live — sidebar reorder and reparent, table row and column, band, outline, pane rows, option and status reorder — with edge-autoscroll and announcement checked on each.
 **Retires:** nothing listed.

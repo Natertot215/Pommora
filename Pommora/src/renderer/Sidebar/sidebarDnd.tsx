@@ -1,22 +1,14 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useRef,
-  useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
 import { DISCLOSURE_INDENT } from '@renderer/DesignSystem/Tokens/size.css'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
-import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
-import { EDITABLE_TARGETS } from '@renderer/DesignSystem/Interactions/shared'
+import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
 import { titleFromPath } from '@shared/connections'
-import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
-import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
-import { announce } from '@renderer/DesignSystem/Interactions/a11y'
-import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
 import type { MutateRequest } from '@shared/mutate'
 import {
@@ -35,15 +27,13 @@ const LINE_INSET_RIGHT = 12
 const BASE_INDENT = 8 // MenuItem's base left padding
 const STEP_INDENT = DISCLOSURE_INDENT // MenuItem's per-depth inset — the shared disclosure step
 
-type DropTarget = {
+type Slot = {
   depth: number // indent depth of the landing slot (the line)
   lineY: number // relative to the content wrapper
   commit: MutateRequest // the write this drop resolves to — handed straight to store.mutate
-  noop: boolean // the drop wouldn't change anything → skip the write
 }
 
-type DragState = { id: string | null; ghostX: number; ghostY: number; target: DropTarget | null }
-const IDLE: DragState = { id: null, ghostX: 0, ghostY: 0, target: null }
+type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
 
 type Value = {
   draggingId: string | null
@@ -66,103 +56,41 @@ export function SidebarDnd({
   subSetPlacement?: FolderPlacement
   children: ReactNode
 }): React.JSX.Element {
-  const indexRef = useRef(index)
-  indexRef.current = index
-  // Ref'd so the frozen-snapshot resolver reads current placement, not a captured prop.
-  const placements = useRef({ set: setPlacement, subSet: subSetPlacement })
-  placements.current = { set: setPlacement, subSet: subSetPlacement }
-  const onCommitRef = useRef(onCommit)
-  onCommitRef.current = onCommit
-
   const rows = useRef(new Map<string, HTMLElement>())
   const contentRef = useRef<HTMLDivElement | null>(null)
-  const live = useRef<DropTarget | null>(null)
-  const [drag, setDrag] = useState<DragState>(IDLE)
-  const beginGesture = usePointerGesture()
 
-  // Set at activation (a tap never sets it) — the id the hit-test and commit run against, and the
-  // grab offset the ghost anchors to.
-  const dragged = useRef<{ id: string; grabX: number } | null>(null)
+  const labelOf = (rowId: string): string => titleFromPath(index.byId.get(rowId)?.path ?? '')
 
-  // Measured ONCE at drag activation, not per pointermove — no row displaces mid-drag, so frozen
-  // rects stay valid until a scroll or tree swap invalidates. Never O(rows) rect reads on a
-  // high-frequency trigger. The dragged row's sibling group is snapshot state too — invariant
-  // mid-drag, so it's filtered here once rather than per move.
-  type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
-  const lastPoint = useRef({ x: 0, y: 0 })
-  const stopScroll = useRef<(() => void) | null>(null)
-  const snap = useDragSnapshot(() => {
-    const d = dragged.current
-    return d ? takeSnapshot(d.id) : null
-  })
-
-  const takeSnapshot = (excludeId: string): Snapshot | null => {
-    const content = contentRef.current
-    if (!content) return null
-    const contentTop = content.getBoundingClientRect().top
-    const measured: MeasuredRow[] = []
-    for (const [id, el] of rows.current) {
-      if (id === excludeId) continue
-      const r = el.getBoundingClientRect()
-      measured.push({ id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 })
-    }
-    measured.sort((a, b) => a.top - b.top)
-    const idx = indexRef.current
-    const entry = idx.byId.get(excludeId)
-    const siblings =
-      entry && entry.kind !== 'page' && entry.kind !== 'set'
-        ? measured.filter((m) => {
-            const e = idx.byId.get(m.id)
-            return e !== undefined && e.kind === entry.kind && e.parentId === entry.parentId
-          })
-        : []
-    return { contentTop, measured, siblings }
-  }
-
-  const registerRow = (id: string, el: HTMLElement | null): void => {
-    if (el) rows.current.set(id, el)
-    else rows.current.delete(id)
-  }
-
-  const computeTarget = (clientY: number): DropTarget | null => {
-    const d = dragged.current
-    if (!d) return null
-    const idx = indexRef.current
-    const draggedEntry = idx.byId.get(d.id)
+  const computeTarget = (id: string, clientY: number, s: Snapshot): Slot | null => {
+    const draggedEntry = index.byId.get(id)
     if (!draggedEntry) return null
-    const s = snap.get()
-    if (!s) return null
     const { contentTop, measured } = s
     if (measured.length === 0) return null
-    const nearest = (rowsByTop: MeasuredRow[]): MeasuredRow => {
-      let over = rowsByTop[0]
-      for (const m of rowsByTop) {
-        if (clientY >= m.top) over = m
-        else break
-      }
-      return over
-    }
+    // A slot that reproduces where the row already sits is declined — the line promises a move.
+    const unless = (noop: boolean, slot: Slot): Slot | null => (noop ? null : slot)
 
     if (draggedEntry.kind === 'page') {
-      const over = nearest(measured)
-      const entry = idx.byId.get(over.id)
+      const over = nearestByTop(measured, clientY)
+      const entry = index.byId.get(over.id)
       if (!entry) return null
       if (entry.kind === 'page') {
-        const container = entry.parentId ? idx.byId.get(entry.parentId) : null
+        const container = entry.parentId ? index.byId.get(entry.parentId) : null
         if (!container || !entry.parentId || !entry.parentPath) return null
-        const { beforeId, edge } = slotInGroup(container.pageIds, over, clientY, d.id)
-        const order = nextOrder(container.pageIds, d.id, beforeId)
-        return {
-          depth: entry.depth,
-          lineY: edge - contentTop,
-          commit: {
-            op: 'movePage',
-            path: draggedEntry.path,
-            newParentPath: entry.parentPath,
-            order,
+        const { beforeId, edge } = slotInGroup(container.pageIds, over, clientY, id)
+        const order = nextOrder(container.pageIds, id, beforeId)
+        return unless(
+          entry.parentId === draggedEntry.parentId && sameOrder(order, container.pageIds),
+          {
+            depth: entry.depth,
+            lineY: edge - contentTop,
+            commit: {
+              op: 'movePage',
+              path: draggedEntry.path,
+              newParentPath: entry.parentPath,
+              order,
+            },
           },
-          noop: entry.parentId === draggedEntry.parentId && sameOrder(order, container.pageIds),
-        }
+        )
       }
       // A Set that's a sibling of the dragged page is the page↔Set boundary, not a reparent target —
       // grazing it reorders the page to its group's edge, never drops it into the Set (that happens
@@ -173,15 +101,13 @@ export function SidebarDnd({
         draggedEntry.parentId === entry.parentId &&
         draggedEntry.parentPath
       ) {
-        const container = idx.byId.get(draggedEntry.parentId)
-        const below =
-          (container?.kind === 'set' ? placements.current.subSet : placements.current.set) ===
-          'bottom'
+        const container = index.byId.get(draggedEntry.parentId)
+        const below = (container?.kind === 'set' ? subSetPlacement : setPlacement) === 'bottom'
         const pageIds = container?.pageIds ?? []
         // Sets below the pages → the page joins at the end; sets above → at the start.
-        const before = below ? null : (pageIds.find((id) => id !== d.id) ?? null)
-        const order = nextOrder(pageIds, d.id, before)
-        return {
+        const before = below ? null : (pageIds.find((x) => x !== id) ?? null)
+        const order = nextOrder(pageIds, id, before)
+        return unless(sameOrder(order, pageIds), {
           depth: draggedEntry.depth,
           lineY: (below ? over.top : over.bottom) - contentTop,
           commit: {
@@ -190,194 +116,138 @@ export function SidebarDnd({
             newParentPath: draggedEntry.parentPath,
             order,
           },
-          noop: sameOrder(order, pageIds),
-        }
+        })
       }
-      const beforeId = entry.pageIds.find((id) => id !== d.id) ?? null
-      const order = nextOrder(entry.pageIds, d.id, beforeId)
+      const beforeId = entry.pageIds.find((x) => x !== id) ?? null
+      const order = nextOrder(entry.pageIds, id, beforeId)
       // Derived from the slot the drop resolves to, never from the row under the pointer — with
       // folders first, a container's first page sits below its entire Sets block. Same rule the
       // Set branch below already follows.
       const firstRow = beforeId ? measured.find((m) => m.id === beforeId) : undefined
-      return {
+      return unless(over.id === draggedEntry.parentId && sameOrder(order, entry.pageIds), {
         depth: entry.depth + 1,
         lineY: (firstRow ? firstRow.top : over.bottom) - contentTop,
         commit: { op: 'movePage', path: draggedEntry.path, newParentPath: entry.path, order },
-        noop: over.id === draggedEntry.parentId && sameOrder(order, entry.pageIds),
-      }
+      })
     }
 
     // A Set may never land on a context or the top level; dropping into its own subtree is
     // blocked as a cycle.
     if (draggedEntry.kind === 'set') {
-      const over = nearest(measured)
-      const overEntry = idx.byId.get(over.id)
+      const over = nearestByTop(measured, clientY)
+      const overEntry = index.byId.get(over.id)
       if (!overEntry) return null
-      const target = setContainerOf(overEntry, idx)
+      const target = setContainerOf(overEntry, index)
       if (!target) return null
-      if (isSelfOrDescendant(target.id, d.id, idx)) return null // no cycles
+      if (isSelfOrDescendant(target.id, id, index)) return null // no cycles
       const group = target.containerIds // the target container's child Sets, in order
       let beforeId: string | null
       let lineY: number
       if (overEntry.kind === 'set') {
-        const slot = slotInGroup(group, over, clientY, d.id)
+        const slot = slotInGroup(group, over, clientY, id)
         beforeId = slot.beforeId
         lineY = slot.edge - contentTop
       } else {
         // Derived from real geometry: an existing block's first-row top (correct either way), else
         // — an empty block — just under the header (top) or after the container's last page (bottom).
-        beforeId = group.find((id) => id !== d.id) ?? null
+        beforeId = group.find((x) => x !== id) ?? null
         const headerRect = measured.find((m) => m.id === target.id)
         const headEdge = headerRect ? headerRect.bottom : over.bottom
         if (beforeId) {
           const firstRow = measured.find((m) => m.id === beforeId)
           lineY = (firstRow ? firstRow.top : headEdge) - contentTop
         } else {
-          const placement =
-            target.kind === 'collection' ? placements.current.set : placements.current.subSet
+          const placement = target.kind === 'collection' ? setPlacement : subSetPlacement
           const pageBottoms = target.pageIds
-            .map((id) => measured.find((m) => m.id === id)?.bottom)
+            .map((x) => measured.find((m) => m.id === x)?.bottom)
             .filter((b): b is number => b != null)
           const edge =
             placement === 'bottom' && pageBottoms.length ? Math.max(...pageBottoms) : headEdge
           lineY = edge - contentTop
         }
       }
-      const order = nextOrder(group, d.id, beforeId)
-      return {
+      const order = nextOrder(group, id, beforeId)
+      return unless(target.id === draggedEntry.parentId && sameOrder(order, group), {
         depth: target.depth + 1,
         lineY,
         commit: { op: 'moveSet', path: draggedEntry.path, newParentPath: target.path, order },
-        noop: target.id === draggedEntry.parentId && sameOrder(order, group),
-      }
+      })
     }
 
     const { siblings } = s
     if (siblings.length === 0) return null
-    const over = nearest(siblings)
-    const overEntry = idx.byId.get(over.id)
+    const over = nearestByTop(siblings, clientY)
+    const overEntry = index.byId.get(over.id)
     if (!overEntry) return null
-    const group = siblingGroup(draggedEntry, idx)
-    const { beforeId, edge } = slotInGroup(group, over, clientY, d.id)
-    const order = nextOrder(group, d.id, beforeId)
+    const group = siblingGroup(draggedEntry, index)
+    const { beforeId, edge } = slotInGroup(group, over, clientY, id)
+    const order = nextOrder(group, id, beforeId)
     const commit = reorderCommit(draggedEntry, order)
     if (!commit) return null
-    return {
+    return unless(sameOrder(order, group), {
       depth: overEntry.depth,
       lineY: edge - contentTop,
       commit,
-      noop: sameOrder(order, group),
-    }
-  }
-
-  const reset = (): void => {
-    dragged.current = null
-    live.current = null
-    snap.reset()
-    setDrag(IDLE)
-  }
-
-  // Shared by pointer move, the auto-scroll re-resolve, and every invalidation, so a held-still
-  // drag keeps re-targeting as the rows move under it.
-  function resolveSlot(): void {
-    const d = dragged.current
-    if (!d) return
-    const target = computeTarget(lastPoint.current.y)
-    live.current = target
-    setDrag({
-      id: d.id,
-      ghostX: lastPoint.current.x - d.grabX,
-      ghostY: lastPoint.current.y,
-      target,
     })
   }
 
-  // A mid-drag tree swap (watcher push) can re-render rows — stale rects must not survive it,
-  // and a release with no further move must still commit against the fresh slot.
-  useEffect(() => {
-    snap.markDirty()
-    resolveSlot()
-  }, [index])
+  const drag = useInsertionDrag<Slot, Snapshot>({
+    // Measured ONCE at drag activation, not per pointermove — no row displaces mid-drag, so frozen
+    // rects stay valid until a scroll or tree swap invalidates. The dragged row's sibling group is
+    // snapshot state too — invariant mid-drag, so it's filtered here once rather than per move.
+    take: (excludeId) => {
+      const content = contentRef.current
+      if (!content) return null
+      const contentTop = content.getBoundingClientRect().top
+      const measured: MeasuredRow[] = []
+      for (const [rowId, el] of rows.current) {
+        if (rowId === excludeId) continue
+        const r = el.getBoundingClientRect()
+        measured.push({ id: rowId, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 })
+      }
+      measured.sort((a, b) => a.top - b.top)
+      const entry = index.byId.get(excludeId)
+      const siblings =
+        entry && entry.kind !== 'page' && entry.kind !== 'set'
+          ? measured.filter((m) => {
+              const e = index.byId.get(m.id)
+              return e !== undefined && e.kind === entry.kind && e.parentId === entry.parentId
+            })
+          : []
+      return { contentTop, measured, siblings }
+    },
+    resolve: (id, point, s) => computeTarget(id, point.y, s),
+    commit: (_id, slot) => onCommit(slot.commit),
+    lineFor: (slot) => ({
+      top: slot.lineY,
+      left: BASE_INDENT + slot.depth * STEP_INDENT,
+      right: LINE_INSET_RIGHT,
+    }),
+    label: labelOf,
+    ghost: 'grab',
+    rowEl: (id) => rows.current.get(id),
+    scrollTarget: () => contentRef.current,
+    disclose: true,
+    watch: index,
+  })
 
-  const labelOf = (rowId: string): string =>
-    titleFromPath(indexRef.current.byId.get(rowId)?.path ?? '')
-
-  const begin = (id: string, e: ReactPointerEvent): void => {
-    // The cheap refusals come before the layout read — a right-press or a busy gesture costs no rect.
-    if (e.button !== 0 || !e.isPrimary) return
-    if ((e.target as HTMLElement).closest?.(EDITABLE_TARGETS)) return
-    const el = rows.current.get(id)
-    if (!el) return
-    const grabX = e.clientX - el.getBoundingClientRect().left
-    beginGesture({
-      el,
-      event: e,
-      onActivate: (ev) => {
-        dragged.current = { id, grabX }
-        lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        // onScrolled re-resolves a held-still drag as the auto-scroll moves the rows.
-        stopScroll.current = armAutoScroll(el, () => lastPoint.current, resolveSlot)
-        announce(`Picked up ${labelOf(id)}.`)
-        return true
-      },
-      onDragMove: (ev) => {
-        lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        resolveSlot()
-      },
-      scrollTarget: () => contentRef.current,
-      onWindowScroll: () => {
-        snap.markDirty()
-        resolveSlot()
-      },
-      onDrop: () => {
-        if (snap.isDirty()) resolveSlot()
-        const t = live.current
-        if (t && !t.noop) {
-          onCommitRef.current(t.commit)
-          announce(`Moved ${labelOf(id)}.`)
-        }
-        reset()
-      },
-      onAbort: reset,
-      teardown: () => {
-        stopScroll.current?.()
-        stopScroll.current = null
-      },
-      // A dwelling drag springs a collapsed container open — DragRow registers each — so its rows
-      // shift; re-aim the drop geometry against them, staying dirty through the reveal animation.
-      onDisclose: () => {
-        snap.markDirty()
-        resolveSlot()
-        snap.markDirty()
-      },
-    })
+  const registerRow = (id: string, el: HTMLElement | null): void => {
+    if (el) rows.current.set(id, el)
+    else rows.current.delete(id)
   }
 
-  const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])
-
-  const draggedLabel = drag.id ? labelOf(drag.id) : ''
+  const value = useMemo<Value>(
+    () => ({ draggingId: drag.dragging, registerRow, begin: drag.begin }),
+    [drag.dragging, drag.begin],
+  )
 
   return (
     <Ctx.Provider value={value}>
       <div ref={contentRef} className="drop-line-host">
         {children}
-        {/* A noop target draws nothing: the line promises a move, and the drop commits only when the
-            slot differs from where the row already sits. */}
-        {drag.target && !drag.target.noop && (
-          <DropLine
-            style={{
-              top: drag.target.lineY,
-              left: BASE_INDENT + drag.target.depth * STEP_INDENT,
-              right: LINE_INSET_RIGHT,
-            }}
-          />
-        )}
+        {drag.line}
       </div>
-      <DragGhost
-        x={drag.id ? drag.ghostX : null}
-        y={drag.id ? drag.ghostY : null}
-        label={draggedLabel}
-      />
+      {drag.ghost}
     </Ctx.Provider>
   )
 }

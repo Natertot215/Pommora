@@ -16,7 +16,7 @@ function List({
 }: {
   onReorder: (value: string, to: number) => void
 }): React.JSX.Element {
-  const dnd = useOptionReorder(ORDER, onReorder)
+  const dnd = useOptionReorder(ORDER, (v) => v, onReorder)
   return (
     <div ref={dnd.containerRef} data-box>
       {ORDER.map((v) => (
