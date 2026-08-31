@@ -7,6 +7,7 @@ import { TableView } from './TableView/TableView'
 import { resolveContainerSchema } from './Pipeline/pickView'
 import { CardsView } from './CardView/CardsView'
 import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
+import './view-host.css'
 
 const identity = (v: SavedView): SavedView => v
 
@@ -32,7 +33,11 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     [isCards, upward],
   )
   const host = useViewHost(source, seam, upward)
-  if (!host) return <div className="table-empty">Loading…</div>
+  // Cards' set cards render independently of the pipeline, so a cards view with Sets present
+  // always mounts — Set Cards on paints them, off stays a blank pane (Nathan's call).
+  const setChrome = isCards && (source.sets?.length ?? 0) > 0
+  if (!host) return <div className="view-empty">Loading…</div>
+  if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
   return isCards ? (
     <CardsView key={source.id} source={source} host={host} />
   ) : (

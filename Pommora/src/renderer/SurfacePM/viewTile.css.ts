@@ -164,7 +164,7 @@ export const body = style({
 /** The embed zoom lands on the table's own token scope — the var is declared ON .table-view
  *  (Tables/table-tokens.css), so only a descendant-scoped redeclaration outranks it. The root var carries
  *  the Embed Scale setting; its fallback is the default the setting stores no key for. */
-globalStyle(`${body} .table-view, ${body} .table-empty`, {
+globalStyle(`${body} .table-view, ${body} .view-empty`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
 })
 
