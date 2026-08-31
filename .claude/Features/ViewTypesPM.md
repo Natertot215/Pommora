@@ -127,7 +127,6 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 | Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam rule's input) |
 | Resizer Strip | `--resizer-width` | `8px` |
 | Column Drag | `--col-highlight` / `--col-drag-band` / `--col-shift-ease` | → state-selected / bg-window / fast+standard |
-| Empty Pad | `--empty-pad-y` | `24px` |
 | Right Inset | `--table-right-inset` | → `--content-inset`; `0px` once overflowing (TableView's own) |
 
 #### II. Known Issues
