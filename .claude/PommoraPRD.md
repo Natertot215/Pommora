@@ -179,11 +179,11 @@ A two-tier token system — primitives (one neutral base at opacities, accent, t
 
 #### MacOS Integration
 
-First-party where Electron reaches it — the native menu bar and dark mode are in the shell; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept.[^14]
+First-party where Electron reaches it — the native menu bar and dark mode are in the shell; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept.
 
 #### Distribution
 
-The current build is ad-hoc-signed. A distributable release adds electron-builder packaging, electron-updater auto-update over GitHub Releases for the direct build, and `@electron/notarize` for a Developer ID identity under the hardened runtime. A Mac App Store build runs sandboxed with security-scoped access to the user-picked Nexus folder — the same constraint a sandboxed native build carries, no feature blocker.[^15]
+The current build is ad-hoc-signed. A distributable release adds electron-builder packaging, electron-updater auto-update over GitHub Releases for the direct build, and `@electron/notarize` for a Developer ID identity under the hardened runtime. A Mac App Store build runs sandboxed with security-scoped access to the user-picked Nexus folder — the same constraint a sandboxed native build carries, no feature blocker.
 
 ---
 
@@ -219,5 +219,3 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 [^11]: [[InterfacePM]] §The Sidebar
 [^12]: [[NavigationPM]]
 [^13]: [[DesignSystemPM]] · [[InteractionPM]]
-[^14]: [[Mac-Integration]]
-[^15]: [[Distribution]]
