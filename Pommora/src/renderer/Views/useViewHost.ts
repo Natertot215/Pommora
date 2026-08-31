@@ -29,19 +29,12 @@ import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { writeContextValue } from './contextCellWrite'
-import { mergeOverrides, mergeStyleRecords } from './viewMerge'
+import { mergeStyleRecords } from './viewMerge'
 import { REASSIGNABLE_GROUP_TYPES } from './TableView/reassign'
 import { sameIds } from './creationOrder'
 
-export interface ViewHostSeam {
-  /** Read at fire time; identity by default. The renderer folds its local layers into a persist. */
-  foldOverrides?: { current: (v: SavedView) => SavedView }
-  flattenStructural: boolean
-  bandBucket: (key: string) => string | null
-  viewRootRef: { readonly current: HTMLElement | null }
-  onCreated: (created: { id: string; path: string }) => void
-}
-
+/** The renderer's four upward slots, read at fire time — its local layers reach the host without
+ *  a re-render. `flattenStructural` rides the seat instead: it is known before the host runs. */
 export interface ViewHostUpward {
   foldOverrides: { current: (v: SavedView) => SavedView }
   bandBucket: { current: (key: string) => string | null }
@@ -64,7 +57,7 @@ const stylesCaughtUp = (
 
 export function useViewHost(
   source: CollectionNode | SetNode,
-  seam: ViewHostSeam,
+  flattenStructural: boolean,
   upward: ViewHostUpward,
 ) {
   const tree = useSession((s) => s.tree)
@@ -147,8 +140,7 @@ export function useViewHost(
   const structuralGrouping = groupsStructurally(liveView.group, schema)
   // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch
   // must not reassign against it.
-  const subGrouped =
-    structuralGrouping && liveView.sub_group !== undefined && !seam.flattenStructural
+  const subGrouped = structuralGrouping && liveView.sub_group !== undefined && !flattenStructural
   const groupPropId =
     liveView.group?.kind === 'property'
       ? liveView.group.property_id
@@ -157,7 +149,7 @@ export function useViewHost(
         : undefined
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
-  const locationFsOrder = seam.flattenStructural && isLocationFsOrder(liveView)
+  const locationFsOrder = flattenStructural && isLocationFsOrder(liveView)
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
   const canRelocate = structuralGrouping && !subGrouped
   const structuralOrder = groupPropId === undefined && sortKeys === 0
@@ -186,12 +178,12 @@ export function useViewHost(
         view: liveView,
         schema,
         manualOrder,
-        flattenStructural: seam.flattenStructural,
+        flattenStructural,
         contextIds,
       }),
       setTree,
     }
-  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, seam.flattenStructural])
+  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
     // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
@@ -219,11 +211,8 @@ export function useViewHost(
   // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's
   // unsaved state. The renderer's fold ref adds its local layers at fire time; the explicit patch
   // wins last.
-  const foldedView = (): SavedView => {
-    const folded = mergeOverrides(liveView, {}, {}, collapsed, {})
-    const fold = seam.foldOverrides?.current
-    return fold ? fold(folded) : folded
-  }
+  const foldedView = (): SavedView =>
+    upward.foldOverrides.current({ ...liveView, collapsed_groups: [...collapsed] })
   const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
     void saveView({ ...foldedView(), ...patch }, opts)
   }
@@ -305,15 +294,15 @@ export function useViewHost(
     persistViewOrder,
     setManualOverride,
     rowBand,
-    bandBucket: seam.bandBucket,
+    bandBucket: (key) => upward.bandBucket.current(key),
     canReassign,
     groupPropId,
     groupPropType,
     setPaths,
     collapsed,
     toggleCollapse,
-    viewRootRef: seam.viewRootRef,
-    onCreated: seam.onCreated,
+    viewRootRef: upward.viewRootRef,
+    onCreated: (created) => upward.onCreated.current(created),
   }))
 
   if (!ctx || !tree) return null
