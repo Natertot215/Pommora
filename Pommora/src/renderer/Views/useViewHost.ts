@@ -312,15 +312,18 @@ export function useViewHost(
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
     if (revealingRef.current.has(id)) return
-    if (view.property_order.includes(id) && !view.hidden_properties.includes(id)) return
+    if (liveView.property_order.includes(id) && !liveView.hidden_properties.includes(id)) return
     revealingRef.current.add(id)
-    void saveView({ ...foldedView(), ...unhide(view, id) }).finally(() =>
-      revealingRef.current.delete(id),
-    )
+    const patch = unhide(liveView, id)
+    setOrderOverride(patch.property_order)
+    setHiddenOverride(patch.hidden_properties)
+    void saveView({ ...foldedView(), ...patch }).finally(() => revealingRef.current.delete(id))
   }
   const hideProperty = (id: string): void => {
-    if (view.hidden_properties.includes(id)) return
-    persistView(hideShown(view, id))
+    if (liveView.hidden_properties.includes(id)) return
+    const patch = hideShown(liveView, id)
+    setHiddenOverride(patch.hidden_properties)
+    persistView(patch)
   }
 
   const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {

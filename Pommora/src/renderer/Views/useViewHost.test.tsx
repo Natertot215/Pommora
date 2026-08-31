@@ -190,6 +190,14 @@ describe('the reset keys', () => {
     expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
   })
 
+  it('hide-then-hide: the second write still carries the first', async () => {
+    const seam = seamWith()
+    await mount(collection(), seam)
+    act(() => api?.hideProperty('prop_status'))
+    await act(async () => api?.hideProperty('_title'))
+    expect(lastSavedView().hidden_properties).toEqual(['prop_status', '_title'])
+  })
+
   it('the order/hidden catch-up drop fires on sameIds', async () => {
     const seam = seamWith()
     await mount(collection(), seam)
