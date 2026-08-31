@@ -5,7 +5,7 @@ import {
   findOption,
   groupLabel,
   optionLabel,
-} from '@renderer/Properties/Editing/cellResolve'
+} from '@renderer/Properties/Assignment/cellResolve'
 import { EMPTY_ASSET_MAP, UNGROUPED, type CollectionNode, type ResolvedGroup } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'

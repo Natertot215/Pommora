@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
+import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import { contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
 

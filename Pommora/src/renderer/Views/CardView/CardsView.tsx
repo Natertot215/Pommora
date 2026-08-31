@@ -67,7 +67,7 @@ import { resolveView } from '../Pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
 import { useActiveView } from '../useActiveView'
 import { useViewOrders } from '../useViewOrders'
-import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
+import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import { contextIdsOf } from '@renderer/Properties/contextIdentity'
 import { resolveContainerSchema } from '../Pipeline/pickView'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
@@ -77,7 +77,7 @@ import {
   buildSetIcons,
   buildSetNames,
   buildSetPaths,
-} from '@renderer/Properties/Editing/cellResolve'
+} from '@renderer/Properties/Assignment/cellResolve'
 import { resolveBandHead } from '../GroupBand'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { BandDnd, type BandDrop } from '../BandDnd'
@@ -98,7 +98,7 @@ import {
   addEntriesFor,
   orderAddableEntries,
   shownColumnsFor,
-} from '@renderer/Properties/Editing/cardValueInput'
+} from '@renderer/Properties/Assignment/cardValueInput'
 import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { IconPicker } from '@renderer/Settings/IconPicker'

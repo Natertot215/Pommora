@@ -36,7 +36,7 @@ import {
   groupsStructurally,
   subHiddenKey,
 } from '@renderer/Views/Pipeline/group'
-import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Properties/Editing/formatValue'
+import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Properties/Assignment/formatValue'
 import type { Band } from '@renderer/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '@renderer/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
@@ -48,7 +48,7 @@ import { propertyTypeIconName } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
 import * as gp from './groupFrame.css'
-import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
+import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 

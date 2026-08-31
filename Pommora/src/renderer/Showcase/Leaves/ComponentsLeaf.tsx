@@ -7,7 +7,7 @@ import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePic
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuSurface } from '@renderer/DesignSystem/Menus'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
-import { condensedDate, formatDate } from '@renderer/Properties/Editing/formatValue'
+import { condensedDate, formatDate } from '@renderer/Properties/Assignment/formatValue'
 import { Label } from '@renderer/DesignSystem/Labels'
 
 function PopupButton({

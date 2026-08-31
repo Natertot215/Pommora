@@ -9,20 +9,20 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { GhostSuppress } from '@renderer/DesignSystem/Interactions/ghostAnchor'
-import { Cell } from '@renderer/Properties/Editing/Cell'
+import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
-import { parseEditorValue } from '@renderer/Properties/Editing/cardValueInput'
+import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
-import { numberDivisor } from '@renderer/Properties/Editing/formatValue'
-import { sharedValueClickAction } from '@renderer/Properties/Editing/valueClick'
+import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
+import { numberDivisor } from '@renderer/Properties/Assignment/formatValue'
+import { sharedValueClickAction } from '@renderer/Properties/Assignment/valueClick'
 import {
   fileChipIndex,
   pickFileInto,
   runFileMenuAction,
-} from '@renderer/Properties/Editing/filePick'
+} from '@renderer/Properties/Assignment/filePick'
 
 export function CardValue({
   row,

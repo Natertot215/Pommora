@@ -369,7 +369,7 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 
 ### Progress
 
-- [ ] **Phase 1** — Final Addresses · base `<commit>`
+- [ ] **Phase 1** — Final Addresses · base `da5ce413`
   - [ ] Task 1 — Editing → Assignment · `<commit>`
   - [ ] Task 2 — ViewRenderer → ViewHost · `<commit>`
 - [ ] **Phase 2** — The Host
