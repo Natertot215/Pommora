@@ -56,6 +56,7 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 **Global Constraints (every task inherits these):**
 
 - The three gates green per task commit; `set -o pipefail` on anything piped for display.
+- **Every phase gate dispatches a simplification review** (code-simplifier over `<base>..HEAD`, scoped to the phase's paths) **whose brief also instructs it to flag any non-simplicity bugs it finds along the way** — flagged findings enter the same verify-then-fix-or-ruling discipline as a reviewer's, never silently folded. Simplification always precedes the break-attempt. Hard requirement; no phase closes without it.
 - Zero newly-authored comments; a hoisted block carries at most the one load-bearing why it already had; net comment-line count across `TableView.tsx` + `CardsView.tsx` + `ViewHost.tsx` + `useViewHost.ts` strictly below the Task 3 baseline at closeout (metric: full-line `//` + block-comment lines).
 - `KNOB` and `(Nathan's call)` markers survive verbatim — grep before and after every simplification dispatch.
 - Stage explicit paths only; bundle Nathan's unattributed doc/style edits into the task commit at hand, never revert them.
@@ -143,6 +144,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
 #### Gate 1 — addresses final, behavior unmoved
 
 - [ ] Gates green; every Task 1–2 box ticked against a watched result; test count unmoved from the phase base.
+- [ ] Simplification review dispatched against `<base>..HEAD` (the rename sweep's residue — dead re-exports, import churn), briefed to also flag any non-simplicity bugs it finds; every flag verified then fixed or ruled.
 - [ ] Progress hashes filled in.
 
 ---
@@ -287,7 +289,7 @@ Empty Sets are present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so 
 #### Gate 2 — one host, two renderers, drift dead
 
 - [ ] Gates green; every Now count re-run against its control; every Task 3–5 box ticked against a watched result.
-- [ ] Simplification (code-simplifier) then review (feature-dev:code-reviewer) dispatched against `<base>..HEAD` scoped to `Views/`, `Properties/`, the two sheets, `viewTile.css.ts` — reports cite files inside it; KNOB grep unmoved (2) after each dispatch.
+- [ ] Simplification (code-simplifier, briefed to also flag any non-simplicity bugs it finds) then review (feature-dev:code-reviewer) dispatched against `<base>..HEAD` scoped to `Views/`, `Properties/`, the two sheets, `viewTile.css.ts` — reports cite files inside it; KNOB grep unmoved (2) after each dispatch.
 - [ ] Every concern fixed or carrying a recorded ruling.
 - [ ] The app-open pass driven live (my own instance, reverted after): the Acceptance list, both renderers.
 - [ ] Progress hashes filled; divergences rewrote dependents before their commits.
@@ -411,7 +413,7 @@ Everything else is the standard below.
 
 **The passes**
 
-- [ ] Simplification + comment pass over the whole range, then code review, in that order.
+- [ ] Simplification (briefed to also flag non-simplicity bugs) + comment pass over the whole range, then code review, in that order.
 - [ ] Delivery Claim written, then checked by a neutral verifier against Bundle 6's text.
 - [ ] Build-breaking attack over the full range; every finding from every pass fixed or carrying a defensible ruling.
 
