@@ -6,7 +6,7 @@ import { containerOwner } from './Scope'
 export function ContainerView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   return (
     <InterfaceScaffold owner={containerOwner(source)}>
-      <ViewHost source={source} />
+      <ViewHost key={source.id} source={source} />
     </InterfaceScaffold>
   )
 }

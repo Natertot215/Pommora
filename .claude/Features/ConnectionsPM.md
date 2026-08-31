@@ -44,7 +44,7 @@ Clicking a connection opens the page, routed by **Open Connections In Preview** 
 
 Right-clicking any link, wherever it sits, opens one native menu built from one model (`src/shared/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
 
-| | Page connection | Website link |
+| Action | Page Connection | Website Link |
 | --- | --- | --- |
 | **Open** | Open Preview · Open New Tab (reads *Open* where the page already holds a tab; each dropped where its own surface is already showing the page) | Open Preview · Open Browser (the in-app browser and the system one) |
 | **Author** (editable surfaces) | Add Title / Edit Title · Edit Link | Rename · Edit Link |

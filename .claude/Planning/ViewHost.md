@@ -389,13 +389,14 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
   - [x] Task 4 — Cards converts · `443f0f7a`
   - [x] Task 5 — root states · `17a43efd`
 - [ ] **Phase 3** — Closeout
-  - [ ] Task 6 — comment pass + attack · `<commit>`
+  - [x] Task 6 — comment pass + attack · `<commit>` · comments 339 → 307 summed (host 21, Table 280, Cards 4, seat 2); attack: 3 Low / 11 killed — the unkeyed content-view seat painted one frame of the prior container's layers (the old renderer key had reset them synchronously) → `ContainerView` keys `ViewHost` by `source.id`, the inner renderer keys retire; the seat's duplicate schema walk → the seat reads the view type with an empty schema (a minted default is a table regardless); the locked-tile hide/reveal pin (a refused write under an optimistic layer) recorded for Nathan — Table's `commitHide` has carried the same composition all along
   - [ ] Task 7 — claim verified · `<commit>`
   - [ ] Task 8 — the record · `<commit>`
 
 ### Rulings
 
 - 08-31-2026, Nathan: wording "Loading…" / "No pages here", shared at the root · no refused-write feedback · Cards' unification behavior changes signed · host-owned fold contract · `ViewHost` the name · `Assignment` the folder · proceed ahead of any further RendererRework motion · every phase gate's simplification review dual-briefed to flag non-simplicity bugs · Set Cards off keeps its blank pane, never the message · filtered-empty shares the one wording · the load-error state stays deferred.
+- 08-31-2026, execution: `hideProperty`/`revealProperty` compute from `liveView` and set the host's hidden/order layers (the reviewer's find; the saved-view base dropped a concurrent pending hide). Open for Nathan: in a **locked** view tile a Cards hide/reveal now pins on screen until reload because the refused write never round-trips — the same composition Table's `commitHide` already had; leave consistent, or drop the optimistic layer under refusal for both.
 - 08-31-2026, review round 1 (build-breaking, post-simplification): six findings + four smaller, all verified at their cited lines and folded — the sub-Set reset leak (`[source.id, view.id]`), the type-switch gate corruption (seam-shaped formulas), `refreshValues` on the API, the Task 4 pin inversion corrected (Cards adopts Table's echo-drop), the renderer-aware empty exemption (`setChrome`), the true test census. None rejected. Two unknowns routed to the user pass (the unmount-transition beat; a create reply into an unmounted renderer is a silent no-op with trivial damage — accepted).
 
 ### Open Against Later Tasks
