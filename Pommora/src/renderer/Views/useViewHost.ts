@@ -1,8 +1,3 @@
-// The one view host. Everything a renderer needs before it can draw lives here exactly once:
-// the value stack, schema + active view, the optimistic layers, band ordering, collapse, the
-// pipeline invocation, the writers, the persist fold, and the creation engine. A renderer adds
-// presentation plus the five-field seam — nothing else.
-
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type {
   CollectionNode,
@@ -167,11 +162,9 @@ export function useViewHost(
     groupingKeyOf(view),
   )
 
-  // Host layers reset on the id STRINGS, never `[source]` identity (which would break
-  // useBandOrdering's echo-survival). `source.id` must be in the array: every sub-Set deeper than
-  // depth 1 shares the DEFAULT_VIEW_ID sentinel and the host is unkeyed, so on `[view.id]` alone a
-  // layer would leak between sibling sub-Sets and a later persist would write one container's
-  // config into the other's sidecar.
+  // Host layers reset on the id STRINGS, never `[source]` identity (breaks useBandOrdering's
+  // echo-survival) — and `source.id` must be in the array, since sibling sub-Sets below depth 1
+  // share the DEFAULT_VIEW_ID sentinel and would leak layers between each other on `[view.id]` alone.
   useEffect(() => {
     setOrderOverride(null)
     setHiddenOverride(null)
@@ -180,19 +173,14 @@ export function useViewHost(
     resetBand()
     setCollapsed(new Set(view.collapsed_groups ?? []))
   }, [source.id, view.id])
-  // A fresh tree (a sidebar reorder, or this view's own write round-tripping back) carries the
-  // canonical page_order, so drop the optimistic MANUAL ORDER it was masking — canon has caught up.
-  // VALUES deliberately do NOT reset here: a PageNode carries no property value and loadValues
-  // never re-reads mid-session, so clearing valueOverride on a `source`-identity change would
+  // A fresh tree carries canonical page_order, so drop the optimistic MANUAL ORDER it was masking —
+  // VALUES deliberately do NOT reset here, since clearing valueOverride on this identity change would
   // revert a just-assigned value whenever a watcher echo re-mints `source` (the assign-vanish).
-  // The value override clears+reloads only on a real container switch, above.
   useEffect(() => {
     setManualOverride(null)
   }, [source])
-  // The Visibility pane writes property_order / hidden_properties from OUTSIDE the host. Once the
-  // canonical view catches an override up (this view's own write round-tripped), drop it — a pinned
-  // override would mask the pane's later writes and fold stale state back over them on the next
-  // persist. Styles drop the same way, key-for-key.
+  // Drop an override once the canonical view catches it up (this view's own write round-tripped) —
+  // a pinned override would otherwise mask a later external write (e.g. the Visibility pane) on the next persist.
   useEffect(() => {
     if (orderOverride && sameIds(orderOverride, view.property_order)) setOrderOverride(null)
     if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
