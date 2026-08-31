@@ -12,14 +12,14 @@ Connections
 └── Prospects
 ```
 
-A **Connection** is a link from one Page to another, written in the page's Markdown body. Two syntaxes spell one — the wikilink `[[Title]]` and the markdown link `[Alias](Title)` whose target names a page — and the word covers both. A connection may also be held as the whole value of a Link property, where it reads as a connection rather than an address. Connections are the only page-to-page relation Pommora has; Contexts are the relation layer, and there is no relation-type property. 
+A **Connection** is a link from one Page to another, written in the page's Markdown body. Two syntaxes spell one — the wikilink `[[Title]]` and the Markdown link `[Alias](Title)` whose target names a page — and the word covers both. A connection may also be held as the whole value of a Link property, where it reads as a connection rather than an address. Connections are the only page-to-page relation Pommora has; Contexts are the relation layer, and there is no relation-type property. 
 
 ### Syntax + Scope
 
 The grammar lives in `src/shared/connections.ts` (the wikilink) and `src/shared/links.ts` (the markdown link), shared code both processes read so the editor's tokenizer and main's rename rewriter can never disagree about what a link is. One normalization — trim, case-fold, NFC — is applied to every title on every side, so the scanner, the resolver, and the uniqueness check always agree.
 
 - **Wikilinks** — `[[Title]]` resolves by its title. `[[Title|Alias]]` shows the alias and still resolves by the title; the title and its pipe join the hidden markers and reveal with the caret like any other syntax. A title can't contain `|`, and the name rule rejects one at creation.
-- **Markdown links** — `[Label](Title)` names a page through its target, percent-encoded so spaces and parentheses survive. A target carrying a scheme or a path separator is addressing something outside the Nexus and is never read as a page title, so a URL can't reach a page by its last segment. The label is the author's own text.
+- **Markdown links** — `[Label](Title)` names a page through its target, percent-encoded so spaces and parentheses survive. A target that carries a scheme or a path separator addresses something outside the Nexus and is never read as a page title, so a URL can't reach a page by its last segment. The label is the author's own text.
 - **Scope** — Pages are the only targets. Spaces are reached through Context links, and Tasks and Events aren't targets. A `!`-prefixed form standing alone on a line is not a connection: `![[Title]]` is a page embed and `![Label](url)` a webpage embed, each rendered as a live tile.[^1]
 
 ### Resolution
@@ -79,6 +79,7 @@ One picker (`MarkdownPM/autocomplete.ts`, driven by `useConnectionAutocomplete`)
 - **Backlinks** — a surface listing every Page that links to the current one. The content index already records mentions; the surface doesn't exist.
 - **Alias management** — curating a Page's remembered aliases in one place rather than forgetting them one at a time.
 - **Wider targets** — Tasks and Events, heading and block anchors (`#`, `#^`).
+
 
 [^1]: [[MarkdownPM]] §Embeds · [[WebviewPM]]
 [^2]: [[PropertiesPM]] §File

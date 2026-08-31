@@ -33,13 +33,17 @@ Design System
 └── Pending
 ```
 
-The Pommora design system — the code counterpart of the Figma "Pommora - React" library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
+The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
 - **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Util/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
 - **Vocabulary:** Five words name the surfaces. A **Window** is a floating window; a **Pane** is a surface floating over another — the sidebar, the inspector, the side slots, the hover pane, the autocomplete; a **Menu** is a surface hung off a trigger; a **Frame** is one page inside a Menu's or Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, the Settings categories; a **Picker** chooses a value.
+1. 
+2. 
+3. 
+4. 
 
 ### Token Atlas
 
@@ -200,7 +204,7 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 | App Inset         | `--app-inset` · `--app-radius`                 | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
 | Surface Inset     | `--surface-inset`                              | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`) |
 | Row Tokens        | `--row-height-standard` · `--row-height-compact` · `--row-width-standard` · `--row-width-compact` | `6px` · `4px` · `6px` · `4px` — a row's vertical and horizontal padding in its two sizes; a row's height is never declared, it is the ramp's line plus the pair (`Menus/menu-base.css.ts`) |
-| Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | what a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0` |
+| Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | What a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0` |
 | Content Start     | `--content-start` · `--content-start-right`    | `calc(clearance + --content-edge)` on each side — where a page's chrome starts: the banner title, the Subfield, NavView's head and rows (`styles.css`) |
 | Rail Inset        | `RAIL_INSET` · `--rail-inset`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
@@ -238,7 +242,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the hover pane, the autocomplete). |
 | Surface       | `Surface`                                     | GlassPane as the app root, the floating overlay over the main view.     |
 | GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface, and opt-in `notch` for the beaked dropdown geometry. |
-| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | That surface carrying the 90% `--bg-window` body — every floating window and the image picker. |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The surface carrying the 90% `--bg-window` body — every floating window and the image picker. |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
 | Beak geometry | `notchGeometry` · `BEAK_RADIUS`               | The opt-in notched outline `GlassSurface`'s `notch` clips and strokes.   |
@@ -326,30 +330,29 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 #### Pickers
 
-| Title          | Export                                      | What it is                                                                                                           |
-| -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. The wikilink autocomplete and the hover pane ride it too, on pane glass. |
-| CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
-| ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
-| IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
-| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
-| TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
+| Title | Export | What it is |
+| ------------- | -------------------- | ------------------------------------------------------------------- |
+| PickerMenu | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. |
+| CalendarPicker | `CalendarPicker` | Date and time selection. |
+| ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
+| IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
+| ImagePicker | `ImagePicker` | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
+| TextPicker | `TextPicker` | A typed-value picker in the shared pane. |
 
 #### Fields
-
 `Fields/` — the input surfaces and the runs that sit inside them; `SegmentRun.tsx` lives here because a run of values is a field's content, not a label's.
 
-| Title          | Export                                                                                                       | What it is                                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| InputField     | `InputField` · `FieldEdit`                                                                                   | The field box — `boxed` or `bordered` chrome.                                                                 |
-| PathField      | `PathField` · `BrowseButton`                                                                                 | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
-| SegmentRun     | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR`                                                         | Values standing side by side inside a field; segment-divided.                                                 |
-| Chrome         | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio. |
-| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                   | One inset-shadow channel; presets set its color.                                                            |
-| Placeholder    | `placeholder`                                                                                                | The ghost-text tone.                                                                                          |
-| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                         | The controlled filter input the list surfaces share.                                                          |
-| EditableInput  | `EditableInput`                                                                                              | Enter commits, Escape abandons, blur settles.                                                                 |
-| RenamableLabel | `RenamableLabel`                                                                                             | The inline-rename swap.                                                                                       |
+| Title | Export | What it is |
+| ------------------ | ----------------------------------- | ----------------------------------------------- |
+| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome. |
+| PathField | `PathField` · `BrowseButton` | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
+| SegmentRun | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR` | Values standing side by side inside a field; segment-divided. |
+| Chrome | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio. |
+| Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set its color. |
+| Placeholder | `placeholder` | The ghost-text tone. |
+| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |
+| EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
+| RenamableLabel | `RenamableLabel` | The inline-rename swap. |
 
 #### Side Pane
 
@@ -379,14 +382,14 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 Composite, feature-facing shells listed by reference; their code stays in the app.
 
-| Title             | Location                                                                                 | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tile chassis      | `SurfacePM/block-tile-base.css`                                                          | The resizable tile frame SurfacePM's tiles and MarkdownPM's embeds share.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| WindowBase        | app: `Windows/window-base.tsx` · `window-base.css`                                       | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
-| Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/`                                                             | [[InterfacePM]]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Tabs              | app: `Tabs/`                                                                             | [[NavigationPM]]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Cards             | app: `Cards/` — `Card.tsx` · `cards.css`                                                 | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` gives the cover `--thumb-share` of the height and the title the rest, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`; `CardPlaceholder` when there is none) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
-| Tables            | app: `Tables/` — `Table.css` · `table-tokens.css` · `ColumnHeader` · `tableDnd`; the cell renderers are `Properties/Editing/` | The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types. A host wears `.table`, lays its own grid on `--cols`, rebinds the heading fill and divider in its scope, and states `is-clear` for a bare heading. [[ViewTypesPM]] carries the sheet.                                                                                                                                                                                                    |
+| Title | Location | What it is |
+| ------------------- | ----------------------- | ---------------------------------------------------------- |
+| Tile chassis | `SurfacePM/block-tile-base.css` | The resizable tile frame SurfacePM's tiles and MarkdownPM's embeds share. |
+| WindowBase | app: `Windows/window-base.tsx` · `window-base.css` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
+| Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
+| Tabs | app: `Tabs/` | [[NavigationPM]] |
+| Cards | app: `Cards/` — `Card.tsx` · `cards.css` | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` gives the cover `--thumb-share` of the height and the title the rest, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`; `CardPlaceholder` when there is none) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
+| Tables | app: `Tables/` — `Table.css` · `table-tokens.css` · `ColumnHeader` · `tableDnd`; the cell renderers are `Properties/Editing/` | The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types. |
 
 ### Interactions
 

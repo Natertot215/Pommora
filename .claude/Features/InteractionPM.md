@@ -40,7 +40,7 @@ The page banner and title zone slides up under the toolbar on scroll: a scroll-t
 
 #### II. Floating Windows
 
-Every in-app window opens and closes on the `window-in` / `window-out` scale-fade in `window-base.css`, on `--duration-fast`, its exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` in `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
+Every in-app window opens and closes on the `window-in` / `window-out` scale-fade in `window-base.css`, on `--duration-fast`, its exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` ixn `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
 
 ### Primitives
 
