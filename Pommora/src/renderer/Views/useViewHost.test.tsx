@@ -1,8 +1,4 @@
 // @vitest-environment jsdom
-// The host's own laws, pinned at the hook: the persist fold (collapse + live style patch + the
-// renderer's fold ref, explicit patch last) · the reset keys ([source.id, view.id] for host layers —
-// sibling sub-Sets share the DEFAULT_VIEW_ID sentinel — [source] identity for the manual-order drop,
-// [source.path] for values) · the sameIds catch-up drop · the fire-time fold read.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
