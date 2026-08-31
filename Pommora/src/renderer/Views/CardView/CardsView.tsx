@@ -10,9 +10,8 @@ import {
 } from 'react'
 import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
-import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
-import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@shared/views'
+import type { PropertyValue } from '@shared/propertyValue'
+import { type CardBanner, isCompact, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
@@ -43,16 +42,9 @@ import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { navKey } from '@renderer/Navigation/navRecents'
 import { findCollectionForSet } from '@renderer/Interface/Scope'
-import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
-import { mergeStyleRecords } from '../viewMerge'
-import { resolveColumns } from '../Pipeline/columns'
-import {
-  contextOptionsFor as contextOptionsForSpaces,
-  type ContextOption,
-} from '@renderer/Properties/contextOptions'
-import { flattenContainer, groupsStructurally, subtreeIds } from '../Pipeline/group'
-import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
+import type { ViewHostApi } from '../useViewHost'
+import { flattenContainer, subtreeIds } from '../Pipeline/group'
 import {
   GHOST_DWELL_MS,
   GHOST_TRAVEL_HOLD_MS,
@@ -61,30 +53,16 @@ import {
   useGhostAnchor,
 } from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
-import { useViewCreation } from '../useViewCreation'
-import { declaredType } from '@renderer/Properties/value'
-import { resolveView } from '../Pipeline/resolveView'
-import { useValuesEpoch } from '../useValuesEpoch'
-import { useActiveView } from '../useActiveView'
-import { useViewOrders } from '../useViewOrders'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
-import { contextIdsOf } from '@renderer/Properties/contextIdentity'
-import { resolveContainerSchema } from '../Pipeline/pickView'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
-import { writeContextValue } from '../contextCellWrite'
-import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../TableView/reassign'
-import {
-  buildSetIcons,
-  buildSetNames,
-  buildSetPaths,
-} from '@renderer/Properties/Assignment/cellResolve'
+import { groupKeyToValue } from '../TableView/reassign'
 import { resolveBandHead } from '../GroupBand'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands } from '../bandDndModel'
-import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
+import { bandReorderPatch } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
-import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../../treeIndex'
 
@@ -100,7 +78,6 @@ import {
   shownColumnsFor,
 } from '@renderer/Properties/Assignment/cardValueInput'
 import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
-import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableTitle } from '@renderer/Actions/RenamableTitle'
 import { titleInput } from '@renderer/DesignSystem/Menus'
@@ -115,137 +92,57 @@ const coverOf = (row: ViewRow): string | undefined =>
 
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
-export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const assetMap = useSession((s) => s.assetMap)
-  const select = useSession((s) => s.select)
+export function CardsView({
+  source,
+  host,
+}: {
+  source: CollectionNode | SetNode
+  host: ViewHostApi
+}): React.JSX.Element {
+  const {
+    view,
+    liveView,
+    effectiveValues,
+    columns,
+    groups,
+    setTree,
+    ctx,
+    setNames,
+    setIcons,
+    setPaths,
+    rowById,
+    rowBand,
+    collapsed,
+    toggleCollapse,
+    structuralGrouping,
+    groupPropId,
+    groupPropType,
+    canReassign,
+    canReorderWithin,
+    canRelocate,
+    structuralOrder,
+    dragDisabled,
+    viewOrders,
+    persistViewOrder,
+    setManualOverride,
+    setStylePatch,
+    hideProperty,
+    revealProperty,
+    commitBand,
+    setProperty,
+    commitValue,
+    contextOptionsFor,
+    refreshValues,
+    creation,
+    mutate,
+    select,
+    tree,
+  } = host
   const openPreview = useSession((s) => s.openPreview)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
-  const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
 
-  useEffect(() => {
-    let canceled = false
-    setValueOverride(null)
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!canceled) setValues(v)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [source.path])
-
-  const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
-  const { view } = useActiveView(source, schema)
-  const { bandPatch, commitBand, resetBand } = useBandOrdering(
-    (patch) => persistView(patch),
-    groupingKeyOf(view),
-  )
-  const [stylePatch, setStylePatch] = useState<Record<string, ColumnStyle> | null>(null)
-  useEffect(() => setStylePatch(null), [source.path, view.id])
-  const liveView = useMemo(() => {
-    const banded = bandPatch ? { ...view, ...bandPatch } : view
-    return stylePatch
-      ? { ...banded, column_styles: mergeStyleRecords(view.column_styles, stylePatch) }
-      : banded
-  }, [view, bandPatch, stylePatch])
-  const saveView = useSaveView(source)
-  const mutate = useSession((s) => s.mutate)
-
-  const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
-  useValuesEpoch(source.path, setValues, setValueOverride)
-  const effectiveValues = useMemo(
-    () => (valueOverride ? { ...values, ...valueOverride } : values),
-    [values, valueOverride],
-  )
-  const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    const prior = effectiveValues[row.id]
-    const patched = applyValueAtRoot(
-      (prior ?? { id: row.id }) as Record<string, unknown>,
-      def,
-      value,
-    ) as PageFrontmatter
-    setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
-    void mutate({ op: 'setProperty', path: row.path, propertyId, value })
-  }
-  const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
-    if (column.kind === 'context') {
-      const ids = value?.kind === 'context' ? value.value : []
-      writeContextValue(
-        row,
-        column.id,
-        ids,
-        effectiveValues[row.id] ?? { id: row.id },
-        setValueOverride,
-        mutate,
-      )
-      return
-    }
-    setProperty(row, column.id, value)
-  }
-  const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
-    if (column.kind !== 'context' || !tree) return null
-    return contextOptionsForSpaces(column.id, tree)
-  }
-  const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
-    void saveView({ ...liveView, ...patch }, opts)
-  }
-  const setColumnStyle = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
-    const merged = { ...stylePatch?.[colId], [key]: value } as ColumnStyle
-    setStylePatch((prev) => ({ ...prev, [colId]: merged }))
-    persistView({
-      column_styles: mergeStyleRecords(view.column_styles, { ...stylePatch, [colId]: merged }),
-    })
-  }
-  const revealingRef = useRef<Set<string>>(new Set())
-  const revealProperty = (id: string): void => {
-    if (revealingRef.current.has(id)) return
-    if (view.property_order.includes(id) && !view.hidden_properties.includes(id)) return
-    revealingRef.current.add(id)
-    void saveView({ ...liveView, ...unhide(view, id) }).finally(() =>
-      revealingRef.current.delete(id),
-    )
-  }
-  const hideProperty = (id: string): void => {
-    if (view.hidden_properties.includes(id)) return
-    persistView(hideShown(view, id))
-  }
-
-  const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
-  const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
   useEffect(() => setSetOrderOverride(null), [source])
-  useEffect(() => setManualOverride(null), [source.path])
-  const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
-  const sortedOrGrouped = sortKeys > 0 || view.group != null
-  const groupPropId = view.group?.kind === 'property' ? view.group.property_id : undefined
-  const structuralOrder = groupPropId === undefined && sortKeys === 0
-  const locationFsOrder = isLocationFsOrder(view)
-  const manualOrder = locationFsOrder
-    ? undefined
-    : resolveManualOrder(
-        sortedOrGrouped,
-        manualOverride,
-        structuralOrder ? undefined : viewOrders[view.id],
-      )
-
-  const contextIds = contextIdsOf(tree)
-  const { groups, setTree } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(source, effectiveValues)
-    return {
-      groups: resolveView({
-        rows,
-        setTree,
-        view: liveView,
-        schema,
-        manualOrder,
-        flattenStructural: true,
-        contextIds,
-      }).groups,
-      setTree,
-    }
-  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
 
   const reorderSets = (activeId: string, overId: string): void => {
     const order = reorderIds(
@@ -263,35 +160,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     )
   }
 
-  const setNames = useMemo(() => buildSetNames(source), [source])
-  const setIcons = useMemo(() => buildSetIcons(source), [source])
-  const ctx = useMemo(
-    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    [tree?.contexts, schema, assetMap],
-  )
-  const columns = useMemo(
-    () => resolveColumns(view, schema, contextIds),
-    [view, schema, contextIds],
-  )
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const structural = useMemo(() => groupsStructurally(view.group, schema), [view.group, schema])
+  const structural = structuralGrouping
   const flatMode = view.group?.kind === 'flat'
-
-  const [collapsed, setCollapsed] = useState<Set<string>>(
-    () => new Set(view.collapsed_groups ?? []),
-  )
-  useEffect(() => {
-    setCollapsed(new Set(view.collapsed_groups ?? []))
-    setManualOverride(null)
-    resetBand()
-  }, [view.id, resetBand])
-  const toggleCollapse = (key: string): void => {
-    const next = new Set(collapsed)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setCollapsed(next)
-    persistView({ collapsed_groups: [...next] }, { viewState: true })
-  }
 
   const banner: CardBanner = view.card_banner ?? 'cover'
   const baseSets = source.sets ?? []
@@ -323,9 +194,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     setAddPicker(req)
   }
-  const refreshValues = (): void => {
-    void window.nexus.loadValues(source.path).then((v) => setValues(v))
-  }
   const pickersOpenRef = useRef(false)
   const iconPickersOpen = useRef(0)
   const holdForIconPicker = (open: boolean): void => {
@@ -349,34 +217,16 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
   const beginRename = useSession((s) => s.beginRename)
-  const { bandAdd, createAfter } = useViewCreation(() => ({
-    source,
-    view,
-    schema,
-    values,
-    setValueOverride,
-    effectiveValues,
-    structuralOrder,
-    viewOrders,
-    persistViewOrder,
-    setManualOverride,
-    rowBand,
-    bandBucket: (key: string) => key,
-    canReassign,
-    groupPropId,
-    groupPropType,
-    setPaths,
-    collapsed,
-    toggleCollapse,
-    viewRootRef: rootRef,
-    onCreated: (created) => {
-      setPendingSeat(null)
-      beginRename(created.path, true, 'detail')
-    },
-  }))
+  const { bandAdd, createAfter } = creation
+  host.seam.foldOverrides.current = (v) => v
+  host.seam.bandBucket.current = (key) => key
+  host.seam.onCreated.current = (created) => {
+    setPendingSeat(null)
+    beginRename(created.path, true, 'detail')
+  }
   const handlers = {
     commitValue,
-    setColumnStyle,
+    setStylePatch,
     contextOptionsFor,
     openPage,
     revealProperty,
@@ -393,7 +243,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) =>
         handlersRef.current.commitValue(row, column, value),
       onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) =>
-        handlersRef.current.setColumnStyle(colId, key, value),
+        handlersRef.current.setStylePatch(colId, key, value),
       contextOptionsFor: (column: ResolvedColumn) => handlersRef.current.contextOptionsFor(column),
       onOpen: (row: ViewRow, newTab: boolean) => handlersRef.current.openPage(row, newTab),
       onReveal: (id: string) => handlersRef.current.revealProperty(id),
@@ -421,16 +271,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   pickersOpenRef.current = valuePicker !== null || addPicker !== null
-  const { rowById, rowBand } = useMemo(() => {
-    const byId = new Map<string, ViewRow>()
-    const band = new Map<string, string>()
-    for (const g of groups)
-      for (const r of flattenGroups([g])) {
-        byId.set(r.id, r)
-        band.set(r.id, g.key)
-      }
-    return { rowById: byId, rowBand: band }
-  }, [groups])
 
   const feel = DEFAULT_FEEL
   const anyNaming = useSession((s) => s.renamingPath !== null)
@@ -483,12 +323,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     })
   }
 
-  const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
-  const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
-  const canRelocate = structural
-  const setPaths = useMemo(() => buildSetPaths(source), [source])
-  const canReorderWithin = sortKeys < 2 && !locationFsOrder
-
   const bands = useMemo(
     () => (flatMode ? [] : flattenBands(groups, collapsed)),
     [flatMode, groups, collapsed],
@@ -523,7 +357,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     })
     if (patch) commitBand(patch)
   }
-  const cardDragEnabled = canReorderWithin || canReassign || canRelocate
+  const cardDragEnabled = !dragDisabled
   const bandRowsWithout = (bandKey: string, activeId: string): ViewRow[] =>
     flattenGroups(groups.filter((g) => g.key === bandKey)).filter((r) => r.id !== activeId)
   const structuralSlotFor = (zoneId: string, index: number, activeId: string): number | null => {
@@ -626,7 +460,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   return (
     <GhostSuppress.Provider value={ghostApi.suppressWrap}>
       <div
-        ref={rootRef}
+        ref={(el) => {
+          rootRef.current = el
+          host.seam.viewRootRef.current = el
+        }}
         className={cx('cards-view', banner === 'none' && 'is-compact')}
         data-view-id={view.id}
         style={{ '--card-scale': view.card_size ?? 1 } as React.CSSProperties}
