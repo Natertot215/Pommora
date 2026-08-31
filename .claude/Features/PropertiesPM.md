@@ -112,7 +112,7 @@ Context links are the relation layer. They store as parenthesized title keys at 
 
 ### Auto-Managed Properties
 
-Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page; pages may also carry `cover:` which assigns their banners. A schema edit is not a page edit: renaming a property, changing its type, or reordering an assignment leaves every member's `modified_at` untouched.[^7]
+Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page; pages may also carry `cover:` which assigns their banners. A schema edit is not a page edit: renaming a property or reordering an assignment leaves every member's `modified_at` untouched.[^7]
 
 ```yaml
 PageID:
@@ -125,7 +125,7 @@ cover:
 
 What holds across every type: the assign surface, the mutations and their safety, validation, and the label vocabulary.
 
-**The Property Frame.** The Properties frame of the toolbar's Settings menu (`src/renderer/Properties/PropertyFrame.tsx`) is the assign surface for a Collection: the assigned properties on top, each opening its per-type editor, and an **All Properties** disclosure pinned to the bottom listing every unassigned registry definition in the nexus order, each promotable by its `+` or by dragging into the assigned group. Dragging within a group reorders it — the Collection's order above, the nexus order below — and dragging an assigned row out removes it. The frame's `+` creates: it mints into the registry, seeds per-type options, and assigns here. Renames, type changes, and option edits change the global definition for every assigner. The global Delete lives only inside a property's own editor frame, behind its ⋮ menu and a native confirm.
+**The Property Frame.** The Properties frame of the toolbar's Settings menu (`src/renderer/Properties/PropertyFrame.tsx`) is the assign surface for a Collection: the assigned properties on top, each opening its per-type editor, and an **All Properties** disclosure pinned to the bottom listing every unassigned registry definition in the nexus order, each promotable by its `+` or by dragging into the assigned group. Dragging within a group reorders it — the Collection's order above, the nexus order below — and dragging an assigned row out removes it. The frame's `+` creates: it mints into the registry, seeds per-type options, and assigns here. A definition's type is chosen at that moment and fixed for its life — a different type is a different property. Renames and option edits change the global definition for every assigner. The global Delete lives only inside a property's own editor frame, behind its ⋮ menu and a native confirm.
 
 **Schema Mutations.** The registry mutations live in `src/main/CRUD/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open.[^8]
 
@@ -136,7 +136,6 @@ What holds across every type: the assign surface, the mutations and their safety
 | Remove a property | Caches each member's value on the Collection's own sidecar (`property_cache`) and unassigns, then strips the value from every member page — cache before strip, so a failure mid-strip never loses anything. Re-assigning restores the cache. |
 | Rename a property | Commits the registry, then sweeps every page holding the old key. Never re-dates a page; assignment lists are id-keyed and unaffected. |
 | Reorder properties | Per-Collection assignment order on the sidecar; the All Properties group reorders the nexus-wide display order in the registry. |
-| Change a property's type | A global definition edit — a value whose shape no longer matches stops rendering but stays in frontmatter. |
 | Delete a property (global) | A record — the definition, the Collections that assigned it, and every value keyed by page id — lands in `.trash` before anything is destroyed, then the value is stripped everywhere, every cache block is purged, and the definition leaves the registry. Restorable.[^9] |
 | Edit options | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its stored label on every assigning page, and removing one strips that value. |
 
@@ -150,11 +149,10 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 
 #### Known Issues
 
-- **A stray bare-string Multi-Select value drops out of grouping and filtering.** The read-side coercion handles the single-string types only. Unreachable while nothing writes that shape; it goes live when a lossy Select→Multi-Select change is implemented, and should be fixed there as a value migration.
+- **A stray bare-string Multi-Select value drops out of grouping and filtering.** The read-side coercion handles the single-string types only. Nothing in the app writes that shape, so it arrives only by hand-editing the frontmatter.
 
 #### Pending
 
-- **Lossy type change** — the cross-assigner value strip a lossy type change should trigger; `changeType` accepts the drop flag and ignores it.
 - **Number looks for other views** — the completion Ring and the Number / Bar / Ring tile grid belong to view types with vertical room; the table ships Number and Bar.
 - **Calendar Picker** — range values, keyboard stepping on the time segments.
 - **Per-view link styling** — a Link property's look is property-level; letting a view override it is a prospect the `column_styles` seam already allows for.
