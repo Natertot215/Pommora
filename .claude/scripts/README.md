@@ -10,7 +10,11 @@ series holds one sample per day, so a commit touches exactly one row — measuri
 archive answers it in a fraction of a second, where `--history` re-walks every day of the branch.
 It reads the commit rather than the working tree, so uncommitted work is never counted against a
 commit that doesn't contain it. A commit that moved no code leaves the page untouched, so the
-refresh itself does not dirty the tree.
+refresh itself does not dirty the tree; where code did move, the hook amends the refreshed files
+into that same commit, so the numbers ship with the code they describe. `head` still names the
+commit the numbers were measured at, which the amend leaves standing — it adds the ledger, not code.
+A commit the remote already holds is never amended: the refresh is left in the tree for the next
+one, and the hook says so.
 
 `loc.py --rebuild` re-walks the branch and rewrites both the JSON and the page from scratch — the run for when the area map changes.
 
