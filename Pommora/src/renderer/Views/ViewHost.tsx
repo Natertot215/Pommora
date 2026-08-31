@@ -1,11 +1,11 @@
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { useActiveView } from './useActiveView'
 import { TableView } from './TableView/TableView'
 import { CardsView } from './CardView/CardsView'
-import { useViewHost, type ViewHostApi, type ViewHostSeam } from './useViewHost'
+import { useViewHost, type ViewHostApi } from './useViewHost'
 import './view-host.css'
 
 const identity = (v: SavedView): SavedView => v
@@ -21,17 +21,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     viewRootRef: { current: null },
     onCreated: { current: () => {} },
   }).current
-  const seam = useMemo<ViewHostSeam>(
-    () => ({
-      foldOverrides: upward.foldOverrides,
-      flattenStructural: isCards,
-      bandBucket: (key) => upward.bandBucket.current(key),
-      viewRootRef: upward.viewRootRef,
-      onCreated: (created) => upward.onCreated.current(created),
-    }),
-    [isCards, upward],
-  )
-  const host = useViewHost(source, seam, upward)
+  const host = useViewHost(source, isCards, upward)
   // Cards' set cards render independently of the pipeline, so a cards view with Sets present
   // always mounts — Set Cards on paints them, off stays a blank pane (Nathan's call).
   const setChrome = isCards && (source.sets?.length ?? 0) > 0
