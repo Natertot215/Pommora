@@ -14,11 +14,13 @@
   /* KNOB — the ring side panes hold from the window edges. */
   --window-side-inset: var(--app-inset);
   --window-footer-h: var(--subfield-h);
-  
+
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
   /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned padding; tracks the inset so the landing math stays true at any ring). */
   --window-flow-home: calc(var(--window-side-inset) + 22px);
-  --window-flow-inset: var(--surface-inset); /* KNOB — breathing room off the pane's seam after the swallow */
+  --window-flow-inset: var(
+    --surface-inset
+  ); /* KNOB — breathing room off the pane's seam after the swallow */
   /* THE distance the trailing pair travels to ride an open right pane's edge. */
   --window-flow-shift: max(
     0px,
