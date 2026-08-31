@@ -74,11 +74,20 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
   } = usePropertyRows(page, fm, setFm)
   const isShown = (def: PropertyDefinition): boolean =>
     revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[propertyKey(def)] !== undefined
-  const shownIds = [
-    ...contextRows.filter((t) => !setAside.has(t.id)).map((t) => t.id),
-    ...schema.filter(isShown).map((d) => d.id),
+  const groups: [string, Field[]][] = [
+    ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map((t) => ({ ...t, def: null }))],
+    [
+      'properties',
+      schema
+        .filter(isShown)
+        .map((d) => ({ id: d.id, label: d.name, icon: propertyIcon(d), def: d })),
+    ],
   ]
-  const entering = useEntrance(shownIds, (id) => id, fm !== null)
+  const entering = useEntrance(
+    groups.flatMap(([, group]) => group),
+    (f) => f.id,
+    fm !== null,
+  )
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const editRow = (def: PropertyDefinition, el: HTMLElement, from?: EventTarget | null): void =>
@@ -146,16 +155,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
 
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
-
-  const groups: [string, Field[]][] = [
-    ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map((t) => ({ ...t, def: null }))],
-    [
-      'properties',
-      schema
-        .filter(isShown)
-        .map((d) => ({ id: d.id, label: d.name, icon: propertyIcon(d), def: d })),
-    ],
-  ]
 
   return frame(
     <>

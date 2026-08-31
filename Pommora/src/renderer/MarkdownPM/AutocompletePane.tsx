@@ -1,16 +1,17 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
-import { MenuItem } from '@renderer/DesignSystem/Menus'
+import { MenuItem, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
+import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
 import { useKeepInView } from '@renderer/DesignSystem/Interactions/useKeepInView'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { ancestryOf } from '@renderer/treeIndex'
 import { useSession } from '@renderer/store'
-import type { AcRow } from './autocomplete'
+import type { AcRow, ConnectionForm } from './autocomplete'
 
 const NO_TRAIL: TrailSegment[] = []
 
@@ -18,6 +19,7 @@ interface Props {
   open: boolean
   candidates: AcRow[]
   index: number
+  form: ConnectionForm
   caretX: number
   caretTop: number
   caretBottom: number
@@ -30,6 +32,7 @@ export function AutocompletePane({
   open,
   candidates,
   index,
+  form,
   caretX,
   caretTop,
   caretBottom,
@@ -39,12 +42,19 @@ export function AutocompletePane({
 }: Props): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const live = open && candidates.length > 0
-  const last = useRef({ candidates, index, caretX, caretTop, caretBottom, bounds, query })
-  if (live) last.current = { candidates, index, caretX, caretTop, caretBottom, bounds, query }
+  const last = useRef({ candidates, index, form, caretX, caretTop, caretBottom, bounds, query })
+  if (live) last.current = { candidates, index, form, caretX, caretTop, caretBottom, bounds, query }
 
   const v = last.current
   const matchLen = v.query.length
   const keepInView = useKeepInView(v.index)
+
+  const cameFrom = useRef<AcRow[]>([])
+  if (live && v.form !== 'alias') cameFrom.current = v.candidates
+  useEffect(() => {
+    if (!open) cameFrom.current = []
+  }, [open])
+  const sliding = v.form === 'alias' && cameFrom.current.length > 0
 
   // Where the page lives, drawn from the same ancestry every location trail reads — the row's own
   // title is the leaf, so the caption stops at its containers. An alias names no place of its own.
@@ -53,29 +63,15 @@ export function AutocompletePane({
     const chain = ancestryOf(tree, { kind: 'page', id: row.pageId })
     return chain ? chain.slice(0, -1).map((n) => ({ title: n.title })) : NO_TRAIL
   }
-  return (
-    // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return
-    // and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the
-    // alias. The × guards itself on POINTERDOWN, a different event, so the mousedown checks for it —
-    // without that the press meant to forget a suggestion accepts it instead.
-    <PickerMenu
-      glass="pane"
-      open={live}
-      anchorX={v.caretX}
-      anchorY={v.caretTop}
-      anchorHeight={v.caretBottom - v.caretTop}
-      bounds={v.bounds}
-      origin="center"
-      manageFocus={false}
-      maxHeight={PICKER_MAX_HEIGHT}
-      contentClassName="mdpm-ac"
-    >
-      {v.candidates.map((row, i) => (
+
+  const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
+    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-ac-slot">
+      {rows.map((row, i) => (
         <MenuItem
           key={row.value}
-          ref={i === v.index ? keepInView : undefined}
+          ref={active && i === v.index ? keepInView : undefined}
           className={hoverRemoveHost}
-          selected={i === v.index}
+          selected={active && i === v.index}
           subLabel={
             <NavTrail
               segments={locationOf(row)}
@@ -111,6 +107,32 @@ export function AutocompletePane({
           {row.label.slice(matchLen)}
         </MenuItem>
       ))}
+    </MenuScrollFrame>
+  )
+
+  const shown = slot(v.candidates, true)
+
+  return (
+    // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return
+    // and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the
+    // alias. The × guards itself on POINTERDOWN, a different event, so the mousedown checks for it —
+    // without that the press meant to forget a suggestion accepts it instead.
+    <PickerMenu
+      glass="pane"
+      open={live}
+      anchorX={v.caretX}
+      anchorY={v.caretTop}
+      anchorHeight={v.caretBottom - v.caretTop}
+      bounds={v.bounds}
+      origin="center"
+      manageFocus={false}
+      contentClassName="mdpm-ac"
+    >
+      <FrameSlide
+        open={sliding}
+        root={sliding ? slot(cameFrom.current, false) : shown}
+        detail={sliding ? shown : null}
+      />
     </PickerMenu>
   )
 }

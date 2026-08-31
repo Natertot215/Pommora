@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
@@ -25,8 +25,15 @@ export function NavRowMenu({
   onClose: () => void
   onOpenNewTab?: (target: NavRef) => void
 }): null {
+  const opened = useRef(false)
+  const alive = useRef(true)
   useEffect(() => {
-    let live = true
+    alive.current = true
+    if (opened.current)
+      return () => {
+        alive.current = false
+      }
+    opened.current = true
     const s = useSession.getState()
     const target = item.target
     const isPinned = s.pinned.some((p) => navKey(p) === item.key)
@@ -44,7 +51,7 @@ export function NavRowMenu({
         ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
       })
       .then((action) => {
-        if (!live) return
+        if (!alive.current) return
         onClose()
         const st = useSession.getState()
         if (action && livePath && runPageSendAction(action, livePath)) return
@@ -79,9 +86,9 @@ export function NavRowMenu({
         }
       })
     return () => {
-      live = false
+      alive.current = false
     }
-  }, [item, onClose, onOpenNewTab])
+  }, [])
   return null
 }
 
