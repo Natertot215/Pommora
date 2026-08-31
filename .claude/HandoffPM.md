@@ -12,7 +12,7 @@
 
 **What the pass didn't cover.** The live drive was a subset — collapse, value edit, cards mount, view switch, the empty seat. Band and card drags, a slow-Collection load, the empty state inside a dashboard tile, and the Cards screenshots are Nathan's own pass, listed in the plan's Completion Criteria.
 
-**Two calls sit with Nathan.** A Cards hide/reveal inside a *locked* view tile now pins on screen until reload (the refused write never round-trips; Table's `commitHide` has always behaved the same) — leave consistent or drop the optimistic layer under refusal for both. And the honest line count: the bundle predicted −150 to −280 and landed +38 code lines — the second copy of the preamble was the only text that vanished, while the host's API and two destructures are new plumbing.
+**Two calls sit with Nathan.** A Cards hide/reveal inside a *locked* view tile now pins on screen until reload (the refused write never round-trips; Table's `commitHide` has always behaved the same) — leave consistent or drop the optimistic layer under refusal for both. And the honest line count: the bundle predicted −150 to −280 and landed +38 code lines — the second copy of the preamble was the only text that vanished, while the host's API and two destructures are new plumbing. The simplification pass that followed took 34 back (net +4): the seam's wrapper object, `mergeOverrides` and its four unfilled parameters, and the band-label and container-walk copies each renderer kept.
 
 #### Completion Criteria
 
