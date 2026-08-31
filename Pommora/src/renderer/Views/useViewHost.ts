@@ -19,6 +19,7 @@ import {
   buildSetPaths,
 } from '@renderer/Properties/Assignment/cellResolve'
 import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
+import { resolveBandHead } from './GroupBand'
 import { resolveContainerSchema } from './Pipeline/pickView'
 import { flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
@@ -33,8 +34,6 @@ import { mergeStyleRecords } from './viewMerge'
 import { REASSIGNABLE_GROUP_TYPES } from './TableView/reassign'
 import { sameIds } from './creationOrder'
 
-/** The renderer's four upward slots, read at fire time — its local layers reach the host without
- *  a re-render. `flattenStructural` rides the seat instead: it is known before the host runs. */
 export interface ViewHostUpward {
   foldOverrides: { current: (v: SavedView) => SavedView }
   bandBucket: { current: (key: string) => string | null }
@@ -67,6 +66,9 @@ export function useViewHost(
   const saveView = useSaveView(source)
 
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
+  // A refresh in flight when the container swaps must not land the old path's values.
+  const pathRef = useRef(source.path)
+  pathRef.current = source.path
   // Optimistic property patches keyed by page id: the loaded values never re-read on a write, so
   // a changed row re-groups only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
@@ -169,7 +171,7 @@ export function useViewHost(
     [values, valueOverride],
   )
   const contextIds = contextIdsOf(tree)
-  const { columns, groups, setTree } = useMemo(() => {
+  const { columns, groups, setTree, rows } = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
     return {
       ...resolveView({
@@ -182,6 +184,7 @@ export function useViewHost(
         contextIds,
       }),
       setTree,
+      rows,
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
   const ctx = useMemo(
@@ -207,14 +210,28 @@ export function useViewHost(
     walk(groups)
     return { rowById: byId, rowBand: band }
   }, [groups])
+  const bandLabel = (id: string): string => {
+    const find = (gs: ResolvedGroup[]): ResolvedGroup | undefined => {
+      for (const g of gs) {
+        if (g.key === id) return g
+        const hit = g.children && find(g.children)
+        if (hit) return hit
+      }
+      return undefined
+    }
+    const g = find(groups)
+    return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
+  }
 
   // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's
   // unsaved state. The renderer's fold ref adds its local layers at fire time; the explicit patch
   // wins last.
-  const foldedView = (): SavedView =>
-    upward.foldOverrides.current({ ...liveView, collapsed_groups: [...collapsed] })
+  const saveFolded = (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => {
+    const folded = upward.foldOverrides.current({ ...liveView, collapsed_groups: [...collapsed] })
+    return saveView({ ...folded, ...patch }, opts)
+  }
   const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
-    void saveView({ ...foldedView(), ...patch }, opts)
+    void saveFolded(patch, opts)
   }
   const toggleCollapse = (key: string): void => {
     const next = new Set(collapsed)
@@ -238,7 +255,7 @@ export function useViewHost(
     const patch = unhide(liveView, id)
     setOrderOverride(patch.property_order)
     setHiddenOverride(patch.hidden_properties)
-    void saveView({ ...foldedView(), ...patch }).finally(() => revealingRef.current.delete(id))
+    void saveFolded(patch).finally(() => revealingRef.current.delete(id))
   }
   const hideProperty = (id: string): void => {
     if (liveView.hidden_properties.includes(id)) return
@@ -279,7 +296,10 @@ export function useViewHost(
     return contextOptionsForSpaces(column.id, tree)
   }
   const refreshValues = (): void => {
-    void window.nexus.loadValues(source.path).then((v) => setValues(v))
+    const path = source.path
+    void window.nexus.loadValues(path).then((v) => {
+      if (pathRef.current === path) setValues(v)
+    })
   }
 
   const creation = useViewCreation(() => ({
@@ -317,6 +337,7 @@ export function useViewHost(
     columns,
     groups,
     setTree,
+    rows,
     ctx,
     contextIds,
     setNames,
@@ -324,6 +345,7 @@ export function useViewHost(
     setPaths,
     rowById,
     rowBand,
+    bandLabel,
     collapsed,
     toggleCollapse,
     structuralGrouping,
