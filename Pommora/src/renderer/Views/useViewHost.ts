@@ -76,8 +76,6 @@ export interface ViewHostApi {
   rowBand: Map<string, string>
   collapsed: Set<string>
   toggleCollapse: (key: string) => void
-  sortKeys: number
-  sortedOrGrouped: boolean
   structuralGrouping: boolean
   subGrouped: boolean
   groupPropId: string | undefined
@@ -328,9 +326,9 @@ export function useViewHost(
   const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
     const def = schema.find((d) => d.id === propertyId)
     if (!def) return
-    const prior = effectiveValues[row.id]
+    const prior = effectiveValues[row.id] ?? row.frontmatter
     const patched = applyValueAtRoot(
-      (prior ?? { id: row.id }) as Record<string, unknown>,
+      prior as Record<string, unknown>,
       def,
       value,
     ) as PageFrontmatter
@@ -344,7 +342,7 @@ export function useViewHost(
         row,
         column.id,
         ids,
-        effectiveValues[row.id] ?? ({ id: row.id } as unknown as PageFrontmatter),
+        effectiveValues[row.id] ?? row.frontmatter,
         setValueOverride,
         mutate,
       )
@@ -404,8 +402,6 @@ export function useViewHost(
     rowBand,
     collapsed,
     toggleCollapse,
-    sortKeys,
-    sortedOrGrouped,
     structuralGrouping,
     subGrouped,
     groupPropId,

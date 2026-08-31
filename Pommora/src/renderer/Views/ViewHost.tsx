@@ -39,8 +39,8 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
   return isCards ? (
-    <CardsView key={source.id} source={source} host={host} />
+    <CardsView key={source.id} host={host} />
   ) : (
-    <TableView key={source.id} source={source} host={host} />
+    <TableView key={source.id} host={host} />
   )
 }
