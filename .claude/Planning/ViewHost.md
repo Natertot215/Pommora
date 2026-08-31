@@ -1,6 +1,7 @@
 ## ViewHost — One View Host in the View Seat (Bundle 6)
 
-> **Status:** written, pending review · Spec: [[Codebase-Cleanup-Checklist]] Bundle 6 + the session's rulings (08-31-2026) · Execute tasks in order.
+> **Status:** ratified — in execution (08-31-2026; review round 1 folded clean) · Spec: [[Codebase-Cleanup-Checklist]] Bundle 6 + the session's rulings (08-31-2026) · Execute tasks in order.
+> History arc: **"The Single ViewHost"** — one short paragraph.
 > Citations name files and symbols; re-derive before editing. All paths are `Pommora/src/renderer/` unless rooted.
 
 **Goal**
