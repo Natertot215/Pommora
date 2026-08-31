@@ -17,8 +17,10 @@ import './connectionPane.css'
 export { closeActiveHoverCard }
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
-// the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
-// it through `hoverConnection`, so one pane app-wide holds by construction.
+// the next click or pull focus out of the editor. A deliberate press inside the pane (selecting
+// its text) is the one exception, and the close hands focus back to the link's editor. Mounted
+// ONCE at app level; every host reaches it through `hoverConnection`, so one pane app-wide holds
+// by construction.
 
 // The size knobs and their persistence live in hoverPaneSize.ts — the ceiling is never a knob:
 // width caps at the viewport and height at the band actually available on the pane's side.
@@ -140,14 +142,18 @@ export function ConnectionPane(): React.JSX.Element {
   if (hovered) shownRef.current = live
   const shown = shownRef.current
 
-  // Free-edge resize: right + bottom + corner, on the tile gesture skeleton. The pane never grows
-  // upward — a flipped-up pane's bottom edge is the anchored one, so it offers width alone.
+  // Free-edge resize on the tile gesture skeleton: the right edge always, plus the pane's one free
+  // horizontal edge and its corner — bottom for a down pane, top for a flipped-up pane, whose
+  // bottom edge is the anchored one and whose height grows upward from it.
   // The ref gates the leave lifecycle per-event; the state drives the accent-stroke class.
   const resizingRef = useRef(false)
+  const selectingRef = useRef(false)
   const [resizing, setResizing] = useState(false)
   const begin = usePointerGesture()
+  // Signed axes: +1 pulls the east/south edge, -1 the west/north one — the pane is centered on
+  // its link, so either side's drag just grows the same remembered size.
   const startResize =
-    (axes: { x?: boolean; y?: boolean }) =>
+    (axes: { x?: 1 | -1; y?: 1 | -1 }) =>
     (e: React.PointerEvent): void => {
       if (e.button !== 0) return
       const start = { ...shownRef.current }
@@ -168,10 +174,10 @@ export function ConnectionPane(): React.JSX.Element {
           const cap = maxSize()
           setSize({
             w: axes.x
-              ? Math.min(cap.w, Math.max(CARD_MIN.w, start.w + (ev.clientX - sx)))
+              ? Math.min(cap.w, Math.max(CARD_MIN.w, start.w + axes.x * (ev.clientX - sx)))
               : start.w,
             h: axes.y
-              ? Math.min(cap.h, Math.max(CARD_MIN.h, start.h + (ev.clientY - sy)))
+              ? Math.min(cap.h, Math.max(CARD_MIN.h, start.h + axes.y * (ev.clientY - sy)))
               : start.h,
           })
         },
@@ -294,7 +300,15 @@ export function ConnectionPane(): React.JSX.Element {
         grace = null
       }
     }
-    const close = (): void => setHovered(null)
+    const close = (): void => {
+      // A press in the preview took focus with it — hand it back to the editor the link lives
+      // in, or the caret is stranded on <body> when the pane goes.
+      if (cardRef.current?.contains(document.activeElement)) {
+        const host = hovered.el.closest('.cm-editor')
+        if (host) EditorView.findFromDOM(host as HTMLElement)?.focus()
+      }
+      setHovered(null)
+    }
     // Both boxes hold still between scrolls, keystrokes, window resizes, and pane resizes — so they
     // are measured once and dropped on exactly those, rather than re-read on every pointer move.
     let linkBox: DOMRect | null = null
@@ -306,12 +320,15 @@ export function ConnectionPane(): React.JSX.Element {
     // The link element is the anchor; once it leaves the DOM (scrolled out of CM's viewport, or a
     // rebuild the same-target refresh didn't heal) there is nothing to point at.
     const onMove = (e: MouseEvent): void => {
-      // A live resize suspends the whole leave lifecycle — the drag routinely exits the pane, and
-      // the grace re-arms naturally on the first movement after the drop. Clearing (not just
-      // skipping) also disarms a countdown that pre-dates the drag, or it fires mid-resize.
-      if (resizingRef.current) {
+      // A live resize or selection drag suspends the whole leave lifecycle — either routinely
+      // exits the pane, and the grace re-arms naturally on the first movement after the release.
+      // Clearing (not just skipping) also disarms a countdown that pre-dates the drag, or it
+      // fires mid-gesture. The selection flag is live only while the button is still down — the
+      // skeleton's own zero-buttons test — so a swallowed release heals on the next move.
+      if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
+      if (resizingRef.current || selectingRef.current) {
         clearGrace()
-        dropBoxes() // the drag moves the pane's own edges
+        dropBoxes() // a resize moves the pane's own edges
         return
       }
       if (!hovered.el.isConnected) {
@@ -378,13 +395,22 @@ export function ConnectionPane(): React.JSX.Element {
         ref={cardRef}
         className={`conn-hover-body${resizing ? ' is-resizing' : ''}`}
         style={{ width: shown.w, height: shown.h }}
-        // The caret never enters the preview — swallowing the press keeps CM from seating a
-        // selection or taking focus, while wheel scrolling and the strips' pointer gestures
-        // (dispatched before mousedown) stay live.
-        onMouseDownCapture={(e) => e.preventDefault()}
-        // With no caret to conflict, a heading click IS the fold toggle — the chevron stays
-        // hidden here and the whole line becomes the affordance, through the same fold logic.
+        // A press in the preview starts a text selection (read-only — the change filter drops any
+        // edit), and a selection drag routinely overshoots the pane's box, so the leave lifecycle
+        // stands down until the release. The flag clears off the live button state in onMove — a
+        // release that never reaches this window (a native drag's drop, a mid-press ⌘Tab) must not
+        // wedge the pane open.
+        onMouseDown={(e) => {
+          if (e.button === 0) selectingRef.current = true
+        }}
+        // The glance surface is not a drag source — a press on an existing highlight would
+        // otherwise start a native drag whose drop lands the text in the live host page.
+        onDragStartCapture={(e) => e.preventDefault()}
+        // A heading click IS the fold toggle — the chevron stays hidden here and the whole line
+        // becomes the affordance, through the same fold logic. A press that dragged out a
+        // selection keeps it: the highlight is what it asked for, not a fold.
         onClick={(e) => {
+          if (window.getSelection()?.isCollapsed === false) return
           const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
           const editor = line?.closest('.cm-editor')
           const view = editor && EditorView.findFromDOM(editor as HTMLElement)
@@ -427,16 +453,20 @@ export function ConnectionPane(): React.JSX.Element {
             />
           </>
         )}
-        <div className="conn-hover-resize-e" onPointerDown={startResize({ x: true })} />
-        {dir !== 'up' && (
-          <>
-            <div className="conn-hover-resize-s" onPointerDown={startResize({ y: true })} />
-            <div
-              className="conn-hover-resize-se"
-              onPointerDown={startResize({ x: true, y: true })}
-            />
-          </>
-        )}
+        <div className="conn-hover-resize-e" onPointerDown={startResize({ x: 1 })} />
+        <div className="conn-hover-resize-w" onPointerDown={startResize({ x: -1 })} />
+        <div
+          className={`conn-hover-resize-${dir === 'up' ? 'n' : 's'}`}
+          onPointerDown={startResize({ y: dir === 'up' ? -1 : 1 })}
+        />
+        <div
+          className={`conn-hover-resize-${dir === 'up' ? 'ne' : 'se'}`}
+          onPointerDown={startResize({ x: 1, y: dir === 'up' ? -1 : 1 })}
+        />
+        <div
+          className={`conn-hover-resize-${dir === 'up' ? 'nw' : 'sw'}`}
+          onPointerDown={startResize({ x: -1, y: dir === 'up' ? -1 : 1 })}
+        />
       </div>
     </PickerMenu>
   )

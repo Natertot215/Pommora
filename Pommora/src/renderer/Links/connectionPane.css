@@ -36,10 +36,9 @@
   --rail-inset: 0px;
 }
 /* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
-   symmetric sides. The caret never enters, so no I-beam either. */
+   symmetric sides. Text selects (read-only), so the I-beam stands. */
 .conn-hover-body .page-tile .mdpm-editor .cm-content {
   padding: 0 calc(14px * var(--mdpm-scale));
-  cursor: default;
 }
 /* No chevron in the card — with the caret disabled, clicking the heading itself is the fold
    toggle, and the whole line signals it. */
@@ -58,39 +57,64 @@
     border-color var(--duration-base) var(--ease-base),
     box-shadow var(--duration-base) var(--ease-base);
 }
-[data-picker-portal] div:has(.conn-hover-resize-e:hover),
-[data-picker-portal] div:has(.conn-hover-resize-s:hover),
-[data-picker-portal] div:has(.conn-hover-resize-se:hover),
+[data-picker-portal] div:has([class^="conn-hover-resize-"]:hover),
 [data-picker-portal] div:has(.conn-hover-body.is-resizing) {
   --glass-outline: var(--accent-stroke-hot);
 }
 
-/* Free-edge resize strips — right, bottom, and their corner (the tile-edge treatment: a thin
-   band straddling the edge, inset clear of the pane's rounded corners). */
-.conn-hover-resize-e,
-.conn-hover-resize-s,
-.conn-hover-resize-se {
+/* Free-edge resize strips — the tile-edge treatment: a thin band straddling each side, with the
+   free horizontal edge and its two corners mirrored to the TOP on a flipped-up pane, whose bottom
+   edge is the anchored one. Corners render after the edges, so they win the overlap. */
+[class^="conn-hover-resize-"] {
   position: absolute;
   z-index: 2;
 }
-.conn-hover-resize-e {
+.conn-hover-resize-e,
+.conn-hover-resize-w {
   top: 10px;
-  bottom: 16px;
-  right: -6px;
+  bottom: 10px;
   width: 10px;
   cursor: ew-resize;
 }
-.conn-hover-resize-s {
+.conn-hover-resize-s,
+.conn-hover-resize-n {
   left: 10px;
-  right: 16px;
-  bottom: -6px;
+  right: 10px;
   height: 10px;
   cursor: ns-resize;
 }
-.conn-hover-resize-se {
-  right: -6px;
-  bottom: -6px;
+.conn-hover-resize-se,
+.conn-hover-resize-ne,
+.conn-hover-resize-sw,
+.conn-hover-resize-nw {
   width: 16px;
   height: 16px;
+}
+.conn-hover-resize-e,
+.conn-hover-resize-se,
+.conn-hover-resize-ne {
+  right: -6px;
+}
+.conn-hover-resize-w,
+.conn-hover-resize-sw,
+.conn-hover-resize-nw {
+  left: -6px;
+}
+.conn-hover-resize-s,
+.conn-hover-resize-se,
+.conn-hover-resize-sw {
+  bottom: -6px;
+}
+.conn-hover-resize-n,
+.conn-hover-resize-ne,
+.conn-hover-resize-nw {
+  top: -6px;
+}
+.conn-hover-resize-se,
+.conn-hover-resize-nw {
   cursor: nwse-resize;
+}
+.conn-hover-resize-ne,
+.conn-hover-resize-sw {
+  cursor: nesw-resize;
 }
