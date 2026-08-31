@@ -369,9 +369,9 @@ Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so 
 
 ### Progress
 
-- [ ] **Phase 1** — Final Addresses · base `da5ce413`
-  - [ ] Task 1 — Editing → Assignment · `<commit>`
-  - [ ] Task 2 — ViewRenderer → ViewHost · `<commit>`
+- [x] **Phase 1** — Final Addresses · base `da5ce413` · gate: simplifier merged one duplicate import (ViewTile), flagged the ledger hook's failed-commit nudge + regex edges (Nathan's infra, reported) and ContextPM's stale `ViewRenderer` line (Task 8's)
+  - [x] Task 1 — Editing → Assignment · `d06541f5`
+  - [x] Task 2 — ViewRenderer → ViewHost · `b3fa93a6`
 - [ ] **Phase 2** — The Host
   - [ ] Task 3 — useViewHost + Table · `<commit>`
   - [ ] Task 4 — Cards converts · `<commit>`

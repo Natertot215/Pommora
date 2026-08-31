@@ -24,7 +24,7 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { titleInput as rowInput, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
-import { optionRing } from '@renderer/DesignSystem/Pickers/picker-base.css'
+import { optionRing, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findSet } from '@renderer/Interface/Scope'
@@ -34,7 +34,6 @@ import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { resolveViewWrite, ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
 import { useSession } from '@renderer/store'
-import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   labelSlot,
