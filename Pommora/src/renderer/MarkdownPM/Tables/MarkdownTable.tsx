@@ -66,7 +66,7 @@ function slotAt(axis: Axis, geom: Geom, rel: number): number {
   return spans.length - 1
 }
 
-export function TableView({
+export function MarkdownTable({
   model,
   cites,
   headingColumn = false,
