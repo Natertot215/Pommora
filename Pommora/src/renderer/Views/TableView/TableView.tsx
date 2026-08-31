@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { UNGROUPED } from '@shared/types'
-import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
@@ -104,14 +104,9 @@ function DatetimeCellPicker({
   )
 }
 
-export function TableView({
-  source,
-  host,
-}: {
-  source: CollectionNode | SetNode
-  host: ViewHostApi
-}): React.JSX.Element {
+export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
+    source,
     schema,
     view,
     liveView,
