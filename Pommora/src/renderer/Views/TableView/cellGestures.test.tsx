@@ -6,7 +6,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { CollectionNode } from '@shared/types'
 import { useSession } from '../../store'
 import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
-import { TableView } from './TableView'
+import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -182,7 +182,7 @@ afterEach(() => {
 
 const mountTable = async (source: CollectionNode): Promise<void> => {
   await act(async () => {
-    root.render(<TableView source={source} />)
+    root.render(<ViewHost source={source} />)
   })
   await act(async () => {}) // flush the loadValues/activeViews promises
 }
@@ -294,7 +294,7 @@ describe('optimistic value persistence', () => {
     // effect stays put). The value override must NOT be dropped — else the glyph reverts to the frozen
     // pre-assign values, which is the ~1/10 assign-vanish this guards.
     await act(async () => {
-      root.render(<TableView source={sourceWith()} />)
+      root.render(<ViewHost source={sourceWith()} />)
     })
     await act(async () => {})
     expect(doneCell().querySelector('svg')).toBeTruthy()

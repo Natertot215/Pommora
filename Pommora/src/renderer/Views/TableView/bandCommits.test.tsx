@@ -17,7 +17,7 @@ import {
   stubRect,
 } from '@renderer/Testing/pointerHarness'
 import { useSession } from '../../store'
-import { TableView } from './TableView'
+import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -172,7 +172,7 @@ afterEach(() => {
 
 const mountTable = async (source: CollectionNode): Promise<void> => {
   await act(async () => {
-    root.render(<TableView source={source} />)
+    root.render(<ViewHost source={source} />)
   })
   await act(async () => {}) // flush loadValues/activeViews
   stubBandRects()
@@ -242,7 +242,7 @@ describe('structural band reorder', () => {
     expect(headerTexts()[0]).toContain('B')
     // The moveSet-style load() swaps source identity mid-flight — same content, new object.
     await act(async () => {
-      root.render(<TableView source={structuralSource()} />)
+      root.render(<ViewHost source={structuralSource()} />)
     })
     await act(async () => {})
     expect(headerTexts()[0]).toContain('B')
