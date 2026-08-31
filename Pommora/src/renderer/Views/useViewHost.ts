@@ -1,19 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import type {
-  CollectionNode,
-  NexusTree,
-  ResolvedColumn,
-  ResolvedGroup,
-  SetNode,
-  ViewRow,
-} from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@shared/views'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
-import type { MutateRequest } from '@shared/mutate'
-import { useSession, type SessionState } from '../store'
+import { useSession } from '../store'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import {
   contextOptionsFor as contextOptionsForSpaces,
@@ -21,7 +12,7 @@ import {
 } from '@renderer/Properties/contextOptions'
 import { contextIdsOf } from '@renderer/Properties/contextIdentity'
 import { declaredType } from '@renderer/Properties/value'
-import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
+import { buildResolveContext } from '@renderer/Properties/resolveContext'
 import {
   buildSetIcons,
   buildSetNames,
@@ -29,14 +20,14 @@ import {
 } from '@renderer/Properties/Assignment/cellResolve'
 import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { resolveContainerSchema } from './Pipeline/pickView'
-import { flattenContainer, groupsStructurally, type SetTreeNode } from './Pipeline/group'
+import { flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { useValuesEpoch } from './useValuesEpoch'
 import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
-import { useViewCreation, type ViewCreation } from './useViewCreation'
+import { useViewCreation } from './useViewCreation'
 import { writeContextValue } from './contextCellWrite'
 import { mergeOverrides, mergeStyleRecords } from './viewMerge'
 import { REASSIGNABLE_GROUP_TYPES } from './TableView/reassign'
@@ -51,62 +42,15 @@ export interface ViewHostSeam {
   onCreated: (created: { id: string; path: string }) => void
 }
 
-export interface ViewHostApi {
-  source: CollectionNode | SetNode
-  schema: PropertyDefinition[]
-  view: SavedView
-  liveView: SavedView
-  values: Record<string, PageFrontmatter>
-  effectiveValues: Record<string, PageFrontmatter>
-  setValueOverride: Dispatch<SetStateAction<Record<string, PageFrontmatter> | null>>
-  columns: ResolvedColumn[]
-  groups: ResolvedGroup[]
-  setTree: SetTreeNode[]
-  ctx: ResolveContext
-  contextIds: string[]
-  setNames: Map<string, string>
-  setIcons: Map<string, string | undefined>
-  setPaths: Map<string, string>
-  rowById: Map<string, ViewRow>
-  rowBand: Map<string, string>
-  collapsed: Set<string>
-  toggleCollapse: (key: string) => void
-  structuralGrouping: boolean
-  subGrouped: boolean
-  groupPropId: string | undefined
-  groupPropType: string | undefined
-  canReassign: boolean
-  canReorderWithin: boolean
-  canRelocate: boolean
-  structuralOrder: boolean
-  dragDisabled: boolean
-  manualOrder: string[] | undefined
-  viewOrders: Record<string, string[]>
-  persistViewOrder: (ids: string[]) => void
-  setManualOverride: Dispatch<SetStateAction<string[] | null>>
-  setOrderOverride: Dispatch<SetStateAction<string[] | null>>
-  setHiddenOverride: Dispatch<SetStateAction<string[] | null>>
-  setStylePatch: (colId: string, key: keyof ColumnStyle & string, value: string) => void
-  hideProperty: (id: string) => void
-  revealProperty: (id: string) => void
-  persistView: (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => void
-  commitBand: (patch: Partial<SavedView>) => void
-  setProperty: (row: ViewRow, propertyId: string, value: PropertyValue | null) => void
-  commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
-  contextOptionsFor: (column: ResolvedColumn) => ContextOption[] | null
-  refreshValues: () => void
-  creation: ViewCreation
-  mutate: (req: MutateRequest) => Promise<boolean>
-  select: SessionState['select']
-  tree: NexusTree
-  /** The renderer's upward slots — assigned on render, read at fire time. */
-  seam: {
-    foldOverrides: { current: (v: SavedView) => SavedView }
-    bandBucket: { current: (key: string) => string | null }
-    viewRootRef: { current: HTMLElement | null }
-    onCreated: { current: (created: { id: string; path: string }) => void }
-  }
+export interface ViewHostUpward {
+  foldOverrides: { current: (v: SavedView) => SavedView }
+  bandBucket: { current: (key: string) => string | null }
+  viewRootRef: { current: HTMLElement | null }
+  onCreated: { current: (created: { id: string; path: string }) => void }
 }
+
+/** The one object a renderer draws from — the hook's return, so the shape has a single writer. */
+export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const stylesCaughtUp = (
   patch: Record<string, ColumnStyle>,
@@ -121,8 +65,8 @@ const stylesCaughtUp = (
 export function useViewHost(
   source: CollectionNode | SetNode,
   seam: ViewHostSeam,
-  upward: ViewHostApi['seam'],
-): ViewHostApi | null {
+  upward: ViewHostUpward,
+) {
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
   const select = useSession((s) => s.select)
