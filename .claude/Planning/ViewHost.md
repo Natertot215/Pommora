@@ -18,7 +18,7 @@ Not solving here: virtualization, the four unbuilt view types themselves, Render
 2. The optimistic `property_order` / `hidden_properties` / `column_styles` patch layers are host-owned generic layers; Cards thereby gains the optimistic behavior, the `sameIds` catch-up drop, and collapse riding every save (signed behavior changes). Width/align stay Table-local.
 3. `persistView` preserves the `mergeOverrides` law for both renderers: host layers + collapse fold into every save, a renderer's fold adds its local layers at fire time, the explicit patch wins last, styles fold per-key.
 4. The renderer seam is exactly `foldOverrides?` · `flattenStructural` · `bandBucket` · `viewRootRef` · `onCreated` plus presentation; everything else arrives on `host`. (`flattenStructural` is a seam field, not a `view.type` switch inside the host — a future renderer chooses its structural shape without editing the host.)
-5. Loading and empty decided once at the root: "Loading…" while `ctx` is null; "No pages here" when the pipeline yields no groups, unless the renderer will still paint set chrome (Cards with Set Cards on and Sets present). Write silence stands.
+5. Loading and empty decided once at the root: "Loading…" while `ctx` is null; "No pages here" when the pipeline yields no groups, unless the view is Cards and the container has Sets — with Set Cards off that pane stays blank, today's behavior (Nathan's call). Write silence stands.
 6. `Properties/Editing/` → `Properties/Assignment/` and `ViewRenderer` → `ViewHost` land first, so the host seats imports at final addresses (RendererRework's ruled rows, taken 08-31-2026).
 7. Cards' parallel `resolveColumns` call dies; the pipeline's `columns` output is the one column resolution renderers consume.
 8. Net comment-line count across the touched Views files strictly decreases; zero newly-authored comments (relocated whys allowed); `KNOB` markers survive.
@@ -273,13 +273,12 @@ if (groups.length === 0) return <div className="table-empty">No pages here</div>
 **Becomes** — in `ViewHost.tsx`, before any renderer mounts; Table's returns delete:
 
 ```tsx
-const setChrome =
-  view.type === 'cards' && (view.set_cards ?? true) && (source.sets?.length ?? 0) > 0
+const setChrome = view.type === 'cards' && (source.sets?.length ?? 0) > 0
 if (!host) return <div className="view-empty">Loading…</div>
 if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
 ```
 
-The exemption asks what the renderer will still paint, not what the source contains: Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so they exempt only when Set Cards is on and Sets exist; Table paints nothing when `groups` is empty (the pipeline's filter/hide-empty prunes included — `resolveView.ts:78-81`), so it keeps the message everywhere it shows one today. Empty Sets are otherwise present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so an unfiltered sets-only container mounts with its bands intact. `--empty-pad-y`'s only writer dies with the `table-empty` rules — its one read inlines as a raw `24px` KNOB in `view-host.css.ts`.
+Cards' set cards render independently of the pipeline (`CardsView.tsx:302`), so a Cards view with Sets present always mounts — Set Cards on paints the cards, Set Cards off stays blank (Nathan's call: the toggle's blank pane keeps today's behavior, never the message). Table paints nothing when `groups` is empty (the pipeline's filter/hide-empty prunes included — `resolveView.ts:78-81`), so it keeps the message everywhere it shows one today. Empty Sets are otherwise present in the pipeline's `setTree` (`Pipeline/group.ts:22`), so an unfiltered sets-only container mounts with its bands intact. `--empty-pad-y`'s only writer dies with the `table-empty` rules — its one read inlines as a raw `24px` KNOB in `view-host.css.ts`.
 
 `.view-empty` styled once beside `ViewHost.tsx` (`view-host.css.ts`, per R5 — no class painted by an un-emitting sheet remains); the tile override at `viewTile.css.ts:167` renames with it; the `table-empty` rules delete from both sheets.
 
@@ -287,7 +286,7 @@ The exemption asks what the renderer will still paint, not what the source conta
 
 **Verify — automated**
 
-- [ ] Red-green: a `ViewHost` mount test — null host paints "Loading…"; empty groups paints "No pages here"; a cards view with Set Cards on and Sets present mounts the renderer instead; the same view with Set Cards off gets the message — red before the seat, green after.
+- [ ] Red-green: a `ViewHost` mount test — null host paints "Loading…"; empty groups paints "No pages here"; a cards view with Sets present mounts the renderer instead, Set Cards toggle irrelevant — red before the seat, green after.
 - [ ] `grep -rn "table-empty" Pommora/src` → 0. Control: `grep -rn "view-empty" Pommora/src | wc -l` → ≥ 4.
 - [ ] Full gates green.
 
@@ -384,7 +383,7 @@ The exemption asks what the renderer will still paint, not what the source conta
 
 ### Rulings
 
-- 08-31-2026, Nathan: wording "Loading…" / "No pages here", shared at the root · no refused-write feedback · Cards' unification behavior changes signed · host-owned fold contract · `ViewHost` the name · `Assignment` the folder · proceed ahead of any further RendererRework motion · every phase gate's simplification review dual-briefed to flag non-simplicity bugs.
+- 08-31-2026, Nathan: wording "Loading…" / "No pages here", shared at the root · no refused-write feedback · Cards' unification behavior changes signed · host-owned fold contract · `ViewHost` the name · `Assignment` the folder · proceed ahead of any further RendererRework motion · every phase gate's simplification review dual-briefed to flag non-simplicity bugs · Set Cards off keeps its blank pane, never the message · filtered-empty shares the one wording · the load-error state stays deferred.
 - 08-31-2026, review round 1 (build-breaking, post-simplification): six findings + four smaller, all verified at their cited lines and folded — the sub-Set reset leak (`[source.id, view.id]`), the type-switch gate corruption (seam-shaped formulas), `refreshValues` on the API, the Task 4 pin inversion corrected (Cards adopts Table's echo-drop), the renderer-aware empty exemption (`setChrome`), the true test census. None rejected. Two unknowns routed to the user pass (the unmount-transition beat; a create reply into an unmounted renderer is a silent no-op with trivial damage — accepted).
 
 ### Open Against Later Tasks
@@ -432,7 +431,7 @@ Everything else is the standard below.
 
 - [ ] Table and Cards driven by hand: grouped and ungrouped, band drag, collapse, value edit, view switch in each.
 - [ ] Cards' new loading and empty states, in the main pane and inside a dashboard tile.
-- [ ] The exemption corners: a sets-only container in Cards with Set Cards on (set cards, no message) and off (the message); a filter matching nothing shows the message in both renderers.
+- [ ] The exemption corners: a sets-only container in Cards with Set Cards on (set cards, no message) and off (blank pane, no message — kept); a filter matching nothing shows the message in both renderers.
 - [ ] The unmount transition: on a wide table, apply a filter matching nothing, clear it — the overflow/inset regime settles without a visible mis-beat (the renderer now unmounts where it used to early-return).
 
 **The record**
