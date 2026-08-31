@@ -1,21 +1,13 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useRef,
-  useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
-import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
-import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
-import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
-import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
-import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import {
   type PaneDrop,
@@ -26,16 +18,13 @@ import {
 } from './frameDndModel'
 import * as s from './frames.css'
 
-// The capped slot auto-scrolls at the edges, and any scroll dirties the frozen snapshot.
-
-type DragState = {
-  id: string | null
-  ghostX: number
-  ghostY: number
-  slot: FrameSlot | null
-  lineTop: number
+type Snapshot = {
+  rows: MeasuredRow[]
+  byId: Map<string, FrameRow>
+  regions: { assigned: Region; all: Region }
+  boxTop: number
 }
-const IDLE: DragState = { id: null, ghostX: 0, ghostY: 0, slot: null, lineTop: 0 }
+type Slot = FrameSlot & { topInBox: number | null }
 
 type Value = {
   draggingId: string | null
@@ -61,72 +50,65 @@ export function FrameDnd({
   slot?: typeof frameSlot
   children: ReactNode
 }): React.JSX.Element {
-  const rowsRef = useRef(rows)
-  rowsRef.current = rows
-  // The context memo freezes `begin` from an early render — the drop must reach the CALLER'S
-  // latest closure (the onCommitRef pattern).
-  const onDropRef = useRef(onDrop)
-  onDropRef.current = onDrop
-  const labelForRef = useRef(labelFor)
-  labelForRef.current = labelFor
-  const ghostLabel = useRef('')
   const els = useRef(new Map<string, HTMLElement>())
   const regionEls = useRef<{ assigned: HTMLElement | null; all: HTMLElement | null }>({
     assigned: null,
     all: null,
   })
   const box = useRef<HTMLDivElement | null>(null)
-  const lastPoint = useRef({ x: 0, y: 0 })
-  const stopScroll = useRef<(() => void) | null>(null)
-  const live = useRef<FrameSlot | null>(null)
-  const [drag, setDrag] = useState<DragState>(IDLE)
-  const beginGesture = usePointerGesture()
 
-  // Frozen at activation: row geometry, the row set, and the region rects ride one snapshot;
-  // an invalidating scroll or rows change re-resolves from the last point.
-  type Snapshot = {
-    rows: MeasuredRow[]
-    byId: Map<string, FrameRow>
-    regions: { assigned: Region; all: Region }
-    boxTop: number
-  }
-  const draggedId = useRef<string | null>(null)
-  const snap = useDragSnapshot(takeSnapshot)
-  useEffect(() => {
-    snap.markDirty()
-    if (draggedId.current) resolveSlot(draggedId.current, lastPoint.current.y)
-  }, [rows])
-
-  function takeSnapshot(): Snapshot | null {
-    const boxEl = box.current
-    const assignedEl = regionEls.current.assigned
-    const allEl = regionEls.current.all
-    if (!boxEl || !assignedEl || !allEl) return null
-    const byId = new Map(rowsRef.current.map((r) => [r.id, r]))
-    const measured: MeasuredRow[] = []
-    for (const row of rowsRef.current) {
-      const el = els.current.get(row.id)
-      if (!el) continue
-      const r = el.getBoundingClientRect()
-      measured.push({ id: row.id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 })
-    }
-    measured.sort((a, b) => a.top - b.top)
-    const boxRect = boxEl.getBoundingClientRect()
-    const assignedRect = assignedEl.getBoundingClientRect()
-    const allRect = allEl.getBoundingClientRect()
-    // Regions own their FIELD, not just their rendered rows: assigned runs down
-    // to the All Properties heading, and the all region runs to the frame's bottom edge — the
-    // empty space around short lists is a legal drop zone, never a dead no-op.
-    return {
-      rows: measured,
-      byId,
-      regions: {
-        assigned: { top: assignedRect.top, bottom: allRect.top },
-        all: { top: allRect.top, bottom: Math.max(allRect.bottom, boxRect.bottom) },
-      },
-      boxTop: boxRect.top,
-    }
-  }
+  const drag = useInsertionDrag<Slot, Snapshot>({
+    // Row geometry, the row set, and the region rects ride one snapshot. A vanished region fails
+    // the resolve closed — a stale slot must not survive to the drop.
+    take: () => {
+      const boxEl = box.current
+      const assignedEl = regionEls.current.assigned
+      const allEl = regionEls.current.all
+      if (!boxEl || !assignedEl || !allEl) return null
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      const measured: MeasuredRow[] = []
+      for (const row of rows) {
+        const el = els.current.get(row.id)
+        if (!el) continue
+        const r = el.getBoundingClientRect()
+        measured.push({ id: row.id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 })
+      }
+      measured.sort((a, b) => a.top - b.top)
+      const boxRect = boxEl.getBoundingClientRect()
+      const assignedRect = assignedEl.getBoundingClientRect()
+      const allRect = allEl.getBoundingClientRect()
+      // Regions own their FIELD, not just their rendered rows: assigned runs down to the All
+      // Properties heading, and the all region runs to the frame's bottom edge — the empty space
+      // around short lists is a legal drop zone, never a dead no-op.
+      return {
+        rows: measured,
+        byId,
+        regions: {
+          assigned: { top: assignedRect.top, bottom: allRect.top },
+          all: { top: allRect.top, bottom: Math.max(allRect.bottom, boxRect.bottom) },
+        },
+        boxTop: boxRect.top,
+      }
+    },
+    resolve: (id, point, snap) => {
+      const liveSlot = slot(snap.rows, snap.byId, snap.regions, point.y, id)
+      return liveSlot
+        ? { ...liveSlot, topInBox: liveSlot.lineY != null ? liveSlot.lineY - snap.boxTop : null }
+        : null
+    },
+    commit: (_id, slot) => onDrop(slot.drop),
+    lineFor: (slot) => (slot.topInBox != null ? { top: slot.topInBox } : null),
+    label: labelFor,
+    rowEl: (id) => els.current.get(id),
+    scrollTarget: () => box.current,
+    armFrom: () => box.current,
+    // `button` beyond the shared guard: a row's +, the outline, and rename inputs never arm a drag.
+    alsoBlock: 'button',
+    // An active drag's Escape must cancel the DRAG, not let the Toolbar's useDismiss close the
+    // whole menu; a sub-threshold press leaves Escape to the host.
+    swallowActiveEscape: true,
+    watch: rows,
+  })
 
   const registerRow = (id: string, el: HTMLElement | null): void => {
     if (el) els.current.set(id, el)
@@ -136,105 +118,24 @@ export function FrameDnd({
     regionEls.current[group] = el
   }
 
-  const reset = (): void => {
-    live.current = null
-    draggedId.current = null
-    snap.reset()
-    setDrag(IDLE)
-  }
-
-  // Snapshot (lazily, when an invalidation dirtied it) then hit-test the frame at a Y. Shared by
-  // pointer move and every re-resolve, so a held-still drag keeps updating as content moves.
-  const resolveSlot = (id: string, clientY: number): void => {
-    const s = snap.get()
-    if (!s) {
-      // Nothing measurable — a region unmounted mid-drag. A stale slot must not survive to the
-      // drop, so the resolve fails closed.
-      live.current = null
-      return
-    }
-    const liveSlot = slot(s.rows, s.byId, s.regions, clientY, id)
-    live.current = liveSlot
-    setDrag({
-      id,
-      ghostX: lastPoint.current.x + GHOST_OFFSET.x,
-      ghostY: clientY + GHOST_OFFSET.y,
-      slot: liveSlot,
-      lineTop: liveSlot?.lineY != null ? liveSlot.lineY - s.boxTop : 0,
-    })
-  }
-
-  const begin = (id: string, e: ReactPointerEvent): void => {
-    // `button` beyond the band guard: a row's +, the outline, and rename inputs never arm a drag.
-    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`)) return
-    const el = els.current.get(id)
-    if (!el) return
-    // swallowActiveEscape: an active drag's Escape must cancel the DRAG, not let the Toolbar's
-    // useDismiss close the whole menu; a sub-threshold press leaves Escape to the host.
-    beginGesture({
-      el,
-      event: e,
-      swallowActiveEscape: true,
-      onActivate: (ev) => {
-        draggedId.current = id
-        lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        ghostLabel.current = labelForRef.current(id)
-        announce(`Picked up ${ghostLabel.current}.`)
-        stopScroll.current = armAutoScroll(
-          box.current,
-          () => lastPoint.current,
-          () => resolveSlot(id, lastPoint.current.y),
-        )
-        return true
-      },
-      scrollTarget: () => box.current,
-      onWindowScroll: () => {
-        snap.markDirty()
-        resolveSlot(id, lastPoint.current.y)
-      },
-      onDragMove: (ev) => {
-        lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        resolveSlot(id, ev.clientY)
-      },
-      onDrop: () => {
-        if (snap.isDirty()) resolveSlot(id, lastPoint.current.y)
-        const liveSlot = live.current
-        if (liveSlot) {
-          onDropRef.current(liveSlot.drop)
-          announce(`Moved ${ghostLabel.current}.`)
-        }
-        reset()
-      },
-      onAbort: reset,
-      teardown: () => {
-        stopScroll.current?.()
-        stopScroll.current = null
-      },
-    })
-  }
-
   const value = useMemo<Value>(
     () => ({
-      draggingId: drag.id,
+      draggingId: drag.dragging,
       allHighlighted: drag.slot?.highlightAll ?? false,
       registerRow,
       registerRegion,
-      begin,
+      begin: drag.begin,
     }),
-    [drag.id, drag.slot?.highlightAll],
+    [drag.dragging, drag.slot?.highlightAll, drag.begin],
   )
 
   return (
     <Ctx.Provider value={value}>
       <div ref={box} className={cx('drop-line-host', s.frameDnd)}>
         {children}
-        {drag.slot && drag.slot.lineY != null && <DropLine style={{ top: drag.lineTop }} />}
+        {drag.line}
       </div>
-      <DragGhost
-        x={drag.id ? drag.ghostX : null}
-        y={drag.id ? drag.ghostY : null}
-        label={ghostLabel.current}
-      />
+      {drag.ghost}
     </Ctx.Provider>
   )
 }

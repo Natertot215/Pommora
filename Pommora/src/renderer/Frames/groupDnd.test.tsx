@@ -18,7 +18,7 @@ const BANDS: Band[] = [
 ]
 
 function List({ onDrop }: { onDrop: (id: string, drop: GroupingDrop) => void }): React.JSX.Element {
-  const dnd = useGroupingListDrag({ bands: BANDS, nestable: false, onDrop })
+  const dnd = useGroupingListDrag({ bands: BANDS, nestable: false, labelFor: (id) => id, onDrop })
   return (
     <div ref={dnd.containerRef} data-box>
       {BANDS.map((b) => (
@@ -26,7 +26,7 @@ function List({ onDrop }: { onDrop: (id: string, drop: GroupingDrop) => void }):
           <span data-handle={b.id} {...dnd.rowHandle(b.id)} />
         </div>
       ))}
-      {dnd.line && <div data-line data-y={dnd.line.y} />}
+      {dnd.line}
     </div>
   )
 }
@@ -61,7 +61,8 @@ afterEach(() => {
 
 const handle = (id: string): HTMLElement =>
   host.querySelector(`[data-handle="${id}"]`) as HTMLElement
-const lineY = (): string | null => host.querySelector('[data-line]')?.getAttribute('data-y') ?? null
+const lineY = (): string | null =>
+  (host.querySelector('.drop-line') as HTMLElement | null)?.style.top ?? null
 
 describe('grouping drag snapshot invalidation', () => {
   it('a mid-drag scroll re-measures, so the line aims at the moved rows', async () => {
@@ -72,7 +73,7 @@ describe('grouping drag snapshot invalidation', () => {
       firePointer(window, 'pointermove', { x: 10, y: 44 })
     })
     // Below B's midline → before C, whose top edge is 48.
-    expect(lineY()).toBe('48')
+    expect(lineY()).toBe('48px')
 
     // The scroller moves the rows up by 10 while the container's own box holds still.
     stubRows(-10)
@@ -84,7 +85,7 @@ describe('grouping drag snapshot invalidation', () => {
       firePointer(window, 'pointermove', { x: 10, y: 44 })
     })
     // Fresh rects put 44 in C's top zone → before C at its NEW top edge, 38. Stale rects say 48.
-    expect(lineY()).toBe('38')
+    expect(lineY()).toBe('38px')
   })
 
   it('a scroll with the pointer held still re-aims, so a release without moving commits fresh', async () => {

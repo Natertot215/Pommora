@@ -1,6 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
-import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
@@ -50,8 +49,10 @@ export function StatusEditor({
     () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
     [groups],
   )
-  const reorder = useStatusReorder(statusOrder, (value, toGroupId, toIndex) =>
-    onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
+  const reorder = useStatusReorder(
+    statusOrder,
+    (value) => groups.flatMap((g) => g.options).find((o) => o.value === value)?.label ?? value,
+    (value, toGroupId, toIndex) => onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
   )
   // One anchor per group — the shared mechanism holds a single ghost, so crossing into another
   // group's list moves the slot rather than standing two of them up.
@@ -105,17 +106,9 @@ export function StatusEditor({
       />
     )
 
-  const draggedLabel = (): string | null => {
-    if (!reorder.dragging) return null
-    for (const g of groups) {
-      const hit = g.options.find((o) => o.value === reorder.dragging)
-      if (hit) return hit.label
-    }
-    return reorder.dragging
-  }
   return (
     <div className={s.statusGroups} ref={reorder.containerRef}>
-      <DragGhost x={reorder.ghost?.x ?? null} y={reorder.ghost?.y ?? null} label={draggedLabel()} />
+      {reorder.ghost}
       {groups.map((g) => (
         <div key={g.id} className={s.statusGroup}>
           <div className={heading}>

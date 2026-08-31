@@ -16,7 +16,6 @@ import {
   useGhostOptionAnchor,
 } from '../GhostOptionChip'
 import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
-import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useOptionReorder } from '../useOptionReorder'
@@ -50,8 +49,10 @@ export function OptionEditor({
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
   const optionOrder = useMemo(() => options.map((o) => o.value), [options])
   const entering = useEntrance(options, (o) => o.value)
-  const reorder = useOptionReorder(optionOrder, (value, toIndex) =>
-    onSetOptions(reorderOption(options, value, toIndex)),
+  const reorder = useOptionReorder(
+    optionOrder,
+    (value) => options.find((o) => o.value === value)?.label ?? value,
+    (value, toIndex) => onSetOptions(reorderOption(options, value, toIndex)),
   )
   // Each option is its own anchor, so the slot opens under whichever chip the pointer rests on; an
   // empty list has no chip to anchor to, so the list itself stands in for the first one.
@@ -118,15 +119,7 @@ export function OptionEditor({
         ref={reorder.containerRef}
         {...(options.length === 0 ? ghostAnchorProps(ghostApi, LIST_ANCHOR) : {})}
       >
-        <DragGhost
-          x={reorder.ghost?.x ?? null}
-          y={reorder.ghost?.y ?? null}
-          label={
-            reorder.dragging
-              ? (options.find((o) => o.value === reorder.dragging)?.label ?? reorder.dragging)
-              : null
-          }
-        />
+        {reorder.ghost}
         {options.map((o, i) => {
           const isColoring = coloring === o.value
           return (
