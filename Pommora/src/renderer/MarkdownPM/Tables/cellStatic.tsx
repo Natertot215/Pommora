@@ -17,7 +17,7 @@ import { CITE_GLYPH } from '../Editor/citationPointer'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
 // connections colored by status, matching the nested editor's look. Only the focused cell mounts a
-// real editor (see TableView), so a table scrolling into view doesn't build R×C editors in one frame.
+// real editor (see MarkdownTable), so a table scrolling into view doesn't build R×C editors in one frame.
 // Block-level markdown (headings, lists, fences) isn't reproduced here — it doesn't occur in a cell.
 export function renderCellContent(
   text: string,

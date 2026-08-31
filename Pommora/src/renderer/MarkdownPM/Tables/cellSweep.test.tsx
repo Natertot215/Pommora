@@ -4,7 +4,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { TableView } from './TableView'
+import { MarkdownTable } from './MarkdownTable'
 import type { TableModel } from './model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -40,7 +40,7 @@ async function mount(): Promise<void> {
   root = createRoot(container)
   await act(async () =>
     root.render(
-      createElement(TableView, {
+      createElement(MarkdownTable, {
         model,
         onCellCommit: noop,
         onExit: noop,

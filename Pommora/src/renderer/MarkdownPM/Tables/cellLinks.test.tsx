@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { TableView } from './TableView'
+import { MarkdownTable } from './MarkdownTable'
 import type { TableModel } from './model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@shared/connMenu'
@@ -59,7 +59,7 @@ async function mount(): Promise<void> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(createElement(TableView, props)))
+  await act(async () => root.render(createElement(MarkdownTable, props)))
 }
 
 afterEach(async () => {
@@ -134,7 +134,7 @@ describe('an external link in a resting cell behaves like one in the body', () =
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
-    await act(async () => root.render(createElement(TableView, { ...props, model: web })))
+    await act(async () => root.render(createElement(MarkdownTable, { ...props, model: web })))
   }
 
   it('follows to the system browser on a click', async () => {
@@ -232,7 +232,7 @@ describe('a link’s menu in a resting cell', () => {
     }
     await act(async () =>
       root.render(
-        createElement(TableView, {
+        createElement(MarkdownTable, {
           ...props,
           model: { ...model, rows: [[`a [Home](${URL}) b`]] },
           connections: () => linked,
@@ -285,7 +285,7 @@ describe('a link’s menu in a resting cell', () => {
     const render = (rows: string[][]): Promise<void> =>
       act(async () =>
         root.render(
-          createElement(TableView, {
+          createElement(MarkdownTable, {
             ...props,
             model: { ...model, rows },
             connections: () => linked,
@@ -354,7 +354,7 @@ describe('a connection’s menu in a resting cell', () => {
     }
     await act(async () =>
       root.render(
-        createElement(TableView, {
+        createElement(MarkdownTable, {
           ...props,
           model: { ...model, rows: [[body]] },
           connections: () => linked,

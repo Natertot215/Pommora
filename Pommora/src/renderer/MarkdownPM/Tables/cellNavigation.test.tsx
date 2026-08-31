@@ -2,10 +2,10 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { TableView } from './TableView'
+import { MarkdownTable } from './MarkdownTable'
 import type { TableModel } from './model'
 
-// jsdom lacks ResizeObserver (TableView measures cell geometry with it); a no-op stub is enough — the
+// jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough — the
 // test asserts focus/activation, not pixel geometry. The flag enables React's act() in this env.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -50,7 +50,7 @@ async function mount(): Promise<void> {
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root.render(createElement(TableView, props))
+    root.render(createElement(MarkdownTable, props))
   })
 }
 
