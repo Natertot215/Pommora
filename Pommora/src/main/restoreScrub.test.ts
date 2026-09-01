@@ -252,11 +252,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
         }),
       )
     })
-    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a', 'b'])
+    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
     const def = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8')).defs[
       PROP
     ]
-    expect(def.select_options.map((o: { value: string }) => o.value)).toEqual(['a', 'b'])
+    expect(def.select_options.map((o: { value: string }) => o.value)).toEqual(['a'])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {

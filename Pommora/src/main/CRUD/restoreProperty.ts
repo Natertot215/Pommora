@@ -18,8 +18,7 @@ import { readSidecar } from '../sidecarIO'
 import { serializeOnFile } from '../IO/fileLock'
 import { collectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
-import { applyAdoptions } from './optionOps'
-import { type Adoption, isBlankValue, reconcilePropertyValue } from '@shared/propertyValue'
+import { isBlankValue, reconcilePropertyValue } from '@shared/propertyValue'
 import { createProperty } from './registryProperty'
 import { serializeSchemaOp } from './schemaChain'
 
@@ -65,14 +64,13 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
 
   const roots = projectBaseline(await refreshTree(root)).entries
   let dropped = 0
-  const adoptions: Adoption[] = []
   for (const [pageId, raw] of Object.entries(record.values)) {
     const entry = roots[pageId]
     if (entry?.kind !== 'page') {
       dropped++
       continue
     }
-    const reconciled = reconcilePropertyValue(def, raw)
+    const reconciled = reconcilePropertyValue(def, raw, false)
     if (isBlankValue(reconciled.value)) {
       dropped++
       continue
@@ -81,10 +79,8 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
     const written = await serializeOnFile(file, () =>
       updatePageProperty(file, def, reconciled.value),
     )
-    if (written.ok) adoptions.push(...reconciled.adoptions)
-    else dropped++
+    if (!written.ok) dropped++
   }
-  await applyAdoptions(root, adoptions)
   if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)
   return ok(null)
 }
