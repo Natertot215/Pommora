@@ -1,7 +1,6 @@
-// CSS can only recolor the browser's native caret, never reshape it, so this paints the SAME
-// `.mdpm-caret` visual over whichever field is focused. Attaches globally — one focus listener at
-// the document root — without editing components. The native caret is hidden in Carets.css; here
-// we only position the drawn bar.
+// CSS can only recolor the browser's native caret and selection, never reshape either, so this paints the
+// same `.mdpm-caret` bar and `.mdpm-sel` pills the editor draws over whichever field is focused. One
+// document-root focus listener, so no component has to opt in.
 
 // Computed-style props copied onto the measuring mirror so its text lays out exactly like the field's.
 const MIRROR_PROPS = [
@@ -49,10 +48,17 @@ const isField = (el: EventTarget | null): el is Field =>
 const isEditable = (el: EventTarget | null): el is HTMLElement =>
   el instanceof HTMLElement && el.isContentEditable && !el.closest('.cm-editor')
 
+const lineHeight = (cs: CSSStyleDeclaration, fallback = 0): number =>
+  parseFloat(cs.lineHeight) || fallback || parseFloat(cs.fontSize) * 1.4
+
 interface CaretRect {
   x: number
   y: number
   h: number
+}
+
+interface PillRect extends CaretRect {
+  w: number
 }
 
 let bar: HTMLDivElement | null = null
@@ -66,6 +72,9 @@ let fieldRO: ResizeObserver | null = null
 // Cached so the per-frame path only updates text + position, not the full mirror style.
 let styledEl: Field | null = null
 let styledH = 0
+let host: HTMLDivElement | null = null
+let hostParent: HTMLElement | null = null
+let hostIsolation = ''
 
 function ensureNodes(): void {
   if (!bar) {
@@ -99,16 +108,22 @@ function syncMirror(el: Field): void {
   for (const p of MIRROR_PROPS) ms[p] = src[p]
   m.style.whiteSpace = el instanceof HTMLInputElement ? 'pre' : 'pre-wrap'
   m.style.wordWrap = el instanceof HTMLInputElement ? 'normal' : 'break-word'
-  styledH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4
+  styledH = lineHeight(cs)
   styledEl = el
 }
 
-function fieldCaret(el: Field): CaretRect | null {
+// The mirror lays out over the field's own box, so a rect measured inside it reads in the field's space.
+function seatMirror(el: Field): { m: HTMLDivElement; box: DOMRect } {
   const m = mirror as HTMLDivElement
   if (styledEl !== el) syncMirror(el)
-  const rect = el.getBoundingClientRect()
-  m.style.left = `${rect.left}px`
-  m.style.top = `${rect.top}px`
+  const box = el.getBoundingClientRect()
+  m.style.left = `${box.left}px`
+  m.style.top = `${box.top}px`
+  return { m, box }
+}
+
+function fieldCaret(el: Field): CaretRect | null {
+  const { m, box } = seatMirror(el)
   const pos = el.selectionStart ?? el.value.length
   m.textContent = el.value.slice(0, pos)
   // The trailing span's LEFT edge marks the caret; a lone `.` stands in when the caret's at the
@@ -122,13 +137,55 @@ function fieldCaret(el: Field): CaretRect | null {
   const x = sr.left - el.scrollLeft
   const y = sr.top - el.scrollTop
   // No box (detached / display:none).
-  if (rect.width === 0 && rect.height === 0) return null
+  if (box.width === 0 && box.height === 0) return null
   // Scrolled out of view. Horizontally the caret is a point, so a point test holds. Vertically it's
   // a bar that can overhang the field's border box at rest — a line-height tighter than the font's
   // own content area gives the line box negative half-leading — so the bar need only intersect.
-  if (x < rect.left - 1 || x > rect.right + 1) return null
-  if (y + styledH <= rect.top || y >= rect.bottom) return null
+  if (x < box.left - 1 || x > box.right + 1) return null
+  if (y + styledH <= box.top || y >= box.bottom) return null
   return { x, y, h: styledH }
+}
+
+function mergeRows(rects: DOMRect[], h: number): PillRect[] {
+  const rows: PillRect[] = []
+  for (const r of rects) {
+    if (r.width <= 0) continue
+    const row = rows.find((p) => Math.abs(p.y - r.top) < 1)
+    if (row) {
+      const right = Math.max(row.x + row.w, r.right)
+      row.x = Math.min(row.x, r.left)
+      row.w = right - row.x
+    } else rows.push({ x: r.left, y: r.top, w: r.width, h })
+  }
+  return rows
+}
+
+function fieldSelection(el: Field): PillRect[] {
+  const { selectionStart: from, selectionEnd: to } = el
+  if (from == null || to == null || from === to) return []
+  const { m, box } = seatMirror(el)
+  m.textContent = el.value.slice(0, from)
+  const span = document.createElement('span')
+  span.textContent = el.value.slice(from, to)
+  m.append(span, el.value.slice(to))
+  const rects = [...span.getClientRects()]
+  m.textContent = ''
+  return mergeRows(rects, styledH).flatMap((p) => {
+    const left = p.x - el.scrollLeft
+    const y = p.y - el.scrollTop
+    const x = Math.max(left, box.left)
+    const w = Math.min(left + p.w, box.right) - x
+    const clipped = w <= 0 || y + p.h <= box.top || y >= box.bottom
+    return clipped ? [] : [{ x, y, w, h: p.h }]
+  })
+}
+
+function editableSelection(el: HTMLElement): PillRect[] {
+  const sel = getSelection()
+  if (!sel?.rangeCount || sel.isCollapsed) return []
+  const r = sel.getRangeAt(0)
+  if (!el.contains(r.commonAncestorContainer)) return []
+  return mergeRows([...r.getClientRects()], lineHeight(getComputedStyle(el)))
 }
 
 function editableCaret(el: HTMLElement): CaretRect | null {
@@ -138,12 +195,67 @@ function editableCaret(el: HTMLElement): CaretRect | null {
   r.collapse(true)
   const rect = r.getClientRects()[0] ?? r.getBoundingClientRect()
   if (!rect || (rect.height === 0 && rect.width === 0 && rect.left === 0)) return null // empty line — skip, don't mutate the DOM
-  const cs = getComputedStyle(el)
-  return {
-    x: rect.left,
-    y: rect.top,
-    h: parseFloat(cs.lineHeight) || rect.height || parseFloat(cs.fontSize) * 1.4,
+  return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
+}
+
+// A field row is no stacking context of its own, so a negative z-index would sink past its background too.
+// Isolating the parent while a selection is drawn gives that negative layer a floor to sit on.
+function ensureHost(): HTMLDivElement | null {
+  const parent = active?.parentElement
+  if (!parent) return null
+  if (hostParent !== parent) {
+    releaseHost()
+    host = document.createElement('div')
+    host.className = 'mdpm-sel-host'
+    hostIsolation = parent.style.isolation
+    parent.style.isolation = 'isolate'
+    parent.prepend(host)
+    hostParent = parent
   }
+  return host
+}
+
+function releaseHost(): void {
+  host?.remove()
+  if (hostParent) hostParent.style.isolation = hostIsolation
+  host = null
+  hostParent = null
+}
+
+const corner = (i: number, n: number): string =>
+  n === 1 ? 'mdpm-sel-solo' : i === 0 ? 'mdpm-sel-head' : i === n - 1 ? 'mdpm-sel-foot' : ''
+
+function drawPills(rects: PillRect[]): void {
+  if (rects.length === 0) {
+    releaseHost()
+    return
+  }
+  const h = ensureHost()
+  if (!h) return
+  while (h.childElementCount > rects.length) h.lastElementChild?.remove()
+  while (h.childElementCount < rects.length) h.append(document.createElement('div'))
+  const base = h.getBoundingClientRect()
+  rects.forEach((r, i) => {
+    const el = h.children[i] as HTMLDivElement
+    el.className = `mdpm-sel ${corner(i, rects.length)}`.trim()
+    el.style.left = `${r.x - base.left}px`
+    el.style.top = `${r.y - base.top}px`
+    el.style.width = `${r.w}px`
+    el.style.height = `${r.h}px`
+  })
+}
+
+function selectionPills(el: HTMLElement): PillRect[] {
+  if (document.documentElement.classList.contains('native-highlight')) return []
+  if (isField(el)) return fieldSelection(el)
+  if (isEditable(el)) return editableSelection(el)
+  return []
+}
+
+function caretRect(el: HTMLElement): CaretRect | null {
+  if (isField(el)) return fieldCaret(el)
+  if (isEditable(el)) return editableCaret(el)
+  return null
 }
 
 function reposition(): void {
@@ -151,9 +263,11 @@ function reposition(): void {
   const b = bar as HTMLDivElement
   if (!active?.isConnected) {
     b.style.display = 'none'
+    releaseHost()
     return
   }
-  const c = isField(active) ? fieldCaret(active) : isEditable(active) ? editableCaret(active) : null
+  drawPills(selectionPills(active))
+  const c = caretRect(active)
   if (!c) {
     b.style.display = 'none'
     return
@@ -227,6 +341,7 @@ export function initNativeCaret(): void {
       styledEl = null
       fieldRO?.disconnect()
       cancelAnimationFrame(settleRaf)
+      releaseHost()
       if (bar) bar.style.display = 'none'
     }
   })
