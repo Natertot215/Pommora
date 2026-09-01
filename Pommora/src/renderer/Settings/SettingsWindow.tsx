@@ -210,6 +210,12 @@ const FRAMES = roster([
             hint: 'Menus that are plain lists open as system menus. Belongs to this computer rather than to the nexus.',
           },
           {
+            kind: 'toggle',
+            key: 'nativeHighlight',
+            label: 'Use Native Highlighting',
+            hint: "Selected text uses the system's own highlight instead of Pommora's.",
+          },
+          {
             kind: 'picker',
             key: 'pickerSelection',
             label: 'Show Selection In Pickers As',

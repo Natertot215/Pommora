@@ -25,11 +25,18 @@ function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null 
   return new RectangleMarker('mdpm-caret', left, top, null, lh)
 }
 
-function caretMarkers(view: EditorView): RectangleMarker[] {
-  // A cursor placed against a block widget (e.g. a table) makes forRange return a marker spanning the whole
-  // widget — a giant, mis-placed caret. Clamp anything far taller than a text line back to one line's height.
+// A cursor placed against a block widget (e.g. a table) makes forRange return a marker spanning the whole
+// widget — a giant, mis-placed measurement. Anything far taller than a text line comes back one line tall.
+// The selection reads its own outer bound through here too, so the two paints measure a seat identically.
+export function clampToLine(view: EditorView, cls: string, m: RectangleMarker): RectangleMarker {
   const cap = view.defaultLineHeight * 2.5 // headings (~1.8em) stay tall; a widget-spanning marker is clamped
   const floor = 4 // under this a marker is a collapsed line's sliver (an embed's fencing blank), not a caret
+  return m.height > cap || m.height < floor
+    ? new RectangleMarker(cls, m.left, m.top, m.width, view.defaultLineHeight)
+    : m
+}
+
+function caretMarkers(view: EditorView): RectangleMarker[] {
   const out: RectangleMarker[] = []
   for (const r of view.state.selection.ranges) {
     if (r.empty) {
@@ -50,14 +57,7 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
         'mdpm-caret',
         EditorSelection.cursor(cursor.head, (cursor.assoc || 1) > 0 ? -1 : 1),
       )
-    // Either end of the legible band takes the same repair — one line's height at the marker's own
-    // seat, so a widget-spanning marker shrinks to a caret and a collapsed seam draws one at all.
-    for (const m of markers)
-      out.push(
-        m.height > cap || m.height < floor
-          ? new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight)
-          : m,
-      )
+    for (const m of markers) out.push(clampToLine(view, 'mdpm-caret', m))
   }
   return out
 }

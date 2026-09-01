@@ -178,7 +178,7 @@
 }
 .data-row.selected,
 .data-row.selected:hover {
-  background: var(--state-selected);
+  background: var(--text-selection);
 }
 .data-row.row-dragging {
   opacity: var(--state-ghost);

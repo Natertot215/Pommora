@@ -142,6 +142,8 @@ export interface Personalization {
   sidebarMode?: SidebarMode
   /** Hide the toolbar tab bar until hovered. Absent = always shown. */
   revealTabBarOnHover?: boolean
+  /** Absent = Pommora draws its own text selection; true hands the paint back to the platform's. */
+  nativeHighlight?: boolean
   /** How every picker marks its chosen row — a filled, outlined row or a trailing checkmark.
    *  Absent = `outlined`. */
   pickerSelection?: PickerSelection
