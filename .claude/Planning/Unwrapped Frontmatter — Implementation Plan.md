@@ -1413,6 +1413,8 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - **The on-open sweep canonicalizes shape and never removes a value** (Gate 5 attack, 09-01-2026). The write-path reconcile deletes what it can't decode — that is V-3, and a user's own edit to the page is the gesture that earns it. A sweep fires with no gesture, over every file changed while the app was closed, so a `Status: Waiting` typed in another application would vanish at launch; the sweep leaves such keys as written (the surfaces already show them as no value) and adopts Multi-Select options whether or not the file needed a rewrite. It runs after the open returns, so a large drifted corpus repairs behind the window.
 - **The toggle repairs what drifts from here on** (Gate 5 attack). The sweep's file list is the index's re-read list, so pages drifted before the toggle was turned on are repaired on their next external change or their next in-app edit, not retroactively, and an open quit mid-sweep leaves the remainder to the same paths. A "Repair Now" action over the whole corpus is the retroactive form — Sequenced After.
 
+- **`setProperty` reads the page twice** (whole-range simplifier, 09-01-2026). `mutate.ts` reads the file to hand `loadGovernedWorld` its raw root, and `setGovernedRootKeys` reads it again inside the file lock — the locked read is the one the write is based on, so the first cannot stand in for it. Two reads per cell edit, on a user gesture, stay.
+
 ### Open Against Later Tasks
 
 ### Deviations
@@ -1428,6 +1430,11 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - **Task 0, the sweep's shape.** The comment-killer agent fanned out to three sub-agents on its own; all three were stopped and the sweep finished single-handed. A parallel session was live in the same tree throughout (its commit `345a82ab` removed both `(Nathan's call)` markers, so that control reads 0 from here on, and it holds uncommitted CSS edits that ride no commit of this arc). Task 0's "only comment lines moved" grep flags two lines whose trailing same-line comment was removed (`watcher.ts` `ignoreInitial`, `propertyValue.ts`'s `select` union member); the code on those lines is unchanged. `npm run lint` as a whole is red on the other session's unformatted `window-base.css`; Biome over the 26 files this task touched is clean.
 
 ### Lessons
+
+- A Features doc's on-disk examples are claims, not evidence → [[Development-Environment]] §Gates & Verification.
+- Commit as soon as a gate is green when a parallel session shares the tree → [[Development-Environment]] §Parallel Write Agents.
+- A test nexus without `nexus.json` is raw mode; `refreshTree` joins an in-flight walk → [[Development-Environment]] §Data-Layer Traps.
+- A sweep that reuses a write-path reconcile inherits its deletions; a repair that fires with no user gesture may only canonicalize shape (Gate 5 attack) — carried in the sweep's own comment and PropertiesPM.
 
 ### Sequenced After
 

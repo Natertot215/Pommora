@@ -144,25 +144,21 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
   })
 })
 
-describe('decodeValue — lenient on read, strict on restore', () => {
-  it('strict refuses what the schema cannot validate', () => {
-    expect(decodeValue(selectDef, 'Gone', { strict: true })).toEqual({ kind: 'null' })
-    expect(decodeValue(statusDef, 'Retired', { strict: true })).toEqual({ kind: 'null' })
-    expect(decodeValue(selectDef, 'A', { strict: true })).toEqual({ kind: 'select', value: 'A' })
+describe('decodeValue — lenient on read', () => {
+  it('a select or status names only an option the schema still offers', () => {
+    expect(decodeValue(selectDef, 'Gone')).toEqual({ kind: 'null' })
+    expect(decodeValue(statusDef, 'Retired')).toEqual({ kind: 'null' })
+    expect(decodeValue(selectDef, 'A')).toEqual({ kind: 'select', value: 'A' })
   })
 
-  it('strict intersects a multi-select, dropping only what the schema lost', () => {
+  it('a multi-select keeps a value the schema does not offer yet', () => {
     const d = def({ type: 'multi_select', select_options: [{ value: 'A', label: 'A' }] })
-    expect(decodeValue(d, ['A', 'Gone'], { strict: true })).toEqual({
-      kind: 'multiSelect',
-      value: ['A'],
-    })
-    expect(decodeValue(d, ['Gone'], { strict: true })).toEqual({ kind: 'null' })
+    expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A', 'Gone'] })
+    expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'multiSelect', value: ['Gone'] })
   })
 
-  it('strict refuses an empty string where lenient keeps it', () => {
+  it('an empty string is a url value', () => {
     expect(decodeValue(def({ type: 'url' }), '')).toEqual({ kind: 'url', value: '' })
-    expect(decodeValue(def({ type: 'url' }), '', { strict: true })).toEqual({ kind: 'null' })
   })
 })
 
@@ -204,12 +200,6 @@ describe('decodeValue — a file value names files', () => {
       value: ['[[a.pdf]]'],
     })
     expect(decodeValue(fileDef, ['[[a.pdf]]', ''])).toEqual({ kind: 'file', value: ['[[a.pdf]]'] })
-    // The same rule under the restore gate — a poisoned entry must not cost a page its files there
-    // either.
-    expect(decodeValue(fileDef, ['[[a.pdf]]', null], { strict: true })).toEqual({
-      kind: 'file',
-      value: ['[[a.pdf]]'],
-    })
   })
 
   it('coerces the unquoted hand-edit YAML reads as a nested sequence', () => {
@@ -222,26 +212,18 @@ describe('decodeValue — a file value names files', () => {
       kind: 'file',
       value: ['[[Report.pdf]]'],
     })
-    expect(decodeValue(fileDef, [[['One.pdf']]], { strict: true })).toEqual({
-      kind: 'file',
-      value: ['[[One.pdf]]'],
-    })
   })
 
   it('a nested sequence holding more than one entry is not a wikilink and reads as null', () => {
     expect(decodeValue(fileDef, [['a.pdf', 'b.pdf']])).toEqual({ kind: 'null' })
   })
 
-  it('nothing left to name is nothing, and strict never gates on option membership', () => {
+  it('nothing left to name is nothing', () => {
     // An empty list and a list of only-unspellable entries are the same answer.
     expect(decodeValue(fileDef, [])).toEqual({ kind: 'null' })
-    expect(decodeValue(fileDef, [], { strict: true })).toEqual({ kind: 'null' })
     expect(decodeValue(fileDef, [null, 2026])).toEqual({ kind: 'null' })
-    // A file def has no options; strict must keep every value it holds.
-    expect(decodeValue(fileDef, ['[[a.pdf]]'], { strict: true })).toEqual({
-      kind: 'file',
-      value: ['[[a.pdf]]'],
-    })
+    // A file def has no options — every value it holds survives.
+    expect(decodeValue(fileDef, ['[[a.pdf]]'])).toEqual({ kind: 'file', value: ['[[a.pdf]]'] })
     expect(isBlankValue(decodeValue(fileDef, []))).toBe(true)
   })
 })
