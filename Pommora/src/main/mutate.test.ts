@@ -13,6 +13,7 @@ const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
 const G_ID = '01KVGMT8BFG350FZZXAMG1QDRG'
 import { openSession, closeSession, sessionRoot } from './session'
+import { flushValueWrites } from './valuesChanged'
 import { splitFrontmatter, readNexus } from './readNexus'
 import { pathExists } from './IO/atomicWrite'
 import { createProperty } from './CRUD/registryProperty'
@@ -137,6 +138,17 @@ describe('handleMutate — create', () => {
     const tree = await readNexus(root)
     const daily = tree.collections.flatMap((c) => c.sets).find((s) => s.path === 'Notes/Daily')
     expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
+  })
+
+  it('createPage notes the new page for the values push', async () => {
+    const live = sessionRoot()!
+    flushValueWrites(live)
+    const r = await handleMutate(
+      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(flushValueWrites(live).map((c) => c.rel)).toEqual(['Notes/Daily'])
   })
 })
 
