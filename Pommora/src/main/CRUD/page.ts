@@ -49,8 +49,7 @@ export async function createPage(
   return ok({ id, path: file })
 }
 
-/** A rename and a move are the same write to disk, so they share one primitive; governing only
- *  modified_at leaves every other frontmatter key untouched. */
+/** A rename and a move are the same write to disk, so they share one primitive. */
 async function relocatePage(absFile: string, target: string): Promise<void> {
   // Under the SOURCE path's lock, the same key every other write to this page takes: a write
   // queued behind the move fails not-found rather than recreating the vacated file as a ghost.
@@ -82,7 +81,6 @@ export async function renamePage(
   return ok({ path: target })
 }
 
-/** Governs only modified_at, so all other frontmatter is preserved. */
 export async function updatePageBody(absFile: string, body: string): Promise<Result<null>> {
   // Locked here rather than at the caller: the existence check and the write must sit inside
   // the same slot as a relocate, or a rename landing between them re-creates the vacated file.

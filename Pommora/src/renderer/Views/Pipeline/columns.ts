@@ -2,8 +2,7 @@
 // not hidden — one allowlist, so a property added to a collection after a view already exists
 // AND a Context created after the view stay hidden until the user reveals them (creation never
 // visually changes an existing view). Title is always guaranteed. React divergences: emits only
-// {id, kind} — column width and the group/sort hoist before Title are render concerns;
-// and `_modified_at` is NOT default-on (it appears only when explicitly in propertyOrder).
+// {id, kind} — column width and the group/sort hoist before Title are render concerns.
 // Pure: no fs, no React.
 
 import type { ColumnKind, ResolvedColumn } from '@shared/types'
