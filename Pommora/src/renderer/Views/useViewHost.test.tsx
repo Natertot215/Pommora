@@ -252,6 +252,19 @@ describe('the values epoch', () => {
     expect(api?.effectiveValues.p2).toBeUndefined()
   })
 
+  it('one push over several containers reaches the mounted one', async () => {
+    await mount(collection())
+    nexus().loadValues.mockClear()
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
+    bump([
+      { rel: 'Other', pageIds: ['p9'] },
+      { rel: 'Col', pageIds: ['p2'] },
+    ])
+    await act(async () => {})
+    expect(nexus().loadValues).toHaveBeenCalledTimes(1)
+    expect(api?.effectiveValues.p2).toBeUndefined()
+  })
+
   it('a sibling container push neither refetches nor retires', async () => {
     await mount(collection())
     nexus().loadValues.mockClear()

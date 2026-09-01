@@ -528,6 +528,7 @@ async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): 
   // Its own deferral, not pushConfirmed's: that one returns at once when the tree didn't move,
   // and a value write never moves the tree.
   setImmediate(() => {
+    if (sessionRoot() !== root) return
     const changes = flushValueWrites(root)
     if (changes.length && mainWindow && !mainWindow.isDestroyed())
       push(mainWindow, 'values:changed', changes)
