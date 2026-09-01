@@ -13,9 +13,11 @@ import { pageCollectionSidecar } from '@shared/schemas'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atomicWrite'
 import { folderCorpus, indexWrittenPage } from '../indexSeed'
-import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
+import { readFrontmatterFields } from '../IO/pageFile'
+import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
+import { isPlainObject, propertyKey } from '@shared/propertyValue'
+import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso, sweepAdmits } from './util'
@@ -112,7 +114,6 @@ export async function restoreCachedValues(
   // actually wrote back, and a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
-  const key = propertyKey(def)
   // Map page id → file; the value write re-reads fresh inside the file lock.
   const byId = new Map<string, string>()
   for (const file of await folderCorpus(root, collectionFolder)) {
@@ -123,9 +124,7 @@ export async function restoreCachedValues(
   }
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
-  // refuses the write — stays cached.
-  // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
-  // resolves true — so the resolved boolean is the spend signal, with refusals mapped in.
+  // refuses the write — stays cached. Only a landed write resolves true.
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
@@ -133,16 +132,11 @@ export async function restoreCachedValues(
     // one can never disagree about whether they may come back.
     const standing = propertyValueStands(def, raw)
     if (!standing.stands) return false
-    const wrote = await rewritePageSerialized(file, (content) =>
-      !sweepAdmits(content)
-        ? null
-        : mergeFrontmatter(
-            content,
-            { [key]: encodeValue(standing.value), modified_at: nowIso() },
-            [key, 'modified_at'],
-            splitEnvelope(content).body,
-          ),
-    )
+    const wrote = await serializeOnFile(file, async () => {
+      const content = await readTextOrNull(file)
+      if (content === null || !sweepAdmits(content)) return false
+      return (await updatePageProperty(file, def, standing.value)).ok
+    })
     if (wrote) await indexWrittenPage(root, file)
     return wrote
   })

@@ -157,13 +157,13 @@
 
 <script id="data" type="application/json">{
   "head": "a4037b94",
-  "now": { "state": "running", "text": "Task 2 landed. Task 3 — restoreCachedValues writes through updatePageProperty under serializeOnFile.", "when": "2026-08-31 · Task 3" },
+  "now": { "state": "running", "text": "Phase 0's three tasks landed with zero test changes. Gate 0 — simplification, comment pass, code review, attack review over a4037b94..HEAD.", "when": "2026-08-31 · Gate 0" },
   "phases": [
     { "name": "Phase 0 · One writer", "state": "running", "base": "a4037b94", "tasks": [
       { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
       { "n": "Task 1", "name": "setPageContext delegates to setGovernedRootKeys", "state": "done", "note": "−6 lines; 26/26 in the three suites, no test touched" },
       { "n": "Task 2", "name": "One optionValues", "state": "done", "note": "main copy deleted; replaySchemaCascade imports the shared one" },
-      { "n": "Task 3", "name": "restoreCachedValues writes through updatePageProperty", "state": "running" }
+      { "n": "Task 3", "name": "restoreCachedValues writes through updatePageProperty", "state": "done", "note": "the hand-rolled merge is gone; serializeOnFile wraps the lockless writer" }
     ], "gate": { "output": "", "deviation": "" } },
     { "name": "Phase 1 · Keying", "state": "pending", "stop": true, "tasks": [
       { "n": "Task 4", "name": "The sigil is the Context's alone; governedKeys.ts dissolves", "state": "pending" },

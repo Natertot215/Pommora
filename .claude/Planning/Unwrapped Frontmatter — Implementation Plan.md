@@ -248,9 +248,9 @@ export function optionValues(def: PropertyDefinition): string[] {
 
 **Verify — automated**
 
-- [ ] `npx vitest run src/main/CRUD/removeProperty` green, tests unmodified.
-- [ ] `rg -F "mergeFrontmatter(" src/main/CRUD/removeProperty.ts` → 0. Control: `rg -F "updatePageProperty(" src/main/CRUD --glob '!*.test.*'` → 3 (the definition, `restoreProperty.ts`, and this; `mutate.ts` sits outside `CRUD/`).
-- [ ] Full gates green.
+- [x] `removeProperty` suite green inside the full run, tests unmodified.
+- [x] `rg -F "mergeFrontmatter(" src/main/CRUD/removeProperty.ts` → 0. Control: `updatePageProperty(` in `CRUD/` non-test → 3.
+- [x] typecheck 0 · 304 / 3749 · Biome clean on the file.
 
 **Verify — user**
 
