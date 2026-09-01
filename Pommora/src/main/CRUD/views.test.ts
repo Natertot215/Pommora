@@ -92,15 +92,17 @@ describe('view persistence CRUD', () => {
 
   it('writes no modified_at through save, reorder, or delete', async () => {
     await writeCollectionSidecar({ views: [view({ id: 'a' })] })
-    await saveView(folder, 'collection', view({ id: 'b' }))
-    await reorderViews(folder, 'collection', ['b', 'a'])
-    await deleteView(folder, 'collection', 'a')
-    expect('modified_at' in (await readRaw('_pagecollection.json'))).toBe(false)
+    expect((await saveView(folder, 'collection', view({ id: 'b' }))).ok).toBe(true)
+    expect((await reorderViews(folder, 'collection', ['b', 'a'])).ok).toBe(true)
+    expect((await deleteView(folder, 'collection', 'a')).ok).toBe(true)
+    const sidecar = await readRaw('_pagecollection.json')
+    expect((sidecar.views as SavedView[]).map((v) => v.id)).toEqual(['b'])
+    expect('modified_at' in sidecar).toBe(false)
   })
 
   it('leaves a legacy modified_at in place as a foreign key', async () => {
     await writeCollectionSidecar({ views: [], modified_at: '2020-01-01T00:00:00.000Z' })
-    await saveView(folder, 'collection', view({ id: 'a' }))
+    expect((await saveView(folder, 'collection', view({ id: 'a' }))).ok).toBe(true)
     expect((await readRaw('_pagecollection.json')).modified_at).toBe('2020-01-01T00:00:00.000Z')
   })
 
