@@ -277,6 +277,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           req.order.map((x) => (x === NEW_PAGE_SLOT ? r.value.id : x)),
         )
       await indexWrittenPage(root, r.value.path)
+      noteValueWrite(root, r.value.path)
       return ok({
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
       })
