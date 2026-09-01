@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-31-2026 → 09-01      | PM-122 | Compatible Properties                                |
 | 08-31-2026              | PM-121 | Custom Text-Selection.                               |
 | 08-31-2026              | PM-120 | The Single ViewHost                                  |
 | 08-30-2026              | PM-119 | The Card Trail & The Landing Slot                    |
@@ -125,6 +126,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-122 || Compatible Properties
+**DATE:** 08-31-2026 → 09-01
+
+Property values moved from wrapped `<Property>:` keys to bare keys named exactly as the registered property, Context keys from `(Title):` to `<Title>:`, and Select and Status values to one-element lists, the shape another frontmatter editor writes and reads. `src/shared/governedKeys.ts` and `src/main/CRUD/standing.ts` were deleted; a key is a property's when `isRegisteredPropertyName` matches it (`src/shared/properties.ts`), `invalidPropertyName` refuses Pommora's own keys and a leading `<`, `confirmedKeyHolders` refuses a rename onto a key any Collection page already holds, and the content index records every key under `INDEX_GENERATION` 2. `reconcileGovernedRoot` (`src/shared/contextResolve.ts`) became the one reconcile — a Context arm repairing near-miss Space titles and a property arm re-encoding values and returning `adoptions` — run by `setGovernedRootKeys` under a `GovernedWorld`, by `restoreScrub`, and by the new `runRepairSweep`; `applyAdoptions` writes new Multi-Select options through `mutateRegistry` alone. `values:changed` (`src/main/valuesChanged.ts`, the watcher's `valueChangesOf`) replaced `refreshValues`: every main-side frontmatter writer notes its page, `confirmWrite` flushes once per operation, and `useValuesEpoch` refetches the named container and retires overrides by page id, each override holding its own write promise. The Properties leaf gained its Metadata section: Repair Properties On Open runs the reconcile over the pages the index seed re-read, shape only, behind the window; Capitalize All Metadata Title Cases property names through `displayPropertyName` at every label surface while the rename fields and every frontmatter read keep the key. Clear Exclusion strips sidecars, `<Context>` keys, and the stamps only. The NexusOS vault was converted in place by a throwaway pass with a dated backup, and its registry re-registered.
+
+- **Commits:** `a4037b94^..5ff0498d`
+- **Diff:** Net +294 | +1164 / −870
 
 #### PM-121 || Custom Text-Selection.
 

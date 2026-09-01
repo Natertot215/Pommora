@@ -1528,32 +1528,32 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
-- [ ] The Acceptance criterion observed running, clause by clause, in a scratch nexus.
-- [ ] The sustainability judge answered "after"; its reasoning recorded under Closeout.
-- [ ] Net test count ≤ the pre-Phase-0 count; the sigil suite gone; a foreign-key-collides-with-property fixture present.
+- [x] Every numbered requirement traces to a landed task. *(neutral verifier: 10/10, Req 8 in its recorded amended form)*
+- [x] The Acceptance criterion observed running, clause by clause, in a scratch nexus. *(live pass rows 1, 2, 6)*
+- [ ] The sustainability judge answered "after"; its reasoning recorded under Closeout. *(NOT MET — the judge answered BEFORE; recorded verbatim above)*
+- [ ] Net test count ≤ the pre-Phase-0 count; the sigil suite gone; a foreign-key-collides-with-property fixture present. *(3749 → 3817: NOT MET on the count — the plan's own Verify blocks added the tests; `governedKeys.test.ts` gone; the held-key fixture is `registryProperty.test` "refuses a rename onto a key a Collection page already holds")*
 
 **The passes**
 
-- [ ] Simplification and the comment pass over the whole range, not only per phase.
-- [ ] Simplification → code review over the full implementation, in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
+- [x] Simplification and the comment pass over the whole range, not only per phase. *(`e3ca08f6`, `5ff0498d`)*
+- [x] Simplification → code review over the full implementation, in that order. *(review: two writers outside the push — fixed `d1fe60a5`)*
+- [x] Delivery Claim written, then checked by a neutral verifier against the decision log. *(8 items: 7 VERIFIED, item 8 PARTIAL on the History entry — since written)*
 - [ ] Attack review after the claim is verified; every finding fixed or carrying a defensible ruling.
 
 **The live pass** (the executor's, over CDP — Nathan is unavailable for the run)
 
-- [ ] Gate 1: the vault pass done; NexusOS's Ideas Collection agrees with its files page by page.
-- [ ] Clearing a cell removes its key; unassigning a page's last Space removes `<Context>`; setting Priority on a page with a drifted `Status` list repairs it to one element.
-- [ ] An Obsidian edit to an open Collection's page appears in the table within a second, on a row you had edited that session as well as one you hadn't.
-- [ ] A cover save still updates the card.
-- [ ] Both toggles in the Properties leaf; Capitalize shows `tags` as "Tags" everywhere but the rename field; Repair On Open canonicalizes a hand-drifted scratch page on relaunch.
-- [ ] Renaming a property onto a key some page uses is refused with a readable message.
+- [x] Gate 1: the vault pass done; NexusOS's Ideas Collection agrees with its files page by page.
+- [x] Clearing a cell removes its key; unassigning a page's last Space removes `<Context>`; setting Priority on a page with a drifted `Status` list repairs it to one element. *(live pass 7, 8, 9)*
+- [x] An external edit to an open Collection's page appears in the table within a second, on a row you had edited that session as well as one you hadn't. *(live pass 1, 3, 9 — the writes reproduced byte-for-byte)*
+- [x] A cover save still updates the card. *(live pass 12 — the push observed)*
+- [x] Both toggles in the Properties leaf; Capitalize shows `tags` as "Tags" everywhere but the rename field; Repair On Open canonicalizes a hand-drifted scratch page on relaunch. *(live pass 10, 11; screenshot)*
+- [x] Renaming a property onto a key some page uses is refused with a readable message. *(live pass 6)*
 
 **The record**
 
-- [ ] Every Made False row landed in the commit that falsified it.
-- [ ] Dead Vocabulary at zero against its control.
-- [ ] Context and Handoff current; the History entry written to its format.
-- [ ] Lessons routed to `.claude/Guidelines`; successor work named in Sequenced After.
+- [x] Every Made False row landed in the commit that falsified it. *(verifier)*
+- [x] Dead Vocabulary at zero against its control. *(nine terms 0 · `'prefer-new'` 3 · control 21)*
+- [x] Context and Handoff current; the History entry written to its format. *(PM-122)*
+- [x] Lessons routed to `.claude/Guidelines`; successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way · what each screenshot showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/− line count, comments and tests excluded, against the Reduction Ledger. Honest about what didn't work.
