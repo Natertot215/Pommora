@@ -31,6 +31,10 @@ export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[
 export const propertyTypeIconName = (type: PropertyType): IconName | undefined =>
   PROPERTY_TYPES[type].icon
 
+/** A definition's glyph: its own icon when one is set, else its type's. */
+export const propertyIcon = (def: PropertyDefinition): string =>
+  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
+
 export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
   (t) => PROPERTY_TYPES[t].creatable,
 )
@@ -53,7 +57,7 @@ export function PropertyTypeIcon({
 export interface PaneTarget {
   id: string
   label: string
-  icon: IconName | undefined
+  icon: string | undefined
 }
 
 export const TITLE_TARGET: PaneTarget = {
@@ -74,5 +78,5 @@ export const schemaTargets = (
   schema.filter(qualifies).map((d) => ({
     id: d.id,
     label: d.name,
-    icon: (asRenderableIcon(d.icon) as IconName | undefined) ?? propertyTypeIconName(d.type),
+    icon: propertyIcon(d),
   }))

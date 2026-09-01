@@ -6,7 +6,7 @@ import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuItem, MenuTopRow } from '@renderer/DesignSystem/Menus'
 import { topRowFlat } from './cardAddPicker.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
-import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
+import { propertyIcon, propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import {
   PropertyOptionRows,
   pickSemantics,
@@ -122,7 +122,14 @@ export function CardAddPicker({
                 <MenuItem
                   key={e.id}
                   leading={
-                    <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size="body" />
+                    <Icon
+                      name={
+                        e.def
+                          ? propertyIcon(e.def)
+                          : (propertyTypeIconName(e.type) ?? 'square-dashed')
+                      }
+                      size="body"
+                    />
                   }
                   trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
                   onClick={() => {

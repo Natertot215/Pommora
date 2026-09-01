@@ -33,7 +33,7 @@ import { bandReorderPatch } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
-import { PropertyTypeIcon } from '@renderer/Properties/PropertyTypes'
+import { PropertyTypeIcon, propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
@@ -455,11 +455,16 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </span>
       )
     }
+    const def = schema.find((d) => d.id === id)
     const t = declaredType(id, schema)
     if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        <PropertyTypeIcon type={t} size="body" />
+        {def ? (
+          <Icon name={propertyIcon(def)} size="body" />
+        ) : (
+          <PropertyTypeIcon type={t} size="body" />
+        )}
       </span>
     )
   }

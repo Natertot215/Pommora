@@ -22,11 +22,8 @@ import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assign
 import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { resolveFieldValue } from '@renderer/Properties/value'
 import { fetchPageDetail, readPageDetail } from '../Store/TabState'
-import {
-  propertyIcon,
-  usePropertyRows,
-  type Editing,
-} from '@renderer/Properties/Assignment/usePropertyRows'
+import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/usePropertyRows'
+import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/

@@ -20,11 +20,8 @@ import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assign
 import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'
 import { side } from '@renderer/DesignSystem/Menus/menu-base.css'
-import {
-  propertyIcon,
-  usePropertyRows,
-  type Editing,
-} from '@renderer/Properties/Assignment/usePropertyRows'
+import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/usePropertyRows'
+import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
