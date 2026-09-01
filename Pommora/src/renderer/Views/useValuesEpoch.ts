@@ -28,8 +28,22 @@ export const retireSettled = (
   pageIds: readonly string[] | null,
 ): Overrides | null => {
   if (!o) return o
-  const kept = Object.entries(o).filter(([id, e]) => (pageIds ? !pageIds.includes(id) : e.pending))
+  const kept = Object.entries(o).filter(([id, e]) =>
+    pageIds?.length ? !pageIds.includes(id) : e.pending,
+  )
   return kept.length ? Object.fromEntries(kept) : null
+}
+
+const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Overrides | null => {
+  if (!o) return o
+  return Object.fromEntries(
+    Object.entries(o).map(([id, entry]) => {
+      const root = entry.fm as unknown as Record<string, unknown>
+      if (!(oldKey in root)) return [id, entry]
+      const { [oldKey]: moved, ...rest } = root
+      return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
+    }),
+  )
 }
 
 /** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a
@@ -42,33 +56,21 @@ export function useValuesEpoch(
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
     if (!valuesEpoch) return
-    if (
-      valuesEpoch.kind === 'container' &&
-      valuesEpoch.rel !== path &&
-      !valuesEpoch.rel.startsWith(`${path}/`)
-    )
-      return
+    let apply: (prev: Overrides | null) => Overrides | null
+    if (valuesEpoch.kind === 'container') {
+      const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
+      if (!mine.length) return
+      const ids = mine.flatMap((c) => c.pageIds)
+      apply = (prev) => retireSettled(prev, ids)
+    } else {
+      const { oldKey, newKey } = valuesEpoch
+      apply = (prev) => rekeyOverrides(prev, oldKey, newKey)
+    }
     let canceled = false
     void window.nexus.loadValues(path).then((v) => {
       if (!canceled) setValues(v)
     })
-    if (valuesEpoch.kind === 'container') {
-      const ids = valuesEpoch.pageIds
-      setValueOverride((prev) => retireSettled(prev, ids.length ? ids : null))
-    } else {
-      const { oldKey, newKey } = valuesEpoch
-      setValueOverride((prev) => {
-        if (!prev) return prev
-        return Object.fromEntries(
-          Object.entries(prev).map(([id, entry]) => {
-            const root = entry.fm as unknown as Record<string, unknown>
-            if (!(oldKey in root)) return [id, entry]
-            const { [oldKey]: moved, ...rest } = root
-            return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
-          }),
-        )
-      })
-    }
+    setValueOverride(apply)
     return () => {
       canceled = true
     }

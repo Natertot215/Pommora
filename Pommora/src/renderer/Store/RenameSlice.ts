@@ -4,7 +4,7 @@ import { normalizePropertyName } from '@shared/properties'
 import { orderWithSlot } from '../Views/creationOrder'
 import { findContainer, parentPathOf } from '../Interface/Scope'
 import type { Slice } from './SessionState'
-import type { ValuesEpoch } from '@shared/types'
+import type { ValueChange, ValuesEpoch } from '@shared/types'
 
 interface RenameClaim {
   token: number
@@ -51,7 +51,7 @@ export interface RenameSlice {
    *  overrides too — clearing them would revive the assign-vanish this codebase already fixed. */
   valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
-  bumpContainerValues: (changes: { rel: string; pageIds: string[] }[]) => void
+  bumpContainerValues: (changes: ValueChange[]) => void
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
@@ -184,12 +184,10 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     set((st) => ({
       valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
     })),
-  bumpContainerValues: (changes) => {
-    for (const { rel, pageIds } of changes)
-      set((st) => ({
-        valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', rel, pageIds },
-      }))
-  },
+  bumpContainerValues: (changes) =>
+    set((st) => ({
+      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', changes },
+    })),
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
   submitPropertyRename: async (newName) => {

@@ -30,9 +30,9 @@ import {
   type WatchEvent,
   type WatchEventName,
 } from './watchPatch'
-import { pageIdOf } from './valuesChanged'
+import { pageIdIndex } from './valuesChanged'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree, ValueChange } from '@shared/types'
 
 const SETTLE_MS = 200
 
@@ -148,9 +148,6 @@ export function stopWatcher(): void {
   batch = []
 }
 
-/** Spend the settle window's batch: patch what classifies, walk for the rest — through the
- *  seam either way, so what the renderer receives is exactly what main now holds. Push only
- *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
 /** The containers whose page values a batch touched, with the ids the tree resolves; a batch that
  *  degraded to a walk names its containers with no ids, so the renderer retires only settled overrides. */
 function valueChangesOf(
@@ -158,21 +155,26 @@ function valueChangesOf(
   root: string,
   scope: WatchScope,
   tree: NexusTree | null,
-): { rel: string; pageIds: string[] }[] {
+): ValueChange[] {
   const held = getLiveTree()
-  const classified = held ? events.map((ev) => classifyEvent(held, root, ev, scope)) : []
+  if (!held) return []
+  const byPath = pageIdIndex(tree)
   const byContainer = new Map<string, Set<string>>()
-  for (const c of classified) {
+  for (const ev of events) {
+    const c = classifyEvent(held, root, ev, scope)
     if (c.kind !== 'page-upsert') continue
     const container = c.rel.includes('/') ? c.rel.slice(0, c.rel.lastIndexOf('/')) : ''
     const ids = byContainer.get(container) ?? new Set<string>()
     byContainer.set(container, ids)
-    const id = pageIdOf(tree, c.rel)
+    const id = byPath.get(c.rel)
     if (id) ids.add(id)
   }
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
+/** Spend the settle window's batch: patch what classifies, walk for the rest — through the
+ *  seam either way, so what the renderer receives is exactly what main now holds. Push only
+ *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
 async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   const events = batch
