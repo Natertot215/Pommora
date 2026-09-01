@@ -4,6 +4,8 @@ import {
   propertyDefinition,
   propertyType,
   isReservedPropertyId,
+  isRegisteredPropertyName,
+  propertyNames,
   defaultStatusSeed,
 } from './properties'
 
@@ -130,6 +132,15 @@ describe('reserved property ids', () => {
     expect(isReservedPropertyId('_modified_at')).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
+  })
+})
+
+describe('isRegisteredPropertyName', () => {
+  it('matches a registered name exactly, case included', () => {
+    const names = propertyNames([{ id: 'p', name: 'tags', type: 'multi_select' }])
+    expect(isRegisteredPropertyName('tags', names)).toBe(true)
+    expect(isRegisteredPropertyName('Tags', names)).toBe(false)
+    expect(isRegisteredPropertyName('<tags>', names)).toBe(false)
   })
 })
 

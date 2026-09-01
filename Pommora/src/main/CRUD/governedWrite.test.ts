@@ -18,9 +18,9 @@ afterEach(async () => {
 describe('setGovernedRootKeys', () => {
   it('writes one governed key and preserves foreign keys and comments', async () => {
     await writeFile(page, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
-    await setGovernedRootKeys(page, { '<Status>': 'Done' }, ['<Status>'])
+    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
     const out = await readFile(page, 'utf8')
-    expect(out).toContain('<Status>: Done')
+    expect(out).toContain('Status: Done')
     expect(out).toContain('# keep me')
     expect(out).toContain('foo: bar')
     expect(out).toContain('body')
@@ -29,31 +29,31 @@ describe('setGovernedRootKeys', () => {
   it('leaves the other layer alone — a property write never touches a Context key', async () => {
     await writeFile(
       page,
-      '---\nid: p1\n# keep\n<Status>: Active\n<Due>: 2026-08-01\n(Projects):\n  - Pommora\n---\n',
+      '---\nid: p1\n# keep\nStatus: Active\nDue: 2026-08-01\n<Projects>:\n  - Pommora\n---\n',
     )
-    await setGovernedRootKeys(page, { '<Status>': 'Live' }, ['<Status>'])
+    await setGovernedRootKeys(page, { Status: 'Live' }, ['Status'])
     const out = await readFile(page, 'utf8')
-    expect(out).toContain('<Status>: Live')
-    expect(out).toContain('<Due>: 2026-08-01')
-    expect(out).toContain('(Projects)')
+    expect(out).toContain('Status: Live')
+    expect(out).toContain('Due: 2026-08-01')
+    expect(out).toContain('<Projects>')
     expect(out).toContain('# keep')
   })
 
   it('a governed key absent from the next values is deleted — that is how a clear is said', async () => {
-    await writeFile(page, '---\nid: p1\n<Status>: Active\n---\n')
-    await setGovernedRootKeys(page, {}, ['<Status>'])
-    expect(await readFile(page, 'utf8')).not.toContain('<Status>')
+    await writeFile(page, '---\nid: p1\nStatus: Active\n---\n')
+    await setGovernedRootKeys(page, {}, ['Status'])
+    expect(await readFile(page, 'utf8')).not.toContain('Status')
   })
 
   it('a Context unassign deletes its key too', async () => {
-    await writeFile(page, '---\nid: p1\n(Projects):\n  - Pommora\n---\n')
-    await setGovernedRootKeys(page, {}, ['(Projects)'])
-    expect(await readFile(page, 'utf8')).not.toContain('(Projects)')
+    await writeFile(page, '---\nid: p1\n<Projects>:\n  - Pommora\n---\n')
+    await setGovernedRootKeys(page, {}, ['<Projects>'])
+    expect(await readFile(page, 'utf8')).not.toContain('<Projects>')
   })
 
   it('stamps modified_at itself — listing it without supplying it would delete it', async () => {
     await writeFile(page, '---\nid: p1\nmodified_at: 2020-01-01T00:00:00.000Z\n---\n')
-    await setGovernedRootKeys(page, { '<Status>': 'Done' }, ['<Status>'])
+    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
     const out = await readFile(page, 'utf8')
     expect(out).toMatch(/modified_at: 20[2-9]\d-/)
     expect(out).not.toContain('2020-01-01')
@@ -61,13 +61,10 @@ describe('setGovernedRootKeys', () => {
 
   it('writes the key plain — neither glyph needs quoting', async () => {
     await writeFile(page, '---\nid: p1\n---\n')
-    await setGovernedRootKeys(page, { '<Status>': 'Done', '(Areas)': ['Work'] }, [
-      '<Status>',
-      '(Areas)',
-    ])
+    await setGovernedRootKeys(page, { Status: 'Done', '<Areas>': ['Work'] }, ['Status', '<Areas>'])
     const out = await readFile(page, 'utf8')
-    expect(out).toContain('<Status>: Done')
-    expect(out).toContain('(Areas):')
-    expect(out).not.toContain('"<Status>"')
+    expect(out).toContain('Status: Done')
+    expect(out).toContain('<Areas>:')
+    expect(out).not.toContain('"Status"')
   })
 })

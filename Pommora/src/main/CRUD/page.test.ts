@@ -8,7 +8,6 @@ import { splitEnvelope, assembleEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { isUlid } from '../ids'
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
-import { wrapKey } from '@shared/governedKeys'
 
 /** The writer takes a definition, not an id — tests name the property and this supplies the rest.
  *  The type only has to be one the value's kind can hold; the key comes from the name. */
@@ -78,8 +77,8 @@ describe('createPage', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
-    expect(fm[wrapKey('property', 'status')]).toBe('doing')
-    expect(wrapKey('property', 'empty') in fm).toBe(false)
+    expect(fm.status).toBe('doing')
+    expect('empty' in fm).toBe(false)
     expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
   })
 })
@@ -190,9 +189,7 @@ describe('updatePageProperty', () => {
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
     const at = async (name: string): Promise<unknown> =>
-      (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[
-        wrapKey('property', name)
-      ]
+      (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
 
     await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
     await updatePageProperty(f, defOf('prop_tags', 'multi_select'), {

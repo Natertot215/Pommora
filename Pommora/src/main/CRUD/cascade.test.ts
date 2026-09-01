@@ -3,9 +3,10 @@ import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PAGE_ID_KEY } from '@shared/identity'
-import { wrapKey } from '@shared/governedKeys'
+import type { PropertyDefinition } from '@shared/properties'
 import { renameCascade } from './cascade'
 import { createPage } from './page'
+import { createProperty } from './registryProperty'
 import { splitFrontmatter } from '../readNexus'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { rewritePageSerialized } from '../IO/atomicWrite'
@@ -126,8 +127,13 @@ describe('the cascade queries the index', () => {
 })
 
 describe('renameCascade over frontmatter', () => {
-  const SOURCE = wrapKey('property', 'Source')
-  const SITE = wrapKey('property', 'Site')
+  const SOURCE = 'Source'
+  const SITE = 'Site'
+  beforeEach(async () => {
+    for (const name of [SOURCE, SITE]) {
+      await createProperty(root, { id: '', name, type: 'url' } as PropertyDefinition)
+    }
+  })
   const setValue = (path: string, key: string, value: string) =>
     rewritePageSerialized(path, (content) =>
       mergeFrontmatter(content, { [key]: value }, [key], splitEnvelope(content).body),

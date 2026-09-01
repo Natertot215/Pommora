@@ -114,7 +114,7 @@ describe('confirmMutation', () => {
   it('a Space delete walks — its cascade rewrote contextValues the transform never touches', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nPageID: ${ULID_A}\n(Areas):\n  - Home\n---\n\nalpha\n`,
+      `---\nPageID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
     )
     dropLiveTree()
     await refreshTree(root)
@@ -151,7 +151,7 @@ describe('confirmMutation', () => {
   it('setContext confirms by one page read — zero walks, contextValues patched', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nPageID: ${ULID_A}\n(Areas):\n  - Home\n---\n\nalpha\n`,
+      `---\nPageID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
     )
     const pushed = await confirmMutation(
       root,

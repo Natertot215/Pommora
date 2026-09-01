@@ -142,13 +142,13 @@ describe('editProperty', () => {
     }
     // Hand-edited into unparseable YAML — an unterminated flow mapping. It sorts between the two
     // healthy pages, so a sweep that throws on it leaves C behind on the old key.
-    await writeFile(pages[1], '---\ntitle: B\n<Old>: 1\nbroken: {oops\n---\nb\n', 'utf8')
+    await writeFile(pages[1], '---\ntitle: B\nOld: 1\nbroken: {oops\n---\nb\n', 'utf8')
 
     expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
     for (const path of [pages[0], pages[2]]) {
       const content = await readFile(path, 'utf8')
-      expect(content).toContain('<New>')
-      expect(content).not.toContain('<Old>')
+      expect(content).toContain('New: 1')
+      expect(content).not.toContain('Old:')
     }
     expect(await readFile(pages[1], 'utf8')).toContain('broken: {oops') // left exactly as found
   })

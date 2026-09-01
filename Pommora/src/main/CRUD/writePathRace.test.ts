@@ -94,7 +94,7 @@ describe('a value write racing a body write on one page', () => {
     ])
 
     const content = await readFile(p.value.path, 'utf8')
-    expect(content).toContain('<Priority>')
+    expect(content).toContain('Priority')
     expect(content).toContain('second')
   })
 })

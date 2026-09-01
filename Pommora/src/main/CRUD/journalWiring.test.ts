@@ -47,11 +47,11 @@ beforeEach(async () => {
   )
   await writeFile(
     abs('Col', 'A.md'),
-    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAA\n<Stage>: Draft\n---\nbody\n',
+    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAA\nStage: Draft\n---\nbody\n',
   )
   await writeFile(
     abs('Col', 'B.md'),
-    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAB\n<Stage>: Draft\n---\nbody\n',
+    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAB\nStage: Draft\n---\nbody\n',
   )
   await openSession(root)
   observed = []
@@ -92,7 +92,7 @@ describe('the rename writer', () => {
     expect(writes.length).toBe(2)
     expect(writes.every((w) => w.journaled)).toBe(true)
     expect(await readSchemaJournal(root)).toBeNull()
-    expect(await readFile(abs('Col', 'A.md'), 'utf8')).toContain('<Phase>: Draft')
+    expect(await readFile(abs('Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
   })
 
   it('clears on a refused rename with no page touched', async () => {
@@ -144,7 +144,7 @@ describe('the option-op writers', () => {
     )
     await writeFile(
       abs('Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\n<Tags>: Draft\n---\nbody\n',
+      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nTags: Draft\n---\nbody\n',
     )
     observed = []
   }
@@ -157,7 +157,7 @@ describe('the option-op writers', () => {
     expect(writes.length).toBeGreaterThan(0)
     expect(writes.every((w) => w.journaled)).toBe(true)
     expect(await readSchemaJournal(root)).toBeNull()
-    expect(await readFile(abs('Col', 'C.md'), 'utf8')).toContain('<Tags>: Queued')
+    expect(await readFile(abs('Col', 'C.md'), 'utf8')).toContain('Tags: Queued')
   })
 
   it('a refused option-rename clears with no page touched', async () => {
@@ -178,7 +178,7 @@ describe('the option-op writers', () => {
     expect(await readSchemaJournal(root)).toBeNull()
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.value)).toEqual(['Done'])
-    expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('<Tags>: Draft')
+    expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
   it('option-clear never writes a record — its residue disagrees with nothing', async () => {
@@ -188,7 +188,7 @@ describe('the option-op writers', () => {
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.value)).toEqual(['Draft', 'Done'])
-    expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('<Tags>: Draft')
+    expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
   it('setOptions never writes a record', async () => {

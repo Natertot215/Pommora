@@ -120,28 +120,28 @@ describe('setPageContext', () => {
     const r = await setPageContext(page(), await world(), 'ctx_projects', ['sp-pom'])
     expect(r.ok).toBe(true)
     const content = await readFile(page(), 'utf8')
-    expect(content).toContain('(Projects):')
-    expect(splitFrontmatter(content)['(Projects)']).toEqual(['Pommora'])
+    expect(content).toContain('<Projects>:')
+    expect(splitFrontmatter(content)['<Projects>']).toEqual(['Pommora'])
     expect(content).toContain('body')
   })
 
   it('clears the key entirely on an empty list (A-5)', async () => {
-    await writeFile(page(), '---\nid: p1\n(Projects):\n  - Pommora\n---\nbody')
+    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
     await setPageContext(page(), await world(), 'ctx_projects', [])
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
-    expect('(Projects)' in fm).toBe(false)
+    expect('<Projects>' in fm).toBe(false)
   })
 
   it('reconciles sibling keys in place (D-9a/H-5)', async () => {
     await writeFile(
       page(),
-      '---\nid: p1\n(Projects):\n  - pommora\n(Classes):\n  - cs 161\n  - Bogus\n---\nbody',
+      '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody',
     )
     const r = await setPageContext(page(), await world(), 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
-    expect(fm['(Classes)']).toEqual(['CS 161'])
-    expect(fm['(Projects)']).toEqual(['Pommora']) // untargeted sibling repaired on the same write
+    expect(fm['<Classes>']).toEqual(['CS 161'])
+    expect(fm['<Projects>']).toEqual(['Pommora']) // untargeted sibling repaired on the same write
   })
 
   it('fails without writing when ANY space sidecar is unreadable (never strips siblings)', async () => {
@@ -149,7 +149,7 @@ describe('setPageContext', () => {
     // a world missing that Space would make the reconcile drop its valid tags.
     await rm(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     await mkdir(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
-    await writeFile(page(), '---\nid: p1\n(Projects):\n  - Pommora\n---\nbody')
+    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
     const before = await readFile(page(), 'utf8')
     const w = await loadContextWorld(root)
     expect(w.ok).toBe(false)
@@ -172,7 +172,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     const sc = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
     )
-    expect(sc['(Classes)']).toEqual(['CS 161'])
+    expect(sc['<Classes>']).toEqual(['CS 161'])
     expect(sc.id).toBe('sp-pom')
   })
 })

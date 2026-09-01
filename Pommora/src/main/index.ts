@@ -1044,16 +1044,15 @@ serveBridge(
         try {
           const { excluded, assetDir } = await readWatchScope(root)
           if (excluded.length === 0 || !win) return ok(null)
-          const preserve = (await readLivePersonalization(root)).preservePropertiesOnClear !== false
           const { response } = await dialog.showMessageBox(win, {
             type: 'warning',
             buttons: ['Clear', 'Cancel'],
             defaultId: 1,
             cancelId: 1,
-            ...clearConfirmCopy(excluded.length, preserve),
+            ...clearConfirmCopy(excluded.length),
           })
           if (response !== 0) return ok(null)
-          const result = await clearExclusionData(root, excluded, assetDir, preserve)
+          const result = await clearExclusionData(root, excluded, assetDir)
           if (!result.ok) return result
           await seedContentIndex(root)
           return ok(result.value)

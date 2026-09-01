@@ -41,10 +41,10 @@ beforeEach(async () => {
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),
   )
   for (let i = 0; i < 28; i++) await page(`P${i}`, '')
-  await page('HolderA', '<Stage>: Draft\n')
-  await page('HolderB', '<Stage>: Draft\n')
+  await page('HolderA', 'Stage: Draft\n')
+  await page('HolderB', 'Stage: Draft\n')
   await mkdir(abs('Loose'), { recursive: true })
-  await writeFile(abs('Loose', 'Note.md'), '---\n<Stage>: Draft\n---\n\nun-governed\n')
+  await writeFile(abs('Loose', 'Note.md'), '---\nStage: Draft\n---\n\nun-governed\n')
   openSessionDb(root)
   await seedContentIndex(root)
   openSpy.mockClear()
@@ -57,13 +57,13 @@ afterEach(async () => {
 
 describe('keyHolderFiles', () => {
   it('answers the queried holders intersected with the scope folders', async () => {
-    const files = await keyHolderFiles(root, '<Stage>', [abs('Notes')])
+    const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
     expect(files.sort()).toEqual([abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md')])
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {
     closeSessionDb()
-    const files = await keyHolderFiles(root, '<Stage>', [abs('Notes')])
+    const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
     expect(files).toHaveLength(30)
     expect(files.some((f) => f.includes('Loose'))).toBe(false)
   })
@@ -81,12 +81,12 @@ describe('the property cascades open only the holders', () => {
   it('a nexus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
     await mkdir(abs('Vault'), { recursive: true })
-    const excludedPage = `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5XYZ\n(Areas):\n  - Home\n---\n\nbody\n`
+    const excludedPage = `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
     await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
     const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
-      if (!('(Areas)' in raw)) return null
+      if (!('<Areas>' in raw)) return null
       const next = { ...raw }
-      delete next['(Areas)']
+      delete next['<Areas>']
       return { next }
     })
     expect(swept.touched).toEqual([])
@@ -97,8 +97,8 @@ describe('the property cascades open only the holders', () => {
     const before = await readFile(abs('Loose', 'Note.md'), 'utf8')
     const r = await deleteProperty(root, 'prop_s')
     expect(r.ok).toBe(true)
-    expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).not.toContain('<Stage>')
-    expect(await readFile(abs('Notes', 'HolderB.md'), 'utf8')).not.toContain('<Stage>')
+    expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).not.toContain('Stage')
+    expect(await readFile(abs('Notes', 'HolderB.md'), 'utf8')).not.toContain('Stage')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toBe(before)
   })
 })

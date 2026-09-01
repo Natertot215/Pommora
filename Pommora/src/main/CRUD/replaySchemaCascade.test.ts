@@ -56,11 +56,11 @@ async function seedNexus(): Promise<string> {
   )
   await writeFile(
     join(root, 'Col', 'A.md'),
-    `---\nPageID: ${PAGE_IDS[0]}\n<Stage>: Draft\n---\nbody\n`,
+    `---\nPageID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`,
   )
   await writeFile(
     join(root, 'Col', 'B.md'),
-    `---\nPageID: ${PAGE_IDS[1]}\n<Stage>: Draft\n---\nbody\n`,
+    `---\nPageID: ${PAGE_IDS[1]}\nStage: Draft\n---\nbody\n`,
   )
   return root
 }
@@ -86,7 +86,7 @@ async function renameCrashState(root: string): Promise<void> {
     },
     result: null,
   }))
-  const half = renameFrontmatterKey(await page(root, 'A'), '<Stage>', '<Phase>', 'prefer-new')
+  const half = renameFrontmatterKey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new')
   if (half === null) throw new Error('fixture: half-fold produced nothing')
   await writeFile(join(root, 'Col', 'A.md'), half)
 }
@@ -140,7 +140,7 @@ describe('rename replay', () => {
     const root = await seedNexus()
     await renameCrashState(root)
     expect((await readRegistry(root)).defs.prop_s?.name).toBe('Phase')
-    expect(await page(root, 'B')).toContain('<Stage>: Draft')
+    expect(await page(root, 'B')).toContain('Stage: Draft')
   })
 })
 
@@ -234,7 +234,7 @@ describe('option replay', () => {
       },
       result: null,
     }))
-    const half = replacePageValue(await page(crashed, 'A'), '<Stage>', 'Draft', 'Queued', 'select')
+    const half = replacePageValue(await page(crashed, 'A'), 'Stage', 'Draft', 'Queued', 'select')
     if (half === null) throw new Error('fixture: half-cascade produced nothing')
     await writeFile(join(crashed, 'Col', 'A.md'), half)
     await openSession(crashed)
@@ -284,11 +284,11 @@ describe('option replay', () => {
     expect((await removeOption(root, 'prop_s', 'Draft')).ok).toBe(true)
     await writeFile(
       join(root, 'Col', 'A.md'),
-      `---\nPageID: ${PAGE_IDS[0]}\n<Stage>: Draft\n---\nbody\n`,
+      `---\nPageID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`,
     )
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
     await replaySchemaCascade(root)
-    expect(await page(root, 'A')).toContain('<Stage>: Draft')
+    expect(await page(root, 'A')).toContain('Stage: Draft')
     expect(await readSchemaJournal(root)).toBeNull()
   })
 })
@@ -306,7 +306,7 @@ describe('unreadable holders hold the record', () => {
     // The page becomes readable again — the next open finishes the job.
     await chmod(join(root, 'Col', 'B.md'), 0o644)
     await replaySchemaCascade(root)
-    expect(await page(root, 'B')).not.toContain('<Stage>')
+    expect(await page(root, 'B')).not.toContain('Stage')
     expect(await readSchemaJournal(root)).toBeNull()
   })
 })
@@ -320,13 +320,13 @@ describe('the index seam', () => {
     // C landed after the seed with no index row — the queried holder set cannot name it.
     await writeFile(
       join(root, 'Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\n<Stage>: Draft\n---\nbody\n',
+      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
     )
     await renameCrashState(root)
     await replaySchemaCascade(root)
-    expect(await page(root, 'A')).toContain('<Phase>: Draft')
-    expect(await page(root, 'B')).toContain('<Phase>: Draft')
-    expect(await page(root, 'C')).toContain('<Stage>: Draft')
+    expect(await page(root, 'A')).toContain('Phase: Draft')
+    expect(await page(root, 'B')).toContain('Phase: Draft')
+    expect(await page(root, 'C')).toContain('Stage: Draft')
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
@@ -334,12 +334,12 @@ describe('the index seam', () => {
     const root = await seedNexus()
     await writeFile(
       join(root, 'Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\n<Stage>: Draft\n---\nbody\n',
+      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
     )
     await renameCrashState(root)
     await openSession(root)
     await replaySchemaCascade(root)
-    expect(await page(root, 'C')).toContain('<Phase>: Draft')
+    expect(await page(root, 'C')).toContain('Phase: Draft')
     expect(await readSchemaJournal(root)).toBeNull()
   })
 })

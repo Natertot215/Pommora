@@ -131,15 +131,6 @@ describe('readPersonalization: ribbon knobs', () => {
   })
 })
 
-describe('readPersonalization: preservePropertiesOnClear', () => {
-  it('round-trips false and leaves an absent key undefined, not false', () => {
-    expect(
-      readPersonalization({ preservePropertiesOnClear: false }).preservePropertiesOnClear,
-    ).toBe(false)
-    expect(readPersonalization({}).preservePropertiesOnClear).toBeUndefined()
-  })
-})
-
 describe('readPersonalization: picker selection', () => {
   it('reads the stored mode back so a set survives the next tree push', () => {
     expect(readPersonalization({ pickerSelection: 'checked' }).pickerSelection).toBe('checked')
@@ -349,7 +340,7 @@ describe('readNexus — registry-backed contexts', () => {
     d(join(reg, '.nexus', 'contexts', 'Projects', 'Pommora'))
     w(
       join(reg, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-pom', color: 'cyan', '(Classes)': ['CS 161'] }),
+      JSON.stringify({ id: 'sp-pom', color: 'cyan', '<Classes>': ['CS 161'] }),
     )
     d(join(reg, '.nexus', 'contexts', 'Projects', 'CS Project'))
     w(
@@ -365,7 +356,7 @@ describe('readNexus — registry-backed contexts', () => {
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
     w(
       join(reg, 'Notes', 'Linked.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n(Projects):\n  - Pommora\n---\nbody',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n<Projects>:\n  - Pommora\n---\nbody',
     )
     w(join(reg, 'Notes', 'Plain.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRR\n---\nbody')
   })

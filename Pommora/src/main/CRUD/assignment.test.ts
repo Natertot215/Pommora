@@ -1,4 +1,3 @@
-import { wrapKey } from '@shared/governedKeys'
 import { it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -87,7 +86,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
       string,
       unknown
     >
-    expect(fm[wrapKey('property', 'Gone')]).toBeUndefined()
+    expect(fm.Gone).toBeUndefined()
     // reset for the next round: re-assign restores the value, unassign pB
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)

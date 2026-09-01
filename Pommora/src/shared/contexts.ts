@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { isGovernedKey, parseGovernedKey, wrapKey } from './governedKeys'
+
+const SIGIL = ['<', '>'] as const
 
 /** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
  *  creation. Any other Context has none; its Spaces read "New Space". */
@@ -20,18 +21,19 @@ export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
 })
 
 export function contextKey(title: string): string {
-  return wrapKey('context', title)
+  return `${SIGIL[0]}${title}${SIGIL[1]}`
 }
 
-/** Scoped to the layer — a blind check would claim the property layer's keys, and a Context
- *  and a property may share a name. */
 export function isGovernedContextKey(key: string): boolean {
-  return isGovernedKey(key, 'context')
+  return key.startsWith(SIGIL[0])
 }
 
+/** Positional strip, so a title containing the closing glyph round-trips. */
 export function parseContextKey(key: string): string | null {
-  const parsed = parseGovernedKey(key)
-  return parsed?.layer === 'context' ? parsed.name : null
+  const [open, close] = SIGIL
+  return key.length > open.length + close.length && key.startsWith(open) && key.endsWith(close)
+    ? key.slice(open.length, -close.length)
+    : null
 }
 
 /** The one path-safety core every entity title shares — a name that cannot be a folder or file

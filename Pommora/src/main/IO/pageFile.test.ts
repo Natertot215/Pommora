@@ -75,7 +75,7 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
   })
 
   it('writes modeled keys + body for a new (empty) file', () => {
-    const out = mergeFrontmatter('', { id: 'X', '(Areas)': ['A', 'B'] }, ['id', '(Areas)'], 'Hello')
+    const out = mergeFrontmatter('', { id: 'X', '<Areas>': ['A', 'B'] }, ['id', '<Areas>'], 'Hello')
     expect(out.startsWith('---\n')).toBe(true)
     const { frontmatter, body } = splitEnvelope(out)
     expect(frontmatter).toContain('id: X')
@@ -84,8 +84,8 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
   })
 
   it('is idempotent — re-saving identical input yields identical bytes', () => {
-    const first = mergeFrontmatter('', { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Body')
-    const second = mergeFrontmatter(first, { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Body')
+    const first = mergeFrontmatter('', { id: 'X', '<Areas>': ['T'] }, ['id', '<Areas>'], 'Body')
+    const second = mergeFrontmatter(first, { id: 'X', '<Areas>': ['T'] }, ['id', '<Areas>'], 'Body')
     expect(second).toBe(first)
   })
 })
@@ -97,55 +97,55 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
 
   it('renames the key where it sits, keeping the comment attached to it', () => {
     const before =
-      'title: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft'
-    const out = renameFrontmatterKey(page(before), '(Projects)', '(Ventures)', 'prefer-new')
+      'title: Alpha\n# which clients this is for\n<Projects>:\n  - Pommora\nstatus: draft'
+    const out = renameFrontmatterKey(page(before), '<Projects>', '<Ventures>', 'prefer-new')
     expect(fmOf(out)).toBe(
-      'title: Alpha\n# which clients this is for\n(Ventures):\n  - Pommora\nstatus: draft',
+      'title: Alpha\n# which clients this is for\n<Ventures>:\n  - Pommora\nstatus: draft',
     )
   })
 
   it('leaves the body alone', () => {
-    const out = renameFrontmatterKey(page('<Status>: Old'), '<Status>', '<Stage>', 'prefer-new')
+    const out = renameFrontmatterKey(page('Status: Old'), 'Status', 'Stage', 'prefer-new')
     expect(splitEnvelope(out ?? '').body).toBe('Body')
   })
 
   it('prefer-new drops the old key, the pre-existing one keeping its own place', () => {
     const out = renameFrontmatterKey(
-      page('<Status>: Stale\nkeep: 1\n<Stage>: Fresh'),
-      '<Status>',
-      '<Stage>',
+      page('Status: Stale\nkeep: 1\nStage: Fresh'),
+      'Status',
+      'Stage',
       'prefer-new',
     )
-    expect(fmOf(out)).toBe('keep: 1\n<Stage>: Fresh')
+    expect(fmOf(out)).toBe('keep: 1\nStage: Fresh')
   })
 
   it('merge folds both lists into one at the renamed key’s place, deduped', () => {
     const out = renameFrontmatterKey(
       page(
-        'id: p2\n# tags\n(Projects):\n  - Pommora\n(Ventures):\n  - Other\n  - Pommora\nforeign: 1',
+        'id: p2\n# tags\n<Projects>:\n  - Pommora\n<Ventures>:\n  - Other\n  - Pommora\nforeign: 1',
       ),
-      '(Projects)',
-      '(Ventures)',
+      '<Projects>',
+      '<Ventures>',
       'merge',
     )
-    expect(fmOf(out)).toBe('id: p2\n# tags\n(Ventures):\n  - Other\n  - Pommora\nforeign: 1')
+    expect(fmOf(out)).toBe('id: p2\n# tags\n<Ventures>:\n  - Other\n  - Pommora\nforeign: 1')
   })
 
   it('answers null for a page holding neither key', () => {
-    expect(renameFrontmatterKey(page('<Other>: x'), '<Status>', '<Stage>', 'prefer-new')).toBeNull()
+    expect(renameFrontmatterKey(page('<Other>: x'), 'Status', 'Stage', 'prefer-new')).toBeNull()
   })
 
   it('answers null for frontmatter that cannot round-trip, in either shape', () => {
     // A tab-indented sequence never parses; an unresolved alias parses clean and refuses to
     // serialize. Both would lose everything the parser did not recover.
     expect(
-      renameFrontmatterKey(page('(Projects):\n\t- Pommora'), '(Projects)', '(Ventures)', 'merge'),
+      renameFrontmatterKey(page('<Projects>:\n\t- Pommora'), '<Projects>', '<Ventures>', 'merge'),
     ).toBeNull()
     expect(
       renameFrontmatterKey(
-        page('(Projects):\n  - Pommora\nother: *word'),
-        '(Projects)',
-        '(Ventures)',
+        page('<Projects>:\n  - Pommora\nother: *word'),
+        '<Projects>',
+        '<Ventures>',
         'merge',
       ),
     ).toBeNull()
@@ -163,7 +163,7 @@ describe('writePageFile (fs)', () => {
 
   it('writes a new page atomically', async () => {
     const p = join(dir, 'page.md')
-    await writePageFile(p, { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Hello')
+    await writePageFile(p, { id: 'X', '<Areas>': ['T'] }, ['id', '<Areas>'], 'Hello')
     const content = await readFile(p, 'utf8')
     expect(content).toContain('id: X')
     expect(splitEnvelope(content).body).toBe('Hello')

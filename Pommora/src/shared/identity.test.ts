@@ -48,7 +48,7 @@ describe('admitContentFile', () => {
 
   it('reports a missing key as adoptable, never as a violation', () => {
     expect(admitContentFile({}, 'page')).toEqual({ state: 'missing' })
-    expect(admitContentFile({ icon: 'star', '(Areas)': ['Work'] }, 'task')).toEqual({
+    expect(admitContentFile({ icon: 'star', '<Areas>': ['Work'] }, 'task')).toEqual({
       state: 'missing',
     })
   })

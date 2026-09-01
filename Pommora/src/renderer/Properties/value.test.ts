@@ -105,7 +105,7 @@ describe('resolveFieldValue memoization', () => {
       frontmatter: {
         [PAGE_ID_KEY]: 'p1',
         ...propsAtRoot({ prop_s: 'open' }, schema),
-        '(Areas)': ['a'],
+        '<Areas>': ['a'],
       },
     }
     // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh

@@ -66,7 +66,7 @@ beforeEach(async () => {
   await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
   await writeFile(
     join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-    JSON.stringify({ id: 'sp-sap', '(Projects)': ['Pommora'] }),
+    JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
   )
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
@@ -76,7 +76,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n(Projects):\n  - Pommora\n---\nbody`,
+    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
   )
   await openSession(root)
 })
@@ -212,7 +212,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   it('a refused root marks the Space record partial — the members list is thinner than the truth', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Dual.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVC\n(Projects):\n  - Pommora\n---\n',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVC\n<Projects>:\n  - Pommora\n---\n',
     )
     await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
@@ -223,7 +223,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
-    await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n(Projects):\n  - Pommora\n---\n')
+    await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n<Projects>:\n  - Pommora\n---\n')
     await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -564,7 +564,7 @@ describe('restore — the record spends, headless', () => {
     )
     expect(
       splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
-        '(Projects)'
+        '<Projects>'
       ],
     ).toBeUndefined()
 
@@ -576,13 +576,13 @@ describe('restore — the record spends, headless', () => {
     )
     expect(
       splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
-        '(Projects)'
+        '<Projects>'
       ],
     ).toEqual(['Pommora'])
     const sap = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
     )
-    expect(sap['(Projects)']).toEqual(['Pommora'])
+    expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
   it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
@@ -602,14 +602,14 @@ describe('restore — the record spends, headless', () => {
     })
     expect(
       splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
-        '(Projects)'
+        '<Projects>'
       ],
     ).toEqual(['Pommora'])
     // The passenger Space returned intact, its own links untouched by the round-trip.
     const sap = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
     )
-    expect(sap['(Projects)']).toEqual(['Pommora'])
+    expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
   it('the resolver re-runs inside the op — a parent gone between list and restore refuses', async () => {
@@ -674,8 +674,8 @@ describe('restore — the gate-four pins', () => {
       icon: 'target',
     })
     const fm = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))
-    expect(fm['(Projects 2)']).toEqual(['Pommora'])
-    expect(fm['(Projects)']).toBeUndefined()
+    expect(fm['<Projects 2>']).toEqual(['Pommora'])
+    expect(fm['<Projects>']).toBeUndefined()
   })
 
   it('an occupant the tree cannot see refuses the restore — never a clobber', async () => {
@@ -788,8 +788,8 @@ describe('restore — the attack folds', () => {
       await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
     )
     // The passenger's key follows the final title — never left pointing at the impostor.
-    expect(sap['(Projects 2)']).toEqual(['Pommora'])
-    expect('(Projects)' in sap).toBe(false)
+    expect(sap['<Projects 2>']).toEqual(['Pommora'])
+    expect('<Projects>' in sap).toBe(false)
   })
 })
 
@@ -1098,7 +1098,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n<Status>: live\n---\nbody',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
@@ -1109,8 +1109,9 @@ describe('restore — into a chosen destination', () => {
     )
     expect(r.ok).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Beta.md'), 'utf8')
-    // The value traveled; the destination's configuration decided it could not stay.
-    expect(landed.includes('<Status>')).toBe(false)
+    // The value traveled as the page's own frontmatter; the destination's schema decides only
+    // what it displays.
+    expect(landed.includes('Status: live')).toBe(true)
     expect(landed.includes('PageID:')).toBe(true)
   })
 
@@ -1135,7 +1136,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n<Status>: live\n---\nbody',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
@@ -1145,8 +1146,8 @@ describe('restore — into a chosen destination', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(
-      (await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('<Status>: live'),
-    ).toBe(true)
+    expect((await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('Status: live')).toBe(
+      true,
+    )
   })
 })

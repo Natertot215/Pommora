@@ -18,7 +18,7 @@ const stamped = (): Promise<void> =>
     'Archive/stamped.md',
     page(
       '01NNNNNNNNNNNNNNNNNNNNNNNN',
-      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Username\n<Status>: open',
+      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Username\nStatus: open',
     ),
   )
 
@@ -45,22 +45,22 @@ beforeEach(async () => {
   await w('Archive/Set/_pageset.json', '{"id":"s1"}')
   await w(
     'Archive/note.md',
-    page('01AAAAAAAAAAAAAAAAAAAAAAAA', '# note about status\n<Status>: Doing'),
+    page('01AAAAAAAAAAAAAAAAAAAAAAAA', '# note about status\nStatus: Doing'),
   )
-  await w('Archive/proj.md', page('01BBBBBBBBBBBBBBBBBBBBBBBB', '(Projects): [Alpha]'))
+  await w('Archive/proj.md', page('01BBBBBBBBBBBBBBBBBBBBBBBB', '<Projects>: [Alpha]'))
   await w(
     'Archive/collide.md',
-    page('01CCCCCCCCCCCCCCCCCCCCCCCC', '<Status>: open\nStatus: [Revisit]'),
+    page('01CCCCCCCCCCCCCCCCCCCCCCCC', 'Status: open\nStatus: [Revisit]'),
   )
-  await w('Archive/both.md', page('01DDDDDDDDDDDDDDDDDDDDDDDD', '<Status>: open\n(Status): [Home]'))
+  await w('Archive/both.md', page('01DDDDDDDDDDDDDDDDDDDDDDDD', 'Status: open\n<Areas>: [Home]'))
   await w('Archive/malformed.md', page('01EEEEEEEEEEEEEEEEEEEEEEEE', '<Status: broken'))
-  await w('Archive/Set/deep.md', page('01FFFFFFFFFFFFFFFFFFFFFFFF', '<Tag>: x'))
+  await w('Archive/Set/deep.md', page('01FFFFFFFFFFFFFFFFFFFFFFFF', 'Tag: x'))
   await w('Archive/stray.md', '---\nTaskID: 01GGGGGGGGGGGGGGGGGGGGGGGG\n---\n\nmisplaced\n')
   await w('Archive/Tasks/_taskconfig.json', '{"id":"t1"}')
   await w('Archive/Tasks/task.md', '---\nTaskID: 01HHHHHHHHHHHHHHHHHHHHHHHH\n---\n\nreal task\n')
-  await w('Archive/node_modules/pkg/index.md', page('01IIIIIIIIIIIIIIIIIIIIIIII', '<Status>: dep'))
-  await w('Archive/.git/config.md', page('01JJJJJJJJJJJJJJJJJJJJJJJJ', '<Status>: git'))
-  await w('file-assets/img-note.md', page('01KKKKKKKKKKKKKKKKKKKKKKKK', '<Status>: asset'))
+  await w('Archive/node_modules/pkg/index.md', page('01IIIIIIIIIIIIIIIIIIIIIIII', 'Status: dep'))
+  await w('Archive/.git/config.md', page('01JJJJJJJJJJJJJJJJJJJJJJJJ', 'Status: git'))
+  await w('file-assets/img-note.md', page('01KKKKKKKKKKKKKKKKKKKKKKKK', 'Status: asset'))
 })
 afterEach(() => rm(root, { recursive: true, force: true }))
 
@@ -106,10 +106,10 @@ describe('excludedArtifacts', () => {
   })
 })
 
-describe('clearExclusionData — preserve properties on', () => {
-  it('deletes container sidecars and unwraps keys, keeping comments, order, and dropping PageID', async () => {
+describe('clearExclusionData', () => {
+  it('deletes container sidecars and drops the identity key and Context keys, keeping every other key, comment, and order', async () => {
     const before = await read('Archive/malformed.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
     expect(res.ok).toBe(true)
 
     expect(existsSync(join(root, 'Archive/_pagecollection.json'))).toBe(false)
@@ -118,24 +118,23 @@ describe('clearExclusionData — preserve properties on', () => {
     const note = await read('Archive/note.md')
     expect(note).toContain('# note about status')
     expect(note).toContain('Status: Doing')
-    expect(note).not.toContain('<Status>')
     expect(note).not.toContain('PageID')
 
-    expect(await read('Archive/proj.md')).toContain('Projects:')
+    const proj = await read('Archive/proj.md')
+    expect(proj).not.toContain('Projects')
+    expect(proj).not.toContain('PageID')
     const collide = await read('Archive/collide.md')
+    expect(collide).toContain('Status: open')
     expect(collide).toContain('Revisit')
-    expect(collide).not.toContain('open')
-    expect(collide).not.toContain('<Status>')
-    const both = await read('Archive/both.md')
-    expect(both.match(/^Status:/gm)?.length).toBe(1)
+    expect(await read('Archive/Set/deep.md')).toContain('Tag: x')
     expect((await read('Archive/malformed.md')).includes('<Status: broken')).toBe(
       before.includes('<Status: broken'),
     )
   })
 
-  it('drops the timestamps with the identity key, keeping icon, cover, and foreign keys', async () => {
+  it('drops the timestamps with the identity key, keeping icon, cover, property values, and foreign keys', async () => {
     await stamped()
-    await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    await clearExclusionData(root, ['Archive'], 'file-assets')
     const text = await expectStampsStripped()
     expect(text).toContain('Status: open')
   })
@@ -143,60 +142,42 @@ describe('clearExclusionData — preserve properties on', () => {
   it('leaves the Agenda folder byte-identical end to end', async () => {
     const config = await read('Archive/Tasks/_taskconfig.json')
     const task = await read('Archive/Tasks/task.md')
-    await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    await clearExclusionData(root, ['Archive'], 'file-assets')
     expect(await read('Archive/Tasks/_taskconfig.json')).toBe(config)
     expect(await read('Archive/Tasks/task.md')).toBe(task)
   })
 
   it('refuses a misplaced identity page rather than scrubbing it', async () => {
     const stray = await read('Archive/stray.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
     if (!res.ok) throw new Error('expected ok')
     expect(res.value.refused).toBeGreaterThanOrEqual(1)
     expect(await read('Archive/stray.md')).toBe(stray)
   })
 
   it('is idempotent — a second run changes nothing and touches no page', async () => {
-    await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    await clearExclusionData(root, ['Archive'], 'file-assets')
     const snapshot = await read('Archive/note.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
     if (!res.ok) throw new Error('expected ok')
     expect(res.value.pages).toBe(0)
     expect(await read('Archive/note.md')).toBe(snapshot)
   })
 })
 
-describe('clearExclusionData — preserve properties off', () => {
-  it('removes the property lines entirely', async () => {
-    await clearExclusionData(root, ['Archive'], 'file-assets', false)
-    const note = await read('Archive/note.md')
-    expect(note).not.toContain('Status')
-    expect(note).not.toContain('PageID')
-    expect(await read('Archive/proj.md')).not.toContain('Projects')
-  })
-
-  it('drops the timestamps with the identity key, keeping icon, cover, and foreign keys', async () => {
-    await stamped()
-    await clearExclusionData(root, ['Archive'], 'file-assets', false)
-    const text = await expectStampsStripped()
-    expect(text).not.toContain('Status')
-  })
-})
-
 describe('clearConfirmCopy', () => {
-  it('says different things in each toggle position, and pluralizes the count', () => {
-    expect(clearConfirmCopy(2, true).detail).not.toBe(clearConfirmCopy(2, false).detail)
-    expect(clearConfirmCopy(2, true).detail).toContain('timestamps')
-    expect(clearConfirmCopy(2, false).detail).toContain('timestamps')
-    expect(clearConfirmCopy(1, true).message).toContain('the excluded folder')
-    expect(clearConfirmCopy(3, true).message).toContain('3 excluded folders')
+  it('names what goes and pluralizes the count', () => {
+    expect(clearConfirmCopy(2).detail).toContain('timestamps')
+    expect(clearConfirmCopy(2).detail).toContain('Context keys')
+    expect(clearConfirmCopy(1).message).toContain('the excluded folder')
+    expect(clearConfirmCopy(3).message).toContain('3 excluded folders')
   })
 })
 
 describe('clearExclusionData — degenerate cases', () => {
   it('an empty exclusion list touches nothing', async () => {
     const before = await read('Archive/note.md')
-    const res = await clearExclusionData(root, [], 'file-assets', true)
+    const res = await clearExclusionData(root, [], 'file-assets')
     if (!res.ok) throw new Error('expected ok')
     expect(res.value).toEqual({ pages: 0, sidecars: 0, refused: 0 })
     expect(await read('Archive/note.md')).toBe(before)

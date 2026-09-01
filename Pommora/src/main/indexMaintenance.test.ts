@@ -99,7 +99,7 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(set.ok).toBe(true)
-    expect(queryKeyHolders('<Stage>')).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryKeyHolders('Stage')).toEqual(['Notes/Daily/Alpha.md'])
     const created = await handleMutate(
       { op: 'createPage', parentPath: 'Notes', name: 'Fresh' },
       deps,

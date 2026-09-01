@@ -19,7 +19,7 @@ import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { splitFrontmatter } from '../readNexus'
-import { isPlainObject, propertyKey } from '@shared/propertyValue'
+import { isPlainObject } from '@shared/propertyValue'
 import { nowIso } from './util'
 import { fail, type Result } from '@shared/result'
 
@@ -32,7 +32,7 @@ async function snapshot(
   folders: string[],
   files: string[],
 ): Promise<void> {
-  const key = propertyKey(def)
+  const key = def.name
   const values: Record<string, unknown> = {}
   const assignments: string[] = []
   let partial = false
@@ -75,7 +75,7 @@ export function deleteProperty(root: string, propertyId: string): Promise<Result
 async function deleteInner(root: string, propertyId: string): Promise<Result<null>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
-  const key = propertyKey(def)
+  const key = def.name
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
   // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.

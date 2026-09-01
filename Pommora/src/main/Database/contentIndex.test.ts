@@ -31,20 +31,20 @@ const STAT = { mtimeMs: 1000, size: 10 }
 
 describe('the content index', () => {
   it('round-trips an upsert through both queries', () => {
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { '<Status>': 'Open' } }, STAT)
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { Status: 'Open' } }, STAT)
     upsertPageIndex('Loose/B.md', { mentions: ['beta', 'gamma'], values: {} }, STAT)
     expect(queryMentions('beta')).toEqual(['Loose/B.md', 'Notes/A.md'])
     expect(queryMentions('gamma')).toEqual(['Loose/B.md'])
-    expect(queryKeyHolders('<Status>')).toEqual(['Notes/A.md'])
+    expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(readIndexedStats()?.get('Notes/A.md')).toEqual(STAT)
   })
 
   it("a re-upsert replaces a page's rows rather than accreting them", () => {
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { '<Status>': 'Open' } }, STAT)
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { Status: 'Open' } }, STAT)
     upsertPageIndex('Notes/A.md', { mentions: ['gamma'], values: {} }, { mtimeMs: 2000, size: 12 })
     expect(queryMentions('beta')).toEqual([])
     expect(queryMentions('gamma')).toEqual(['Notes/A.md'])
-    expect(queryKeyHolders('<Status>')).toEqual([])
+    expect(queryKeyHolders('Status')).toEqual([])
     expect(readIndexedStats()?.get('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
   })
 
@@ -53,14 +53,14 @@ describe('the content index', () => {
     expect(queryMentions('beta')).toEqual([])
     closeSessionDb()
     expect(queryMentions('beta')).toBeNull()
-    expect(queryKeyHolders('<Status>')).toBeNull()
+    expect(queryKeyHolders('Status')).toBeNull()
     expect(readIndexedStats()).toBeNull()
   })
 
   it('missing tables answer exactly like a null Db, and writers never throw', () => {
     sessionDb()?.exec('DROP TABLE mentions; DROP TABLE page_values; DROP TABLE indexed_files')
     expect(queryMentions('beta')).toBeNull()
-    expect(queryKeyHolders('<Status>')).toBeNull()
+    expect(queryKeyHolders('Status')).toBeNull()
     expect(readIndexedStats()).toBeNull()
     expect(() => upsertPageIndex('Notes/A.md', { mentions: ['x'], values: {} }, STAT)).not.toThrow()
     expect(() => removePathIndex('Notes/A.md')).not.toThrow()
@@ -83,19 +83,19 @@ describe('the content index', () => {
   })
 
   it('a rename moves every row to the new path', () => {
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { '<Status>': 'Open' } }, STAT)
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { Status: 'Open' } }, STAT)
     renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
     expect(queryMentions('beta')).toEqual(['Notes/Alpha.md'])
-    expect(queryKeyHolders('<Status>')).toEqual(['Notes/Alpha.md'])
+    expect(queryKeyHolders('Status')).toEqual(['Notes/Alpha.md'])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
     expect(readIndexedStats()?.get('Notes/Alpha.md')).toEqual(STAT)
   })
 
   it('a removal clears every row for the path', () => {
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { '<Status>': 'Open' } }, STAT)
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: { Status: 'Open' } }, STAT)
     removePathIndex('Notes/A.md')
     expect(queryMentions('beta')).toEqual([])
-    expect(queryKeyHolders('<Status>')).toEqual([])
+    expect(queryKeyHolders('Status')).toEqual([])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
   })
 })

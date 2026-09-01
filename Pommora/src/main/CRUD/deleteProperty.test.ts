@@ -89,7 +89,7 @@ describe('deleteProperty', () => {
     // frontmatter scrubbed in both, other keys preserved
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')
-      expect(content).not.toContain('<Priority>')
+      expect(content).not.toContain('Priority')
       expect(content).toContain(`${PAGE_ID_KEY}:`)
     }
     // The recovery snapshot is an artifact-less bundle — a valid record whose values key by

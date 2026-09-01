@@ -76,7 +76,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n(Projects):\n  - Pommora\n<Priority>: hi\n---\nbody`,
+    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\nPriority: hi\n---\nbody`,
   )
   await openSession(root)
 })
@@ -90,11 +90,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('keeps every governed key that still stands', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
-    expect(f['<Priority>']).toBe('hi')
-    expect(f['(Projects)']).toEqual(['Pommora'])
+    expect(f.Priority).toBe('hi')
+    expect(f['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('drops a value whose property was deleted while it sat in the trash', async () => {
+  it('keeps a value whose property was deleted while it sat in the trash — the key is now foreign frontmatter', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(
         join(root, '.nexus', 'properties.json'),
@@ -103,16 +103,15 @@ describe('a returning artifact is reconciled against the world it comes back to'
       await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
     })
     const f = await fm('Notes/Alpha.md')
-    expect(f['<Priority>']).toBeUndefined()
-    // The Context key is untouched — it still stands.
-    expect(f['(Projects)']).toEqual(['Pommora'])
+    expect(f.Priority).toBe('hi')
+    expect(f['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('drops a value whose property is no longer assigned to the destination Collection', async () => {
+  it('keeps a value whose property is no longer assigned to the destination Collection', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
     })
-    expect((await fm('Notes/Alpha.md'))['<Priority>']).toBeUndefined()
+    expect((await fm('Notes/Alpha.md')).Priority).toBe('hi')
   })
 
   it('drops a tag whose Context was erased while it sat in the trash', async () => {
@@ -121,14 +120,14 @@ describe('a returning artifact is reconciled against the world it comes back to'
       await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
     })
     const f = await fm('Notes/Alpha.md')
-    expect(f['(Projects)']).toBeUndefined()
-    expect(f['<Priority>']).toBe('hi')
+    expect(f['<Projects>']).toBeUndefined()
+    expect(f.Priority).toBe('hi')
   })
 
   it('prunes only the dead Space from a tag whose Context survives', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n(Projects):\n  - Pommora\n  - Sapphire\n---\nbody`,
+      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
     )
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
@@ -138,7 +137,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
-    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['Pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('keeps a near-miss Space title exactly as the file spelled it', async () => {
@@ -146,10 +145,10 @@ describe('a returning artifact is reconciled against the world it comes back to'
     // as written — standing decides what to drop, never what to rewrite.
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n(Projects):\n  - pommora\n---\nbody`,
+      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })
 
   it('a value an outside write left as a number still names its Space', async () => {
@@ -160,10 +159,10 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n(Projects):\n  - 2024\n---\nbody`,
+      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - 2024\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual([2024])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual([2024])
   })
 
   it('prunes the dead Space from a near-miss tag and leaves the survivor as written', async () => {
@@ -174,29 +173,26 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n(Projects):\n  - pommora\n  - Sapphire\n---\nbody`,
+      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - Sapphire\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
-    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })
 
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Journal.md'),
-      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n(Projects):\n  - Pommora\n<Priority>: lo\n---\nb`,
+      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\nPriority: lo\n---\nb`,
     )
     await cycle('Notes/Daily', 'set', async () => {
-      await writeFile(
-        join(root, '.nexus', 'properties.json'),
-        JSON.stringify({ order: [], defs: {} }),
-      )
-      await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
+      await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
+      await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
     })
     const f = await fm('Notes/Daily/Journal.md')
-    expect(f['<Priority>']).toBeUndefined()
-    expect(f['(Projects)']).toEqual(['Pommora'])
+    expect(f['<Projects>']).toBeUndefined()
+    expect(f.Priority).toBe('lo')
   })
 
   it('drops a value whose OPTION was deleted while it sat in the trash', async () => {
@@ -218,7 +214,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
         }),
       )
     })
-    expect((await fm('Notes/Alpha.md'))['<Priority>']).toBeUndefined()
+    expect((await fm('Notes/Alpha.md')).Priority).toBeUndefined()
   })
 
   it('keeps a multi-value tag’s survivors when only some options died', async () => {
@@ -241,7 +237,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n<Tags>:\n  - a\n  - b\n---\nbody`,
+      `---\nPageID: ${PAGE_A}\nTags:\n  - a\n  - b\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(
@@ -259,21 +255,23 @@ describe('a returning artifact is reconciled against the world it comes back to'
         }),
       )
     })
-    expect((await fm('Notes/Alpha.md'))['<Tags>']).toEqual(['a'])
+    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\nauthor: Username\n<Priority>: hi\n---\nthe body\n`,
+      `---\nPageID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - Pommora\nPriority: hi\n---\nthe body\n`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
+      await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
+      await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
     })
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
     expect(raw).toContain('author: Username')
+    expect(raw).toContain('Priority: hi')
     expect(raw).toContain('the body')
-    expect(raw).not.toContain('<Priority>')
+    expect(raw).not.toContain('Projects')
   })
 })
 
@@ -297,7 +295,7 @@ describe('a Space sidecar is a context root too', () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap', '(Areas)': ['Work'], '<Status>': 'Done', color: 'blue' }),
+      JSON.stringify({ id: 'sp-sap', '<Areas>': ['Work'], Status: 'Done', color: 'blue' }),
     )
   }
 
@@ -333,11 +331,11 @@ describe('a Space sidecar is a context root too', () => {
     expect(r.ok).toBe(true)
 
     const sap = await sidecar('Projects/Sapphire')
-    expect(sap['(Areas)']).toBeUndefined()
+    expect(sap['<Areas>']).toBeUndefined()
     // Its identity and its foreign keys ride through — only what nothing stands behind goes.
     expect(sap.id).toBe('sp-sap')
     expect(sap.color).toBe('blue')
-    expect(sap['<Status>']).toBe('Done')
+    expect(sap.Status).toBe('Done')
   })
 
   it('a returning Context’s own key is left for the rekey, never judged mid-transit', async () => {
@@ -345,7 +343,7 @@ describe('a Space sidecar is a context root too', () => {
     // Sapphire also tags a Space in its OWN Context — the passenger the delete deliberately keeps.
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap', '(Projects)': ['Pommora'] }),
+      JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
     )
     await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
@@ -355,7 +353,7 @@ describe('a Space sidecar is a context root too', () => {
     expect(
       (await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
-    expect((await sidecar('Projects/Sapphire'))['(Projects)']).toEqual(['Pommora'])
+    expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
   })
 })
 
