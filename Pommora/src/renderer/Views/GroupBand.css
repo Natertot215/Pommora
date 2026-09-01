@@ -1,6 +1,6 @@
 /* Shared group-band chrome — the disclosure head (outline + glyph + hover "+") over the band body. The
    table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the
-   cards' sibling seams. The glyph itself resolves identically for both (GroupBand). */
+   cards' sibling seams. */
 
 .group-band {
   --band-gap: calc(2 * var(--band-clearance));
@@ -28,9 +28,8 @@
   align-items: center;
   min-width: 0;
 }
-/* The icon + label cluster shared by structural, checkbox, date, and fallback glyphs. The glyphs read
-   at the shared icon tone; the label text stays its own. Direct child only, so a chip glyph (checkbox
-   box) keeps its own color. */
+/* Direct child only, so a nested chip glyph (checkbox box) keeps its own color instead of the
+   shared icon tone. */
 .group-name {
   display: inline-flex;
   align-items: center;
@@ -56,8 +55,8 @@
   color: var(--label-tertiary);
 }
 
-/* Drag states — the glyph is the drag surface; the picked-up band mutes in place and the shared
-   drop line marks the slot. A nestable Set band tints on middle-zone hover instead of a line. */
+/* The glyph is the drag surface; a nestable Set band tints on middle-zone hover instead of
+   showing the shared drop line. */
 .group-band-head.band-dragging {
   opacity: var(--state-ghost);
 }

@@ -1,6 +1,5 @@
-/* The gallery — the card chassis is src/Cards; this is the gallery's own layer: the host insets and
-   the grid regime. All cards share ONE grid — pinned first, recents flowing straight after them
-   (L→R/T→B), no divider. */
+/* Pinned and recent cards share one flow — pinned first, then recents straight after with no
+   divider between them; the card chassis itself lives in src/Cards. */
 .nav-gallery {
   display: flex;
   flex-direction: column;

@@ -76,9 +76,8 @@
   align-items: center;
   gap: 4px 4px; /* KNOB — Compact flow packing */
 }
-/* Each compact value is a bare <span> wrapper; make it a flex centerer so every property type — text,
-   chips, AND the fixed checkbox box — shares one vertical band. Without this the box (no text, so its
-   baseline is its bottom edge) rides high on the line baseline while text/chips sit correctly. */
+/* Without this, a checkbox box (no text, so its baseline is its own bottom edge) rides high
+   against text/chip baselines in the flow row. */
 .card-props.is-flow > span {
   display: flex;
   align-items: center;

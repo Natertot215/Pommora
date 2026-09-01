@@ -1,6 +1,3 @@
-/* The connection hover card's body: a floating surface, so its scroll always contains — an
-   over-scroll must never reach the editor underneath (moving that editor detaches the card's
-   own anchor). */
 /* No overflow here: the pane's clip-path bounds the visuals and the page-tile owns the scroll,
    while the resize strips straddle this box's edge — clipping would leave the visible border
    inert under the pointer. */
@@ -8,8 +5,8 @@
   position: relative;
 }
 
-/* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
-   glance surface — pointer events land on the host, never the site.  */
+/* The shield sits above the web guest in stacking order, so pointer events land on the host
+   pane until `.is-lifted` fades it away to reveal the site. */
 .conn-hover-web,
 .conn-hover-web-shield {
   position: absolute;
@@ -31,8 +28,8 @@
 .conn-hover-body .page-tile {
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* Grip menus, fold chevrons, and gutter actions are inactive here — the card is scroll-only —
-     so the gutter lane reserves nothing. */
+  /* Grip menus, fold chevrons, and gutter actions are inactive here, so the gutter lane reserves
+     nothing. */
   --rail-inset: 0px;
 }
 /* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
@@ -41,7 +38,7 @@
   padding: 0 calc(14px * var(--mdpm-scale));
 }
 /* No chevron in the card — with the caret disabled, clicking the heading itself is the fold
-   toggle, and the whole line signals it. */
+   toggle. */
 .conn-hover-body .mdpm-editor .cm-line.md-foldable::before {
   display: none;
 }
@@ -49,9 +46,8 @@
   cursor: pointer;
 }
 
-/* Resizing wears the hot accent stroke tiles and embeds use, set on the glass's own outline knob —
-   breathing in and out on the same beat as the tile border it mirrors — both passes together, since
-   a color easing in beside an edge that snapped is what flashed the stroke white for a frame. */
+/* Both transitions run together: a border-color easing in beside an edge that snapped is what
+   flashed the stroke white for a frame. */
 [data-picker-portal] div:has(.conn-hover-body) {
   transition:
     border-color var(--duration-base) var(--ease-base),
@@ -62,9 +58,9 @@
   --glass-outline: var(--accent-stroke-hot);
 }
 
-/* Free-edge resize strips — the tile-edge treatment: a thin band straddling each side, with the
-   free horizontal edge and its two corners mirrored to the TOP on a flipped-up pane, whose bottom
-   edge is the anchored one. Corners render after the edges, so they win the overlap. */
+/* Each strip is a thin band along one side; on a flipped-up pane the free horizontal edge and its
+   two corners mirror to the TOP, since the bottom edge is the anchored one. Corners render after
+   the edges, so they win the overlap. */
 [class^="conn-hover-resize-"] {
   position: absolute;
   z-index: 2;
