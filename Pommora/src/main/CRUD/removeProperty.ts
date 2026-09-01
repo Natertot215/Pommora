@@ -16,13 +16,7 @@ import { noteValueWrite } from '../valuesChanged'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import {
-  type Adoption,
-  isBlankValue,
-  isPlainObject,
-  reconcilePropertyValue,
-} from '@shared/propertyValue'
-import { applyAdoptions } from './optionOps'
+import { isBlankValue, isPlainObject, reconcilePropertyValue } from '@shared/propertyValue'
 import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
@@ -134,24 +128,19 @@ export async function restoreCachedValues(
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
   // refuses the write — stays cached.
-  const adoptions: Adoption[] = []
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
-    const reconciled = reconcilePropertyValue(def, raw)
+    const reconciled = reconcilePropertyValue(def, raw, false)
     if (isBlankValue(reconciled.value)) return false
     const wrote = await serializeOnFile(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
       return (await updatePageProperty(file, def, reconciled.value)).ok
     })
-    if (wrote) {
-      adoptions.push(...reconciled.adoptions)
-      await indexWrittenPage(root, file)
-    }
+    if (wrote) await indexWrittenPage(root, file)
     return wrote
   })
-  await applyAdoptions(root, adoptions)
   // The page walk above deliberately runs unlocked.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(

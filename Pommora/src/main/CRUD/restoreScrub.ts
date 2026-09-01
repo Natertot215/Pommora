@@ -12,10 +12,8 @@
 // still holds, a key the destination's schema assigns is re-read as its definition reads it, and
 // every other key — a Context or property the registry no longer names included — rides through.
 
-import type { Adoption } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
 import { assignedDefs } from './contextWrite'
-import { applyAdoptions } from './optionOps'
 import {
   NO_DEFS,
   reconcileGovernedRoot,
@@ -78,19 +76,16 @@ export async function scrubReturning(
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
-  const adoptions: Adoption[] = []
   for (const file of pages) {
     // Under the page lock, and admission-gated exactly as every other nexus-wide sweep is: an
     // Unknown file is left byte-identical here too.
     await rewritePageSerialized(file, (content) => {
       if (!sweepAdmits(content)) return null
-      const r = reconcileGovernedRoot(splitFrontmatter(content), world)
-      adoptions.push(...r.adoptions)
+      const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
       if (!r.changed.length) return null
       return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
     }).catch(() => false)
   }
-  await applyAdoptions(root, adoptions)
   // A Space sidecar is a context root too — the sweeps have always treated it as one, so the
   // reconcile reaches it on the way back for the same reason.
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {

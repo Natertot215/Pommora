@@ -88,17 +88,25 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
 
 /** What a stored value stands as under its definition, and the Multi-Select options it holds that
  *  the definition doesn't offer yet. */
+// A write adopts a Multi-Select option the definition lacks; a restore of a frozen copy (the
+// Remove cache, a trash bundle) keeps only the options the definition still offers, so a deleted
+// option never comes back through it.
 export function reconcilePropertyValue(
   def: PropertyDefinition,
   raw: unknown,
+  adopt = true,
 ): { value: PropertyValue; adoptions: Adoption[] } {
   const value = decodeValue(def, raw)
+  if (value.kind !== 'multiSelect') return { value, adoptions: [] }
   const known = optionValues(def)
-  const adoptions =
-    value.kind === 'multiSelect'
-      ? value.value.filter((v) => !known.includes(v)).map((v) => ({ propertyId: def.id, value: v }))
-      : []
-  return { value, adoptions }
+  if (adopt) {
+    const adoptions = value.value
+      .filter((v) => !known.includes(v))
+      .map((v) => ({ propertyId: def.id, value: v }))
+    return { value, adoptions }
+  }
+  const kept = value.value.filter((v) => known.includes(v))
+  return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL, adoptions: [] }
 }
 
 export function encodeValue(value: PropertyValue): unknown {

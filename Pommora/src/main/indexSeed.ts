@@ -77,12 +77,12 @@ function relCorpusPath(root: string, abs: string): string | null {
   return segs.join('/')
 }
 
-let reread: { db: Db | null; rels: string[] } = { db: null, rels: [] }
+let reread: { db: Db | null; rels: string[]; cold: boolean } = { db: null, rels: [], cold: true }
 
 /** The pages the last seed re-read — the only files whose values could have drifted since; the
  *  list belongs to the database that seeded it. */
 export const rereadSinceSeed = (): readonly string[] =>
-  sessionDb() === reread.db ? reread.rels : []
+  sessionDb() === reread.db && !reread.cold ? reread.rels : []
 
 function recordPage(rel: string, content: string, stat: IndexedStat): void {
   upsertPageIndex(rel, extractPageIndex(content) ?? { mentions: [], values: {} }, stat)
@@ -134,7 +134,8 @@ export async function seedContentIndex(root: string): Promise<void> {
   // and then prune everything the new nexus holds — so the seed bails wherever the identity
   // moved, and the new session's own adopt-time seed covers its nexus.
   const db0 = sessionDb()
-  reread = { db: db0, rels: [] }
+  // A database with no rows re-reads the whole corpus; that is a first open, not drift.
+  reread = { db: db0, rels: [], cold: indexed.size === 0 }
   try {
     const rels = await nexusCorpus(root)
     const seen = new Set(rels)
