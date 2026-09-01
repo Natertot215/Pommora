@@ -1,8 +1,15 @@
 import type { ContextsRegistry } from './contexts'
 import { normalizeContextValue, parseContextKey } from './contexts'
+import type { PropertyDefinition } from './properties'
 import type { SpaceNode } from './types'
 
 export type ResolvedLinks = Map<string, string[]>
+
+export interface GovernedWorld {
+  registry: ContextsRegistry | null
+  spacesByContext: Map<string, SpaceNode[]>
+  defs: ReadonlyMap<string, PropertyDefinition>
+}
 
 /** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted
  *  key is foreign data, never a link. */

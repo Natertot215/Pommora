@@ -10,12 +10,15 @@ import {
   renameStatusOption,
   removeStatusOption,
   clearStatusOption,
+  addOptionToDef,
+  applyAdoptions,
 } from './optionOps'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
 import { serializeSchemaOp } from './schemaChain'
+import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
 
@@ -277,5 +280,51 @@ describe('clearStatusOption', () => {
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).toContain('Done')
     expect(await readFile(page, 'utf8')).not.toContain(id)
+  })
+})
+
+describe('adoption — a Multi-Select registers an option a page already holds', () => {
+  async function mkMulti(): Promise<string> {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Labels',
+      type: 'multi_select',
+      select_options: [{ value: 'alpha', label: 'alpha' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('createProperty failed')
+    return c.value.id
+  }
+  const values = async (id: string) =>
+    ((await readRegistry(root)).defs[id].select_options ?? []).map((o) => o.value)
+
+  it('adds the option once across concurrent calls, and is a no-op when present', async () => {
+    const id = await mkMulti()
+    const both = await Promise.all([
+      addOptionToDef(root, id, 'zeta'),
+      addOptionToDef(root, id, 'zeta'),
+    ])
+    expect(both.every((r) => r.ok)).toBe(true)
+    expect(await values(id)).toEqual(['alpha', 'zeta'])
+    expect((await addOptionToDef(root, id, 'alpha')).ok).toBe(true)
+    expect(await values(id)).toEqual(['alpha', 'zeta'])
+  })
+
+  it('refuses a Select — only a Multi-Select adopts', async () => {
+    const sel = await mkSelect([{ value: 'a', label: 'A' }])
+    expect((await addOptionToDef(root, sel, 'b')).ok).toBe(false)
+    expect((await readRegistry(root)).defs[sel].select_options?.map((o) => o.value)).toEqual(['a'])
+  })
+
+  it('applyAdoptions resolves from inside a page lock and from inside the schema chain', async () => {
+    const id = await mkMulti()
+    await serializeOnFile(join(root, 'any.md'), () =>
+      applyAdoptions(root, [
+        { propertyId: id, value: 'beta' },
+        { propertyId: id, value: 'beta' },
+      ]),
+    )
+    await serializeSchemaOp(() => applyAdoptions(root, [{ propertyId: id, value: 'gamma' }]))
+    await applyAdoptions(root, [])
+    expect(await values(id)).toEqual(['alpha', 'beta', 'gamma'])
   })
 })
