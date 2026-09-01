@@ -52,16 +52,17 @@
   pointer-events: none;
 }
 
-/* Scoped to the surfaces with a drawn paint — the same roster Carets.css hides the native caret over.
-   Anywhere unenumerated keeps a native selection rather than losing one. */
-:root:not(.native-highlight) .cm-editor .cm-scroller .cm-content::selection,
-:root:not(.native-highlight) .cm-editor .cm-scroller .cm-content ::selection,
-:root:not(.native-highlight) input:not([type])::selection,
-:root:not(.native-highlight) input[type="text"]::selection,
-:root:not(.native-highlight) input[type="search"]::selection,
-:root:not(.native-highlight) input[type="url"]::selection,
-:root:not(.native-highlight) input[type="tel"]::selection,
-:root:not(.native-highlight) textarea::selection,
+/* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection
+   layer, and the fields nativeCaret.ts paints (it skips read-only and disabled ones). A surface
+   outside that set keeps its native selection rather than losing one. */
+:root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content::selection,
+:root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content ::selection,
+:root:not(.native-highlight) input:not([type]):not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) input[type="text"]:not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) input[type="search"]:not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) input[type="url"]:not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) input[type="tel"]:not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) textarea:not([readonly]):not([disabled])::selection,
 :root:not(.native-highlight) [contenteditable="true"]::selection,
 :root:not(.native-highlight) [contenteditable="true"] ::selection {
   background: transparent;

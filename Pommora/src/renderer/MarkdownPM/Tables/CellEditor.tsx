@@ -3,6 +3,7 @@ import { EditorView, keymap } from '@codemirror/view'
 import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
 import { customCaret } from '../Editor/caret'
+import { customSelection } from '../Editor/selection'
 import { markdownDecorations } from '../Editor/decorations'
 import { formatKeymap } from '../Editor/formatKeymap'
 import { cellCitations, citesChanged } from './cellCitations'
@@ -147,6 +148,7 @@ export function CellEditor({
           linkRest,
           linkTyping,
           customCaret,
+          customSelection,
           EditorView.lineWrapping,
           // Native spell-check, opted in explicitly: the cell editor sits inside the table widget's
           // contentEditable=false host, which suppresses the spell-check the page editor inherits by default.
