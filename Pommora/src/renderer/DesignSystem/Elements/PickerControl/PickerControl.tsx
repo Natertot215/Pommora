@@ -15,13 +15,11 @@ export type PickerChoice<T extends string> = {
 export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-/** A scale factor as the percent choice every zoom/scale picker offers. */
 export const percentChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
   label: `${Math.round(f * 100)}%`,
 })
 
-/** The same factor spoken as a multiplier — the Scale sliders' `1.00x` convention. */
 export const factorChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
   label: `${f.toFixed(2)}x`,

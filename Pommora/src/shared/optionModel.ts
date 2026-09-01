@@ -19,12 +19,10 @@ export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
   return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
 }
 
-/** One transform applied to the option with `value`, the rest passed through. */
 function mapOption(options: Option[], value: string, fn: (o: Option) => Option): Option[] {
   return options.map((o) => (o.value === value ? fn(o) : o))
 }
 
-/** One flat-option transform applied to the status option with `value`, whichever group holds it. */
 function mapStatusOption(
   groups: StatusGroup[],
   value: string,
