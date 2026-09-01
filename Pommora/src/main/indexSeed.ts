@@ -76,6 +76,11 @@ function relCorpusPath(root: string, abs: string): string | null {
   return segs.join('/')
 }
 
+let reread: string[] = []
+
+/** The pages the last seed re-read — the only files whose values could have drifted since. */
+export const rereadSinceSeed = (): readonly string[] => reread
+
 function recordPage(rel: string, content: string, stat: IndexedStat): void {
   upsertPageIndex(rel, extractPageIndex(content) ?? { mentions: [], values: {} }, stat)
 }
@@ -126,6 +131,7 @@ export async function seedContentIndex(root: string): Promise<void> {
   // and then prune everything the new nexus holds — so the seed bails wherever the identity
   // moved, and the new session's own adopt-time seed covers its nexus.
   const db0 = sessionDb()
+  reread = []
   try {
     const rels = await nexusCorpus(root)
     const seen = new Set(rels)
@@ -149,6 +155,7 @@ export async function seedContentIndex(root: string): Promise<void> {
       const row = readIndexedStat(rel)
       if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
+      reread.push(rel)
     }
     if (sessionDb() !== db0) return
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born

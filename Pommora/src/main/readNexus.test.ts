@@ -131,6 +131,13 @@ describe('readPersonalization: ribbon knobs', () => {
   })
 })
 
+describe('readPersonalization: the Metadata toggles', () => {
+  it('round-trips repairOnOpen; absent is undefined', () => {
+    expect(readPersonalization({ repairOnOpen: true }).repairOnOpen).toBe(true)
+    expect(readPersonalization({}).repairOnOpen).toBeUndefined()
+  })
+})
+
 describe('readPersonalization: picker selection', () => {
   it('reads the stored mode back so a set survives the next tree push', () => {
     expect(readPersonalization({ pickerSelection: 'checked' }).pickerSelection).toBe('checked')

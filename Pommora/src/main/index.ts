@@ -101,6 +101,7 @@ import { listBundles } from './provenance'
 import { trashRows } from './CRUD/trashRows'
 import { replayPendingRename } from './CRUD/contextCascade'
 import { replaySchemaCascade } from './CRUD/replaySchemaCascade'
+import { runRepairSweep } from './repairSweep'
 import {
   flushNavigation,
   hasPendingNavigation,
@@ -429,6 +430,10 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
     // belongs to an op still on the schema chain, which the replay would only queue behind.
     await replaySchemaCascade(root)
+    await runRepairSweep(root)
+    const repaired = flushValueWrites(root)
+    if (repaired.length && mainWindow && !mainWindow.isDestroyed())
+      push(mainWindow, 'values:changed', repaired)
     // A reference still naming `.nexus/assets` under a CONFIGURED directory is one the user has
     // already asked to move. The gate is one readdir of a folder that ends empty, so the ordinary
     // open pays a listing and nothing else — and a pass that moved something re-walks, or the
