@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
+import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from '@shared/contextResolve'
 import type { Adoption } from '@shared/propertyValue'
 import type { PropertyDefinition } from '@shared/properties'
 import { errText } from '@shared/result'
@@ -45,10 +45,7 @@ export async function runRepairSweep(root: string): Promise<void> {
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(raw, world)
       adoptions.push(...r.adoptions)
-      const next = { ...r.root }
-      for (const k of r.changed) if (!(k in next)) next[k] = raw[k]
-      const moved = r.changed.filter((k) => JSON.stringify(next[k]) !== JSON.stringify(raw[k]))
-      return moved.length ? { next } : null
+      return { next: { ...raw, ...survivingChanges(r) } }
     })
     await applyAdoptions(root, adoptions)
   } catch (e) {
