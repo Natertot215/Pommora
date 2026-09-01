@@ -18,6 +18,8 @@ one, and the hook says so.
 
 `loc.py --rebuild` re-walks the branch and rewrites both the JSON and the page from scratch — the run for when the area map changes.
 
+`comment-ledger.mjs` measures the comment mass of the app's TypeScript and proves a stripping pass touched nothing else. `--snapshot` writes `comment-baseline.json` — per-file comment characters, comment count, and a hash of the file's non-trivia token stream. `--verify` re-measures against it, reports the reduction per directory, and exits non-zero naming any file whose token stream moved; because whitespace is trivia and never enters the hash, a Biome reformat cannot mask a real edit. `comment-units.json` divides the tree into work units of roughly equal comment mass; `--unit N` prints one unit's file list and character floor, and passing the same id to `--verify` scopes the check to it.
+
 `check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must agree with the code files its SOURCE line names — each backticked token in a row's second column and each literal value in its third must appear in those files. Exit 0 means the tables agree; drift is listed per table.
 
 Both run after every commit through the versioned git hook `../hooks/post-commit`, which runs
