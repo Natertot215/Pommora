@@ -15,28 +15,23 @@ function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
   return contextIds.includes(id) ? 'context' : 'property'
 }
 
-/** Visible property ids: propertyOrder verbatim, hidden skipped, stale ids (a dropped prop_*
- *  reference or a deleted Context) dropped. A column shows ONLY if listed here — never
- *  auto-appended. */
-function visibleOrder(
+/** Visible columns: propertyOrder verbatim, hidden skipped, stale ids (a dropped prop_* reference
+ *  or a deleted Context) dropped — only a 'property' kind can be stale, since every other kind is
+ *  the classification itself. A column shows ONLY if listed here — never auto-appended. */
+function visibleColumns(
   view: SavedView,
   schema: PropertyDefinition[],
   contextIds: readonly string[],
-): string[] {
+): ResolvedColumn[] {
   const hidden = new Set(view.hidden_properties)
   const emitted = new Set<string>()
-  const out: string[] = []
+  const out: ResolvedColumn[] = []
   for (const id of view.property_order) {
     if (hidden.has(id) || emitted.has(id)) continue
-    if (
-      id === RESERVED_PROPERTY_ID.title ||
-      STAMP_TYPE[id] ||
-      contextIds.includes(id) ||
-      schema.some((d) => d.id === id)
-    ) {
-      emitted.add(id)
-      out.push(id)
-    }
+    const kind = columnKind(id, contextIds)
+    if (kind === 'property' && !schema.some((d) => d.id === id)) continue
+    emitted.add(id)
+    out.push({ id, kind })
   }
   return out
 }
@@ -48,10 +43,7 @@ export function resolveColumns(
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): ResolvedColumn[] {
-  const result: ResolvedColumn[] = visibleOrder(view, schema, contextIds).map((id) => ({
-    id,
-    kind: columnKind(id, contextIds),
-  }))
+  const result = visibleColumns(view, schema, contextIds)
   if (!result.some((c) => c.id === RESERVED_PROPERTY_ID.title)) {
     result.unshift({ id: RESERVED_PROPERTY_ID.title, kind: 'title' })
   }

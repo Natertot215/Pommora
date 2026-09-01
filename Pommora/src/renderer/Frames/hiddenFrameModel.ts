@@ -32,12 +32,11 @@ export function hiddenListIds(
 ): string[] {
   const set = new Set(view.hidden_properties)
   const shown = new Set(view.property_order)
+  const nonShown = (id: string): boolean => set.has(id) || !shown.has(id)
   return [
-    ...contextIds.filter((id) => set.has(id) || !shown.has(id)),
-    ...schema
-      .filter((d) => !isReservedPropertyId(d.id) && (set.has(d.id) || !shown.has(d.id)))
-      .map((d) => d.id),
-    ...Object.keys(STAMP_TYPE).filter((id) => set.has(id) || !shown.has(id)),
+    ...contextIds.filter(nonShown),
+    ...schema.filter((d) => !isReservedPropertyId(d.id) && nonShown(d.id)).map((d) => d.id),
+    ...Object.keys(STAMP_TYPE).filter(nonShown),
   ]
 }
 
