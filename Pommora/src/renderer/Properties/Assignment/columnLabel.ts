@@ -9,7 +9,6 @@ const RESERVED_LABEL: Record<string, string> = {
   [RESERVED_PROPERTY_ID.modifiedAt]: 'Modified',
 }
 
-/** The name a property is shown under — the stored key, or Title Cased when the toggle is on. */
 export const displayPropertyName = (name: string, capitalize: boolean): string =>
   capitalize ? name.replace(/(?:^|\s)\p{Ll}/gu, (m) => m.toUpperCase()) : name
 

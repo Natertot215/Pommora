@@ -24,7 +24,6 @@ import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connect
 // rows show. Every write here goes through the same primitives the table and cards use, so this is
 // a shape over them rather than a second way to write.
 
-/** Which value editor a row has open. */
 export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 
 /** The page this surface is about. The two hosts find it differently — one reads the open page, the

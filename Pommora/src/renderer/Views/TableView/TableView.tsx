@@ -589,8 +589,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (v.kind === 'url') return linkEditText(v.value)
     return ''
   }
-  // Map the editor's raw text to its typed write: number parses (a lone '-'/'.' reverts),
-  // url validates + normalizes, title renames. Empty input clears the value.
+  // A lone '-'/'.' fails to parse and reverts rather than clearing the value.
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
     const fromCreate = editing?.fromCreate
     setEditing(null)
