@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
+import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
 import { MenuRowView, MenuTopRow, MenuSeparator, type MenuRow } from '@renderer/DesignSystem/Menus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
@@ -55,7 +55,6 @@ function directionOptions(
   schema: PropertyDefinition[],
 ): PickerChoice<Direction>[] {
   if (propertyId === RESERVED_PROPERTY_ID.title) return TEXT_DIRECTIONS
-  if (STAMP_TYPE[propertyId]) return VALUE_DIRECTIONS
   switch (declaredType(propertyId, schema)) {
     case 'select':
     case 'status':

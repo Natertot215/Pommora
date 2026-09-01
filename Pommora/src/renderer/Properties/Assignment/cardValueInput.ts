@@ -1,4 +1,4 @@
-import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import { type PropertyDefinition, type PropertyType, STAMP_TYPE } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { isCompact, type SavedView } from '@shared/views'
@@ -66,7 +66,7 @@ export function addEntriesFor(
     .filter((id) => !shownIds.has(id))
     .map((id) => {
       const def = bySchema.get(id) ?? null
-      const type = def?.type ?? 'context'
+      const type = STAMP_TYPE[id] ?? def?.type ?? 'context'
       const blank = isBlankValue(resolveFieldValue(row, id, ctx.schema))
       const contextShaped = contextIds.includes(id) || type === 'context'
       const revealOnly = contextShaped
