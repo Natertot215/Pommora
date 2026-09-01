@@ -2,7 +2,8 @@ import { useEffect, type Dispatch, type SetStateAction } from 'react'
 import type { PageFrontmatter } from '@shared/schemas'
 import { useSession } from '../store'
 
-export type OverrideEntry = { fm: PageFrontmatter; pending: boolean }
+// `write` is the mutate the override waits on; null once it landed.
+export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
@@ -10,13 +11,13 @@ export const patchOverride = (
   set: SetOverrides,
   pageId: string,
   fm: PageFrontmatter,
-  settled: Promise<unknown>,
+  write: Promise<unknown>,
 ): void => {
-  set((prev) => ({ ...prev, [pageId]: { fm, pending: true } }))
-  void settled.finally(() =>
+  set((prev) => ({ ...prev, [pageId]: { fm, write } }))
+  void write.finally(() =>
     set((prev) => {
       const entry = prev?.[pageId]
-      return entry ? { ...prev, [pageId]: { ...entry, pending: false } } : prev
+      return entry?.write === write ? { ...prev, [pageId]: { fm: entry.fm, write: null } } : prev
     }),
   )
 }
@@ -29,7 +30,7 @@ export const retireSettled = (
 ): Overrides | null => {
   if (!o) return o
   const kept = Object.entries(o).filter(([id, e]) =>
-    pageIds?.length ? !pageIds.includes(id) : e.pending,
+    pageIds?.length ? !pageIds.includes(id) : e.write !== null,
   )
   return kept.length ? Object.fromEntries(kept) : null
 }
@@ -51,7 +52,7 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
 export function useValuesEpoch(
   path: string,
   setValues: Dispatch<SetStateAction<Record<string, PageFrontmatter>>>,
-  setValueOverride: SetOverrides,
+  setValueOverride?: SetOverrides,
 ): void {
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
@@ -70,7 +71,7 @@ export function useValuesEpoch(
     void window.nexus.loadValues(path).then((v) => {
       if (!canceled) setValues(v)
     })
-    setValueOverride(apply)
+    setValueOverride?.(apply)
     return () => {
       canceled = true
     }

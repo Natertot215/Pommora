@@ -787,7 +787,7 @@ function DateBucketList({
       canceled = true
     }
   }, [source.path])
-  useValuesEpoch(source.path, setValues, () => {})
+  useValuesEpoch(source.path, setValues)
 
   const granularity = group.date_granularity ?? 'month'
   const present = new Set<string>()

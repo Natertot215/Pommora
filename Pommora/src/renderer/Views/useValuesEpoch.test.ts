@@ -3,9 +3,10 @@ import type { PageFrontmatter } from '@shared/schemas'
 import { patchOverride, retireSettled, type Overrides } from './useValuesEpoch'
 
 const fm = (id: string): PageFrontmatter => ({ id }) as never
+const inFlight = new Promise(() => {})
 const overrides: Overrides = {
-  a: { fm: fm('a'), pending: true },
-  b: { fm: fm('b'), pending: false },
+  a: { fm: fm('a'), write: inFlight },
+  b: { fm: fm('b'), write: null },
 }
 
 describe('retireSettled', () => {
@@ -36,11 +37,25 @@ describe('patchOverride', () => {
       land = r
     })
     patchOverride(set, 'a', fm('a'), settled)
-    expect(state).toEqual({ a: { fm: fm('a'), pending: true } })
+    expect(state).toEqual({ a: { fm: fm('a'), write: settled } })
     land()
     await settled
     await Promise.resolve()
-    expect(state).toEqual({ a: { fm: fm('a'), pending: false } })
+    expect(state).toEqual({ a: { fm: fm('a'), write: null } })
+  })
+
+  it('an older write landing does not settle a newer override on the same page', async () => {
+    let state: Overrides | null = null
+    const set: Parameters<typeof patchOverride>[0] = (next) => {
+      state = typeof next === 'function' ? next(state) : next
+    }
+    const first = Promise.resolve()
+    patchOverride(set, 'a', fm('a'), first)
+    patchOverride(set, 'a', fm('a2'), inFlight)
+    await first
+    await Promise.resolve()
+    expect(state).toEqual({ a: { fm: fm('a2'), write: inFlight } })
+    expect(retireSettled(state, null)).toEqual(state)
   })
 
   it('an override retired before its write lands stays retired', async () => {

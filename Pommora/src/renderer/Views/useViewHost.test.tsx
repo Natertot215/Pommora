@@ -165,7 +165,7 @@ describe('the reset keys', () => {
   it('manualOverride drops on a source-identity echo while valueOverride survives it', async () => {
     await mount(collection())
     act(() => api?.setManualOverride(['p2', 'p1']))
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     expect(api?.manualOrder).toEqual(['p2', 'p1'])
     await mount(collection()) // same content, new object — the watcher echo
     expect(api?.manualOrder).toBeUndefined()
@@ -227,8 +227,8 @@ describe('the values epoch', () => {
     nexus().loadValues.mockClear()
     act(() =>
       api?.setValueOverride({
-        p1: { fm: { id: 'p1' } as never, pending: true },
-        p2: { fm: { id: 'p2' } as never, pending: false },
+        p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
+        p2: { fm: { id: 'p2' } as never, write: null },
       }),
     )
     bump([{ rel: 'Col', pageIds: ['p1'] }])
@@ -242,8 +242,8 @@ describe('the values epoch', () => {
     await mount(collection())
     act(() =>
       api?.setValueOverride({
-        p1: { fm: { id: 'p1' } as never, pending: true },
-        p2: { fm: { id: 'p2' } as never, pending: false },
+        p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
+        p2: { fm: { id: 'p2' } as never, write: null },
       }),
     )
     bump([{ rel: 'Col', pageIds: [] }])
@@ -255,7 +255,7 @@ describe('the values epoch', () => {
   it('one push over several containers reaches the mounted one', async () => {
     await mount(collection())
     nexus().loadValues.mockClear()
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([
       { rel: 'Other', pageIds: ['p9'] },
       { rel: 'Col', pageIds: ['p2'] },
@@ -268,7 +268,7 @@ describe('the values epoch', () => {
   it('a sibling container push neither refetches nor retires', async () => {
     await mount(collection())
     nexus().loadValues.mockClear()
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Other', pageIds: ['p2'] }])
     await act(async () => {})
     expect(nexus().loadValues).not.toHaveBeenCalled()
@@ -279,7 +279,7 @@ describe('the values epoch', () => {
     await mount(collection())
     act(() =>
       api?.setValueOverride({
-        p2: { fm: { id: 'p2', Status: ['Done'] } as never, pending: false },
+        p2: { fm: { id: 'p2', Status: ['Done'] } as never, write: null },
       }),
     )
     act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
