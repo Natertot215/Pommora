@@ -46,6 +46,13 @@ describe('the option list is the one shape', () => {
     expect(stripped).not.toContain('Status')
   })
 
+  it('a YAML number names the option it spells, and the rewrite spells it back as a string', () => {
+    const renamed = replacePageValue(page('Year:\n  - 2024\n'), 'Year', '2024', 'FY2024')
+    expect(renamed).toContain('Year:\n  - FY2024')
+    expect(stripPageValue(page('Year: 2024\n'), 'Year', '2024')).not.toContain('Year')
+    expect(stripPageValue(page('Year: 2025\n'), 'Year', '2024')).toBeNull()
+  })
+
   it('a scalar written from outside rewrites to a list of one', () => {
     expect(replacePageValue(page('Status: Active\n'), 'Status', 'Active', 'Live')).toContain(
       'Status:\n  - Live',

@@ -754,13 +754,14 @@ Foreign elements in the list ride through untouched, as today's array path alrea
 
 #### Gate 2 — one shape
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Scalar fixture sweep: `rg -n "^\s*(Status|Stage|Tags): [A-Za-z]" src --glob '*.test.*'` → 0 (legit hits: none). Control: `rg -F "- Active" src --glob '*.test.*'` → ≥ 5.
-- [ ] Simplification and review against `<base>..HEAD` scoped to `src/shared/propertyValue.ts`, `src/main/CRUD/{pageValue,optionOps,replaySchemaCascade}.ts`, `src/renderer/Views/Pipeline`.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Made False row for Task 10 landed.
-- [ ] Progress hashes filled in. Not a declared stop.
+- [x] typecheck 0 · Vitest 303 / 3758 · lint clean.
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] Scalar fixture sweep → 0. Control `- Active` in tests → 2 (the plan guessed ≥ 5; two is what the fixtures hold).
+- [x] **The Ideas display check** (carried from Gate 1): NexusOS reopened on this build, the Ideas Table view (its stray filter removed at Nathan's request) shows Archived ×3, Closed ×1, Revisit ×2 with the right pages, Active ×4 and Complete ×1 behind their collapsed bands, and the 15 Open/Awaiting pages ungrouped at the bottom — 26 of 26 as the files hold them; `<Projects>` chips resolve. Screenshot `gate2-ideas.png` in the session scratchpad.
+- [x] Simplifier (`CascadeTarget` collapsed to the bare key), code review (clean), attack review (2 findings, 11 kills), all fixed: `optionList` and `rewriteRaw` now coerce a YAML number or boolean to its spelling, the way `normalizeContextValue` already does for Contexts — an outside `- 2024` names the option "2024" and the cascade reaches it; `PropertyValue`'s checkbox narrowed to `value: true`, so the two constructors that produced `false` (band-drag reassign, a filter-implied creation seed) now clear the key, and `isBlankValue` needs no checkbox arm.
+- [x] Every concern fixed or ruled (Log).
+- [x] Made False row for Task 10 landed (re-applied at this gate after the parallel session's revert erased it — Rulings).
+- [x] Progress hashes filled in. Not a declared stop.
 
 ---
 
@@ -1355,9 +1356,9 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 8 — reserved-name rule · `9c3c3585`
   - [x] Task 9 — rename onto a held key refused · `9c3c3585`
   - [x] **Declared stop — vault pass run 09-01-2026 03:47Z; automated checks; Nathan pinged**
-- [ ] **Phase 2** — Values
-  - [ ] Task 10 — `decodeValue` coerces; `encodeValue` lists
-  - [ ] Task 11 — `rewriteRaw` array path; `type` retires
+- [x] **Phase 2** — Values · base `2e804767`
+  - [x] Task 10 — `decodeValue` coerces; `encodeValue` lists · `2a3e9c35`
+  - [x] Task 11 — `rewriteRaw` array path; `type` retires · `2a3e9c35`
 - [ ] **Phase 3** — Repair
   - [ ] Task 12 — `GovernedWorld`; `assignedDefs`
   - [ ] Task 13 — `addOptionToDef` / `applyAdoptions`
@@ -1392,6 +1393,9 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - **The single-value resolution is tested per type** (Nathan, 09-01-2026): Task 10's red-first cases run once against a Select definition and once against a Status definition, not through one shared "single" fixture; and the lines that resolve an externally written option list to the property's value are isolated in one named function in `propertyValue.ts`, so the rule has one address.
 - **Gate 0, the re-read window** (executor, 08-31-2026). `setPageContext` now reads once under its lock and `setGovernedRootKeys` reads again; a page deleted in the microtask between them throws `ENOENT` into the mutate envelope where the old path wrote its stale first read back — resurrecting the deleted page. The window sits inside the held file lock and the new outcome is the better one; no code added. From `restoreCachedValues` the same throw is absorbed by `reconcile`'s catch and the entry stays cached, exactly as before (probe-verified).
 - **Gate 1, the simplifier's flags** (executor, 09-01-2026). `createProperty` has no held-key gate by design — registering a name pages already hold adopts their values without a write (R-9); only a rename rewrites pages, so only a rename can destroy. `confirmedKeyHolders` reads the whole scope once per rename while the index is cold (the first launch after the generation bump) — K-7's own "unconditional per-file read", on a rare gesture. `isGovernedContextKey` is a prefix test (the write set) and `parseContextKey` demands the full shape (the strips); a half-open `<foo` is reserved by `invalidPropertyName` and claimed by neither strip. `renameCascade` now routes its filter through `isRegisteredPropertyName`, the one address the log names.
+- **Gate 2, the attack's two observations** (executor, 09-01-2026). Removing an option from a page holding `[Open, Active]` reveals `Open` — V-2's last-valid rule applied to the shorter list; stated in [[PropertiesPM]]'s Select paragraph rather than changed. The option cascades reach every Collection, assigned or not (K-6's corpus-wide claim), while V-5 says an unassigned value is never rewritten — the cascade rewrites only the value it was asked to rename or remove, which is what a corpus-wide rename means; left as is.
+- **`Awaiting` is a Status option** (Nathan, 09-01-2026, mid-run): it existed in his original definition and the vault pass's six had dropped it. Added back to the `upcoming` group in `properties.json`; the 14 `Awaiting` pages read live from the next open. `Open` ×13 stays outside until he says otherwise.
+- **The parallel session's commit and revert carried this arc's doc edits** (`2d454d99` → `1984a71b`): Nathan's auto-stage hook swept the uncommitted Task 10 rewrites to [[PropertiesPM]] into that session's commit, and its revert erased them. Re-applied at Gate 2 and committed there.
 - **Closeout's manual list is at least fifteen actions**, each stated as expected behavior before the attempt and watched over CDP, observed behavior recorded beside it.
 
 - **The vault pass as run** (executor, 09-01-2026 03:47Z; script in the session scratchpad, never committed). Backup: a dated copy at `~/NexusOS-backup-2026-09-01T03-47-22-946Z/` of `.nexus/*` and every rewritten file — not a git commit, since the vault repository held 508 uncommitted entries of Nathan's own. 79 files rewritten, post-check clean (translation equality on every key, bodies byte-identical): 19 wrapped property keys (`<Status>`×13 incl. `.trash`, `<Pinned>`×5, `<Timeframe>`×1), 12 of them dropped because a bare twin held a value; one `(Areas)` re-sigiled (in `.trash`); one `closed` → `Closed`; 67 `.slate` Project links copied into `<Projects>` (the bare key kept, Nathan's move-vs-copy answer pending). Status values in use after the pass: Active 13 · Paused 5 · Complete 4 · Archived 3 · Revisit 2 · Closed 2 — and **Open ×13, Awaiting ×14 outside the six**, left as written; they read as no value until mapped. `.slate` titles naming no Space, left alone: Topics/Aphelion ×8, Projects/Chronos ×2, Topics/Claude ×2, Areas/Studio ×1. Registry: Status's options are the six (Revisit / Active, Paused / Complete, Closed, Archived — group by phase), `Link` renamed `Links`, `Brand` (Select, no options in use) added, `Price` already present; assignments added on Assets (Links, Price, Brand) and Context (Status, Links). No `<Attachments>` frontmatter existed (the survey's hit was inside a fenced example in a doc page). No `(Context)` keys existed outside `.trash`.
