@@ -6,10 +6,9 @@ import {
   contextKey,
   normalizeContextValue,
   parseContextKey,
-  type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
-import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
+import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
 import type { PropertyDefinition } from '@shared/properties'
@@ -50,8 +49,6 @@ export interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
 }
-
-const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
 export async function assignedDefs(
   root: string,
@@ -109,10 +106,6 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
   return ok({ registry: reg.value, spacesByContext, spaceById, defs: NO_DEFS })
 }
 
-function defById(world: ContextWorld, contextId: string): ContextDef | undefined {
-  return world.registry.contexts.find((c) => c.id === contextId)
-}
-
 /** Resolve target Space ids → titles through the live registry. Unknown ids fail —
  *  a stale renderer id must never serialize as a guess. */
 function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]> {
@@ -130,7 +123,7 @@ function applyTarget(
   contextId: string,
   titles: string[],
 ): Result<{ key: string; value: string[] | undefined }> {
-  const def = defById(world, contextId)
+  const def = world.registry.contexts.find((c) => c.id === contextId)
   if (!def) return fail('not-found', 'Unknown Context.')
   return ok({ key: contextKey(def.title), value: titles.length ? titles : undefined })
 }
@@ -183,7 +176,8 @@ export async function loadGovernedWorld(
 ): Promise<GovernedWorld> {
   const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
   const skipped: GovernedWorld = { registry: null, spacesByContext: new Map(), defs }
-  if (!contextDriftPresent(raw, getLiveTree())) return skipped
+  const held = getLiveTree()
+  if (!contextDriftPresent(raw, held?.nexus.rootPath === root ? held : null)) return skipped
   const world = await loadContextWorld(root)
   return world.ok ? { ...world.value, defs } : skipped
 }

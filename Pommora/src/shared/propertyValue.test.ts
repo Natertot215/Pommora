@@ -167,6 +167,13 @@ describe('decodeValue — lenient on read, strict on restore', () => {
 })
 
 describe('decodeValue — a file value names files', () => {
+  it('a single wikilink written as a scalar is a list of one', () => {
+    expect(decodeValue(def({ type: 'file' }), '[[Shot.png]]')).toEqual({
+      kind: 'file',
+      value: ['[[Shot.png]]'],
+    })
+  })
+
   const fileDef = def({ type: 'file' })
 
   it('reads a list of wikilink strings', () => {

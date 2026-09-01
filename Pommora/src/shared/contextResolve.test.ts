@@ -106,14 +106,26 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(root['<Classes>']).toEqual(['2024', 'true'])
   })
 
-  it('removes a key whose values all drop, and a present-but-empty list (no empties)', () => {
+  it('removes a key whose values all drop, a present-but-empty list, and a bare key (no empties)', () => {
     const { root, changed } = reconcileGovernedRoot(
-      { '<Projects>': ['Pomora'], '<Classes>': [] },
-      world,
+      { '<Projects>': ['Pomora'], '<Classes>': [], '<Areas>': null },
+      { ...world, registry: { contexts: [...registry.contexts, { id: 'ctxB', title: 'Areas' }] } },
     )
     expect('<Projects>' in root).toBe(false)
     expect('<Classes>' in root).toBe(false)
-    expect(changed.sort()).toEqual(['<Classes>', '<Projects>'])
+    expect('<Areas>' in root).toBe(false)
+    expect(changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
+  })
+
+  it('reads a scalar Context value as a list of one, so a hand-typed tag repairs and resolves', () => {
+    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
+    expect(root['<Projects>']).toEqual(['Pommora'])
+    expect(changed).toEqual(['<Projects>'])
+    expect(
+      resolveContextKeys({ '<Projects>': 'Pommora' }, registry, spacesByContext).get(
+        'ctx_projects',
+      ),
+    ).toEqual(['sp1'])
   })
 
   it('leaves unknown wrapped keys and foreign keys verbatim', () => {
