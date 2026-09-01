@@ -2,13 +2,14 @@
 // option's `value` IS its title (value=label), so identity keys on the value string. No I/O, no React
 // — unit-tested in isolation; the IPC ops and panes are thin over these.
 
-import type { PropertyType, StatusGroup } from './properties'
+import type { OptionAppearance, PropertyType, StatusGroup, StatusOption } from './properties'
 
 export type Option = {
   value: string
   label: string
   color?: string
   icon?: string
+  appearance?: OptionAppearance
   group_id?: string
 }
 
@@ -133,6 +134,52 @@ export function setOptionIcon(
     const { icon: _drop, ...rest } = o
     return icon ? { ...rest, icon } : rest
   })
+}
+
+/** Filled is the default, so it clears the key rather than being written. */
+export function setOptionAppearance(
+  options: Option[],
+  value: string,
+  appearance: OptionAppearance,
+): Option[] {
+  return options.map((o) => {
+    if (o.value !== value) return o
+    const { appearance: _drop, ...rest } = o
+    return appearance === 'clear' ? { ...rest, appearance } : rest
+  })
+}
+
+/** One flat-option transform applied to the status option with `value`, whichever group holds it. */
+function mapStatusOption(
+  groups: StatusGroup[],
+  value: string,
+  fn: (o: StatusOption) => StatusOption,
+): StatusGroup[] {
+  return groups.map((g) => ({
+    ...g,
+    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
+  }))
+}
+
+/** undefined removes the field → the chip falls back to its group's glyph. */
+export function setStatusOptionIcon(
+  groups: StatusGroup[],
+  value: string,
+  icon: string | undefined,
+): StatusGroup[] {
+  return mapStatusOption(groups, value, ({ icon: _drop, ...rest }) =>
+    icon ? { ...rest, icon } : rest,
+  )
+}
+
+export function setStatusOptionAppearance(
+  groups: StatusGroup[],
+  value: string,
+  appearance: OptionAppearance,
+): StatusGroup[] {
+  return mapStatusOption(groups, value, ({ appearance: _drop, ...rest }) =>
+    appearance === 'clear' ? { ...rest, appearance } : rest,
+  )
 }
 
 /** Move the option with `value` to `toIndex` (in the without-the-dragged coordinate space). */

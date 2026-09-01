@@ -42,6 +42,11 @@ export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
 /** `Intl.NumberFormat` renders any ISO code — this is the curated common set, not a limit. */
 export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as const
 
+/** How an option's chip paints: filled is the tinted default and is never written; clear drops the
+ *  fill and keeps the tinted border and label. */
+const optionAppearance = z.enum(['filled', 'clear'])
+export type OptionAppearance = z.infer<typeof optionAppearance>
+
 const selectOption = z.looseObject({
   value: z.string(),
   label: z.string(),
@@ -49,6 +54,7 @@ const selectOption = z.looseObject({
   icon: z.string().optional().catch(undefined),
   // Lenient: a non-string degrades to undefined rather than failing the whole def parse.
   color: z.string().optional().catch(undefined),
+  appearance: optionAppearance.optional().catch(undefined),
 })
 
 /** Status-group ids — an OPEN set, seeded with upcoming / in_progress / done. A group is identified
@@ -60,6 +66,9 @@ const statusOption = z.looseObject({
   value: z.string(),
   label: z.string(),
   color: z.string().optional().catch(undefined),
+  // Absent falls to the group's glyph.
+  icon: z.string().optional().catch(undefined),
+  appearance: optionAppearance.optional().catch(undefined),
   group_id: statusGroupId,
 })
 export type StatusOption = z.infer<typeof statusOption>

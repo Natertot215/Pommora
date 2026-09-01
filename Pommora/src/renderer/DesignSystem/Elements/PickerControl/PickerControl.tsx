@@ -21,6 +21,12 @@ export const percentChoice = (f: number): PickerChoice<string> => ({
   label: `${Math.round(f * 100)}%`,
 })
 
+/** The same factor spoken as a multiplier — the Scale sliders' `1.00x` convention. */
+export const factorChoice = (f: number): PickerChoice<string> => ({
+  value: String(f),
+  label: `${f.toFixed(2)}x`,
+})
+
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
  *  a menu; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
 export function PickerControl<T extends string>({

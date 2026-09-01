@@ -37,7 +37,7 @@ export const ICON = {
   dropOutline: 'control',
   rowPlus: 'control',
   optionsAdd: 'control',
-  palette: 'body',
+  optionEdit: 'body',
 } satisfies Record<string, IconSize>
 
 export const anchor = style(menuAnchor('right', stack.local.lifted))
@@ -149,9 +149,9 @@ export const ghostChip = style({
   },
 })
 
-export const paletteAnchor = style({ position: 'relative', display: 'flex', alignItems: 'center' })
+export const optionAnchor = style({ position: 'relative', display: 'flex', alignItems: 'center' })
 
-export const paletteButton = style([
+export const optionEditButton = style([
   accessoryButton,
   {
     opacity: 0,

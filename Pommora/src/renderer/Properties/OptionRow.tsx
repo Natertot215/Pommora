@@ -2,11 +2,11 @@ import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 
 import type { ColumnLook } from '@shared/columnStyles'
-import type { PropertyDefinition } from '@shared/properties'
+import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
+import { OptionEditPopup } from './OptionEditPopup'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/DesignSystem/Interactions/ghostAnchor'
@@ -28,16 +28,18 @@ export function OptionRow({
   label,
   color,
   icon,
+  appearance,
   def,
   renaming,
-  coloring,
+  editing,
   iconEditing,
-  paletteRef,
+  editButtonRef,
   onCommitRename,
   onCancelRename,
-  onToggleColoring,
-  onCloseColoring,
+  onToggleEditing,
+  onCloseEditing,
   onPickColor,
+  onPickAppearance,
   onEditIcon,
   onCloseIcon,
 }: {
@@ -47,21 +49,23 @@ export function OptionRow({
   label: string
   color: string | undefined
   icon?: string
+  appearance?: OptionAppearance
   def?: Pick<PropertyDefinition, 'status_groups'>
   renaming: boolean
-  coloring: boolean
+  editing: boolean
   iconEditing?: boolean
-  paletteRef: React.RefObject<HTMLButtonElement | null>
+  editButtonRef: React.RefObject<HTMLButtonElement | null>
   onCommitRename: (raw: string) => void
   onCancelRename: () => void
-  onToggleColoring: () => void
-  onCloseColoring: () => void
+  onToggleEditing: () => void
+  onCloseEditing: () => void
   onPickColor: (color: string | undefined) => void
+  onPickAppearance: (appearance: OptionAppearance) => void
   onEditIcon?: (icon: string | undefined) => void
   onCloseIcon?: () => void
 }): React.JSX.Element {
   const iconAnchor = useRef<HTMLSpanElement>(null)
-  const option = { value, label, color, icon }
+  const option = { value, label, color, icon, appearance }
   if (renaming) {
     return (
       <OptionNameCaret
@@ -76,7 +80,7 @@ export function OptionRow({
   // revealing the full name — you see the option as its icon while you pick it.
   if (iconEditing) {
     return (
-      <span className={s.paletteAnchor} ref={iconAnchor}>
+      <span className={s.optionAnchor} ref={iconAnchor}>
         <OptionChip type={type} look="compact" option={option} def={def} />
         <IconPicker
           open
@@ -94,24 +98,29 @@ export function OptionRow({
         <OptionChip type={type} look={look} option={option} def={def} />
         {look === 'compact' && <span className={compactTitle}>{label}</span>}
       </span>
-      <span className={s.paletteAnchor}>
+      <span className={s.optionAnchor}>
         <Button
-          ref={coloring ? paletteRef : undefined}
+          ref={editing ? editButtonRef : undefined}
           size="button-inline"
           paddingX="0"
-          icon="palette"
-          iconSize={s.ICON.palette}
-          className={s.paletteButton}
-          style={coloring ? { opacity: 1 } : undefined}
-          aria-label="Recolor"
-          onClick={onToggleColoring}
+          icon="square-pen"
+          iconSize={s.ICON.optionEdit}
+          className={s.optionEditButton}
+          style={editing ? { opacity: 1 } : undefined}
+          aria-label="Edit Option"
+          onClick={onToggleEditing}
         />
-        <ColorPicker
-          open={coloring}
-          selected={labelColorFor(color)}
-          onPick={onPickColor}
-          onDismiss={onCloseColoring}
-          triggerRef={paletteRef}
+        <OptionEditPopup
+          open={editing}
+          type={type}
+          option={option}
+          def={def}
+          triggerRef={editButtonRef}
+          onDismiss={onCloseEditing}
+          onRename={onCommitRename}
+          onPickIcon={(id) => onEditIcon?.(id)}
+          onPickColor={onPickColor}
+          onPickAppearance={onPickAppearance}
         />
       </span>
     </>

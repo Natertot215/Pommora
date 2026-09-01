@@ -9,7 +9,10 @@ import {
   renameOption,
   recolorOption,
   reorderOption,
+  setOptionAppearance,
   setOptionIcon,
+  setStatusOptionAppearance,
+  setStatusOptionIcon,
   fallbackTitle,
 } from './optionModel'
 import type { StatusGroup } from './properties'
@@ -50,6 +53,51 @@ describe('optionModel', () => {
       { value: 'A', label: 'A', color: 'blue' },
     ])
     expect(recolorOption([opt('A', 'blue')], 'A', undefined)).toEqual([opt('A')])
+  })
+
+  it('setOptionAppearance writes only clear; filled removes the key (the default is never stored)', () => {
+    expect(setOptionAppearance([opt('A')], 'A', 'clear')).toEqual([
+      { value: 'A', label: 'A', appearance: 'clear' },
+    ])
+    expect(
+      setOptionAppearance([{ value: 'A', label: 'A', appearance: 'clear' }], 'A', 'filled'),
+    ).toEqual([opt('A')])
+  })
+
+  it('setStatusOptionIcon and setStatusOptionAppearance reach the option in whichever group holds it', () => {
+    const groups: StatusGroup[] = [
+      {
+        id: 'upcoming',
+        label: 'Open',
+        color: 'grey',
+        options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
+      },
+      {
+        id: 'done',
+        label: 'Done',
+        color: 'green',
+        options: [{ value: 'D', label: 'D', group_id: 'done' }],
+      },
+    ]
+    expect(setStatusOptionIcon(groups, 'D', 'star')[1].options[0]).toEqual({
+      value: 'D',
+      label: 'D',
+      group_id: 'done',
+      icon: 'star',
+    })
+    expect(
+      setStatusOptionIcon(setStatusOptionIcon(groups, 'D', 'star'), 'D', undefined)[1].options[0],
+    ).toEqual({ value: 'D', label: 'D', group_id: 'done' })
+    expect(setStatusOptionAppearance(groups, 'A', 'clear')[0].options[0]).toEqual({
+      value: 'A',
+      label: 'A',
+      group_id: 'upcoming',
+      appearance: 'clear',
+    })
+    expect(
+      setStatusOptionAppearance(setStatusOptionAppearance(groups, 'A', 'clear'), 'A', 'filled')[0]
+        .options[0],
+    ).toEqual({ value: 'A', label: 'A', group_id: 'upcoming' })
   })
 
   it('setOptionIcon sets the icon key; clearing removes it', () => {
