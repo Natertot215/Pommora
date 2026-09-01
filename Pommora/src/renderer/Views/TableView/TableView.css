@@ -37,6 +37,12 @@
   position: relative; /* containing block for the grip */
   overflow: visible;
 }
+.data-cell.cell-sweep {
+  background: var(--text-selection);
+}
+:root.native-highlight .data-cell.cell-sweep {
+  background: var(--col-highlight);
+}
 /* The views gutter lane the row grip and band chevron both float into. */
 .row-grip,
 .table-view .group-band-drop-outline {

@@ -396,6 +396,14 @@ describe('sub-group bucket band drag', () => {
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
+  it('a cross-set slot before the SAME bucket declines — no append-to-end misfire', async () => {
+    await mountTable(subGroupSource())
+    await dragBand(1, 98)
+    await drop()
+    expect(saveSpy).not.toHaveBeenCalled()
+    expect(mutateSpy).not.toHaveBeenCalled()
+  })
+
   it('outside manual mode the bucket drag is inert', async () => {
     await mountTable(
       subGroupSource({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } }),

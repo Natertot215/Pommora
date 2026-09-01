@@ -609,6 +609,7 @@ function LocationHierarchy({
       const value = chipValueOf.get(draggedId)
       const before = drop.beforeId === null ? null : (chipValueOf.get(drop.beforeId) ?? null)
       if (value === undefined || !view.sub_group) return
+      if (before === value) return
       onSaveView({
         sub_group: {
           ...view.sub_group,
