@@ -2,16 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { PAGE_ID_KEY } from '@shared/identity'
 import type { CollectionNode, PageNode, SetNode, ViewRow } from '@shared/types'
 import type { GroupConfig } from '@shared/views'
-import type { PageFrontmatter } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 import {
   dateBucketKey,
   flattenContainer,
+  frontmatterOf,
   pruneEmptyBuckets,
   resolveGroups,
   subGroupKey,
 } from './group'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
+import { pageValues } from '@renderer/Testing/pageValues'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
@@ -226,6 +227,31 @@ describe('flattenContainer + structural grouping', () => {
   })
 })
 
+describe('toRow stamps', () => {
+  it("carries the batch entry's stamps and omits them when the entry lacks them", () => {
+    const { rows } = flattenContainer(collection([], [page('p1'), page('p2'), page('p3')]), {
+      p1: {
+        frontmatter: { [PAGE_ID_KEY]: 'p1' },
+        createdAt: '2024-01-02T03:04:05.000Z',
+        modifiedAt: '2024-06-07T08:09:10.000Z',
+      },
+      p2: { frontmatter: { [PAGE_ID_KEY]: 'p2' }, createdAt: null, modifiedAt: null },
+    })
+    expect(rows[0]).toMatchObject({
+      createdAt: '2024-01-02T03:04:05.000Z',
+      modifiedAt: '2024-06-07T08:09:10.000Z',
+    })
+    for (const row of rows.slice(1)) {
+      expect('createdAt' in row).toBe(false)
+      expect('modifiedAt' in row).toBe(false)
+    }
+  })
+
+  it('a page absent from the batch stands on a PageID-keyed frontmatter', () => {
+    expect(frontmatterOf({}, 'p9')).toEqual({ [PAGE_ID_KEY]: 'p9' })
+  })
+})
+
 describe('flat grouping', () => {
   it('drops set structure into one band of all rows', () => {
     const { rows, setTree } = flattenContainer(
@@ -239,12 +265,12 @@ describe('flat grouping', () => {
 })
 
 describe('property grouping — status manual order', () => {
-  const values: Record<string, PageFrontmatter> = {
+  const values = pageValues({
     p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
     p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'in_progress' }, statusSchema) },
     p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, statusSchema) },
     p4: { [PAGE_ID_KEY]: 'p4' },
-  }
+  })
   const col = collection([], [page('p1'), page('p2'), page('p3'), page('p4')])
   const base: GroupConfig = {
     kind: 'property',
@@ -308,11 +334,11 @@ describe('property grouping — status manual order', () => {
 describe('sub-grouping (structural + view-level sub_group)', () => {
   const structural: GroupConfig = { kind: 'structural' }
   const sub = { property_id: 'prop_status', order_mode: 'configured' as const }
-  const values: Record<string, PageFrontmatter> = {
+  const values = pageValues({
     p_a: { [PAGE_ID_KEY]: 'p_a', ...propsAtRoot({ prop_status: 'not_started' }, statusSchema) },
     p_sub: { [PAGE_ID_KEY]: 'p_sub', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
     p_b: { [PAGE_ID_KEY]: 'p_b', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
-  }
+  })
   const col = collection(
     [set('setA', [page('p_a')], [set('setA1', [page('p_sub')])]), set('setB', [page('p_b')])],
     [],
@@ -351,10 +377,15 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
 
   it('manual sub-order is global; no-value pages sit per-set placed by the knob; loose root pages stay one flat tail', () => {
     const manual = { ...sub, order_mode: 'manual' as const, order: ['done', 'not_started'] }
-    const values2: Record<string, PageFrontmatter> = {
+    const values2 = {
       ...values,
-      p_nv: { [PAGE_ID_KEY]: 'p_nv' },
-      p_loose: { [PAGE_ID_KEY]: 'p_loose', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
+      ...pageValues({
+        p_nv: { [PAGE_ID_KEY]: 'p_nv' },
+        p_loose: {
+          [PAGE_ID_KEY]: 'p_loose',
+          ...propsAtRoot({ prop_status: 'done' }, statusSchema),
+        },
+      }),
     }
     const col2 = collection(
       [
@@ -379,10 +410,10 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
   })
 
   it('sorts within each sub-bucket', () => {
-    const values3: Record<string, PageFrontmatter> = {
+    const values3 = pageValues({
       p_z: { [PAGE_ID_KEY]: 'p_z', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
       p_a2: { [PAGE_ID_KEY]: 'p_a2', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
-    }
+    })
     const col3 = collection([set('setA', [page('p_z'), page('p_a2')])], [])
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
     const { rows, setTree } = flattenContainer(col3, values3)
@@ -414,10 +445,10 @@ describe('ungrouped placement (the view-level knob)', () => {
   })
 
   it('property: top placement leads with the no-value band', () => {
-    const values: Record<string, PageFrontmatter> = {
+    const values = pageValues({
       p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
       p2: { [PAGE_ID_KEY]: 'p2' },
-    }
+    })
     const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), values)
     const group: GroupConfig = {
       kind: 'property',
@@ -463,11 +494,11 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
   })
 
   it('configured uses schema option order; reversed flips it', () => {
-    const values = {
+    const values = pageValues({
       p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'c' }, selSchema) },
       p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'a' }, selSchema) },
       p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'b' }, selSchema) },
-    }
+    })
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
@@ -482,11 +513,11 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
 
   it('routes a nil checkbox to the false bucket with no no-value band', () => {
     const cbSchema: PropertyDefinition[] = [{ id: 'prop_done', name: 'Done', type: 'checkbox' }]
-    const values = {
+    const values = pageValues({
       p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, cbSchema) },
       p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_done: false }, cbSchema) },
       p3: { [PAGE_ID_KEY]: 'p3' },
-    }
+    })
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
@@ -511,7 +542,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
 
   it('buckets dates by granularity (same month together)', () => {
     const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
-    const values = {
+    const values = pageValues({
       p1: {
         [PAGE_ID_KEY]: 'p1',
         ...propsAtRoot({ prop_when: '2026-06-10T12:00:00Z' }, dateSchema),
@@ -524,7 +555,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         [PAGE_ID_KEY]: 'p3',
         ...propsAtRoot({ prop_when: '2026-07-15T12:00:00Z' }, dateSchema),
       },
-    }
+    })
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
       values,
@@ -549,9 +580,9 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
 
   it('buckets a date-only value by its stored date (no timezone shift)', () => {
     const dueSchema: PropertyDefinition[] = [{ id: 'prop_due', name: 'Due', type: 'datetime' }]
-    const values = {
+    const values = pageValues({
       p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) },
-    }
+    })
     const { rows, setTree } = flattenContainer(collection([], [page('p1')]), values)
     const groups = resolveGroups(
       rows,

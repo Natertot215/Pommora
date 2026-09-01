@@ -3,7 +3,7 @@
 // caller opens its own naming surface over the row already real. The pipeline owns placement.
 
 import { useRef } from 'react'
-import type { CollectionNode, SetNode, ViewRow } from '@shared/types'
+import type { CollectionNode, PageValues, SetNode, ViewRow } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { SetOverrides } from './useValuesEpoch'
@@ -20,7 +20,7 @@ import {
 import { useSession } from '../store'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { filterSeeds } from './Pipeline/creationSeeds'
-import { flattenContainer } from './Pipeline/group'
+import { flattenContainer, frontmatterOf } from './Pipeline/group'
 import { orderWithSlot, tieOrderWith } from './creationOrder'
 import { groupKeyToValue } from './TableView/reassign'
 
@@ -34,9 +34,9 @@ export interface ViewCreationConfig {
   /** The LIVE view — the caller resolves any local overrides before handing it over. */
   view: SavedView
   schema: PropertyDefinition[]
-  values: Record<string, PageFrontmatter>
+  values: Record<string, PageValues>
   setValueOverride: SetOverrides
-  effectiveValues: Record<string, PageFrontmatter>
+  effectiveValues: Record<string, PageValues>
   /** Whether creates write the canonical page_order channel — the table's law, stated by both
    *  renderers: no property grouping and no sort, where the pipeline paints tree order. */
   structuralOrder: boolean
@@ -91,7 +91,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const entries = Object.entries(seeds)
     if (entries.length === 0) return
     c.setValueOverride((prev) => {
-      let patched = (c.values[pageId] ?? { id: pageId }) as Record<string, unknown>
+      let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
       for (const [propId, value] of entries) {
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
+import type { CollectionNode, PageValues, SetNode } from '@shared/types'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type {
   DateGranularity,
@@ -782,7 +781,7 @@ function DateBucketList({
   def: PropertyDefinition | undefined
   schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
-  const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
+  const [values, setValues] = useState<Record<string, PageValues>>({})
   useEffect(() => {
     let canceled = false
     void window.nexus.loadValues(source.path).then((v) => {

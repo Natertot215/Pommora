@@ -1,5 +1,6 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
 import type { PageFrontmatter } from '@shared/schemas'
+import type { PageValues } from '@shared/types'
 import { useSession } from '../store'
 
 // `write` is the mutate the override waits on; null once it landed.
@@ -51,7 +52,7 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
  *  container push refetches the named container and retires the overrides the push settles. */
 export function useValuesEpoch(
   path: string,
-  setValues: Dispatch<SetStateAction<Record<string, PageFrontmatter>>>,
+  setValues: Dispatch<SetStateAction<Record<string, PageValues>>>,
   setValueOverride?: SetOverrides,
 ): void {
   const valuesEpoch = useSession((st) => st.valuesEpoch)

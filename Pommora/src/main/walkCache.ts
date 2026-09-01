@@ -10,7 +10,12 @@ import { stat } from 'node:fs/promises'
 // so hot files re-parse until they cool. git's racy-index rule.
 const RACY_WINDOW_MS = 2000
 
-type Entry = { mtimeMs: number; size: number; verifiedAt: number; gen: number; value: unknown }
+export interface FileStat {
+  mtimeMs: number
+  size: number
+}
+
+type Entry = FileStat & { verifiedAt: number; gen: number; value: unknown }
 
 let cacheRoot: string | null = null
 let gen = 0
@@ -31,14 +36,17 @@ export function endWalk(): void {
 }
 
 /** Parse-through cache: stat `absPath`, serve the cached value while (mtime, size) hold
- *  and the racy window has passed, else run `parse` and remember it. A failed stat
- *  falls through to `parse` uncached so the parser's own error semantics decide. */
-export async function cachedParse<T>(absPath: string, parse: () => Promise<T>): Promise<T> {
-  let s: { mtimeMs: number; size: number }
+ *  and the racy window has passed, else run `parse` with that stat and remember it. A failed
+ *  stat hands `null` through uncached so the parser's own error semantics decide. */
+export async function cachedParse<T>(
+  absPath: string,
+  parse: (stat: FileStat | null) => Promise<T>,
+): Promise<T> {
+  let s: FileStat
   try {
     s = await stat(absPath)
   } catch {
-    return parse()
+    return parse(null)
   }
   const e = entries.get(absPath)
   if (
@@ -50,7 +58,7 @@ export async function cachedParse<T>(absPath: string, parse: () => Promise<T>): 
     e.gen = gen
     return e.value as T
   }
-  const value = await parse()
+  const value = await parse(s)
   // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy
   // (mtime, size) would serve the failure until the file next changes. Re-read each pass.
   if (value !== null)
