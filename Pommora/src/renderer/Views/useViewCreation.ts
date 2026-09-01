@@ -96,7 +96,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)
       }
-      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, pending: false } }
+      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
     })
   }
   // The full child list of the container a create targets — never the view's visible rows: an

@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from '@shared/types'
-import { flushValueWrites, noteValueWrite, pageIdOf } from './valuesChanged'
+import { flushValueWrites, noteValueWrite, pageIdIndex } from './valuesChanged'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', () => ({ getLiveTree: () => held.tree }))
@@ -70,7 +70,14 @@ describe('the write leg of values:changed', () => {
     expect(flushValueWrites(ROOT)).toEqual([])
   })
 
-  it('pageIdOf without a tree is null', () => {
-    expect(pageIdOf(null, 'Notes/A.md')).toBeNull()
+  it('a note under another root drops what the old root held', () => {
+    noteValueWrite(ROOT, join(ROOT, 'Notes/A.md'))
+    noteValueWrite('/elsewhere', '/elsewhere/Notes/A.md')
+    expect(flushValueWrites(ROOT)).toEqual([])
+    expect(flushValueWrites('/elsewhere')).toEqual([{ rel: 'Notes', pageIds: [] }])
+  })
+
+  it('pageIdIndex without a tree is empty', () => {
+    expect(pageIdIndex(null).size).toBe(0)
   })
 })
