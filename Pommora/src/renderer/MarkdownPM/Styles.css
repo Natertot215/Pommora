@@ -8,7 +8,7 @@
   --editor-scale: 1;
   --mdpm-scale: var(--editor-scale);
   --md-box-radius: 6px;
-  --md-box-gap-base: 6px; /* KNOB — the distance at 100% */
+  --md-box-gap-base: 6px; /* KNOB — the gap at 100% zoom */
 }
 
 .mdpm-shell {
@@ -53,8 +53,8 @@
 .mdpm-editor .cm-content {
   color: var(--label-primary);
   --number-zone: 1.3em;
-  --cite-divider-blur: 4px; /* KNOB: how softly the section's seam fades out as it closes */
-  --cite-divider-gap: 14px; /* KNOB: the seam's breathing room, the title divider's own */
+  --cite-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
+  --cite-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
   font-size: calc(var(--editor-font-size, 15px) * var(--block-zoom, 1) * var(--editor-scale, 1));
 }
@@ -143,13 +143,11 @@
   color: var(--label-primary);
 }
 
-/* HEADING FOLD — the chevron is a masked ::before ANCHORED to the heading line in the content layer, NOT a
-   CM gutter. CM positions a gutter from its line-height model, which only measures the visible viewport and
-   estimates off-screen variable-height blocks (callouts, folds) at the default height — so a gutter chevron
-   below such a block drifts from its heading by a scroll-dependent amount. A line ::before shares the
-   heading's own layout box and can't drift. Closed: points right, dim + persistent (a standing affordance);
-   open: points down, hover-only. KNOBS: --rail-inset (chevron offset into the inset, the root token) ·
-   --fold-chevron-size · motion via --disclosure / --ease-base. */
+/* The fold chevron is a masked ::before anchored to the heading line's own layout box, not a CM gutter —
+   a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks
+   (callouts, folds) at a default height and drifts from its heading on scroll. Closed: right-pointing,
+   dim and persistent; open: down-pointing, hover-only. KNOBS: --rail-inset, --fold-chevron-size, motion
+   via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
 }
@@ -180,8 +178,8 @@
   color: var(--label-control);
 }
 
-/* KNOBS: --rail-inset (rail x) · --grip-top (first-line offset — box blocks override it to drop the
-   grip onto their padded first row, e.g. the code fence). */
+/* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their
+   padded first row, e.g. a code fence). */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
@@ -267,7 +265,7 @@
   text-decoration: line-through;
 }
 .md-highlight {
-  --highlight-bleed: 0.1em; /* KNOB — how far the wash carries past the words, half a character */
+  --highlight-bleed: 0.1em; /* KNOB — how far the wash bleeds past the words */
   background: color-mix(
     in srgb,
     var(--highlight, var(--accent)) var(--tint-secondary),
@@ -383,9 +381,8 @@
   line-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  /* KNOB — the grip's seat at the tile's top corner, eye-tuned to where the rounding ends.
-     Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box
-     doesn't ride the glyph zoom. */
+  /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height
+     text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
   --grip-top: 28px;
 }
 .mdpm-editor .cm-line.mdpm-embed-line .cm-widgetBuffer {
@@ -407,17 +404,10 @@
   text-indent: 0;
 }
 
-/* ══ LIST KNOBS — edit these to alter list indentation & spacing ════════════════
-     --list-indent  : indent step PER nesting level (all list types)
-     --list-gap     : space between a marker and its text
-     --bullet-zone  : bullet gutter width    → controls BULLET text indent
-     --number-zone  : number gutter width    → controls NUMBER text indent
-                      (declared at .cm-content — a citation row hangs in the same column, and it
-                       is not a list line, so scoping it here would leave that row with none)
-     --task-zone    : checkbox gutter width  → controls CHECKBOX text indent
-     --bullet-size  : the • glyph size
-   A wider *-zone pushes that list type's text further right from the margin.
-   The marker hangs in its zone; wrapped lines align to the text column.       */
+/* KNOBS: --list-indent (per-level step), --list-gap (marker-to-text space), --bullet-zone /
+   --number-zone / --task-zone (per-list-type gutter width — wider pushes that list's text right),
+   --bullet-size. --number-zone lives on .cm-content rather than .md-li so a citation row, which
+   hangs in the same column but isn't a list line, still gets one. */
 .mdpm-editor .cm-line.md-li {
   --list-indent: 20px;
   --bullet-zone: 16px;
@@ -532,9 +522,9 @@
 }
 
 .md-cite-ref {
-  color: var(--label-control); /* KNOB: the marker's ink */
+  color: var(--label-control); /* KNOB: marker ink */
   font-variant-numeric: tabular-nums;
-  font-size: 0.65em; /* KNOB: how much smaller a marker reads than the line carrying it */
+  font-size: 0.65em; /* KNOB: marker size relative to its line */
   vertical-align: top;
   cursor: pointer;
 }
@@ -542,7 +532,7 @@
 .mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
   white-space: pre;
   color: var(--label-secondary);
-  font-size: 0.75em; /* KNOB: how much smaller a citation reads than the body it cites */
+  font-size: 0.75em; /* KNOB: citation size relative to the body it cites */
   padding-left: var(--number-zone);
 }
 .mdpm-editor .cm-line.md-cite {
@@ -567,7 +557,6 @@
 
 .mdpm-editor .checkbox {
   zoom: var(--glyph-scale);
-  /* Sits the box on the text baseline — a line the box carries only where it rides inside prose. */
   vertical-align: -0.18em;
 }
 
@@ -579,7 +568,7 @@
   white-space: nowrap;
 }
 
-/* Every level is bold; only the size steps. KNOB: the six sizes. */
+/* KNOB: the six heading sizes below. */
 .md-h1,
 .md-h2,
 .md-h3,
@@ -650,8 +639,8 @@
   border-bottom-right-radius: var(--box-radius-r);
 }
 
-/* KNOBS: --bar-width / --bar-color / --bar-radius (left bar) · --box-fill / --box-radius-r (fill) ·
-   --box-gap (outer breathing room above the first line + below the last) */
+/* KNOBS: --bar-width / --bar-color / --bar-radius (left bar), --box-fill / --box-radius-r (fill),
+   --box-gap (breathing room above the first line and below the last). */
 .mdpm-editor .cm-line.md-bq {
   --bar-width: 4px;
   --bar-color: var(--label-tertiary);
@@ -695,8 +684,8 @@
   background: transparent;
 }
 
-/* KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter) / --callout-gap
-   (separation) / --callout-inner-pad (head/foot inner padding past the gap). */
+/* KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter), --callout-gap
+   (separation), --callout-inner-pad (head/foot inner padding past the gap). */
 .mdpm-editor .cm-line.md-callout {
   --callout-border: var(--label-tertiary);
   --callout-bw: var(--width-150);
@@ -798,7 +787,7 @@
   padding-right: calc(var(--cb-inset) + var(--cb-pad));
 }
 
-/* KNOBS: --grip-x (gutter offset) / --grip-y (top offset past the gap). */
+/* KNOBS: --grip-x (gutter offset), --grip-y (top offset past the gap). */
 .mdpm-editor .cm-line.md-callout-first::after {
   --grip-x: -18px;
   --grip-y: 4px;

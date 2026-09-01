@@ -1,6 +1,5 @@
-/* The toolbar's tab-bar SKIN: bar layout, knobs, the pinned zone, the scroller, and the trailing +.
-   The tab/segment/×/slide motion itself lives in tabStrip.css (container-agnostic — the preview strip
-   mounts the same classes); the .tab-bar knob block below overrides that layer's --tab-* defaults. */
+/* The toolbar's tab-bar SKIN — layout, knobs, and chrome. Tab/segment/×/slide motion lives in
+   tabStrip.css (container-agnostic); this file's knob block overrides that layer's --tab-* defaults. */
 
 .tab-bar {
   /* KNOBS — the whole bar tunes here. */
@@ -22,13 +21,12 @@
   align-items: center;
   height: var(--tab-height);
   margin-left: 4px;
-  /* Right edge condenses by the SAME --toolbar-swallow the right cluster slides by (defined on
-     .app-toolbar), so the trailing + stays flush against the swallowing ViewMenu/trio as the
-     inspector opens instead of parking under the floating pane — one shared magnitude, no bespoke slide. */
+  /* Condenses by the same --toolbar-swallow the right cluster slides by (defined on .app-toolbar),
+     keeping the trailing + flush against it as the inspector opens rather than parked under the pane. */
   margin-right: calc(4px + var(--toolbar-swallow));
   pointer-events: auto;
-  /* Not an app-region: a native drag region never delivers hover to the renderer; the bar drags the
-     window through the JS mover instead, so the same pixels hover AND drag. */
+  /* Not an app-region: a native drag region never delivers hover to the renderer, so the bar drags
+     the window through the JS mover instead — the same pixels hover AND drag. */
   -webkit-app-region: no-drag;
 }
 .tab-bar.reveal-on-hover {
@@ -39,14 +37,13 @@
   opacity: 1;
 }
 
-/* ---- pinned zone (fixed left, compact icons) ---- */
 .tab-pinned-zone {
   display: flex;
   align-items: center;
   flex: 0 1 auto;
   min-width: 0;
   height: 100%;
-  overflow: hidden; /* bounded — uncapped pins never collide with the right cluster */
+  overflow: hidden;
 }
 .tab-pinned {
   position: relative;
@@ -70,13 +67,11 @@
   opacity: var(--state-ghost);
 }
 
-/* ---- segment divider between the zones ---- */
 .tab-divider {
   height: var(--tab-divider-h);
   margin: 0 4px;
 }
 
-/* ---- unpinned strip: the shared over-scroll on the inline axis ---- */
 .tab-scroll {
   --over-scroll-fade: var(--fade-base);
   position: relative;
@@ -96,14 +91,13 @@
   padding-right: var(--tab-plus-gutter);
 }
 
-/* ---- the trailing +: the .group-add glyph + fade. A SIBLING of the masked scroller —
-   inside it, the edge fade would dim the + itself; the strip's --tab-plus-gutter padding keeps the
-   last tab's × clear beneath it when the strip runs full-width. ---- */
+/* The trailing +: a SIBLING of the masked scroller, not a child — inside it the edge fade would dim
+   the + itself. The −gutter margin tucks it under the scroll's transparent right edge and clear of the
+   last tab's ×, and z-index lifts it above the scroll's own position:relative stacking so its clicks
+   aren't eaten by the scroll box. */
 .tab-plus {
   flex: 0 0 auto;
   margin-left: calc(-1 * var(--tab-plus-gutter));
-  /* Lift above .tab-scroll (position:relative → it paints over static siblings): the −gutter tucks the
-     + under the scroll's transparent right edge, and without this the scroll box eats its clicks. */
   position: relative;
   z-index: 1;
   color: var(--label-secondary);
@@ -116,8 +110,8 @@
 .tab-bar:hover .tab-plus {
   opacity: 1;
 }
-/* The + also reveals when the content's header is hovered — the banner OR the banner-less heading — so
-   it's reachable as you move toward the top of the content, not only on the thin toolbar strip. */
+/* The + also reveals when the content's header is hovered — banner or banner-less — so it stays
+   reachable near the top of the content, not only on the thin toolbar strip. */
 .shell:has(.detail-scroll .banner:hover) .tab-plus,
 .shell:has(.detail-scroll .banner-empty:hover) .tab-plus,
 .shell:has(.mdpm-header:hover) .tab-plus,
@@ -125,8 +119,8 @@
 .shell:has(.nav-view-head:hover) .tab-plus {
   opacity: 1;
 }
-/* The + reveals across the tab bar, but Back/Forward and the right cluster (view menu + trio)
-   aren't tab chrome — suppress it while one of those is hovered. */
+/* Back/Forward and the right cluster (view menu + trio) aren't tab chrome, so suppress the + while
+   either is hovered. */
 .app-toolbar:has(.app-toolbar-cluster--nav button:hover) .tab-plus,
 .app-toolbar:has(.app-toolbar-right button:hover) .tab-plus {
   opacity: 0;

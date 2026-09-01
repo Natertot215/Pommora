@@ -1,6 +1,3 @@
-/* The browser flavor of the floating window: the guest owns the whole body below the toolbar
-   strip, and the centered title is the escalating link. */
-
 .wbrowser-body {
   flex: 1;
   min-height: 0;
@@ -14,8 +11,8 @@
   min-width: 0;
 }
 
-/* Centered in the strip, two-tone like the page window's crumb: the domain stands back, the page
-   title carries. Ellipsized from the middle out so a long title never crowds the clusters. */
+/* Two-tone like the page window's crumb: the domain stands back, the page title carries, ellipsized
+   from the middle out so a long title never crowds the clusters. */
 .wbrowser-title {
   align-items: center;
   gap: 6px;

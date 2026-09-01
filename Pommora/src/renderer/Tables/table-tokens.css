@@ -1,49 +1,42 @@
-/* ============================================================================
-   TABLE TOKENS — the single source for every tunable number in a table. Retune any dimension by
-   editing ONE line here, aliased to a design-system token wherever one exists. Scoped to `.table`,
-   the class every tabular surface wears, so the vars stay table-owned (no global leak); a host
-   rebinds what it needs — the heading fill and divider, the cell padding — in its own scope.
-   ============================================================================ */
+/* Table tokens — the single source for every tunable number in a table; retune a dimension by editing
+   one line here. Scoped to `.table` so the vars stay table-owned; a host rebinds what it needs — heading
+   fill, cell padding — in its own scope. */
 .table {
-  /* — Density — */
   --zoom: 1; /* One knob scales text + chips + padding + widths together. */
 
-  /* — Cell spacing — */
   --cell-padding-x: 12px;
   --cell-padding-y: 6px; /* drives row height */
   --cell-icon-gap: 6px; /* used by the title cell + group glyph */
   --row-indent: var(
     --disclosure-indent
-  ); /* per-nesting-depth inset (Set within Set, group members) — the shared disclosure step */
+  ); /* per-nesting-depth inset for Set-within-Set and group members — the shared disclosure step */
   --loose-inset: 8px; /* title inset for ungrouped/loose rows — tucked left of the cell-padding-x column inset */
 
-  /* — Borders — the ONE token for every standard table hairline (vertical column lines + horizontal row
-       underlines). The heading row's seams are heavier/different (see Heading below). — */
+  /* The one token for every standard table hairline — column lines and row underlines; the heading
+     row's seams are heavier (see Heading below). */
   --table-border-width: var(--width-125);
   --table-border: var(--table-border-width) solid var(--border-base);
-  --cell-active-radius: 4px; /* corner radius of the borderless active-cell accent ring */
+  --cell-active-radius: 4px;
 
-  /* — Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
-       heavier bottom seam, and short centered segment dividers between columns (vs the data rows'
-       full-height hairlines). */
+  /* Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
+     heavier bottom seam, and segment dividers shorter than the row, like a segmented control; the
+     padding clears the label off both seams. */
   --heading-fill: var(--fill-quinary);
   --heading-divider: var(--width-175) solid var(--border-base);
   --heading-segment: var(--border-base);
-  --heading-segment-height: 16px; /* shorter than the row — reads like a segmented control */
+  --heading-segment-height: 16px;
   --heading-segment-width: var(--width-200);
-  --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
+  --heading-padding-y: 8px;
 
-  /* — Group sections — the seam law's binding (GroupBand.css): the row rhythm is the shoulder;
-       tune --cell-padding-y, not this. — */
+  /* Group sections bind to the seam law in GroupBand.css: the row rhythm is the shoulder — tune
+     --cell-padding-y, not this. */
   --band-clearance: var(--cell-padding-y);
 
-  /* — Column resize — */
   --resizer-width: 8px;
 
-  /* — Drag — */
   --col-highlight: var(
     --state-selected
-  ); /* the lifted COLUMN reads as selected mid-drag (not ghosted — ghost is for rows) */
+  ); /* the lifted column reads as selected mid-drag — ghost is reserved for rows */
   --col-drag-band: var(
     --bg-window
   ); /* opaque backing so the dragged column glides as one solid band, not see-through */

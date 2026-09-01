@@ -1,5 +1,5 @@
-/* The tile's hover-revealed identity, one treatment for both tile kinds: centered at the top,
-   hidden until the tile is hovered. The embedded page shows its breadcrumb, a webpage its title. */
+/* One shared hover-revealed treatment for both the page embed's breadcrumb and a webpage tile's
+   title: centered at the top, hidden until the tile is hovered. */
 .page-tile-crumbs,
 .web-tile-title {
   position: absolute;

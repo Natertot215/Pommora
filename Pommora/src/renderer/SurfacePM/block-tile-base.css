@@ -1,16 +1,13 @@
 /* The block-tile primitive: the chassis every embedded-tile host keys onto (SurfacePM's tiles and
-   MarkdownPM's embedded pages), and the content chrome the body kinds — markdown, page, webpage —
-   hang off it. */
+   MarkdownPM's embedded pages), with the markdown, page, and webpage body chrome hanging off it. */
 
-/* ── The chassis ─────────────────────────────────────────────────────────── */
-
-/* Geometry and color binding only. Transitions are deliberately per-consumer — `transition` is a
-   shorthand, so a shared one would replace a host's own list wholesale instead of merging. */
+/* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here
+   would replace a host's own list instead of merging with it. */
 .tile-chassis {
   --tile-border: var(--width-125); /* one source — hosts' handle/notch math reads it */
-  /* Re-anchored on EVERY chassis: custom properties inherit where border-color wouldn't, so without
-     its own declaration a nested tile would wear its host's border state (a borderless host would
-     erase it entirely). Host triggers outrank this at (0,2,0)+ on the same element. */
+  /* Re-anchored on every chassis because custom properties inherit where border-color wouldn't (a
+     nested tile would otherwise wear its host's border state); host triggers still outrank it at
+     (0,2,0)+ on the same element. */
   --tile-border-color: var(--border-base);
   border: var(--tile-border) solid var(--tile-border-color);
   border-radius: 12px;
@@ -22,18 +19,17 @@
   border-radius: inherit;
 }
 
-/* ── Shared body scroll model ────────────────────────────────────────────── */
-
-/* The tile IS the CM6 portal (read-only at rest). SCROLL MODEL (edge-release, matching view embeds):
-   at rest a tile scrolls its OWN overflow, releasing to the page at its bound (default chaining) — a
-   tile whose content fits passes the wheel straight through. Editing traps the wheel (contain). */
+/* The tile IS the CM6 portal (read-only at rest). Scroll model (edge-release, matching view
+   embeds): at rest a tile scrolls its own overflow, releasing to the page at its bound (default
+   chaining) — a tile whose content fits passes the wheel straight through. Editing traps the
+   wheel (contain). */
 .tile-chassis.is-editing-tile :is(.markdown-tile, .page-tile) {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 .tile-chassis:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-scroller {
-  /* Rest-scroll: the CM6 scroller scrolls vertically with default chaining (edge-release) —
-     !important beats CM6's own runtime overflow rule. Horizontal stays clipped (prose wraps). */
+  /* Horizontal stays clipped since prose wraps; vertical needs !important to beat CM6's own
+     runtime overflow rule. */
   /* biome-ignore lint/complexity/noImportantStyles: must beat CM6's runtime overflow rule. */
   overflow-x: hidden !important;
   /* biome-ignore lint/complexity/noImportantStyles: as above. */
@@ -42,13 +38,12 @@
 .tile-chassis:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-content {
   cursor: default;
 }
-/* Portal padding: the editor's boundary-to-first-line standard, never the host page's side insets. */
+/* Portal padding: the editor's boundary-to-first-line standard, never the host page's side
+   insets. */
 :is(.markdown-tile, .page-tile) .mdpm-editor {
   padding-left: 0;
   padding-right: 0;
 }
-
-/* ── Markdown tile ───────────────────────────────────────────────────────── */
 
 .markdown-tile {
   position: relative;
@@ -65,8 +60,6 @@
   height: 100%;
 }
 
-/* ── Page tile ───────────────────────────────────────────────────────────── */
-
 .page-tile {
   position: relative;
   height: 100%;
@@ -76,14 +69,14 @@
   --rail-inset: calc(var(--rail-inset-base) * var(--mdpm-scale));
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
-  /* Re-home the editor's scroll timeline at the tile, where the banner can bind it — the shell's own
-     scope (which serves the full page's header) is stood down inside a tile. Each nested tile
-     re-scopes, so every banner tracks its OWN page's scroller. */
+  /* Re-home the editor's scroll timeline at the tile, where the banner can bind it — the shell's
+     own scope (which serves the full page's header) is stood down inside a tile. Each nested tile
+     re-scopes, so every banner tracks its own page's scroller. */
   timeline-scope: --mdpm-scroll;
 }
 
-/* A page:open that fails while the title still resolves — the embed renders its target's name as dim
-   inert text, never an editable blank (whose first keystroke would overwrite the real file). */
+/* A page:open that fails while the title still resolves — the embed renders its target's name as
+   dim inert text, never an editable blank (whose first keystroke would overwrite the real file). */
 .page-tile-failed {
   display: flex;
   align-items: center;
@@ -96,8 +89,8 @@
   padding: calc(16px * var(--mdpm-scale)) calc(14px * var(--mdpm-scale))
     calc(16px * var(--mdpm-scale)) var(--rail-inset);
 }
-/* A host that owns the scroll itself: the editor chain GROWS to its content (height:auto down to the
-   CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. */
+/* A host that owns the scroll itself: the editor chain grows to its content (height:auto down to
+   the CM6 editor) so the host is the one scroller and content can ride under floating chrome. */
 .page-tile-grows .page-tile,
 .page-tile-grows .page-tile .mdpm-shell,
 .page-tile-grows .mdpm-editor,
@@ -108,17 +101,17 @@
 .page-tile-grows .page-tile .mdpm-shell {
   overflow: visible;
 }
-/* The editor's scroller keeps `overscroll-behavior: none` app-wide (the parked-header steady rule) —
-   but here it never overflows, and a non-overflowing scroll container with `none` EATS the wheel
-   instead of chaining it to the host scroller. Restore chaining where the host grows. */
+/* The editor's scroller keeps `overscroll-behavior: none` app-wide (the parked-header steady
+   rule), but here it never overflows, and a non-overflowing scroll container with `none` eats the
+   wheel instead of chaining it to the host scroller. */
 .page-tile-grows .mdpm-editor .cm-scroller {
   overscroll-behavior: auto;
   overflow: visible;
 }
 
-/* Page-follows header chrome inside a tile (chrome='page'): the banner band holds the page's OWN
-   layout contract — out of flow, its height reserved as editor padding — because an in-flow band
-   inside a fixed clipped tile would push the editor's viewport past the clip and strand it. */
+/* Page-follows header chrome inside a tile (chrome='page'): the banner band holds the page's own
+   layout contract — out of flow, its height reserved as editor padding — because an in-flow
+   band inside a fixed clipped tile would push the editor's viewport past the clip and strand it. */
 .page-tile .mdpm-shell {
   timeline-scope: none;
 }
@@ -129,7 +122,7 @@
   right: 0;
   height: var(--embed-banner-h);
   z-index: 2;
-  /* The page's own park, at tile scale: the band scrolls away with the content instead of sitting
+  /* The page's own park, at tile scale: the band scrolls away with the content rather than sitting
      glued to the tile's top. Keyframes and range both read --header-zone, so re-pointing it at the
      band's height is the whole retarget. */
   --header-zone: var(--embed-banner-h);
@@ -146,19 +139,17 @@
 .page-tile .mdpm-banner-img {
   -webkit-user-drag: none;
 }
-/* Size only — the span is a .detail-title-text, which already carries the weight and color. */
+/* Only geometry and --detail-title-size are set here — the shared .detail-title-text component
+   already carries weight and color, and this var exists because the embed omits .mdpm-header (the
+   parking layer) that normally supplies it. */
 .page-tile .mdpm-banner-overlay {
-  /* The title size var the shared .detail-title-text reads — defined here because the embed omits
-     .mdpm-header (the parking layer), whose scope normally carries it. */
   --detail-title-size: calc(var(--text-title-large-size) * var(--mdpm-scale));
   left: calc(16px * var(--mdpm-scale));
   right: calc(16px * var(--mdpm-scale));
 }
 
-/* ── Webpage tile ────────────────────────────────────────────────────────── */
-
-/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with
-   a phantom baseline gap). */
+/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF
+   with a phantom baseline gap). */
 .web-tile {
   position: relative;
   height: 100%;
@@ -188,9 +179,9 @@
   inset: 0;
 }
 
-/* The static faces: a clipped or reloading tile wears the guest's last captured frame, a failed one
-   carries only the site's domain (the same fallback identity every link surface shows), and a first
-   load with no frame yet is simply blank. */
+/* The static faces: a clipped or reloading tile wears the guest's last captured frame, a failed
+   one carries only the site's domain (the same fallback identity every link surface shows), and a
+   first load with no frame yet is simply blank. */
 .web-tile-face {
   position: absolute;
   inset: 0;

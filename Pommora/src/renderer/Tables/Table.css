@@ -1,12 +1,9 @@
-/* Tables — the tabular chrome every table surface wears: the column-header band with its
-   segment bars, the row and column hairlines, the column drag and resize strips, the borderless
-   regime, and the cell content types. A surface wears `.table` (the token scope, table-tokens.css)
-   and lays its own grid; the Collection TableView (Views/TableView) and the Trash both do. */
+/* The tabular chrome every table surface wears. A surface wears `.table` (the token scope,
+   table-tokens.css) and lays its own grid — the Collection TableView and the Trash both do. */
 
-/* Header band + every data row share the column tracks; the final 1fr is the filler. Stretch (not center)
-   so every cell fills the row height — an empty cell's full-height column divider then matches a filled
-   one's, instead of collapsing to a short centered bar. The row height is set by its tallest (content) cell,
-   so single-line content stays visually centered. */
+/* Header band and every data row share the column tracks; the final track is the filler. Stretch
+   (not center) so every cell fills the row height, so an empty cell's divider matches a filled one's
+   instead of collapsing to a short centered bar. */
 .table-head,
 .data-row {
   display: grid;
@@ -14,17 +11,16 @@
   align-items: stretch;
 }
 
-/* A clear heading — no fill, no seam; the segment bars alone divide the columns. The host
-   states it when its heading sits under chrome of its own (the Trash's inset hairline); it binds the
-   same two vars any host tunes. */
+/* A clear heading — no fill, no seam; the segment bars alone divide the columns. A host sets it
+   when its heading already sits under chrome of its own, such as the Trash's inset hairline. */
 .table.is-clear {
   --heading-fill: none;
   --heading-divider: none;
 }
 
 .table-head {
-  /* The one place a table heading's type is set — callout, emphasized, secondary ink — so what a
-     heading uses can't drift; TableView's .col-header and the Trash's head both inherit it. */
+  /* The one place a table heading's type is set, so what a heading uses can't drift — TableView's
+     .col-header and the Trash's head both inherit it. */
   font-size: var(--text-callout-size);
   line-height: var(--text-callout-line);
   font-weight: var(--weight-emphasized);
@@ -32,12 +28,10 @@
   color: var(--label-secondary);
   border-bottom: var(--heading-divider);
   user-select: none;
-  /* Full-bleed the fill + seam to BOTH glass edges: the widened .table-view puts its padding box at the
-     sidebar edge (left) and inspector/window edge (right), and these margins bleed the band out to them by
-     the side insets; the fill (background covers the border box) reaches the glass, while BOTH paddings
-     re-land the column tracks on the exact same content width as a data row — an un-padded (wider) header
-     would resolve its tracks against a different box than the rows and drift every column. Staying in the
-     grid keeps the band h-scrolling with the body. */
+  /* Full-bleeds the fill and seam to both glass edges: the negative margins push the band out to the
+     sidebar and inspector/window edges, and the matching padding re-lands the column tracks on the same
+     content width as a data row — an un-padded header would resolve its tracks against a different box
+     and drift every column. */
   margin-left: calc(-1 * var(--content-inset));
   margin-right: calc(-1 * var(--table-right-inset));
   padding-left: var(--content-inset);
@@ -59,31 +53,28 @@
   min-width: 0; /* grid items default to min-width:auto; 0 lets the ellipsis engage */
   position: relative; /* containing block for the right-edge resize strip */
 }
-/* Column smooth-shift: the whole dragged column — header + every data cell + its right divider —
-   slides with the cursor as one solid band (an opaque backing so neighbors don't show through) carrying
-   the selected highlight so it reads as the lifted column; the neighbors slide to open the gap on the
-   shift curve. The lifted column tracks the cursor 1:1 (no transition); only the neighbors animate. */
+/* Column smooth-shift: the dragged column — header, cells, and its right divider — slides with the
+   cursor as one opaque band carrying the selected highlight, while the neighbor columns animate open on
+   the shift curve; the dragged column itself tracks the cursor 1:1, with no transition. */
 .table-grid.col-dragging-active .col-header,
 .table-grid.col-dragging-active .data-cell {
   transition: transform var(--col-shift-ease);
 }
 .col-header.col-dragging,
 .data-cell.col-dragging {
-  /* The cursor-follow rides an imperative grid-level var, NOT React state — a per-pointermove
-     setState would re-render every unmemoized row; slot flips stay state. */
+  /* The cursor-follow rides an imperative grid-level var, not React state — a per-pointermove setState
+     would re-render every unmemoized row; slot flips still use state. */
   transform: translateX(var(--col-drag-x, 0px));
   z-index: 2;
   background-color: var(--col-drag-band);
   background-image: linear-gradient(var(--col-highlight), var(--col-highlight));
-  /* Both edges, so the lifted band reads as a bounded column — the right line already comes from the
+  /* Both edges so the lifted band reads as a bounded column — the right line already comes from the
      :not(:last-child) divider; this adds the matching left one. */
   border-left: var(--table-border);
   cursor: grabbing;
   transition: none;
 }
 
-/* Column resizer — an invisible ew-resize hit-strip at the header's right edge; the live track width
-   is the drag feedback, so there's no separate bar. */
 .col-resizer {
   position: absolute;
   top: 0;
@@ -102,22 +93,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The inline cell editor — replaces the cell's content in flow, inheriting its type ramp. */
 .property-editor {
   width: 100%;
 }
 /* Ghosted while the typed value isn't a valid link yet — the field wears the link's color (set inline)
-   faded to the shared ghost opacity, so it previews as the link, dimmed, until it snaps solid. */
+   faded to the shared ghost opacity, previewing as the link, dimmed, until it snaps solid. */
 .property-editor-ghost {
   opacity: var(--state-ghost);
 }
-/* A title rename — the page glyph holds its seat while the editor takes only the text's slot. */
 .cell-rename {
   display: flex;
   align-items: center;
   gap: var(--cell-icon-gap);
 }
-/* The glyph keeps the resting title's dim, not the cell's text color. */
 .cell-rename > svg {
   color: var(--label-secondary);
 }
@@ -136,12 +124,10 @@
 .table-grid.single-column .col-header::before {
   content: none;
 }
-/* Heading column dividers — a short, vertically-centered, fully-rounded segment bar (segmented-control
-   feel), shorter than the row, instead of the data rows' full-height hairline. The ::after sits on each
-   column's right edge; the first column also carries a ::before leading bar at the grid's left edge (the
-   gutter↔Title junction) so the heading reads as a bounded segmented strip. Absolutely placed so they add
-   no track width; the radius reuses the bar width so the thin caps fully round. `.table-segment` is the
-   same bar on any element a host wants divided — its tone rides --segment-tone. */
+/* Heading column dividers — a short, centered, fully-rounded segment bar (segmented-control feel)
+   instead of the data rows' full-height hairline; absolutely placed so they add no track width, with the
+   radius reusing the bar width so the thin caps fully round. `.table-segment` puts the same bar on any
+   element a host wants divided, riding --segment-tone. */
 .col-header:not(:last-child)::after,
 .col-header:first-child::before,
 .table-segment::after {
@@ -162,9 +148,8 @@
 .col-header:first-child::before {
   left: 0;
 }
-/* Row divider spans the full width including the filler track — on the row, not per cell. It's a TOP
-   border (not bottom) so a line only ever falls BETWEEN two rows: the first row of each group drops it
-   (.row-lead), so a list has no line above its first row nor below its last (a lone row gets none). */
+/* The row divider is a TOP border, not bottom, so a line only ever falls between two rows: each group's
+   first row drops it (.row-lead), so a list has none above its first row or below its last. */
 .data-row {
   border-top: var(--table-border);
   cursor: default;
@@ -186,8 +171,8 @@
 
 /* Drop-line drag chrome (line, dot, host) is the design system's — dropChrome.css. */
 
-/* Hide Borders toggle — the heading row keeps its borders (the bottom seam + the segment bars) so it
-   stays structured over a lineless body. */
+/* Hide Borders toggle — the heading row keeps its borders so it stays structured over an otherwise
+   lineless body. */
 .table-grid.no-borders .data-row {
   border-top: none;
 }
@@ -195,9 +180,9 @@
   border-right: none;
 }
 
-/* Borderless structure-on-demand — with the body lines gone, structure surfaces only while you're changing
-   columns: resizing or reordering fades the vertical dividers back in for reference, and the cell you're
-   editing wears a faint rounded accent ring. Both ride --ease-base so they fade in and close smoothly. */
+/* Borderless structure-on-demand — with body lines gone, structure surfaces only while columns change:
+   resizing or reordering fades the vertical dividers back in, and the active cell wears a faint accent
+   ring. */
 .table-grid.no-borders .data-cell {
   position: relative;
 }
@@ -230,11 +215,9 @@
   opacity: 1;
 }
 
-/* Type-aware cell content (chips, title icon, links). The page icon reads at the shared icon tone
-   (same as the sidebar's), a step under the title text. */
-/* The title is an OverScroll box (the sidebar-row mechanism): icon + text INLINE in one nowrap
-   scroller, so the icon rides the hover-scroll with the title instead of pinning while text slides.
-   The lead cell keeps overflow visible for the gutter grip, so the content box carries the cap. */
+/* The title is an OverScroll box (the sidebar-row mechanism): icon and text sit inline in one nowrap
+   scroller, so the icon rides the hover-scroll with the title instead of pinning while text slides. The
+   lead cell keeps overflow visible for the gutter grip. */
 .cell-title {
   display: inline-block;
   max-width: 100%;
@@ -248,7 +231,6 @@
 .cell-title-text {
   color: var(--label-primary);
 }
-/* Plain-text scroll box (dates, numbers, links) — same mechanism, block-bounded to the cell. */
 .cell-text-scroll {
   display: inline-block;
   max-width: 100%;
@@ -261,7 +243,6 @@
   max-width: 100%;
   min-width: 0;
 }
-/* Chips never squish — they hold their size and the OverScroll box scrolls them instead. */
 .cell-chips > * {
   flex: none;
 }
@@ -281,8 +262,8 @@
 .cell-control {
   color: var(--label-control);
 }
-/* Scaled to match the Links pane's switch-scale, so a switch cell is never taller than a checkbox cell
-   and a toggle never shifts the row height. */
+/* Scaled to match the Links pane's switch, so a switch cell is never taller than a checkbox cell and a
+   toggle never shifts the row height. */
 .cell-switch {
   display: inline-flex;
   align-items: center;

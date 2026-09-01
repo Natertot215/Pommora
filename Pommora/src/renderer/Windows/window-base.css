@@ -1,4 +1,6 @@
-/* The floating-window surface every in-app window mounts: glass shell + geometry, the toolbar and its dismissal contract, side panes, and the footer. Hosts own their interior and their padding — a window that runs edge-to-edge and one that rings on the glass inset are both consumers here. */
+/* The floating-window surface every in-app window mounts: glass shell, toolbar, side panes, and
+   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or
+   an inset-ring layout. */
 
 .window {
   position: fixed;
@@ -16,12 +18,12 @@
   --window-footer-h: var(--subfield-h);
 
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
-  /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned padding; tracks the inset so the landing math stays true at any ring). */
+  /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math
+     stays true at any ring. */
   --window-flow-home: calc(var(--window-side-inset) + 22px);
   --window-flow-inset: var(
     --surface-inset
   ); /* KNOB — breathing room off the pane's seam after the swallow */
-  /* THE distance the trailing pair travels to ride an open right pane's edge. */
   --window-flow-shift: max(
     0px,
     var(--io) *
@@ -30,10 +32,14 @@
     var(--window-flow-w) -
     var(--window-flow-inset)
   );
-  /* THE right squeeze a wide title (a tab strip) takes so it stops AT an open pane's leading edge. Not the pair's travel: the pair lands INSIDE the pane's corner, so a title that only cleared the pair would still lay a sliver of itself over the pane. The window insets cancel — the gap is the pane's width less the toolbar's own right padding and the trailing cluster (the pair, its gap, and the ×: 62px). */
+  /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so
+     clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the
+     trailing cluster. */
   --window-title-squeeze: max(0px, var(--io) * var(--window-side-r-w) - 6px - 62px);
 
-  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an inheriting registered property driving the main inspector) can never leak into a floating window. One var carries the pane slide, the button ride, and the body squeeze. */
+  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
+     inheriting registered property driving the main inspector) can never leak into a floating
+     window. */
   --io: 0;
   --io-l: 0;
   transition:
@@ -63,25 +69,23 @@
   }
 }
 
-/* ---- toolbar. A floating layer WITHIN the content — the body runs the full window and content scrolls beneath the strip; no seam, no bleed. ---- */
 .window-toolbar {
   position: absolute;
-  color: var(
-    --label-control
-  ); /* the toolbar's ground tone — the glyphs inherit it, as in the main toolbar */
+  color: var(--label-control);
   top: 0;
   left: 0;
   right: 0;
-  /* No stacking context of its own: the buttons carry their own z (.window-actions, z4) so they ride ON an open side pane, while the centered title stays z-auto and fades UNDER the pane when a wide/hovered title would otherwise overlap it. */
+  /* No stacking context of its own: the buttons carry their own z (.window-actions) to ride ON an
+     open side pane, while the centered title stays z-auto and falls UNDER the pane. */
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: var(--window-toolbar-h);
-  /* The glyphs align to the side pane's box: the × sits over the pane's inner corner, and the leading glyph mirrors the same inset. */
   padding: 0 var(--surface-inset);
 }
 
-/* Floating mode: no strip. The clusters pin to the top corners and everything between them stays clickable, so a window whose own content reaches the top edge is never covered. */
+/* Floating mode: buttons re-enable pointer-events individually, so clicks pass through the
+   zero-height strip to reach content beneath it. */
 .window-toolbar-floating .window-toolbar {
   height: 0;
   padding: 0;
@@ -91,9 +95,7 @@
   position: absolute;
   top: calc(var(--window-side-inset) + 4px);
   pointer-events: auto;
-  /* The pair sits further off the × when it floats the corner than in a toolbar band. */
   --window-trail-gap: 6px;
-  /* Corner-pinned: children hang from the cluster's top edge, so a taller × never nudges its neighbors off that line. */
   align-items: flex-start;
 }
 .window-toolbar-floating .window-actions-lead {
@@ -110,7 +112,8 @@
   z-index: 4;
 }
 
-/* ---- the content region every window scrolls: the scroll core plus the right-pane squeeze. Each window adds its own top clearance (a band's height, a floating cluster's landing). ---- */
+/* The scroll core plus the right-pane squeeze; each window adds its own top clearance (a band's
+   height, a floating cluster's landing). */
 .window-body {
   flex: 1;
   min-width: 0;
@@ -125,7 +128,6 @@
 .window.is-resizing .window-body {
   transition: none;
 }
-/* A side-pane's own scroller (the inspector rows). */
 .window-pane-scroll {
   flex: 1;
   min-height: 0;
@@ -142,7 +144,9 @@
   max-width: 60%;
 }
 
-/* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and the slide live here. An OVERLAY pane rides the inset ring and is carried by its driver with no transition of its own; an IN-FLOW pane takes a column in the body row. ---- */
+/* Side panes: material and geometry come from the SidePane shell — only positioning and slide live
+   here. An overlay pane rides the inset ring, carried by its driver with no transition of its own;
+   an in-flow pane takes a column in the body row. */
 .window-row {
   display: flex;
   flex: 1;
@@ -196,14 +200,14 @@
 .window-side-right-inflow {
   --pane-w: var(--window-side-r-w);
 }
-/* The in-flow strip is a column in the body row rather than an overlay, so it keeps its own geometry: the row's stretch gives it its height, and the pane's inset is its width. */
 .window-side-left-inflow-resize,
 .window-side-right-inflow-resize {
   width: var(--window-side-inset);
   flex-shrink: 0;
 }
 
-/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window root included (its own driver transitions must not re-animate mid-drag). */
+/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window
+   root included (its own driver transitions must not re-animate mid-drag). */
 .window.is-resizing,
 .window.is-resizing .window-side-left-inflow,
 .window.is-resizing .window-side-right-inflow,
@@ -213,9 +217,9 @@
   transition: none;
 }
 
-/* ---- footer: a bar pinned at the window bottom, squeezing left of an open right pane exactly as the body does. Its own border-top is the flush body/footer divider. ---- */
+/* Footer: a bar pinned at the window bottom, its own border-top the flush body/footer divider. It
+   squeezes left of an open right pane exactly as the body does, so it animates its padding too. */
 .window-footer {
-  /* The footer also squeezes left of an open right pane, so it animates its padding too. */
   transition:
     height var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
@@ -251,12 +255,14 @@
   opacity: 1;
 }
 
-/* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge makes contact (the max() gate), then lands flush inside its corner. The × holds home. */
 .window-actions-flow {
   display: flex;
   align-items: center;
   gap: 2px;
-  /* A host that reveals the pair (rather than showing it always) drives --window-flow-reveal rather than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
+  /* The trailing pair holds at home until the pane's leading edge makes contact (the max() gate),
+     then lands flush inside its corner. A host that reveals the pair drives --window-flow-reveal
+     rather than the transform itself, so its entry nudge and the swallow compose instead of
+     clobbering. */
   transform: translateX(var(--window-flow-reveal, 0px))
     translateX(calc(-1 * var(--window-flow-shift)));
 }
