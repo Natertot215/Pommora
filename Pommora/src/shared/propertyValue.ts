@@ -97,6 +97,21 @@ export function decodeValue(
   }
 }
 
+/** What a stored value stands as under its definition, and the Multi-Select options it holds that
+ *  the definition doesn't offer yet. */
+export function reconcilePropertyValue(
+  def: PropertyDefinition,
+  raw: unknown,
+): { value: PropertyValue; adoptions: Adoption[] } {
+  const value = decodeValue(def, raw)
+  const known = optionValues(def)
+  const adoptions =
+    value.kind === 'multiSelect'
+      ? value.value.filter((v) => !known.includes(v)).map((v) => ({ propertyId: def.id, value: v }))
+      : []
+  return { value, adoptions }
+}
+
 export function encodeValue(value: PropertyValue): unknown {
   switch (value.kind) {
     case 'select':

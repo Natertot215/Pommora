@@ -195,6 +195,29 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect(root2[selDef.name]).toEqual(['2024-01-01'])
   })
 
+  it('a Multi-Select restore keeps an option the definition lost, and adopts it back', async () => {
+    const tags = await createProperty(root, {
+      id: '',
+      name: 'Tags',
+      type: 'multi_select',
+      select_options: [{ value: 'alpha', label: 'alpha' }],
+    } as PropertyDefinition)
+    if (!tags.ok) throw new Error('setup failed')
+    await assignProperty(root, folder, tags.value.id)
+    const p = await createPage(folder, 'T', { body: 'b' })
+    if (!p.ok) throw new Error('setup failed')
+    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
+      kind: 'multiSelect',
+      value: ['alpha', 'zeta'],
+    })
+    await removeProperty(root, folder, tags.value.id)
+    await assignProperty(root, folder, tags.value.id)
+    const fm = readFrontmatterFields(await readFile(p.value.path, 'utf8'))
+    expect(fm.Tags).toEqual(['alpha', 'zeta'])
+    const def = (await readRegistry(root)).defs[tags.value.id]
+    expect(def.select_options?.map((o) => o.value)).toEqual(['alpha', 'zeta'])
+  })
+
   it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {
     const orphan = join(folder, 'Orphan.md')
     await writeFile(orphan, `---\n${liveDef.name}: active\n---\n\nbody\n`)

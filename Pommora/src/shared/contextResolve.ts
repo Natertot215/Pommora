@@ -1,6 +1,7 @@
 import type { ContextsRegistry } from './contexts'
 import { normalizeContextValue, parseContextKey } from './contexts'
 import type { PropertyDefinition } from './properties'
+import { type Adoption, encodeValue, isBlankValue, reconcilePropertyValue } from './propertyValue'
 import type { SpaceNode } from './types'
 
 export type ResolvedLinks = Map<string, string[]>
@@ -48,36 +49,51 @@ export function resolveContextKeys(
   return links
 }
 
-/** A coercion-only near-miss (case/whitespace/NFC/scalar) repairs to the canonical Space
- *  title; a genuinely unknown value drops, and an emptied key drops with it (no empties). */
-export function reconcileContextKeys(
+export interface Reconciled {
+  root: Record<string, unknown>
+  /** Keys set or deleted. */
+  changed: string[]
+  adoptions: Adoption[]
+}
+
+/** The one reconcile over a governed root: a Context key repairs a coercion-only near-miss to the
+ *  canonical Space title and drops an unknown value; an assigned property key re-encodes as its
+ *  definition reads it; an emptied key is deleted; every other key passes verbatim. */
+export function reconcileGovernedRoot(
   root: Record<string, unknown>,
-  registry: ContextsRegistry,
-  spacesByContext: Map<string, SpaceNode[]>,
-): { root: Record<string, unknown>; changed: boolean } {
+  world: GovernedWorld,
+): Reconciled {
   const out: Record<string, unknown> = {}
-  const contextIds = idsByExactTitle(registry)
-  let changed = false
+  const changed: string[] = []
+  const adoptions: Adoption[] = []
+  const contextIds = world.registry ? idsByExactTitle(world.registry) : null
+  const moved = (key: string, raw: unknown, next: unknown): void => {
+    if (JSON.stringify(next) !== JSON.stringify(raw)) changed.push(key)
+    out[key] = next
+  }
   for (const [key, raw] of Object.entries(root)) {
+    const def = world.defs.get(key)
+    if (def) {
+      const reconciled = reconcilePropertyValue(def, raw)
+      adoptions.push(...reconciled.adoptions)
+      if (isBlankValue(reconciled.value)) changed.push(key)
+      else moved(key, raw, encodeValue(reconciled.value))
+      continue
+    }
     const title = parseContextKey(key)
-    const contextId = title !== null ? contextIds.get(title) : undefined
+    const contextId = title !== null && contextIds ? contextIds.get(title) : undefined
     if (contextId === undefined || !Array.isArray(raw)) {
       out[key] = raw
       continue
     }
-    const byTitle = spacesByTitle(spacesByContext.get(contextId))
+    const byTitle = spacesByTitle(world.spacesByContext.get(contextId))
     const repaired: string[] = []
     for (const value of raw) {
       const match = byTitle.get(normalizeContextValue(value))
-      if (!match) {
-        changed = true
-        continue
-      }
-      if (value !== match.title) changed = true
-      repaired.push(match.title)
+      if (match) repaired.push(match.title)
     }
-    if (repaired.length) out[key] = repaired
-    else changed = true
+    if (repaired.length) moved(key, raw, repaired)
+    else changed.push(key)
   }
-  return { root: out, changed }
+  return { root: out, changed, adoptions }
 }

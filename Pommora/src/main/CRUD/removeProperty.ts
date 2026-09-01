@@ -8,7 +8,6 @@
 import { contentId } from '@shared/identity'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
-import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atomicWrite'
@@ -16,7 +15,13 @@ import { folderCorpus, indexWrittenPage } from '../indexSeed'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { isPlainObject } from '@shared/propertyValue'
+import {
+  type Adoption,
+  isBlankValue,
+  isPlainObject,
+  reconcilePropertyValue,
+} from '@shared/propertyValue'
+import { applyAdoptions } from './optionOps'
 import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
@@ -125,21 +130,24 @@ export async function restoreCachedValues(
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
   // refuses the write — stays cached.
+  const adoptions: Adoption[] = []
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
-    // The same standing check restore asks — one predicate, so a cached value and a recorded
-    // one can never disagree about whether they may come back.
-    const standing = propertyValueStands(def, raw)
-    if (!standing.stands) return false
+    const reconciled = reconcilePropertyValue(def, raw)
+    if (isBlankValue(reconciled.value)) return false
     const wrote = await serializeOnFile(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
-      return (await updatePageProperty(file, def, standing.value)).ok
+      return (await updatePageProperty(file, def, reconciled.value)).ok
     })
-    if (wrote) await indexWrittenPage(root, file)
+    if (wrote) {
+      adoptions.push(...reconciled.adoptions)
+      await indexWrittenPage(root, file)
+    }
     return wrote
   })
+  await applyAdoptions(root, adoptions)
   // The page walk above deliberately runs unlocked.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
