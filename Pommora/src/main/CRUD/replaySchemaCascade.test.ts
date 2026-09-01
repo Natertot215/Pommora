@@ -1,6 +1,6 @@
 // The crash-window suite: each window is the exact on-disk state a killed op leaves — built by
 // running the same internals the live op runs, stopped between steps — and the replay must land
-// the same disk an uninterrupted op lands (modulo `modified_at` on the stamping ops).
+// the same disk an uninterrupted op lands.
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
@@ -67,13 +67,6 @@ async function seedNexus(): Promise<string> {
 
 const page = (root: string, name: string): Promise<string> =>
   readFile(join(root, 'Col', `${name}.md`), 'utf8')
-
-/** Page bytes with `modified_at` dropped — the stamping ops re-date by design. */
-const unstamped = (content: string): string =>
-  content
-    .split('\n')
-    .filter((l) => !l.startsWith('modified_at:'))
-    .join('\n')
 
 /** The post-commit pre-sweep crash state of a Stage→Phase rename, with page A already folded
  *  (the sweep died between its two files) — journal exactly as editProperty leaves it. */
@@ -149,8 +142,8 @@ describe('delete replay', () => {
     const live = await seedNexus()
     await openSession(live)
     expect((await deleteProperty(live, 'prop_s')).ok).toBe(true)
-    const wantA = unstamped(await page(live, 'A'))
-    const wantB = unstamped(await page(live, 'B'))
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
     closeSession()
     dropLiveTree()
 
@@ -169,8 +162,8 @@ describe('delete replay', () => {
     await writeFile(join(crashed, 'Col', 'A.md'), `---\nPageID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
-    expect(unstamped(await page(crashed, 'A'))).toBe(wantA)
-    expect(unstamped(await page(crashed, 'B'))).toBe(wantB)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
     expect((await readRegistry(crashed)).defs.prop_s).toBeUndefined()
     const sidecar = await readSidecar(join(crashed, 'Col'), 'collection', pageCollectionSidecar)
     expect((sidecar?.properties as string[] | undefined) ?? []).toEqual([])
@@ -206,8 +199,8 @@ describe('option replay', () => {
     const live = await seedNexus()
     await openSession(live)
     expect((await renameOption(live, 'prop_s', 'Draft', 'Queued')).ok).toBe(true)
-    const wantA = unstamped(await page(live, 'A'))
-    const wantB = unstamped(await page(live, 'B'))
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
     closeSession()
     dropLiveTree()
 
@@ -239,8 +232,8 @@ describe('option replay', () => {
     await writeFile(join(crashed, 'Col', 'A.md'), half)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
-    expect(unstamped(await page(crashed, 'A'))).toBe(wantA)
-    expect(unstamped(await page(crashed, 'B'))).toBe(wantB)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
     expect(await readSchemaJournal(crashed)).toBeNull()
   })
 
@@ -258,8 +251,8 @@ describe('option replay', () => {
     const live = await seedNexus()
     await openSession(live)
     expect((await removeOption(live, 'prop_s', 'Draft')).ok).toBe(true)
-    const wantA = unstamped(await page(live, 'A'))
-    const wantB = unstamped(await page(live, 'B'))
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
     const wantOptions = (await readRegistry(live)).defs.prop_s?.select_options
     closeSession()
     dropLiveTree()
@@ -270,8 +263,8 @@ describe('option replay', () => {
     await writeFile(join(crashed, 'Col', 'A.md'), `---\nPageID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
-    expect(unstamped(await page(crashed, 'A'))).toBe(wantA)
-    expect(unstamped(await page(crashed, 'B'))).toBe(wantB)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
     expect((await readRegistry(crashed)).defs.prop_s?.select_options).toEqual(wantOptions)
     expect(await readSchemaJournal(crashed)).toBeNull()
   })

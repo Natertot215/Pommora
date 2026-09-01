@@ -193,7 +193,14 @@ describe('mergeFrontmatter — broken frontmatter is never re-serialized', () =>
   })
 
   it('a body-only write passes the frontmatter bytes through verbatim', () => {
-    const out = mergeFrontmatter(broken, { modified_at: 'now' }, ['modified_at'], 'new prose')
+    const out = mergeFrontmatter(broken, {}, [], 'new prose')
     expect(out).toBe('---\nbad: [unclosed\n---\nnew prose')
+  })
+})
+
+describe('mergeFrontmatter — a body-only write re-serializes nothing', () => {
+  it('leaves a flow-style list unspaced', () => {
+    const out = mergeFrontmatter('---\ntags: [a,b]\n---\nold', {}, [], 'new')
+    expect(out).toBe('---\ntags: [a,b]\n---\nnew')
   })
 })

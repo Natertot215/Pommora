@@ -112,12 +112,10 @@ Context links are the relation layer. They store as `<Title>` keys at the entity
 
 ### Auto-Managed Properties
 
-Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page; pages may also carry `cover:` which assigns their banners. A schema edit is not a page edit: renaming a property or reordering an assignment leaves every member's `modified_at` untouched.[^7]
+Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), maintained by Pommora and not user-creatable, and may carry `cover:`, which assigns its banner. **Creation Time** and **Last Modified** are never written: the first is the instant the `PageID` ULID encodes, the second is the file's modification time as the filesystem reports it. Any write that changes the file's bytes moves Last Modified — a value edit, a text edit, and a schema edit that rewrites the page alike — while a rename or a move, which changes no bytes, leaves it where it was.[^7]
 
 ```yaml
 PageID:
-created_at:
-modified_at:
 cover:
 ```
 

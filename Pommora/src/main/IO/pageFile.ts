@@ -88,13 +88,12 @@ export function mergeFrontmatter(
   body: string,
 ): string {
   const { frontmatter } = splitEnvelope(existingContent)
-  // A body-only rewrite of a file holding no frontmatter invents none — an un-adopted note
-  // keeps exactly its own bytes, the link swap aside.
-  if (frontmatter === '' && modeledKeys.length === 0) return body
+  // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own
+  // bytes, and a broken map is passed through rather than re-serialized from what it recovered.
+  if (modeledKeys.length === 0)
+    return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
-  // The body still saves with the original frontmatter bytes passed through verbatim (a body-only
-  // write governs no key a broken map can lose); a field write refuses instead.
   if (mergeable(doc)) {
     for (const key of modeledKeys) {
       if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
@@ -103,12 +102,9 @@ export function mergeFrontmatter(
     const out = serialized(doc)
     if (out !== null) return assembleEnvelope(out, body)
   }
-  if (modeledKeys.some((k) => k !== 'modified_at')) {
-    throw new Error(
-      'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
-    )
-  }
-  return assembleEnvelope(frontmatter, body)
+  throw new Error(
+    'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
+  )
 }
 
 /** What a rename does with a page already holding BOTH keys. The two governed renames commit their

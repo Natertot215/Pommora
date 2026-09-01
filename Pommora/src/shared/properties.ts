@@ -162,9 +162,13 @@ export function isReservedPropertyId(id: string): boolean {
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
 export const RESERVED_NAME_PREFIX = '$'
+// The two retired stamp names stay refused: a user property under either would collide with the
+// vault's own history.
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
   ...Object.values(KIND_ID_KEY),
   ...PAGE_MODELED_KEYS,
+  'created_at',
+  'modified_at',
 ])
 
 export const KEY_REFUSAL = {

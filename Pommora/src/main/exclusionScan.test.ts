@@ -13,19 +13,19 @@ const read = (p: string): Promise<string> => readFile(join(root, p), 'utf8')
 const page = (id: string, frontmatter: string): string =>
   `---\n${frontmatter}\nPageID: ${id}\n---\n\nbody\n`
 
-const stamped = (): Promise<void> =>
+const legacy = (): Promise<void> =>
   w(
-    'Archive/stamped.md',
+    'Archive/legacy.md',
     page(
       '01NNNNNNNNNNNNNNNNNNNNNNNN',
       'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Username\nStatus: open',
     ),
   )
 
-const expectStampsStripped = async (): Promise<string> => {
-  const text = await read('Archive/stamped.md')
-  expect(text).not.toContain('created_at')
-  expect(text).not.toContain('modified_at')
+const expectIdentityStripped = async (): Promise<string> => {
+  const text = await read('Archive/legacy.md')
+  expect(text).toContain('created_at: 2026-01-01T00:00:00.000Z')
+  expect(text).toContain('modified_at: 2026-02-02T00:00:00.000Z')
   expect(text).not.toContain('PageID')
   expect(text).toContain('icon: star')
   expect(text).toContain('cover: img.png')
@@ -132,10 +132,10 @@ describe('clearExclusionData', () => {
     )
   })
 
-  it('drops the timestamps with the identity key, keeping icon, cover, property values, and foreign keys', async () => {
-    await stamped()
+  it('drops the identity key alone — legacy timestamps, icon, cover, property values, and foreign keys stay', async () => {
+    await legacy()
     await clearExclusionData(root, ['Archive'], 'file-assets')
-    const text = await expectStampsStripped()
+    const text = await expectIdentityStripped()
     expect(text).toContain('Status: open')
   })
 
@@ -167,8 +167,8 @@ describe('clearExclusionData', () => {
 
 describe('clearConfirmCopy', () => {
   it('names what goes and pluralizes the count', () => {
-    expect(clearConfirmCopy(2).detail).toContain('timestamps')
-    expect(clearConfirmCopy(2).detail).toContain('Context keys')
+    expect(clearConfirmCopy(2).detail).toContain('identity key and Context keys')
+    expect(clearConfirmCopy(2).detail).not.toContain('timestamps')
     expect(clearConfirmCopy(1).message).toContain('the excluded folder')
     expect(clearConfirmCopy(3).message).toContain('3 excluded folders')
   })
