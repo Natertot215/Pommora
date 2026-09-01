@@ -1,7 +1,6 @@
-// Multi arrays are edited IN PLACE (filter/map on the raw array), never decode-to-strings→
+// Option lists are edited IN PLACE (filter/map on the raw list), never decode-to-strings→
 // re-encode: a page may carry foreign / non-string elements, and an op must touch only its target.
 
-import type { PropertyType } from '@shared/properties'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
 import { nowIso } from './util'
@@ -13,37 +12,23 @@ const SKIP = Symbol('skip')
 
 /** Rewrite the raw stored value so `target` is stripped or replaced, preserving foreign content.
  *  Returns SKIP when the value doesn't hold `target`; otherwise the next value (null = delete key). */
-function rewriteRaw(
-  raw: unknown,
-  type: PropertyType,
-  target: string,
-  edit: ValueEdit,
-): unknown | typeof SKIP {
-  if (type === 'multi_select') {
-    if (!Array.isArray(raw) || !raw.includes(target)) return SKIP
-    if (edit.op === 'replace') {
-      // Renaming target into a DIFFERENT value the array already holds would duplicate it — merge
-      // instead by dropping the target (its new value is already present). The `to !== target` guard
-      // keeps a no-op rename from deleting the value. Foreign elements are otherwise untouched.
-      if (edit.to !== target && raw.includes(edit.to)) return raw.filter((el) => el !== target)
-      return raw.map((el) => (el === target ? edit.to : el))
-    }
-    const filtered = raw.filter((el) => el !== target)
-    return filtered.length ? filtered : null
+function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | typeof SKIP {
+  const xs = Array.isArray(raw) ? raw : [raw]
+  if (!xs.includes(target)) return SKIP
+  if (edit.op === 'replace') {
+    // Renaming target into a DIFFERENT value the list already holds would duplicate it — merge
+    // instead by dropping the target (its new value is already present). The `to !== target` guard
+    // keeps a no-op rename from deleting the value. Foreign elements are otherwise untouched.
+    if (edit.to !== target && xs.includes(edit.to)) return xs.filter((el) => el !== target)
+    return xs.map((el) => (el === target ? edit.to : el))
   }
-  if (raw !== target) return SKIP
-  return edit.op === 'replace' ? edit.to : null
+  const filtered = xs.filter((el) => el !== target)
+  return filtered.length ? filtered : null
 }
 
-function applyEdit(
-  content: string,
-  key: string,
-  type: PropertyType,
-  target: string,
-  edit: ValueEdit,
-): string | null {
+function applyEdit(content: string, key: string, target: string, edit: ValueEdit): string | null {
   const root = splitFrontmatter(content)
-  const nextValue = rewriteRaw((root as Record<string, unknown>)[key], type, target, edit)
+  const nextValue = rewriteRaw((root as Record<string, unknown>)[key], target, edit)
   if (nextValue === SKIP) return null
   return mergeFrontmatter(
     content,
@@ -56,13 +41,8 @@ function applyEdit(
 }
 
 /** Remove one option's value from a page. Returns null if the page didn't hold it. */
-export function stripPageValue(
-  content: string,
-  key: string,
-  value: string,
-  type: PropertyType,
-): string | null {
-  return applyEdit(content, key, type, value, { op: 'strip' })
+export function stripPageValue(content: string, key: string, value: string): string | null {
+  return applyEdit(content, key, value, { op: 'strip' })
 }
 
 /** Rename cascade: swap oldValue → newValue in place. Returns null if the page didn't hold it. */
@@ -71,9 +51,8 @@ export function replacePageValue(
   key: string,
   oldValue: string,
   newValue: string,
-  type: PropertyType,
 ): string | null {
-  return applyEdit(content, key, type, oldValue, { op: 'replace', to: newValue })
+  return applyEdit(content, key, oldValue, { op: 'replace', to: newValue })
 }
 
 /** Null means the page didn't hold it — the caller writes nothing, so an unrelated page is never

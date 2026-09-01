@@ -77,7 +77,7 @@ describe('createPage', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
-    expect(fm.status).toBe('doing')
+    expect(fm.status).toEqual(['doing'])
     expect('empty' in fm).toBe(false)
     expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
   })
@@ -196,12 +196,12 @@ describe('updatePageProperty', () => {
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
-    expect(await at('status')).toBe('todo')
+    expect(await at('status')).toEqual(['todo'])
     expect(await at('tags')).toEqual(['a', 'b'])
     expect(splitFrontmatter(await readFile(f, 'utf8'))[PAGE_ID_KEY]).toBe(c.value.id)
 
     await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
-    expect(await at('status')).toBe('done')
+    expect(await at('status')).toEqual(['done'])
 
     await updatePageProperty(f, defOf('prop_status'), null)
     expect(await at('status')).toBeUndefined()

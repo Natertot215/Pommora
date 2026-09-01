@@ -234,7 +234,7 @@ describe('option replay', () => {
       },
       result: null,
     }))
-    const half = replacePageValue(await page(crashed, 'A'), 'Stage', 'Draft', 'Queued', 'select')
+    const half = replacePageValue(await page(crashed, 'A'), 'Stage', 'Draft', 'Queued')
     if (half === null) throw new Error('fixture: half-cascade produced nothing')
     await writeFile(join(crashed, 'Col', 'A.md'), half)
     await openSession(crashed)

@@ -1146,8 +1146,6 @@ describe('restore — into a chosen destination', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect((await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('Status: live')).toBe(
-      true,
-    )
+    expect((await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('- live')).toBe(true)
   })
 })

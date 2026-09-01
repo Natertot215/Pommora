@@ -123,7 +123,7 @@ export function dropOptionFromDef(
 
 /** What a page cascade needs about the property it is rewriting: the key the values sit under,
  *  and the type the rewrite must speak. Resolved from the authoritative def, never re-read. */
-type CascadeTarget = { type: PropertyType; key: string }
+type CascadeTarget = { key: string }
 
 /** The gate that admits a def to an op — the one place Select and Status diverge outside a
  *  rename's def edit. */
@@ -140,15 +140,13 @@ async function resolveForCascade(
   if (!def) return fail('not-found', 'Property not found.')
   const typeCheck = requireType(def.type)
   if (!typeCheck.ok) return typeCheck
-  return ok({ type: def.type, key: def.name })
+  return ok({ key: def.name })
 }
 
 /** Strip `value` from every page holding the target's key — the shared tail of clear and remove
  *  on both Select and Status, which differ only in the type check that resolved the target. */
 function stripCascade(root: string, target: CascadeTarget, value: string): Promise<number> {
-  return cascadePages(root, target.key, (content) =>
-    stripPageValue(content, target.key, value, target.type),
-  )
+  return cascadePages(root, target.key, (content) => stripPageValue(content, target.key, value))
 }
 
 /** Stage an option rename's record, def-gated so an op the registry will refuse outright journals
@@ -214,7 +212,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         if (!check.ok) return { result: check }
         return {
           next: { ...registry, defs: { ...registry.defs, [propertyId]: edited.next } },
-          result: ok({ type: def.type, key: def.name }),
+          result: ok({ key: def.name }),
         }
       })
       if (!edit.ok) {
@@ -222,7 +220,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         return edit
       }
       const skipped = await cascadePages(root, edit.value.key, (content) =>
-        replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
+        replacePageValue(content, edit.value.key, oldValue, newTitle),
       )
       if (!skipped) await clearSchemaJournal(root, record)
       return ok(null)

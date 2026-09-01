@@ -94,8 +94,8 @@ describe('restoring a deleted property', () => {
     expect(def).toMatchObject({ id, name: 'Priority', type: 'select' })
     expect(await assigns(notes, id)).toBe(true)
     expect(await assigns(tasks, id)).toBe(true)
-    expect(await valueOn(p1.value.path, 'Priority')).toBe('hi')
-    expect(await valueOn(p2.value.path, 'Priority')).toBe('lo')
+    expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
+    expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
     // The bundle is spent.
     expect(await listBundles(root)).toHaveLength(0)
   })
@@ -152,7 +152,7 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     // The valid one returns; the one that can't be a Priority does not.
-    expect(await valueOn(good.value.path, 'Priority')).toBe('hi')
+    expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
   })
 
@@ -171,7 +171,7 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(await assigns(notes, id)).toBe(true)
-    expect(await valueOn(p1.value.path, 'Priority')).toBe('hi')
+    expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await listBundles(root)).toHaveLength(0)
   })
 })

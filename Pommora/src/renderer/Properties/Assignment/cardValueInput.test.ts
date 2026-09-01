@@ -45,7 +45,12 @@ describe('orderAddableEntries', () => {
 })
 
 describe('shownColumnsFor', () => {
-  const sel = { id: 'sel', name: 'Sel', type: 'select' } as PropertyDefinition
+  const sel = {
+    id: 'sel',
+    name: 'Sel',
+    type: 'select',
+    select_options: [{ value: 'Done', label: 'Done' }],
+  } as PropertyDefinition
   const chk = { id: 'chk', name: 'Chk', type: 'checkbox' } as PropertyDefinition
   const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ResolveContext
   const columns: ResolvedColumn[] = [

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import { decodeValue, encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
+import {
+  decodeValue,
+  encodeValue,
+  isBlankValue,
+  resolveSingleOption,
+  type PropertyValue,
+} from './propertyValue'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
   ({ id: 'p', name: 'P', type: 'select', ...over }) as PropertyDefinition
@@ -34,8 +40,15 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   })
 
   it('never guesses: a select option shaped like a date or a url stays a select', () => {
-    expect(decodeValue(selectDef, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
-    expect(decodeValue(selectDef, 'https://acme.io')).toEqual({
+    const shaped = def({
+      type: 'select',
+      select_options: [
+        { value: '2024-01-01', label: 'Kickoff' },
+        { value: 'https://acme.io', label: 'Site' },
+      ],
+    })
+    expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
+    expect(decodeValue(shaped, 'https://acme.io')).toEqual({
       kind: 'select',
       value: 'https://acme.io',
     })
@@ -44,9 +57,9 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('reads each declared type from its own bare shape', () => {
     expect(decodeValue(def({ type: 'number' }), 42)).toEqual({ kind: 'number', value: 42 })
     expect(decodeValue(def({ type: 'number' }), 0)).toEqual({ kind: 'number', value: 0 })
-    expect(decodeValue(def({ type: 'checkbox' }), false)).toEqual({
+    expect(decodeValue(def({ type: 'checkbox' }), true)).toEqual({
       kind: 'checkbox',
-      value: false,
+      value: true,
     })
     expect(decodeValue(def({ type: 'url' }), 'https://acme.io')).toEqual({
       kind: 'url',
@@ -65,7 +78,20 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('a value whose shape contradicts its type reads as null, never as another type', () => {
     expect(decodeValue(def({ type: 'number' }), 'five')).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'checkbox' }), 'true')).toEqual({ kind: 'null' })
-    expect(decodeValue(def({ type: 'multi_select' }), 'a')).toEqual({ kind: 'null' })
+    expect(decodeValue(def({ type: 'multi_select' }), 7)).toEqual({ kind: 'null' })
+  })
+
+  it('a checkbox is true or absent — false written from outside reads as no value', () => {
+    expect(decodeValue(def({ type: 'checkbox' }), false)).toEqual({ kind: 'null' })
+  })
+
+  it('an option type reads a scalar as a list of one', () => {
+    expect(decodeValue(def({ type: 'multi_select' }), 'zeta')).toEqual({
+      kind: 'multiSelect',
+      value: ['zeta'],
+    })
+    expect(decodeValue(selectDef, ['A'])).toEqual({ kind: 'select', value: 'A' })
+    expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'Done' })
   })
 
   it('last_edited_time reads a stored stamp; it is encode that refuses to persist one', () => {
@@ -77,12 +103,38 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   })
 })
 
-describe('decodeValue — lenient on read, strict on restore', () => {
-  it('lenient keeps an option the schema no longer knows, so the cell still shows its text', () => {
-    expect(decodeValue(selectDef, 'Gone')).toEqual({ kind: 'select', value: 'Gone' })
-    expect(decodeValue(statusDef, 'Retired')).toEqual({ kind: 'select', value: 'Retired' })
-  })
+describe('the single-option resolution — one rule, tested on Select and on Status', () => {
+  const cases: Array<[string, PropertyDefinition, [string, string, string]]> = [
+    ['Select', selectDef, ['A', 'B', 'Zed']],
+    ['Status', statusDef, ['Done', 'Open', 'Retired']],
+  ]
+  for (const [type, d, [first, second, unknown]] of cases) {
+    it(`${type}: an externally written list resolves to its newest registered option`, () => {
+      expect(decodeValue(d, [first, second])).toEqual({ kind: 'select', value: second })
+      expect(decodeValue(d, [second, first])).toEqual({ kind: 'select', value: first })
+    })
+    it(`${type}: an unregistered trailing option yields to the registered one before it`, () => {
+      expect(decodeValue(d, [first, unknown])).toEqual({ kind: 'select', value: first })
+    })
+    it(`${type}: a scalar reads as a list of one`, () => {
+      expect(decodeValue(d, first)).toEqual({ kind: 'select', value: first })
+    })
+    it(`${type}: an option the schema does not offer reads as no value`, () => {
+      expect(decodeValue(d, [unknown])).toEqual({ kind: 'null' })
+      expect(decodeValue(d, unknown)).toEqual({ kind: 'null' })
+    })
+  }
 
+  it('resolveSingleOption is that rule', () => {
+    expect(resolveSingleOption(['Open', 'Active'], ['Open', 'Active', 'Done'])).toBe('Active')
+    expect(resolveSingleOption(['Green', 'Blue'], ['Red', 'Blue'])).toBe('Blue')
+    expect(resolveSingleOption(['Active', 'Wip'], ['Open', 'Active'])).toBe('Active')
+    expect(resolveSingleOption(['Wip'], ['Open'])).toBeUndefined()
+    expect(resolveSingleOption([], ['Open'])).toBeUndefined()
+  })
+})
+
+describe('decodeValue — lenient on read, strict on restore', () => {
   it('strict refuses what the schema cannot validate', () => {
     expect(decodeValue(selectDef, 'Gone', { strict: true })).toEqual({ kind: 'null' })
     expect(decodeValue(statusDef, 'Retired', { strict: true })).toEqual({ kind: 'null' })
@@ -178,10 +230,10 @@ describe('decodeValue — a file value names files', () => {
 })
 
 describe('encodeValue — bare on disk', () => {
-  it('writes the value itself, with no tag wrapping it', () => {
-    expect(encodeValue({ kind: 'select', value: 'Done' })).toBe('Done')
+  it('writes the value itself; a single option as a list of one', () => {
+    expect(encodeValue({ kind: 'select', value: 'Done' })).toEqual(['Done'])
     expect(encodeValue({ kind: 'number', value: 42 })).toBe(42)
-    expect(encodeValue({ kind: 'checkbox', value: false })).toBe(false)
+    expect(encodeValue({ kind: 'checkbox', value: true })).toBe(true)
     expect(encodeValue({ kind: 'multiSelect', value: ['a'] })).toEqual(['a'])
     expect(encodeValue({ kind: 'null' })).toBeNull()
   })
@@ -192,9 +244,9 @@ describe('encodeValue — bare on disk', () => {
       [def({ type: 'checkbox' }), true],
       [def({ type: 'url' }), 'https://acme.io'],
       [def({ type: 'datetime' }), '2026-06-15T14:30:00Z'],
-      [selectDef, 'A'],
+      [selectDef, ['A']],
       [def({ type: 'multi_select' }), ['a', 'b']],
-      [statusDef, 'Done'],
+      [statusDef, ['Done']],
       [def({ type: 'file' }), ['[[y.png]]']],
     ]
     for (const [d, raw] of pairs) expect(encodeValue(decodeValue(d, raw))).toEqual(raw)

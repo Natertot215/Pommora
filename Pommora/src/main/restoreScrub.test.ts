@@ -90,7 +90,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('keeps every governed key that still stands', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
-    expect(f.Priority).toBe('hi')
+    expect(f.Priority).toEqual(['hi'])
     expect(f['<Projects>']).toEqual(['Pommora'])
   })
 
@@ -121,7 +121,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
     const f = await fm('Notes/Alpha.md')
     expect(f['<Projects>']).toBeUndefined()
-    expect(f.Priority).toBe('hi')
+    expect(f.Priority).toEqual(['hi'])
   })
 
   it('prunes only the dead Space from a tag whose Context survives', async () => {
@@ -192,7 +192,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
     const f = await fm('Notes/Daily/Journal.md')
     expect(f['<Projects>']).toBeUndefined()
-    expect(f.Priority).toBe('lo')
+    expect(f.Priority).toEqual(['lo'])
   })
 
   it('drops a value whose OPTION was deleted while it sat in the trash', async () => {
@@ -269,7 +269,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
     expect(raw).toContain('author: Username')
-    expect(raw).toContain('Priority: hi')
+    expect(raw).toContain('Priority:\n  - hi')
     expect(raw).toContain('the body')
     expect(raw).not.toContain('Projects')
   })

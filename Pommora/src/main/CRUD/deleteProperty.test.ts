@@ -104,7 +104,7 @@ describe('deleteProperty', () => {
     const values = (record as { values: Record<string, unknown> }).values
     for (const path of [p1.value.path, p2.value.path]) {
       const pid = readFrontmatterFields(await readFile(path, 'utf8'))[PAGE_ID_KEY] as string
-      expect(values[pid]).toBe('hi')
+      expect(values[pid]).toEqual(['hi'])
     }
   })
 
