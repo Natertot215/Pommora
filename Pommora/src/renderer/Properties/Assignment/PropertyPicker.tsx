@@ -5,23 +5,32 @@ import type { PropertyValue } from '@shared/propertyValue'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
+import type { PickKind } from './massAssign'
 import { OptionChip } from './OptionChip'
+
+export type PickOption = { value: string; label: string; color?: string; icon?: string }
 
 /** A pickable option — status options flatten out of their groups, select/multi read
  *  `select_options`. An option is never filtered by what it's called: the starter options a new
  *  property seeds are ordinary values. Groups are containers, never pickable chips. */
-const optionsOf = (
-  def: PropertyDefinition,
-): Array<{ value: string; label: string; color?: string; icon?: string }> => {
+export const optionsOf = (def: PropertyDefinition): PickOption[] => {
   return def.type === 'status' ? statusOptions(def) : (def.select_options ?? [])
 }
 
-const selectedValues = (current: PropertyValue | null): string[] => {
+export const selectedValues = (current: PropertyValue | null): string[] => {
   if (!current) return []
   if (current.kind === 'multiSelect' || current.kind === 'context') return current.value
   if (current.kind === 'select') return [current.value]
   return []
 }
+
+export const pickShape = (
+  def: PropertyDefinition,
+  contextOptions?: PickOption[],
+): { options: PickOption[]; kind: PickKind } => ({
+  options: contextOptions ?? optionsOf(def),
+  kind: contextOptions ? 'context' : def.type === 'multi_select' ? 'multiSelect' : 'select',
+})
 
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
@@ -64,7 +73,7 @@ export function PropertyPicker({
   look?: ColumnLook
   /** Context columns (the registry Contexts + user context props) pick from the NEXUS's contexts,
    *  not the def — the caller supplies the column's list. Toggles like multi; commits `context`. */
-  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>
+  contextOptions?: PickOption[]
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
 }): React.JSX.Element | null {
@@ -109,8 +118,8 @@ export function PropertyOptionRows({
 }: {
   def: PropertyDefinition
   look?: ColumnLook
-  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>
-  options: Array<{ value: string; label: string; color?: string; icon?: string }>
+  contextOptions?: PickOption[]
+  options: PickOption[]
   selected: string[]
   onPick: (value: string) => void
 }): React.JSX.Element {
@@ -150,24 +159,20 @@ export function pickSemantics(
   current: PropertyValue | null,
   onCommit: (value: PropertyValue | null) => void,
   onSinglePicked: () => void,
-  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>,
+  contextOptions?: PickOption[],
 ): {
-  options: Array<{ value: string; label: string; color?: string; icon?: string }>
+  options: PickOption[]
   selected: string[]
   pick: (value: string) => void
 } {
-  const options = contextOptions ?? optionsOf(def)
-  const multi = def.type === 'multi_select' || contextOptions !== undefined
+  const { options, kind } = pickShape(def, contextOptions)
   const selected = selectedValues(current)
   const pick = (value: string): void => {
-    if (multi) {
-      const next = toggleValue(selected, value)
-      onCommit(
-        contextOptions ? { kind: 'context', value: next } : { kind: 'multiSelect', value: next },
-      )
+    if (kind !== 'select') {
+      onCommit({ kind, value: toggleValue(selected, value) })
       return
     }
-    onCommit({ kind: 'select', value })
+    onCommit(selected.includes(value) ? null : { kind: 'select', value })
     onSinglePicked()
   }
   return { options, selected, pick }
