@@ -2,7 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 08-31-2026              | PM-121 | The Drawn Text Selection                             |
+| 08-31-2026              | PM-121 | Custom Text-Selection.                               |
 | 08-31-2026              | PM-120 | The Single ViewHost                                  |
 | 08-30-2026              | PM-119 | The Card Trail & The Landing Slot                    |
 | 08-29-2026              | PM-118 | The Disclosure Lock                                  |
@@ -126,11 +126,11 @@
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
 
-#### PM-121 || The Drawn Text Selection
+#### PM-121 || Custom Text-Selection.
 
 **DATE:** 08-31-2026
 
-`::selection` carries a color and nothing else — no corner, no bleed, no height of its own — so selected text took a drawn paint seated at the chokepoints `Carets.css` and `nativeCaret.ts` already held: `MarkdownPM/Editor/selection.ts` adds a CodeMirror `layer` at `above: false`, and `nativeCaret.ts`'s measuring mirror, which had wrapped the text after the caret, now wraps the selected run and reads its rects. `styles.css`'s `user-select: none` on `body`, reopened only for `input`, `textarea` and `[contenteditable]`, bounds the surfaces a pill can appear on to the roster the caret already named, so the editor, every text field, `ViewTile`'s editable title, and the swept cells of `mdpm-tbl` and `.data-row` all resolve `--text-selection` from `renderer/text-selection.css`. A field's pill sits in the field's own parent at `z-index: -1` under an `isolation: isolate` the host sets and restores, which puts it between the parent's background and the field's glyphs — reachable because `fields.css.ts`'s `base`, `search` and `draftInput` each paint on a transparent background. Height clamps to the caret at the ribbon's outer bound alone, since CodeMirror returns contiguous pieces: the first piece's top and the last piece's bottom move, and the corners round there while the seams stay square. `caret.ts`'s widget clamp became the exported `clampToLine`, which the selection's own edge measurement had been calling `RectangleMarker.forRange` without, leaving a selection begun beside a table or embed tile starting at the widget's top. `Personalization.nativeHighlight` returns the platform's paint through a root class; webpage embeds kept their native selection, a guest being a separate WebContents that only `::selection` reaches.
+Pommora gained an app-specific text-highlighting style -- a smoother accent-tinted variation of the native selection chrome. `::selection` carries a color and nothing else — no corner, no bleed, no height of its own — so selected text took a drawn paint seated at the chokepoints `Carets.css` and `nativeCaret.ts` already held: `MarkdownPM/Editor/selection.ts` adds a CodeMirror `layer` at `above: false`, and `nativeCaret.ts`'s measuring mirror, which had wrapped the text after the caret, now wraps the selected run and reads its rects. `styles.css`'s `user-select: none` on `body`, reopened only for `input`, `textarea` and `[contenteditable]`, bounds the surfaces a pill can appear on to the roster the caret already named, so the editor, every text field, `ViewTile`'s editable title, and the swept cells of `mdpm-tbl` and `.data-row` all resolve `--text-selection` from `renderer/text-selection.css`. A field's pill sits in the field's own parent at `z-index: -1` under an `isolation: isolate` the host sets and restores, which puts it between the parent's background and the field's glyphs — reachable because `fields.css.ts`'s `base`, `search` and `draftInput` each paint on a transparent background. Height clamps to the caret at the ribbon's outer bound alone, since CodeMirror returns contiguous pieces: the first piece's top and the last piece's bottom move, and the corners round there while the seams stay square. `caret.ts`'s widget clamp became the exported `clampToLine`, which the selection's own edge measurement had been calling `RectangleMarker.forRange` without, leaving a selection begun beside a table or embed tile starting at the widget's top. `Personalization.nativeHighlight` returns the platform's paint through a root class; webpage embeds kept their native selection, a guest being a separate WebContents that only `::selection` reaches.
 
 - **Commits:** `a5d17e39^..a5d17e39`
 - **Diff:** Net +206 | +229 / −23
