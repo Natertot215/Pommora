@@ -504,7 +504,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // one serialized patch-writer is what keeps the arrays and the banner from dropping
       // each other.
       if (req.kind === 'navview') {
-        // Resolved rather than trusted: the read gate now admits a wikilink, which names a
+        // Resolved rather than trusted: the read gate admits a wikilink, which names a
         // file rather than a path, and one several files answer to deletes nothing at all.
         const prevNav = await assetFileToDelete(root, (await readNavigationFile(root)).banner)
         const adopted = await adopt()

@@ -1450,6 +1450,41 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Closeout
 
+**Delivery Claim** (executor, 09-01-2026; range `a4037b94^..HEAD`)
+
+1. Property values live under bare keys named exactly as the registered property; Context keys are `<Title>:`; a key is Pommora's when the registry names it (`isRegisteredPropertyName`) or `parseContextKey` accepts it, and a property may not take one of Pommora's own keys or a `<`-led name (`invalidPropertyName`). `governedKeys.ts`, `standing.ts`, `propertyKey`, `preservePropertiesOnClear`, and the unwrap arm are gone (Dead Vocabulary: nine terms at 0, control 21).
+2. Select and Status are one-element lists on disk; `optionList` normalizes every option shape, `resolveSingleOption` keeps the last registered element, `encodeValue` writes `[value]`, checkbox `false` reads as no value; `rewriteRaw` takes the list path with no `type` parameter.
+3. One reconcile, `reconcileGovernedRoot`, with a Context arm and a property arm returning `adoptions`; `setGovernedRootKeys` is the one governed-root writer, taking a `GovernedWorld` under three precedence rules; the restores and the on-open sweep run the same function; adoptions apply through `applyAdoptions` → `mutateRegistry` only; the strict Contexts world loads only when `contextDriftPresent` says so and a failed load skips the context arm.
+4. The content index records every frontmatter key; `INDEX_GENERATION` = 2 truncates the two index tables on mismatch; a rename onto a key any Collection page holds is refused before the journal (`confirmedKeyHolders`), with a message naming the count.
+5. `values:changed` reaches the renderer from the watcher's settle and from every main-side frontmatter writer (`noteValueWrite` → one flush per operation, grouped by container with page ids; a single-root ledger); the epoch is a union (rename re-keys, container refetches); overrides carry their own write promise and retire by id; `refreshValues` is deleted.
+6. Two Settings toggles in the Properties leaf's **Metadata** section: Repair Properties On Open (the seed's re-read list, the one reconcile, shape only, never removing, behind the window) and Capitalize All Metadata (`displayPropertyName` at every label surface; rename fields, native-menu payloads, and frontmatter reads stay raw).
+7. Clear Exclusion strips sidecars, `<Context>` keys, and the stamps only.
+8. NexusOS converted (79 files, backed up), its registry re-registered; every Made False row landed; History arc "Compatible Properties".
+
+**Live pass** (executor over CDP, 09-01-2026 — scratch nexus `~/PommoraScratch`, Collection `Col` assigning Status · Tags(alpha) · Priority · Done; each expected outcome stated before the attempt):
+
+| # | Action | Expected | Observed |
+| --- | --- | --- | --- |
+| 1 | External write on One: `Status: [Open, Active]`, `Tags: [alpha, zeta]`, `Priority: 2`, `foo: bar` | one `values:changed` naming Col/One within a settle; the row shows Active, alpha + zeta | push `{ rel: 'Col', pageIds: [One] }` at 1.1 s; the table cell reads **Active**; `loadValues` holds the raw list |
+| 2 | Set Priority 3 on One | file rewritten `Status: [Active]`, zeta adopted, `foo: bar` byte-identical, one push | exactly that; `Tags` options `[alpha, zeta]`; one push |
+| 3 | External `Status: [Wip]` on Two, then set Priority 1 | cell blank; the key deleted on the write | raw read `['Wip']`; after the write Two holds `Priority: 1` only |
+| 4 | External `Done: false` on Three, then set Priority 5 | reads unchecked; key deleted on the write | `Done` gone after the write |
+| 5 | External bare `Brand: Acme` on One, then register Brand (Select) on Col | foreign until registered, then live without re-indexing | `loadValues` shows `Brand: 'Acme'` before; after `schema.add` the column shows **Acme** at once |
+| 6 | Rename Status → `foo` (One holds `foo`) | refused, naming one holder | `invalid-property`: "1 page already uses "foo" as a key." |
+| 7 | Clear Priority on One | key gone | `Priority` absent |
+| 8 | Assign One to Projects/Pommora, then unassign | `<Projects>: [Pommora]`, then the key gone | as expected |
+| 9 | External `Status: [Open, Active]` on Three, then set Priority 1 | Status repaired to `[Active]` | `Status:\n  - Active` |
+| 10 | Repair On Open on; quit; hand-drift Two (`Status: Open`, `Tags: alfa` scalars, `Done: false`); launch | scalars canonical, `Done: false` left as written | `Status:\n  - Open`, `Tags:\n  - alfa`, `Done: false` kept. A drift written while the app was *open* was not swept — the watcher had already indexed it; that is the toggle's stated scope |
+| 11 | Capitalize on; add property `notes` | header reads **Notes**; the rename field shows `notes` | header **Notes** (screenshot); the rename field's raw value is `RenamableLabel value={d.name}` / `InlineEditHeader value={def.name}`, pinned by the reviewer census — not driven live |
+| 12 | Cover save on Two (`setBanner`) | a push names Col/Two; the card would update without reopening | push `{ rel: 'Col', pageIds: [Two] }`; `cover:` written |
+| 13 | Rename option alpha → alfa on list-shaped Tags | every holder rewritten | One holds `- alfa` |
+| 14 | Delete option zeta | stripped from holders and the registry | One holds `- alfa` only; options `[alfa]` |
+| 15 | External `Done: false` on Two, `Done: true` on Three, filter Done **is empty** | One and Two listed, Three not | rows `[One, Two]` |
+| 16 | Exclude Col, Clear Exclusion (native confirm pressed through System Events) | values survive; `PageID`, stamps, `<Projects>`, sidecar gone | `{ pages: 3, sidecars: 1, refused: 0 }`; One keeps Status/Tags/foo/Brand, Three keeps Status/Priority/Done; `PageID`, `modified_at`, `<Projects>`, `_pagecollection.json` gone. No aliases or dashboard layouts existed on the scratch nexus to check |
+| 17 | NexusOS, Ideas Collection (read-only) | every Status shows the value its frontmatter holds; Contexts resolve | bands Paused · Complete · Active · Archived (3) · Awaiting (10) · Closed · Revisit match the files' tally (Archived 3, Awaiting 10, Active 4, Complete 1, Closed 1, Revisit 2); the 5 pages holding `Open` — outside the six options — sit in the no-value band, as ruled at Gate 1; `<Projects>` chips resolve (Pommora, NexusOS, Athena) |
+
+Screenshots: `gate5-metadata.png` (the Properties leaf's Metadata section, both toggles), `closeout-ideas.png` (the Ideas table with its Status bands) — in the session scratchpad.
+
 **Sustainability judge** (a general-purpose agent handed `a4037b94` and `bd3ac843`, the arc's file list, and the one question; verbatim):
 
 > **BEFORE.**
