@@ -8,33 +8,28 @@
 // that name inherits values the page never legitimately held.
 //
 // So the returning content is reconciled against the CURRENT world before it lands: a Context key
-// survives only if what it names still exists, and a key the destination's schema assigns is
-// asked to stand the way the destination asks it — a value its definition can't hold (an option
-// the property no longer offers, a shape its type refuses) is dropped, whoever wrote it. Every
-// other key rides through untouched: under bare names a key the schema doesn't assign is
-// indistinguishable from the user's own frontmatter.
+// survives only if what it names still exists, a key the destination's schema assigns is asked to
+// stand the way the destination asks it, and every other key rides through untouched.
 
 import { contextKey, normalizeContextValue, parseContextKey } from '@shared/contexts'
 import type { PropertyDefinition } from '@shared/properties'
 import { encodeValue } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
 import { contextTagStands, propertyValueStands } from './standing'
+import { assignedDefs } from './contextWrite'
 import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
-import { readRegistry } from '../IO/propertiesRegistry'
 import { serializeOnFile } from '../IO/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../IO/walk'
 import { splitFrontmatter } from '../readNexus'
-import { pageCollectionSidecar } from '@shared/schemas'
 import { SPACE_SIDECAR } from '../paths'
-import { readSidecar } from '../sidecarIO'
 import { sweepAdmits } from './util'
 
 /** What governs each key at the destination — the only thing the caller can answer, and all
  *  the standing check needs. A key absent from either map is governed by nothing. */
 interface LiveWorld {
   /** Property key → the definition the destination Collection carries under that name. */
-  defs: Map<string, PropertyDefinition>
+  defs: ReadonlyMap<string, PropertyDefinition>
   /** Context key → that Context's live Space titles, coerced for matching. */
   contextSpaces: Map<string, Set<string>>
 }
@@ -44,16 +39,7 @@ async function liveWorld(
   tree: NexusTree,
   destCollectionFolder: string | null,
 ): Promise<LiveWorld> {
-  const registry = (await readRegistry(root)).defs
-  const assigned: string[] = destCollectionFolder
-    ? (((await readSidecar(destCollectionFolder, 'collection', pageCollectionSidecar))
-        ?.properties as string[] | undefined) ?? [])
-    : []
-  const defs = new Map<string, PropertyDefinition>()
-  for (const id of assigned) {
-    const def = registry[id]
-    if (def) defs.set(def.name, def)
-  }
+  const defs = await assignedDefs(root, destCollectionFolder)
   const contextSpaces = new Map(
     tree.contexts.map((g) => [
       contextKey(g.def.title),

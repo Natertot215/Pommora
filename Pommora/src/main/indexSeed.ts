@@ -37,8 +37,7 @@ export function extractPageIndex(content: string): PageIndexEntry | null {
   return { mentions: [...mentions], values }
 }
 
-/** Every frontmatter key, registry-independent: a name registered later must find the pages
- *  already holding it without a re-read, and registering writes no file. */
+// Every key, so a name registered later finds its holders without a re-read.
 export function frontmatterValues(content: string): Record<string, unknown> {
   return splitFrontmatter(content) as Record<string, unknown>
 }
