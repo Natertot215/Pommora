@@ -5,8 +5,6 @@ import type { PropertyDefinition } from '@shared/properties'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ViewRow } from '@shared/types'
-import { asRenderableIcon } from '@renderer/DesignSystem/Symbols'
-import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import { useSession } from '@renderer/store'
 import {
   contextIdentityOf,
@@ -70,9 +68,6 @@ export interface PropertyRows {
 /** A page's owning Collection by path prefix — schema lives only on Collections. */
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
   tree?.collections.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
-
-export const propertyIcon = (def: PropertyDefinition): string =>
-  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
 
 export function usePropertyRows(
   page: PropertyRowsPage | null,

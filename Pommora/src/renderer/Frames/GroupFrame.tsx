@@ -10,7 +10,7 @@ import type {
   StructuralOrderMode,
   SubGroupConfig,
 } from '@shared/views'
-import { Icon, asRenderableIcon } from '@renderer/DesignSystem/Symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import {
   DisclosureRow,
   MenuItem,
@@ -44,7 +44,7 @@ import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../store'
 import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
-import { propertyTypeIconName } from '../Properties/PropertyTypes'
+import { propertyIcon } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
 import * as gp from './groupFrame.css'
@@ -163,7 +163,7 @@ export function GroupFrame({
     ...groupable.map((d) => ({
       value: d.id,
       label: d.name,
-      icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type) ?? 'tag',
+      icon: propertyIcon(d),
     })),
   ]
   const pickGroupByValue = (v: string): void => {
@@ -828,7 +828,7 @@ function SubGroupRow({
     ...groupable.map((d) => ({
       value: d.id,
       label: d.name,
-      icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type),
+      icon: propertyIcon(d),
     })),
   ]
   return (

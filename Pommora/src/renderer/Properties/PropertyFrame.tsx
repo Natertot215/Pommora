@@ -50,7 +50,7 @@ import { URLEditor } from './Editors/URLEditor'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { FrameDnd, RowShell, useFrameRegions } from '../Frames/frameDnd'
 import { nexusReorderIndex, type PaneDrop, type FrameRow } from '../Frames/frameDndModel'
-import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './PropertyTypes'
+import { CREATABLE_TYPES, PropertyTypeIcon, propertyIcon, propertyTypeLabel } from './PropertyTypes'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from '../Frames/frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
@@ -107,7 +107,7 @@ function ListGroups({
             <Reveal key={d.id} open enterOnMount={enteringAssigned(d.id)} fill>
               <RowShell id={d.id}>
                 <MenuItem
-                  leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
+                  leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
                   detail={propertyTypeLabel(d.type)}
                   trailing={<Icon name="chevron-right" />}
                   onClick={() => onOpenEditor(d.id)}
@@ -141,7 +141,7 @@ function ListGroups({
                 <RowShell id={d.id}>
                   <MenuItem
                     className={s.allRow}
-                    leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
+                    leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
                     onContextMenu={(e) => {
                       e.preventDefault()
                       onRowMenu(d, 'all')
@@ -421,7 +421,7 @@ export function PropertyFrame({
       >
         <InlineEditHeader
           value={def.name}
-          icon={def.icon}
+          icon={propertyIcon(def)}
           iconRef={iconRef}
           iconOpen={iconOpen}
           onIconClick={() => setIconOpen(true)}
