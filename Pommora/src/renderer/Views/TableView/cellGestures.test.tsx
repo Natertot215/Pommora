@@ -8,6 +8,8 @@ import { useSession } from '../../store'
 import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
 import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
+import { pageValues } from '@renderer/Testing/pageValues'
+import { PAGE_ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -91,9 +93,9 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
     ],
   }) as unknown as CollectionNode
 
-const VALUES = {
+const VALUES = pageValues({
   p1: {
-    id: 'p1',
+    [PAGE_ID_KEY]: 'p1',
     ...propsAtRoot(
       {
         prop_status: 'active',
@@ -105,8 +107,8 @@ const VALUES = {
       allDefs,
     ),
   },
-  p2: { id: 'p2' },
-}
+  p2: { [PAGE_ID_KEY]: 'p2' },
+})
 
 // React intercepts the value property — commit through the native setter so the change event carries.
 const typeInto = (input: HTMLInputElement, value: string): void => {
@@ -264,10 +266,11 @@ describe('checkbox cell gestures', () => {
 
   it('unchecking a checked box strips the property — no stored false', async () => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
-      async () => ({
-        p1: { id: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
-        p2: { id: 'p2' },
-      })
+      async () =>
+        pageValues({
+          p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
+          p2: { [PAGE_ID_KEY]: 'p2' },
+        })
     await mountTable(sourceWith())
     await act(async () => {
       host.querySelectorAll<HTMLElement>('.data-cell')[2].click()
@@ -556,13 +559,14 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     }) as unknown as CollectionNode
 
   const mountChips = async (): Promise<void> => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: {
-        id: 'p1',
-        '<Areas>': ['area_work', 'area_life'],
-        ...propsAtRoot({ prop_status: 'active', prop_tags: ['a', 'b'] }, allDefs),
-      },
-    })
+    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+      pageValues({
+        p1: {
+          [PAGE_ID_KEY]: 'p1',
+          '<Areas>': ['area_work', 'area_life'],
+          ...propsAtRoot({ prop_status: 'active', prop_tags: ['a', 'b'] }, allDefs),
+        },
+      })
     await mountTable(chipSource())
   }
   const cell = (i: number): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[i]
@@ -603,9 +607,10 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   })
 
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: { id: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
-    })
+    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+      pageValues({
+        p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
+      })
     await mountTable(chipSource())
     const [x] = removesIn(cell(2))
     await act(async () => {
@@ -635,9 +640,10 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   })
 
   it('a Compact status look carries NO × — Clear lives in its menu', async () => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: { id: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
-    })
+    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+      pageValues({
+        p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
+      })
     const styled = chipSource()
     ;(styled.views as Array<{ column_styles?: unknown }>)[0].column_styles = {
       prop_status: { look: 'compact' },
@@ -653,12 +659,13 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const twoFiles = (): CollectionNode => {
     const s = sourceWith()
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: {
-        id: 'p1',
-        ...propsAtRoot({ prop_files: ['[[a.pdf]]', '[[b.pdf]]'] }, allDefs),
-      },
-    })
+    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+      pageValues({
+        p1: {
+          [PAGE_ID_KEY]: 'p1',
+          ...propsAtRoot({ prop_files: ['[[a.pdf]]', '[[b.pdf]]'] }, allDefs),
+        },
+      })
     return s
   }
   const fileCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[5]

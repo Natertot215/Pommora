@@ -532,6 +532,14 @@ export interface PageDetail {
 
 /** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies a minimal
  *  `{ id }` so the row still sorts/groups/filters on intrinsic fields. */
+/** One page's batch entry for the view pipeline. Both stamps are ISO 8601; `createdAt` is null
+ *  under an adopted id, `modifiedAt` null when the file could not be stat'd. */
+export interface PageValues {
+  frontmatter: PageFrontmatter
+  createdAt: string | null
+  modifiedAt: string | null
+}
+
 export interface ViewRow {
   id: string
   title: string
@@ -539,6 +547,8 @@ export interface ViewRow {
   path: string
   parentSetId?: string
   frontmatter: PageFrontmatter
+  createdAt?: string
+  modifiedAt?: string
   /** The tree node's resolved context links (contextId → Space ids); the optimistic write
    *  layer overrides per commit. */
   contextValues?: Record<string, string[]>

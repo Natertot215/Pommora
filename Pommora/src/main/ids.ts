@@ -4,7 +4,7 @@
 // a real id exists. Both the read engine and the write path import from here.
 
 import { createHash } from 'node:crypto'
-import { monotonicFactory } from 'ulidx'
+import { decodeTime, monotonicFactory } from 'ulidx'
 import { isUlidShaped } from '@shared/identity'
 
 const nextUlid = monotonicFactory()
@@ -12,6 +12,18 @@ const nextUlid = monotonicFactory()
 /** Mint a fresh ULID. Monotonic within the process so same-ms creates stay ordered. */
 export function newId(): string {
   return nextUlid()
+}
+
+/** The instant a ULID encodes; null for an adopted (path-derived) id or one the decoder refuses —
+ *  `isUlidShaped` admits a first character 8–Z that ulidx rejects, and a throw here would reject a
+ *  whole batch for one hand-edited id. */
+export function idTime(id: string): number | null {
+  if (isAdoptedId(id)) return null
+  try {
+    return decodeTime(id)
+  } catch {
+    return null
+  }
 }
 
 /** True for a syntactically valid ULID. Shape lives in the identity seam so the walk's admission

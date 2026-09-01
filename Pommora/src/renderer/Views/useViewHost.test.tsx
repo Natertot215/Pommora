@@ -9,6 +9,8 @@ import { useSession } from '../store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { ViewHost } from './ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
+import { pageValues } from '@renderer/Testing/pageValues'
+import { PAGE_ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -80,9 +82,9 @@ const deepSets = (): { a: SetNode; b: SetNode } => {
   return { a: a as unknown as SetNode, b: b as unknown as SetNode }
 }
 
-const VALUES = {
-  p1: { id: 'p1', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
-}
+const VALUES = pageValues({
+  p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+})
 
 let host: HTMLDivElement
 let root: Root
@@ -169,7 +171,7 @@ describe('the reset keys', () => {
     expect(api?.manualOrder).toEqual(['p2', 'p1'])
     await mount(collection()) // same content, new object — the watcher echo
     expect(api?.manualOrder).toBeUndefined()
-    expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
+    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
   it('hide-then-hide: the second write still carries the first', async () => {
@@ -235,7 +237,7 @@ describe('the values epoch', () => {
     await act(async () => {})
     expect(nexus().loadValues).toHaveBeenCalledWith('Col')
     expect(api?.effectiveValues.p1).toEqual(VALUES.p1)
-    expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
+    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
   it('a push naming no ids retires the settled override and keeps the pending one', async () => {
@@ -248,7 +250,7 @@ describe('the values epoch', () => {
     )
     bump([{ rel: 'Col', pageIds: [] }])
     await act(async () => {})
-    expect(api?.effectiveValues.p1).toEqual({ id: 'p1' })
+    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
     expect(api?.effectiveValues.p2).toBeUndefined()
   })
 
@@ -272,7 +274,7 @@ describe('the values epoch', () => {
     bump([{ rel: 'Other', pageIds: ['p2'] }])
     await act(async () => {})
     expect(nexus().loadValues).not.toHaveBeenCalled()
-    expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
+    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
   it('a rename re-keys the override instead of clearing it', async () => {
@@ -284,7 +286,7 @@ describe('the values epoch', () => {
     )
     act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
     await act(async () => {})
-    expect(api?.effectiveValues.p2).toEqual({ id: 'p2', State: ['Done'] })
+    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
   })
 })
 

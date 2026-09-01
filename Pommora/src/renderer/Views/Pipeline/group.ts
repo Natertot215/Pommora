@@ -3,7 +3,14 @@
 // still appear as disclosure groups, and a CollectionNode and a SetNode container flow through the
 // identical structural path. Pure: no fs, no React.
 
-import type { CollectionNode, PageNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
+import type {
+  CollectionNode,
+  PageNode,
+  PageValues,
+  ResolvedGroup,
+  SetNode,
+  ViewRow,
+} from '@shared/types'
 import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
 import { PAGE_ID_KEY } from '@shared/identity'
 import { pad } from '@renderer/DesignSystem/Util/pad'
@@ -84,18 +91,27 @@ export function dropHiddenGroups(
   })
 }
 
+/** A page's frontmatter from the value batch; a page the batch lacks stands on its identity alone. */
+export const frontmatterOf = (
+  values: Record<string, PageValues>,
+  pageId: string,
+): PageFrontmatter => values[pageId]?.frontmatter ?? { [PAGE_ID_KEY]: pageId }
+
 function toRow(
   page: PageNode,
   parentSetId: string | undefined,
-  values: Record<string, PageFrontmatter>,
+  values: Record<string, PageValues>,
 ): ViewRow {
+  const v = values[page.id]
   return {
     id: page.id,
     title: page.title,
     icon: page.icon,
     path: page.path,
     ...(parentSetId !== undefined ? { parentSetId } : {}),
-    frontmatter: values[page.id] ?? { [PAGE_ID_KEY]: page.id },
+    frontmatter: frontmatterOf(values, page.id),
+    ...(v?.createdAt != null ? { createdAt: v.createdAt } : {}),
+    ...(v?.modifiedAt != null ? { modifiedAt: v.modifiedAt } : {}),
     ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
   }
 }
@@ -104,7 +120,7 @@ function toRow(
  *  for a container-root page) plus the setTree for structural grouping. */
 export function flattenContainer(
   node: CollectionNode | SetNode,
-  valuesByPageId: Record<string, PageFrontmatter>,
+  valuesByPageId: Record<string, PageValues>,
 ): { rows: ViewRow[]; setTree: SetTreeNode[] } {
   const rows: ViewRow[] = []
   const walk = (container: CollectionNode | SetNode, parentSetId: string | undefined): void => {

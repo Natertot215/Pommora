@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
+import type {
+  CollectionNode,
+  PageValues,
+  ResolvedColumn,
+  ResolvedGroup,
+  SetNode,
+  ViewRow,
+} from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@shared/views'
@@ -65,7 +72,7 @@ export function useViewHost(
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
 
-  const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
+  const [values, setValues] = useState<Record<string, PageValues>>({})
   // A refresh in flight when the container swaps must not land the old path's values.
   const pathRef = useRef(source.path)
   pathRef.current = source.path
@@ -166,16 +173,19 @@ export function useViewHost(
       )
   const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
 
-  const effectiveValues = useMemo(
-    () =>
-      valueOverride
-        ? {
-            ...values,
-            ...Object.fromEntries(Object.entries(valueOverride).map(([id, e]) => [id, e.fm])),
-          }
-        : values,
-    [values, valueOverride],
-  )
+  const effectiveValues = useMemo(() => {
+    if (!valueOverride) return values
+    const out = { ...values }
+    for (const [id, e] of Object.entries(valueOverride)) {
+      const prior: PageValues | undefined = values[id]
+      out[id] = {
+        createdAt: prior?.createdAt ?? null,
+        modifiedAt: prior?.modifiedAt ?? null,
+        frontmatter: e.fm,
+      }
+    }
+    return out
+  }, [values, valueOverride])
   const contextIds = contextIdsOf(tree)
   const { columns, groups, setTree, rows } = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
@@ -273,7 +283,7 @@ export function useViewHost(
   const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
     const def = schema.find((d) => d.id === propertyId)
     if (!def) return
-    const prior = effectiveValues[row.id] ?? row.frontmatter
+    const prior = effectiveValues[row.id]?.frontmatter ?? row.frontmatter
     const patched = applyValueAtRoot(
       prior as Record<string, unknown>,
       def,
@@ -293,7 +303,7 @@ export function useViewHost(
         row,
         column.id,
         ids,
-        effectiveValues[row.id] ?? row.frontmatter,
+        effectiveValues[row.id]?.frontmatter ?? row.frontmatter,
         setValueOverride,
         mutate,
       )

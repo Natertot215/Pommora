@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile, utimes } from 'node:fs/promises'
+import { decodeTime } from 'ulidx'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadValues } from './loadValues'
@@ -29,10 +30,33 @@ describe('loadValues', () => {
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual([P1, P2])
-    expect(values[P1]['<Areas>']).toEqual(['Work'])
+    expect(values[P1].frontmatter['<Areas>']).toEqual(['Work'])
     // Wrapped keys ride the loose frontmatter unmodeled — the batch read needs no schema at all.
-    expect((values[P1] as Record<string, unknown>).Status).toBe('in_progress')
-    expect((values[P2] as Record<string, unknown>)['<Count>']).toBe(7)
+    expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('in_progress')
+    expect((values[P2].frontmatter as Record<string, unknown>)['<Count>']).toBe(7)
+  })
+
+  it("carries the file's mtime and the id's time as ISO strings", async () => {
+    await mkdir(join(root, 'Col'), { recursive: true })
+    const file = join(root, 'Col', 'p1.md')
+    await writeFile(file, `---\nPageID: ${P1}\n---\n\nbody\n`)
+    const modified = new Date('2024-03-04T05:06:07.000Z')
+    await utimes(file, modified, modified)
+
+    const values = await loadValues(root, 'Col')
+    expect(values[P1].modifiedAt).toBe(modified.toISOString())
+    expect(values[P1].createdAt).toBe(new Date(decodeTime(P1)).toISOString())
+  })
+
+  it('one undecodable PageID leaves the rest of the batch intact', async () => {
+    await mkdir(join(root, 'Col'), { recursive: true })
+    const bad = `8${P1.slice(1)}`
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nPageID: ${P1}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'bad.md'), `---\nPageID: ${bad}\n---\n\nbody\n`)
+
+    const values = await loadValues(root, 'Col')
+    expect(values[bad].createdAt).toBeNull()
+    expect(values[P1].createdAt).toBe(new Date(decodeTime(P1)).toISOString())
   })
 
   // An identity-less page must reach the value batch whole, not just as a key — a row that lands
@@ -49,9 +73,10 @@ describe('loadValues', () => {
     const keys = Object.keys(values)
     expect(keys).toHaveLength(1)
     expect(keys[0]).toMatch(/^adopted-/)
-    const row = values[keys[0]] as Record<string, unknown>
+    const row = values[keys[0]].frontmatter as Record<string, unknown>
     expect(row['<Areas>']).toEqual(['Work'])
     expect(row.Status).toBe('in_progress')
+    expect(values[keys[0]].createdAt).toBeNull()
   })
 
   it('returns an empty map for an absent container', async () => {

@@ -370,6 +370,7 @@ function retainContextKeys(node: object, raw: Json): void {
 export interface PageRecord {
   node: PageNode
   fm: Json
+  mtimeMs: number | null
 }
 
 /** THE per-page read: one stat-gated parse serves the walk (the node) and the view pipeline's
@@ -379,7 +380,7 @@ export interface PageRecord {
  *  or a stray `.png`. A file with NO key is admitted and wears a synthetic id until adoption
  *  stamps it. */
 export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord | null> {
-  return cachedParse(absFile, async () => {
+  return cachedParse(absFile, async (stat) => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
     const admission = admitContentFile(fm, 'page')
     if (admission.state === 'unknown') return null
@@ -390,7 +391,7 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
       path: relFile,
     })
     retainContextKeys(node, fm)
-    return { node, fm }
+    return { node, fm, mtimeMs: stat?.mtimeMs ?? null }
   })
 }
 

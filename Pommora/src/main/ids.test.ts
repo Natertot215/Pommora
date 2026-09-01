@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { newId, isUlid, adoptedId, mintPropertyId } from './ids'
+import { decodeTime } from 'ulidx'
+import { newId, isUlid, adoptedId, mintPropertyId, idTime } from './ids'
 
 describe('newId / isUlid', () => {
   it('mints valid, unique ULIDs', () => {
@@ -19,6 +20,21 @@ describe('newId / isUlid', () => {
     expect(isUlid('')).toBe(false)
     expect(isUlid('not-a-ulid')).toBe(false)
     expect(isUlid(adoptedId('x'))).toBe(false)
+  })
+})
+
+describe('idTime', () => {
+  it('decodes a minted id to its mint instant', () => {
+    const id = newId()
+    expect(idTime(id)).toBe(decodeTime(id))
+  })
+
+  it('returns null for a shape-valid id the decoder refuses', () => {
+    expect(idTime(`8${newId().slice(1)}`)).toBeNull()
+  })
+
+  it('returns null for an adopted id', () => {
+    expect(idTime(adoptedId('a/b.md'))).toBeNull()
   })
 })
 

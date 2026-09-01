@@ -10,7 +10,7 @@ import { parseStyleAction } from '@shared/columnMenu'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { parentOf } from '@shared/treePatch'
-import { subtreeIds } from '../Pipeline/group'
+import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
@@ -1154,7 +1154,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const def = schema.find((d) => d.id === groupPropId)
     if (!def) return null
     return applyValueAtRoot(
-      (values[pageId] ?? { id: pageId }) as Record<string, unknown>,
+      frontmatterOf(values, pageId) as Record<string, unknown>,
       def,
       value,
     ) as PageFrontmatter

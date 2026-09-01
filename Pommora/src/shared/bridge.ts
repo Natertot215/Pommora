@@ -18,6 +18,7 @@ import type {
   HoverCardSize,
   PreviewsFile,
   SubfieldConfig,
+  PageValues,
   StoredTabSet,
   ThumbRect,
   TrashRow,
@@ -37,7 +38,6 @@ import type {
   PropertyDefinition,
   StatusGroup,
 } from './properties'
-import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
@@ -143,7 +143,7 @@ export interface Asks {
     ]
     reply: Result<null>
   }
-  'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageFrontmatter> }
+  'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageValues> }
 
   // Schema (container-scoped) + registry-wide property ops
   'schema:add': {
