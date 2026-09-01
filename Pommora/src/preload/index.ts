@@ -37,34 +37,23 @@ const api = {
   // path to main — the absolute path never enters web content.
   openDropped: (file: File) => ask('nexus:openPath')(webUtils.getPathForFile(file)),
   openPage: ask('page:open'),
-  // Debounced editor body write (relative path); main resolves under the session root + preserves frontmatter.
   updatePageBody: ask('page:updateBody'),
-  // Heading-fold UI state — per-machine rows in nexus.db, keyed by page id (not frontmatter).
   folds: { get: ask('folds:get'), set: ask('folds:set') },
-  // Active-view pointer — per-machine rows in nexus.db, container id → active view id.
   activeViews: { get: ask('activeViews:get'), set: ask('activeViews:set') },
-  // Sorted-view manual order — per-machine rows in nexus.db, view id → page-id tiebreaker.
   viewOrders: { get: ask('viewOrders:get'), set: ask('viewOrders:set') },
-  // View persistence — save / reorder / delete a SavedView in a Collection/Set sidecar's views[].
   views: {
     save: ask('views:save'),
     reorder: ask('views:reorder'),
     delete: ask('views:delete'),
   },
-  // Per-container non-view settings (open_in is collection-only; view_button either level).
   container: { configure: ask('container:configure') },
-  // The ViewDropdown right-click menu — resolves the picked action (or null on dismiss).
   viewButtonMenu: ask('view-button-menu'),
-  // A saved view row's right-click menu, shared by the view pane and the view embed's segments.
   viewRowMenu: ask('view-row-menu'),
-  // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
   viewEmbedTitleMenu: ask('view-embed-title-menu'),
-  // The view embed switcher area's right-click menu (Hide/Show Titles · New View · Style).
   viewEmbedAreaMenu: ask('view-embed-area-menu'),
-  // The icon picker's right-click Favorite/Remove menu — resolves 'toggle' on click, null on dismiss.
   iconFavoriteMenu: ask('icon-favorite-menu'),
-  // Property schema CRUD on a Collection's page schema. containerPath is the schema-owning
-  // Collection's folder (a Set inherits, so the renderer passes its ancestor Collection's path).
+  // containerPath is the schema-owning Collection's folder (a Set inherits, so the renderer
+  // passes its ancestor Collection's path).
   schema: {
     add: ask('schema:add'),
     rename: ask('schema:rename'),
@@ -72,81 +61,59 @@ const api = {
     delete: ask('schema:delete'),
     assign: ask('schema:assign'),
   },
-  // Nexus-wide property ops (registry-level, no container scope). `property.delete` is the
-  // global destructive op (snapshot, scrub every collection, purge caches, drop the def);
-  // `schema.delete` above is the per-Collection Remove (strip + cache restorably).
+  // `property.delete` is the global destructive op (snapshot, scrub every collection, purge
+  // caches, drop the def); `schema.delete` above is the per-Collection Remove (strip + cache
+  // restorably).
   property: {
     delete: ask('property:delete'),
     setOptions: ask('property:setOptions'),
     setStatusGroups: ask('property:setStatusGroups'),
-    // Registry-only display config for a URL / Link property (underline, full-url ⇄ title, color).
     setLinkConfig: ask('property:setLinkConfig'),
-    // Registry-only display config for a Checkbox property: its property-wide color (undefined = Default).
     setCheckboxColor: ask('property:setCheckboxColor'),
-    // Registry-only: a property's icon (a symbol id; undefined = the type's default glyph).
     setIcon: ask('property:setIcon'),
-    // Registry-only display config for a Number property: its property-wide format fields.
     setNumberFormat: ask('property:setNumberFormat'),
     setFileDirectory: ask('property:setFileDirectory'),
     renameOption: ask('property:renameOption'),
     removeOption: ask('property:removeOption'),
     clearOption: ask('property:clearOption'),
-    // Status variants of the page-touching ops — same cascade, keyed on the Status property's
-    // `status_groups`. Rename cascades the new value onto pages; remove/clear strip it.
+    // Status variants of the page-touching ops: rename cascades the new value onto pages;
+    // remove/clear strip it.
     renameStatusOption: ask('property:renameStatusOption'),
     removeStatusOption: ask('property:removeStatusOption'),
     clearStatusOption: ask('property:clearStatusOption'),
   },
-  // The nexus-wide cosmetic property order — how every collection's All Properties lists.
   registry: { reorder: ask('registry:reorder') },
-  // Batch frontmatter read for a container's view pipeline (pageId → frontmatter), lazy on open.
   loadValues: ask('view:loadValues'),
-  // Per-machine embed-tile heights, keyed host page id → target page id.
   embedHeights: { get: ask('embedHeights:get'), set: ask('embedHeights:set') },
   embedZooms: { get: ask('embedZooms:get'), set: ask('embedZooms:set') },
   webGuestZoom: { set: ask('webGuestZoom:set') },
-  // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   tableHeadingColumns: { get: ask('tableHeadingCols:get'), set: ask('tableHeadingCols:set') },
   headingIcon: { get: ask('headingIcon:get'), set: ask('headingIcon:set') },
-  // Whether a page shows its footnotes section, against the nexus-wide default.
   citations: { get: ask('citations:get'), set: ask('citations:set') },
-  // The aliases each page has been given, keyed page id, for offering back while typing one.
   aliases: { get: ask('aliases:get'), set: ask('aliases:set') },
-  // The block document behind the BlockHost seam — targeted per-host load + locked
-  // partial writes (layout / blocks / locked) on the host's config.
   blocks: {
     get: ask('blocks:get'),
     save: ask('blocks:save'),
     // create mints the ULID + file + entry (the renderer splices the layout after); remove
-    // drops the entry + trashes the file; read/write is the tile editor's body persistence.
+    // drops the entry + trashes the file.
     createMarkdown: ask('blocks:createMarkdown'),
     removeTile: ask('blocks:removeTile'),
     readMarkdown: ask('blocks:readMarkdown'),
     writeMarkdown: ask('blocks:writeMarkdown'),
-    // Link Page: the entry becomes a page embed; a markdown tile's .md trashes.
     convertToPage: ask('blocks:convertToPage'),
-    // Link View: the entry becomes a view embed carrying the COPIED config.
     convertToView: ask('blocks:convertToView'),
-    // Raw-entry copy under a fresh id; markdown copies its file, a view tile re-mints its config ids.
     duplicateTile: ask('blocks:duplicateTile'),
     // Delete keeps the native confirm (deliberate).
     confirmRemove: ask('blocks:confirmRemove'),
   },
-  // Subfield (footer) config — React-owned `subfield` key in `.nexus/settings.json`.
   subfield: { get: ask('subfield:get'), set: ask('subfield:set') },
-  // Nav view modes (List/Gallery per surface) — React-owned `navViewModes` key.
   navViewModes: { get: ask('navViewModes:get'), set: ask('navViewModes:set') },
-  // Navigation intent — one contract over two stores; the IO layer routes each key. The
-  // renderer owns the arrays and sends only the keys it means to change.
   nav: { read: ask('nav:read'), write: ask('nav:write') },
-  // The tab set — one device-local db row (unpinned tabs + active + per-tab history refs).
   tabs: { load: ask('tabs:load'), save: ask('tabs:save') },
-  // The preview tab sets — one device-local db row (nav set + per-origin sets + open pointer).
   previews: { load: ask('previews:load'), save: ask('previews:save') },
   hoverCard: { load: ask('hoverCard:load'), save: ask('hoverCard:save') },
   devicePrefs: { load: ask('devicePrefs:load'), save: ask('devicePrefs:save') },
   rowMenu: ask('row-menu'),
-  // capture returns the nexus-asset:// URL; evict prunes thumbnails outside the live recents∪pins set.
   capture: { thumbnail: ask('capture:thumbnail'), evict: ask('nav:evictThumbs') },
   // Persists one key; the tree surfaces current values, so there's no get. Hand-typed so the
   // key↔value correlation the map's tuple can't express survives for callers.
@@ -156,43 +123,32 @@ const api = {
       value: Personalization[K],
     ): Promise<Result<null>> => ipcRenderer.invoke('personalization:set', key, value),
   },
-  // What `.trash` holds, already shaped into rows, and the menu a row's right-click pops.
   listTrash: ask('trash:list'),
   trashMenu: ask('trash:menu'),
   trashColumnMenu: ask('trash:columnMenu'),
   confirmEmptyTrash: ask('trash:confirmEmpty'),
   reportTrash: ask('trash:report'),
-  // Renderer-initiated write (relative paths only); main resolves under the session root.
   mutate: ask('mutate'),
   contextMenu: ask('context-menu'),
-  // Push the editor's active formatting state so the native right-click menu renders accurate state.
   setEditorFormatState: tell('editor:format-state'),
-  // JS window mover for hover-bearing chrome (the tab bar): a native app-region never delivers
-  // hover, so the bar drives the move itself via per-pointermove screen deltas.
+  // A native app-region never delivers hover, so hover-bearing chrome (the tab bar) drives
+  // its own move via per-pointermove screen deltas.
   winDragBy: tell('win:dragBy'),
   winZoom: tell('win:zoom'),
   popCreateMenu: ask('create-menu'),
-  // Surface a failure natively (renderer can't show a native dialog itself).
   showError: ask('error:show'),
   openExternal: ask('link:open'),
-  // `get` returns the whole cached map; `fetch` resolves one URL (cache hit or live fetch).
   linkTitles: { get: ask('linkTitles:get'), fetch: ask('linkTitles:fetch') },
   systemAccent: ask('theme:systemAccent'),
-  // Pop the native nexus-identity icon menu (Edit Icon / Add·Change Photo / removes) → the chosen action.
   iconMenu: ask('nexus:iconMenu'),
-  // null if canceled.
   pickFile: ask('nexus:pickFile'),
   adoptFile: ask('assets:adopt'),
-  // A pasted clipboard image, landed as a temp file whose path adopts like a picked one.
   pasteImage: ask('nexus:pasteImage'),
-  // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: ask('nexus:bannerMenu'),
   titleMenu: ask('nexus:titleMenu'),
   tableMenu: ask('table-menu'),
-  // A block grip's menu — Delete on every kind, Type ▸ on a list, Source ▸ on an embed tile.
   gripMenu: ask('grip-menu'),
   columnMenu: ask('column-menu'),
-  // A table cell's right-click menu (title meta / per-type Style / Edit).
   cellMenu: ask('cell-menu'),
   writeClipboard: ask('clipboard:write'),
   readClipboard: ask('clipboard:read'),
@@ -204,45 +160,29 @@ const api = {
   chooseExclusion: ask('exclusions:choose'),
   clearExclusions: ask('exclusions:clear'),
   pageActionsMenu: ask('page-actions-menu'),
-  // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),
   tabMenu: ask('tab-menu'),
-  // A NavWindow row/card's right-click menu (Open · Pin · Favorite · Remove).
   navRowMenu: ask('nav-row-menu'),
-  // A wikilink's right-click menu (Open Preview).
   connMenu: ask('conn-menu'),
   citationMenu: ask('citation-menu'),
-  // A property's native menu (editor ⋮ / row right-click); Delete confirms in main first.
+  // Delete confirms in main first.
   propertyMenu: ask('property-menu'),
-  // An option chip's native menu (Rename / Remove / Clear); Remove + Clear confirm in main first.
   optionMenu: ask('option-menu'),
-  // Flag (on hover) whether the pointer sits on a block grip, so the generic editor menu stands down there.
   setGripHot: tell('editor:grip-hot'),
-  // Scrolls a guest whose covering chrome holds the pointer — the hover card's site flavor.
   wheelGuest: tell('web:wheel'),
   renameNexus: ask('nexus:rename'),
-  // Native-menu actions pushed from main; each subscriber returns an unsubscribe.
   onMenuAction: on('menu:action'),
-  // Main asks the renderer to start inline-renaming the row at this path (context-menu Rename).
   onBeginRename: on('begin-rename'),
-  // Main asks the renderer to open the icon picker on the row at this path (context-menu Change
-  // Icon) — the picker anchors to a row only the renderer can find.
+  // The picker anchors to a row only the renderer can find.
   onBeginIcon: on('begin-icon'),
-  // The context-menu New Page Above/Below push-back — the renderer computes the position.
   onNewPageAdjacent: on('new-page-adjacent'),
-  // The context-menu "Open New Tab" push-back — the action runs renderer-side (main can't know
-  // the tab set).
+  // Runs renderer-side because main can't know the tab set.
   onOpenInNewTab: on('open-in-new-tab'),
-  // The context-menu "Open Preview" push-back — same contract as onOpenInNewTab.
   onOpenInPreview: on('open-in-preview'),
-  // The live watcher pushed fresh nav state (external/synced sidecar or pin change) — no tree walk.
   onNavChanged: on('nav:changed'),
-  // The asset root's listing changed — a file landed in the shared folder, no tree walk.
   onAssetsChanged: on('assets:changed'),
-  // The live watcher pushed a fresh tree (external FS change) — swap it in place.
   onNexusChanged: on('nexus:changed'),
   onValuesChanged: on('values:changed'),
-  // A guest webview's window.open — the renderer's open-link adjudicator answers it.
   onWebPopup: on('web:popup'),
 }
 

@@ -242,8 +242,7 @@ export function defaultStatusSeed(): StatusGroup[] {
   ]
 }
 
-/** Default single-option seed written when a Select / Multi-Select property is first added. Creation
- *  seeds one starter option (value=label=title) the user then renames or extends. */
+/** Written when a Select / Multi-Select property is first added; the user renames or extends it. */
 export function defaultSelectSeed(): { value: string; label: string }[] {
   return [{ value: 'Option 1', label: 'Option 1' }]
 }

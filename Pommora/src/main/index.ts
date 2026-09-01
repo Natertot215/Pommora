@@ -190,18 +190,14 @@ import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { getTitleCache, resolveTitle, type LinkTitleCache } from './linkTitles'
 
-// Dev affordance: opt-in CDP endpoint for headless screenshots / automation. Inert unless
-// POMMORA_DEBUG_PORT is set; must be appended before the app is ready.
+// Opt-in CDP endpoint for headless automation; must be appended before the app is ready.
 if (process.env.POMMORA_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.POMMORA_DEBUG_PORT)
 }
 
-// app:// serves the production renderer instead of file://: a file://-loaded ES-module bundle
-// is CORS-blocked (opaque origin → blank window); a standard secure scheme gives it a real
-// origin instead. Must be registered before app is ready.
+// file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives
+// the bundle a real origin. Both schemes must be registered before the app is ready.
 const RENDERER_SCHEME = 'app'
-// Banner/avatar assets ride their own privileged scheme so the renderer can <img src> them
-// without inlining bytes into the reloaded state tree. Also registered before app is ready.
 const ASSET_SCHEME = 'nexus-asset'
 protocol.registerSchemesAsPrivileged([
   { scheme: RENDERER_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -223,8 +219,8 @@ const RENDERER_MIME: Record<string, string> = {
   '.ico': 'image/x-icon',
 }
 
-// fs.readFile is asar-aware (the bundle lives inside app.asar); the containment check
-// below rejects any path escaping the bundle dir.
+// readFile is asar-aware (bundle lives inside app.asar); the containment check rejects
+// any path escaping the bundle dir.
 function registerRendererProtocol(): void {
   const rendererRoot = join(__dirname, '../renderer')
   protocol.handle(RENDERER_SCHEME, async (request) => {
@@ -244,9 +240,8 @@ function registerRendererProtocol(): void {
   })
 }
 
-// Read-only and confined to the open nexus's asset roots — the configured directory and
-// `.nexus/assets`, which still holds the thumbnails (resolveUnderRoot realpaths + contains;
-// `underAssetRoot` pins the request to one of the two).
+// Confined to the open nexus's asset roots — the configured directory and `.nexus/assets`
+// (still holds thumbnails); `underAssetRoot` pins the request to one of the two.
 function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
     const root = sessionRoot()
@@ -269,21 +264,17 @@ function registerAssetProtocol(): void {
   })
 }
 
-// Rebuilds the menu (Open Recent + session-gated items) whenever the session / recents change.
 let mainWindow: BrowserWindow | null = null
 function refreshMenu(): void {
   if (mainWindow) void installAppMenu(mainWindow, adoptNexus)
 }
 
-// Applies personalization.defaultViewScale — the zoom it opens at and ⌘0 resets to. Called on
-// every load (launch-restore + ⌘R) and on nexus switch, where no reload fires to trigger it.
+// Called on every load (launch-restore + ⌘R) and on nexus switch, where no reload fires.
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   if (win.isDestroyed()) return
-  // Empty state (no nexus) normalizes to 1.0 — the same value ⌘0 asserts there — so the welcome
-  // screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
+  // No-nexus state normalizes to 1.0 so the welcome screen never inherits a prior nexus's
+  // host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
-  // Both factors off one read — the guests' own scale rides the same points the window's does:
-  // launch, reload, and nexus switch.
   const p = root ? await readLivePersonalization(root) : null
   setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
   if (!win.isDestroyed())
@@ -295,25 +286,20 @@ function createWindow(): void {
     width: 1280,
     height: 832,
     show: false,
-    // Native frame kept (macOS draws the corner radius + shadow) but the title bar hidden,
-    // traffic lights repositioned into the sidebar. Opaque so the sidebar glass samples the window.
+    // Title bar hidden but the native frame kept (macOS corner radius + shadow); traffic
+    // lights repositioned into the sidebar, which stays opaque to sample the window.
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
-    backgroundColor: WINDOW_BG, // single source (@shared/theme) — also drives the background.window token + --bg-window
+    backgroundColor: WINDOW_BG,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      // CommonJS preload → sandbox can stay ON, plus contextIsolation on + nodeIntegration
-      // off; the preload exposes only the narrow nexus read API.
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
-      // Guest webviews for the web-embed surfaces — every attach is validated and re-homed onto
-      // the shared partition by installWebGuests; nothing else about the window loosens.
       webviewTag: true,
     },
   })
 
-  // Applied before first paint so the window opens at scale instead of flashing 100% → scale;
   // finally() guarantees show() even if the (error-swallowing) read stalls.
   win.on('ready-to-show', () => void applyDefaultZoom(win).finally(() => win.show()))
   installEditorContextMenu(win)
@@ -323,18 +309,14 @@ function createWindow(): void {
     if (mainWindow === win) mainWindow = null
   })
 
-  // Open (and reload) at the nexus's default view scale — the session root is set before the window
-  // is created on launch-restore, so it's known by the time the page finishes loading.
   win.webContents.on('did-finish-load', () => void applyDefaultZoom(win))
 
-  // Deny-by-default navigation hardening (cheap, ahead of user-Markdown links).
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault()
   })
 
-  // electron-vite injects ELECTRON_RENDERER_URL in dev; in production load the
-  // bundle over the app:// scheme (see registerRendererProtocol).
+  // electron-vite injects ELECTRON_RENDERER_URL in dev; production loads over app://.
   const devUrl = process.env.ELECTRON_RENDERER_URL
   if (devUrl) {
     win.loadURL(devUrl)
@@ -343,17 +325,13 @@ function createWindow(): void {
   }
 }
 
-// Gallery thumbnails — capture the content-view rect on entity-open, evict on membership roll-off.
 const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 
 const isCardSize = (v: unknown): v is HoverCardSize =>
   isPlainObject(v) && ['w', 'h'].every((k) => typeof v[k] === 'number' && Number.isFinite(v[k]))
 
-// Shared by every path that opens a nexus, run after openSession and before anything reads it:
-// ensures `.nexus/nexus.json` exists so sidecar mode has an identity, then stamps any un-adopted
-// entity with a real ULID so every later write gets a stable id instead of a transient
-// `adopted-` placeholder. Best-effort: never blocks opening the folder.
+// Run after openSession and before anything reads it. Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
@@ -368,18 +346,14 @@ async function prepareOpenedNexus(path: string): Promise<void> {
   }
 }
 
-// Nexus adoption in flight — renderer-initiated sidecar saves are dropped for the window where the
-// session root swaps, so a mid-adopt save can't land in the NEW nexus's synced sidecars (the drop
-// path is non-modal, so the renderer stays interactive through the adopt). The outgoing state was
-// drained at adopt start; the post-adopt load re-seeds and re-persists.
-// A COUNT, not a flag: the open path runs more than one pass, and a boolean lets whichever
-// finishes first clear the suppression the other is still relying on.
+// Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt
+// save can't land in the NEW nexus's sidecars; the drop path is non-modal so the renderer
+// stays interactive through the adopt. A COUNT, not a flag: the open path runs more than one
+// pass, and a boolean would let whichever finishes first clear the suppression the other needs.
 let adoptingDepth = 0
 const adopting = (): boolean => adoptingDepth > 0
 
-// Open a chosen nexus folder: make it the session, persist it as last-opened, and
-// push it onto the recents (deduped, capped) + the OS Recent Documents list.
-// `latchRecord: false` is the mid-session re-point's opt-out: only a GENUINE open latches the
+// `latchRecord: false` is the mid-session re-point's opt-out: only a genuine open latches the
 // record baseline — a re-point that latched would diff the live session against the launch
 // baseline, reporting every in-session change as drift and overwriting the closed-window record.
 async function adoptNexus(path: string, latchRecord = true): Promise<void> {
@@ -391,27 +365,20 @@ async function adoptNexus(path: string, latchRecord = true): Promise<void> {
   }
 }
 
-// The one open sequence — a user adopt and the launch restore both run it. Returns the
-// canonical root.
 async function openNexusSequence(path: string, latchRecord: boolean): Promise<string> {
-  // Re-adopting the already-open nexus (Open Recent's head, a re-pick in the picker) is a
-  // re-point of a live session, not a genuine open — the latch below compares roots and
-  // stands down, or every in-session change would diff against the launch baseline as drift.
+  // Re-adopting the already-open nexus is a re-point of a live session, not a genuine open —
+  // the latch below compares roots and stands down.
   const priorRoot = sessionRoot()
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
-  // session-match guard and the persistence layer key off the same string — a raw path here
-  // would make the watcher treat every event as a session switch.
+  // session-match guard and the persistence layer key off the same string.
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
-  // Forward-completes a crashed rename, BEFORE anything reads contexts.
+  // Forward-completes a crashed rename, before anything reads contexts.
   await replayPendingRename(root)
-  // Best-effort: a null handle costs the session its persisted chrome, never its content.
   openSessionDb(root)
-  // The record's one explicit walk — BEFORE the watcher starts, so the baseline latches what
-  // the closed window left rather than whatever a sync daemon materializes first. Every root
-  // switch drops and reseeds the live tree, latch or no latch — a re-point (nexus rename)
-  // skips the record but must not keep serving the dead root's tree.
+  // The record's one explicit walk, before the watcher starts, so the baseline latches what
+  // the closed window left rather than whatever a sync daemon materializes first.
   if (root !== priorRoot) {
     dropLiveTree()
     if (latchRecord) {
@@ -423,19 +390,10 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
         console.error('adopt: the seed walk failed; reads will retry:', errText(e))
       }
     }
-    // Unconditional on every root switch, latch or no latch — a nexus rename that skipped this
-    // would leave relative rows valid but the reconcile owed, and the cascades querying stale.
     await seedContentIndex(root)
-    // Post-seed on purpose (warm index, warm tree — nothing it heals is read during open the
-    // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
-    // belongs to an op still on the schema chain, which the replay would only queue behind.
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     // Off the open's critical path: a large drifted corpus repairs behind the window, not before it.
     void runRepairSweep(root).then(() => pushValueChanges(root))
-    // A reference still naming `.nexus/assets` under a CONFIGURED directory is one the user has
-    // already asked to move. The gate is one readdir of a folder that ends empty, so the ordinary
-    // open pays a listing and nothing else — and a pass that moved something re-walks, or the
-    // session serves banner values naming files it just trashed.
     if (await runAssetMigration(root)) {
       try {
         await refreshTree(root)
@@ -447,10 +405,8 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
   return root
 }
 
-/** The one caller shape the migration has, wherever it is asked from. Its own writes are echo-
- *  suppressed, so what it moved reaches the renderer through the map it refreshed, not the
- *  watcher. A failure is reported and never blocks the open — the references it did not move
- *  still name real files under `.nexus/assets`, which the protocol still serves. */
+/** Its own writes are echo-suppressed, so what it moved reaches the renderer through the map
+ *  it refreshed, not the watcher. Never blocks the open on failure. */
 async function runAssetMigration(root: string): Promise<boolean> {
   try {
     const report = await migrateAssets(root)
@@ -470,20 +426,15 @@ async function runAssetMigration(root: string): Promise<boolean> {
 
 async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
   const root = await openNexusSequence(path, latchRecord)
-  // A user-initiated open always has a window; launch-restore starts its watcher after
-  // createWindow below instead.
+  // Launch-restore starts its watcher after createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
   // Switching nexus doesn't reload the renderer, so apply the new default scale here —
-  // the launch-restore path gets it via did-finish-load instead.
+  // launch-restore gets it via did-finish-load instead.
   if (mainWindow) void applyDefaultZoom(mainWindow)
-  // Best-effort: a config-write failure must not block opening the folder this session,
-  // nor leave a half-open "ghost" session the renderer never re-reads.
   try {
     // Persist the RAW user-facing path, not the canonical `root`: a nexus under an iCloud-synced
     // ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in Open
-    // Recent AND breaks restore if the user later turns iCloud Desktop & Documents off (the
-    // container path disappears; ~/Documents/MyNexus survives). Canonical stays on the in-process
-    // locks only; what we save and reveal to the user stays the path they picked.
+    // Recent and breaks restore if the user later turns iCloud Desktop & Documents off.
     await updateAppConfig(app.getPath('userData'), (cur) => ({
       lastNexusPath: path,
       recents: addRecent(cur.recents ?? [], path),
@@ -495,8 +446,6 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
   refreshMenu()
 }
 
-// The keyed operational stores — one row per (scope, key) in nexus.db. Per-machine editor and view
-// chrome, kept out of the portable `.md` and out of the synced container sidecars.
 const isString = (v: unknown): v is string => typeof v === 'string'
 const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isString)
 const isHeightMap = (v: unknown): v is Record<string, number> =>
@@ -507,17 +456,14 @@ const isHeightMap = (v: unknown): v is Record<string, number> =>
 const isIndexArray = (v: unknown): v is number[] =>
   Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
-// View persistence — save / reorder / delete a SavedView in a container's synced `views[]` sidecar.
-// (View SELECTION is the per-machine activeViews pointer above; this is the view DEFINITION.)
+// View SELECTION is the per-machine activeViews pointer above; this is the view DEFINITION.
 type ResolvedViewContainer = Result<{ folder: string; kind: 'collection' | 'set' }>
-// The write channels' confirmation push — one place, so a confirmed write that moved the tree
-// reaches the renderer over the same channel the watcher uses.
+
 function pushConfirmed(tree: NexusTree | null): void {
   if (!tree) return
-  // The send is deferred one macrotask so the invoke's own reply always reaches the renderer
-  // FIRST: its continuation captures the pre-push tree, mounts an optimistic create in the
-  // same commit as its callback state, and the confirming push reconciles a beat later.
-  // Deferrals are FIFO, so consecutive confirms still arrive in completion order.
+  // Deferred one macrotask so the invoke's own reply always reaches the renderer FIRST: its
+  // continuation mounts an optimistic create in the same commit as its callback state, and
+  // the confirming push reconciles a beat later. Deferrals are FIFO, so order is preserved.
   setImmediate(() => {
     if (mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'nexus:changed', tree)
   })
@@ -535,8 +481,7 @@ async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): 
   const root = sessionRoot()
   if (root === null) return
   pushConfirmed(await work(root))
-  // Its own deferral, not pushConfirmed's: that one returns at once when the tree didn't move,
-  // and a value write never moves the tree.
+  // Its own deferral: pushConfirmed's returns at once when the tree didn't move.
   setImmediate(() => {
     if (sessionRoot() !== root) return
     pushValueChanges(root)
@@ -571,12 +516,10 @@ async function resolveViewContainer(
   return ok({ folder: resolved.value, kind })
 }
 
-// Registry+assignment-backed: defs live nexus-wide in `.nexus/properties.json`; a Collection's
-// sidecar holds the assigned prop-ids. Keeps its pre-V2 names/args so the renderer is untouched —
-// add = create-in-registry + assign, rename = global def edit, delete = Remove (strip
-// values + cache restorably on the sidecar; the word Delete means property:delete only), reorder =
-// assignment-order move, assign = append + restore-from-cache. containerPath is the schema-owning
-// Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
+// add = create-in-registry + assign, rename = global def edit, delete = Remove (strip values
+// + cache restorably; the word Delete means property:delete only), assign = append +
+// restore-from-cache. containerPath is the schema-owning Collection's folder — a Set inherits
+// the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   containerPath: unknown,
 ): Promise<Result<{ root: string; folder: string; rel: string }>> {
@@ -588,18 +531,11 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ root, folder: resolved.value, rel: containerPath }) : resolved
 }
 
-// The bad-payload refusals more than one handler speaks — one spelling each, alongside the
-// session refusals (NO_NEXUS / BUSY) the ipc module owns.
 const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
 const NOT_A_PROPERTY_DIR = fail('invalid-path', NOT_A_PROPERTY_DIR_MESSAGE)
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
 
-// The three shapes the no-container property channels share. Each states the ceremony once —
-// refuse without a session, refuse a malformed payload, write, confirm the registry when it
-// landed — so the channels below name only what they actually do differently.
-
-/** `(propertyId, value)`: clear or remove one option, on either the select or the status family. */
 const optionValueOp = (
   write: (root: string, propertyId: string, value: string) => Promise<Result<null>>,
 ) => ({
@@ -614,7 +550,6 @@ const optionValueOp = (
   },
 })
 
-/** `(propertyId, oldValue, newTitle)`: retitle one option, on either family. */
 const optionRenameOp = (
   write: (
     root: string,
@@ -640,16 +575,13 @@ const optionRenameOp = (
   },
 })
 
-/** Exactly what the registry's own editor accepts — never re-derived here. */
 type DefChanges = Parameters<typeof editProperty>[2]
 
-/** A registry-only def edit. The narrower is what keeps a display-config write from patching
- *  arbitrary def fields (type, options, id) through this door; `null` from it refuses the
- *  payload. Registry-only by construction: none of these touch page values. */
+/** The narrower keeps a display-config write from patching arbitrary def fields (type,
+ *  options, id) through this door; `null` from it refuses the payload. */
 const defEditOp = (
   narrow: (payload: unknown) => DefChanges | null,
-  // A refusal the narrower can't reach, because it needs the nexus: the narrower is sync by
-  // convention, while `fn` is already async and already holds `root`.
+  // Needs the nexus, which the (sync) narrower can't reach; `fn` already holds `root`.
   check?: (root: string, changes: DefChanges) => Promise<Result<null>>,
 ) => ({
   kind: 'envelope' as const,
@@ -669,8 +601,8 @@ const defEditOp = (
   },
 })
 
-/** An `in` check rather than a truthiness one, so a caller can clear a field by passing
- *  undefined — absent means "leave it", present-and-undefined means "back to the default". */
+/** An `in` check, not truthiness: absent means "leave it", present-and-undefined means
+ *  "back to the default". */
 const asPatch = (payload: unknown): Record<string, unknown> | null =>
   payload !== null && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
 
@@ -686,9 +618,8 @@ const narrowLinkConfig = (payload: unknown): LinkConfig | null => {
   return changes
 }
 
-/** Where a file property's uploads land. Stored relative to the asset ROOT, so the spelling is
- *  normalized here — trimmed, slash-padding dropped — and an empty result means the root itself,
- *  which is the absence of the field rather than a stored empty string. */
+/** Stored relative to the asset ROOT; an empty result means the root itself — the absence
+ *  of the field, not a stored empty string. */
 const narrowFileConfig = (payload: unknown): FileConfig | null => {
   const p = asPatch(payload)
   if (!p || !('file_directory' in p)) return null
@@ -721,8 +652,6 @@ const narrowNumberFormat = (payload: unknown): NumberConfig | null => {
   return changes
 }
 
-// Registry-level option edits, cascading to pages. No-container-scope siblings of
-// property:delete; the confirm dialog for remove/clear lives in the option menu, not here.
 function isOptionArray(v: unknown): v is Option[] {
   return (
     Array.isArray(v) &&
@@ -736,8 +665,8 @@ function isOptionArray(v: unknown): v is Option[] {
   )
 }
 
-// Markdown-block file ops. Tile ids gate on isUlid — the id becomes a filename, so a
-// renderer-supplied value must never carry path segments.
+// Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must
+// never carry path segments.
 const blockHostAnd = (
   host: unknown,
   tileId?: unknown,
@@ -751,8 +680,6 @@ const blockHostAnd = (
   return ok({ root, h })
 }
 
-// The Electron-side bits the write orchestration needs: trashMode from app config +
-// system-trash injected. Shared by the mutate IPC + the native context menu.
 async function mutateDeps(): Promise<MutateDeps> {
   const config = await readAppConfig(app.getPath('userData'))
   const root = sessionRoot()
@@ -763,14 +690,11 @@ async function mutateDeps(): Promise<MutateDeps> {
   }
 }
 
-// What the dialog has handed the renderer this session. A picked file sits outside the nexus, so
-// the channel that adopts one cannot be bounded by the root — it is bounded by the pick instead,
-// and the renderer never names a path main did not choose.
+// A picked file sits outside the nexus, so the channel that adopts one is bounded by the
+// pick, not the root — the renderer never names a path main did not choose.
 const pickedPaths = new Set<string>()
 async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise<string | null> {
   const root = sessionRoot()
-  // The renderer holds nexus-relative paths only, so the folder to open at is joined here. It
-  // merely steers the dialog — a folder that has gone missing opens at the root instead.
   const at = root && opts?.dir ? await resolveUnderRoot(root, opts.dir) : null
   const defaultPath = at?.ok ? at.value : (root ?? undefined)
   const result = await dialog.showOpenDialog(win, {
@@ -783,8 +707,7 @@ async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise
   return picked
 }
 
-// A pasted image is read from the OS clipboard here (no bytes cross the bridge) and written to a
-// temp PNG the caller adopts like any picked file — so paste rides the same source-adopt path.
+// Written to a temp PNG the caller adopts like any picked file, so no bytes cross the bridge.
 async function pasteImagePath(): Promise<string | null> {
   const image = clipboard.readImage()
   if (image.isEmpty()) return null
@@ -795,7 +718,7 @@ async function pasteImagePath(): Promise<string | null> {
 }
 
 /** An asset a mutation adopted never reaches the watcher — `atomicWriteBinary` records its own
- *  write and the echo is dropped — so the write's own channel is what tells the renderer. */
+ *  write and drops the echo — so the write's own channel is what tells the renderer. */
 function pushAssetWrites(): void {
   const root = sessionRoot()
   if (root === null || !mainWindow || mainWindow.isDestroyed()) return
@@ -805,7 +728,6 @@ function pushAssetWrites(): void {
 
 serveBridge(
   {
-    // The renderer's launch + post-change read. Empty status is not an error — just no nexus open.
     'nexus:state': {
       kind: 'raw',
       fn: async (): Promise<NexusState> => {
@@ -820,8 +742,8 @@ serveBridge(
       },
     },
 
-    // The asset root's listing. Built on first ask and held; the watcher patches it in place,
-    // so an image a sync delivers costs a listing exactly once.
+    // Built on first ask and held; the watcher patches it in place, so an image a sync
+    // delivers costs a listing exactly once.
     'assets:map': {
       kind: 'raw',
       fn: async (): Promise<AssetMap> => {
@@ -830,9 +752,8 @@ serveBridge(
       },
     },
 
-    // Navigation intent — one contract over two stores (navigationFile routes each key). The
-    // renderer owns the arrays; main persists. Writes are refused mid-adopt so a gesture on the old
-    // nexus's still-open UI can't land in the new one.
+    // Writes are refused mid-adopt so a gesture on the old nexus's still-open UI can't land
+    // in the new one.
     'nav:read': {
       kind: 'envelope',
       fn: async () => {
@@ -855,7 +776,6 @@ serveBridge(
       },
     },
 
-    // Ordered unpinned tabs + the active pointer + per-tab history targets, as one row in nexus.db.
     'tabs:load': {
       kind: 'envelope',
       fn: () => {
@@ -875,7 +795,6 @@ serveBridge(
       },
     },
 
-    // The NavWindow set, the per-origin page sets, and the open pointer, as one row in nexus.db.
     'previews:load': {
       kind: 'envelope',
       fn: () => {
@@ -895,7 +814,6 @@ serveBridge(
       },
     },
 
-    // The hover card's universal size — one device-local row, validated at the boundary.
     'hoverCard:load': {
       kind: 'envelope',
       fn: () => {
@@ -914,7 +832,6 @@ serveBridge(
       },
     },
 
-    // Device-local preferences — how this machine draws the Nexus, never the Nexus itself.
     'devicePrefs:load': {
       kind: 'envelope',
       fn: () => {
@@ -958,8 +875,8 @@ serveBridge(
       },
     },
 
-    // The typed half of the Default Asset Directory row. It crosses the same validator the dialog's
-    // pick does, so a hand-typed path and a chosen one are refused for identical reasons.
+    // Crosses the same validator the dialog's pick does, so a hand-typed path and a chosen
+    // one are refused for identical reasons.
     'assets:setDir': {
       kind: 'envelope',
       fn: async (dir: unknown) => {
@@ -974,14 +891,10 @@ serveBridge(
           next = valid.value
         }
         await writeAssetDirectory(root, next)
-        // Everything an EXTERNAL edit of this key gets from settle, which this write cannot
-        // reach: `recordWrite` suppresses its own echo, and the settings confirmer patches
-        // leaves without ever asking the scope comparison that would call this structural.
-        // The folder just left the tree and the corpus, so the walk and the index owe a pass,
-        // the map owes a fresh listing, and the watcher owes a re-arm against the new scope.
+        // `recordWrite` suppresses this write's own echo, so the structural re-arm an external
+        // edit would trigger via settle never fires here — do it explicitly.
         await confirmSettingsWrite()
-        // Setting the directory is the moment the migration becomes applicable, and it runs
-        // BEFORE the walk: the banner values it rewrites are what the pushed tree carries.
+        // Runs BEFORE the walk: the banner values it rewrites are what the pushed tree carries.
         await runAssetMigration(root)
         const tree = await refreshAfterWrite(root)
         await seedContentIndex(root)
@@ -995,9 +908,8 @@ serveBridge(
       },
     },
 
-    // The whole exclusion list, written at once. Each entry crosses the same refusal a hand-edited
-    // settings.json meets; duplicates collapse on the case-folded path the matcher compares, so
-    // `archive` and `Archive` are one folder while the spelling the user typed is what's stored.
+    // Duplicates collapse on the case-folded path the matcher compares, so `archive` and
+    // `Archive` are one folder while the spelling the user typed is what's stored.
     'exclusions:set': {
       kind: 'envelope',
       fn: async (folders: unknown) => {
@@ -1007,10 +919,8 @@ serveBridge(
         if (!sanitized.ok) return sanitized
         const next = sanitized.value
         await writeExcludedFolders(root, next)
-        // The re-arm an external edit would get from settle, which this write cannot reach:
-        // recordWrite suppresses its own echo and the settings confirmer never asks the scope
-        // comparison. The folders just left (or rejoined) the tree and corpus, so the walk, the
-        // index and the watcher each owe a pass against the new scope.
+        // recordWrite suppresses this write's own echo, so the re-arm settle would trigger
+        // for an external edit never fires here — do it explicitly.
         await confirmSettingsWrite()
         const tree = await refreshAfterWrite(root)
         await seedContentIndex(root)
@@ -1022,9 +932,6 @@ serveBridge(
       },
     },
 
-    // A sheet on the calling window that adopts nothing — it answers the folder's nexus-relative
-    // path and leaves the write to the row that asked. A pick outside the nexus fails the same
-    // refusal a typed path does.
     'exclusions:choose': {
       kind: 'window',
       fn: async (win: BrowserWindow | null) => {
@@ -1050,8 +957,6 @@ serveBridge(
       },
     },
 
-    // Re-seed after a confirmed clear: the sweep re-indexes every page it rewrites and the watcher
-    // never corrects an excluded folder, so the cleared pages would otherwise linger in the index.
     'exclusions:clear': {
       // A `window` handler has no envelope net, so this wraps its own throws — the destructive
       // filesystem work must never reject across the boundary.
@@ -1094,10 +999,6 @@ serveBridge(
       },
     },
 
-    // A sheet on the calling window. Unlike `nexus:choose` this adopts nothing — it answers the
-    // folder's nexus-relative path and leaves the write to the row that asked.
-    // `scope` rather than a sibling channel: the two differ by a starting folder, a message and a
-    // validator, which is an argument's worth against a twin's bridge entry, binding and dialog.
     // A property's answer is relative to the ASSET root; the nexus's is relative to the nexus.
     'assets:chooseDir': {
       kind: 'window',
@@ -1107,8 +1008,7 @@ serveBridge(
         const forProperty = scope === 'property'
         const { assetDir } = await readWatchScope(root)
         // Open where the property already points, so re-choosing starts from what it is rather
-        // than from the root every time. `at` is asset-root-relative, like the field that stores
-        // it; a folder that has gone missing steers nowhere and the root answers instead.
+        // than from the root every time.
         const from =
           forProperty && typeof at === 'string' && validPropertyDir(at, assetDir)
             ? await resolveUnderRoot(root, assetSubRoot(assetDir, at))
@@ -1129,7 +1029,7 @@ serveBridge(
           if (result.canceled || !chosen) return ok(null)
           if (!forProperty) return validateAssetDir(root, chosen)
           // Containment BEFORE the subtraction: a folder outside the asset root would otherwise
-          // have its leading segments sliced off and be re-read as a plausible subfolder of it.
+          // have its leading segments sliced off and be re-read as a plausible subfolder.
           const below = assetSubfolder(relPosix(root, chosen), assetDir)
           return below !== null && validPropertyDir(below, assetDir)
             ? ok(below)
@@ -1140,7 +1040,6 @@ serveBridge(
       },
     },
 
-    // A sheet on the calling window; on success the renderer re-reads nexus:state.
     'nexus:choose': {
       kind: 'window',
       fn: async (win: BrowserWindow | null) => {
@@ -1163,8 +1062,7 @@ serveBridge(
       },
     },
 
-    // The preload resolves the dropped File to an absolute path (webUtils) and sends it here —
-    // the one place a renderer-origin path enters. Accepted only if it's an existing directory.
+    // The one place a renderer-origin path enters; accepted only if it's an existing directory.
     'nexus:openPath': {
       kind: 'envelope',
       fn: async (p: unknown) => {
@@ -1175,8 +1073,6 @@ serveBridge(
       },
     },
 
-    // resolveUnderRoot canonicalizes the renderer's nexus-relative path under the open nexus root
-    // and rejects anything that escapes (traversal, absolute, or an in-nexus symlink pointing out).
     'page:open': {
       kind: 'envelope',
       fn: async (relPath: unknown) => {
@@ -1191,16 +1087,13 @@ serveBridge(
         if (!resolved.ok) {
           return resolved
         }
-        // resolveUnderRoot is the guard; readPage re-joins root + relPath and keeps the
-        // relative path as the page's identity (PageDetail.path), so pass relPath, not
-        // the canonical absolute (which would leak an abs path + mis-key the detail).
+        // readPage keeps relPath as the page's identity (PageDetail.path) — pass relPath,
+        // not the canonical absolute, which would leak an abs path and mis-key the detail.
         const page = await readPage(root, relPath)
         return ok(page)
       },
     },
 
-    // Reconstructs the file via updatePageBody (frontmatter-preserving) + atomic write.
-    // Structurally distinct from the one-shot `mutate` ops, so it gets its own channel.
     'page:updateBody': {
       kind: 'envelope',
       fn: async (relPath: unknown, body: unknown) => {
@@ -1257,9 +1150,7 @@ serveBridge(
         'Table indices must be a non-negative-integer array.',
       ),
     },
-    // Whether a page's heading icon is hidden. The icon itself is on-page in frontmatter; only
-    // whether the header draws it is chrome, so it keys by PageID here like folds and heading
-    // columns rather than writing a display toggle into the user's own file.
+    // Only whether the header draws the icon is chrome; the icon itself stays in frontmatter.
     'headingIcon:get': { kind: 'raw', fn: scopeGet<boolean>('headingIcon') },
     'headingIcon:set': {
       kind: 'envelope',
@@ -1269,8 +1160,7 @@ serveBridge(
         'Hidden must be a boolean.',
       ),
     },
-    // Whether a page shows its footnotes section. A row exists only where someone overrode the
-    // nexus-wide default, so a null clears it and the default reaches the page again.
+    // A row exists only where someone overrode the nexus-wide default; null clears it.
     'citations:get': { kind: 'raw', fn: scopeGet<boolean>('citations') },
     'citations:set': {
       kind: 'envelope',
@@ -1421,7 +1311,7 @@ serveBridge(
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        // One chain slot covers a drag-assign: append + restore + slot placement land atomically.
+        // One chain slot: append + restore + slot placement land atomically.
         const r = await assignPropertyAt(
           c.value.root,
           c.value.folder,
@@ -1447,7 +1337,6 @@ serveBridge(
       },
     },
 
-    // Snapshot to .trash, strip the value across every assigner, drop the def + all assignments.
     // The rare destructive op; unassign is the daily path.
     'property:delete': {
       kind: 'envelope',
@@ -1491,13 +1380,11 @@ serveBridge(
 
     'property:setLinkConfig': defEditOp(narrowLinkConfig),
 
-    // The def-level color, and nothing else — a non-string clears it to Default (the system
-    // accent). The look itself (checkbox versus switch) is per-VIEW, in column_styles.
+    // The look itself (checkbox versus switch) is per-VIEW, in column_styles — not here.
     'property:setCheckboxColor': defEditOp((color) => ({
       checkbox_color: typeof color === 'string' ? color : undefined,
     })),
 
-    // The def's symbol id; a non-string clears it to the type's default glyph.
     'property:setIcon': defEditOp((icon) => ({
       icon: typeof icon === 'string' ? icon : undefined,
     })),
@@ -1523,7 +1410,6 @@ serveBridge(
 
     'property:clearStatusOption': optionValueOp(clearStatusOption),
 
-    // Subfield (footer) config — a React-owned `subfield` foreign key in `.nexus/settings.json`.
     'subfield:get': {
       kind: 'raw',
       fn: async (): Promise<SubfieldConfig | null> => {
@@ -1543,7 +1429,6 @@ serveBridge(
       },
     },
 
-    // Nav view modes (List/Gallery per surface) — a React-owned `navViewModes` foreign key.
     'navViewModes:get': {
       kind: 'raw',
       fn: async (): Promise<NavViewModes | null> => {
@@ -1563,7 +1448,6 @@ serveBridge(
       },
     },
 
-    // The block document — one row per host, loaded on host open and never woven into the tree walk.
     'blocks:get': {
       kind: 'envelope',
       fn: (host: unknown) => {
@@ -1676,8 +1560,6 @@ serveBridge(
       },
     },
 
-    // Merged one key at a time into the React-owned `personalization` object in `.nexus/settings.json`;
-    // the value is validated on read.
     'personalization:set': {
       kind: 'envelope',
       fn: async (key: unknown, value: unknown) => {
@@ -1686,7 +1568,6 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
-        // The personalization keys with a main-side effect: guests re-stamp, the window re-zooms.
         if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
         if (key === 'defaultViewScale' && mainWindow && !mainWindow.isDestroyed())
           setHostZoom(mainWindow.webContents, viewScaleZoom(coerceViewScale(value)))
@@ -1706,8 +1587,6 @@ serveBridge(
       },
     },
 
-    // The single write path — main resolves the request under the session root and runs the
-    // orchestration.
     mutate: {
       kind: 'raw',
       fn: async (req: MutateRequest) => {
@@ -1720,8 +1599,6 @@ serveBridge(
       },
     },
 
-    // A right-clicked sidebar entity's menu; its items act main-side (handleMutate / confirm /
-    // Finder) and signal the renderer to refetch on change.
     'context-menu': {
       kind: 'window',
       fn: async (win: BrowserWindow | null, target: ContextTarget): Promise<void> => {
@@ -1736,9 +1613,6 @@ serveBridge(
       },
     },
 
-    // The section-header "+" menu (New Area/Topic/Project). Resolves with the picked request (null
-    // when dismissed) — the renderer's store runs it, riding the same one-write-path +
-    // optimistic-insert flow as every other mutation, instead of forcing a full reload here.
     'create-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, items: Creator[]): Promise<MutateRequest | null> => {
@@ -1748,8 +1622,6 @@ serveBridge(
       },
     },
 
-    // Renderer-initiated mutations (e.g. New Page ⌘N) have no native dialog of their own,
-    // unlike the context menu.
     'error:show': {
       kind: 'window',
       fn: async (win: BrowserWindow | null, message: unknown): Promise<void> => {
@@ -1763,8 +1635,6 @@ serveBridge(
       },
     },
 
-    // Open an external markdown link in the OS default app. Invalid links (same check that dims them in
-    // the editor) are rejected — the renderer never opens links itself.
     'link:open': {
       kind: 'raw',
       fn: async (url: unknown): Promise<void> => {
@@ -1773,8 +1643,7 @@ serveBridge(
       },
     },
 
-    // `get` hydrates the renderer's store on open (whole cached map); `fetch` resolves one URL
-    // (cache hit or a live network fetch), persisting successes to the device-local title cache.
+    // `fetch` persists successes to the device-local title cache.
     'linkTitles:get': {
       kind: 'raw',
       fn: async (): Promise<LinkTitleCache> => {
@@ -1792,8 +1661,7 @@ serveBridge(
       },
     },
 
-    // The OS accent (macOS 10.14+), for accent === 'system'. Electron returns
-    // RRGGBBAA; surface just the RGB as '#RRGGBB'. null when unsupported/unavailable.
+    // Electron returns RRGGBBAA; surface just the RGB as '#RRGGBB'.
     'theme:systemAccent': {
       kind: 'raw',
       fn: (): string | null => {
@@ -1806,8 +1674,6 @@ serveBridge(
       },
     },
 
-    // Resolves the picked action to the renderer, which performs the container-config write;
-    // the renderer supplies the current values for the checkmarks.
     'view-button-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, current: unknown): Promise<ViewButtonMenuAction | null> => {
@@ -1817,7 +1683,6 @@ serveBridge(
       },
     },
 
-    // A saved view row's right-click menu, shared by the view pane and the embed's segments.
     'view-row-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: unknown): Promise<ViewRowAction | null> => {
@@ -1829,7 +1694,6 @@ serveBridge(
       },
     },
 
-    // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
     'view-embed-title-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<EmbedTitleMenuAction | null> => {
@@ -1839,7 +1703,6 @@ serveBridge(
       },
     },
 
-    // The view embed switcher area's right-click menu (Hide/Show Titles · New View · Style).
     'view-embed-area-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, current: unknown): Promise<EmbedAreaMenuAction | null> => {
@@ -1851,8 +1714,6 @@ serveBridge(
       },
     },
 
-    // The icon picker's right-click Favorite menu — resolves 'toggle' to the renderer, which owns
-    // the favoriteIcons write.
     'icon-favorite-menu': {
       kind: 'menu',
       fn: async (
@@ -1863,8 +1724,6 @@ serveBridge(
       },
     },
 
-    // The nexus identity icon menu (Edit Icon → the renderer's glyph picker; Add/Change Photo → the native
-    // image pick, done renderer-side). Returns the chosen action; the renderer runs the picker/pick + mutate.
     'nexus:iconMenu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<NexusIconAction | null> => {
@@ -1880,8 +1739,6 @@ serveBridge(
       },
     },
 
-    // The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
-    // the same picker).
     'nexus:pickFile': { kind: 'menu', fn: pickFilePath },
     'nexus:pasteImage': { kind: 'raw', fn: pasteImagePath },
 
@@ -1904,9 +1761,8 @@ serveBridge(
       },
     },
 
-    // Change/Remove for an existing image, a single Add item when `add`. The noun follows the
-    // surface's vocabulary (Banner by default; the cards' Cover-mode thumb passes "Cover").
-    // Add resolves 'change' (both routes open the image picker).
+    // The noun follows the surface's vocabulary (Banner by default; the cards' Cover-mode
+    // thumb passes "Cover"). Add resolves 'change' (both routes open the image picker).
     'nexus:bannerMenu': {
       kind: 'menu',
       fn: async (
@@ -1926,8 +1782,7 @@ serveBridge(
       },
     },
 
-    // Rename is always offered; Edit Icon unless `noEditIcon` (the homepage sets its icon from
-    // the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item.
+    // Edit Icon unless `noEditIcon` — the homepage sets its icon from the settings pane, not here.
     'nexus:titleMenu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<TitleMenuAction | null> => {
@@ -1955,12 +1810,10 @@ serveBridge(
 
     'table-menu': { kind: 'menu', fn: popTableMenu },
 
-    // Every block grip's right-click menu — Delete, plus that block kind's own arm.
     'grip-menu': { kind: 'menu', fn: popGripMenu },
 
     'column-menu': { kind: 'menu', fn: popColumnMenu },
 
-    // A table cell's right-click menu (title meta / per-type Style / Edit).
     'cell-menu': { kind: 'menu', fn: popCellMenu },
 
     'clipboard:write': {
@@ -1981,12 +1834,10 @@ serveBridge(
     },
     'page-actions-menu': { kind: 'menu', fn: popPageActionsMenu },
 
-    // A card's right-click menu (page meta + Add Property ▸).
     'card-menu': { kind: 'menu', fn: popCardMenu },
 
-    // The ordinary delete's confirm cannot be reused: it hardcodes one title, runs the delete
-    // itself, and promises a destination from the old trash mode — wrong in both of the switch's
-    // positions. This one names what will actually happen, read at the moment of asking.
+    // The ordinary delete's confirm can't be reused: it hardcodes one title and the old trash
+    // mode's destination. This one names what will actually happen, read at the moment of asking.
     'trash:confirmEmpty': {
       kind: 'window',
       fn: async (win: BrowserWindow | null, count: unknown): Promise<boolean> => {
@@ -2027,7 +1878,6 @@ serveBridge(
         isPlainObject(ctx) ? popTrashColumnMenu(win, ctx) : null,
     },
 
-    // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
     'tab-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: TabMenuContext) => {
@@ -2042,7 +1892,6 @@ serveBridge(
       },
     },
 
-    // A wikilink's right-click menu (Open Preview).
     'conn-menu': { kind: 'menu', fn: popConnMenu },
     'citation-menu': { kind: 'menu', fn: popCitationMenu },
 
@@ -2051,10 +1900,8 @@ serveBridge(
     'option-menu': { kind: 'menu', fn: popOptionMenu },
     'row-menu': { kind: 'menu', fn: popRowMenu },
 
-    // Rename the OPEN nexus's ROOT folder within its parent dir, then RE-POINT the live session
-    // to the new path. A dedicated IPC (not a mutate op) because it re-targets the whole session:
-    // after the fs.rename, adoptNexus re-opens the session, database, watcher, and recents at the new
-    // path. Never throws across the boundary.
+    // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session,
+    // database, watcher, and recents at the new path.
     'nexus:rename': {
       kind: 'envelope',
       fn: async (newName: unknown) => {
@@ -2071,22 +1918,18 @@ serveBridge(
         if (await pathExists(newRoot))
           return fail('operation-failed', 'A folder with that name already exists.')
         await rename(root, newRoot)
-        // RE-POINT: adoptNexus does exactly the re-target work (openSession + openSessionDb +
-        // startWatcher + lastNexusPath/recents + addRecentDocument + refreshMenu), so reuse it
-        // rather than replicate the calls — opting out of the record latch, which belongs to
-        // genuine opens only.
+        // Reuses adoptNexus rather than replicating its re-target work; opts out of the record
+        // latch, which belongs to genuine opens only.
         await adoptNexus(newRoot, false)
-        // The re-point reseeded the live tree; the push is the renderer's confirmation.
         pushConfirmed(getLiveTree())
         return ok(null)
       },
     },
   },
   {
-    // Pushed here so the native context menu (editorMenu.ts) can render accurate checkmarks/radios.
     'editor:format-state': { kind: 'raw', fn: (state: FormatState) => setFormatState(state) },
 
-    // The JS window mover (hover-bearing chrome can't be a native drag region — it'd lose hover).
+    // Hover-bearing chrome can't be a native drag region — it'd lose hover.
     'win:dragBy': {
       kind: 'window',
       fn: (win, dx: number, dy: number) => {
@@ -2103,20 +1946,17 @@ serveBridge(
       },
     },
 
-    // Flagged on hover so the generic editor menu stands down and the hovered grip's own menu
-    // is the only one that pops on the right-press.
+    // Flagged on hover so the generic editor menu stands down for the hovered grip's own menu.
     'editor:grip-hot': { kind: 'raw', fn: (on: boolean) => setGripHot(on) },
 
     'web:wheel': { kind: 'raw', fn: wheelGuest },
   },
 )
 
-// Every write lock in this process — the per-file chains, the schema chain, the watcher's
-// self-write suppression — is module state, so a SECOND process on the same nexus shares none of
-// it and its writes race every one of ours with no coordination at all. One instance is therefore
-// a correctness boundary, not a convenience: the loser exits before it can open a session, and a
-// relaunch raises the window that already exists. Multi-window stays reachable — one process may
-// own many windows; what it may not do is become a second process over one nexus.
+// Every write lock in this process is module state, so a second process on the same nexus
+// would share none of it and race every write with no coordination. One instance is a
+// correctness boundary, not a convenience — multi-window stays reachable, a second process
+// over one nexus does not.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
@@ -2132,10 +1972,8 @@ app
   .then(async () => {
     // A losing second instance is already quitting; whenReady can still fire before it exits.
     if (!app.hasSingleInstanceLock()) return
-    // Restore the last nexus if it's still an existing directory; otherwise launch
-    // empty. No picker/modal here — a launch must never block (headless / tests).
-    // Restore failures degrade to empty state (never fatal); only a failure to
-    // create the window reaches the fatal .catch below.
+    // No picker/modal here — a launch must never block. Restore failures degrade to empty
+    // state (never fatal); only a failure to create the window reaches the .catch below.
     try {
       const config = await readAppConfig(app.getPath('userData'))
       const restore = await resolveRestorePath(config)
@@ -2144,8 +1982,7 @@ app
       console.error('Restore skipped (config unreadable):', e)
     }
 
-    // Dark-only app: force the native chrome dark to match the renderer (a light
-    // theme + `themeSource = 'system'` is a later task).
+    // Dark-only app: force the native chrome dark to match the renderer.
     nativeTheme.themeSource = 'dark'
     app.setAboutPanelOptions({ applicationName: 'Pommora', applicationVersion: app.getVersion() })
 
@@ -2153,13 +1990,11 @@ app
     registerAssetProtocol()
     createWindow()
     refreshMenu()
-    // A restored nexus opened before the window existed — start its watcher now.
     const restored = sessionRoot()
     if (restored && mainWindow) void startWatcher(restored, mainWindow)
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow()
-        // Re-attach the watcher to the fresh window (the session stays open across a close).
         const root = sessionRoot()
         if (root && mainWindow) void startWatcher(root, mainWindow)
       }
@@ -2174,9 +2009,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Quit cleanup. Database writes commit synchronously, so the close is only tidying — it flushes
-// the WAL and frees its sibling files. Navigation intent is the one operational write still going
-// to disk, so it is the one thing that can still be owed: defer the quit, settle it, re-quit.
+// Database writes commit synchronously, so close is only tidying (flushes the WAL). Navigation
+// intent is the one operational write still going to disk, so it's the one thing that can still
+// be owed: defer the quit, settle it, re-quit.
 let flushingBeforeQuit = false
 app.on('before-quit', (e) => {
   if (flushingBeforeQuit) return

@@ -1,5 +1,4 @@
-// Single source of truth for the cross-process contract.
-// Imported by main, preload, and renderer — NO fs, NO React here.
+// The cross-process contract. Imported by main, preload, and renderer — NO fs, NO React here.
 
 import { SPECTRUM, type CellKey } from './theme'
 import type { ContextDef } from './contexts'
@@ -11,10 +10,7 @@ import type { SavedView } from './views'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 
-// The spectrum solids the app accent can be set to, plus `system` (follow the OS accent).
-// The selectable spectrum, straight off the palette that builds the :root vars — an accent, an
-// option color and a Space color are one vocabulary, so they read one list. greyDefault is absent
-// by construction: it lives beside SPECTRUM, not in it.
+// greyDefault is absent by construction: it lives beside SPECTRUM, not in it.
 export const SOLID_COLORS = Object.keys(SPECTRUM) as SolidColor[]
 export type SolidColor = keyof typeof SPECTRUM
 
