@@ -1,6 +1,6 @@
 ## Stamp Retirement — Implementation Plan
 
-> **Status:** written, pending review (09-01-2026) · Spec: the 09-01-2026 session's confirmed direction (recorded under Rulings) · Execute tasks in order.
+> **Status:** reviewed, pending Nathan's approval (09-01-2026) · Spec: the 09-01-2026 session's confirmed direction (recorded under Rulings) · Execute tasks in order.
 > Citations name files and symbols at HEAD `27080e45`; re-derive before editing. Line numbers are the weakest part of every citation here — a parallel session's comment sweep is shifting them under the plan as it's read, so trust the symbol names and the greps, and treat every `:NN` as an approximate landmark.
 
 **Goal**
@@ -15,7 +15,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 
 1. Task 0 first strips every target file's comments to why-only, by a single-handed subagent, so no file asserts a stamp truth while the change lands.
 2. The batch a container loads is `Record<pageId, PageValues>` with `PageValues = { frontmatter, createdAt, modifiedAt }`; `ViewRow` carries `createdAt?`/`modifiedAt?`; every consumer of the batch reads `.frontmatter` where it read the map's value.
-3. A body save refetches an open view: `page:updateBody` notes the value write and pushes, the same shared writer path every other frontmatter writer already takes.
+3. A body save and a page creation refetch an open view: `page:updateBody` and `createPage` note the value write, the same shared writer path every other frontmatter writer already takes.
 4. `created_time` is a PropertyType beside `last_edited_time`; `_created_at` resolves to it; both stamps resolve from the row through the generic date branches of sort, filter, styles, menus, and widths; the modified∥created fallback, the `_id` sort, and the `lastEditedTime` value kind are deleted.
 5. Both stamp columns are revealable from the Hidden frame on any view, labeled "Creation Time" / "Last Modified" from one source, glyphed from the type registry, and offered as sort and filter targets.
 6. No page writer sets or governs `created_at`/`modified_at`; `createPage` writes id (+icon); a relocate is a rename only; a body save governs no key and passes the frontmatter bytes through; `governedWrite`, `pageValue`, and `governedSweep` govern only the caller's keys; the sweep's `stamp` option is gone; `pageFrontmatter` and `PAGE_MODELED_KEYS` drop the stamps while `RESERVED_KEY_NAMES` keeps refusing both names.
@@ -26,7 +26,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 11. Every document the change falsifies is rewritten in the commit that falsifies it, carried by the Made False table.
 12. Closeout normalizes NexusOS once — every `.md` and sidecar under the vault, excluded folders included — with the app closed, after a backup, on Nathan's per-item go.
 
-**Acceptance — the whole thing working:** In a scratch nexus with a Collection holding three pages created one second apart, its Table view open: the Hidden frame lists Creation Time and Last Modified; revealing both shows Creation Time in the pages' creation order and Last Modified equal to each file's mtime as `stat` reports it; sorting by Last Modified descending puts the page whose body was just edited first, and that reorder happens without reopening the view; renaming a page moves neither column; a filter "Last Modified is after <yesterday>" keeps all three; `rg -e "created_at|modified_at" <nexus>` → 0 after every one of those actions; and a page adopted from a file dated last year shows last year under Creation Time.
+**Acceptance — the whole thing working:** In a scratch nexus, a Collection's Table view open with both stamp columns revealed from the Hidden frame, three pages created through **New Page** one second apart: each row shows Creation Time and Last Modified the moment it lands, in creation order, Last Modified equal to each file's mtime as `stat` reports it; sorting by Last Modified descending puts the page whose body was just edited first, and that reorder happens without reopening the view; renaming a page moves neither column; single- and double-clicking a stamp cell opens no editor; a filter "Last Modified is after <yesterday>" keeps all three; `rg -e "created_at|modified_at" <nexus>` → 0 after every one of those actions; and a page adopted from a file dated last year shows last year under Creation Time.
 
 **Forced By**
 
@@ -40,6 +40,8 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 - `page:updateBody` calls neither `noteValueWrite` nor `pushValueChanges` (`index.ts:1097–1110`) → once Modified is the mtime, a body save must note and push or the open view's column lags until the next unrelated write (Task 2).
 - `mintNewView` (`shared/views.ts:327–337`) seeds `property_order: [_title]` and `hidden_properties` as the schema ids, and `hiddenListIds` lists `_modified_at` only when already hidden → a stamp is in neither array on a new view, so no UI path reveals Modified; the hidden list must offer both stamps whenever they aren't shown (Task 4).
 - The NexusOS working tree is dirty (543 entries at grounding) → the closeout backup is a dated copy of the touched files, not a stash (Closeout).
+- `atomicWriteFile` is temp + rename, which replaces the inode and stamps it with now → once Modified is the mtime, every rewrite is a mutation of the feature: the closeout script restores each file's timestamps after writing, and its backup copies with `-p` (Closeout).
+- `mutate.ts`'s `createPage` case never calls `noteValueWrite`, and nothing refetches a container's batch on membership change → a row can enter a view without a batch entry, which under Task 1 renders both stamps blank; the creation notes its write like the cover and icon cases beside it (Task 2).
 
 **Inherited Reasoning:** Nathan raised and settled: Clear Metadata reduces to ids + Contexts (09-01-2026); the typed carrier over a tuple; group-by-stamp not built ("if it already exists, just make sure it rides the change" — it doesn't: `GROUPABLE_PANE` admits schema definitions only, so nothing rides); rename/move not bumping Modified; the body-save push as "a shared writer across different purposes"; the `{ id: pageId }` fallback fixed alongside; the one-time vault normalization at closeout. The sibling plan's Sequenced After row "A `Last Edited Time` column can lag on an in-app body edit" is Task 2 here.
 
@@ -225,10 +227,17 @@ export interface PageRecord {
     return { node, fm, mtimeMs: stat?.mtimeMs ?? null }
   })
 
-// src/main/ids.ts
-/** The instant a ULID encodes; null for an adopted (path-derived) id, which encodes none. */
+// src/main/ids.ts — total: `isUlidShaped` admits a first character 8–Z that ulidx's decoder rejects
+// (its own pattern is `^[0-7]…`), and a throw here rejects the whole batch, blanking every column in
+// the container. A hand-edited id reads as "no instant," the same as an adopted one.
+/** The instant a ULID encodes; null for an adopted (path-derived) id or one the decoder refuses. */
 export function idTime(id: string): number | null {
-  return isAdoptedId(id) ? null : decodeTime(id)
+  if (isAdoptedId(id)) return null
+  try {
+    return decodeTime(id)
+  } catch {
+    return null
+  }
 }
 
 // src/shared/types.ts
@@ -311,6 +320,7 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 **Verify — automated**
 
 - [ ] Red first: `loadValues.test.ts` gains "carries the file's mtime and the id's time as ISO strings" (a page whose PageID is a known ULID, `utimes` set to a fixed instant → `modifiedAt` equals it; `createdAt` equals `decodeTime`) and "an adopted page has `createdAt: null`" — both fail on the old map shape.
+- [ ] Degenerate: `ids.test.ts` "`idTime` returns null for a shape-valid id the decoder refuses" (`8` + 25 valid characters); `loadValues.test.ts` "one undecodable PageID leaves the rest of the batch intact" — the page lands with `createdAt: null`, its siblings with theirs. Both go red with the try/catch removed.
 - [ ] `group.test.ts` (or the pipeline test that covers `toRow`): a values entry with stamps → the row carries them; an absent entry → neither key present.
 - [ ] Fix test (Req 10): `patchBandValue` on a page absent from the batch produces a frontmatter keyed `PageID`, not `id` — red before, green after.
 - [ ] Inverted in the same commit: every test building the batch by hand — `group.test.ts` (5 sites) and `resolveView.test.ts` (8 sites) both declare `Record<string, PageFrontmatter>` literals and hand them to `flattenContainer`; each becomes a `PageValues` entry. `rg -n "Record<string, PageFrontmatter>" src` → 0 including tests.
@@ -321,13 +331,13 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 
 - [ ] *(carried — Completion Criteria: the batch shape is invisible until Task 4 reveals the columns)*
 
-#### Task 2: A body save notes and pushes its value write
+#### Task 2: A body save and a page creation note and push their value write
 
 **Requirement:** 3
 
-**Why:** Modified is now the mtime, and a body save moves it. Every other frontmatter writer already hands its file to `noteValueWrite` and lets `confirmWrite` push; the body handler is the one writer that doesn't, so an open view showing Last Modified would sit stale after a text edit. One shared push path, no second mechanism.
+**Why:** Modified is now the mtime, and a body save moves it; a creation mints both stamps at once. Every other frontmatter writer already hands its file to `noteValueWrite` and lets `confirmWrite` push; the body handler and `createPage` are the two writers that don't. Without the first, an open view showing Last Modified sits stale after a text edit; without the second, a page made from **New Page** has no batch entry until an unrelated write in its container — both stamp columns blank on the row just created. One shared push path, no second mechanism.
 
-**Now** — `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 10 (its definition in `valuesChanged.ts:16` plus nine callers):
+**Now** — `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 10 (its definition in `valuesChanged.ts:16` plus nine callers; `mutate.ts` holds two of them, for cover and icon, and none for createPage):
 
 ```ts
 // src/main/index.ts:1093
@@ -340,6 +350,12 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
         return r.ok ? ok(null) : r
       },
     },
+
+// src/main/mutate.ts — case 'createPage', after the order write; `confirmWrite` already runs after mutate
+      await indexWrittenPage(root, r.value.path)
+      return ok({
+        created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
+      })
 ```
 
 **Becomes**
@@ -352,17 +368,24 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
         noteValueWrite(root, resolved.value)
         pushValueChanges(root)
         return ok(null)
+
+// src/main/mutate.ts — case 'createPage'
+      await indexWrittenPage(root, r.value.path)
+      noteValueWrite(root, r.value.path)
+      return ok({
+        created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
+      })
 ```
 
 **Verify — automated**
 
-- [ ] Red first: the `index.ts` handler test (or `valuesChanged.test.ts`'s handler-level case) asserts a body save yields one `values:changed` push naming the page's container and id — fails before the change.
-- [ ] `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 11. Control: `pushValueChanges` ≥ 3 (`index.ts:394, 470, 484` at grounding; this adds a fourth).
+- [ ] Red first: the `index.ts` handler test (or `valuesChanged.test.ts`'s handler-level case) asserts a body save yields one `values:changed` push naming the page's container and id; `mutate.test.ts` asserts a `createPage` request leaves the new page in `flushValueWrites`' set — both fail before the change.
+- [ ] `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 12. Control: `pushValueChanges` ≥ 3 (`index.ts:394, 470, 484` at grounding; this adds a fourth).
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
 **Verify — user**
 
-- [ ] *(carried — Completion Criteria: an open table sorted by Last Modified reorders after a body edit in the page window)*
+- [ ] *(carried — Completion Criteria: an open table sorted by Last Modified reorders after a body edit in the page window, and a page made from New Page shows both stamps without a reopen)*
 
 #### Gate 1 — the carrier
 
@@ -537,7 +560,8 @@ export function resolveFieldValue(row, propertyId, schema): PropertyValue {
 - [ ] Red first: `sort.test.ts` "sorts `_created_at` by the row's createdAt" and "sorts `_modified_at` by the row's modifiedAt, absent last ascending"; `filter.test.ts` the same pair through `evaluateDate`; `value.test.ts` "`_created_at` resolves from the row, not the frontmatter" — all fail before.
 - [ ] Inverted in the same commit: every sort/filter test asserting the created fallback; `propertyValue.test.ts`'s encode-throws case (deleted); `columnWidths.test.ts`'s `created` key.
 - [ ] Crossing: one test resolves the same row through `resolveFieldValue('_modified_at')`, `buildCriterion`, and the filter — three readers, one value.
-- [ ] `rg -c "modifiedStampString" src` → 0; `lastEditedTime` → 0; `RESERVED_PROPERTY_ID.id\b` → 0; `WIDTHS.created\b` → 0; `computeFieldValue` → 0. Control: `rg -c "created_time" src --glob '!*.test.*'` ≥ 9.
+- [ ] `rg -c "modifiedStampString" src` → 0; `lastEditedTime` → 0; `RESERVED_PROPERTY_ID.id\b` → 0; `WIDTHS.created\b` → 0; `computeFieldValue` → 0. Control: `rg -c "created_time" src --glob '!*.test.*'` ≥ 11 — the Becomes fences name eleven sites, and a looser floor passes with an arm missed.
+- [ ] The compiler enumerates one site only: `PROPERTY_TYPES` is the codebase's sole exhaustive `Record<PropertyType, …>`, so adding `'created_time'` to the enum alone yields exactly one typecheck error; every other arm (`columnStyles.defaultStyleFor`, `filter.evaluateByType`, `sort.buildCriterion`, `cellMenu`, `columnMenu`, `filterModel`, the decode, `WIDTHS`) sits behind a `default:` or a `Record<string, …>` and fails silently when missed — a Creation Time column with no date format, a filter that always passes, a sort that returns null. Tick each named site by hand against the fence, not by the gate.
 - [ ] Regression guard for the cellMenu split: a `_created_at` cell resolves to a `style-only` menu with no `clearable` — the same kind `_modified_at` gets, never the `datetime` arm's.
 - [ ] Doc: PropertiesPM :37 (two rows: Creation Time from the ULID, Last Modified from the mtime; neither persisted), :42 (`_id` removed from the reserved list). Req 11.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
@@ -666,6 +690,7 @@ export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).map(([id, 
 
 - [ ] On a Collection's Table view, the Hidden frame lists **Creation Time** and **Last Modified** with the clock-plus and history glyphs; toggling each reveals a dated column; the header glyph appears when Column Icons is on; the Sort and Filter frames offer both.
 - [ ] Label check: the labels read "Creation Time" and "Last Modified" — an assumption Nathan can overturn by editing two strings in `columnLabel.ts`.
+- [ ] Single-click, then double-click, a Creation Time cell: no popover, no editor. `_created_at` reaching a `Cell` is new — both write paths guard on a schema def a reserved id never has, so nothing can persist, but whether TableView's editor host opens a calendar and then no-ops was not traced statically. If one opens, the editor host needs the stamp types excluded the way `cellMenu`'s style-only arm already does.
 
 #### Gate 2 — the columns
 
@@ -902,9 +927,12 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 // src/main/ids.ts
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
 /** A ULID whose time part is `atMs` — for an entity whose birth predates the mint. Not monotonic:
- *  the factory clamps a past seed to its last mint, which would erase the age. */
+ *  the factory clamps a past seed to its last mint, which would erase the age. The seed is floored
+ *  and clamped at zero because `stat` reports sub-millisecond floats on APFS (and a negative for a
+ *  pre-epoch file) and the encoder throws on both — a throw here is swallowed per file by adopt's
+ *  `.catch(() => false)`, so adoption would silently stamp nothing. */
 export function idAt(atMs: number): string {
-  return ulid(atMs)
+  return ulid(Math.max(0, Math.floor(atMs)))
 }
 
 // src/main/adopt.ts
@@ -925,7 +953,7 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 
 - [ ] Red first: `adopt.test.ts` "an adopted page's id decodes to the file's mtime when that is older than now" (`utimes` to a fixed past instant → `idTime(id)` equals it within the second) and `ids.test.ts` "`idAt` round-trips through `idTime`" — fail before.
 - [ ] Both halves: the same adopt test with the seed replaced by `newId()` goes red (the id decodes to now).
-- [ ] Degenerate: `birthtimeMs === 0` (unsupported) → the mtime seeds.
+- [ ] Degenerate: `birthtimeMs === 0` (unsupported) → the mtime seeds; `ids.test.ts` "`idAt` accepts a fractional seed and a negative one" (`1788295304609.0347` → decodes to `1788295304609`; `-5` → decodes to `0`) — both throw with the floor/clamp removed. The adopt test uses a real `stat`, never a hand-built integer, so the fractional path is exercised end to end.
 - [ ] `rg -c "idAt\(" src/main --glob '!*.test.*'` → 2 (definition + adopt). Control: `newId\(\)` = baseline − 1.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
@@ -969,6 +997,14 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 - **`_id` sort** (executor, 09-01-2026): deleted with its constant — its one consumer was the sort case Creation Time supersedes; a saved view naming `_id` resolves to no criterion, which is the same treatment any stale id gets.
 - **Task 0 by subagent** (Nathan, 09-01-2026): comments first, single-handed, so old prose never reads as instruction.
 - **Vault pass** (Nathan, 09-01-2026): one-time, manual, whole vault including excluded folders, when the plan is done.
+- **`idTime` is total, `isUlidShaped` stays loose** (attack review, 09-01-2026): a hand-edited PageID reads as "no instant" and blanks one cell; tightening the shape check to ulidx's `^[0-7]` would flip the file to Unknown and hide it — strictly worse.
+- **`createPage` notes its write** (attack review, 09-01-2026): rides Task 2 as the same one-line shape; the alternative — a membership-change refetch in the renderer — is a second mechanism for what `noteValueWrite` already does.
+- **The closeout script restores timestamps** (attack review, 09-01-2026): non-negotiable once mtime is the fact; a pass that stamped 88 pages with the closeout date would falsify the column the arc builds.
+
+### Review Pass — 09-01-2026
+
+- `code-simplifier` over the plan: fifteen edits folded (Task 7 → Task 5 on the `PAGE_STAMP_KEYS` import; the cellMenu arm split; `computeFieldValue` inlined; `STAMP_TYPE` typed `Partial`; five count corrections; the `index.ts` handler annotation; `resolveView.test.ts` added). Not acted on, with reasons in the Rulings: `created_time` stays a distinct type (the cellMenu `clearable` difference is behavioral); stamps stay off `PageFrontmatter` (a loose object can't distinguish a virtual field from a foreign key); `idAt`/`idTime` both stay (the one ulidx seam).
+- `build-breaking-agent`, one round: six findings, none blocking, all verified against the code and folded — the closeout rewrite moving every mtime (Closeout 2–3); `ulid()` throwing on APFS's fractional `mtimeMs` (Task 8 `idAt`); `createPage` never noting a write (Task 2); `decodeTime` throwing on a shape-valid id and rejecting the whole batch (Task 1 `idTime`); no gate catching a missed `created_time` arm (Task 3 control raised, the site list made the check); the closeout script's missing skip rule and `serializeJson` newline (Closeout 3–4). One unknown carried to Task 4's user verify (a stamp cell opening an editor). Seventeen candidate attacks killed by execution or trace, among them the `cachedParse` staleness hypothesis, same-ms (mtime, size) collisions, the override double-flip, stamp ids leaking into `hidden_properties`, and adopted-id collisions.
 
 ### Open Against Later Tasks
 
@@ -987,10 +1023,10 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 **Coordination point — the vault pass** (Nathan present; nothing touched before the per-item go):
 
 1. App closed (`ps` shows no Electron on NexusOS). Census run and shown: every `.md` under `~/NexusOS` (excluded folders included) holding `created_at:` or `modified_at:` at the frontmatter root, and every `.json` sidecar holding `modified_at` — predicted 49 / 88 / 29 from grounding; the actual list is presented file by file.
-2. Backup: a dated copy of every file the census names, relative paths preserved, at `~/NexusOS-stamp-backup-MM-DD-YYYY/` — the vault's tree is dirty, so no stash and no commit of Nathan's in-flight work.
-3. The transform, a throwaway script in the scratchpad (never app code): pages through `yaml`'s `parseDocument` → `doc.delete('created_at')`, `doc.delete('modified_at')` → the envelope reassembled with the body byte-identical (the same document edit `mergeFrontmatter` performs, so comments and foreign keys survive); sidecars through parse → delete → `JSON.stringify(sortKeys(value), null, 2)` matching `atomicWrite.ts:137`. Dry run first: three sample diffs shown before any write. Idempotent: a second run reports 0 changes.
-4. Invariants after: `rg -e "^created_at:|^modified_at:" ~/NexusOS --glob '*.md'` → 0; `rg -F '"modified_at"' ~/NexusOS --glob '*.json'` → 0; control `rg -c "^PageID:" ~/NexusOS` unchanged from the census; every touched page's body byte-equal to its backup's body.
-5. Disclosed consequence: a page's Creation Time is now its PageID's instant — for a page Pommora created, the same instant `created_at` held; for a page adopted before Task 8, its adoption date.
+2. Backup: a dated copy of every file the census names, relative paths **and timestamps** preserved (`cp -Rp`, never `cp -R` — the bare form stamps every copy with now, and the true mtimes would be unrecoverable), at `~/NexusOS-stamp-backup-MM-DD-YYYY/` — the vault's tree is dirty, so no stash and no commit of Nathan's in-flight work.
+3. The transform, a throwaway script in the scratchpad (never app code). **It restores each file's timestamps after writing:** the arc makes mtime the Last Modified fact, and a rewrite through temp + rename replaces the inode and stamps it with now — so without `stat` before and `utimes(file, atime, mtime)` after, the closing act sets Last Modified on all 88 pages to the closeout date and erases the birthtime Task 8 seeds from (a stamped file with no `PageID` yet would then adopt as born today). Pages: `yaml`'s `parseDocument` → skip and **list** any document with `errors.length > 0` or a non-map root (an alias-bearing `*important`, a duplicate key, a tab-indented block — the shapes this vault has produced before), else `doc.delete('created_at')`, `doc.delete('modified_at')`, `toString()` inside a try that skips and lists on throw; a map that empties drops the fence entirely rather than emitting `---\n{}\n---`; the envelope reassembled with the body byte-identical (the same document edit `mergeFrontmatter` performs, so comments and foreign keys survive). Sidecars: parse → delete → `serializeJson` (`stableStringify(value) + '\n'`, `atomicWrite.ts:31` — the exact bytes the app writes, so no one-byte diff on the trailing newline). Dry run first: three sample diffs and the skip list shown before any write. Restartable and idempotent: each file is stat'd, transformed, and restored on its own; a second run reports 0 changes.
+4. Invariants after: `rg -e "^created_at:|^modified_at:" ~/NexusOS --glob '*.md'` → the skip list's count exactly, each named; `rg -F '"modified_at"' ~/NexusOS --glob '*.json'` → 0; control `rg -c "^PageID:" ~/NexusOS` unchanged from the census; every touched page's body byte-equal to its backup's body; `stat -f %m` on every touched file equal to its backup's. The skip list is presented to Nathan for hand-editing in Obsidian; the pass does not touch what it cannot parse.
+5. Disclosed consequence: a page's Creation Time is now its PageID's instant — for a page Pommora created, the same instant `created_at` held; for a page adopted before Task 8, its adoption date. Last Modified is unchanged by the pass.
 
 **Then:** History entry (arc "Stamp Retirement"); Context doc's Recent Work; Handoff; a Development-Environment line if the executor hit a trap worth keeping; the Delivery Claim below checked by a neutral verifier against Requirements 1–12.
 
