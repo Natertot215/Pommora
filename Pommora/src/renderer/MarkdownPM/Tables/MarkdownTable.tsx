@@ -192,13 +192,15 @@ export function MarkdownTable({
     // A press back into the already-active cell re-hides the append strips — the activation effect
     // only fires when `active` changes, and this press changes nothing.
     if (active) setAddsHidden(true)
-    const b = wrap.getBoundingClientRect()
+    let b = wrap.getBoundingClientRect()
     let engaged = false
     let head = start
-    const onMove = (ev: PointerEvent): void => {
+    let last = { x: e.clientX, y: e.clientY }
+    let stopScroll: (() => void) | null = null
+    const resolveAt = (): void => {
       const at: GridPos = {
-        r: slotAt('row', geomRef.current, ev.clientY - b.top),
-        c: slotAt('col', geomRef.current, ev.clientX - b.left),
+        r: slotAt('row', geomRef.current, last.y - b.top),
+        c: slotAt('col', geomRef.current, last.x - b.left),
       }
       if (!engaged) {
         if (at.r === start.r && at.c === start.c) return
@@ -206,15 +208,30 @@ export function MarkdownTable({
         setActive(null)
         window.getSelection()?.removeAllRanges()
         setSweeping(true)
+        stopScroll = startAutoScroll({
+          getPoint: () => last,
+          scroller: resolveScroller(wrap, 'xy'),
+          dragEl: wrap,
+          axis: 'xy',
+          onScrolled: () => {
+            b = wrap.getBoundingClientRect()
+            resolveAt()
+          },
+        })
       }
       if (at.r !== head.r || at.c !== head.c) {
         head = at
         setSel({ a: start, h: at })
       }
     }
+    const onMove = (ev: PointerEvent): void => {
+      last = { x: ev.clientX, y: ev.clientY }
+      resolveAt()
+    }
     const onUp = (): void => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      stopScroll?.()
       setSweeping(false)
       if (engaged) suppressClick.current = true
     }
