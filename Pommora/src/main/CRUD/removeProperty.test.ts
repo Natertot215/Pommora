@@ -3,6 +3,7 @@ import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { flushValueWrites } from '../valuesChanged'
 import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
@@ -76,7 +77,9 @@ const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undef
 
 describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
+    flushValueWrites(root)
     const r = await removeProperty(root, folder, propId)
+    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes'])
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()

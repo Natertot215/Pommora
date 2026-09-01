@@ -35,10 +35,11 @@ import {
   rewritePageSerialized,
   writeJson,
 } from './IO/atomicWrite'
-import { listEntries } from './IO/walk'
+import { isMarkdownFile, listEntries } from './IO/walk'
 import { serializeOnFile } from './IO/fileLock'
 import { mergeFrontmatter, splitEnvelope } from './IO/pageFile'
 import { recordWrite } from './IO/writeEcho'
+import { noteValueWrite } from './valuesChanged'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
 import { refreshTree } from './liveTree'
 import { splitFrontmatter } from './readNexus'
@@ -683,6 +684,7 @@ export async function restoreArtifact(
   }
   recordWrite(artifactAbs)
   recordWrite(targetAbs)
+  if (isMarkdownFile(targetAbs)) noteValueWrite(root, targetAbs)
   try {
     await mkdir(dirname(targetAbs), { recursive: true })
     await rename(artifactAbs, targetAbs)

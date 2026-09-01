@@ -12,6 +12,7 @@ import { pageCollectionSidecar } from '@shared/schemas'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atomicWrite'
 import { folderCorpus, indexWrittenPage } from '../indexSeed'
+import { noteValueWrite } from '../valuesChanged'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
@@ -80,7 +81,10 @@ async function removeInner(
     const wrote = await rewritePageSerialized(file, (content) =>
       sweepAdmits(content) ? stripPageMember(content, key) : null,
     )
-    if (wrote) await indexWrittenPage(root, file)
+    if (wrote) {
+      noteValueWrite(root, file)
+      await indexWrittenPage(root, file)
+    }
   }
   return ok(null)
 }
