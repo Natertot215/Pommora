@@ -45,8 +45,6 @@ export function OptionEditPopup({
 }): React.JSX.Element | null {
   const iconRef = useRef<HTMLButtonElement>(null)
   const [iconOpen, setIconOpen] = useState(false)
-  // Escape peels one layer (the CalendarPicker inner-menu idiom): while the IconPicker is up it
-  // takes the key on capture, so the editor pane underneath survives to the second press.
   useEffect(() => {
     if (!iconOpen) return
     const onKey = (e: KeyboardEvent): void => {
@@ -54,8 +52,17 @@ export function OptionEditPopup({
       e.stopPropagation()
       setIconOpen(false)
     }
+    const onDown = (e: PointerEvent): void => {
+      const portals = document.querySelectorAll('[data-picker-portal]')
+      const pane = portals[portals.length - 1]
+      if (pane && !pane.contains(e.target as Node)) setIconOpen(false)
+    }
     document.addEventListener('keydown', onKey, true)
-    return () => document.removeEventListener('keydown', onKey, true)
+    document.addEventListener('pointerdown', onDown, true)
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      document.removeEventListener('pointerdown', onDown, true)
+    }
   }, [iconOpen])
   return (
     <>
