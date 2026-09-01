@@ -11,7 +11,6 @@ import type { Adoption } from '@shared/propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
-import { nowIso } from './util'
 import { sessionRoot } from '../session'
 import { noteValueWrite } from '../valuesChanged'
 
@@ -30,8 +29,8 @@ export async function setGovernedRootKeys(
   const { changed, adoptions } = reconciled
   const content = mergeFrontmatter(
     existing,
-    { ...survivingChanges(reconciled), ...next, modified_at: nowIso() },
-    [...changed, ...govern, 'modified_at'],
+    { ...survivingChanges(reconciled), ...next },
+    [...changed, ...govern],
     splitEnvelope(existing).body,
   )
   await atomicWriteFile(absFile, content)

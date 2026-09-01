@@ -19,8 +19,7 @@ import { noteValueWrite } from '../valuesChanged'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '@shared/properties'
 
-/** `modified_at` is preserved untouched either way — a derived link edit isn't a user
- *  modification. The caller renames the target's own file and reverts that rename if this throws. */
+/** The caller renames the target's own file and reverts that rename if this throws. */
 export async function renameCascade(
   nexusRoot: string,
   oldTitle: string,

@@ -12,7 +12,7 @@ import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { listFilesRecursive } from '../IO/walk'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { splitFrontmatter } from '../readNexus'
-import { nowIso, sweepAdmits } from './util'
+import { sweepAdmits } from './util'
 
 export type Raw = Record<string, unknown>
 
@@ -40,7 +40,6 @@ export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } 
 export type RewriteText = (content: string, file: string) => string | null
 
 export interface SweepOptions {
-  stamp?: boolean
   /** Pages take this instead of the raw decision; sidecars keep the raw one, JSON having neither
    *  position nor comments to preserve. */
   rewriteText?: RewriteText
@@ -111,11 +110,9 @@ export async function sweepGovernedRoots<C>(
       if (!keys.length) return
       const modeled: Raw = {}
       for (const k of keys) if (k in decided.next) modeled[k] = decided.next[k]
-      if (opts.stamp) modeled.modified_at = nowIso()
-      const merged = opts.stamp ? [...keys, 'modified_at'] : keys
       await atomicWriteFile(
         file,
-        mergeFrontmatter(content, modeled, merged, splitEnvelope(content).body),
+        mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body),
       )
       noteValueWrite(root, file)
       await indexWrittenPage(root, file)

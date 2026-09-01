@@ -69,8 +69,6 @@ export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
 
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-const STAMP_ON_CLEAR = { stamp: true }
-
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
@@ -132,21 +130,17 @@ export async function unlinkContextKey(
   const key = contextKey(contextTitle)
   const skipPrefix = skipUnder ? skipUnder + sep : null
   const captured: SweepCapture[] = []
-  const swept = await sweepContextRoots(
-    root,
-    (raw, file) => {
-      if (skipPrefix && file.startsWith(skipPrefix)) return null
-      if (!(key in raw)) return null
-      const values = Array.isArray(raw[key])
-        ? raw[key].filter((v): v is string => typeof v === 'string')
-        : []
-      captured.push(captureRoot(raw, file, values))
-      const next = { ...raw }
-      delete next[key]
-      return next
-    },
-    STAMP_ON_CLEAR,
-  )
+  const swept = await sweepContextRoots(root, (raw, file) => {
+    if (skipPrefix && file.startsWith(skipPrefix)) return null
+    if (!(key in raw)) return null
+    const values = Array.isArray(raw[key])
+      ? raw[key].filter((v): v is string => typeof v === 'string')
+      : []
+    captured.push(captureRoot(raw, file, values))
+    const next = { ...raw }
+    delete next[key]
+    return next
+  })
   return ok({ ...swept, captured })
 }
 
@@ -158,20 +152,16 @@ export async function unlinkSpaceValue(
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
-  const swept = await sweepContextRoots(
-    root,
-    (raw, file) => {
-      const arr = raw[key]
-      if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
-      captured.push(captureRoot(raw, file, [spaceTitle]))
-      const kept = arr.filter((v) => v !== spaceTitle)
-      const next = { ...raw }
-      if (kept.length) next[key] = kept
-      else delete next[key]
-      return next
-    },
-    STAMP_ON_CLEAR,
-  )
+  const swept = await sweepContextRoots(root, (raw, file) => {
+    const arr = raw[key]
+    if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
+    captured.push(captureRoot(raw, file, [spaceTitle]))
+    const kept = arr.filter((v) => v !== spaceTitle)
+    const next = { ...raw }
+    if (kept.length) next[key] = kept
+    else delete next[key]
+    return next
+  })
   return ok({ ...swept, captured })
 }
 

@@ -59,9 +59,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const key = journal.name
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, key, folders)
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), {
-        stamp: true,
-      })
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key))
       for (const folder of folders) await unassignAndPurge(folder, journal.id)
       await removeFromRegistry(root, journal.id)
       return swept.skipped.length > 0

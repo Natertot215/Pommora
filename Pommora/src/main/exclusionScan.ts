@@ -5,7 +5,7 @@
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseContextKey } from '@shared/contexts'
-import { KIND_ID_KEY, PAGE_STAMP_KEYS } from '@shared/identity'
+import { KIND_ID_KEY } from '@shared/identity'
 import { ok, type Result } from '@shared/result'
 import type { ClearReport } from '@shared/types'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
@@ -19,7 +19,7 @@ const AGENDA_CONFIGS: readonly string[] = [
   SIDECAR_FILENAME.taskConfig,
   SIDECAR_FILENAME.eventConfig,
 ]
-const BOOKKEEPING_KEYS: readonly string[] = [...Object.values(KIND_ID_KEY), ...PAGE_STAMP_KEYS]
+const BOOKKEEPING_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
 
 export async function excludedArtifacts(
   root: string,
@@ -70,7 +70,7 @@ export function clearConfirmCopy(folderCount: number): { message: string; detail
   return {
     message: `Clear Pommora’s data from ${folders}?`,
     detail:
-      'Pommora’s container files are removed and each page’s identity key, timestamps, and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
+      'Pommora’s container files are removed and each page’s identity key and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
   }
 }
 
