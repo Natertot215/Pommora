@@ -280,12 +280,15 @@ export function useViewHost(
     persistView(patch)
   }
 
+  /** The row's live frontmatter: the override-folded batch entry, else what the row flattened with. */
+  const liveFrontmatter = (row: ViewRow): PageFrontmatter =>
+    effectiveValues[row.id]?.frontmatter ?? row.frontmatter
+
   const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
     const def = schema.find((d) => d.id === propertyId)
     if (!def) return
-    const prior = effectiveValues[row.id]?.frontmatter ?? row.frontmatter
     const patched = applyValueAtRoot(
-      prior as Record<string, unknown>,
+      liveFrontmatter(row) as Record<string, unknown>,
       def,
       value,
     ) as PageFrontmatter
@@ -299,14 +302,7 @@ export function useViewHost(
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
     if (column.kind === 'context') {
       const ids = value?.kind === 'context' ? value.value : []
-      writeContextValue(
-        row,
-        column.id,
-        ids,
-        effectiveValues[row.id]?.frontmatter ?? row.frontmatter,
-        setValueOverride,
-        mutate,
-      )
+      writeContextValue(row, column.id, ids, liveFrontmatter(row), setValueOverride, mutate)
       return
     }
     setProperty(row, column.id, value)
