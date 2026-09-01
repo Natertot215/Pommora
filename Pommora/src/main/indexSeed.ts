@@ -25,6 +25,7 @@ import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './IO/walk'
 import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 import { splitFrontmatter } from './readNexus'
 import { readWatchScope } from './settings'
+import type { Db } from './Database/driver'
 import { sessionDb } from './sessionDb'
 
 /** A page's index rows, from its raw content. Null = the sweeps would skip it (Unknown
@@ -76,10 +77,12 @@ function relCorpusPath(root: string, abs: string): string | null {
   return segs.join('/')
 }
 
-let reread: string[] = []
+let reread: { db: Db | null; rels: string[] } = { db: null, rels: [] }
 
-/** The pages the last seed re-read — the only files whose values could have drifted since. */
-export const rereadSinceSeed = (): readonly string[] => reread
+/** The pages the last seed re-read — the only files whose values could have drifted since; the
+ *  list belongs to the database that seeded it. */
+export const rereadSinceSeed = (): readonly string[] =>
+  sessionDb() === reread.db ? reread.rels : []
 
 function recordPage(rel: string, content: string, stat: IndexedStat): void {
   upsertPageIndex(rel, extractPageIndex(content) ?? { mentions: [], values: {} }, stat)
@@ -131,7 +134,7 @@ export async function seedContentIndex(root: string): Promise<void> {
   // and then prune everything the new nexus holds — so the seed bails wherever the identity
   // moved, and the new session's own adopt-time seed covers its nexus.
   const db0 = sessionDb()
-  reread = []
+  reread = { db: db0, rels: [] }
   try {
     const rels = await nexusCorpus(root)
     const seen = new Set(rels)
@@ -155,7 +158,7 @@ export async function seedContentIndex(root: string): Promise<void> {
       const row = readIndexedStat(rel)
       if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
-      reread.push(rel)
+      reread.rels.push(rel)
     }
     if (sessionDb() !== db0) return
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born

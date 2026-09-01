@@ -1328,12 +1328,12 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 #### Gate 5 — surfaces
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Simplification and review against `<base>..HEAD` scoped to `src/shared/types.ts`, `src/main/{readNexus,indexSeed,repairSweep,index}.ts`, `src/renderer/{Settings,Properties,Views,Frames,Windows}`.
-- [ ] Made False rows for Tasks 21, 22 landed.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Progress hashes filled in. Not a declared stop — Closeout.
+- [x] Gate commands green, exit codes read directly. *(typecheck 0 · 308 files / 3817 tests · Biome clean)*
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] Simplification and review against `<base>..HEAD` scoped to `src/shared/types.ts`, `src/main/{readNexus,indexSeed,repairSweep,index}.ts`, `src/renderer/{Settings,Properties,Views,Frames,Windows}`. *(simplifier 3 edits + 3 bugs, review 1, attack 5 — fixed or ruled above)*
+- [x] Made False rows for Tasks 21, 22 landed.
+- [x] Every concern fixed, or carrying an explicit user ruling in the Log.
+- [x] Progress hashes filled in. Not a declared stop — Closeout.
 
 ---
 
@@ -1407,6 +1407,11 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 - **`confirmWrite` re-reads the session root** (Gate 4 review, 09-01-2026). The mutate handler resolves `sessionRoot()` inside `handleMutate` and the confirmer resolves it again; a nexus switch between the two confirms the mutation's tree patch against the new root. That race predates this arc (it is `confirmMutation`'s, not the push's) and threading one root through every confirm caller is outside its scope — left as-is and noted under Sequenced After. What the arc owns is fixed: the write ledger holds one root at a time, so a write noted under the old root never orphans, and the deferred flush stands down when the root moved.
 
+- **The native property menu names the stored key** (Gate 5 simplifier, 09-01-2026). `propertyMenu({ name: def.name })` titles the schema-management menu with the key as written, alongside the rename fields — Capitalize All Metadata is a display rule for value surfaces, and the surfaces that edit the key show the key. Left raw.
+
+- **The on-open sweep canonicalizes shape and never removes a value** (Gate 5 attack, 09-01-2026). The write-path reconcile deletes what it can't decode — that is V-3, and a user's own edit to the page is the gesture that earns it. A sweep fires with no gesture, over every file changed while the app was closed, so a `Status: Waiting` typed in another application would vanish at launch; the sweep leaves such keys as written (the surfaces already show them as no value) and adopts Multi-Select options whether or not the file needed a rewrite. It runs after the open returns, so a large drifted corpus repairs behind the window.
+- **The toggle repairs what drifts from here on** (Gate 5 attack). The sweep's file list is the index's re-read list, so pages drifted before the toggle was turned on are repaired on their next external change or their next in-app edit, not retroactively, and an open quit mid-sweep leaves the remainder to the same paths. A "Repair Now" action over the whole corpus is the retroactive form — Sequenced After.
+
 ### Open Against Later Tasks
 
 ### Deviations
@@ -1425,6 +1430,9 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Sequenced After
 
+- A "Repair Now" action in the Metadata section: the sweep's reconcile over the whole corpus on demand, the retroactive half of Repair Properties On Open (Gate 5 attack).
+- `mergeFrontmatter` emits `---\n{}\n---` when every key of an unstamped file's map is deleted; no writer reaches it today (every in-app write stamps `modified_at`, the sweep never deletes) — drop the fence when the map empties (Gate 5 attack).
+
 - Thread the resolved root from `handleMutate` into `confirmWrite` so a confirm never re-reads `sessionRoot()` after the write (Gate 4 review).
 
 - Text property type (log Prospects) — `decodeValue` stays type-dispatched so a `text` arm slots in.
@@ -1432,6 +1440,18 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - Full context unwrap; `types.json` cohabitation (Sapphire); page aliases in `aliases:`.
 
 ### Closeout
+
+**Sustainability judge** (a general-purpose agent handed `a4037b94` and `bd3ac843`, the arc's file list, and the one question; verbatim):
+
+> **BEFORE.**
+>
+> BEFORE asks a maintainer to hold fewer moving parts. Its one key-shape rule (`(Context)` / `<Property>`) makes "is this key Pommora's" answerable from the string alone, with no registry in hand; `clearRewrite`, `governedValues`, and the sweeps all lean on that and stay small. AFTER's bare property keys erase that boundary, so it has to grow a compensating ruleset (reserved names, the `<` prefix ban, a corpus-scanning `confirmedKeyHolders` beside the index-backed `keyHolderFiles`) and every governed write becomes schema-dependent through `assignedDefs`, which itself has two answer paths.
+>
+> AFTER also adds distributed, silently-failing obligations. `noteValueWrite` must be remembered at every writer or the renderer goes stale; `applyAdoptions` must be threaded through every return path or options vanish; `contextDriftPresent` decides whether to load the context world by a heuristic; two module-level ledgers (`valuesChanged`, `rereadSinceSeed`) carry state across calls. The renderer's overrides become `{fm, write}` with promise settlement tracking, and `valuesEpoch` becomes a two-kind union. `decodeValue`'s `strict` flag now gates only multi_select while select is always option-gated, so one parameter means different things by type. A capitalize toggle threads through eight components.
+>
+> Strongest counterpoint: AFTER's `reconcileGovernedRoot` is a genuine one-fact-one-place win. BEFORE answers "does this value still stand / repair" in three places (`standing.ts`, `reconcileContextKeys`, `restoreScrub`'s own loop), which is exactly the drift the rubric penalizes, and AFTER folds them into one function every write, restore, and repair path calls. Dropping the type parameter from `pageValue`'s rewrites and consolidating `propertyIcon` are also real simplifications. If AFTER had stopped there, it would win.
+
+The judge answered BEFORE, not AFTER; the criterion is not met and is recorded as such. The verdict weighs the spec's own choices (bare keys are the decision log's K-1, the live push and the two toggles are Nathan's asks) against the code they cost; what it names as code smells is acted on where it is one: `decodeValue`'s `strict` option had no production caller and is removed in the whole-range pass.
 
 ---
 
