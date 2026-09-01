@@ -13,13 +13,14 @@ import type { PaneDrop, FrameRow } from './frameDndModel'
 import { contextIdsOf, contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenFrameModel'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
-import { PropertyTypeIcon } from '../Properties/PropertyTypes'
+import { PropertyTypeIcon, propertyIcon } from '../Properties/PropertyTypes'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './frames.css'
 
 function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   const def = schema.find((d) => d.id === id)
-  if (def) return <PropertyTypeIcon type={def.type} size={s.ICON.doc} />
+  if (def) return <Icon name={propertyIcon(def)} size={s.ICON.doc} />
   if (id === RESERVED_PROPERTY_ID.title) return <PropertyTypeIcon type="title" size={s.ICON.doc} />
   if (id === RESERVED_PROPERTY_ID.modifiedAt)
     return <PropertyTypeIcon type="last_edited_time" size={s.ICON.doc} />

@@ -24,10 +24,6 @@ export function contextKey(title: string): string {
   return `${SIGIL[0]}${title}${SIGIL[1]}`
 }
 
-export function isGovernedContextKey(key: string): boolean {
-  return key.startsWith(SIGIL[0])
-}
-
 /** Positional strip, so a title containing the closing glyph round-trips. */
 export function parseContextKey(key: string): string | null {
   const [open, close] = SIGIL

@@ -44,15 +44,8 @@ export const resolveSingleOption = (
   known: readonly string[],
 ): string | undefined => written.filter((v) => known.includes(v)).at(-1)
 
-export function decodeValue(
-  def: PropertyDefinition,
-  raw: unknown,
-  opts: { strict?: boolean } = {},
-): PropertyValue {
+export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL
-  const strict = opts.strict === true
-  const str = (v: PropertyValue & { value: string }): PropertyValue =>
-    strict && v.value === '' ? NULL : v
 
   switch (def.type) {
     case 'number':
@@ -60,22 +53,19 @@ export function decodeValue(
     case 'checkbox':
       return raw === true ? { kind: 'checkbox', value: true } : NULL
     case 'url':
-      return typeof raw === 'string' ? str({ kind: 'url', value: raw }) : NULL
+      return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL
     case 'datetime':
     // last_edited_time reads a stored stamp the same way; "virtual, never persisted" is enforced
     // only on encode, where it throws.
     case 'last_edited_time':
-      return typeof raw === 'string' ? str({ kind: 'datetime', value: raw }) : NULL
+      return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL
     case 'select':
     case 'status':
     case 'multi_select': {
-      const known = optionValues(def)
       const xs = optionList(raw)
-      if (def.type === 'multi_select') {
-        const kept = strict ? xs.filter((v) => known.includes(v)) : xs
-        return kept.length === 0 ? NULL : { kind: 'multiSelect', value: kept }
-      }
-      const value = resolveSingleOption(xs, known)
+      if (def.type === 'multi_select')
+        return xs.length === 0 ? NULL : { kind: 'multiSelect', value: xs }
+      const value = resolveSingleOption(xs, optionValues(def))
       return value === undefined ? NULL : { kind: 'select', value }
     }
     // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a
