@@ -23,8 +23,16 @@ import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
 import { readWatchScope } from './settings'
-import { applyWatchEvents, touchesCorpus, type WatchEvent, type WatchEventName } from './watchPatch'
+import {
+  applyWatchEvents,
+  classifyEvent,
+  touchesCorpus,
+  type WatchEvent,
+  type WatchEventName,
+} from './watchPatch'
+import { pageIdOf } from './valuesChanged'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
+import type { NexusTree } from '@shared/types'
 
 const SETTLE_MS = 200
 
@@ -143,6 +151,28 @@ export function stopWatcher(): void {
 /** Spend the settle window's batch: patch what classifies, walk for the rest — through the
  *  seam either way, so what the renderer receives is exactly what main now holds. Push only
  *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
+/** The containers whose page values a batch touched, with the ids the tree resolves; a batch that
+ *  degraded to a walk names its containers with no ids, so the renderer retires only settled overrides. */
+function valueChangesOf(
+  events: WatchEvent[],
+  root: string,
+  scope: WatchScope,
+  tree: NexusTree | null,
+): { rel: string; pageIds: string[] }[] {
+  const held = getLiveTree()
+  const classified = held ? events.map((ev) => classifyEvent(held, root, ev, scope)) : []
+  const byContainer = new Map<string, Set<string>>()
+  for (const c of classified) {
+    if (c.kind !== 'page-upsert') continue
+    const container = c.rel.includes('/') ? c.rel.slice(0, c.rel.lastIndexOf('/')) : ''
+    const ids = byContainer.get(container) ?? new Set<string>()
+    byContainer.set(container, ids)
+    const id = pageIdOf(tree, c.rel)
+    if (id) ids.add(id)
+  }
+  return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
+}
+
 async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   const events = batch
@@ -162,6 +192,8 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     // OLD root's walked tree (a superseded walk still returns it to its awaiters).
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
+    const changed = valueChangesOf(events, root, scope, outcome === 'refresh' ? null : tree)
+    if (changed.length) pushToWindow(win, 'values:changed', changed)
     // One push for the whole batch, however many files the sync delivered. Nothing held before
     // means nothing has asked for the map yet — the first ask serves it fresh.
     const assets = getHeldAssetMap(root)

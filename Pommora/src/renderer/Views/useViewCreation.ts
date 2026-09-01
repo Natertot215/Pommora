@@ -6,6 +6,7 @@ import { useRef } from 'react'
 import type { CollectionNode, SetNode, ViewRow } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
+import type { SetOverrides } from './useValuesEpoch'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
@@ -34,7 +35,7 @@ export interface ViewCreationConfig {
   view: SavedView
   schema: PropertyDefinition[]
   values: Record<string, PageFrontmatter>
-  setValueOverride: React.Dispatch<React.SetStateAction<Record<string, PageFrontmatter> | null>>
+  setValueOverride: SetOverrides
   effectiveValues: Record<string, PageFrontmatter>
   /** Whether creates write the canonical page_order channel — the table's law, stated by both
    *  renderers: no property grouping and no sort, where the pipeline paints tree order. */
@@ -95,7 +96,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)
       }
-      return { ...prev, [pageId]: patched as PageFrontmatter }
+      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, pending: false } }
     })
   }
   // The full child list of the container a create targets — never the view's visible rows: an

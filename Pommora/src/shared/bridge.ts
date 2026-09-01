@@ -363,6 +363,7 @@ export interface Pushes {
   'nav:changed': Omit<NavigationState, 'recents'>
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
+  'values:changed': { rel: string; pageIds: string[] }[]
   // A guest webview's window.open, denied main-side and handed to the renderer's one open-link
   // adjudicator — popups and link clicks can never route differently.
   'web:popup': string

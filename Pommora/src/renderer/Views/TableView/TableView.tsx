@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { UNGROUPED } from '@shared/types'
+import { patchOverride } from '../useValuesEpoch'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
@@ -1157,16 +1158,16 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // dimensions: a bucket change writes the property; a set change is a REAL movePage into
   // that set — the property write lands first, while the page still has its current path.
   // Both band drops patch the same key the same way — the group property's own value on that row.
-  const patchBandValue = (pageId: string, value: PropertyValue | null): void => {
+  const patchBandValue = (pageId: string, value: PropertyValue | null): PageFrontmatter | null => {
     const def = schema.find((d) => d.id === groupPropId)
-    if (!def) return
+    if (!def) return null
     const prior = values[pageId]
     const patched = applyValueAtRoot(
       (prior ?? { id: pageId }) as Record<string, unknown>,
       def,
       value,
     ) as PageFrontmatter
-    setValueOverride((prev) => ({ ...prev, [pageId]: patched }))
+    return patched
   }
   const reassignRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
@@ -1180,10 +1181,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       const bucketChanged = dest.bucket !== (cur?.bucket ?? null)
       const setChanged = dest.setId !== (cur?.setId ?? null)
       const value = groupKeyToValue(dest.bucket ?? UNGROUPED, groupPropType)
-      if (bucketChanged) {
-        patchBandValue(pageId, value)
-      }
-      void (async () => {
+      const write = (async () => {
         if (
           bucketChanged &&
           !(await mutate({ op: 'setProperty', path, propertyId: groupPropId, value }))
@@ -1191,11 +1189,19 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           return
         if (setChanged) await mutate({ op: 'movePage', path, newParentPath: destPath })
       })()
+      const patched = bucketChanged ? patchBandValue(pageId, value) : undefined
+      if (patched) patchOverride(setValueOverride, pageId, patched, write)
       return
     }
     const value = groupKeyToValue(destGroupKey, groupPropType)
-    patchBandValue(pageId, value)
-    void mutate({ op: 'setProperty', path, propertyId: groupPropId, value })
+    const patched = patchBandValue(pageId, value)
+    if (patched)
+      patchOverride(
+        setValueOverride,
+        pageId,
+        patched,
+        mutate({ op: 'setProperty', path, propertyId: groupPropId, value }),
+      )
   }
   // Cross-folder move (plain location grouping): a row dropped into a DIFFERENT location band relocates
   // the page into that band's Set (the root band → the container itself). movePage; the tree reload

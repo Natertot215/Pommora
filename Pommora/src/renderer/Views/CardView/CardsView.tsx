@@ -127,7 +127,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setProperty,
     commitValue,
     contextOptionsFor,
-    refreshValues,
     creation,
     mutate,
     select,
@@ -227,7 +226,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hideProperty,
     openValuePicker,
     openAddPicker,
-    refreshValues,
     newPageBelow: createAfter,
   }
   const handlersRef = useRef(handlers)
@@ -244,7 +242,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       onHide: (id: string) => handlersRef.current.hideProperty(id),
       onOpenValuePicker: (req: ValuePickerRequest) => handlersRef.current.openValuePicker(req),
       onOpenAddPicker: (req: AddPickerRequest) => handlersRef.current.openAddPicker(req),
-      onRefreshValues: () => handlersRef.current.refreshValues(),
       onNewBelow: (row: ViewRow) => handlersRef.current.newPageBelow(row),
       onHover: ghostApi.onHover,
       onIconPicker: holdForIconPicker,
@@ -555,7 +552,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           onHide={cardApi.onHide}
                           onOpenValuePicker={cardApi.onOpenValuePicker}
                           onOpenAddPicker={cardApi.onOpenAddPicker}
-                          onRefreshValues={cardApi.onRefreshValues}
                           onNewBelow={cardApi.onNewBelow}
                           onHover={cardApi.onHover}
                           onIconPicker={cardApi.onIconPicker}
@@ -752,7 +748,6 @@ interface PageCardProps {
   onHide: (id: string) => void
   onOpenValuePicker: (req: ValuePickerRequest) => void
   onOpenAddPicker: (req: AddPickerRequest) => void
-  onRefreshValues: () => void
   onNewBelow: (row: ViewRow) => void
   onHover: (id: string, entering: boolean) => void
   onIconPicker: (open: boolean) => void
@@ -1013,7 +1008,6 @@ const PageCard = memo(function PageCard({
   onHide,
   onOpenValuePicker,
   onOpenAddPicker,
-  onRefreshValues,
   onNewBelow,
   onHover,
   onIconPicker,
@@ -1098,7 +1092,6 @@ const PageCard = memo(function PageCard({
     value: cover,
     frame: thumbRef,
     noun: banner === 'cover' ? 'Cover' : 'Banner',
-    onDone: onRefreshValues,
     autoEdit: true,
   })
   const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined

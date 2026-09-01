@@ -76,6 +76,7 @@ import { sanitizeExclusions } from './exclusionInput'
 import { clearConfirmCopy, clearExclusionData } from './exclusionScan'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
+import { flushValueWrites } from './valuesChanged'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -522,7 +523,15 @@ function pushConfirmed(tree: NexusTree | null): void {
 /** Run one channel's confirmer against the session root and push what it moved. */
 async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): Promise<void> {
   const root = sessionRoot()
-  if (root !== null) pushConfirmed(await work(root))
+  if (root === null) return
+  pushConfirmed(await work(root))
+  // Its own deferral, not pushConfirmed's: that one returns at once when the tree didn't move,
+  // and a value write never moves the tree.
+  setImmediate(() => {
+    const changes = flushValueWrites(root)
+    if (changes.length && mainWindow && !mainWindow.isDestroyed())
+      push(mainWindow, 'values:changed', changes)
+  })
 }
 
 async function confirmContainerWrite(containerPath: unknown): Promise<void> {
