@@ -88,6 +88,20 @@
   .gate pre { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 16px; color: var(--ink-secondary); white-space: pre-wrap; word-break: break-word; }
   .gate .dev { margin-top: 8px; color: var(--state-stop); }
 
+  details.about { background: var(--surface-primary); border: 1px solid var(--hairline); border-radius: 12px; }
+  details.about summary { cursor: pointer; padding: 12px 16px; font: var(--title-2) var(--font); font-weight: 600; color: var(--ink-primary); list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.about summary::-webkit-details-marker { display: none; }
+  details.about summary::after { content: '+'; color: var(--ink-tertiary); font-weight: 400; font-size: 18px; }
+  details.about[open] summary::after { content: '–'; }
+  details.about summary:focus-visible { outline: 2px solid var(--state-running); outline-offset: -2px; border-radius: 12px; }
+  details.about .body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--hairline); padding-top: 14px; }
+  details.about p { margin: 0; max-width: 66ch; color: var(--ink-secondary); }
+  details.about h3 { margin: 0; font: var(--body) var(--font); font-weight: 600; color: var(--ink-primary); }
+  details.about .plan { display: grid; grid-template-columns: 92px 1fr; gap: 6px 14px; }
+  details.about .plan .ph { font: var(--footnote) var(--font); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-tertiary); padding-top: 3px; }
+  details.about .plan .what { color: var(--ink-secondary); max-width: 66ch; }
+  details.about .plan .what b { color: var(--ink-control); font-weight: 500; }
+
   .foot { border-top: 1px solid var(--hairline); padding-top: 16px; color: var(--ink-tertiary); font: var(--caption) var(--font); max-width: 66ch; }
   .foot code { font-family: var(--mono); font-size: 10.5px; color: var(--ink-secondary); background: var(--surface-primary); border: 1px solid var(--hairline); border-radius: 4px; padding: 1px 5px; }
 </style>
@@ -109,6 +123,30 @@
     <div class="strip" id="strip"></div>
     <div class="striplabels" id="stripLabels"></div>
   </div>
+
+  <details class="about">
+    <summary>What this is, and what the plan does</summary>
+    <div class="body">
+      <h3>This board</h3>
+      <p>A live view of an overnight execution. The executing session republishes this page at the start of every task, at every gate, and at closeout. <b>Right now</b> is the last thing it was doing; the strip is one segment per phase; each card lists its tasks with a state, the commit that landed it, and — once the phase closes — the gate's real command output and anything that departed from the plan. If a task reads <em>blocked</em>, the run has stopped and is waiting on you.</p>
+
+      <h3>What changes</h3>
+      <p>Property values move from Pommora-only keys like <code>&lt;Status&gt;:</code> to plain keys like <code>Status:</code> — the same frontmatter any other Markdown app reads and writes. Context relations move from <code>(Projects):</code> to <code>&lt;Projects&gt;:</code>. Select and Status values become one-element lists so a list edited elsewhere and a Select edited in Pommora are the same thing. Whether a key is Pommora's is decided by one rule — its exact name is registered in <code>properties.json</code> — instead of by the brackets around it. An edit made outside the app shows up in an open view within a second, resolves by one rule when its shape is off (the newest valid value wins), and is tidied on disk the next time a value is deliberately set on that file. Renaming a property onto a key some page already uses is refused instead of destroying data.</p>
+
+      <h3>The plan, phase by phase</h3>
+      <div class="plan">
+        <span class="ph">Phase 0</span><span class="what"><b>One writer.</b> Strip stale comments from every file the plan touches, then collapse the two frontmatter writers into one and delete two duplicate functions. Nothing changes in behavior; the tests prove it by not changing.</span>
+        <span class="ph">Phase 1</span><span class="what"><b>Keying.</b> The brackets come off property keys, Context keys switch to <code>&lt;…&gt;</code>, the registry name becomes the one ownership test, the content index records every key so a newly registered name finds its pages at once, a reserved-name rule and the rename refusal land. <b>Then the one planned stop:</b> the vault is converted (Obsidian's values win, <code>.slate</code> pseudo-contexts also become real Contexts, Brand/Price/Links join the registry), and you look at a page in both apps.</span>
+        <span class="ph">Phase 2</span><span class="what"><b>Values.</b> Select and Status write as lists; one shape rule for the three option types; checkbox <code>false</code> reads as absent; option rename and delete work on list-shaped pages.</span>
+        <span class="ph">Phase 3</span><span class="what"><b>Repair.</b> One reconcile with a property arm runs inside the one writer on every value edit, whole file, with the rules that keep a clear or an unassign from being reverted. Unknown Multi-Select values are adopted into the registry; unknown Select values are dropped. The expensive Contexts load runs only when a quick check finds drift.</span>
+        <span class="ph">Phase 4</span><span class="what"><b>Live values.</b> A <code>values:changed</code> push fed by the file watcher and by the app's own writes, so an external edit reaches an open table without reopening it; optimistic edits are retired by page id and never before their own write lands.</span>
+        <span class="ph">Phase 5</span><span class="what"><b>Surfaces.</b> Two toggles in Settings › Properties › Metadata: <em>Repair Properties On Open</em> (off by default) and <em>Capitalize All Metadata</em>. Then closeout: the Ideas Collection checked against what Obsidian shows, a manual list of behaviors tried in the running app, an independent "which is more sustainable" judgment, surgical doc rewrites, and the History entry <em>Compatible Properties</em>.</span>
+      </div>
+
+      <h3>How it's judged</h3>
+      <p>Not by line count. The goal is fewer concepts — one sigil, one ownership gate, one writer, one reconcile, one shape rule, one refresh seam — and an outside agent, shown before and after, answering that the after is the more sustainable codebase.</p>
+    </div>
+  </details>
 
   <section class="phases" id="phases"></section>
 
