@@ -157,7 +157,7 @@
 
 <script id="data" type="application/json">{
   "head": "a4037b94",
-  "now": { "state": "running", "text": "Tasks 4+5 (+7, + Task 6's shape sites) landed as one commit: governedKeys.ts gone, bare property keys, <Context> keys, Clear strips bookkeeping only. 303 files / 3738 tests. Dev app now runs on ~/PommoraScratch. Next: Task 6's index generation.", "when": "2026-08-31 · Task 6" },
+  "now": { "state": "running", "text": "Task 6 landed (index generation). Task 8 — the reserved-name rule joins invalidPropertyName; then Task 9, the rename-onto-held-key refusal.", "when": "2026-08-31 · Task 8" },
   "phases": [
     { "name": "Phase 0 · One writer", "state": "done", "base": "a4037b94", "tasks": [
       { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
@@ -168,7 +168,7 @@
     { "name": "Phase 1 · Keying", "state": "running", "base": "6d720e31", "stop": true, "tasks": [
       { "n": "Task 4", "name": "The sigil is the Context's alone; governedKeys.ts dissolves", "state": "done", "note": "one commit with Task 5; 17 fixture files re-sigiled" },
       { "n": "Task 5", "name": "Ownership is the registry name; propertyKey → def.name", "state": "done", "note": "14 callers → def.name; isRegisteredPropertyName + propertyNames in properties.ts" },
-      { "n": "Task 6", "name": "Four shape sites; the index records every key; the index generation", "state": "running", "note": "the four shape sites rode the 4+5 commit (no intermediate form exists); the index generation is this commit" },
+      { "n": "Task 6", "name": "Four shape sites; the index records every key; the index generation", "state": "done", "note": "INDEX_GENERATION=2 truncates page_values + indexed_files on mismatch; local_state untouched (tested)" },
       { "n": "Task 7", "name": "Clear Exclusion strips bookkeeping only", "state": "done", "note": "rode the 4+5 commit; preservePropertiesOnClear gone from types, reader, Settings, and the clear handler" },
       { "n": "Task 8", "name": "The reserved-name rule", "state": "pending" },
       { "n": "Task 9", "name": "A rename onto a held key is refused", "state": "pending" },

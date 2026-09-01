@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openNexusDb, DB_FILENAME } from './open'
-import { SCHEMA_VERSION, readSchemaVersion } from './schema'
+import { INDEX_GENERATION, SCHEMA_VERSION, readMeta } from './schema'
 import type { Db } from './driver'
 
 let root: string
@@ -29,7 +29,8 @@ describe('openNexusDb', () => {
     expect(db).not.toBeNull()
     if (!db) return
     expect(existsSync(join(root, '.nexus', DB_FILENAME))).toBe(true)
-    expect(readSchemaVersion(db)).toBe(SCHEMA_VERSION)
+    expect(readMeta(db, 'schema_version')).toBe(String(SCHEMA_VERSION))
+    expect(readMeta(db, 'index_generation')).toBe(String(INDEX_GENERATION))
     db.close()
   })
 
@@ -55,7 +56,47 @@ describe('openNexusDb', () => {
 
     const second = openNexusDb(root)
     expect(second && keys(second)).toEqual([])
-    expect(second && readSchemaVersion(second)).toBe(SCHEMA_VERSION)
+    expect(second && readMeta(second, 'schema_version')).toBe(String(SCHEMA_VERSION))
+    second?.close()
+  })
+
+  it('a stale index generation truncates the index tables and nothing else', () => {
+    const first = openNexusDb(root)
+    expect(first).not.toBeNull()
+    if (!first) return
+    for (const scope of ['aliases', 'blockDoc', 'folds']) {
+      first
+        .prepare('INSERT INTO local_state (scope, key, value) VALUES (?, ?, ?)')
+        .run(scope, 'k', '{}')
+    }
+    first
+      .prepare("INSERT INTO page_values (path, key, value) VALUES ('a.md', 'Status', '\"x\"')")
+      .run()
+    first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
+    first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '1')").run()
+    first.close()
+
+    const second = openNexusDb(root)
+    expect(second).not.toBeNull()
+    if (!second) return
+    expect(second.prepare('SELECT count(*) AS n FROM local_state').get()).toEqual({ n: 3 })
+    expect(second.prepare('SELECT count(*) AS n FROM page_values').get()).toEqual({ n: 0 })
+    expect(second.prepare('SELECT count(*) AS n FROM indexed_files').get()).toEqual({ n: 0 })
+    expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
+    second.close()
+  })
+
+  it('the current index generation keeps the index across a reopen', () => {
+    const first = openNexusDb(root)
+    expect(first).not.toBeNull()
+    if (!first) return
+    first
+      .prepare("INSERT INTO page_values (path, key, value) VALUES ('a.md', 'Status', '\"x\"')")
+      .run()
+    first.close()
+
+    const second = openNexusDb(root)
+    expect(second?.prepare('SELECT count(*) AS n FROM page_values').get()).toEqual({ n: 1 })
     second?.close()
   })
 

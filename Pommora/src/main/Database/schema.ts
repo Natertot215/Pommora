@@ -6,6 +6,9 @@
 import type { Db } from './driver'
 
 export const SCHEMA_VERSION = 1
+/** The content index's own shape. A mismatch truncates page_values and indexed_files so the next
+ *  seed re-reads the corpus; local_state is never touched. */
+export const INDEX_GENERATION = 2
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -41,20 +44,20 @@ export function applySchema(db: Db): void {
   db.exec(DDL)
 }
 
-/** The stored version, or null when the meta table / row is absent (⇒ recreate). */
-export function readSchemaVersion(db: Db): number | null {
+/** The stored value, or null when the meta table or the row is absent. */
+export function readMeta(db: Db, key: string): string | null {
   const hasMeta = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").get()
   if (!hasMeta) return null
-  const row = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as
     | { value: string }
     | undefined
-  if (!row) return null
-  const n = Number(row.value)
-  return Number.isFinite(n) ? n : null
+  return row?.value ?? null
 }
 
-export function stampSchemaVersion(db: Db): void {
-  db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)").run(
-    String(SCHEMA_VERSION),
-  )
+export function writeMeta(db: Db, key: string, value: string): void {
+  db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
+}
+
+export function truncateIndex(db: Db): void {
+  db.exec('DELETE FROM page_values; DELETE FROM indexed_files;')
 }

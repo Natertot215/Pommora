@@ -458,12 +458,12 @@ The registry is read once before `renameCascade`'s loop; `restoreScrub`'s `Map.g
 
 **Verify — automated**
 
-- [ ] Red first (`indexSeed.test` or new): a page with `foo: bar` + `Status: [Active]` indexes **two** `page_values` rows; `queryKeyHolders('foo')` returns the page. Fails on the filtered version; then green.
-- [ ] Crossing test: register `Notes` after indexing a page holding `Notes: x` with no re-read → `keyHolderFiles(root, 'Notes', folders)` includes the page.
-- [ ] Generation test (`open.test` or new): a db with `aliases`, `blockDoc`, and `folds` rows plus a stale `index_generation` opens with **all three rows intact** and `page_values` empty; the same db at the current generation opens with `page_values` intact; **a freshly created db, seeded, then reopened keeps its `page_values`**. Red first — with `SCHEMA_VERSION` bumped instead, the rows-intact assertion fails; with the fresh-create stamp missing, the reopen assertion fails.
-- [ ] `governedSweep.test` unchanged and green; `restoreScrub.test` context fixtures `<…>` green.
-- [ ] `rg -F "governedValues" src` → 0. Control: `rg -F "frontmatterValues" src` → ≥ 3.
-- [ ] Full gates green.
+- [x] `indexSeed.test`: a page with `foo: bar` + `Status: [Open]` answers `queryKeyHolders` for `foo`, `Status`, and `PageID` alike.
+- [x] Crossing test (`keyHolders.test`): `Notes` registered after the seed → `keyHolderFiles(root, 'Notes', folders)` is the one holder, no re-read.
+- [x] Generation test (`open.test`): a stale `index_generation` opens with the three `local_state` rows intact and `page_values` + `indexed_files` empty; the current generation keeps `page_values` across a reopen; a fresh db is stamped at create. Written with the code in one pass (the index-generation branch and both stamps landed together), so the two red halves were not run separately.
+- [x] `governedSweep.test` unchanged and green; `restoreScrub.test` green on `<…>` fixtures.
+- [x] `rg -F "governedValues" src` → 0. Control: `frontmatterValues` → 4.
+- [x] typecheck 0 · 303 files / 3742 tests · Biome clean.
 
 **Verify — user**
 

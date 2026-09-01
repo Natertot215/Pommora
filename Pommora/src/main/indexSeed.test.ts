@@ -81,6 +81,17 @@ describe('seedContentIndex', () => {
     expect(readIndexedStats()?.has('Loose/Note.md')).toBe(false)
   })
 
+  it('records every frontmatter key, registered or not, so a name registered later finds its holders', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nPageID: ${ULID_A}\nStatus:\n  - Open\nfoo: bar\n---\n\nbody\n`,
+    )
+    await seedContentIndex(root)
+    expect(queryKeyHolders('foo')).toEqual(['Notes/A.md'])
+    expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
+    expect(queryKeyHolders('PageID')).toEqual(['Notes/A.md'])
+  })
+
   it('with no database the seed stands down and queries stay null', async () => {
     closeSessionDb()
     await expect(seedContentIndex(root)).resolves.toBeUndefined()
