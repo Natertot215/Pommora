@@ -4,14 +4,14 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### The Model
 
-**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content relates *to*. No Context contains or parents another; an entity tags whichever Spaces fit, resolved through the registry via parenthesized `(Title):` keys in frontmatter.
+**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content relates *to*. No Context contains or parents another; an entity tags whichever Spaces fit, resolved through the registry via `<Title>:` keys in frontmatter.
 
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations.
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `PageID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages.
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each as Markdown files distinguished via their key and validated against their folder placement.
-- **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; assigned as frontmatter via `<Property>:` syntax.
+- **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare frontmatter keys named exactly as the property (`Status:`), so any application that reads frontmatter reads them.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed anywhere outside the Markdown body, and content-to-content relational properties **don't** exist.
 
 **Files are canonical for content.** Pages, Tasks, and Events are all Markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. 
@@ -22,7 +22,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Database//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand, and codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Pommora/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system.
-- **TS-native on-disk format:** bare, natively typed values under wrapped title keys, zod-validated.
+- **TS-native on-disk format:** bare, natively typed values under bare property-name keys and `<Context>` keys, zod-validated.
 
 ### Hard Rules
 

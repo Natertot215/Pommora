@@ -15,12 +15,12 @@ The organization layer. A **Context** is a user-defined group — a fresh nexus 
 Context identity lives in one file, `.nexus/contexts.json`, modeled by `contextsRegistry` in `src/shared/contexts.ts`: each entry carries an `id` (a minted ULID, seeded and user-created alike), a `title`, an optional `singular` (the seeded three carry one, so their create entries read "New Area" rather than "New Space"), and an optional `icon`, with array position as the display order. Everything else about the layer follows from the filesystem and the files that name a Space.
 
 - **Spaces are folders** at `.nexus/contexts/<Context>/<Space>/`, each gated by a `_space.json` sidecar holding the Space's id, icon, chip color, banner, and its own relation keys. A folder without the sidecar isn't a Space. The Space's Context is its parent folder and nothing else records it, so re-homing a Space is a move, and a Context rename is a folder rename plus a cascade.
-- **Membership lives in member files** as parenthesized title keys at the root, over an array of bare Space titles — the same shape in a page's frontmatter and in a `_space.json`, where JSON quotes the key. Member files carry no ids; the registry resolves titles at read time, and an emptied key is removed rather than written empty.
+- **Membership lives in member files** as `<Title>` keys at the root, over an array of bare Space titles — the same shape in a page's frontmatter and in a `_space.json`, where JSON quotes the key. Member files carry no ids; the registry resolves titles at read time, and an emptied key is removed rather than written empty.
 - **Validation is registry membership at read.** A key must exactly match a registry title; a value matches through one normalizer (`normalizeContextValue`) that folds case, whitespace, composition, and scalar drift, so `- 2024` still finds the Space titled "2024". A drifted-but-resolvable value displays and repairs on that file's next context write; an unknown value sits inert. Any other membership shape is a foreign key, preserved and read by nothing.
 - **Title uniqueness folds case** at create and rename, since the filesystem does; a case-only rename of an entity itself passes.
 
 ```yaml
-(Projects):
+<Projects>:
   - Pommora
 ```
 
