@@ -87,7 +87,7 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
   })
 
-  it('createPage seeds stamp in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
+  it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
     await createProperty(root, { id: 'prop_stage', name: 'Stage', type: 'select' })
     const r = await handleMutate(
       {
@@ -1032,7 +1032,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(splitFrontmatter(md).Stage).toEqual(['done'])
   })
 
-  it('stamps modified_at — a property VALUE change is an edit', async () => {
+  it('writes no modified_at on a property VALUE change — the file mtime is the edit record', async () => {
     await handleMutate(
       {
         op: 'setProperty',
@@ -1042,9 +1042,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       },
       nexusDeps,
     )
-    const stamp = splitFrontmatter(await read('Notes/Daily/Beta.md')).modified_at
-    expect(typeof stamp).toBe('string')
-    expect(stamp as string).toBeTruthy()
+    expect('modified_at' in splitFrontmatter(await read('Notes/Daily/Beta.md'))).toBe(false)
   })
 
   it('a null value clears the property key', async () => {

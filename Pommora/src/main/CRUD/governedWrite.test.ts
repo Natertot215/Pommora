@@ -53,12 +53,12 @@ describe('setGovernedRootKeys', () => {
     expect(await readFile(page, 'utf8')).not.toContain('<Projects>')
   })
 
-  it('stamps modified_at itself — listing it without supplying it would delete it', async () => {
+  it('writes no modified_at — a legacy one survives as foreign frontmatter', async () => {
     await writeFile(page, '---\nid: p1\nmodified_at: 2020-01-01T00:00:00.000Z\n---\n')
     await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
     const out = await readFile(page, 'utf8')
-    expect(out).toMatch(/modified_at: 20[2-9]\d-/)
-    expect(out).not.toContain('2020-01-01')
+    expect(out).toContain('modified_at: 2020-01-01T00:00:00.000Z')
+    expect(out.match(/modified_at/g)).toHaveLength(1)
   })
 
   it('writes the key plain — neither glyph needs quoting', async () => {

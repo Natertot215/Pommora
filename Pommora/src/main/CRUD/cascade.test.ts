@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { PAGE_ID_KEY } from '@shared/identity'
 import type { PropertyDefinition } from '@shared/properties'
 import { renameCascade } from './cascade'
 import { createPage } from './page'
@@ -44,7 +43,7 @@ describe('renameCascade', () => {
     const nested = await createPage(sub, 'Nested', { body: 'deep [[Target]]' })
     if (!a.ok || !b.ok || !c.ok || !nested.ok) throw new Error('setup failed')
 
-    const before = await fmOf(a.value.path)
+    const before = splitEnvelope(await readFile(a.value.path, 'utf8')).frontmatter
     const r = await renameCascade(root, 'Target', 'New Target')
     expect(r.ok).toBe(true)
     if (!r.ok) return
@@ -55,9 +54,7 @@ describe('renameCascade', () => {
     expect(await bodyOf(nested.value.path)).toBe('deep [[New Target]]')
     expect(await bodyOf(c.value.path)).toBe('no links')
 
-    const after = await fmOf(a.value.path)
-    expect(after[PAGE_ID_KEY]).toBe(a.value.id)
-    expect(after.modified_at).toBe(before.modified_at) // derived edit ⇒ no modified bump
+    expect(splitEnvelope(await readFile(a.value.path, 'utf8')).frontmatter).toBe(before)
   })
 
   it('touches nothing when no page links the old title', async () => {

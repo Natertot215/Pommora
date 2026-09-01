@@ -3,7 +3,6 @@
 
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
-import { nowIso } from './util'
 
 type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 
@@ -35,8 +34,8 @@ function applyEdit(content: string, key: string, target: string, edit: ValueEdit
   return mergeFrontmatter(
     content,
     // Governed but not supplied is how the merge is told to delete the key.
-    nextValue === null ? { modified_at: nowIso() } : { [key]: nextValue, modified_at: nowIso() },
-    [key, 'modified_at'],
+    nextValue === null ? {} : { [key]: nextValue },
+    [key],
     splitEnvelope(content).body,
   )
 }
@@ -55,14 +54,9 @@ export function replacePageValue(
 }
 
 /** Null means the page didn't hold it — the caller writes nothing, so an unrelated page is
- *  never re-dated. */
+ *  never rewritten. */
 export function stripPageMember(content: string, key: string): string | null {
   const root = splitFrontmatter(content) as Record<string, unknown>
   if (!(key in root)) return null
-  return mergeFrontmatter(
-    content,
-    { modified_at: nowIso() },
-    [key, 'modified_at'],
-    splitEnvelope(content).body,
-  )
+  return mergeFrontmatter(content, {}, [key], splitEnvelope(content).body)
 }

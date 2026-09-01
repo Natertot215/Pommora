@@ -434,22 +434,21 @@ describe('the journal slot law', () => {
   })
 })
 
-describe('clearing a value re-dates the page; renaming a key does not', () => {
-  it('unlinkSpaceValue stamps the roots it strips', async () => {
-    const before = (await fmOf(page())).modified_at
+describe('neither clearing a value nor renaming a key writes a modified_at', () => {
+  it('unlinkSpaceValue strips the value and nothing else', async () => {
     const { unlinkSpaceValue } = await import('./contextCascade')
     expect((await unlinkSpaceValue(root, 'Projects', 'Pommora')).ok).toBe(true)
-    const after = (await fmOf(page())).modified_at
-    expect(after).toBeTypeOf('string')
-    expect(after).not.toBe(before)
+    const fm = await fmOf(page())
+    expect(fm['<Projects>']).toEqual(['pommora'])
+    expect('modified_at' in fm).toBe(false)
   })
 
-  it('a key-only rename leaves the page’s date alone — the relation is unchanged', async () => {
+  it('a key-only rename moves the key and nothing else', async () => {
     const { renameContextOp } = await import('./contextCascade')
-    const before = (await fmOf(page())).modified_at
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
-    expect((await fmOf(page()))['<Ventures>']).toBeDefined()
-    expect((await fmOf(page())).modified_at).toBe(before)
+    const fm = await fmOf(page())
+    expect(fm['<Ventures>']).toBeDefined()
+    expect('modified_at' in fm).toBe(false)
   })
 })

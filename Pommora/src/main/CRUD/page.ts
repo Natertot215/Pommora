@@ -1,23 +1,22 @@
 import { join, dirname, basename } from 'node:path'
-import { rename, readFile } from 'node:fs/promises'
+import { rename } from 'node:fs/promises'
 import { PAGE_ID_KEY } from '@shared/identity'
 import { newId } from '../ids'
-import { writePageFile, mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
-import { atomicWriteFile } from '../IO/atomicWrite'
+import { writePageFile } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
 import { type Adoption, encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { GovernedWorld } from '@shared/contextResolve'
 import { PAGE_MODELED_KEYS } from '@shared/identity'
 import { ok, fail, type Result } from '@shared/result'
-import { pathExists, invalidName, nowIso } from './util'
+import { pathExists, invalidName } from './util'
 import { setGovernedRootKeys } from './governedWrite'
 import type { PropertyDefinition } from '@shared/properties'
 
 const MD = '.md'
 
-/** No context keys — presence is value-driven. Icon, body, and property values stamp in the
- *  same birth write, so a seeded page is never observable unstamped. Blank values write no key. */
+/** No context keys — presence is value-driven. Icon, body, and property values land in the
+ *  same birth write, so a seeded page is never observable unseeded. Blank values write no key. */
 export async function createPage(
   parentDir: string,
   name: string,
@@ -31,12 +30,7 @@ export async function createPage(
   const file = join(parentDir, name + MD)
   if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
-  const now = nowIso()
-  const modeled: Record<string, unknown> = {
-    [PAGE_ID_KEY]: id,
-    created_at: now,
-    modified_at: now,
-  }
+  const modeled: Record<string, unknown> = { [PAGE_ID_KEY]: id }
   if (opts.icon) modeled.icon = opts.icon
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
@@ -57,14 +51,6 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
     recordWrite(absFile)
     recordWrite(target)
     await rename(absFile, target)
-    const existing = await readFile(target, 'utf8')
-    const content = mergeFrontmatter(
-      existing,
-      { modified_at: nowIso() },
-      ['modified_at'],
-      splitEnvelope(existing).body,
-    )
-    await atomicWriteFile(target, content)
   })
 }
 
@@ -86,7 +72,7 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
   // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
   return serializeOnFile(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
+    await writePageFile(absFile, {}, [], body)
     return ok(null)
   })
 }
