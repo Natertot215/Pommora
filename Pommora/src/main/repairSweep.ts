@@ -11,6 +11,8 @@ import { rereadSinceSeed } from './indexSeed'
 import { sessionDb } from './sessionDb'
 import { readLivePersonalization } from './settings'
 
+const len = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
+
 /** Canonicalize the pages the seed re-read: the reconcile every write runs, over the files that
  *  changed while the app was closed. Best-effort; a failure costs the repair, never the open. */
 export async function runRepairSweep(root: string): Promise<void> {
@@ -45,7 +47,15 @@ export async function runRepairSweep(root: string): Promise<void> {
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(raw, world)
       adoptions.push(...r.adoptions)
-      return { next: { ...raw, ...survivingChanges(r) } }
+      const surviving = survivingChanges(r)
+      // Shape, never membership: a reconcile that shortens a list drops a member — a Context Space
+      // no title resolves, a Select value the definition lacks — which no user gesture asked for.
+      // Leave that key as written; only a length-preserving change (a scalar wrapped, a title
+      // respelled) is a shape fix the sweep may land.
+      for (const key of Object.keys(surviving)) {
+        if (len(surviving[key]) < len(raw[key])) delete surviving[key]
+      }
+      return { next: { ...raw, ...surviving } }
     })
     await applyAdoptions(root, adoptions)
   } catch (e) {
