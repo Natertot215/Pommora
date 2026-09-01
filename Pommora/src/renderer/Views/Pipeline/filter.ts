@@ -12,7 +12,7 @@ import {
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import { declaredType, modifiedStampString, resolveFieldValue } from '@renderer/Properties/value'
+import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@shared/linkValue'
 
@@ -131,11 +131,6 @@ function evaluateRule(
 ): Verdict {
   if (!FILTER_OP_SET.has(rule.op)) return NO_OP
 
-  if (rule.property_id === RESERVED_PROPERTY_ID.modifiedAt) {
-    const s = modifiedStampString(row)
-    return evaluateDate(s ? { kind: 'datetime', value: s } : { kind: 'null' }, rule.op, rule.value)
-  }
-
   // Location — not a property: membership of the row's parent set in the operand's subtree.
   if (rule.property_id === RESERVED_PROPERTY_ID.location) {
     // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Every location op is
@@ -184,6 +179,7 @@ function evaluateByType(
     case 'number':
       return evaluateNumber(v, op, expected)
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time':
       return evaluateDate(v, op, expected)
     case 'checkbox':

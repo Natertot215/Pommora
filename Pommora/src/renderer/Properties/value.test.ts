@@ -42,9 +42,11 @@ const row: ViewRow = {
   title: 'My Page',
   path: 'Col/my-page.md',
   contextValues: { ctx_areas: ['01AREA'] },
+  createdAt: '2026-06-01T08:00:00Z',
+  modifiedAt: '2026-06-20T10:00:00Z',
   frontmatter: {
     [PAGE_ID_KEY]: '01ROW',
-    modified_at: '2026-06-20T10:00:00Z',
+    modified_at: '2026-06-19T10:00:00Z',
     ...propsAtRoot(
       {
         prop_status: 'in_progress',
@@ -61,6 +63,7 @@ const row: ViewRow = {
 describe('declaredType', () => {
   it('maps reserved columns to the type/sentinel sort+group+filter switch on', () => {
     expect(declaredType('_title', schema)).toBe('title')
+    expect(declaredType('_created_at', schema)).toBe('created_time')
     expect(declaredType('_modified_at', schema)).toBe('last_edited_time')
   })
 
@@ -82,8 +85,12 @@ describe('declaredType', () => {
 })
 
 describe('resolveFieldValue', () => {
-  it('reads reserved columns from intrinsic/frontmatter fields', () => {
+  it('reads reserved columns from the row, not the frontmatter', () => {
     expect(rfv(row, '_title')).toEqual({ kind: 'select', value: 'My Page' })
+    expect(rfv(row, '_created_at')).toEqual({
+      kind: 'datetime',
+      value: '2026-06-01T08:00:00Z',
+    })
     expect(rfv(row, '_modified_at')).toEqual({
       kind: 'datetime',
       value: '2026-06-20T10:00:00Z',
@@ -110,8 +117,9 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'prop_bad')).toEqual({ kind: 'null' })
   })
 
-  it('returns null for _modified_at when frontmatter has no timestamp', () => {
+  it('returns null for a stamp the row does not carry', () => {
     const bare: ViewRow = { id: 'x', title: 'X', path: 'x.md', frontmatter: { [PAGE_ID_KEY]: 'x' } }
+    expect(rfv(bare, '_created_at')).toEqual({ kind: 'null' })
     expect(rfv(bare, '_modified_at')).toEqual({ kind: 'null' })
   })
 })

@@ -3,6 +3,8 @@ import { PAGE_ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { makeSorter, resolveManualOrder, resolvedSortCount } from './sort'
+import { applyFilter } from './filter'
+import { resolveFieldValue } from '@renderer/Properties/value'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
@@ -60,20 +62,17 @@ function makeRow(
   opts: {
     title?: string
     props?: Record<string, unknown>
-    modified_at?: string
-    created_at?: string
+    modifiedAt?: string
+    createdAt?: string
   } = {},
 ): ViewRow {
   return {
     id,
     title: opts.title ?? id,
     path: `${id}.md`,
-    frontmatter: {
-      [PAGE_ID_KEY]: id,
-      ...(opts.modified_at ? { modified_at: opts.modified_at } : {}),
-      ...(opts.created_at ? { created_at: opts.created_at } : {}),
-      ...propsAtRoot(opts.props ?? {}, schema),
-    },
+    frontmatter: { [PAGE_ID_KEY]: id, ...propsAtRoot(opts.props ?? {}, schema) },
+    ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
+    ...(opts.modifiedAt ? { modifiedAt: opts.modifiedAt } : {}),
   }
 }
 
@@ -192,22 +191,60 @@ describe('makeSorter — reserved presets', () => {
     ).toEqual(['r2', 'r1', 'r3'])
   })
 
-  it('_id compares lexicographically (ULID = creation order)', () => {
-    const rows = [makeRow('01C'), makeRow('01A'), makeRow('01B')]
-    expect(
-      ids(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema)!(rows)),
-    ).toEqual(['01A', '01B', '01C'])
+  it('_id is not a sortable column', () => {
+    expect(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema)).toBeNull()
   })
 
-  it('_modified_at uses created_at as a fallback when modified_at is absent', () => {
+  it("sorts _created_at by the row's createdAt", () => {
     const rows = [
-      makeRow('r1', { modified_at: '2026-06-20T10:00:00Z' }),
-      makeRow('r2', { created_at: '2026-06-15T10:00:00Z' }),
-      makeRow('r3', { modified_at: '2026-06-25T10:00:00Z' }),
+      makeRow('r1', { createdAt: '2026-06-20T10:00:00Z' }),
+      makeRow('r2', { createdAt: '2026-06-15T10:00:00Z' }),
+      makeRow('r3', { createdAt: '2026-06-25T10:00:00Z' }),
+    ]
+    expect(
+      ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema)!(rows)),
+    ).toEqual(['r2', 'r1', 'r3'])
+  })
+
+  it("sorts _modified_at by the row's modifiedAt, absent first ascending like any date", () => {
+    const rows = [
+      makeRow('r1', { modifiedAt: '2026-06-20T10:00:00Z' }),
+      makeRow('r2'),
+      makeRow('r3', { modifiedAt: '2026-06-15T10:00:00Z' }),
     ]
     expect(
       ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema)!(rows)),
-    ).toEqual(['r2', 'r1', 'r3'])
+    ).toEqual(['r2', 'r3', 'r1'])
+  })
+})
+
+describe('the stamp readers agree', () => {
+  it('one row resolves the same _modified_at through the value, the sort, and the filter', () => {
+    const rows = [
+      makeRow('old', { modifiedAt: '2026-06-15T10:00:00Z' }),
+      makeRow('new', { modifiedAt: '2026-06-25T10:00:00Z' }),
+    ]
+    expect(resolveFieldValue(rows[1], '_modified_at', schema)).toEqual({
+      kind: 'datetime',
+      value: '2026-06-25T10:00:00Z',
+    })
+    expect(
+      ids(makeSorter([{ property_id: '_modified_at', direction: 'descending' }], schema)!(rows)),
+    ).toEqual(['new', 'old'])
+    expect(
+      ids(
+        applyFilter(
+          rows,
+          {
+            match: 'all',
+            rules: [{ property_id: '_modified_at', op: 'on_or_after', value: '2026-06-22' }],
+          },
+          schema,
+          [],
+          [],
+        ),
+      ),
+    ).toEqual(['new'])
   })
 })
 

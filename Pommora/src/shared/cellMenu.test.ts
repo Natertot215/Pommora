@@ -181,10 +181,20 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('checkbox/number/last_edited_time → style-only with no Clear', () => {
+  it('checkbox/number and both stamps → style-only with no Clear', () => {
     expect(cellMenuContextFor(prop(), 'number', {}, true)).toEqual({
       kind: 'style-only',
       type: 'number',
+      current: {},
+    })
+    expect(cellMenuContextFor(prop(), 'created_time', {}, true)).toEqual({
+      kind: 'style-only',
+      type: 'created_time',
+      current: {},
+    })
+    expect(cellMenuContextFor(prop(), 'last_edited_time', {}, true)).toEqual({
+      kind: 'style-only',
+      type: 'last_edited_time',
       current: {},
     })
   })

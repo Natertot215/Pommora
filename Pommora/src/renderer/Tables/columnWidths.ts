@@ -1,4 +1,4 @@
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import type { PropertyDefinition } from '@shared/properties'
 import { defaultStyleFor } from '@shared/columnStyles'
 import { declaredType } from '@renderer/Properties/value'
 
@@ -8,7 +8,7 @@ export interface ColumnWidth {
   max: number
 }
 
-// Keyed by declaredType's outputs ('title' | 'context' | a PropertyType) + 'created' (special-cased).
+// Keyed by declaredType's outputs ('title' | 'context' | a PropertyType).
 // Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall; every
 // other type carries a deliberate finite max. Mins stay so a stale saved value can't squash a
 // column below legibility.
@@ -24,8 +24,8 @@ const WIDTHS: Record<string, ColumnWidth> = {
   file: { min: 100, default: 140, max: 250 },
   number: { min: 50, default: 100, max: 350 },
   datetime: { min: 90, default: 140, max: 250 },
+  created_time: { min: 90, default: 120, max: 250 },
   last_edited_time: { min: 90, default: 120, max: 250 },
-  created: { min: 90, default: 120, max: 250 },
 }
 
 const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
@@ -40,15 +40,14 @@ const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   multi_select: OPTION_MIN,
 }
 
-/** The {min, default, max} width for a column, keyed by its declared type (`_created_at` special-cased,
- *  unknown → a sane fallback). `contextIds` is what makes a Context column classify as such — omit it
- *  and one takes the fallback instead of the Context width. */
+/** The {min, default, max} width for a column, keyed by its declared type (unknown → a sane
+ *  fallback). `contextIds` is what makes a Context column classify as such — omit it and one takes
+ *  the fallback instead of the Context width. */
 export function widthFor(
   columnId: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): ColumnWidth {
-  if (columnId === RESERVED_PROPERTY_ID.createdAt) return WIDTHS.created
   const t = declaredType(columnId, schema, contextIds)
   return (t !== undefined && WIDTHS[t]) || FALLBACK
 }
@@ -64,7 +63,6 @@ export function minWidthFor(
   contextIds: readonly string[] = [],
 ): number {
   const base = widthFor(columnId, schema, contextIds).min
-  if (columnId === RESERVED_PROPERTY_ID.createdAt) return base
   const t = declaredType(columnId, schema, contextIds)
   if (t === undefined) return base
   const resolved = look ?? defaultStyleFor(t).look

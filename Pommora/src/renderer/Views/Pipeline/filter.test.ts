@@ -50,20 +50,17 @@ function row(
   opts: {
     props?: Record<string, unknown>
     areas?: string[]
-    modified_at?: string
-    created_at?: string
+    modifiedAt?: string
+    createdAt?: string
   } = {},
 ): ViewRow {
   return {
     id,
     title: id,
     path: `${id}.md`,
-    frontmatter: {
-      [PAGE_ID_KEY]: id,
-      ...(opts.modified_at ? { modified_at: opts.modified_at } : {}),
-      ...(opts.created_at ? { created_at: opts.created_at } : {}),
-      ...propsAtRoot(opts.props ?? {}, schema),
-    },
+    frontmatter: { [PAGE_ID_KEY]: id, ...propsAtRoot(opts.props ?? {}, schema) },
+    ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
+    ...(opts.modifiedAt ? { modifiedAt: opts.modifiedAt } : {}),
     ...(opts.areas ? { contextValues: { ctx_areas: opts.areas } } : {}),
   }
 }
@@ -327,15 +324,32 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['rA', 'rB'])
   })
 
-  it('_modified_at filters as a date, falling back to created_at', () => {
-    const rMod = row('rMod', { modified_at: '2026-06-20T10:00:00Z' })
-    const rCreated = row('rCreated', { created_at: '2026-06-25T10:00:00Z' })
+  it("_created_at filters as a date from the row's createdAt", () => {
+    const early = row('early', { createdAt: '2026-06-20T10:00:00Z' })
+    const late = row('late', { createdAt: '2026-06-25T10:00:00Z' })
     expect(
-      ids([rMod, rCreated], {
+      ids([early, late], {
+        match: 'all',
+        rules: [{ property_id: '_created_at', op: 'on_or_after', value: '2026-06-22' }],
+      }),
+    ).toEqual(['late'])
+  })
+
+  it("_modified_at filters as a date from the row's modifiedAt; a row without one is empty", () => {
+    const stamped = row('stamped', { modifiedAt: '2026-06-25T10:00:00Z' })
+    const bare = row('bare', { createdAt: '2026-06-25T10:00:00Z' })
+    expect(
+      ids([stamped, bare], {
         match: 'all',
         rules: [{ property_id: '_modified_at', op: 'on_or_after', value: '2026-06-22' }],
       }),
-    ).toEqual(['rCreated'])
+    ).toEqual(['stamped'])
+    expect(
+      ids([stamped, bare], {
+        match: 'all',
+        rules: [{ property_id: '_modified_at', op: 'is_empty' }],
+      }),
+    ).toEqual(['bare'])
   })
 })
 

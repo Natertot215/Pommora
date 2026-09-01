@@ -104,12 +104,15 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'Done' })
   })
 
-  it('last_edited_time reads a stored stamp; it is encode that refuses to persist one', () => {
+  it('both stamp types decode as a datetime', () => {
     expect(decodeValue(def({ type: 'last_edited_time' }), '2026-06-15T14:30:00Z')).toEqual({
       kind: 'datetime',
       value: '2026-06-15T14:30:00Z',
     })
-    expect(() => encodeValue({ kind: 'lastEditedTime' })).toThrow()
+    expect(decodeValue(def({ type: 'created_time' }), '2026-06-15T14:30:00Z')).toEqual({
+      kind: 'datetime',
+      value: '2026-06-15T14:30:00Z',
+    })
   })
 })
 
@@ -254,10 +257,6 @@ describe('encodeValue — bare on disk', () => {
   it('a hand-edited unquoted wikilink encodes back as the string it meant', () => {
     const raw = [[['Report.pdf']]]
     expect(encodeValue(decodeValue(def({ type: 'file' }), raw))).toEqual(['[[Report.pdf]]'])
-  })
-
-  it('encoding lastEditedTime throws — it is virtual and must never persist', () => {
-    expect(() => encodeValue({ kind: 'lastEditedTime' })).toThrow()
   })
 })
 
