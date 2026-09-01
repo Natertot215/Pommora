@@ -172,17 +172,16 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   useEffect(() => () => handlers.clear(), [handlers])
   // Any pointerdown outside the ghost stands it down synchronously — before a drag can cross
   // its activation threshold and freeze item rects over a grid the ghost still occupies. The
-  // ghost's own pointerdown survives (its click is the create).
-  const live = ghost !== null
+  // ghost's own pointerdown survives (its click is the create). Bound unconditionally: a press
+  // must also kill a PENDING dwell, or the ghost mounts mid-drag and shifts the frozen rows.
   useEffect(() => {
-    if (!live) return
     const down = (e: PointerEvent): void => {
       const el = e.target instanceof Element ? e.target : null
       if (!el?.closest('[data-ghost-root]')) handlers.clear()
     }
     window.addEventListener('pointerdown', down, { capture: true })
     return () => window.removeEventListener('pointerdown', down, { capture: true })
-  }, [live, handlers])
+  }, [handlers])
 
   return { ghost, ...handlers }
 }
