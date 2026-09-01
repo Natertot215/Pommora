@@ -4,6 +4,7 @@ import {
   propertyDefinition,
   propertyType,
   isReservedPropertyId,
+  invalidPropertyName,
   isRegisteredPropertyName,
   propertyNames,
   defaultStatusSeed,
@@ -132,6 +133,18 @@ describe('reserved property ids', () => {
     expect(isReservedPropertyId('_modified_at')).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
+  })
+})
+
+describe('invalidPropertyName', () => {
+  it('refuses empty, the $ prefix, the Context sigil, and the keys Pommora manages', () => {
+    expect(invalidPropertyName('')).toBe(true)
+    expect(invalidPropertyName('$role')).toBe(true)
+    expect(invalidPropertyName('<Foo')).toBe(true)
+    expect(invalidPropertyName('modified_at')).toBe(true)
+    expect(invalidPropertyName(' PageID ')).toBe(true)
+    expect(invalidPropertyName('pageid')).toBe(false)
+    expect(invalidPropertyName('Budget ($)')).toBe(false)
   })
 })
 

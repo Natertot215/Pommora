@@ -157,7 +157,7 @@
 
 <script id="data" type="application/json">{
   "head": "a4037b94",
-  "now": { "state": "running", "text": "Task 6 landed (index generation). Task 8 — the reserved-name rule joins invalidPropertyName; then Task 9, the rename-onto-held-key refusal.", "when": "2026-08-31 · Task 8" },
+  "now": { "state": "running", "text": "Phase 1's tasks are all in. Gate 1 — simplification, comment pass, code review, attack review over 03d3cab2..HEAD; then the vault backup and conversion pass on NexusOS.", "when": "2026-08-31 · Gate 1" },
   "phases": [
     { "name": "Phase 0 · One writer", "state": "done", "base": "a4037b94", "tasks": [
       { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
@@ -170,8 +170,8 @@
       { "n": "Task 5", "name": "Ownership is the registry name; propertyKey → def.name", "state": "done", "note": "14 callers → def.name; isRegisteredPropertyName + propertyNames in properties.ts" },
       { "n": "Task 6", "name": "Four shape sites; the index records every key; the index generation", "state": "done", "note": "INDEX_GENERATION=2 truncates page_values + indexed_files on mismatch; local_state untouched (tested)" },
       { "n": "Task 7", "name": "Clear Exclusion strips bookkeeping only", "state": "done", "note": "rode the 4+5 commit; preservePropertiesOnClear gone from types, reader, Settings, and the clear handler" },
-      { "n": "Task 8", "name": "The reserved-name rule", "state": "pending" },
-      { "n": "Task 9", "name": "A rename onto a held key is refused", "state": "pending" },
+      { "n": "Task 8", "name": "The reserved-name rule", "state": "done", "note": "PageID/TaskID/EventID/icon/cover/created_at/modified_at and a leading < refused, with their own message" },
+      { "n": "Task 9", "name": "A rename onto a held key is refused", "state": "done", "note": "confirmedKeyHolders reads each candidate; refusal lands before stageRename; tested with and without the index" },
       { "n": "Stop", "name": "Vault pass, then Nathan's look at a page in both apps", "state": "pending" }
     ], "gate": { "output": "", "deviation": "" } },
     { "name": "Phase 2 · Values", "state": "pending", "tasks": [

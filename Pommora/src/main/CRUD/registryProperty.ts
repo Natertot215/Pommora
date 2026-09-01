@@ -9,8 +9,18 @@ import {
 } from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
-import { normalizePropertyName, invalidPropertyName, KEY_REFUSAL } from '@shared/properties'
+import {
+  normalizePropertyName,
+  invalidPropertyName,
+  isReservedKeyName,
+  KEY_REFUSAL,
+} from '@shared/properties'
+
+const nameRefusal = (name: string): string =>
+  isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
 import { cascadePages } from './optionOps'
+import { collectionFolders } from './assignment'
+import { confirmedKeyHolders } from './keyHolders'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -46,7 +56,7 @@ export async function createProperty(
     })
     if (!candidate.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
     if (invalidPropertyName(candidate.name))
-      return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
+      return { result: fail('invalid-property', nameRefusal(candidate.name)) }
     const v = validateDefinition(candidate, Object.values(registry.defs))
     if (!v.ok) return { result: v }
     return {
@@ -116,6 +126,12 @@ export function editProperty(
   changes: Partial<PropertyDefinition>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
+    const to = typeof changes.name === 'string' ? normalizePropertyName(changes.name) : undefined
+    const prior = (await readRegistry(root)).defs[propertyId]
+    if (to !== undefined && prior && to !== prior.name) {
+      const holders = await confirmedKeyHolders(root, to, await collectionFolders(root))
+      if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
+    }
     const record = await stageRename(root, propertyId, changes.name)
     const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
       let rename: Rename | null = null
@@ -127,7 +143,7 @@ export function editProperty(
       if (next.name !== current.name) {
         if (!next.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
         if (invalidPropertyName(next.name))
-          return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
+          return { result: fail('invalid-property', nameRefusal(next.name)) }
         const v = validateName(next.name, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
         rename = { from: current.name, to: next.name }

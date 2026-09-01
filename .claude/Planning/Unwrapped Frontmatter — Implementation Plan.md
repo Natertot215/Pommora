@@ -552,8 +552,8 @@ export function invalidPropertyName(name: string): boolean // empty · leading '
 
 **Verify — automated**
 
-- [ ] Red first: `invalidPropertyName('modified_at')` and `('<Foo')` expected true fail; then green. `('pageid')` false. Both create and rename refuse `created_at` through their IPC (`registryProperty.test`).
-- [ ] Full gates green.
+- [x] `properties.test`: `modified_at`, `<Foo`, `' PageID '` refused; `pageid` and `Budget ($)` allowed. `registryProperty.test`: create refuses `created_at` naming it; rename refuses `created_at` and `<Due>`. `PAGE_STAMP_KEYS`/`PAGE_MODELED_KEYS` moved from `schemas.ts` to `identity.ts` so `properties.ts` reads them without an import cycle through `views.ts`.
+- [x] typecheck 0 · the four suites green · Biome clean.
 
 **Verify — user**
 
@@ -600,10 +600,9 @@ export async function confirmedKeyHolders(root: string, key: string, folders: st
 
 **Verify — automated**
 
-- [ ] Red first: rename `Status` → `foo` with a page holding `foo: bar` expected refused; fails (today it renames and drops); then green. A rename with **no** holder still succeeds and sweeps. Renaming `Status` → `"Status "` succeeds as a no-op. Both halves of the guard: with the check disabled the refusal test goes red.
-- [ ] With no index (`sessionDb` not ready), a rename onto an **unheld** name succeeds — the corpus fallback confirms per file, not by candidacy.
-- [ ] `.nexus/property-cascade.json` is absent after a refusal (no stranded journal).
-- [ ] Full gates green.
+- [x] `registryProperty.test` (no index — the corpus fallback): `Status` → `foo` with a page holding `foo: bar` refused with `1 page already uses "foo" as a key.`, the registry unmoved, no journal; `"Status "` succeeds as a no-op; `Phase` (unheld) succeeds and leaves `foo: bar` alone. `keyHolders.test` (indexed): a held `Phase` refused, an unheld `Step` sweeps; the un-governed note outside the scope never counts. The tests were written with the check in place; the red half was not run against the pre-Task-9 code separately (the indexed case did go red once, on a fixture whose id wasn't ULID-shaped — the page was never indexed — which is the "cold candidate" trap the per-file read exists for).
+- [x] `.nexus/property-cascade.json` absent after the refusal.
+- [x] typecheck 0 · full Vitest green · Biome clean.
 
 **Verify — user**
 
@@ -1398,6 +1397,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Deviations
 
+- **Tasks 8 and 9 land as one commit** — Task 9's edits to `properties.ts` and `registryProperty.ts` were made before Task 8's commit was cut; the two are one rule family (what a name may be) and the split would have been cosmetic.
 - **Tasks 4, 5, 7 and Task 6's four shape sites land as one commit.** Deleting the sigil leaves the four property-shape sites (`indexSeed.governedValues`, `governedSweep.changedKeys`, `restoreScrub`'s layer dispatch, `exclusionScan.clearRewrite`) and `cascade.renameCascade` with no intermediate form — a bare key has no shape to test — so their Task 6/7 forms ride the Tasks 4+5 commit; Task 6's index generation and Task 7's docs follow as their own commits. Red-first was observed as one batch (19 failures) rather than per task. Two behavior changes the fixtures surfaced, both the spec's own: a returning trashed page keeps a value whose property was deleted or unassigned meanwhile (the key is now indistinguishable from the user's own frontmatter — `restoreScrub.test`, `provenance.test`, `trashRecovery.test` rewritten to say so), and `renameCascade` rewrites Link connections only under registered names (`cascade.test` now registers its two properties). `removeProperty.test`'s select-restore had passed by accident (a nameless def wrapped to `<undefined>`); it now reads the live def.
 - **Task 0, the sweep's shape.** The comment-killer agent fanned out to three sub-agents on its own; all three were stopped and the sweep finished single-handed. A parallel session was live in the same tree throughout (its commit `345a82ab` removed both `(Nathan's call)` markers, so that control reads 0 from here on, and it holds uncommitted CSS edits that ride no commit of this arc). Task 0's "only comment lines moved" grep flags two lines whose trailing same-line comment was removed (`watcher.ts` `ignoreInitial`, `propertyValue.ts`'s `select` union member); the code on those lines is unchanged. `npm run lint` as a whole is red on the other session's unformatted `window-base.css`; Biome over the 26 files this task touched is clean.
 

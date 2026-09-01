@@ -6,7 +6,7 @@ import { rewritePageSerialized } from '../IO/atomicWrite'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { seedContentIndex } from '../indexSeed'
 import { dropLiveTree } from '../liveTree'
-import { createProperty } from './registryProperty'
+import { createProperty, editProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
 import { keyHolderFiles } from './keyHolders'
@@ -66,6 +66,15 @@ describe('keyHolderFiles', () => {
     await seedContentIndex(root)
     await createProperty(root, { id: 'prop_n', name: 'Notes', type: 'url' })
     expect(await keyHolderFiles(root, 'Notes', [abs('Notes')])).toEqual([abs('Notes', 'Late.md')])
+  })
+
+  it('a rename onto a held key is refused through the index, and the un-governed note never counts', async () => {
+    await page('Q9X', 'Phase: x\n')
+    await writeFile(abs('Loose', 'Other.md'), '---\nPhase: y\n---\n\nun-governed\n')
+    await seedContentIndex(root)
+    const refused = await editProperty(root, 'prop_s', { name: 'Phase' })
+    expect(refused.ok).toBe(false)
+    expect((await editProperty(root, 'prop_s', { name: 'Step' })).ok).toBe(true)
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {

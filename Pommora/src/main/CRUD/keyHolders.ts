@@ -7,6 +7,8 @@
 
 import { queryKeyHolders } from '../Database/contentIndex'
 import { corpusUnder, nexusCorpus } from '../indexSeed'
+import { readTextOrNull } from '../IO/atomicWrite'
+import { readFrontmatterFields } from '../IO/pageFile'
 
 export async function keyHolderFiles(
   root: string,
@@ -14,4 +16,19 @@ export async function keyHolderFiles(
   folders: string[],
 ): Promise<string[]> {
   return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
+}
+
+/** The candidates that actually hold `key`, read one by one — with no ready index the candidate
+ *  set is the whole scope, so candidacy alone never answers. */
+export async function confirmedKeyHolders(
+  root: string,
+  key: string,
+  folders: string[],
+): Promise<string[]> {
+  const holders: string[] = []
+  for (const file of await keyHolderFiles(root, key, folders)) {
+    const content = await readTextOrNull(file)
+    if (content !== null && key in readFrontmatterFields(content)) holders.push(file)
+  }
+  return holders
 }
