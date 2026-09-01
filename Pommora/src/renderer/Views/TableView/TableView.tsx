@@ -9,9 +9,13 @@ import { parseStyleAction } from '@shared/columnMenu'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { parentOf } from '@shared/treePatch'
+import type { PropertyDefinition } from '@shared/properties'
+import type { ContextOption } from '@renderer/Properties/contextOptions'
 import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
+import { MassPropertyPicker } from '@renderer/Properties/Assignment/MassPropertyPicker'
+import { pushValueUndo } from '@renderer/Properties/Assignment/valueUndo'
 import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
 import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { sharedValueClickAction } from '@renderer/Properties/Assignment/valueClick'
@@ -59,6 +63,7 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@renderer/DesignSystem/Interactions/ghostAnchor'
+import { useCellSweep } from '@renderer/Tables/cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { openWebLink } from '@renderer/Links/openWebLink'
@@ -262,6 +267,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const draggedBucket = bucketByKey.get(draggedId)
     if (draggedBucket === undefined) return null
     const beforeBucket = beforeId === null ? null : (bucketByKey.get(beforeId) ?? null)
+    if (beforeBucket === draggedBucket) return null
     const present = [...new Set(bucketByKey.values())]
     return {
       sub_group: { ...sub, order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket) },
@@ -636,6 +642,17 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
+  // A reserved Context column has no schema def — a minimal synthetic one satisfies the picker,
+  // whose options come from `contextOptions` anyway.
+  const pickerDefOf = (
+    col: ResolvedColumn,
+  ): { def: PropertyDefinition; contextOptions: ContextOption[] | null } | null => {
+    const contextOptions = contextOptionsFor(col)
+    const def =
+      schema.find((d) => d.id === col.id) ??
+      (contextOptions ? syntheticContextDef(col.id) : undefined)
+    return def ? { def, contextOptions } : null
+  }
   // ONE self-managed picker/datetime pane for the whole table, hung off the editing cell and
   // portaled to a body top layer so it escapes the table's overflow clip. `open` blooms it in on a
   // picker cell, out when editing clears; lastPicker keeps the exiting cell's content through the
@@ -660,13 +677,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </DatetimeCellPicker>
       )
     }
-    const contextOptions = contextOptionsFor(col)
-    // A reserved Context column has no schema def — a minimal synthetic one satisfies the picker,
-    // whose options come from `contextOptions` anyway.
-    const def =
-      schema.find((d) => d.id === col.id) ??
-      (contextOptions ? syntheticContextDef(col.id) : undefined)
-    if (!def) return null
+    const picked = pickerDefOf(col)
+    if (!picked) return null
+    const { def, contextOptions } = picked
     return (
       <PropertyPicker
         key={key}
@@ -678,6 +691,51 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         {...(contextOptions ? { contextOptions } : {})}
         onCommit={(v) => commitValue(row, col, v)}
         onDismiss={dismiss}
+      />
+    )
+  }
+  const massPicker = (): React.ReactNode => {
+    if (!mass) return null
+    const col = columns.find((c) => c.id === mass.colId)
+    if (!col) return null
+    const rows = mass.rowIds.flatMap((id) => {
+      const r = rowById.get(id)
+      return r ? [r] : []
+    })
+    if (rows.length < 2) return null
+    const picked = pickerDefOf(col)
+    if (!picked) return null
+    const { def, contextOptions } = picked
+    const currents = rows.map((r) => resolveFieldValue(r, col.id, schema))
+    return (
+      <MassPropertyPicker
+        key={`${mass.colId}:${mass.rowIds.join('.')}`}
+        def={def}
+        currents={currents}
+        open={massOpen}
+        triggerRef={massTriggerRef}
+        look={colStyle(col.id).look}
+        {...(contextOptions ? { contextOptions } : {})}
+        onPick={(commits) => {
+          if (commits.length === 0) return
+          const prev = commits.map(({ index }) => ({
+            id: rows[index].id,
+            value: currents[index],
+          }))
+          pushValueUndo(() => {
+            const liveCol = columnsRef.current.find((c) => c.id === col.id)
+            if (!liveCol) return
+            for (const { id, value } of prev) {
+              const row = rowByIdRef.current.get(id)
+              if (row) cellApiRef.current.commitValue(row, liveCol, value)
+            }
+          })
+          for (const { index, next } of commits) commitValue(rows[index], col, next)
+        }}
+        onDismiss={() => {
+          setMassOpen(false)
+          cellSweep.clear()
+        }}
       />
     )
   }
@@ -886,11 +944,45 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       : null
     // colWidth's inputs (widths, collapsing) are static during a drag; keying on colDrag + columns is the change surface.
   }, [colDrag, columns])
+  const [mass, setMass] = useState<{ colId: string; rowIds: string[] } | null>(null)
+  const [massOpen, setMassOpen] = useState(false)
+  const massTriggerRef = useRef<HTMLElement | null>(null)
+  const cellSweep = useCellSweep({
+    gridEl: () => host.seam.viewRootRef.current,
+    onSettle: (colId, rowIds, settleRowId) => {
+      const at = columns.findIndex((c) => c.id === colId)
+      const cell = host.seam.viewRootRef.current
+        ?.querySelector(`[data-rid="${CSS.escape(settleRowId)}"]`)
+        ?.children.item(at)
+      if (!(cell instanceof HTMLElement)) return cellSweep.clear()
+      massTriggerRef.current = cell
+      setMass({ colId, rowIds })
+      setMassOpen(true)
+    },
+  })
+  const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
+    const t = col.kind === 'context' ? 'context' : declaredType(col.id, schema)
+    if (t !== 'status' && t !== 'select' && t !== 'multi_select' && t !== 'context') return false
+    if (e.button !== 0) return false
+    cellSweep.begin(row.id, col.id, e)
+    return true
+  }
+  const columnsRef = useRef(columns)
+  columnsRef.current = columns
+  const rowByIdRef = useRef(rowById)
+  rowByIdRef.current = rowById
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const titleCol = columns.find((c) => c.kind === 'title')
-  const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, commitValue, titleCol })
-  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, commitValue, titleCol }
+  const cellApiRef = useRef({
+    openCellMenu,
+    onCellClick,
+    cellEditor,
+    commitValue,
+    titleCol,
+    startSweep,
+  })
+  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, commitValue, titleCol, startSweep }
   // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
   // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
@@ -929,6 +1021,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         const col = cellApiRef.current.titleCol
         if (col) void cellApiRef.current.openCellMenu(row, col, e)
       },
+      sweep: (row, col, e) => cellApiRef.current.startSweep(row, col, e),
       // Identity-stable straight off the hook — no ref detour needed.
       hover: (row, entering) => ghostApi.onHover(row.id, entering),
     }),
@@ -1271,6 +1364,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             hideIcon={liveView.hide_page_icons ?? false}
             selected={selection.kind === 'page' && selection.id === row.id}
             dragDisabled={dragDisabled}
+            sweepCol={cellSweep.sweep?.rows.has(row.id) ? cellSweep.sweep.colId : null}
             lead={lead}
           />,
         ]
@@ -1411,6 +1505,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </TableRowDnd>
       </BandDnd>
       {cellPicker()}
+      {massPicker()}
       {renameField()}
     </div>
   )
@@ -1424,6 +1519,7 @@ type RowCellApi = {
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   remove: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
+  sweep: (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent) => boolean
   hover: (row: ViewRow, entering: boolean) => void
 }
 
@@ -1515,6 +1611,7 @@ const DataRow = memo(function DataRow({
   hideIcon,
   selected,
   dragDisabled,
+  sweepCol,
   lead,
 }: {
   row: ViewRow
@@ -1532,6 +1629,7 @@ const DataRow = memo(function DataRow({
   hideIcon: boolean
   selected: boolean
   dragDisabled: boolean
+  sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
   const { ref, handle, isDragging } = useTableRowDrag(row.id)
@@ -1585,10 +1683,14 @@ const DataRow = memo(function DataRow({
               'data-cell',
               'cell-lead',
               dragShift?.from === i && 'col-dragging',
+              sweepCol === c.id && 'cell-sweep',
               stateCx,
             )}
             style={style}
             onContextMenu={(e) => api.menu(row, c, e)}
+            onPointerDown={(e) => {
+              if (api.sweep(row, c, e)) e.stopPropagation()
+            }}
             onClick={(e) => {
               if (!isDragging) api.click(row, c, e)
             }}
@@ -1620,9 +1722,17 @@ const DataRow = memo(function DataRow({
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div
             key={c.id}
-            className={cx('data-cell', dragShift?.from === i && 'col-dragging', stateCx)}
+            className={cx(
+              'data-cell',
+              dragShift?.from === i && 'col-dragging',
+              sweepCol === c.id && 'cell-sweep',
+              stateCx,
+            )}
             style={style}
             onContextMenu={(e) => api.menu(row, c, e)}
+            onPointerDown={(e) => {
+              if (api.sweep(row, c, e)) e.stopPropagation()
+            }}
             onClick={(e) => {
               if (!isDragging) api.click(row, c, e)
             }}
