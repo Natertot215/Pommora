@@ -7,6 +7,8 @@ import {
   recolorStatusOption,
   relabelStatusGroup,
   moveStatusOption,
+  setStatusOptionAppearance,
+  setStatusOptionIcon,
   fallbackTitle,
 } from '@shared/optionModel'
 import type { StatusGroup } from '@shared/properties'
@@ -42,8 +44,8 @@ export function StatusEditor({
   const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
-  const [coloring, setColoring] = useState<string | null>(null)
-  const paletteBtnRef = useRef<HTMLButtonElement>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const editBtnRef = useRef<HTMLButtonElement>(null)
   const def = useMemo(() => ({ status_groups: groups }), [groups])
   const statusOrder = useMemo(
     () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
@@ -57,7 +59,7 @@ export function StatusEditor({
   // One anchor per group — the shared mechanism holds a single ghost, so crossing into another
   // group's list moves the slot rather than standing two of them up.
   const ghostApi = useGhostOptionAnchor(
-    adding !== null || renaming !== null || renamingGroup !== null || coloring !== null,
+    adding !== null || renaming !== null || renamingGroup !== null || editing !== null,
   )
 
   const commitAdd = (groupId: string, raw: string, at: number): void => {
@@ -84,7 +86,6 @@ export function StatusEditor({
     else if (action === 'option:clear') onClearOption(value)
   }
   const pickColor = (value: string, color: string | undefined): void => {
-    setColoring(null)
     onSetGroups(recolorStatusOption(groups, value, color))
   }
 
@@ -140,7 +141,7 @@ export function StatusEditor({
             {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
           >
             {g.options.map((o, i) => {
-              const isColoring = coloring === o.value
+              const isEditing = editing === o.value
               return (
                 <Fragment key={o.value}>
                   <OptionSlot
@@ -152,15 +153,21 @@ export function StatusEditor({
                     look={look}
                     label={o.label}
                     color={o.color ?? g.color}
+                    icon={o.icon}
+                    appearance={o.appearance}
                     def={def}
                     renaming={renaming === o.value}
-                    coloring={isColoring}
-                    paletteRef={paletteBtnRef}
+                    editing={isEditing}
+                    editButtonRef={editBtnRef}
                     onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
                     onCancelRename={() => setRenaming(null)}
-                    onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                    onCloseColoring={() => setColoring(null)}
+                    onToggleEditing={() => setEditing((v) => (v === o.value ? null : o.value))}
+                    onCloseEditing={() => setEditing(null)}
                     onPickColor={(color) => pickColor(o.value, color)}
+                    onPickAppearance={(a) =>
+                      onSetGroups(setStatusOptionAppearance(groups, o.value, a))
+                    }
+                    onEditIcon={(icon) => onSetGroups(setStatusOptionIcon(groups, o.value, icon))}
                   />
                   {slotAt(g, i + 1, o.value)}
                 </Fragment>

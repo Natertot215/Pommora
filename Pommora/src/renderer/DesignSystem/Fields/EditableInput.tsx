@@ -18,6 +18,7 @@ export function EditableInput({
   caretAtEnd,
   boxed,
   ariaLabel,
+  autoFocus = true,
   onCommit,
   onCancel,
 }: {
@@ -29,6 +30,9 @@ export function EditableInput({
   caretAtEnd?: boolean
   boxed?: boolean
   ariaLabel?: string
+  /** Off for a field that merely SITS in a pane (the option editor) rather than being the act
+   *  the pane opened for — mounting must not steal the selection. */
+  autoFocus?: boolean
   onCommit: (next: string) => void
   onCancel: () => void
 }): React.JSX.Element {
@@ -39,12 +43,13 @@ export function EditableInput({
   // rename pane it can't focus yet (visibility:hidden until measured, launched async from a native
   // menu) — a short backstop re-asserts once shown. Re-focusing a focused field is a no-op.
   useEffect(() => {
+    if (!autoFocus) return
     const el = inputRef.current
     if (!el) return
     el.focus()
     const t = setTimeout(() => el.focus(), 60)
     return () => clearTimeout(t)
-  }, [])
+  }, [autoFocus])
   const field = (
     <input
       ref={inputRef}

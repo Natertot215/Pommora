@@ -1,5 +1,5 @@
 import type { ColumnLook } from '@shared/columnStyles'
-import type { PropertyDefinition } from '@shared/properties'
+import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
 import { Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
 import { Icon, type IconName, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
@@ -10,10 +10,22 @@ export interface OptionChipData {
   label?: string
   color?: string
   icon?: string
+  appearance?: OptionAppearance
 }
 
 /** The Compact glyph a select / multi option falls back to when it carries none of its own. */
 const defaultOptionIcon = (type: string): IconName => (type === 'multi_select' ? 'tags' : 'tag')
+
+/** The glyph an option leads with — its own icon, else its type's default (status: its group's). */
+export function optionGlyph(
+  type: string,
+  option: OptionChipData | undefined,
+  def?: Pick<PropertyDefinition, 'status_groups'>,
+): string {
+  return type === 'status'
+    ? iconNameOr(option?.icon, statusGroupGlyph(statusGroupOf(option?.value ?? '', def)))
+    : iconNameOr(option?.icon, defaultOptionIcon(type))
+}
 
 /** One option value as a chip — the single place a (type, look, option) becomes a Label. SHAPE is
  *  the type's identity (pill for status, tag for select / multi); the LOOK is its size: Standard
@@ -35,17 +47,14 @@ export function OptionChip({
   className?: string
 }): React.JSX.Element {
   const value = option?.value ?? ''
-  const compactGlyph = (): string =>
-    type === 'status'
-      ? statusGroupGlyph(statusGroupOf(value, def))
-      : iconNameOr(option?.icon, defaultOptionIcon(type))
   return (
     <Label
       shape={optionShapeFor(type)}
       color={labelColorFor(option?.color)}
+      {...(option?.appearance === 'clear' ? { fill: 'none' as const } : {})}
       className={className}
       {...(look === 'compact'
-        ? { icon: <Icon name={compactGlyph()} size="body" /> }
+        ? { icon: <Icon name={optionGlyph(type, option, def)} size="body" /> }
         : { text: option?.label ?? value })}
       {...(onRemove ? { onRemove } : {})}
     />
