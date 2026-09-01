@@ -66,7 +66,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 - `src/main` and `src/preload` don't hot-reload: after any main-side task the dev process restarts before anything is verified live. Tasks 1, 2, 5, 6, 8 touch main.
 - `src/shared` imports no fs, no React, and nothing from `src/main`. Main owns the filesystem.
 - Comments: at most one load-bearing why per change; never restate a value; never narrate. The plan's fences carry only path markers and contract edges.
-- Commit granularity: one commit per task, message on the task heading, ticks in the same commit. No line-count reporting (Nathan, 09-01-2026).
+- Commit granularity: one commit per task, message on the task heading, ticks in the same commit. No per-task line-count reporting; the closeout reports Task 0's target files baseline → finish, comments and tests excluded (Nathan, 09-01-2026).
 - Out of scope everywhere: Sapphire; `.claude/Mobile`; PageID or path-identity retirement; the content index; grouping by a stamp; any new frontmatter key.
 
 **Made False**
@@ -966,8 +966,8 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 - [ ] Every task's **Verify — automated** ticked against a result just watched.
 - [ ] Dead Vocabulary sweep, every line, controls non-zero.
-- [ ] `code-simplifier` over the whole arc's diff, dual-briefed; `comment-killer-agent` (single-handed) over the same; findings fixed or ruled.
-- [ ] `build-breaking-agent` over the whole arc (≤ 3 rounds); every finding verified against the code, fixed or carrying a ruling.
+- [ ] `code-simplifier` over the Phase 3 diff alone, dual-briefed; findings fixed or ruled — the phase earns its own pass before the arc is judged whole.
+- [ ] Then over the whole arc's diff (`<pre-Phase-0 baseline>..HEAD`), in this order: `code-simplifier` (dual-briefed) → `comment-killer-agent` (single-handed) → `build-breaking-agent` (≤ 3 rounds). Every finding verified against the code, fixed or carrying a ruling; a fix re-runs the gates and lands as its own commit.
 - [ ] Commits landed per task, explicit paths only.
 - [ ] **Declared Stop** — the closeout vault pass needs Nathan.
 
@@ -990,7 +990,7 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 - **Body-save push** (Nathan, 09-01-2026): fold it in — one shared writer path.
 - **Group by stamp** (Nathan, 09-01-2026): not built; nothing existing rides.
 - **Both columns first-class** (Nathan, 09-01-2026): Creation Time and Last Modified sort, filter, reveal, render.
-- **Labels** (executor's reading, unratified): "Creation Time" / "Last Modified" — two strings in `columnLabel.ts` if Nathan wants otherwise.
+- **Labels** (Nathan, 09-01-2026): "Creation Time" / "Last Modified".
 - **`{ id: pageId }` fallback** (Nathan, 09-01-2026): fixed alongside.
 - **Clear Metadata** (Nathan, 09-01-2026): reduces to ids + Context keys.
 - **Clear rides Task 5** (simplifier, 09-01-2026): `exclusionScan.ts` is `PAGE_STAMP_KEYS`' one consumer outside `identity.ts`, so a separate task would land a commit that doesn't typecheck. Task 8 keeps its number — Forced By, Rulings, and Sequenced After all cite it.
@@ -1022,13 +1022,13 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 
 **Coordination point — the vault pass** (Nathan present; nothing touched before the per-item go):
 
-1. App closed (`ps` shows no Electron on NexusOS). Census run and shown: every `.md` under `~/NexusOS` (excluded folders included) holding `created_at:` or `modified_at:` at the frontmatter root, and every `.json` sidecar holding `modified_at` — predicted 49 / 88 / 29 from grounding; the actual list is presented file by file.
+1. App closed (`ps` shows no Electron on NexusOS). Census run and shown: every `.md` under `~/NexusOS` (excluded folders included) holding `created_at:` or `modified_at:` at the frontmatter root, and every `.json` sidecar holding `modified_at` — predicted 49 / 88 / 29 from grounding; the actual list is presented file by file. Alongside it, the information-loss check: every page holding both `PageID` and `created_at` where `idTime(PageID)` and `created_at` disagree by more than a second — those are the pages whose Creation Time changes when the key goes, and the list is presented before any write (predicted 0: Pommora's `createPage` minted both from one instant, and adoption never wrote `created_at`).
 2. Backup: a dated copy of every file the census names, relative paths **and timestamps** preserved (`cp -Rp`, never `cp -R` — the bare form stamps every copy with now, and the true mtimes would be unrecoverable), at `~/NexusOS-stamp-backup-MM-DD-YYYY/` — the vault's tree is dirty, so no stash and no commit of Nathan's in-flight work.
 3. The transform, a throwaway script in the scratchpad (never app code). **It restores each file's timestamps after writing:** the arc makes mtime the Last Modified fact, and a rewrite through temp + rename replaces the inode and stamps it with now — so without `stat` before and `utimes(file, atime, mtime)` after, the closing act sets Last Modified on all 88 pages to the closeout date and erases the birthtime Task 8 seeds from (a stamped file with no `PageID` yet would then adopt as born today). Pages: `yaml`'s `parseDocument` → skip and **list** any document with `errors.length > 0` or a non-map root (an alias-bearing `*important`, a duplicate key, a tab-indented block — the shapes this vault has produced before), else `doc.delete('created_at')`, `doc.delete('modified_at')`, `toString()` inside a try that skips and lists on throw; a map that empties drops the fence entirely rather than emitting `---\n{}\n---`; the envelope reassembled with the body byte-identical (the same document edit `mergeFrontmatter` performs, so comments and foreign keys survive). Sidecars: parse → delete → `serializeJson` (`stableStringify(value) + '\n'`, `atomicWrite.ts:31` — the exact bytes the app writes, so no one-byte diff on the trailing newline). Dry run first: three sample diffs and the skip list shown before any write. Restartable and idempotent: each file is stat'd, transformed, and restored on its own; a second run reports 0 changes.
 4. Invariants after: `rg -e "^created_at:|^modified_at:" ~/NexusOS --glob '*.md'` → the skip list's count exactly, each named; `rg -F '"modified_at"' ~/NexusOS --glob '*.json'` → 0; control `rg -c "^PageID:" ~/NexusOS` unchanged from the census; every touched page's body byte-equal to its backup's body; `stat -f %m` on every touched file equal to its backup's. The skip list is presented to Nathan for hand-editing in Obsidian; the pass does not touch what it cannot parse.
 5. Disclosed consequence: a page's Creation Time is now its PageID's instant — for a page Pommora created, the same instant `created_at` held; for a page adopted before Task 8, its adoption date. Last Modified is unchanged by the pass.
 
-**Then:** History entry (arc "Stamp Retirement"); Context doc's Recent Work; Handoff; a Development-Environment line if the executor hit a trap worth keeping; the Delivery Claim below checked by a neutral verifier against Requirements 1–12.
+**Then:** History entry (arc "Stamp Retirement"); Context doc's Recent Work; Handoff; a Development-Environment line if the executor hit a trap worth keeping; the Delivery Claim below checked by a neutral verifier against Requirements 1–12; and the target-file report — every file Task 0 names, non-comment non-test line count at the pre-Phase-0 baseline commit → at finish, per file and in total, with the files the arc deleted or created listed apart.
 
 ## Completion Criteria
 
@@ -1043,8 +1043,7 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 
 **The passes**
 
-- [ ] Simplification and the comment pass over the whole range, not only per phase.
-- [ ] Attack review after the Delivery Claim is verified; every finding fixed or carrying a defensible ruling.
+- [ ] Each phase's own simplification pass, then the whole range: simplification → comment pass → attack review; every finding fixed or carrying a defensible ruling.
 
 **Nathan's own pass**
 
