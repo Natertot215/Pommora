@@ -1,5 +1,5 @@
-/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowBase surface;
-   what remains here is what only this window has — its custom exits, its body scroll model, and the
+/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowBase surface; what
+   remains here is what only this window has — its custom exits, body scroll model, and the
    front-matter inspector's rows. */
 
 /* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is
@@ -14,12 +14,8 @@
   display: none;
 }
 
-/* ---- body: the embedded page, bare on the window glass. The top padding clears the floating
-   toolbar at rest, then content scrolls under it. ---- */
 .page-window-body {
   padding-top: var(--window-toolbar-h);
-  /* Scrolled content dissolves under the floating toolbar (the shared scroll-edge fade); the fade
-     width matches the toolbar strip so nothing hard-clips behind it. */
   --over-scroll-fade: var(--window-toolbar-h);
 }
 
@@ -30,8 +26,7 @@
   padding-right: calc(14px * var(--mdpm-scale));
 }
 
-/* ---- the front-matter inspector rows: property label + icon left, value hugging the right
-   edge — properties only, no title/banner rows. ---- */
+/* The front-matter inspector rows are properties only — no title/banner rows. */
 .page-window-insp {
   display: flex;
   flex-direction: column;
@@ -45,15 +40,12 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* The rows start BELOW the toolbar strip, never squished against the pane top. */
   padding: var(--window-toolbar-h) 4px 4px;
 }
-/* A group field: contexts and properties each sit in a rounded fill. */
 .page-window-insp-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  /* Inner breathing room — rows never read pushed to the field's edges. */
   padding: 6px 8px;
   border-radius: 6px;
   background: var(--fill-quaternary);
@@ -92,8 +84,8 @@
 .page-window-insp-empty {
   font-size: var(--text-caption-size);
 }
-/* + Add Property — a bare footnote affordance OUTSIDE the properties field (no field of its
-   own); its picker borrows the Group/Sort property menu. */
+/* + Add Property is a bare footnote affordance outside the properties field; its picker borrows
+   the Group/Sort property menu. */
 .page-window-insp-add {
   align-self: flex-start;
   color: var(--label-tertiary);
