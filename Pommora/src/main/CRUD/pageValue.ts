@@ -14,15 +14,20 @@ const SKIP = Symbol('skip')
  *  Returns SKIP when the value doesn't hold `target`; otherwise the next value (null = delete key). */
 function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | typeof SKIP {
   const xs = Array.isArray(raw) ? raw : [raw]
-  if (!xs.includes(target)) return SKIP
+  // The same spelling rule the read applies: a YAML number or boolean names the option it spells.
+  const names = (el: unknown, value: string): boolean =>
+    (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
+    String(el) === value
+  if (!xs.some((el) => names(el, target))) return SKIP
   if (edit.op === 'replace') {
     // Renaming target into a DIFFERENT value the list already holds would duplicate it — merge
     // instead by dropping the target (its new value is already present). The `to !== target` guard
     // keeps a no-op rename from deleting the value. Foreign elements are otherwise untouched.
-    if (edit.to !== target && xs.includes(edit.to)) return xs.filter((el) => el !== target)
-    return xs.map((el) => (el === target ? edit.to : el))
+    if (edit.to !== target && xs.some((el) => names(el, edit.to)))
+      return xs.filter((el) => !names(el, target))
+    return xs.map((el) => (names(el, target) ? edit.to : el))
   }
-  const filtered = xs.filter((el) => el !== target)
+  const filtered = xs.filter((el) => !names(el, target))
   return filtered.length ? filtered : null
 }
 

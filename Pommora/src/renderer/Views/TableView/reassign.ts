@@ -16,7 +16,7 @@ export function groupKeyToValue(groupKey: string, type: string | undefined): Pro
     case 'select':
       return { kind: 'select', value: groupKey }
     case 'checkbox':
-      return { kind: 'checkbox', value: groupKey === 'true' }
+      return groupKey === 'true' ? { kind: 'checkbox', value: true } : null
     default:
       return null
   }

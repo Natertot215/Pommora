@@ -16,7 +16,7 @@ function ruleSeed(rule: FilterRule, schema: PropertyDefinition[]): PropertyValue
     case 'select':
       return { kind: 'select', value: rule.value }
     case 'checkbox':
-      return { kind: 'checkbox', value: rule.value === 'true' }
+      return rule.value === 'true' ? { kind: 'checkbox', value: true } : null
     default:
       return null
   }

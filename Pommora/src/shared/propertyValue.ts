@@ -2,7 +2,7 @@ import { optionValues, type PropertyDefinition } from './properties'
 
 export type PropertyValue =
   | { kind: 'number'; value: number }
-  | { kind: 'checkbox'; value: boolean }
+  | { kind: 'checkbox'; value: true }
   | { kind: 'datetime'; value: string } // ISO-8601; a bare "yyyy-MM-dd" is a date-only datetime
   | { kind: 'select'; value: string }
   | { kind: 'multiSelect'; value: string[] }
@@ -29,9 +29,14 @@ function fileEntry(v: unknown): string | null {
 
 const NULL: PropertyValue = { kind: 'null' }
 
-/** The three option types share one on-disk shape — a list — and a scalar is read as a list of one. */
-const optionList = (raw: unknown): string[] =>
-  (Array.isArray(raw) ? raw : [raw]).filter((x): x is string => typeof x === 'string' && x !== '')
+/** The three option types share one on-disk shape — a list of one or more option values — and a
+ *  scalar is read as a list of one. An outside write of `- 2024` parses as a number and must still
+ *  name the option "2024", so scalars coerce to their string spelling. */
+export const optionList = (raw: unknown): string[] =>
+  (Array.isArray(raw) ? raw : [raw])
+    .filter((x) => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean')
+    .map(String)
+    .filter((x) => x !== '')
 
 /** The one address for "an externally written option list sets a Select or Status value": the
  *  newest valid element wins, and an invalid trailing element yields to the nearest valid one
@@ -115,7 +120,7 @@ export function encodeValue(value: PropertyValue): unknown {
   }
 }
 
-/** Checkbox `false` and number `0` carry meaning and are never blank. */
+/** Number `0` carries meaning and is never blank. */
 export function isBlankValue(value: PropertyValue | null): boolean {
   if (value === null) return true
   switch (value.kind) {
