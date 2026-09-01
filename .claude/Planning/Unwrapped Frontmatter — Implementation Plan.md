@@ -1371,9 +1371,10 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 19 — in-flight overrides; id-scoped retire · `36f803f7`
   - [x] Task 20 — both legs; `refreshValues` deleted · `36f803f7`
   - [x] Gate 4 — simplification `224bbbaa`; review + attack fixes `9dad7341`
-- [ ] **Phase 5** — Surfaces · base `9dad7341`
+- [x] **Phase 5** — Surfaces · base `9dad7341`
   - [x] Task 21 — on-load repair sweep + toggle · `7557bc97`
-  - [x] Task 22 — Capitalize All Metadata + toggle
+  - [x] Task 22 — Capitalize All Metadata + toggle · `5732ac8a`
+  - [x] Gate 5 — simplification + docs `bd3ac843`; review + attack fixes `a3212fb4`
 
 ### Rulings
 
