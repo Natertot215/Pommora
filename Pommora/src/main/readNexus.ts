@@ -123,6 +123,7 @@ export function readPersonalization(raw: unknown): Personalization {
     muteCheckedItems: bool(p.muteCheckedItems),
     hideChevrons: bool(p.hideChevrons),
     repairOnOpen: bool(p.repairOnOpen),
+    capitalizeMetadata: bool(p.capitalizeMetadata),
     outlinerLines: bool(p.outlinerLines),
     codeblockLineCount: bool(p.codeblockLineCount),
     navCloseOnSelect: bool(p.navCloseOnSelect),

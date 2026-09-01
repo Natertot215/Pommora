@@ -7,6 +7,7 @@ import {
   type IconName,
 } from '@renderer/DesignSystem/Symbols'
 
+import { displayPropertyName } from '@renderer/Properties/Assignment/columnLabel'
 interface TypeMeta {
   label: string
   icon?: IconName
@@ -73,9 +74,10 @@ export const MODIFIED_TARGET: PaneTarget = {
 export const schemaTargets = (
   schema: PropertyDefinition[],
   qualifies: (def: PropertyDefinition) => boolean,
+  capitalize = false,
 ): PaneTarget[] =>
   schema.filter(qualifies).map((d) => ({
     id: d.id,
-    label: d.name,
+    label: displayPropertyName(d.name, capitalize),
     icon: propertyIcon(d),
   }))

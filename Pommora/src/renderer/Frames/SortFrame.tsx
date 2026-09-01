@@ -12,6 +12,7 @@ import { bucketOrder } from '@renderer/Views/Pipeline/group'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
 import * as gp from './groupFrame.css'
 
+import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 type Direction = SortCriterion['direction']
 
 /** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer
@@ -89,11 +90,15 @@ interface SortTarget {
   icon: PickerChoice<string>['icon']
 }
 
-function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
+function sortTargets(schema: PropertyDefinition[], capitalize: boolean): SortTarget[] {
   return [
     TITLE_TARGET,
     MODIFIED_TARGET,
-    ...schemaTargets(schema, (d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? '')),
+    ...schemaTargets(
+      schema,
+      (d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? ''),
+      capitalize,
+    ),
   ]
 }
 
@@ -115,7 +120,8 @@ export function SortFrame({
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
-  const targets = sortTargets(schema)
+  const capitalize = useCapitalizeMetadata()
+  const targets = sortTargets(schema, capitalize)
   const targetById = new Map(targets.map((t) => [t.id, t]))
   const nameOf = (c: SortCriterion): string =>
     c.property_id === LOCATION_SORT

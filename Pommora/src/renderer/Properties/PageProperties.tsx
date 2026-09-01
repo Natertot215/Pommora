@@ -26,9 +26,14 @@ import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
 
+import {
+  displayPropertyName,
+  useCapitalizeMetadata,
+} from '@renderer/Properties/Assignment/columnLabel'
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
 export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const pageDetail = useSession(shownDetail)
   const tree = useSession((st) => st.tree)
   const [editing, setEditing] = useState<Editing>(null)
@@ -75,9 +80,12 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map((t) => ({ ...t, def: null }))],
     [
       'properties',
-      schema
-        .filter(isShown)
-        .map((d) => ({ id: d.id, label: d.name, icon: propertyIcon(d), def: d })),
+      schema.filter(isShown).map((d) => ({
+        id: d.id,
+        label: displayPropertyName(d.name, capitalize),
+        icon: propertyIcon(d),
+        def: d,
+      })),
     ],
   ]
   const entering = useEntrance(
@@ -279,7 +287,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
             leading={<Icon name={propertyIcon(def)} size="body" />}
             onClick={() => revealAndEdit(def)}
           >
-            {def.name}
+            {displayPropertyName(def.name, capitalize)}
           </PickerOption>
         ))}
       </PickerMenu>

@@ -20,6 +20,10 @@ import {
   parseEditorValue,
 } from '@renderer/Properties/Assignment/cardValueInput'
 
+import {
+  displayPropertyName,
+  useCapitalizeMetadata,
+} from '@renderer/Properties/Assignment/columnLabel'
 function ValuePane({
   def,
   current,
@@ -35,8 +39,14 @@ function ValuePane({
   onDone: () => void
   onBack: () => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const header = (
-    <MenuTopRow label="Properties" current={def.name} onBack={onBack} className={topRowFlat} />
+    <MenuTopRow
+      label="Properties"
+      current={displayPropertyName(def.name, capitalize)}
+      onBack={onBack}
+      className={topRowFlat}
+    />
   )
   if (def.type === 'number') {
     return (

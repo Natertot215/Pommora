@@ -5,7 +5,7 @@ import type { SavedView } from '@shared/views'
 import { useSession } from '../store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { resolveColumns } from '@renderer/Views/Pipeline/columns'
-import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
+import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { useActiveView } from '@renderer/Views/useActiveView'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { FrameDnd, RowShell, useFrameRegions } from './frameDnd'
@@ -115,13 +115,14 @@ export function VisibilityList({
 }): React.JSX.Element | null {
   const saveView = useSaveView(source)
   const tree = useSession((st) => st.tree)
+  const capitalize = useCapitalizeMetadata()
   if (!tree) return null
 
   const contextIds = contextIdsOf(tree)
   const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
   const hiddenIds = hiddenListIds(view, schema, contextIds)
   const hiddenSet = new Set(view.hidden_properties)
-  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree))
+  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
     const res = await saveView({ ...view, ...patch })

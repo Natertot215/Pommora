@@ -26,11 +26,16 @@ import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/u
 import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { useSession, type PreviewTarget } from '../store'
 
+import {
+  displayPropertyName,
+  useCapitalizeMetadata,
+} from '@renderer/Properties/Assignment/columnLabel'
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
 // re-paths the open tab on rename.
 
 export function WindowInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const tree = useSession((s) => s.tree)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
@@ -158,7 +163,12 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
           schema
             .filter((d) => isAssigned(d.id))
-            .map((d) => ({ def: d, id: d.id, label: d.name, icon: propertyIcon(d) })),
+            .map((d) => ({
+              def: d,
+              id: d.id,
+              label: displayPropertyName(d.name, capitalize),
+              icon: propertyIcon(d),
+            })),
         ].map((group, gi) =>
           group.length === 0 ? null : (
             <div key={gi === 0 ? 'contexts' : 'properties'} className="page-window-insp-group">
@@ -292,7 +302,7 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
               leading={<Icon name={propertyIcon(d)} size="body" />}
               onClick={() => revealAndEdit(d.id, d)}
             >
-              {d.name}
+              {displayPropertyName(d.name, capitalize)}
             </PickerOption>
           ))}
       </PickerMenu>

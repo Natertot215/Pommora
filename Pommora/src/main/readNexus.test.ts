@@ -136,6 +136,10 @@ describe('readPersonalization: the Metadata toggles', () => {
     expect(readPersonalization({ repairOnOpen: true }).repairOnOpen).toBe(true)
     expect(readPersonalization({}).repairOnOpen).toBeUndefined()
   })
+  it('round-trips capitalizeMetadata; absent is undefined', () => {
+    expect(readPersonalization({ capitalizeMetadata: true }).capitalizeMetadata).toBe(true)
+    expect(readPersonalization({}).capitalizeMetadata).toBeUndefined()
+  })
 })
 
 describe('readPersonalization: picker selection', () => {
