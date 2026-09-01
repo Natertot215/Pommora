@@ -1,4 +1,5 @@
-/* Trailing inspector pane — the right-side twin of the sidebar's .surface-glass. A full-height GlassPane seam aligned with the sidebar; slides off the right edge when closed. Open/closed state + the content push are driven by .shell.inspector-open. */
+/* Trailing inspector pane — the right-side twin of the sidebar's .surface-glass. A full-height
+   GlassPane seam aligned with the sidebar; slides off the right edge when closed. */
 .inspector-glass {
   position: absolute;
   top: var(--app-inset);

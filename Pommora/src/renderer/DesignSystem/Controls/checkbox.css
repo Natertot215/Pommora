@@ -1,8 +1,6 @@
-/* The app's one checkbox look. Three consumers wear it: the editor's task marker (a CodeMirror
-   widget building raw DOM), the React `Checkbox` control, and the property value glyph.
-
-   inline-block (content-independent baseline) so toggling doesn't shift the box; the mark is
-   absolutely centered. The box owns its own geometry — no borrowed frame. */
+/* The app's one checkbox look, shared by the editor's CodeMirror task-marker widget, the React
+   `Checkbox` control, and the property value glyph. inline-block keeps the baseline fixed so
+   toggling doesn't shift the box, and the mark is centered absolutely within it. */
 .checkbox {
   box-sizing: border-box;
   display: inline-block;
@@ -15,7 +13,6 @@
   border-style: solid;
   border-color: var(--border-base);
   background: transparent;
-  /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.*/
   color: var(--checkbox-mark);
   cursor: pointer;
 }
@@ -26,8 +23,8 @@
   transform: translate(-50%, -50%);
 }
 
-/* Filled-when-empty: a resting wash for a value that reads as unset rather than absent. A checked
-   box's own fill overrides it. */
+/* Filled-when-empty: a resting wash marks a value as unset rather than absent; a checked box's
+   own fill overrides it. */
 .checkbox-filled {
   background: var(--fill-tertiary);
 }
@@ -36,8 +33,8 @@
   border-color: var(--checkbox-border);
 }
 
-/* Hover rides the interactive forms only; the static value glyph leaves its row's hover to speak.
-   The checked box holds its fill through hover rather than washing it out. */
+/* Hover only applies to the interactive forms — the static value glyph leaves its row's hover to
+   speak — and a checked box keeps its fill through hover rather than washing out. */
 .checkbox:not(.checkbox-static):hover {
   background: var(--state-hover);
 }
@@ -45,15 +42,11 @@
   background: var(--checkbox-fill);
 }
 
-/* The presentational value glyph: no pointer of its own, pinned to the text middle so toggling a
-   cell never shifts the row. */
 .checkbox-static {
   vertical-align: middle;
   cursor: default;
 }
 
-/* The compact size; overrides the standard box rather than forking it, so the two stay one shape at
-   two sizes. */
 .checkbox-compact {
   width: 12px;
   height: 12px;

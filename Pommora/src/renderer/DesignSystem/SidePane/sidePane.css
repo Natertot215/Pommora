@@ -1,5 +1,5 @@
-/* The shared side-pane shell: inner geometry both flavors render identically. Positioning
-   (in-flow rail vs overlay inspector), the width var, and any slide live on the host's class. */
+/* Shared side-pane geometry — both flavors (in-flow rail, overlay inspector) render it identically.
+   Positioning, the width var, and any slide live on the host's class instead. */
 
 .sidepane {
   display: flex;

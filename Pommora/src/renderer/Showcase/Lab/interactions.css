@@ -97,7 +97,7 @@
   background: var(--surface-tertiary);
 }
 
-/* Keyboard focus — items are focusable (tabIndex 0) so they can be picked up with Space/Enter. */
+/* Items carry tabIndex 0 so they can be picked up with Space/Enter. */
 .ix-row:focus-visible,
 .sx-item:focus-visible,
 .ix-tree-row:focus-visible,
@@ -217,7 +217,7 @@
   min-height: 0;
 }
 
-/* Scrolling list — capped height so auto-scroll has an edge to engage */
+/* Capped height so auto-scroll has an edge to engage. */
 .ix-scroll {
   max-height: 220px;
   overflow-y: auto;

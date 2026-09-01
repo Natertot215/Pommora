@@ -1,8 +1,7 @@
-/* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost
-   every drop-line surface renders. Geometry a surface genuinely owns (a depth-indented left,
-   a column-scoped width) rides inline on top of these defaults. */
-
-/* The line's positioning context — the wrapper a surface marks so `top` resolves against it. */
+/* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost every
+   drop-line surface renders. Geometry a surface genuinely owns (a depth-indented left, a column-
+   scoped width) rides inline on top of these defaults. The ghost's frost half (fill, blur, lift
+   shadow) comes from GHOST_FROST via DragGhost. */
 .drop-line-host {
   position: relative;
 }
@@ -28,7 +27,6 @@
   background: var(--drag-line);
 }
 
-/* The landing slot — the box the lifted thing will occupy. A surface supplies only geometry. */
 .drop-slot {
   position: absolute;
   top: 0;
@@ -38,7 +36,6 @@
   background: var(--drop-slot-fill);
 }
 
-/* The frost half of the ghost (fill, blur, lift shadow) comes from GHOST_FROST via DragGhost. */
 .drag-ghost {
   position: fixed;
   padding: 4px 12px;

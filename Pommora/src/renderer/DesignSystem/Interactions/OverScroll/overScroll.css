@@ -1,7 +1,6 @@
 /* THE over-scroll edge fade — every clipped edge rides this one mechanism. Two progress vars
    animate along the box's own scroll range, so a box whose content fits has an inactive timeline
-   and the mask collapses to a no-op. An AXIS class carries the fade, `over-scroll-cap` adds the
-   capped-label box under it, and the modifiers tune what the edges mean. */
+   and the mask collapses to a no-op. */
 @property --os-lead {
   syntax: "<number>";
   inherits: false;
@@ -64,7 +63,6 @@
   );
 }
 
-/* THE house fade width, stated once. */
 .over-scroll {
   --os-fade-default: 22px;
   animation-timeline: scroll(self block);
@@ -104,9 +102,6 @@
     normal;
 }
 
-/* An ellipsis marks the end, so the trailing fade drops (one animation; --os-trail holds its 0
-   initial). The leading edge still dissolves what scrolled off the start, but only where a surface
-   names a width. */
 .over-scroll-ellipsis {
   --os-fade-default: 0px;
   animation-name: os-lead;

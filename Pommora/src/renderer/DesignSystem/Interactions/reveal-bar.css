@@ -1,6 +1,5 @@
-/* The reveal bar: a fixed-height bar that slides open at a surface's bottom edge, with a chevron
-   riding directly above it (mirroring its height) so the toggle bounces up and down with the bar
-   and never overlaps its items.
+/* The reveal bar slides open at a surface's bottom edge; a chevron rides directly above it, mirroring
+   its height, so the toggle bounces with the bar instead of overlapping its items.
 
    The toggle rests invisible and reveals three ways: the host marks a large surrounding region as
    "near" so the reveal zone can be generous without an invisible button swallowing clicks to the

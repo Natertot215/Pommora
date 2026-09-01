@@ -27,8 +27,8 @@
   bottom: 0;
   border-bottom: var(--width-150) solid var(--border-base);
 }
-/* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
-   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.*/
+/* The leading bar normally marks the gutter↔Title junction; this strip has no gutter column, so
+   it's suppressed here — the divider between columns stays. */
 .trash-head .col-header:first-child::before {
   content: none;
 }
