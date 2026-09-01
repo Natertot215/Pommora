@@ -1,8 +1,4 @@
-// The Contexts & Spaces write layer: create ops, the setContext family (one per entity
-// kind — page frontmatter, `_space.json`), color setters, and the
-// per-file reconcile every context write runs on the root it's already rewriting (repair
-// near-misses, drop unknowns). Ids arrive from the renderer; titles serialize here,
-// through the live registry — never earlier.
+// Ids arrive from the renderer; titles serialize here, through the live registry — never earlier.
 
 import { readFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'

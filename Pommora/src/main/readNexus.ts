@@ -71,8 +71,6 @@ import {
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'
 
-// ---------- low-level helpers ----------
-
 function resolveAccent(raw: string | undefined): AccentSetting {
   if (raw === 'system') return 'system'
   if (raw != null && isColorKey(raw)) return raw as AccentSetting
@@ -187,12 +185,8 @@ export interface SettingsLeaves {
   profileSubtitle: string
 }
 
-/** The shape a nexus-relative folder path must have to be written into settings: non-empty, no
- *  leading slash, no backslash, no `.` or `..` segment, and a first segment that is not a folder
- *  the app owns whole. Both scope keys are folder paths under this one rule — the asset root and
- *  each exclusion entry — so a value one reader would coerce and another would store is the
- *  disagreement this rule prevents. The app-owned check is case-folded, as every matcher is, and
- *  the rule is stated as a refusal so a folder chooser reports exactly what a reader enforces. */
+/** Shared by the asset root and each exclusion entry, so a value one reader would coerce and
+ *  another would store is the disagreement this rule prevents. */
 export function nexusFolderRefusal(raw: string): string | null {
   const segs = rootSegs(raw)
   if (
@@ -357,8 +351,6 @@ const readContainerMeta = (
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readJsonObject(absPath).then((v) => v ?? {})
 
-// ---------- page reads ----------
-
 /** Raw context keys retained off the parse each entity read already does — the parenthesized root
  *  keys, keyed by the cached node object. Registry-INDEPENDENT
  *  data, so the parse cache never needs busting for registry changes; resolution runs at
@@ -426,8 +418,6 @@ async function readDirectPages(
   )
   return out.filter((n): n is PageNode => n !== null)
 }
-
-// ---------- container reads (Collection -> recursive Set) ----------
 
 /** Lenient read of a sidecar `views[]` — drops any view that fails to decode rather than
  *  poisoning the whole container read; absent/empty ⇒ undefined. */
@@ -542,8 +532,6 @@ async function readPageCollection(
   })
 }
 
-// ---------- contexts ----------
-
 async function readSpace(
   absDir: string,
   relDir: string,
@@ -594,8 +582,6 @@ async function readContextGroups(
     }),
   )
 }
-
-// ---------- top level ----------
 
 export async function readNexus(root: string): Promise<NexusTree> {
   if (!(await pathExists(root))) throw new Error(`Nexus root not found: ${root}`)

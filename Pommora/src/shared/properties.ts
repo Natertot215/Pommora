@@ -1,13 +1,8 @@
-// One property schema entry. The zod schema IS the codec AND the type (z.infer). Definitions live
-// in the nexus-wide registry; a Collection assigns them by id.
-//
-// Snake_case keys = the on-disk shape. Loose ⇒ foreign keys within a def survive a rewrite.
-// What is modeled here is what the write path or a renderer actually reads — a rider nothing
-// consumes rides through as a foreign key and does not earn a field.
+// Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the
+// write path or a renderer actually reads.
 
 import { z } from 'zod'
 
-/** Property type catalog. Raw lowercase / snake_case strings = the on-disk values. */
 export const propertyType = z.enum([
   'number',
   'checkbox',
@@ -22,25 +17,20 @@ export const propertyType = z.enum([
 ])
 export type PropertyType = z.infer<typeof propertyType>
 
-/** How a link reads: Full Link the whole address, Short Link its bare domain, Page Title the site's
- *  fetched `<title>`. One vocabulary for every link in the app — a URL property's configured look and
- *  the form a pasted link is written in are the same three choices, named the same way, so nothing
- *  downstream can disagree about what any of them means. The order is the order they are offered in,
- *  and the first is the default. */
+/** One vocabulary for every link in the app — a URL property's configured look and the form a
+ *  pasted link is written in are the same three choices. Order is display order; first is default. */
 export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
 export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
 
 export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
   (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
 
-/** The form a link takes where nothing has said otherwise — a property with no Format set, a column
- *  naming none, and the nexus-wide paste default. Read from the vocabulary rather than spelled at
- *  each of those, so "the first is the default" is a fact one place holds. */
+/** Read from the vocabulary rather than spelled at each caller, so "the first is the default" is
+ *  a fact one place holds. */
 export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
 
-/** What each form is called wherever one is picked — a URL property's Format control, the nexus-wide
- *  default in Settings, and a link's own Format menu, which main builds and so cannot read a
- *  renderer's list. */
+/** Duplicated rather than imported by every caller — main builds a link's Format menu and cannot
+ *  read a renderer's list. */
 export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
   'link-full': 'Full Link',
   'link-short': 'Short Link',
@@ -58,10 +48,9 @@ export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as cons
 const selectOption = z.looseObject({
   value: z.string(),
   label: z.string(),
-  // A per-option glyph for the Compact style; absent falls to the type's default (tag / tags).
+  // Absent falls to the type's default (tag / tags).
   icon: z.string().optional().catch(undefined),
-  // Open solid-palette key (chipColorFor normalizes on render). Lenient: a non-string degrades to
-  // undefined rather than failing the whole def parse.
+  // Lenient: a non-string degrades to undefined rather than failing the whole def parse.
   color: z.string().optional().catch(undefined),
 })
 
@@ -81,8 +70,7 @@ export type StatusOption = z.infer<typeof statusOption>
 const statusGroup = z.looseObject({
   id: statusGroupId,
   label: z.string(),
-  // Open solid-palette key, required — an absent / non-string color falls back to the neutral solid
-  // rather than dropping the group.
+  // Absent / non-string falls back to the neutral solid rather than dropping the group.
   color: z.string().catch('grey'),
   options: z.array(statusOption),
 })
@@ -93,7 +81,6 @@ const contextTarget = z.looseObject({
   context_id: z.string().optional(),
 })
 
-/** One property schema entry. Loose ⇒ display config + any foreign keys ride through. */
 export const propertyDefinition = z.looseObject({
   id: z.string(),
   name: z.string(),
@@ -102,23 +89,15 @@ export const propertyDefinition = z.looseObject({
   select_options: z.array(selectOption).optional(),
   status_groups: z.array(statusGroup).optional(),
   context_target: contextTarget.optional(),
-  // Link display config is def-level per-property: how a URL property's values render.
-  // `link_color` is a solid-palette key; absent =
-  // Default = the system accent. Lenient .catch so an unknown value degrades to the default look.
   link_underline: z.boolean().optional().catch(undefined),
-  // Which of the three link displays this property's values render as; absent = the default. A
-  // per-value alias (a `[alias](url)` markdown value, set via Rename) overrides all of them — the
-  // alias always wins.
+  // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
   link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
   link_color: z.string().optional().catch(undefined),
-  // A checkbox property's def-level color (property-wide, mirroring link_color): a solid-palette key
-  // tinting both looks — the box fill (checkbox look) and the on-track (switch look). Absent = Default
-  // = the system accent. The checkbox/switch LOOK itself is per-VIEW (column_styles), not here.
+  // Tints both the checkbox fill and the switch on-track. The checkbox/switch LOOK itself is
+  // per-VIEW (column_styles), not here.
   checkbox_color: z.string().optional().catch(undefined),
-  // Def-level number format config — kept per-def rather than per-view because a format rode as an
-  // inert foreign key. `number_family` picks plain/percent/currency; percent stores the LITERAL
-  // (30 → "30%"); fraction renders "N out of number_denominator" (Number/Currency only). Loose
-  // .catch ⇒ a bad value drops the field, never the def.
+  // Kept per-def rather than per-view because a format rode as an inert foreign key. Percent
+  // stores the LITERAL (30 → "30%"); fraction renders "N out of number_denominator".
   number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
   number_currency: z.string().optional().catch(undefined),
   number_separators: z.boolean().optional().catch(undefined),
@@ -128,22 +107,19 @@ export const propertyDefinition = z.looseObject({
     .catch(undefined),
   number_fraction: z.boolean().optional().catch(undefined),
   number_denominator: z.number().optional().catch(undefined),
-  // Where a file property's uploads land: a subfolder BENEATH the configured asset directory, or
-  // absent for the directory itself. Relative to the asset root rather than to the nexus, so
-  // re-pointing the root moves every property's folder with it. It governs new writes only — a
-  // value names a basename, not a folder, so files already on disk keep resolving where they sit.
+  // Relative to the asset root rather than the nexus, so re-pointing the root moves every
+  // property's folder with it. Governs new writes only — files already on disk keep resolving
+  // where they sit.
   file_directory: z.string().optional().catch(undefined),
 })
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
-/** The def-level link display config, narrowed for the editor, the bridge's patch argument, and the
- *  whitelist main writes through — one shape, so a new link field is declared once. */
+/** One shape shared by the editor, the bridge's patch argument, and the whitelist main writes
+ *  through, so a new link field is declared once. */
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
 
-/** The def-level file config — where this property's uploads land. */
 export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
 
-/** The def-level number format config, narrowed for the pure formatter + the editor. */
 export type NumberConfig = Pick<
   PropertyDefinition,
   | 'number_family'
@@ -154,24 +130,20 @@ export type NumberConfig = Pick<
   | 'number_denominator'
 >
 
-// MARK: - Reserved property IDs
-
 /** Built-in property IDs use a `_` prefix; user properties use `prop_<ulid>` (minted by
- *  `mintPropertyId` in ids.ts). A display name carries its own rules — unique nexus-wide and
- *  no leading `$` — because the name is the key its values write under. */
+ *  `mintPropertyId` in ids.ts). */
 export const RESERVED_PROPERTY_ID = {
   id: '_id',
   title: '_title',
   createdAt: '_created_at',
   modifiedAt: '_modified_at',
-  // Filter-only Location target — never a column; the filter's location branch runs before the
-  // declaredType dispatch, so this id deliberately resolves to no type.
+  // Filter-only; never a column — the filter's location branch runs before the declaredType
+  // dispatch, so this id deliberately resolves to no type.
   location: '_location',
 } as const
 
 const RESERVED_SET = new Set<string>(Object.values(RESERVED_PROPERTY_ID))
 
-/** True iff `id` is in the reserved catalog (the schema editor blocks claiming one). */
 export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }

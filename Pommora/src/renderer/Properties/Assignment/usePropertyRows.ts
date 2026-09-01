@@ -46,11 +46,6 @@ export interface PropertyRows {
   isContextRow: (id: string) => boolean
   commitValue: (propertyId: string, next: PropertyValue | null) => void
   commitContext: (contextId: string, ids: string[]) => void
-  /** The click semantics every value surface shares. `onReveal` is the host's — a cleared checkbox
-   *  would otherwise drop its own row out from under the cursor. `el` anchors what opens; `from` is
-   *  the node actually clicked, which is what says WHICH file label a file click landed on. They
-   *  differ because a row's handler carries `currentTarget` for the anchor and `target` for the
-   *  hit — passing the anchor for both reads every click as the value's own area. */
   /** The VALUE's own right-click, and whether it claimed the event — a file pops the Add · Replace
    *  · Remove triad, a live link pops the link menu, and anything else falls through to the row's
    *  menu, where Remove belongs to the property rather than to the value it holds. */

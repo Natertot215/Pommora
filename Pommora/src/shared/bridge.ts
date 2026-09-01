@@ -1,8 +1,5 @@
-// The one owner of the wire — every IPC channel's name, direction, argument tuple, and reply
-// type, in one map both processes derive from. The preload dials through `ask`/`tell`/`on`
-// builders typed by these interfaces; main answers through `serveBridge`'s exhaustive handler
-// object, so a channel with no handler, a handler with no channel, or a mismatched signature
-// is a compile error, never a runtime discovery. Adding a channel is one entry here.
+// A channel with no handler, a handler with no channel, or a mismatched signature is a
+// compile error here, never a runtime discovery.
 //
 // Pure types — zero runtime values, zero runtime imports — so the sandboxed preload (whose
 // bundle may require only 'electron') consumes it freely from both tsconfig projects.
@@ -77,31 +74,20 @@ export interface Asks {
   'nexus:choose': { args: []; reply: Result<boolean> }
   'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
   'nexus:rename': { args: [newName: string]; reply: Result<null> }
-  // Two small services a page action needs from main: the system clipboard, and revealing a
-  // nexus-relative path in the file manager (validated against the root before it resolves).
   'clipboard:write': { args: [text: string]; reply: undefined }
-  // Read is the keyboard's door to what a paste event carries for free: a chord matched on keydown
-  // has no `clipboardData` of its own.
+  // A chord matched on keydown has no `clipboardData` of its own; read is its door to a paste.
   'clipboard:read': { args: []; reply: string }
   'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
-  // The renderer resolves `[[Name.png]]` against this; main owns the listing behind it.
   'assets:map': { args: []; reply: AssetMap }
-  // A folder picked from the native dialog, validated in main — the same refusal a hand-edited
-  // `settings.json` meets. `null` is a cancelled dialog, not a failure.
+  // `null` is a cancelled dialog, not a failure.
   'assets:chooseDir': {
     args: [scope?: 'nexus' | 'property', at?: string]
     reply: Result<string | null>
   }
-  // A typed path crosses the SAME validator the dialog's pick does; an empty string clears the key.
   'assets:setDir': { args: [dir: string]; reply: Result<string> }
-  // The whole exclusion list crosses at once, so add and remove are one write and no ordering
-  // question exists between two half-applied edits. Each entry meets the same refusal a
-  // hand-edited `settings.json` does; the stored, deduped list is echoed back.
+  // The whole list crosses at once, so add/remove is one write with no half-applied ordering.
   'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
-  // A folder picked from the native dialog, answered as its nexus-relative path — the same
-  // refusal the typed path meets. `null` is a cancelled dialog, not a failure.
   'exclusions:choose': { args: []; reply: Result<string | null> }
-  // Removes Pommora's bookkeeping from every excluded folder, behind a native confirmation.
   // `null` is a cancelled dialog or an empty exclusion list; a report is a pass that ran.
   'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
 
@@ -261,7 +247,6 @@ export interface Asks {
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
   'previews:load': { args: []; reply: Result<PreviewsFile> }
   'previews:save': { args: [file: PreviewsFile]; reply: Result<null> }
-  // The hover card's universal size — one device-local db row.
   'hoverCard:load': { args: []; reply: Result<HoverCardSize | null> }
   'hoverCard:save': { args: [size: HoverCardSize]; reply: Result<null> }
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
@@ -273,13 +258,12 @@ export interface Asks {
   }
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
-  // The trash's read side. `.trash` is excluded from the watcher, so nothing is ever pushed —
-  // the browser asks, and asks again after every action it takes.
+  // `.trash` is excluded from the watcher, so nothing is ever pushed — the browser asks, and
+  // asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   'trash:menu': { args: [ctx: TrashMenuContext]; reply: TrashMenuAction | null }
   'trash:columnMenu': { args: [ctx: TrashColumnContext]; reply: TrashColumnAction | null }
-  // Main owns the confirm's wording because main owns the switch that decides what Delete means —
-  // the renderer supplies only how many rows are going.
+  // Main owns the switch that decides what Delete means; the renderer supplies only the count.
   'trash:confirmEmpty': { args: [count: number]; reply: boolean }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'trash:report': { args: [message: string, detail: string]; reply: void }
@@ -320,11 +304,9 @@ export interface Asks {
     reply: NexusIconAction | null
   }
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
-  /** Land a picked file under the asset root and answer the `[[Name.ext]]` naming it. Its own
-   *  channel rather than a field on a write: fusing them would make one IPC perform two writes
-   *  with partial-failure semantics, and forecloses naming a file already in the nexus. */
+  /** Its own channel rather than a field on a write: fusing them would make one IPC perform
+   *  two writes with partial-failure semantics, and forecloses naming a file already in the nexus. */
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
-  // The temp PNG path of a pasted clipboard image, adopted like a picked file (null if none).
   'nexus:pasteImage': { args: []; reply: string | null }
   'nexus:bannerMenu': {
     args: [opts?: { noRemove?: boolean; noun?: string; add?: boolean }]
@@ -356,37 +338,29 @@ export interface Asks {
   'citation-menu': { args: [ctx: CitationMenuContext]; reply: CitationMenuAction | null }
   'property-menu': { args: [ctx: PropertyMenuContext]; reply: PropertyMenuAction | null }
   'option-menu': { args: [ctx: OptionMenuContext]; reply: OptionMenuAction | null }
-  /** The generic list menu — any surface whose menu is plain rows. Replies with the chosen row's
-   *  action, or null on dismissal. */
   'row-menu': { args: [req: RowMenuRequest]; reply: string | null }
 }
 
-/** Fire-and-forget sends (`send` → `on`) — no reply channel. */
 export interface Tells {
   'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
   'editor:grip-hot': [on: boolean]
-  // A wheel over a surface that holds the pointer on the host's behalf, handed to the guest it
-  // covers — the only way a host-owned pointer can still scroll the page beneath it.
+  // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
   'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
 }
 
-/** Main→renderer pushes — the preload derives an `on*` subscriber (returning an unsubscribe)
- *  per entry, and main sends through the typed `push` helper. */
 export interface Pushes {
   'menu:action': string
   // `create` marks a just-created entity's naming session — the field opens empty and the
   // first commit rides the create (disambiguating, cascade-free).
   'begin-rename': { path: string; create?: boolean; host?: RenameHost }
   'new-page-adjacent': { path: string; where: 'above' | 'below'; host?: RenameHost }
-  // Edit Icon, like Rename, is a renderer affordance a native menu can only ask for: the picker
-  // anchors to the row the gesture happened on, which only the renderer can find.
+  // The icon picker anchors to the row the gesture happened on, which only the renderer can find.
   'begin-icon': { path: string; host?: RenameHost }
   'open-in-new-tab': ContextTarget
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
-  // The asset root's listing, re-pushed on every file that lands in it — never a tree walk.
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
   // A guest webview's window.open, denied main-side and handed to the renderer's one open-link

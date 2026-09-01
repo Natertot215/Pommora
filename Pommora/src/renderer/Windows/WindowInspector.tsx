@@ -39,7 +39,6 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
-  // Empty properties hide from the field; + Add Property reveals one and opens its editor.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
   const [addOpen, setAddOpen] = useState(false)
   const addRef = useRef<HTMLButtonElement | null>(null)
@@ -160,7 +159,6 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
   return (
     <div className="page-window-insp">
       <div className="page-window-insp-rows over-scroll">
-        {/* Nothing pre-shows — on an empty page the Add affordance alone sits at the top. */}
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
           schema

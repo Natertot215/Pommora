@@ -10,7 +10,6 @@ interface RenameClaim {
   path: string
   host: RenameHost
 }
-/** The path being renamed and the host the gesture declared, if it knew one. */
 interface RenameFence {
   renamingPath: string | null
   renamingHost: RenameHost | null
@@ -56,8 +55,6 @@ export interface RenameSlice {
   submitPropertyRename: (newName: string) => Promise<boolean>
 }
 
-// The owner fence's resolver: claims for the live path only; a gesture-declared host wins,
-// then rank, then first-come — insertion order breaks ties at every step.
 let nextRenameToken = 1
 // The unclaimed-session sweep's beat — long enough for a create's row to arrive and claim.
 const RENAME_CLAIM_BEAT_MS = 2000
@@ -103,13 +100,9 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       const claims = s.renameClaims.filter((c) => c.token !== token)
       return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
     })
-    // The verdict waits a microtask: StrictMode's simulated remount (and any same-act re-key)
-    // releases and re-claims in one act — an immediate cancel would kill every dev rename.
-    // A rename whose winning surface left is abandoned, never handed to a standing claimant
-    // (same host or not — the same path fielded twice, say a view plus its embed): a transfer
-    // would focus-steal, whole-title selected, and a create session would reopen empty. The
-    // verdict judges the RELEASED claim's own path: the live session may already belong to a
-    // successor (main pushes a create's begin-rename before its row exists to claim).
+    // Waits a microtask: StrictMode's simulated remount releases and re-claims in one act —
+    // an immediate cancel would kill every dev rename. A rename whose winning surface left is
+    // abandoned rather than handed to a standing claimant (would focus-steal / reopen empty).
     queueMicrotask(() => {
       const s = get()
       if (released === undefined || s.renamingPath !== released.path) return
@@ -126,11 +119,8 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
         renameWinner: resolveRenameWinner(s.renameClaims, fence),
       }
     })
-    // The fence self-heals when no surface ever claims — a newborn a filter hides, or a
-    // navigate-away mid-create, would otherwise strand the session: every ghost suppressed
-    // for the rest of it, and an unprompted empty field opening when the row later mounts.
-    // The beat covers the legitimate window where main pushes a create's begin-rename before
-    // its row exists to claim.
+    // Self-heals when no surface ever claims — a newborn a filter hides, or a navigate-away
+    // mid-create, would otherwise strand the session with an unprompted empty field later.
     window.clearTimeout(renameOrphanTimer)
     renameOrphanTimer = window.setTimeout(() => {
       const s = get()

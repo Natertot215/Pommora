@@ -1,6 +1,5 @@
-// zod schemas for the JSON sidecars. Each schema IS the codec AND the type (`z.infer`) — one
-// source of truth. `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents
-// can add keys to a sidecar without Pommora erasing them.
+// `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to
+// a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
 import { PAGE_ID_KEY } from './identity'
@@ -8,7 +7,6 @@ import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
 
-// Each field doubles as the read-side coercer for readNexus.
 export const openInField = z.enum(['full-page', 'page-preview']).optional().catch(undefined)
 export const viewButtonField = z.enum(['icon', 'labeled']).optional().catch(undefined)
 
@@ -29,17 +27,14 @@ export const cropsFile = z.looseObject({
   byImage: z.record(z.string(), crop.optional().catch(undefined)).optional().catch(undefined),
 })
 
-/** Fields shared by every folder sidecar. Loose ⇒ unknown keys are retained. Exported because it
- *  is exactly the identity-only shape a kind resolver needs: it reads a sidecar the caller has
- *  ALREADY located by filename, purely to recover its id. It is deliberately non-discriminating —
- *  it validates any sidecar — so it must never stand in for the kind decision itself. */
+/** Deliberately non-discriminating — it validates any sidecar — so it must never stand in
+ *  for the kind decision itself. */
 export const baseSidecar = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
   modified_at: z.string().optional(),
 })
 
-// `_pagecollection.json` is the schema-bearing TOP level (a top Collection has no parent).
 // `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection
 // validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
 export const pageCollectionSidecar = baseSidecar.extend({
@@ -53,9 +48,7 @@ export const pageCollectionSidecar = baseSidecar.extend({
   disclosure_locked: z.boolean().optional(),
 })
 
-// `_pageset.json` is the RECURSIVE level at any depth. Parentage is the folder nesting itself,
-// never a stored field. `set_order` orders child Sets; `views`/`banner` are read at every depth,
-// not just depth-1.
+// Parentage is the folder nesting itself, never a stored field.
 export const pageSetSidecar = baseSidecar.extend({
   page_order: ulidList,
   set_order: ulidList,
@@ -65,11 +58,6 @@ export const pageSetSidecar = baseSidecar.extend({
   disclosure_locked: z.boolean().optional(),
 })
 
-/** Page (.md) frontmatter. Context links are parenthesized TITLE keys (`(Projects):`)
- *  riding the loose object as retained raw keys — resolved against the registry at walk
- *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields).
- *  A property value rides the same way, under its own wrapped name key. Loose ⇒ every wrapped
- *  key and every foreign key rides through unmodeled. */
 export const pageFrontmatter = z.looseObject({
   [PAGE_ID_KEY]: z.string(),
   icon: z.string().optional(),

@@ -509,7 +509,6 @@ export interface StoredTab {
   navIndex: number
 }
 
-/** The persisted row's shape — StoredTab entries under the same pointer. */
 /** The connection hover card's one universal size — device-local, every card opens at it. */
 export interface HoverCardSize {
   w: number
@@ -585,15 +584,9 @@ export interface PageDetail {
   body: string
 }
 
-// ---------- View pipeline seam types (filter → group → sort) ----------
-
 /**
- * One row fed to the view pipeline. Carries the intrinsic PageNode fields plus the page's
- * parsed `frontmatter` (the source of property-keyed column values). `frontmatter` is
- * REQUIRED: when values aren't loaded yet, the flatten step supplies a minimal `{ id }` so the
- * row still sorts/groups/filters on intrinsic fields. `parentSetId` is the id of the Set the
- * page lives in (undefined for a container-root page), used to build structural disclosure
- * groups. Pure data — no fs, no React.
+ * `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies a
+ * minimal `{ id }` so the row still sorts/groups/filters on intrinsic fields.
  */
 export interface ViewRow {
   id: string

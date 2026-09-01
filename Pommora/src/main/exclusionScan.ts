@@ -64,7 +64,6 @@ export async function excludedArtifacts(
   return { pages, sidecars }
 }
 
-// Governance is by shape: a malformed, unclosed key is not `<…>`-shaped, so it is left untouched.
 function clearRewrite(preserveProperties: boolean): RewriteText {
   return (content) => {
     const keys = Object.keys(readFrontmatterFields(content))
