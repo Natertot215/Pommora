@@ -49,7 +49,10 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
 }
 
 /** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a
- *  container push refetches the named container and retires the overrides the push settles. */
+ *  container push refetches the named container and retires the overrides the push settles —
+ *  only once the refetch lands, since a row retired ahead of it paints its identity-only
+ *  fallback for the round trip. A superseded refetch still retires: a settled override left
+ *  standing would mask the disk until the next push. */
 export function useValuesEpoch(
   path: string,
   setValues: Dispatch<SetStateAction<Record<string, PageValues>>>,
@@ -58,21 +61,21 @@ export function useValuesEpoch(
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
     if (!valuesEpoch) return
-    let apply: (prev: Overrides | null) => Overrides | null
+    let retire: ((prev: Overrides | null) => Overrides | null) | null = null
     if (valuesEpoch.kind === 'container') {
       const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
       if (!mine.length) return
       const ids = mine.flatMap((c) => c.pageIds)
-      apply = (prev) => retireSettled(prev, ids)
+      retire = (prev) => retireSettled(prev, ids)
     } else {
       const { oldKey, newKey } = valuesEpoch
-      apply = (prev) => rekeyOverrides(prev, oldKey, newKey)
+      setValueOverride?.((prev) => rekeyOverrides(prev, oldKey, newKey))
     }
     let canceled = false
     void window.nexus.loadValues(path).then((v) => {
       if (!canceled) setValues(v)
+      if (retire) setValueOverride?.(retire)
     })
-    setValueOverride?.(apply)
     return () => {
       canceled = true
     }

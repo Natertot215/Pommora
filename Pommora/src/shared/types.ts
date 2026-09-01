@@ -530,8 +530,6 @@ export interface PageDetail {
   body: string
 }
 
-/** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies a minimal
- *  `{ id }` so the row still sorts/groups/filters on intrinsic fields. */
 /** One page's batch entry for the view pipeline. Both stamps are ISO 8601; `createdAt` is null
  *  under an adopted id, `modifiedAt` null when the file could not be stat'd. */
 export interface PageValues {
@@ -540,6 +538,8 @@ export interface PageValues {
   modifiedAt: string | null
 }
 
+/** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies an
+ *  identity-only entry so the row still sorts/groups/filters on intrinsic fields. */
 export interface ViewRow {
   id: string
   title: string

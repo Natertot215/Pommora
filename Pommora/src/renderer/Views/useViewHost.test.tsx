@@ -240,6 +240,18 @@ describe('the values epoch', () => {
     expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
+  it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
+    await mount(collection())
+    let land: (v: typeof VALUES) => void = () => {}
+    nexus().loadValues = vi.fn(() => new Promise<typeof VALUES>((r) => (land = r)))
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    bump([{ rel: 'Col', pageIds: ['p2'] }])
+    await act(async () => {})
+    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
+    await act(async () => land(VALUES))
+    expect(api?.effectiveValues.p2).toEqual(VALUES.p2)
+  })
+
   it('a push naming no ids retires the settled override and keeps the pending one', async () => {
     await mount(collection())
     act(() =>
