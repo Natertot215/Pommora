@@ -2,10 +2,14 @@
 // window), so every writer notes the page it touched and one flush per operation pushes them,
 // grouped by container, with page ids resolved from the live tree.
 
-import { dirname } from 'node:path'
 import { getLiveTree } from './liveTree'
 import { relPosix } from './paths'
 import type { NexusTree, ValueChange } from '@shared/types'
+
+/** The container a page rel belongs to — its parent path, or '' at the root. The two value-push
+ *  legs (this ledger and the watcher's batch) key on it, so both read it the same way. */
+export const containerOf = (rel: string): string =>
+  rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : ''
 
 // One root at a time: a note under another root is a session that moved, and the old root's
 // unflushed writes have no window left to reach.
@@ -16,7 +20,7 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   const rel = relPosix(root, absFile)
   if (!rel || rel.startsWith('..')) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
-  const container = dirname(rel)
+  const container = containerOf(rel)
   const files = ledger.byRel.get(container) ?? new Set<string>()
   ledger.byRel.set(container, files)
   files.add(rel)
