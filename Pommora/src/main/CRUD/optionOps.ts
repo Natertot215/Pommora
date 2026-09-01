@@ -91,14 +91,6 @@ export function setStatusGroups(
   )
 }
 
-/** Every option value a def holds, whichever shape its type stores them in — the read the
- *  crash replay shares with nobody else restating it. */
-export function optionValues(def: PropertyDefinition): string[] {
-  if (def.type === 'status')
-    return (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
-  return (def.select_options ?? []).map((o) => o.value)
-}
-
 /** Drop one option value from a def's registry entry, whichever shape holds it — the remove
  *  ops' registry finish, shared with the crash replay so both run the identical edit. A value
  *  already gone is a completed finish, not a failure. */

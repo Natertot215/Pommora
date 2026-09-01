@@ -157,13 +157,13 @@
 
 <script id="data" type="application/json">{
   "head": "a4037b94",
-  "now": { "state": "running", "text": "Task 1 landed. Task 2 — the duplicate optionValues in optionOps.ts goes; the shared one stays.", "when": "2026-08-31 · Task 2" },
+  "now": { "state": "running", "text": "Task 2 landed. Task 3 — restoreCachedValues writes through updatePageProperty under serializeOnFile.", "when": "2026-08-31 · Task 3" },
   "phases": [
     { "name": "Phase 0 · One writer", "state": "running", "base": "a4037b94", "tasks": [
       { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
       { "n": "Task 1", "name": "setPageContext delegates to setGovernedRootKeys", "state": "done", "note": "−6 lines; 26/26 in the three suites, no test touched" },
-      { "n": "Task 2", "name": "One optionValues", "state": "running" },
-      { "n": "Task 3", "name": "restoreCachedValues writes through updatePageProperty", "state": "pending" }
+      { "n": "Task 2", "name": "One optionValues", "state": "done", "note": "main copy deleted; replaySchemaCascade imports the shared one" },
+      { "n": "Task 3", "name": "restoreCachedValues writes through updatePageProperty", "state": "running" }
     ], "gate": { "output": "", "deviation": "" } },
     { "name": "Phase 1 · Keying", "state": "pending", "stop": true, "tasks": [
       { "n": "Task 4", "name": "The sigil is the Context's alone; governedKeys.ts dissolves", "state": "pending" },

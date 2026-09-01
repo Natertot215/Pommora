@@ -204,8 +204,8 @@ export function optionValues(def: PropertyDefinition): string[] {
 
 **Verify — automated**
 
-- [ ] `rg -n "export function optionValues" src` → 1 (`src/shared/properties.ts`). Control: `rg -n "export function dropOptionFromDef" src` → 1.
-- [ ] Full gates green; `optionOps.test.ts` 19 pass unmodified.
+- [x] `rg -n "export function optionValues" src` → 1 (`src/shared/properties.ts`). Control: `dropOptionFromDef` → 1.
+- [x] typecheck 0 · full Vitest green · Biome clean; `optionOps.test.ts` unmodified. The only importer of the main copy was `replaySchemaCascade.ts`; `optionOps.ts` itself never read it.
 
 **Verify — user**
 
