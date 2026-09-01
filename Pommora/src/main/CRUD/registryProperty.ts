@@ -77,8 +77,6 @@ export async function createProperty(
   return created
 }
 
-/** A property rename commits the registry BEFORE its sweep, so a value written while the sweep runs
- *  already resolved the new name: a key already wearing it is genuinely the fresher of the two. */
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
 /** Rewrite one property's key across every page that holds it, in place — the key keeps its
@@ -150,9 +148,7 @@ export function editProperty(
       if (record) await clearSchemaJournal(root, record)
       return edit
     }
-    // Registry first, then one sweep: every write during it resolves the new name, so the new
-    // key is always the fresher of the two and no comparison is needed. A holder the sweep
-    // could not read holds the record — the next open's replay retries.
+    // A holder the sweep could not read holds the record — the next open's replay retries.
     const skipped = edit.value ? await renameSweep(root, edit.value.from, edit.value.to) : 0
     if (record && !skipped) await clearSchemaJournal(root, record)
     return ok(null)

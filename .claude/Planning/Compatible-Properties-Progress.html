@@ -156,12 +156,12 @@
 </div>
 
 <script id="data" type="application/json">{
-  "head": "3e16777b",
-  "now": { "state": "pending", "text": "Ratified. Waiting for the post-compact session to open Phase 0.", "when": "2026-08-31 · ratified" },
+  "head": "a4037b94",
+  "now": { "state": "running", "text": "Task 0 landed (26 files, −228 comment lines, gates green). Task 1 — setPageContext delegates to setGovernedRootKeys.", "when": "2026-08-31 · Task 1" },
   "phases": [
-    { "name": "Phase 0 · One writer", "state": "pending", "tasks": [
-      { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "pending" },
-      { "n": "Task 1", "name": "setPageContext delegates to setGovernedRootKeys", "state": "pending" },
+    { "name": "Phase 0 · One writer", "state": "running", "base": "a4037b94", "tasks": [
+      { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
+      { "n": "Task 1", "name": "setPageContext delegates to setGovernedRootKeys", "state": "running" },
       { "n": "Task 2", "name": "One optionValues", "state": "pending" },
       { "n": "Task 3", "name": "restoreCachedValues writes through updatePageProperty", "state": "pending" }
     ], "gate": { "output": "", "deviation": "" } },

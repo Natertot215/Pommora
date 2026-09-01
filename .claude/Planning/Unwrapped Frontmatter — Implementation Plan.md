@@ -117,9 +117,9 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 
 **Verify — automated**
 
-- [ ] `git diff --stat` touches only the target files; `git diff -U0 | grep '^[-+]' | grep -v '^[-+]\s*\(//\|/\*\|\*\)' | grep -v '^[-+][-+]'` → 0 lines (only comment lines moved).
-- [ ] `rg -F "governance is by shape" src` → 0; `rg -F "the ONE answer" src` → 0; `rg -F "genuinely the fresher" src` → 0. Controls: `rg -F "KNOB" src` and `rg -F "(Nathan" src` equal the baselines recorded above.
-- [ ] Full gates green; `git diff --stat -- '*.test.*'` empty.
+- [x] `git diff --stat` touches only the target files (26 of the 60 needed cuts); the code-line grep flags the two trailing-comment lines named under Deviations, nothing else.
+- [x] `rg -F "governance is by shape" src` → 0; `rg -F "the ONE answer" src` → 0; `rg -F "genuinely the fresher" src` → 0. Controls: `KNOB` 144 = baseline; `(Nathan` 0 (baseline moved to 0 by `345a82ab`, Deviations).
+- [x] typecheck 0 · 304 files / 3749 tests · Biome clean over the touched files; `git diff --stat -- '*.test.*'` empty.
 
 **Verify — user**
 
@@ -520,7 +520,7 @@ The one detail string: *Pommora’s container files are removed and each page’
 
 **Verify — user**
 
-- [ ] The Settings row is gone; Clear's confirm reads the new sentence. *(carried to Gate 1's stop)*
+- [ ] *(none — the row's absence is the `rg` control)*
 
 #### Task 8: The reserved-name rule
 
@@ -618,9 +618,10 @@ export async function confirmedKeyHolders(root: string, key: string, folders: st
 - [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
 - [ ] Made False rows for Tasks 4, 5, 7, 9 landed in their commits.
 - [ ] Progress hashes filled in.
-- [ ] **Declared stop.** Nathan: run the manual vault pass (log M-1/M-2), open NexusOS on this build, look at one page in Obsidian and in Pommora. Execution halts until he closes these boxes:
-  - [ ] Pommora shows the same values it did before the pass.
-  - [ ] Obsidian's Properties panel shows Pommora's properties as ordinary properties and `<Context>` keys hidden by Sapphire.
+- [ ] **Declared stop.** The executor runs the vault pass (Rulings, "Vault conversion") after the backup, then the automated Gate 1 checks (Rulings, "Gate 1 is automated"):
+  - [ ] The pass's post-check: every rewritten file's frontmatter equals its pre-pass frontmatter under the translation; other keys and bodies byte-identical; counts match the survey.
+  - [ ] NexusOS on this build: the Ideas Collection's `loadValues` agrees with the files' frontmatter page by page; nothing the registry names reads foreign.
+  - [ ] Nathan pinged; execution continues after his look or after one hour.
 
 ---
 
@@ -670,9 +671,14 @@ const optionList = (raw: unknown): string[] =>
         const kept = strict ? xs.filter((v) => known.includes(v)) : xs
         return kept.length === 0 ? NULL : { kind: 'multiSelect', value: kept }
       }
-      const last = xs.filter((v) => known.includes(v)).at(-1)
-      return last === undefined ? NULL : { kind: 'select', value: last }
+      const value = resolveSingleOption(xs, known)
+      return value === undefined ? NULL : { kind: 'select', value }
     }
+
+// The one address for "an externally written option list sets a Select or Status value":
+// the newest valid element wins, an invalid trailing element yields to the nearest valid one before it.
+export const resolveSingleOption = (written: readonly string[], known: readonly string[]): string | undefined =>
+  written.filter((v) => known.includes(v)).at(-1)
 // encodeValue
     case 'select':
       return [value.value]
@@ -684,7 +690,7 @@ Select/Status membership is no longer `strict`-gated — it is the read rule. `P
 
 **Verify — automated**
 
-- [ ] Red first in `propertyValue.test.ts`: `['Open','Active']` on Select → `Active`; `['Green','Blue']` against Red/Blue → `Blue`; `'Active'` scalar → `Active`; `['Wip']` unknown → null; `'zeta'` scalar on Multi-Select → `['zeta']`; `false` on checkbox → null; `encodeValue({kind:'select',value:'Active'})` → `['Active']`. Expect 7 failures, then green. Existing 27 stay green after fixture rewrite.
+- [ ] Red first in `propertyValue.test.ts`, the single-value cases run **twice — once against a Select definition, once against a Status definition** (Rulings): `['Open','Active']` → `Active`; `['Green','Blue']` against Red/Blue → `Blue`; `['Active','Wip']` (invalid trailing) → `Active`; `'Active'` scalar → `Active`; `['Wip']` unknown → null; plus `'zeta'` scalar on Multi-Select → `['zeta']`; `false` on checkbox → null; `encodeValue({kind:'select',value:'Active'})` → `['Active']`. Then green. Existing 27 stay green after fixture rewrite. `resolveSingleOption` is exported and named in the tests so the rule's address is the test's subject.
 - [ ] `filter.test`: "is empty" on a checkbox with `false` on disk → true (red first against `:333`).
 - [ ] `rg -F "kind: 'checkbox', value: raw" src` → 0. Control: `rg -F "optionList(" src/shared/propertyValue.ts` → 1 (the one call; the definition is `const optionList = (`).
 - [ ] Full gates green.
@@ -1372,20 +1378,26 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 - **Vault conversion** (Nathan, 08-31-2026). The executor's throwaway script (scratchpad only) runs at Gate 1 over `~/NexusOS`, after a backup (a git commit of the vault if it is a repository, else a dated copy of `.nexus/` and every `.md` the pass touches). Then, in order:
   1. **Wrapped property keys → bare.** `<Status>`, `<Pinned>`, `<Timeframe>` (and any other `<Prop>` found) rename in place. Where a bare twin already holds a value, **Obsidian's value always wins** and the wrapped key is dropped; an empty twin (`Status:` with nothing under it) counts as absent and the wrapped value renames in.
-  2. **Context keys re-sigil.** `(Projects)`/`(Areas)`/`(Topics)` → `<Projects>`/`<Areas>`/`<Topics>`. The bare Obsidian `Projects:`/`Areas:`/`Topics:` keys are **never touched** — except that where one holds `[[Title.slate]]` pseudo-context links, the pass **also** writes the matching Pommora Context: `<Projects>:` gets `Title` for each `[[Title.slate]]` under `Projects:`, likewise Areas and Topics. Every `.slate` title already names an existing Pommora Space (Nathan, 08-31-2026), so the pass **creates nothing** — a `.slate` title with no matching Space is listed in the dry-run report and left alone, never invented. The bare key and its `.slate` links stay exactly as written.
+  2. **Context keys re-sigil.** `(Projects)`/`(Areas)`/`(Topics)` → `<Projects>`/`<Areas>`/`<Topics>`. Where a bare Obsidian `Projects:`/`Areas:`/`Topics:` key holds `[[Title.slate]]` pseudo-context links (the four Project titles: Athena, NexusOS, Pommora, Sapphire), those links get a **one-time move** into the matching Pommora Context key — `<Projects>:` gets `Title` for each `[[Title.slate]]` (Nathan, 09-01-2026; whether the bare key is then deleted or kept is pending his answer — the pass defaults to **keeping** the bare key, the recoverable reading). Every `.slate` title already names an existing Pommora Space, so the pass **creates nothing** — a `.slate` title with no matching Space is listed in the dry-run report and left alone, never invented. Bare context keys holding anything else are never touched.
   3. **Select/Status values as one-element lists**, matching what the app now writes.
   4. **`.trash` bundles** get the identical treatment.
-  5. **`properties.json` re-registered** from the vault's actual keys and values: `Status` (Status type; groups/options harvested from every value in use), `Pinned` (Checkbox), `Timeframe` (Date), **`Brand`** (Select — there is no Text type; options harvested from the values in use) and **`Price`** (Number), and the **Link properties merged**: where Obsidian and Pommora use the same key name (`Links`), one Pommora Link (`url`) property under that exact name so the existing `"[[Page]]"` values are its connections. `tags` stays Obsidian's — not registered. Empty bare keys stay empty and unregistered. Assignments: each registered property is assigned to every Collection whose pages hold its key.
+  5. **`properties.json` re-registered** from the vault's actual keys and values: `Status` (Status type; its options exactly Active · Paused · Archived · Revisit · Complete · Closed, in that order — a vault value outside the six is listed by the dry-run, never invented), `Pinned` (Checkbox), `Timeframe` (Date), **`Brand`** (Select — there is no Text type; options harvested from the values in use) and **`Price`** (Number), and the **Link properties merged**: where Obsidian and Pommora use the same key name (`Links`), one Pommora Link (`url`) property under that exact name so the existing `"[[Page]]"` values are its connections. `tags` stays Obsidian's — not registered. Empty bare keys stay empty and unregistered. Assignments: each registered property is assigned to every Collection whose pages hold its key.
   6. **`.nexus/property-cascade.json`** deleted if present; **`nexus.db` untouched** (the index generation rebuilds the index on open); every `.md` the pass rewrites keeps its foreign keys and comments byte-identical (the pass edits the YAML document in place, as `pageFile.ts` does).
   Dry-run first: print every file and every key the pass would change, with counts against the 08-31-2026 survey (`<Status>`×6, `<Pinned>`×4, `<Timeframe>`×1, six bare `Status:` twins), then run.
 - **Phase 1 verification is Nathan's; every later phase is verified by the executor** over CDP against scratch nexuses. NexusOS is opened again only at closeout, read-only.
 - **The Metadata section title** is Nathan's call; the other single-section leaves leave theirs untitled.
 - **Nathan drives only Gate 1** (Nathan, 08-31-2026, at launch). Every other user-facing behavior is covered by an interaction checklist the executor writes before closeout — the directive's manual list widened to every interaction the change touches (each action and its inverse, each toggle on and off, each external-write shape, each restore path) — and runs over CDP against a scratch nexus, expected-vs-observed recorded under Closeout.
-- **The run ends with a push.** The final commit closes the plan; the closing report is the summary plus an honest account, and `main` is pushed to `origin` afterward.
+- **The run ends with a push.** The final commit closes the plan; the closing report is the summary plus an honest account, and `main` is pushed to `origin` afterward. Nothing is left in the working tree — doc edits that don't belong to a task's commit get their own commit before the push.
+- **Gate 1 is automated** (Nathan, 09-01-2026). Nathan's two boxes are replaced by checks the executor runs: (a) the vault pass's own post-check — for every rewritten `.md`, the parsed frontmatter after equals the frontmatter before under the translation (wrapped property → bare, twin-wins; `(C)` → `<C>`; Select/Status wrapped as one-element lists) and every other key and the body are byte-identical, with counts printed against the survey; (b) NexusOS opened on the Phase 1 build over CDP, the Ideas Collection's `loadValues` compared page by page against the files' frontmatter — every Status equal, no registered key reading foreign. Obsidian's own panel isn't driven. The Settings row Task 7 removes needs no verification beyond `rg` → 0.
+- **Status translates exactly** (Nathan, 09-01-2026): the registered Status property's options are, in order, Active · Paused · Archived · Revisit · Complete · Closed; every vault value maps onto one of those six or the dry-run lists it.
+- **The single-value resolution is tested per type** (Nathan, 09-01-2026): Task 10's red-first cases run once against a Select definition and once against a Status definition, not through one shared "single" fixture; and the lines that resolve an externally written option list to the property's value are isolated in one named function in `propertyValue.ts`, so the rule has one address.
+- **Closeout's manual list is at least fifteen actions**, each stated as expected behavior before the attempt and watched over CDP, observed behavior recorded beside it.
 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- **Task 0, the sweep's shape.** The comment-killer agent fanned out to three sub-agents on its own; all three were stopped and the sweep finished single-handed. A parallel session was live in the same tree throughout (its commit `345a82ab` removed both `(Nathan's call)` markers, so that control reads 0 from here on, and it holds uncommitted CSS edits that ride no commit of this arc). Task 0's "only comment lines moved" grep flags two lines whose trailing same-line comment was removed (`watcher.ts` `ignoreInitial`, `propertyValue.ts`'s `select` union member); the code on those lines is unchanged. `npm run lint` as a whole is red on the other session's unformatted `window-base.css`; Biome over the 26 files this task touched is clean.
 
 ### Lessons
 

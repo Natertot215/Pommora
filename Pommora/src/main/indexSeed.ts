@@ -100,7 +100,6 @@ export async function indexWrittenPage(root: string, abs: string): Promise<void>
   }
 }
 
-/** Drop rows for a deleted file or folder. */
 export function deindexPath(root: string, abs: string): void {
   const rel = relCorpusPath(root, abs)
   if (!rel) return

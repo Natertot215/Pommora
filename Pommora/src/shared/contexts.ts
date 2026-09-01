@@ -1,8 +1,3 @@
-// The Contexts registry contract — `.nexus/contexts.json` is the one identity source
-// (id, title, singular, icon per Context); member files speak wrapped TITLE keys only.
-// The sigil itself lives in `governedKeys`, which both layers read from.
-// Pure: no fs, no React — both processes import it.
-
 import { z } from 'zod'
 import { isGovernedKey, parseGovernedKey, wrapKey } from './governedKeys'
 
@@ -24,19 +19,16 @@ export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
   ),
 })
 
-/** A Context title → its frontmatter/JSON root key. */
 export function contextKey(title: string): string {
   return wrapKey('context', title)
 }
 
-/** A frontmatter/JSON root key the Contexts layer governs when it rewrites a root: a Context-wrapped
- *  key, malformed ones included, so a rewrite still sweeps them. Scoped to the layer — a blind check
- *  would claim the property layer's keys, and a Context and a property may share a name. */
+/** Scoped to the layer — a blind check would claim the property layer's keys, and a Context
+ *  and a property may share a name. */
 export function isGovernedContextKey(key: string): boolean {
   return isGovernedKey(key, 'context')
 }
 
-/** '(Projects)' → 'Projects'. A property key, an unwrapped key, or an empty name → null. */
 export function parseContextKey(key: string): string | null {
   const parsed = parseGovernedKey(key)
   return parsed?.layer === 'context' ? parsed.name : null
@@ -63,7 +55,6 @@ export function normalizeContextValue(raw: unknown): string {
   return String(raw).trim().toLowerCase().normalize('NFC')
 }
 
-/** The fresh-nexus registry: the three seeded Contexts, a minted id each. */
 export function seededRegistry(mintId: () => string): ContextsRegistry {
   return {
     contexts: [
@@ -74,8 +65,6 @@ export function seededRegistry(mintId: () => string): ContextsRegistry {
   }
 }
 
-/** The create-entry label for a Context's Spaces. A seeded Context carries a singular
- *  ("New Area"); one the user minted has none to speak for it. */
 export function createSpaceLabel(def: ContextDef): string {
   return def.singular ? `New ${def.singular}` : 'New Space'
 }

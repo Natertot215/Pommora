@@ -1,14 +1,3 @@
-// The one owner of Pommora's reserved frontmatter syntax: which glyphs wrap which layer, how a key
-// is built and read, what a name may not be, and what a refusal says. Every consumer reads from
-// here, so changing a glyph is a one-line edit.
-//
-// Neither glyph is a YAML flow indicator, so a wrapped key writes plain and unquoted and what
-// Pommora emits is byte-identical to what a person would type by hand. Swapping SIGIL to a pair
-// that IS an indicator (`[`/`{`) still works — the serializer quotes those on its own — so the
-// pair is a genuine one-line decision. No consumer builds a key by hand — every one goes
-// through wrapKey/parseGovernedKey, or through contextKey/propertyKey above them.
-// No fs, no React: both processes import it.
-
 export type GovernedLayer = 'context' | 'property'
 
 const SIGIL: Record<GovernedLayer, readonly [string, string]> = {
@@ -32,9 +21,8 @@ export function wrapKey(layer: GovernedLayer, name: string): string {
   return `${open}${name}${close}`
 }
 
-/** Any wrapped key, malformed ones included — governance is by shape, so a root rewrite still
- *  sweeps a key it cannot parse. Pass `layer` to scope it: a layer-blind check lets one layer's
- *  rewrite claim the other's keys, and a Context and a property may legally share a name. */
+/** Pass `layer` to scope it: a layer-blind check lets one layer's rewrite claim the other's
+ *  keys, and a Context and a property may legally share a name. */
 export function isGovernedKey(key: string, layer?: GovernedLayer): boolean {
   if (layer) return key.startsWith(SIGIL[layer][0])
   return SIGIL_ENTRIES.some(([, [open]]) => key.startsWith(open))

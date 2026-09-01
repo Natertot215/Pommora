@@ -143,7 +143,6 @@ const api = {
   tabs: { load: ask('tabs:load'), save: ask('tabs:save') },
   // The preview tab sets — one device-local db row (nav set + per-origin sets + open pointer).
   previews: { load: ask('previews:load'), save: ask('previews:save') },
-  // The hover card's universal size — one device-local db row.
   hoverCard: { load: ask('hoverCard:load'), save: ask('hoverCard:save') },
   devicePrefs: { load: ask('devicePrefs:load'), save: ask('devicePrefs:save') },
   rowMenu: ask('row-menu'),
@@ -165,7 +164,6 @@ const api = {
   reportTrash: ask('trash:report'),
   // Renderer-initiated write (relative paths only); main resolves under the session root.
   mutate: ask('mutate'),
-  // Right-click an entity → main pops a native context menu + acts on it.
   contextMenu: ask('context-menu'),
   // Push the editor's active formatting state so the native right-click menu renders accurate state.
   setEditorFormatState: tell('editor:format-state'),
@@ -173,31 +171,26 @@ const api = {
   // hover, so the bar drives the move itself via per-pointermove screen deltas.
   winDragBy: tell('win:dragBy'),
   winZoom: tell('win:zoom'),
-  // Resolves with the picked request, for the renderer's store to run.
   popCreateMenu: ask('create-menu'),
   // Surface a failure natively (renderer can't show a native dialog itself).
   showError: ask('error:show'),
-  // Open an external link (http/https/mailto) in the OS default browser/app.
   openExternal: ask('link:open'),
   // `get` returns the whole cached map; `fetch` resolves one URL (cache hit or live fetch).
   linkTitles: { get: ask('linkTitles:get'), fetch: ask('linkTitles:fetch') },
   systemAccent: ask('theme:systemAccent'),
   // Pop the native nexus-identity icon menu (Edit Icon / Add·Change Photo / removes) → the chosen action.
   iconMenu: ask('nexus:iconMenu'),
-  // Open the native image picker directly → the chosen file's path (null if canceled).
+  // null if canceled.
   pickFile: ask('nexus:pickFile'),
   adoptFile: ask('assets:adopt'),
   // A pasted clipboard image, landed as a temp file whose path adopts like a picked one.
   pasteImage: ask('nexus:pasteImage'),
   // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: ask('nexus:bannerMenu'),
-  // The Rename / Edit Icon menu for a detail title.
   titleMenu: ask('nexus:titleMenu'),
-  // The table grip's right-click menu.
   tableMenu: ask('table-menu'),
   // A block grip's menu — Delete on every kind, Type ▸ on a list, Source ▸ on an embed tile.
   gripMenu: ask('grip-menu'),
-  // The table-view column header's right-click menu.
   columnMenu: ask('column-menu'),
   // A table cell's right-click menu (title meta / per-type Style / Edit).
   cellMenu: ask('cell-menu'),
@@ -227,7 +220,6 @@ const api = {
   setGripHot: tell('editor:grip-hot'),
   // Scrolls a guest whose covering chrome holds the pointer — the hover card's site flavor.
   wheelGuest: tell('web:wheel'),
-  // Rename the open nexus's root folder + re-point the live session to the new path.
   renameNexus: ask('nexus:rename'),
   // Native-menu actions pushed from main; each subscriber returns an unsubscribe.
   onMenuAction: on('menu:action'),

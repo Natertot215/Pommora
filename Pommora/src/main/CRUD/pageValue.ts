@@ -1,8 +1,5 @@
-// Page value primitives — strip or rewrite ONE option's value on a page, plus stripPageMember,
-// which deletes a whole property key. Type-switched over the on-disk value
-// shapes: multi_select = string array; every single-option kind, Status included, = bare string. Multi arrays
-// are edited IN PLACE (filter/map on the raw array), never decode-to-strings→re-encode: a page
-// may carry foreign / non-string elements, and an op must touch only its target.
+// Multi arrays are edited IN PLACE (filter/map on the raw array), never decode-to-strings→
+// re-encode: a page may carry foreign / non-string elements, and an op must touch only its target.
 
 import type { PropertyType } from '@shared/properties'
 import { splitFrontmatter } from '../readNexus'
@@ -34,7 +31,6 @@ function rewriteRaw(
     const filtered = raw.filter((el) => el !== target)
     return filtered.length ? filtered : null
   }
-  // select and status alike — both store the bare option label.
   if (raw !== target) return SKIP
   return edit.op === 'replace' ? edit.to : null
 }

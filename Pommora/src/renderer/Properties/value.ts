@@ -100,9 +100,6 @@ function computeFieldValue(
       ? { kind: 'datetime', value: fm.modified_at }
       : { kind: 'null' }
   }
-  // Definition-first: the definition supplies the key its values are stored under. Never walk the
-  // frontmatter's wrapped keys looking for definitions — that inverts the rule and would let any
-  // wrapped key claim to be a property. A key naming nothing the registry knows is inert.
   if (!def) return { kind: 'null' }
   return decodeValue(def, (fm as Record<string, unknown>)[propertyKey(def)])
 }

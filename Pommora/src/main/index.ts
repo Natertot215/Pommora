@@ -1936,13 +1936,11 @@ serveBridge(
       },
     },
 
-    // The table grip's right-click menu.
     'table-menu': { kind: 'menu', fn: popTableMenu },
 
     // Every block grip's right-click menu — Delete, plus that block kind's own arm.
     'grip-menu': { kind: 'menu', fn: popGripMenu },
 
-    // The table-view column header's right-click menu.
     'column-menu': { kind: 'menu', fn: popColumnMenu },
 
     // A table cell's right-click menu (title meta / per-type Style / Edit).
@@ -2020,7 +2018,6 @@ serveBridge(
       },
     },
 
-    // A NavWindow row/card's right-click menu.
     'nav-row-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: NavRowMenuContext) => {
