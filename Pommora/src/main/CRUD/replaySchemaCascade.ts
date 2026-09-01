@@ -18,17 +18,19 @@ import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './pro
 import { sweepGovernedRoots } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 
-export function replaySchemaCascade(root: string): Promise<void> {
+/** True when a record was found and acted on — the registry or assignments may have moved. */
+export function replaySchemaCascade(root: string): Promise<boolean> {
   return serializeSchemaOp(async () => {
     try {
       const journal = await readSchemaJournal(root)
-      if (!journal) return
+      if (!journal) return false
       const unfinished = await replay(root, journal)
       if (!unfinished) await clearSchemaJournal(root, journal)
     } catch (e) {
       // The record stays; the next open retries.
       console.error('schema replay could not finish:', errText(e))
     }
+    return true
   })
 }
 

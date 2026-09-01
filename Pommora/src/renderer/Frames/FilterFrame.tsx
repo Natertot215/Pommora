@@ -56,8 +56,8 @@ import {
 import * as fp from './filterFrame.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
-
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
+
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },

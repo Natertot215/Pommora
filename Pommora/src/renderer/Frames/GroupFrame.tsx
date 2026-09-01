@@ -50,11 +50,11 @@ import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
 import * as gp from './groupFrame.css'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
-
 import {
   displayPropertyName,
   useCapitalizeMetadata,
 } from '@renderer/Properties/Assignment/columnLabel'
+
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
 const STRUCTURAL_ORDER: PickerChoice<StructuralOrderMode>[] = [

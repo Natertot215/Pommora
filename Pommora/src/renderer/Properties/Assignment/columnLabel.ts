@@ -11,7 +11,7 @@ const RESERVED_LABEL: Record<string, string> = {
 
 /** The name a property is shown under — the stored key, or Title Cased when the toggle is on. */
 export const displayPropertyName = (name: string, capitalize: boolean): string =>
-  capitalize ? name.replace(/(^|\s)(\p{Ll})/gu, (_, gap, c) => gap + c.toUpperCase()) : name
+  capitalize ? name.replace(/(?:^|\s)\p{Ll}/gu, (m) => m.toUpperCase()) : name
 
 export const useCapitalizeMetadata = (): boolean =>
   useSession((s) => s.personalization.capitalizeMetadata ?? false)
