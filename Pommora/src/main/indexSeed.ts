@@ -5,7 +5,6 @@
 
 import { readFile, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, sep } from 'node:path'
-import { isGovernedKey } from '@shared/governedKeys'
 import { errText } from '@shared/result'
 import { extractMentions, frontmatterMentions } from './Connections/scan'
 import { sweepAdmitsBody } from './CRUD/util'
@@ -32,21 +31,16 @@ import { sessionDb } from './sessionDb'
  *  admission), so the index holds nothing for it either. */
 export function extractPageIndex(content: string): PageIndexEntry | null {
   if (!sweepAdmitsBody(content)) return null
-  const values = governedValues(content)
+  const values = frontmatterValues(content)
   const mentions = extractMentions(splitEnvelope(content).body)
   for (const title of frontmatterMentions(values)) mentions.add(title)
   return { mentions: [...mentions], values }
 }
 
-/** A page's governed property values, as the file holds them — the index's own rows, and the map
- *  the rename cascade patches. */
-export function governedValues(content: string): Record<string, unknown> {
-  const values: Record<string, unknown> = {}
-  const fm = splitFrontmatter(content) as Record<string, unknown>
-  for (const [key, value] of Object.entries(fm)) {
-    if (isGovernedKey(key, 'property')) values[key] = value
-  }
-  return values
+/** Every frontmatter key, registry-independent: a name registered later must find the pages
+ *  already holding it without a re-read, and registering writes no file. */
+export function frontmatterValues(content: string): Record<string, unknown> {
+  return splitFrontmatter(content) as Record<string, unknown>
 }
 
 /** Every corpus file of the nexus at `root`, honoring the user's `excluded_folders` — the one

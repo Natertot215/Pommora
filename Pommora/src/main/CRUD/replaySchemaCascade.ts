@@ -6,8 +6,6 @@
 // holder is an unfinished heal for the same purpose: the record survives it.
 
 import { errText } from '@shared/result'
-import { wrapKey } from '@shared/governedKeys'
-import { propertyKey } from '@shared/propertyValue'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
@@ -58,7 +56,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const crashed = def?.name === journal.name
       const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return false
-      const key = wrapKey('property', journal.name)
+      const key = journal.name
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, key, folders)
       const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), {
@@ -75,7 +73,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       // Holds `to` and not `from` = the commit landed cleanly; every other state (still holds
       // `from`, holds both — a refused duplicate's residue — or neither) is not this record's.
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
-      const key = propertyKey(def)
+      const key = def.name
       const skipped = await cascadePages(root, key, (content) =>
         replacePageValue(content, key, journal.from, journal.to, def.type),
       )
@@ -86,7 +84,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       // still listed is the owed state; gone means the op finished and only the clear failed.
       const def = defs[journal.id]
       if (!def || !optionValues(def).includes(journal.value)) return false
-      const key = propertyKey(def)
+      const key = def.name
       const skipped = await cascadePages(root, key, (content) =>
         stripPageValue(content, key, journal.value, def.type),
       )

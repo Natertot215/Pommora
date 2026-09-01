@@ -2,7 +2,7 @@ import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValu
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import type { PropertyDefinition } from '@shared/properties'
-import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
+import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -93,9 +93,7 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
     if (revealed.has(id)) return true
     if (isContextRow(id)) return (contextValues?.[id]?.length ?? 0) > 0
     const def = schema.find((d) => d.id === id)
-    return def
-      ? (fm as Record<string, unknown> | undefined)?.[propertyKey(def)] !== undefined
-      : false
+    return def ? (fm as Record<string, unknown> | undefined)?.[def.name] !== undefined : false
   }
 
   const editRow = (def: PropertyDefinition, el: HTMLElement, from?: EventTarget | null): void =>

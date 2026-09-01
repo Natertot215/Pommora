@@ -4,7 +4,7 @@
 
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import { parseGovernedKey } from '@shared/governedKeys'
+import { parseContextKey } from '@shared/contexts'
 import { KIND_ID_KEY } from '@shared/identity'
 import { ok, type Result } from '@shared/result'
 import { PAGE_STAMP_KEYS } from '@shared/schemas'
@@ -12,12 +12,7 @@ import type { ClearReport } from '@shared/types'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
 import { assetMatcher, rootSegs } from './exclusion'
 import { isMarkdownFile, listEntries } from './IO/walk'
-import {
-  mergeFrontmatter,
-  readFrontmatterFields,
-  renameFrontmatterKey,
-  splitEnvelope,
-} from './IO/pageFile'
+import { mergeFrontmatter, readFrontmatterFields, splitEnvelope } from './IO/pageFile'
 import { SIDECAR_FILENAME } from './paths'
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
@@ -64,39 +59,19 @@ export async function excludedArtifacts(
   return { pages, sidecars }
 }
 
-function clearRewrite(preserveProperties: boolean): RewriteText {
-  return (content) => {
-    const keys = Object.keys(readFrontmatterFields(content))
-    const governed = keys.flatMap((k) => {
-      const parsed = parseGovernedKey(k)
-      return parsed ? [{ key: k, name: parsed.name }] : []
-    })
-    const bookkeeping = keys.filter((k) => BOOKKEEPING_KEYS.includes(k))
-    let text = content
-    if (preserveProperties) {
-      for (const { key, name } of governed) {
-        const renamed = renameFrontmatterKey(text, key, name, 'prefer-new')
-        if (renamed !== null) text = renamed
-      }
-    }
-    const remove = preserveProperties
-      ? bookkeeping
-      : [...bookkeeping, ...governed.map((g) => g.key)]
-    if (remove.length > 0) text = mergeFrontmatter(text, {}, remove, splitEnvelope(text).body)
-    return text === content ? null : text
-  }
+const clearRewrite: RewriteText = (content) => {
+  const keys = Object.keys(readFrontmatterFields(content))
+  const remove = keys.filter((k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null)
+  if (remove.length === 0) return null
+  return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
 }
 
-export function clearConfirmCopy(
-  folderCount: number,
-  preserveProperties: boolean,
-): { message: string; detail: string } {
+export function clearConfirmCopy(folderCount: number): { message: string; detail: string } {
   const folders = folderCount === 1 ? 'the excluded folder' : `${folderCount} excluded folders`
   return {
     message: `Clear Pommora’s data from ${folders}?`,
-    detail: preserveProperties
-      ? 'Pommora’s container files are removed and each page’s identity key and timestamps are dropped; the property and Context values a page holds are kept as ordinary frontmatter. This cannot be undone.'
-      : 'Pommora’s container files are removed and each page’s identity key, timestamps, and property values are deleted outright. This cannot be undone.',
+    detail:
+      'Pommora’s container files are removed and each page’s identity key, timestamps, and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
   }
 }
 
@@ -104,7 +79,6 @@ export async function clearExclusionData(
   root: string,
   excluded: string[],
   assetDir: string,
-  preserveProperties: boolean,
 ): Promise<Result<ClearReport>> {
   const { pages, sidecars } = await excludedArtifacts(root, excluded, assetDir)
   // Best-effort: a sidecar that won't delete (locked, permission-denied, a sync placeholder) is
@@ -118,7 +92,7 @@ export async function clearExclusionData(
     if (gone) removed++
   }
   const swept = await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {
-    rewriteText: clearRewrite(preserveProperties),
+    rewriteText: clearRewrite,
   })
   return ok({ pages: swept.touched.length, sidecars: removed, refused: swept.refused.length })
 }

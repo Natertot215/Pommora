@@ -1,4 +1,3 @@
-import { wrapKey } from './governedKeys'
 import { optionValues, type PropertyDefinition } from './properties'
 
 export type PropertyValue =
@@ -121,10 +120,6 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
-export function propertyKey(def: PropertyDefinition): string {
-  return wrapKey('property', def.name)
-}
-
 /** The renderer's optimistic mirror of the main-side write, so a cell reads the same value
  *  whether the commit has landed yet or not. */
 export function applyValueAtRoot(
@@ -132,7 +127,7 @@ export function applyValueAtRoot(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Record<string, unknown> {
-  const key = propertyKey(def)
+  const key = def.name
   const next = { ...root }
   if (value === null || isBlankValue(value)) delete next[key]
   else next[key] = encodeValue(value)

@@ -1,6 +1,6 @@
 import { DEFAULT_NEW_NAME, type MutableKind, type RenameHost } from '@shared/mutate'
 import { contextDirRel } from '@shared/nexusPaths'
-import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
+import { normalizePropertyName } from '@shared/properties'
 import { orderWithSlot } from '../Views/creationOrder'
 import { findContainer, parentPathOf } from '../Interface/Scope'
 import type { Slice } from './SessionState'
@@ -195,8 +195,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       return false
     }
     const after = normalizePropertyName(newName)
-    if (before !== undefined && before !== after)
-      get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))
+    if (before !== undefined && before !== after) get().bumpValuesEpoch(before, after)
     return true
   },
 })

@@ -148,6 +148,34 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
+/** Reserved for system-assigned roles — a user name may not start with it. */
+export const RESERVED_NAME_PREFIX = '$'
+
+export const KEY_REFUSAL = {
+  empty: 'A name cannot be empty.',
+  reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX}.`,
+  duplicate: (name: string) => `A property named "${name}" already exists.`,
+} as const
+
+/** Applied once at write, so an untrimmed or denormalized name never reaches disk — which is what
+ *  lets the key match stay an exact string compare with no normalization of its own. */
+export function normalizePropertyName(raw: string): string {
+  return raw.trim().normalize('NFC')
+}
+
+export function invalidPropertyName(name: string): boolean {
+  const n = normalizePropertyName(name)
+  return !n || n.startsWith(RESERVED_NAME_PREFIX)
+}
+
+/** A frontmatter key is a property's iff it is exactly a registered name — the one ownership gate. */
+export function isRegisteredPropertyName(key: string, names: ReadonlySet<string>): boolean {
+  return names.has(key)
+}
+
+export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<string> =>
+  new Set([...defs].map((d) => d.name))
+
 /** A status def's options flattened for display — an option without its own color wears its
  *  GROUP's (the on-disk contract: group color is the default, option color the override). THE
  *  read for status chips anywhere the group isn't separately in scope. */
