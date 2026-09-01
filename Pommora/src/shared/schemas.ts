@@ -81,10 +81,5 @@ export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 
 /** The modeled top-level page keys a FULL page rewrite governs (set if present, else
  *  delete). Partial updates pass a narrower key set so they touch nothing else. */
-export const PAGE_MODELED_KEYS = [
-  PAGE_ID_KEY,
-  'icon',
-  'created_at',
-  'modified_at',
-  'cover',
-] as const
+export const PAGE_STAMP_KEYS = ['created_at', 'modified_at'] as const
+export const PAGE_MODELED_KEYS = [PAGE_ID_KEY, 'icon', ...PAGE_STAMP_KEYS, 'cover'] as const

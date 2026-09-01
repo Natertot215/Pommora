@@ -13,6 +13,26 @@ const read = (p: string): Promise<string> => readFile(join(root, p), 'utf8')
 const page = (id: string, frontmatter: string): string =>
   `---\n${frontmatter}\nPageID: ${id}\n---\n\nbody\n`
 
+const stamped = (): Promise<void> =>
+  w(
+    'Archive/stamped.md',
+    page(
+      '01NNNNNNNNNNNNNNNNNNNNNNNN',
+      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Nathan\n<Status>: open',
+    ),
+  )
+
+const expectStampsStripped = async (): Promise<string> => {
+  const text = await read('Archive/stamped.md')
+  expect(text).not.toContain('created_at')
+  expect(text).not.toContain('modified_at')
+  expect(text).not.toContain('PageID')
+  expect(text).toContain('icon: star')
+  expect(text).toContain('cover: img.png')
+  expect(text).toContain('Author: Nathan')
+  return text
+}
+
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-exscan-'))
   await d('Archive/Set')
@@ -113,6 +133,13 @@ describe('clearExclusionData — preserve properties on', () => {
     )
   })
 
+  it('drops the timestamps with the identity key, keeping icon, cover, and foreign keys', async () => {
+    await stamped()
+    await clearExclusionData(root, ['Archive'], 'file-assets', true)
+    const text = await expectStampsStripped()
+    expect(text).toContain('Status: open')
+  })
+
   it('leaves the Agenda folder byte-identical end to end', async () => {
     const config = await read('Archive/Tasks/_taskconfig.json')
     const task = await read('Archive/Tasks/task.md')
@@ -147,11 +174,20 @@ describe('clearExclusionData — preserve properties off', () => {
     expect(note).not.toContain('PageID')
     expect(await read('Archive/proj.md')).not.toContain('Projects')
   })
+
+  it('drops the timestamps with the identity key, keeping icon, cover, and foreign keys', async () => {
+    await stamped()
+    await clearExclusionData(root, ['Archive'], 'file-assets', false)
+    const text = await expectStampsStripped()
+    expect(text).not.toContain('Status')
+  })
 })
 
 describe('clearConfirmCopy', () => {
   it('says different things in each toggle position, and pluralizes the count', () => {
     expect(clearConfirmCopy(2, true).detail).not.toBe(clearConfirmCopy(2, false).detail)
+    expect(clearConfirmCopy(2, true).detail).toContain('timestamps')
+    expect(clearConfirmCopy(2, false).detail).toContain('timestamps')
     expect(clearConfirmCopy(1, true).message).toContain('the excluded folder')
     expect(clearConfirmCopy(3, true).message).toContain('3 excluded folders')
   })
