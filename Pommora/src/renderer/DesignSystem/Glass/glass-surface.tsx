@@ -13,8 +13,9 @@ import { shadowStandardVar } from '../Tokens/color.css'
 import { cx } from '../Util/cx'
 
 /** Opt-in beaked geometry — a pane that points at what opened it. `insetRight` aims the beak from the
- *  right edge (omitted = centered); `animationClass` rides the frost and the outline together, never a
- *  shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and it samples nothing). */
+ *  right edge (omitted = centered); `animationClass` rides the frost and the outline together, never
+ *  a shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and samples
+ *  nothing). */
 export interface NotchOptions {
   insetRight?: number
   animationClass?: string

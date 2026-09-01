@@ -11,10 +11,9 @@ export const BUSY = fail('busy', 'Nexus switching.')
 type Args<K extends keyof Asks> = Asks[K]['args']
 type Reply<K extends keyof Asks> = Asks[K]['reply']
 
-/** One entry per ask channel — the `kind` is the boundary policy, declared beside the handler:
- *  `envelope` catches a throw into `{ok:false,error}`; `raw` lets it reject (the sentinel reads
- *  the renderer already catches); `menu` injects the sender's window and resolves null without
- *  one; `window` injects window-or-null and leaves the rest to the handler. */
+/** One entry per ask channel — `kind` is the boundary policy, declared beside the handler:
+ *  `envelope` catches a throw into `{ok:false,error}`; `raw` lets it reject; `menu` injects the
+ *  sender's window and resolves null without one; `window` injects window-or-null. */
 export type AskEntry<K extends keyof Asks> =
   | { kind: 'envelope' | 'raw'; fn: (...args: Args<K>) => Reply<K> | Promise<Reply<K>> }
   | { kind: 'menu'; fn: (win: BrowserWindow, ...args: Args<K>) => Reply<K> | Promise<Reply<K>> }
@@ -36,8 +35,8 @@ export function serveBridge(asks: BridgeAsks, tells: BridgeTells): void {
   for (const channel of Object.keys(asks) as (keyof Asks)[]) {
     const entry = asks[channel] as AskEntry<keyof Asks>
     ipcMain.handle(channel, async (e, ...raw) => {
-      // The wire hands back `any[]`; the map's tuple is the declared truth for this channel,
-      // and the per-kind `fn` unions can't be correlated to it without the assertion.
+      // The wire hands back `any[]`; the per-kind `fn` unions can't be correlated to the
+      // channel's declared tuple without the assertion.
       const args = raw as Args<keyof Asks>
       switch (entry.kind) {
         case 'raw':
@@ -88,8 +87,8 @@ const isEmptyValue = (v: unknown): boolean =>
  *  here at the boundary, where the renderer's payload is still untrusted — one guard ladder
  *  and one emptiness rule for all four scopes. */
 export function scopeGet<T>(scope: Scope): () => Record<string, T> {
-  // Self-wrapped like nexus:state — raw channels have no envelope net, and a scope that can't be
-  // read (corrupt db, missing table, gone volume) degrades to its empty default, never a rejection.
+  // Self-wrapped like nexus:state — raw channels have no envelope net, so a scope that can't be
+  // read degrades to its empty default, never a rejection.
   return () => {
     try {
       return readScope<T>(scope)

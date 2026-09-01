@@ -1,9 +1,8 @@
-// Remove — the daily non-destructive lifecycle op, and its restore half. Remove caches
-// { pageId: raw } + unassigns on the Collection's sidecar FIRST, then strips the property's value
-// from every member page under its file lock. Cache-before-strip keeps Remove RECOVERABLE: the
-// values are persisted before any page loses them, so an fs failure mid-strip never destroys
-// them. Re-assigning restores each cached value that still conforms to the def's CURRENT type +
-// options (per-value reconciliation); the global Delete purges these caches.
+// Remove caches { pageId: raw } + unassigns on the Collection's sidecar FIRST, then strips the
+// property's value from every member page under its file lock — cache-before-strip means an fs
+// failure mid-strip never destroys a value the cache didn't already capture. Re-assigning
+// restores each cached value that still conforms to the def's CURRENT type + options; the global
+// Delete purges these caches.
 
 import { contentId } from '@shared/identity'
 import { stripPageMember } from './pageValue'
@@ -38,16 +37,13 @@ async function removeInner(
 ): Promise<Result<null>> {
   const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
   const ids = (sidecar?.properties as string[] | undefined) ?? []
-  if (!sidecar || !ids.includes(propertyId)) return ok(null) // not assigned → no-op
+  if (!sidecar || !ids.includes(propertyId)) return ok(null)
 
-  // A property's values live under its own name, so the strip needs the registry's key.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
   const key = def.name
 
   const files = await folderCorpus(root, collectionFolder)
-  // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
-  // written first (below): a failure mid-strip can then never lose a value it didn't capture.
   const values: Record<string, unknown> = {}
   for (const file of files) {
     const content = await readTextOrNull(file)
@@ -56,17 +52,16 @@ async function removeInner(
     const id = contentId(fields)
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
-    // Only the CACHE needs identity — an id-less page still gets stripped (below), its value
-    // just isn't restorable; Remove must not leak the value it exists to clear.
+    // Only the cache needs identity — an id-less page still gets stripped below, its value
+    // just isn't restorable.
     if (id) values[id] = raw
   }
-  // Cache + unassign FIRST — under the sidecar's own lock, so the page-read window above can't
+  // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't
   // revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
       { ...cur, properties: ids.filter((id) => id !== propertyId) },
       propertyId,
-      // No value, no key — a block with nothing in it is the same violation as an empty map.
       Object.keys(values).length ? { values } : undefined,
     ),
   )
@@ -83,8 +78,7 @@ async function removeInner(
   return ok(null)
 }
 
-/** One shape for both cache writers: set (or clear, on undefined) a property's cache block on a
- *  fresh sidecar read, stamping the edit — the no-empties rule drops an emptied map's key. */
+/** Shared by both cache writers. The no-empties rule drops an emptied map's key. */
 function patchCacheBlock(
   cur: Record<string, unknown>,
   propertyId: string,
@@ -99,9 +93,8 @@ function patchCacheBlock(
   return next
 }
 
-/** Restore the Remove-cache on re-assign: write each reconciled value back to the page
- *  (matched by frontmatter id) that held it — deleted/moved-out pages drop their entries —
- *  then clear the block. Pages first (under their file lock), cache cleared last. No block → no-op. */
+/** Write each reconciled value back to the page (matched by frontmatter id) that held it;
+ *  deleted/moved-out pages drop their entries. Pages first, cache cleared last. */
 export async function restoreCachedValues(
   root: string,
   collectionFolder: string,
@@ -113,11 +106,10 @@ export async function restoreCachedValues(
   const block = cacheAll?.[propertyId]
   if (!isPlainObject(block) || !isPlainObject(block.values)) return ok(null)
 
-  // No readable definition → the cache stays whole: a restore can only spend an entry it
-  // actually wrote back, and a def that reappears later still finds everything waiting.
+  // No readable definition → the cache stays whole: a def that reappears later still finds
+  // everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
-  // Map page id → file; the value write re-reads fresh inside the file lock.
   const byId = new Map<string, string>()
   for (const file of await folderCorpus(root, collectionFolder)) {
     const content = await readTextOrNull(file)
@@ -125,9 +117,8 @@ export async function restoreCachedValues(
     const id = contentId(readFrontmatterFields(content))
     if (id) byId.set(id, file)
   }
-  // Each entry leaves the cache only as its page write lands; what didn't restore — a page
-  // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
-  // refuses the write — stays cached.
+  // What didn't restore — a vanished page, a value the def's current type/options reject, a
+  // page whose frontmatter refuses the write — stays cached.
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false

@@ -18,10 +18,8 @@ export function InterfaceScaffold({
   // A container's warmth is its scroll position only — undo/folds are page-editor concerns.
   const warmKey = selection.kind !== 'none' && selection.kind !== 'page' ? navKey(selection) : null
 
-  // The scaffold's div is REUSED across containers (no key), so warmth rides this effect: restore on
-  // (tab, entity) change, capture on leave. Scroll is tracked continuously into `last` — by cleanup
-  // time the div may already hold the NEXT container's content (clamped scroll), so a teardown read
-  // would capture the wrong value.
+  // The scaffold's div is reused across containers (no key): scroll tracks continuously into
+  // `last` since by cleanup the div may already hold the next container's content.
   useEffect(() => {
     const el = ref.current
     if (!el || !warmKey) return

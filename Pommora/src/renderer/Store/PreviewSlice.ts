@@ -40,8 +40,7 @@ export interface PreviewSlice {
   closeNav: () => void
   toggleNav: () => void
   /** The in-app browser's summoned address; null = closed. The sequence makes every summon a
-   *  distinct event, so re-clicking a link the window has navigated away from still re-aims it —
-   *  a bare url would read as unchanged. */
+   *  distinct event, so re-clicking a link the window has navigated away from still re-aims it. */
   browserSummon: { url: string; seq: number } | null
   browserSeq: number
   openBrowser: (url: string) => void
@@ -70,8 +69,8 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
     return { dir: to < from ? 'back' : 'fwd', seq: ++previewSlideSeq }
   }
 
-  // The gallery sentinel never persists — openNavPreview re-seeds it as tab 1 on every open, so
-  // only the page tabs write, and activeIndex counts by the stored (page-only) order.
+  // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by
+  // the stored (page-only) order.
   const toPreviewRecord = (p: PreviewState): PreviewSetRecord => {
     const pages = p.tabs.filter(
       (t): t is PreviewTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
@@ -167,17 +166,15 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
         activeTabId: (activeTab ?? tabs[0]).id,
       }
       clearWindowWarm()
-      // previewExit re-seeds on every open — only the close that wrote 'engulf' may play the FLIP;
-      // the other window-closing paths never write the flag.
+      // previewExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
       set({ preview, navOpen: false, previewExit: 'dismiss' })
       mirrorPreviews()
     },
     openNavPreview: () => {
       const cur = get().preview
       if (cur?.flavor === 'nav') return
-      // A live page preview morphs into the NavWindow (one window changing shape, never a
-      // dismiss + fresh open) — its rect is stashed for the nav's mount FLIP, and the 'morph'
-      // exit hides the outgoing window instantly so the nav carries the whole motion.
+      // A live page preview morphs into the NavWindow rather than dismiss + fresh open — its
+      // rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
       const morphing = cur?.flavor === 'page'
       if (morphing) stashWindowMorph()
       const { tabs: pages } = reconcileRecord(get().previewsFile.navSet)
@@ -253,8 +250,8 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
     },
 
     browserSummon: null,
-    // Monotonic across closes: the sequence lives outside the summon object, so a re-summon
-    // inside the window's exit presence (which skips the remount) still reads as a new event.
+    // Monotonic across closes: living outside the summon object, a re-summon inside the window's
+    // exit presence (which skips the remount) still reads as a new event.
     browserSeq: 0,
     openBrowser: (url) =>
       set((s) => {

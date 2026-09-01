@@ -32,10 +32,9 @@ export function useStatusReorder(
   const groupEls = useRef(new Map<string, HTMLElement>())
   const rows = useRef(new Map<string, HTMLElement>())
 
-  // Groups partition the pointer axis by boundary midpoints, so every clientY (gaps + empty
-  // groups included) resolves to exactly one group. The slot lands in the target group's
-  // without-the-dragged space; a destination that wouldn't move resolves to null, so the line
-  // never promises a move the drop then declines.
+  // Groups partition the pointer axis by boundary midpoints, so every clientY resolves to exactly
+  // one group. A destination that wouldn't move resolves to null, so the line never promises a
+  // move the drop then declines.
   const drag = useInsertionDrag<Slot, SnapGroup[]>({
     take: () =>
       order.map((grp) => {

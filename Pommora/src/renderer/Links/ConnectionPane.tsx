@@ -16,14 +16,13 @@ import './connectionPane.css'
 
 export { closeActiveHoverCard }
 
-// Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
-// the next click or pull focus out of the editor. A deliberate press inside the pane (selecting
-// its text) is the one exception, and the close hands focus back to the link's editor. Mounted
-// ONCE at app level; every host reaches it through `hoverConnection`, so one pane app-wide holds
-// by construction.
+// Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat the
+// next click or pull focus out of the editor. A deliberate press inside the pane (selecting its
+// text) is the one exception, and the close hands focus back to the link's editor. Mounted once at
+// app level; every host reaches it through `hoverConnection`.
 
 // The size knobs and their persistence live in hoverPaneSize.ts — the ceiling is never a knob:
-// width caps at the viewport and height at the band actually available on the pane's side.
+// width caps at the viewport, height at the band actually available on the pane's side.
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200

@@ -39,9 +39,8 @@ export interface Token {
 }
 
 /** What a `link` token's `( )` holds, still encoded. Both producers close a link with `](target)`,
- *  and the three surfaces that resolve one used to re-derive this from a different span each — so a
- *  target read for coloring could drift from the one read for the click, which is the disagreement
- *  the shared resolver downstream exists to prevent. */
+ *  read through this one resolver so a target read for coloring can't drift from the one read for
+ *  the click. */
 export function linkTarget(text: string, tk: Token): string {
   const [, close] = tk.markerRanges
   return text.slice(close[0] + 2, close[1] - 1)
@@ -151,8 +150,8 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     if (!s || inCode(s.full[0])) continue
     const [fs, fe] = s.full
     // An alias pulls the two meanings apart — the words shown and the key resolved. The leading
-    // marker then swallows `[[Title|`, since all of it is syntax the reader shouldn't see. An
-    // opened-but-empty one shows nothing, so it stays a plain link until something is written in it.
+    // marker swallows `[[Title|`. An opened-but-empty one shows nothing, so it stays a plain link
+    // until something is written in it.
     const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
     const shown = alias ?? s.title
     tokens.push({
@@ -161,8 +160,8 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
       contentRange: shown,
       ...(alias ? { resolveRange: s.title } : {}),
       // Everything either side of what's shown, so the markers tile the whole token — a renderer
-      // drawing only the content span and skipping the rest can't then disagree with one hiding
-      // markers. A pipe with nothing after it rides the closer.
+      // drawing only the content span can't disagree with one hiding markers. A pipe with nothing
+      // after it rides the closer.
       markerRanges: [
         [fs, shown[0]],
         [shown[1], fe],
@@ -180,8 +179,8 @@ export function tokenize(text: string): Token[] {
   const inCode = codeMask(text)
   const scan = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
-  // Code tokenizes FIRST so connections and links inside `spans` are dropped like latex already is —
-  // a [[link]] in code must render (and click) as literal code, not a live connection.
+  // Code tokenizes FIRST so connections and links inside spans are dropped — a [[link]] in code
+  // must render (and click) as literal code, not a live connection.
   const code = scan({ kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
   const embeds = scan({
     kind: 'embed',
@@ -189,10 +188,9 @@ export function tokenize(text: string): Token[] {
     open: 3,
     close: 2,
   })
-  // `[[Title]](target)` stays a connection trailed by literal parens, which is what Obsidian shows
-  // and therefore what a shared vault means by it. CommonMark would read it as a link labeled
-  // `[Title]`; reading it that way here creates a link the rename cascade's grammar cannot match,
-  // so renaming its target rots it silently.
+  // `[[Title]](target)` stays a connection trailed by literal parens, matching what Obsidian shows.
+  // CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't
+  // match, so renaming its target would rot it silently.
   const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
   const links = scan({
     kind: 'link',
@@ -201,8 +199,8 @@ export function tokenize(text: string): Token[] {
     close: 1,
   }).filter(notOverlapping([...embeds, ...wikis, ...code]))
   // A footnote marker tokenizes so the resting table cell — which has no EditorView and reads the
-  // tokenizer directly — draws the same construct the body does. What it draws is the ordinal, which
-  // is a whole-document fact no token carries; the editor takes it from the scan instead.
+  // tokenizer directly — draws the same construct the body does. The ordinal it draws is a
+  // whole-document fact no token carries; the editor takes it from the scan instead.
   const cites = scan({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...embeds, ...wikis, ...code]),
   )
@@ -241,8 +239,8 @@ export function tokenize(text: string): Token[] {
 }
 
 /** Which tokens reveal their syntax. `restingAt` is where a link was just FINISHED, if anywhere —
- *  the one caret position that leaves a link rendered, and only because the finishing gesture put
- *  the caret there. Clicking beside a link reveals it as every other construct does. */
+ *  the one caret position that leaves a link rendered, only because the finishing gesture put the
+ *  caret there. */
 export function activeTokenIndices(
   tokens: Token[],
   selStart: number,
@@ -251,9 +249,8 @@ export function activeTokenIndices(
 ): Set<number> {
   const active = new Set<number>()
   tokens.forEach((tk, i) => {
-    // A marker never reveals its syntax at any caret position — its label is invisible plumbing, and
-    // showing `[^7]` under a glyph reading 2 is the contradiction positional display exists to
-    // prevent. It opts out here rather than being suppressed per position.
+    // A marker never reveals its syntax at any caret position — its label is invisible plumbing,
+    // and showing `[^7]` under a glyph reading 2 is the contradiction this opt-out exists to prevent.
     if (tk.kind === 'citationRef') return
     const [s, e] = tk.range
     if (selStart !== selEnd) {
@@ -262,8 +259,8 @@ export function activeTokenIndices(
     }
     const caret = selStart
     // A link just finished leaves the caret on its closer and stays rendered there. Nothing about
-    // the position earns that — clicking beside a link is aiming at its syntax and still reveals it
-    // — so the finishing gesture is what says so, and the next thing the user does takes it back.
+    // the position earns that — it's the finishing gesture that says so, and the next thing the
+    // user does takes it back.
     if (caret === e && caret === restingAt && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
     if (caret >= s && caret <= e) active.add(i)
   })

@@ -1,6 +1,6 @@
-// Repairs deletes that touch a callout BODY line's hidden `> ` prefix, instead of cancelling them — a flat
-// cancel made routine gestures (triple-click delete, Cmd+Backspace, drag-out) silently dead, since their
-// changes legitimately start at the line start. Verdicts below encode which repair each case needs.
+// Repairs deletes that touch a callout body line's hidden `> ` prefix instead of cancelling them —
+// a flat cancel made routine gestures (triple-click delete, Cmd+Backspace, drag-out) silently dead,
+// since their changes legitimately start at the line start.
 import { type Annotation, EditorState, Transaction, type Extension } from '@codemirror/state'
 import { calloutLines } from '../Detect'
 import { tableSelfEdit } from '../Tables/sync'
@@ -35,19 +35,17 @@ export function calloutDeleteVerdict(
     const lineEnd = off + lines[i].length
     const co = info[i]
     if (from >= off && from <= lineEnd) {
-      // Body prefixes only — the head's whole-prefix delete (de-callout) is intentional, and the atomic
-      // range already blocks partial head corruption.
+      // Body prefixes only — the head's whole-prefix delete (de-callout) is intentional, and the
+      // atomic range already blocks partial head corruption.
       if (!co || co.first || co.prefixEnd === 0 || from >= off + co.prefixEnd) {
-        // The delete starts cleanly but may JOIN a following body line up (forward-delete of the newline).
-        // A join that leaves the body's `> ` intact splices a literal `>` into content — extend the join
-        // to consume the whole prefix, like smartBackspace's join does.
+        // May join a following body line up (forward-delete of the newline); a join that leaves the
+        // body's `> ` intact splices a literal `>` into content, so extend it to consume the prefix.
         const ext = joinExtension(lines, info, from, to)
         return ext === null ? { kind: 'ok' } : { kind: 'extend', to: ext }
       }
-      // Removing the line WITH its newline (or through EOF) keeps the remaining box contiguous.
+      // Removing the line with its newline (or through EOF) keeps the remaining box contiguous.
       if (to >= lineEnd + 1 || to >= doc.length) return { kind: 'ok' }
-      // A prefix-only line — the box's own blank `>` — holds no content for the clamp to protect, so
-      // clamping it would only turn the delete into a zero-length no-op.
+      // A prefix-only line holds no content for the clamp to protect.
       if (co.prefixEnd >= lines[i].length) return { kind: 'ok' }
       if (to >= off + co.prefixEnd) return { kind: 'clamp', from: off + co.prefixEnd }
       return { kind: 'cancel' }
@@ -57,8 +55,8 @@ export function calloutDeleteVerdict(
   return { kind: 'ok' }
 }
 
-// When [from, to) removes the newline before a callout BODY line but stops inside (or at the start of) its
-// `> ` prefix, return the position the delete must extend to (prefix end) so the join is clean; else null.
+// When [from, to) removes the newline before a callout body line but stops inside its `> ` prefix,
+// return the position the delete must extend to so the join is clean; else null.
 function joinExtension(
   lines: string[],
   info: ReturnType<typeof calloutLines>,
@@ -78,17 +76,16 @@ function joinExtension(
   return null
 }
 
-/** True when deleting [from, to) would erode a callout BODY line's `>` prefix in place — a clamped repair
- *  and a cancel both count as "strips". Pure + exported for tests. */
+/** True when deleting [from, to) would erode a callout body line's `>` prefix in place — a clamped
+ *  repair and a cancel both count as "strips". */
 export function stripsCalloutPrefix(doc: string, from: number, to: number): boolean {
   return calloutDeleteVerdict(doc, from, to).kind !== 'ok'
 }
 
-/** The annotations a re-issued spec has to carry. A filter rebuilds its transaction from the start
- *  state, so anything a construct stamped on its own write is gone unless it is named here — and a
- *  dropped self-edit annotation makes a downstream guard read that construct's write as a user edit.
- *  CodeMirror exposes no way to enumerate a transaction's annotations, so this list IS the
- *  enumeration: a new annotation that rides a document change joins it. */
+/** A filter rebuilds its transaction from the start state, so anything a construct stamped on its
+ *  own write is gone unless named here — a dropped self-edit annotation makes a downstream guard
+ *  read that construct's write as a user edit. CodeMirror exposes no way to enumerate a
+ *  transaction's annotations, so this list is a manual enumeration. */
 function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
   const out: Annotation<unknown>[] = []
   const userEvent = tr.annotation(Transaction.userEvent)
@@ -98,9 +95,8 @@ function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
   return out
 }
 
-/** THE guard shape: read the start state's cached scan, put every change to a verdict, and re-issue
- *  only what a verdict moved. A guard that copied this body instead of calling it would be a second
- *  re-issue path, and only one of the two would ever get the next fix to it. */
+/** Read the start state's cached scan, put every change to a verdict, and re-issue only what a
+ *  verdict moved. */
 export function verdictFilter(
   verdict: (
     doc: string,

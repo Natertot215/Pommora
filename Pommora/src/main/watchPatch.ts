@@ -1,9 +1,7 @@
-// The watcher's path, spent: classify each event, then apply the matching targeted patch
-// against the live tree. The classifier never admits what the walk wouldn't — page reads ride
-// `readPageRecord` and sidecar reads the same coercions the walk uses — and everything it
-// can't place lands on the total default, the full refresh. Genuine leaf fields patch;
-// structural walk INPUTS (the registries, state orderings, folder-kind sidecars appearing or
-// vanishing, directories) don't, because they shape the tree rather than sit in it.
+// Classifies each watcher event, then applies the matching targeted patch against the live
+// tree; anything the classifier can't place lands on the full refresh. Structural walk inputs
+// (registries, state orderings, folder-kind sidecars, directories) always force a refresh
+// because they shape the tree rather than sit in it — only leaf fields patch.
 
 import { join } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
@@ -62,8 +60,7 @@ export type WatchClass =
   | { kind: 'ignored' }
   | { kind: 'full-refresh' }
 
-/** The same nexus-relative POSIX spelling, refusing a path that is not under the root at all —
- *  a watch event can name one, and everything downstream keys on the relative path. */
+/** The nexus-relative POSIX path, or null if the watch event names one outside root. */
 const toPosixRel = (root: string, absPath: string): string | null => {
   const rel = relPosix(root, absPath)
   return !rel || rel.startsWith('..') ? null : rel
@@ -99,11 +96,11 @@ function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
   return null
 }
 
-/** Mirrors `isContentFile` for a bare name — the walk's page admission, minus the Dirent. */
+/** Mirrors `isContentFile` for a bare name. */
 const isContentName = (name: string): boolean => !name.startsWith('_') && isMarkdownFile(name)
 
-/** Whether the walk reads this nexus's container sidecars at all — a raw nexus derives every
- *  container fact from position, so its sidecars are files the walk never opens. */
+/** Whether the walk reads this nexus's container sidecars — a raw nexus derives every
+ *  container fact from position and never opens them. */
 const sidecarMode = (tree: NexusTree): boolean => !isAdoptedId(tree.nexus.id)
 const orderFallback = (tree: NexusTree): 'id' | 'title' => (sidecarMode(tree) ? 'id' : 'title')
 

@@ -49,7 +49,7 @@ const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edi
 const onEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
-  // Close an open construct before list/blockquote continuation, so a caret inside a pair jumps past its closer.
+  // Close an open construct before list/blockquote continuation, so a caret inside a pair jumps past it.
   return apply(
     view,
     closeConstructOnEnter(scan, s.from, s.to) ??
@@ -59,13 +59,13 @@ const onEnter = (view: EditorView): boolean => {
   )
 }
 
-// Forward-delete at the end of the line ABOVE a table would join prose into the header row and dissolve
-// the whole table to raw pipes. Mirror the backspace atomic behavior instead: a boundary delete removes
-// the table as one undoable unit.
-/** The footnote cascade for exactly this range, dispatched where there is one. Dispatched rather
- *  than returned into the transform chain: removing a footnote is two disjoint sites — its citation
- *  and every marker pointing at it — and the edit that chain carries is a single range. Both delete
- *  keys ask HERE, so a cascade keyed to the range cannot come to depend on which one removed it. */
+// Forward-delete at the end of the line above a table would join prose into the header row and
+// dissolve the whole table to raw pipes. Mirror the backspace atomic behavior instead: a boundary
+// delete removes the table as one undoable unit.
+/** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint
+ *  sites — its citation and every marker pointing at it — and the edit that chain carries is a
+ *  single range. Both delete keys ask here, so a cascade keyed to the range cannot come to depend
+ *  on which one removed it. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
   const changes = citationDeleteIntent(docScan(view.state.doc), from, to)
   if (!changes) return false
@@ -76,17 +76,15 @@ const citationCascade = (view: EditorView, from: number, to: number): boolean =>
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
-  // The range this key actually removes: whatever is swept, or the whole marker sitting under the
-  // caret, which is atomic and has no interior to delete into. An empty caret anywhere else removes
-  // one character, which is never a whole construct.
+  // The whole marker sitting under the caret, which is atomic and has no interior to delete into.
   const marker = s.empty ? scan.citations.markers.find((m) => m.from === s.from) : undefined
   const from = marker?.from ?? s.from
   const to = marker?.to ?? s.to
   if (from !== to && citationCascade(view, from, to)) return true
   if (!s.empty) return false
-  // A claimed embed tile refuses its boundary deletes in BOTH directions — the atomic default
+  // A claimed embed tile refuses its boundary deletes in both directions — the atomic default
   // would otherwise expand the delete over the whole absorbed range and remove the tile from a
-  // keystroke; removal is the menu's or a spanning selection's, never a stray boundary key.
+  // keystroke.
   if (embedTileRanges(view.state).some((r) => s.from === r.from - 1 || s.from === r.from))
     return true
   if (scan.text[s.from] !== '\n') return false
@@ -121,12 +119,11 @@ const onShiftTab = (view: EditorView): boolean => {
 }
 
 /** Whether a keystroke must not land because the caret is inside an alias. `]` would truncate the
- *  link the caret is sitting in — the same treatment `|` gets in a title. Escaping was the
- *  alternative and puts backslashes into a file whose readability is the point.
+ *  link the caret is sitting in — the same treatment `|` gets in a title.
  *
  *  Exported because every surface that authors an alias owes the same refusal: the page editor and
  *  a markdown table cell run different input handlers, and the guard belongs to the alias rather
- *  than to either of them. Paste doesn't come through an input handler at all. */
+ *  than to either of them. */
 export function refusedInAlias(doc: string, at: number, text: string): boolean {
   if (text !== ']') return false
   const ls = lineStartAt(doc, at)
@@ -160,14 +157,14 @@ export const markdownInput = [
     ]),
   ),
   EditorView.inputHandler.of((view, from, to, text) => {
-    // Never dispatch mid-composition: IME / dead-key input delivers single chars while composing, and a
-    // transaction there aborts or garbles the session (CM's own closeBrackets bails the same way).
+    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session (CM's own
+    // closeBrackets bails the same way).
     if (view.composing || view.compositionStarted) return false
     if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
     const scan = docScan(view.state.doc)
     if (refusedInAlias(scan.text, from, text)) return true
-    // Ahead of the chain, and dispatched on its own: a seed writes a marker and a citation at two
-    // disjoint sites, and every transform in that chain carries one range.
+    // Dispatched on its own: a seed writes a marker and a citation at two disjoint sites, and every
+    // transform in that chain carries one range.
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,

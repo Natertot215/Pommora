@@ -1,5 +1,5 @@
 // Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
-// Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
+// Idempotent. Folder position decides kind: a root child is a Collection, anything nested a Set.
 
 import { readFile, rename } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
@@ -23,14 +23,9 @@ import {
 } from './folderKind'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from './paths'
 
-/**
- * Move a registered singleton back to the nexus root when it is found nested. The registration IS
- * the record — no last-known-state system is involved, because the nexus already names this exact
- * folder as canonical and the root is the only place it is valid.
- *
- * A name already taken at the root refuses rather than overwrites: two folders claiming one place
- * is the user's to resolve, and silently merging them would be worse than leaving one nested.
- */
+/** Move a registered singleton back to the nexus root when found nested — the registration is the
+ *  only record of where it belongs, since the root is the sole valid place for it. Refuses rather
+ *  than overwrites if the name is already taken at the root; that conflict is the user's to resolve. */
 async function reHomeRegistered(
   absDir: string,
   root: string,
@@ -39,17 +34,14 @@ async function reHomeRegistered(
   for (const { slot, sidecar: sidecarKind, kind } of AGENDA_SLOTS) {
     const registered = kindCtx.agenda[slot]
     if (!registered) continue
-    // The singleton is already at the root, so nothing was displaced: this folder is a copy of it,
-    // and carrying it home would move it out of wherever its owner filed it.
+    // Already homed means this folder is a copy, not the displaced original — leave it be.
     if (kindCtx.homed.has(slot)) continue
     const sidecar = await readSidecar(absDir, sidecarKind, baseSidecar)
-    // Try the other slot rather than aborting the loop on one non-match.
     if (sidecar?.id !== registered) continue
     const target = join(root, basename(absDir))
     if (await pathExists(target)) return false
-    // Ask the resolver whether this folder WOULD be the singleton once it sat at the root. That
-    // one call inherits every refusal it already makes — a second agenda config, a container
-    // sidecar beside it — so re-homing can never relocate a folder the resolver calls Unknown.
+    // Confirms the resolver would still call this the singleton once at the root, so re-homing
+    // can never relocate a folder the resolver calls Unknown (e.g. a second agenda config).
     if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== kind) return false
     recordWrite(absDir)
     recordWrite(target)
@@ -59,12 +51,10 @@ async function reHomeRegistered(
   return false
 }
 
-/** Stamp a single `.md` that lacks an id, under the key its FOLDER declares. Returns whether it
- *  wrote. Foreign frontmatter + body survive via the preserving merge.
- *
- *  Only a missing key is adoptable. Unknown — a key contradicting the folder, a malformed value,
- *  two keys at once — is left byte-untouched: stamping over it would erase the conflict and
- *  silently convert a mislocated file into a member of wherever it happened to land. */
+/** Stamp a single `.md` that lacks an id, under the key its FOLDER declares.
+ *  Only a missing key is adoptable — Unknown (a key contradicting the folder, a malformed value,
+ *  two keys at once) is left byte-untouched, since stamping over it would silently convert a
+ *  mislocated file into a member of wherever it happened to land. */
 async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const content = await readFile(absFile, 'utf8')
   if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
@@ -77,8 +67,8 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 /** The two folder kinds that carry a container sidecar of their own. */
 type ContainerKind = 'collection' | 'set'
 
-/** Every kind adoption can act on. Unknown is excluded by type, not by a runtime check: callers
- *  already skip it, and letting it in here would silently look up an undefined member kind. */
+/** Every kind adoption can act on; Unknown is excluded by type since letting it in would silently
+ *  look up an undefined member kind. */
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
 /** The content kind a folder's members answer to. */
@@ -89,9 +79,8 @@ const MEMBER_KIND = {
   'events-singleton': 'event',
 } as const satisfies Record<AdoptableKind, ContentKind>
 
-/** Mint + persist a folder id when it has none, reporting whether it wrote. A sidecar that exists
- *  but couldn't be read is left alone: minting over it would replace the Collection's views,
- *  schema and cache with a bare id, so the folder waits for a later open. */
+/** Mint + persist a folder id when it has none. A sidecar that exists but couldn't be read is left
+ *  alone — minting over it would replace the Collection's views, schema and cache with a bare id. */
 async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
   if (!read.ok && read.error.code !== 'not-found') return false
@@ -104,14 +93,12 @@ async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean
 
 /**
  * A folder that crossed depth outside the app still carries the sidecar of the kind it used to be
- * — a Set dragged to the root, a Collection dragged into one. Its identity is renamed rather than
- * replaced: minting a second sidecar beside the first leaves one folder with two ids, whichever
- * one wins decided purely by where it currently sits, and any work done under the new id silently
- * reverts the moment it moves back.
+ * (a Set dragged to the root, a Collection dragged into one). Its identity is renamed rather than
+ * replaced: minting a second sidecar beside the first would leave one folder with two ids, and any
+ * work done under the new one silently reverts the moment it moves back.
  *
- * Renaming, not refusing. Refusing writes no sidecar, and the walk needs one — the folder would
- * vanish from the sidebar entirely, which is worse than losing an icon. Both sidecars present is
- * the one case that refuses: that is a real conflict, and no arm should pick.
+ * Refusing instead would write no sidecar, and the walk needs one — the folder would vanish from
+ * the sidebar. Both sidecars present is the one case that still refuses: a real conflict.
  */
 async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<boolean> {
   const other: ContainerKind = kind === 'collection' ? 'set' : 'collection'
@@ -119,20 +106,16 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   const read = await readJsonStrict(from)
   if (!read.ok || !asString(read.value.id)) return false
   const to = join(absDir, SIDECAR_FILENAME[kind])
-  // Both endpoints, or the rename reads as an external edit and buys a full re-walk.
+  // Both endpoints — else the rename reads as an external edit and triggers a full re-walk.
   recordWrite(from)
   recordWrite(to)
   await rename(from, to)
   return true
 }
 
-/**
- * Stamp `absDir` then its direct `.md` members, then recurse. Accumulates the write count.
- *
- * An agenda singleton is FLAT by rule and differs in both directions: its own id already lives in
- * the config sidecar, so it is never container-stamped, and it does not recurse — there are no
- * Sets over agenda, and nothing below it is stamped as anything.
- */
+/** Stamp `absDir` then its direct `.md` members, then recurse.
+ *  An agenda singleton is FLAT by rule: its id already lives in the config sidecar, so it's never
+ *  container-stamped, and it doesn't recurse — there are no Sets over agenda. */
 async function stampTree(
   absDir: string,
   relDir: string,
@@ -143,15 +126,14 @@ async function stampTree(
 ): Promise<number> {
   const singleton = kind === 'tasks-singleton' || kind === 'events-singleton'
   const memberKind = MEMBER_KIND[kind]
-  // A folder Pommora can't write — a locked sync target, a restored backup with foreign
-  // ownership, an evicted cloud placeholder — costs only itself. Letting it throw would abandon
-  // every folder after it in readdir order, silently, on every open.
+  // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud
+  // placeholder) costs only itself — letting it throw would silently abandon every folder after
+  // it in readdir order.
   let count = !singleton && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
-      // An unreadable page, or one whose frontmatter refuses a field write, skips — adoption
-      // is idempotent, so the next open retries it.
+      // Adoption is idempotent, so an unreadable page just skips — the next open retries it.
       if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
     } else if (e.isDirectory() && !singleton) {
       const childRel = `${relDir}/${e.name}`

@@ -1,9 +1,9 @@
 import { StateEffect, StateField } from '@codemirror/state'
 import { linkAt } from '@shared/connections'
 
-// Two facts about a link that no offset can carry, because both are about the gesture that put the
-// caret where it is rather than about where that is. Each is set by the transaction that earns it
-// and taken back by whatever the user does next.
+// Two facts about a link that no offset can carry, since both are about the gesture that put the
+// caret where it is, not about where that is. Each is set by the transaction that earns it and
+// taken back by whatever the user does next.
 
 /** Announce that a link was just finished, with the caret left on its closer. */
 export const restedOnLink = StateEffect.define<number>()
@@ -12,9 +12,9 @@ export const restedOnLink = StateEffect.define<number>()
  *
  *  Finishing a link — pressing Enter on an alias, accepting a page from the picker — leaves the
  *  caret on the closer, and the link should read as finished there rather than springing back into
- *  raw syntax. But that is true of the *gesture*, not of the position: clicking beside a link is
- *  aiming at its syntax, and must still reveal it. A token can't tell the two apart from offsets
- *  alone, so the finishing transaction says so and anything the user does next takes it back. */
+ *  raw syntax. But that's true of the *gesture*, not the position: clicking beside a link is aiming
+ *  at its syntax and must still reveal it. A token can't tell the two apart from offsets alone, so
+ *  the finishing transaction says so, and anything the user does next takes it back. */
 export const linkRest = StateField.define<number | null>({
   create: () => null,
   update(value, tr) {
@@ -24,12 +24,12 @@ export const linkRest = StateField.define<number | null>({
   },
 })
 
-/** The link the caret is currently TYPING inside, as that link's start, or null.
+/** The link the caret is currently typing inside, as that link's start, or null.
  *
- *  A connection takes the connection color from its first character rather than reading as prose
- *  until a title happens to match. But that belongs to writing one: clicking into a link that names
- *  no page is inspecting an unresolved link, and it should look unresolved. Typing keeps this alive
- *  keystroke by keystroke; moving the caret without editing ends it. */
+ *  A connection takes its color from the first character rather than reading as prose until a
+ *  title matches — but that belongs to writing one: clicking into a link that names no page is
+ *  inspecting it, and it should look unresolved. Typing keeps this alive keystroke by keystroke;
+ *  moving the caret without editing ends it. */
 export const linkTyping = StateField.define<number | null>({
   create: () => null,
   update(value, tr) {

@@ -1,14 +1,11 @@
-// One string materialization + one whole-doc scan per doc VERSION, shared by every extension that runs per
-// keystroke / caret move. CM's Text.toString() re-joins the rope on every call and each scan re-splits the
-// result — with several extensions each doing both per transaction, this was the lag source. Keyed on the
-// immutable Text via WeakMap, so old versions collect with the history.
+// CM's Text.toString() re-joins the rope on every call, and several extensions re-scanning the
+// result per keystroke was the lag source — hence the per-version caching below.
 import type { Text } from '@codemirror/state'
 import { docLineIntents, scanDoc } from '../Decorations/intent'
 import type { Token } from '../Tokens'
 
-/** One derivation per doc VERSION, keyed on the immutable `Text` — so an old version's entry
- *  collects with the history rather than being invalidated by hand. Exported so a derivation that
- *  belongs with its own rule can live beside that rule and still be cached once. */
+/** One derivation per doc version, keyed on the immutable `Text` — an old version's entry collects
+ *  with the history rather than being invalidated by hand. */
 export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
   const held = new WeakMap<Text, T>()
   return (doc) => {
@@ -23,13 +20,10 @@ export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
 
 export const docString = perDoc((doc) => doc.toString())
 
-/** One derivation per TEXT, for a caller that holds the string rather than the version — the
- *  Subfield's counter beside the editor. Exported for the same reason `perDoc` is: a derivation off
- *  the body belongs beside its own rule and should still be held once.
- *
- *  It holds a few texts rather than one because more than one page can be on screen: the main pane
- *  and a floating preview describe different bodies, and a single slot would let their renders evict
- *  each other into recomputing on every call — which is the whole reason to hold anything. */
+/** One derivation per text, for a caller that holds the string rather than the version — the
+ *  Subfield's counter beside the editor. Holds a few texts rather than one because more than one
+ *  page can be on screen (main pane + floating preview), and a single slot would let their renders
+ *  evict each other into recomputing on every call. */
 const TEXT_SLOTS = 4
 export function perText<T>(derive: (text: string) => T): (text: string) => T {
   const held = new Map<string, T>()
@@ -44,27 +38,22 @@ export function perText<T>(derive: (text: string) => T): (text: string) => T {
   }
 }
 
-/** The whole-document scan for a caller holding only the text, whose body is the very string the
- *  editor's own scan was taken from — keyed on the text rather than the version, so the two meet in
- *  one slot instead of scanning one document twice. */
+// Keyed on the text rather than the version, so a caller holding only the text (whose body is the
+// same string the editor's own scan was taken from) meets it in one slot instead of scanning twice.
 export const scanOf = perText(scanDoc)
 
-// The one whole-document derivation — split, fences, callouts, tables, block constructs, and the
-// per-line block predicates — computed once per doc VERSION. A caret move must never pay an O(doc)
-// re-scan for line chrome that only the text defines.
+// Split, fences, callouts, tables, block constructs, and the per-line block predicates, computed
+// once per doc version — a caret move must never pay an O(doc) re-scan for line chrome.
 export const docScan = perDoc((doc) => scanOf(docString(doc)))
 
-// The caret-free per-line decoration intents + rails, one per doc VERSION — a caret move re-derives
-// only the one line the caret sits on and reads the rest from here, so the per-caret cost stops
-// scaling with document length. Every caret-sensitive output is line-local by construction: a
-// derivation that reached across lines would be dropped here without a trace.
+// Caret-free per-line decoration intents + rails, one per doc version — a caret move re-derives
+// only the line it sits on and reads the rest from here, so per-caret cost stops scaling with
+// document length.
 export const docLineIntentsOf = perDoc((doc) => docLineIntents(docScan(doc)))
 
-// The inline tokenize over the visible spans, one per doc VERSION + span set. It is the dominant cost
-// of a decoration build and answers to nothing but the text under those spans, so a caret move, a focus
-// flip, and a resolution nudge read it back rather than re-parsing. Two slots, most-recent first: a
-// span set is returned to as readily as it is left — scrolling back up, and folding, which moves the
-// set within one version.
+// Inline tokenize over the visible spans, one per doc version + span set — the dominant cost of a
+// decoration build. Two slots, most-recent first: a span set is returned to as readily as it's
+// left (scrolling back up, folding within one version).
 type Slot = { key: string; tokens: Token[] }
 const spanTokens = new WeakMap<Text, [Slot] | [Slot, Slot]>()
 export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): Token[] {
@@ -76,6 +65,5 @@ export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): To
   return fresh.tokens
 }
 
-// Every ↔ in the document, one scan per doc VERSION. Only the text says where they are, so a caret
-// move, a focus flip, and a scroll read the positions back rather than re-scanning for them.
+// Every ↔ in the document, one scan per doc version.
 export const docBidirMarks = perDoc((doc) => [...docString(doc).matchAll(/↔/g)].map((m) => m.index))

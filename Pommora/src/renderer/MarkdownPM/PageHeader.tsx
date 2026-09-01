@@ -6,9 +6,8 @@ import { useBannerMenu } from '../Interface/useBannerMenu'
 import { AddBannerButton } from '../Interface/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/DetailTitleHeader'
 
-/** What the header draws. Passed as one object rather than five props, so the surfaces that host an
- *  editor — the page view, the floating preview, an embedded tile — hand over the page they are
- *  showing instead of spreading its fields. The header never reads the store for these: a preview
+/** What the header draws, passed as one object rather than five props so a host — page view, floating
+ *  preview, embedded tile — hands over the page it's showing. Never read from the store: a preview
  *  window draws a page that is not the active one. */
 export interface HeaderPage {
   path: string

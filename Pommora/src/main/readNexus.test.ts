@@ -233,7 +233,7 @@ describe('readNexus — structure mode (raw, like ~/test)', () => {
   it('classifies collections/sets/pages recursively; hides agenda + internal', async () => {
     const t = await readNexus(raw)
     const collections = t.collections!
-    expect(collections.map((c) => c.title)).toEqual(['Collection A', 'Collection B']) // title fallback order
+    expect(collections.map((c) => c.title)).toEqual(['Collection A', 'Collection B'])
     const a = collections.find((c) => c.title === 'Collection A')!
     expect(a.sets.map((s) => s.title)).toEqual(['Set A'])
     expect(a.pages.map((p) => p.title)).toEqual(['Root Page'])

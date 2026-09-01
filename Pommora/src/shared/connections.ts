@@ -1,75 +1,60 @@
-// Connection model. Connections live ONLY as `[[Title]]` text in a Page's Markdown body
-// (page→page) — no on-disk store, no frontmatter mirror, no id. Resolution is computed at
-// read time: normalized body-title → the unique page holding that title → its id; the id
-// never touches disk. `![[ ]]` and `{{ }}` are not connections. Obsidian/GitHub-compatible.
+// Connections live ONLY as `[[Title]]` text in a Page's Markdown body — no on-disk store, no
+// frontmatter mirror, no id. Resolution is computed at read time: normalized body-title → the
+// unique page holding that title → its id; the id never touches disk. `![[ ]]` and `{{ }}`
+// aren't connections. Obsidian/GitHub-compatible.
 //
 // `[[Title|alias]]` gives a connection its own words: the alias is what the reader sees, the
-// TITLE alone resolves, and the alias is carried through every rewrite rather than dropped.
-// Display and resolution are separate spans everywhere downstream, so no code may destroy one.
+// TITLE alone resolves, and it's carried through every rewrite. Display and resolution stay
+// separate spans everywhere downstream, so no code may destroy one.
 //
-// This module is shared (renderer-importable: autocomplete + inline styling later) — no
-// fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
-// resolution, and uniqueness all share, so they can never disagree. The right-click menu a link
-// carries is `connMenu.ts`'s: the grammar here says what a link IS, never what can be done to one.
+// normalizeTitle is the SINGLE normalization the scanner, the phantom key, resolution, and
+// uniqueness all share. This module says what a link IS; `connMenu.ts` says what can be done to one.
 
-/** A page's display title from its Nexus-relative path — the basename, extension dropped. */
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
-/** The parallel embed pattern — `![[Title]]` page embeds, matched for the rename cascade's sweep
- *  ONLY. Never widened into pageLinkPattern: `![[` is not a connection (no link-graph edge), and
- *  the connections pattern's four consumers must not start seeing it. Fresh per call. */
+/** Matches `![[Title]]` page embeds, for the rename cascade's sweep ONLY — never widen into
+ *  pageLinkPattern, since `![[` isn't a connection and its consumers must not start seeing it. */
 export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/g
 
-/** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
- *  NFD-composed outside write still matches the NFC title it names). */
+/** Trim + case-fold + NFC, so an NFD-composed outside write still matches the NFC title it names. */
 export function normalizeTitle(raw: string): string {
   return raw.trim().toLowerCase().normalize('NFC')
 }
 
 /** A fresh global regex matching `[[Title]]` / `[[Title|alias]]`, excluding `![[ ]]` page embeds.
- *  `[[ ]]` is the only connection syntax. Returned fresh per call so callers never share
- *  `lastIndex`. Capture group 1 = the raw title, group 2 = the alias when one is present.
+ *  Fresh per call so callers never share `lastIndex`. Group 1 = raw title, group 2 = alias.
  *
- *  The title tolerates internal brackets — `[[Notes [WIP] final]]` captures `Notes [WIP] final`
- *  — by treating a `]` as content unless it's the closing `]]` pair (`\](?!\])`). A title ending
- *  in `]` (`[[Notes [WIP]]]`) is the one irreducible ambiguity of the `[[ ]]` grammar (`]]]` could
- *  split either way): it degrades to a recognized phantom, never corrupts the surrounding text. `|`
- *  is the alias delimiter, so a title can't hold one — CRUD's invalidName rejects it at the source.
+ *  Tolerates internal brackets — `[[Notes [WIP] final]]` captures `Notes [WIP] final` — by
+ *  treating `]` as content unless it's the closing `]]` pair. A title ending in `]`
+ *  (`[[Notes [WIP]]]`) is the one irreducible ambiguity of the grammar: it degrades to a
+ *  recognized phantom rather than corrupting the surrounding text.
  *
- *  Title + alias are length-capped at 255 (the filesystem name limit — a longer title can't name a
- *  real page anyway). The cap is load-bearing, not cosmetic: allowing `[` in the class made an
- *  unclosed `[`-run backtrack quadratically at every `[[` start, so an unbounded `+` here is a
- *  ReDoS that freezes buildIndex + the live tokenizer on a pathological body. */
+ *  Length-capped at 255, the filesystem name limit. The cap is load-bearing: allowing `[` in the
+ *  class made an unclosed `[`-run backtrack quadratically at every `[[` start, so an unbounded
+ *  `+` here is a ReDoS that freezes buildIndex and the live tokenizer on a pathological body. */
 export function pageLinkPattern(): RegExp {
   return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|([^\]\r\n]{0,255}))?\]\]/g
 }
 
-/** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-/** Where the parts of one `pageLinkPattern` match sit, offset into whatever string it matched
- *  against. The grammar's arithmetic lives here and nowhere else: the editor's tokenizer, the
- *  autocomplete query, and the alias helpers below all read their boundaries from this, so a change
- *  to the syntax moves one set of numbers rather than three that have to be kept in agreement. */
+/** The grammar's arithmetic lives here and nowhere else: the editor's tokenizer, the autocomplete
+ *  query, and the alias helpers below all read their boundaries from this, so a syntax change
+ *  moves one set of numbers rather than three kept in agreement. */
 export interface LinkSpans {
-  /** The whole token, brackets included. */
+  /** Brackets included. */
   full: [number, number]
-  /** The resolution key, always present. */
   title: [number, number]
-  /** The words shown, excluding the `|` that opens them — which therefore sits at `title[1]`. Null
-   *  when the link wears no pipe, and empty when one was opened and left bare; the three consumers
-   *  each turn on a different one of those two states. */
+  /** Excludes the opening `|`, which sits at `title[1]`. Null when the link wears no pipe, empty
+   *  when one was opened and left bare — the three consumers each turn on a different state. */
   alias: [number, number] | null
 }
 
-/** The title a wikilink names, with a table cell's pipe-escape removed.
- *
- *  A GFM cell escapes `|`, and `|` is the alias delimiter — so a connection given its own words
- *  inside a table reaches every reader as `[[Title\|alias]]`. That backslash belongs to the cell's
- *  encoding, not to the title, and the shared name rule refuses `\` in a page name, so a title can
- *  never legitimately end in one. Stripping it is what keeps the renderer, the picker and the rename
- *  cascade naming the same page. */
+/** A GFM cell escapes `|`, and `|` is the alias delimiter, so a connection given its own words
+ *  inside a table reaches every reader as `[[Title\|alias]]`. That backslash belongs to the
+ *  cell's encoding, not the title — page names can't end in `\` — so stripping it keeps the
+ *  renderer, the picker, and the rename cascade naming the same page. */
 export const titleOf = (rawTitle: string): string =>
   rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
 
@@ -80,16 +65,15 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   const aliased = m[2] !== undefined
   return {
     full,
-    // The escape sits between the title and the pipe, so it leaves the title's span rather than
-    // being shown as part of the name.
+    // The escape sits between title and pipe, so it leaves the title's span rather than showing
+    // as part of the name.
     title: [m.index + 2, aliased && m[1].endsWith('\\') ? titleEnd - 1 : titleEnd],
     alias: aliased ? [titleEnd + 1, full[1] - 2] : null,
   }
 }
 
-/** The link containing a line-relative offset, or null. Takes a line rather than a document so it
- *  stays free of any editor's line helpers — the grammar is the only thing it knows. Everything that
- *  asks "which link is the caret in" comes through here, so the containment test is written once. */
+/** Takes a line rather than a document, so it stays free of any editor's line helpers — the
+ *  grammar is the only thing it knows. */
 export function linkAt(line: string, rel: number): LinkSpans | null {
   for (const m of line.matchAll(pageLinkPattern())) {
     const s = linkSpans(m)
@@ -98,27 +82,26 @@ export function linkAt(line: string, rel: number): LinkSpans | null {
   return null
 }
 
-/** The alias span containing `rel`, or null — the caret has to be in the alias itself, not merely
+/** The alias span containing `rel`, or null — the caret must be in the alias itself, not merely
  *  somewhere in the link wearing it. */
 export function aliasSpanAt(line: string, rel: number): [number, number] | null {
   const alias = linkAt(line, rel)?.alias
   return alias && rel >= alias[0] && rel <= alias[1] ? alias : null
 }
 
-/** The offset of a bare `|` in a `[[Title|]]` containing `rel`, or null — an alias that was opened
- *  and never written. */
+/** The offset of a bare `|` in a `[[Title|]]` containing `rel` — an alias opened and never
+ *  written — or null. */
 export function emptyAliasPipeAt(line: string, rel: number): number | null {
   const s = linkAt(line, rel)
   return s?.alias && s.alias[0] === s.alias[1] ? s.title[1] : null
 }
 
-/** The `[[ ]]` grammar anchored to a whole string. Built once — every Link cell reads its value
- *  through it on render, and the pattern is a constant. Non-global, so it holds no `lastIndex`. */
+/** Built once since every Link cell reads its value through it on render. Non-global, so it
+ *  holds no `lastIndex`. */
 const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`)
 
-/** The connection a string holds when the WHOLE string is one — the shape a Link property stores,
- *  as against a connection sitting in a run of prose. Null when the text is anything else, which is
- *  how a Link value decides whether it names a page or an address. */
+/** The connection a string holds when the WHOLE string is one, as against a connection sitting
+ *  in a run of prose. Null otherwise — how a Link value decides page vs address. */
 export function parseConnectionText(raw: string): { title: string; alias?: string } | null {
   const m = WHOLE_LINK.exec(raw.trim())
   if (!m) return null
@@ -126,8 +109,8 @@ export function parseConnectionText(raw: string): { title: string; alias?: strin
   return title ? { title, alias: m[2]?.trim() || undefined } : null
 }
 
-/** Write a connection. The alias is dropped when it can't survive the grammar (a `]` closes the
- *  link early) or when it merely repeats the title it stands for. */
+/** The alias is dropped when it can't survive the grammar (a `]` closes the link early) or when
+ *  it merely repeats the title it stands for. */
 export function connectionText(title: string, alias?: string): string {
   const named =
     alias && !/[\]\r\n]/.test(alias) && normalizeTitle(alias) !== normalizeTitle(title)
@@ -138,15 +121,13 @@ export function connectionText(title: string, alias?: string): string {
 
 /** What `[[…]]` can name: the syntax carries no escape, so a `]` ends the link early and a `|`
  *  splits off an alias — a title holding either has no spelling that means it. Every surface
- *  that offers a link or an embed reads this rather than restating it. */
+ *  offering a link or embed reads this rather than restating it. */
 export function embeddableTitle(title: string): boolean {
   // A line break too: the pattern that reads a connection back is single-line, so a name carrying
-  // one mints a reference that can be written and never parsed — which is the blank the other two
-  // refusals exist to prevent, reached by a character rather than a bracket.
+  // one mints a reference that can be written and never parsed.
   return !title.includes(']') && !title.includes('|') && !/[\r\n]/.test(title)
 }
 
-/** Write a page embed — the lone-line token, assembled in one place the way a connection is. */
 export function pageEmbedText(title: string): string {
   return `![[${title}]]`
 }

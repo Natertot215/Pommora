@@ -25,7 +25,6 @@ interface ResolvedCriterion {
 
 const numericLess: Less = (a, b) => (a as number) < (b as number)
 const plainLess: Less = (a, b) => (a as string) < (b as string)
-// Case-insensitive, accent-sensitive.
 const ciLess: Less = (a, b) =>
   (a as string).localeCompare(b as string, undefined, { sensitivity: 'accent' }) < 0
 

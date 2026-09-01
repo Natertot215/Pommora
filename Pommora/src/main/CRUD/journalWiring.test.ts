@@ -1,5 +1,5 @@
-// The ordering proofs for the schema-cascade journal's writers: the record exists while pages
-// are being swept, is gone once the op settles, and a refused op never leaves one behind.
+// The record exists while pages are being swept, is gone once the op settles, and a refused
+// op never leaves one behind.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync } from 'node:fs'
@@ -31,7 +31,6 @@ let root: string
 const journalFile = (): string => join(root, '.nexus', 'property-cascade.json')
 const abs = (...segs: string[]): string => join(root, ...segs)
 
-/** Journal presence observed at the moment each intercepted write ran, keyed by target path. */
 let observed: { path: string; journaled: boolean }[]
 
 beforeEach(async () => {
@@ -127,7 +126,6 @@ describe('the delete writer', () => {
 })
 
 describe('the option-op writers', () => {
-  /** A second select property with known options, joined to the Collection beside prop_s. */
   const withOptions = async (): Promise<void> => {
     await createProperty(root, {
       id: 'prop_t',

@@ -1,13 +1,12 @@
 // Transient UI chrome — regeneratable, not portable content — so it lives in app-level
-// localStorage, not `.nexus/`. Storage is a
-// parameter so behavior is testable without a DOM.
+// localStorage, not `.nexus/`. Storage is a parameter so behavior is testable without a DOM.
 
 type OpenMap = Record<string, boolean>
 
 export const DISCLOSURE_KEY = 'pommora.sidebar.disclosure'
 
 // Parsed once per storage object and mutated through saveOpen thereafter — a full JSON.parse per
-// mount (one per child Disclosure) adds up fast.
+// mount adds up fast.
 let cached: { storage: Pick<Storage, 'getItem'>; map: OpenMap } | null = null
 
 function readMap(storage: Pick<Storage, 'getItem'>): OpenMap {

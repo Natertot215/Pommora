@@ -5,9 +5,8 @@ import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 import { pinLabel } from '@shared/toggleLabels'
 
-// The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the tab's
-// state. The send items come from the shared page-menu model, so a tab holding a page names them
-// exactly as every other surface that reaches one does.
+// The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the
+// tab's state. The send items come from the shared page-menu model.
 export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<TabMenuAction | null> {
   return popReturningMenu<TabMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []

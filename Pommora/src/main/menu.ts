@@ -28,8 +28,8 @@ const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
 export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promise<void> {
   const userData = app.getPath('userData')
   const stored = (await readAppConfig(userData)).recents ?? []
-  // Drop deleted (trashed) nexuses so Open Recent never lists a dead path; self-heal the stored
-  // list when the prune removes any, so the debris doesn't linger in the config.
+  // Drop deleted (trashed) nexuses so Open Recent never lists a dead path; self-heal the
+  // stored list when the prune removes any.
   const recents = await pruneRecents(stored)
   if (recents.length !== stored.length) {
     await updateAppConfig(userData, () => ({ recents }))
@@ -81,8 +81,6 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         {
           label: 'Reload',
           accelerator: 'CmdOrCtrl+R',
-          // The captured `win` can be a stale/destroyed reference (the menu outlives a window
-          // lifecycle); reload the live focused window, and guard so a dead one is a no-op, not a crash.
           click: () => {
             const w = BrowserWindow.getFocusedWindow() ?? win
             if (!w.isDestroyed()) {
@@ -97,9 +95,9 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         { role: 'close' },
       ],
     },
-    // The `editMenu` role spelled out so Paste and Match Style can keep its act while giving up its
-    // accelerator: the role claims ⌘⇧V main-side, and while it holds it the chord never reaches the
-    // renderer at all (→ ConfigurationPM §Commands).
+    // `editMenu` spelled out so Paste and Match Style keeps its act while giving up its
+    // accelerator — the role claims ⌘⇧V main-side, so the chord would never reach the renderer
+    // otherwise (→ ConfigurationPM §Commands).
     {
       label: 'Edit',
       submenu: [
@@ -141,8 +139,8 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           },
         },
         // De-roled: the native zoom roles act on whatever WebContents holds focus — a focused
-        // guest webview would zoom itself, not the host — and their writes bypass the guest-zoom
-        // sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
+        // guest webview would zoom itself, bypassing the guest-zoom sync. The hidden item keeps
+        // the role's unshifted ⌘= alias (US layout) alive.
         { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
         {
           label: 'Zoom In',

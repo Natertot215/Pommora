@@ -11,15 +11,12 @@ import type { PropertyType } from './properties'
 import type { ResolvedColumn } from './types'
 import type { ActionItem } from './menuModel'
 
-/** The table-cell right-click menu (right-click always opens a menu, never acts).
- *  Title cells get the page meta menu; style-bearing cells get their COLUMN's Style radios;
- *  a `link` (url) cell gets Edit · Rename · Clear (its look is per-property, set in its pane, not a
- *  per-view Style); picker-based cells add Clear (`clearable` on a styleable type, `clear-only`
- *  for select/multi/context, which carry no Style). `hideable` (cards
- *  only) appends a trailing "Remove" that drops the property from the view, which a `file` cell
- *  names "Remove from View" so it can't be read as its own Remove File; `remove-only` is the bare
- *  case for a cell that would otherwise have no menu (an empty picker). A `file` cell carries its
- *  own Add · Replace · Remove triad instead of Style radios. */
+/** The table-cell right-click menu (right-click always opens a menu, never acts). Title cells get
+ *  the page meta menu; style-bearing cells get their COLUMN's Style radios; a `link` cell gets
+ *  Edit · Rename · Clear (its look is per-property, not a per-view Style); picker-based cells add
+ *  Clear. `hideable` (cards only) appends a trailing "Remove" that drops the property from the view
+ *  — a `file` cell names it "Remove from View" so it isn't read as its own Remove File. A `file`
+ *  cell carries its own Add · Replace · Remove triad instead of Style radios. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -68,9 +65,9 @@ export function cellMenuContextFor(
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
-  // Cards let any non-title cell drop its property (hideable): a cell that would otherwise have no menu
-  // (an empty picker) still gets a bare Remove; every other cell gets Remove appended below.
-  // remove-only must CARRY the hideable flag — the model appends Remove only when it sees it.
+  // Cards let any non-title cell drop its property (hideable): an otherwise-menu-less cell (an
+  // empty picker) still gets a bare Remove. remove-only must CARRY the hideable flag — the model
+  // appends Remove only when it sees it.
   if (base === null) return hideable ? { kind: 'remove-only', hideable: true } : null
   return hideable ? { ...base, hideable: true } : base
 }
@@ -111,11 +108,9 @@ export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
     model.items = [
       ...model.items,
       {
-        // Only self-separate from SIBLING items — main/cellMenu already inserts the Style▸↔items
-        // divider once Remove lands in items, so keying on `model.style` too would double the separator
-        // for a style-only cell with no base item (checkbox/number/last_edited).
-        // A file cell carries its OWN Remove, and two items spelled the same — one destructive to
-        // a value, one to the view's configuration — are told apart by position alone.
+        // Only self-separate from SIBLING items — keying on `model.style` too would double the
+        // separator for a style-only cell with no base item. A file cell carries its OWN Remove;
+        // the two same-labeled items are told apart by position alone.
         label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
         action: 'cell:hide',
         separatorBefore: model.items.length > 0,
@@ -149,9 +144,8 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
         },
       }
     case 'link':
-      // A URL / Link cell: Edit the URL inline; a FILLED one adds Rename (give it an alias) + Clear
-      // (clear the value) — both are no-ops on an empty cell, so only Edit shows there. No per-view
-      // Style — a link's look (underline / color / full-url ⇄ title) is per-property.
+      // A FILLED cell adds Rename + Clear, no-ops on an empty one, so only Edit shows there. No
+      // per-view Style — a link's look is per-property.
       return {
         items: ctx.filled
           ? [

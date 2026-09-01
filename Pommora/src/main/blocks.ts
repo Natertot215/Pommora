@@ -1,12 +1,12 @@
 // A block document — layout, entries, lock — is ONE row in nexus.db, keyed by host. It is an
-// arrangement of things that live elsewhere: every entry is a reference (a markdown file per tile,
-// an embedded page, a view onto a container), so the document creates nothing a Nexus would miss.
-// What each tile *says* stays a file: markdown bodies are prose, in the connections graph, and
-// rewritten by a rename cascade.
+// arrangement of things that live elsewhere: every entry is a reference (a markdown file per
+// tile, an embedded page, a view onto a container), so the document creates nothing a Nexus
+// would miss. What each tile *says* stays a file: markdown bodies are prose, in the connections
+// graph, and rewritten by a rename cascade.
 //
-// A host's own sidecar keeps identity and appearance — homepage.json its banner and icon, a Space
-// its id and color — and no longer carries the document, so a block gesture and a banner write can
-// never lose each other, and no hand-edit can mangle a host into an unrenderable tree.
+// A host's own sidecar keeps identity and appearance (homepage.json its banner and icon, a
+// Space its id and color) and no longer carries the document, so a block gesture and a banner
+// write can never lose each other, and no hand-edit can mangle a host into an unrenderable tree.
 
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'

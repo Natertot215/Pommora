@@ -1,7 +1,6 @@
-// One pending-op slot on disk — write-ahead intent under `.nexus/`, replayed on the next open.
-// The slot law: a write never displaces a different stranded record (its owed heal outranks the
-// op now starting, which runs unjournaled), and a clear lands only for the caller's own record
-// on the live session's root.
+// One pending-op slot on disk, replayed on the next open. A write never displaces a different
+// stranded record — its owed heal outranks the op now starting, which runs unjournaled — and a
+// clear lands only for the caller's own record on the live session's root.
 import { rm } from 'node:fs/promises'
 import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { recordWrite } from '../IO/writeEcho'
@@ -19,8 +18,7 @@ export function journalSlot<J>(
   decode: (raw: Record<string, unknown>) => J | null,
   same: (a: J, b: J) => boolean,
   // Lets a newer intent for the SAME entity displace the held record — required by a replay
-  // that trusts the record's before-state (context), else a rename-back replays the abandoned
-  // rename; omitted by a replay that verifies against current state (property).
+  // that trusts the record's before-state (context); omitted by one that verifies current state.
   supersedes?: (held: J, incoming: J) => boolean,
 ): JournalSlot<J> {
   const path = (root: string): string => nexusConfig(root, file)

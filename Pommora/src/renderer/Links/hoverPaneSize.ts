@@ -1,8 +1,7 @@
 // The hover preview's one universal size — every pane opens at it, resizing any pane updates it for
-// all, persisted per-machine in nexus.db. This accessor is the single door: it clamps on read
-// (a stored value from before a bounds change must not reopen out of bounds — the sidebar-width
-// precedent) and writes through on set. The viewport ceiling stays with the pane at render, where
-// the live link geometry lives.
+// all, persisted per-machine in nexus.db. This accessor is the single door: it clamps on read (a
+// stored value from before a bounds change must not reopen out of bounds) and writes through on
+// set. The viewport ceiling stays with the pane at render, where the live link geometry lives.
 import type { HoverCardSize } from '@shared/types'
 
 // KNOB — the default and floor sizes.

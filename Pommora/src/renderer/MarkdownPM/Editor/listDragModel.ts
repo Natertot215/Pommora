@@ -47,8 +47,8 @@ export function subBlockAt(doc: string, pos: number): SubBlock | null {
     const fs = p + 1 // skip the '\n'
     const fe = lineEndAt(doc, fs)
     const fline = doc.slice(fs, fe)
-    // A line inside a math range whose opener already rides this sub-block is formula content — blanks
-    // and marker-lookalikes included — mirroring blockModel's absorb rule, through the same math ranges.
+    // A line inside a math range whose opener already rides this sub-block is formula content —
+    // blanks and marker-lookalikes included — mirroring blockModel's absorb rule.
     const inJoinedMath = (): boolean => {
       const r = maths.find(([f, t]) => fs >= f && fs <= t)
       return r !== undefined && r[0] >= from && r[0] <= to
@@ -77,9 +77,9 @@ export interface Slot {
 // doubled `>`). Leading `[ \t]*` first so an indented `  > - x` strips its `>` too.
 const LEAD_RE = /^[ \t]*(?:>[ \t]?)*[ \t]*/
 
-/** Re-indent a block so its head line sits at `targetIndent`, shifting every descendant by the same delta
- *  (relative nesting preserved). Strips the head's lead by LENGTH off each line's own lead (prefix + indent),
- *  so it can't silently skip a descendant that mixes tabs/spaces. Verbatim when targetIndent is undefined. */
+/** Re-indent a block so its head line sits at `targetIndent`, shifting every descendant by the same
+ *  delta. Strips the head's lead by length off each line's own lead, so it can't silently skip a
+ *  descendant that mixes tabs/spaces. Verbatim when targetIndent is undefined. */
 function reindentBlock(blockText: string, targetIndent: string | undefined): string {
   if (targetIndent === undefined) return blockText
   const headLen = (blockText.match(LEAD_RE)?.[0] ?? '').length
@@ -93,8 +93,7 @@ function reindentBlock(blockText: string, targetIndent: string | undefined): str
 }
 
 /** Move `block` to start at `slot.at`, expressed as two changes (delete source, insert at target) over
- *  the original doc. The block is re-indented to `slot.indent` (re-nesting) — verbatim when unset. Newlines
- *  are handled so the moved block keeps its own line and never fuses with a neighbor. Null for a no-op. */
+ *  the original doc. Re-indented to `slot.indent`, verbatim when unset. Null for a no-op. */
 function moveBlockChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpec[] | null {
   const blockText = reindentBlock(doc.slice(block.from, block.to), slot.indent)
   // Cut the block plus one adjoining newline so no blank line is orphaned: its trailing newline if it has

@@ -44,7 +44,6 @@ async function mkSelect(
   return c.value.id
 }
 
-/** A collection assigning `id`, holding one page whose `id` value is `value`. Returns the page path. */
 async function pageHolding(id: string, value: string): Promise<string> {
   const col = await createFolderEntity(root, 'collection', 'Col')
   if (!col.ok) throw new Error('folder failed')
@@ -57,7 +56,6 @@ async function pageHolding(id: string, value: string): Promise<string> {
   return p.value.path
 }
 
-/** A Status property seeded Open / Active / Done (upcoming / in_progress / done groups). */
 async function mkStatus(): Promise<string> {
   const c = await createProperty(root, {
     id: '',
@@ -68,7 +66,6 @@ async function mkStatus(): Promise<string> {
   return c.value.id
 }
 
-/** A collection assigning the Status property `id`, holding one page whose status value is `value`. */
 async function statusPageHolding(id: string, value: string): Promise<string> {
   const col = await createFolderEntity(root, 'collection', 'Col')
   if (!col.ok) throw new Error('folder failed')
@@ -81,7 +78,6 @@ async function statusPageHolding(id: string, value: string): Promise<string> {
   return p.value.path
 }
 
-/** Every option value across a property's status groups, flattened. */
 async function statusValues(id: string): Promise<string[]> {
   const def = (await readRegistry(root)).defs[id]
   return (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))

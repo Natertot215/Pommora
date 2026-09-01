@@ -1,8 +1,8 @@
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { BannerOwnerKind } from '@shared/mutate'
 
-/** `icon` is the entity's raw stored value, unvalidated — the Banner component falls back per
- *  kind at render. NavView wears its own banner treatment, so it's excluded here. */
+/** `icon` is the entity's raw stored value, unvalidated — Banner falls back per kind at render.
+ *  NavView has its own banner treatment, so it's excluded here. */
 export interface BannerOwner {
   path: string
   kind: Exclude<BannerOwnerKind, 'navview'>
@@ -56,15 +56,14 @@ export function findCollectionForSet(
 }
 
 /** Block-based surface kinds (homepage + Spaces) run tight tile gutters instead of the page/table
- *  content inset — the tile handles supply their own grip/chevron actions, so no reserved lane
- *  is needed. Drives `is-surface`. */
+ *  content inset — the tile handles supply their own grip/chevron actions. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
 }
 
-/** Whether a Set is depth-1 — a DIRECT child of a Collection (so it carries + renders views). A
- *  deeper Sub-Set is a plain organizing folder; a reparent + Back-nav replay can surface one as a
- *  `set` selection, so the view paths test this rather than trusting "depth-1 by construction". */
+/** Whether a Set is a direct child of a Collection (so it carries + renders views) rather than a
+ *  plain organizing folder — tested rather than trusted, since a reparent + Back-nav replay can
+ *  surface either as a `set` selection. */
 export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
   const col = findCollectionForSet(tree, setId)
   return !!col && col.sets.some((s) => s.id === setId)

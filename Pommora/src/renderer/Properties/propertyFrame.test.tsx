@@ -93,9 +93,9 @@ describe('the DRY nested slide (A-7)', () => {
       await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
     const inertSlots = host.querySelectorAll('[inert]')
-    expect(inertSlots.length).toBe(1) // exactly one inert slot = slider semantics, list mounted beneath
-    expect(inertSlots[0].textContent).toContain('Count') // the inert slot IS the list
-    expect(host.textContent).toContain('Open') // the Status editor is live in the active slot (a group heading)
+    expect(inertSlots.length).toBe(1)
+    expect(inertSlots[0].textContent).toContain('Count')
+    expect(host.textContent).toContain('Open')
   })
 
   it('the type picker rides the same slide', async () => {
@@ -104,7 +104,7 @@ describe('the DRY nested slide (A-7)', () => {
       host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
     })
     expect(host.querySelectorAll('[inert]').length).toBe(1)
-    expect(host.textContent).toContain('Checkbox') // a CREATABLE_TYPES row is live
+    expect(host.textContent).toContain('Checkbox')
   })
 })
 
@@ -114,7 +114,7 @@ const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'url' 
 describe('the All Properties section (T5)', () => {
   it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {
     useSession.setState({ tree: { registry: [effortDef, defs[0], titleDef] } as never })
-    await mountPane([defs[0]]) // Status is assigned
+    await mountPane([defs[0]])
     await act(async () => {
       rowFor('All Properties').click()
     })

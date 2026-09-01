@@ -80,20 +80,16 @@ describe('deleteProperty', () => {
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
-    // def gone, assignments gone
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
     for (const folder of [notes, tasks]) {
       const sc = await readSidecar(folder, 'collection', pageCollectionSidecar)
       expect(((sc?.properties as string[]) ?? []).includes(id)).toBe(false)
     }
-    // frontmatter scrubbed in both, other keys preserved
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')
       expect(content).not.toContain('Priority')
       expect(content).toContain(`${PAGE_ID_KEY}:`)
     }
-    // The recovery snapshot is an artifact-less bundle — a valid record whose values key by
-    // page id, never by path.
     const trashed = await readdir(join(root, '.trash'))
     const name = trashed.find((f) => f.includes(`property-${id}`))
     expect(name?.endsWith('.deleted')).toBe(true)

@@ -1,10 +1,7 @@
-// The inverse of the global property delete: the definition re-enters the registry, the
-// Collections that carried it get it back, and every page value the record holds is written home.
-//
-// ONLY WHAT STILL VALIDATES RETURNS. A definition whose name has since been taken cannot come
-// back at all; a value whose option is gone, whose type no longer fits, or whose page has since
-// died simply doesn't. The record is evidence of what was, never a mandate to recreate it —
-// so a restore lands what it honestly can and names the rest.
+// The inverse of the global property delete. ONLY WHAT STILL VALIDATES RETURNS: a definition
+// whose name has since been taken cannot come back; a value whose option is gone, whose type no
+// longer fits, or whose page has since died simply doesn't. The record is evidence of what was,
+// never a mandate to recreate it.
 
 import { join } from 'node:path'
 import { pageCollectionSidecar } from '@shared/schemas'
@@ -24,9 +21,8 @@ import { serializeSchemaOp } from './schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
-/** Collection folders by sidecar id — read from the sidecars themselves, exactly as the delete
- *  recorded them. The tree is the wrong source here: it answers with a path-derived placeholder
- *  for a folder that has no persisted id, which is an address rather than the identity recorded. */
+/** The tree is the wrong source here: it answers with a path-derived placeholder for a folder
+ *  with no persisted id, which is an address rather than the identity recorded. */
 async function foldersById(root: string): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   for (const folder of await collectionFolders(root)) {
@@ -41,12 +37,12 @@ export function restoreProperty(root: string, record: PropertyRecord): Promise<R
 }
 
 async function restoreInner(root: string, record: PropertyRecord): Promise<Result<null>> {
-  // Nothing may write over a living identity — the same law the artifact resolver answers to.
+  // Nothing may write over a living identity.
   if ((await readRegistry(root)).defs[record.id])
     return fail('exists', 'Something in the nexus already carries this identity.')
 
-  // The registry is the judge of whether the definition can return: it refuses a name another
-  // property now holds, which is exactly the state that makes this restore invalid.
+  // The registry refuses a name another property now holds, which is exactly what makes a
+  // restore invalid.
   const created = await createProperty(root, {
     ...(record.def as unknown as PropertyDefinition),
     id: record.id,

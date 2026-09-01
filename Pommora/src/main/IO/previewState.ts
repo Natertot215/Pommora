@@ -1,7 +1,7 @@
 // The preview windows' persistence: the NavWindow flavor's page tabs, the per-origin page-preview
-// sets (keyed by origin page id, re-keyed on re-parent), and which preview was open. Device-local
-// for the same reason as the tab set. The renderer owns restore-time reconciliation against the
-// live tree; main strips every ref to bare identity and persists the file as one row.
+// sets (keyed by origin page id, re-keyed on re-parent), and which preview was open. The renderer
+// owns restore-time reconciliation against the live tree; main strips every ref to bare identity
+// and persists the file as one row.
 
 import { isPlainObject } from '@shared/propertyValue'
 import {
@@ -35,8 +35,7 @@ function readOpen(v: unknown): PreviewsFile['open'] {
 }
 
 /** Shape-validate and strip a previews payload to bare refs — the ONE boundary for the row,
- *  shared by the read below and the `previews:save` handler. Malformed records drop; a payload
- *  that isn't a previews file at all reads as null. */
+ *  shared by the read below and the `previews:save` handler. */
 export function sanitizePreviews(raw: unknown): PreviewsFile | null {
   if (!isPlainObject(raw) || !isPlainObject(raw.origins)) return null
   const origins: Record<string, PreviewSetRecord> = {}

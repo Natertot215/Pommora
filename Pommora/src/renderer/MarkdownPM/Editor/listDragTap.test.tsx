@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
-// The glyph is one press with two meanings, and the shared gesture skeleton is what tells them
-// apart: released in place it is a click (a checkbox toggles, a bullet seats the caret), carried
-// past the activation threshold it is a drag and the click must not also fire. Geometry — where a
-// drag actually lands — stays with the model suite and the CDP passes; jsdom measures every rect
-// as zero.
+// The glyph is one press with two meanings: released in place it's a click (a checkbox toggles, a
+// bullet seats the caret), carried past the activation threshold it's a drag. Geometry — where a
+// drag actually lands — stays with the model suite; jsdom measures every rect as zero.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
@@ -63,10 +61,8 @@ describe('a list glyph press is a click or a drag, never both', () => {
   })
 })
 
-// A page runs several editors at once — an embed tile, a hover card, a preview window — and every
-// one of them mounts the cleanup plugin. The abort is the OWNER's alone: a sibling unmounting
-// mid-drag (a hover card timing out, a tile scrolling out of CM's viewport) must leave the drag
-// you are in the middle of alone.
+// A page runs several editors at once, each mounting the cleanup plugin. The abort is the owner's
+// alone: a sibling unmounting mid-drag must leave the drag in progress alone.
 describe('a sibling editor tearing down leaves a live drag alone', () => {
   it('only the view that started the gesture can abort it', async () => {
     const dragged = await mountEditor({ initialBody: '- [ ] task' })

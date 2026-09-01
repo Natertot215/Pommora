@@ -74,9 +74,8 @@ describe('deleting a citation', () => {
   })
 })
 
-// B-11: a cascade fires only where the deleted range is exactly the construct. That is what stops a
-// wide sweep from silently taking citations the reader never saw, and it is why backspace at a
-// citation's content start and the menu's Delete land the same result.
+// A cascade fires only where the deleted range is exactly the construct — this stops a wide sweep
+// from silently taking citations the reader never saw.
 describe('cascades are keyed to the range, never to the gesture', () => {
   const intent = (doc: string, from: number, to = from): string | null => {
     const s = scanOf(doc)
@@ -157,9 +156,7 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^1]\n\n[^1]: nine\n[^2]: orphan')
   })
 
-  // Two rows renamed onto one label would fuse two independent footnotes into a winner and a
-  // shadow, losing one binding for good — so a number a blocked rename leaves standing blocks the
-  // next row too.
+  // Two rows renamed onto one label would fuse two independent footnotes, losing one binding.
   it('never renames two rows onto one label', () => {
     const doc = 'x[^2] y[^3]\n\n[^1]: orphan\n[^2]: two\n[^3]: three'
     expect(normalized(doc)).toBe('x[^2] y[^3]\n\n[^2]: two\n[^3]: three\n[^1]: orphan')
@@ -172,8 +169,7 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^5]\n\n[^5]: five\n[^1]: orphan')
   })
 
-  // The loser is renumbered with the winner it shadows: normalization renumbers and reorders, it
-  // does not quietly turn a duplicate the reader wrote into an orphan.
+  // Normalization renumbers and reorders; it never quietly turns a duplicate into an orphan.
   it('drops a duplicate that lost below the run, still shadowing its winner', () => {
     const doc = 'x[^7] y[^b]\n\n[^b]: bee\n[^7]: won\n[^7]: lost'
     expect(normalized(doc)).toBe('x[^1] y[^b]\n\n[^1]: won\n[^b]: bee\n[^1]: lost')
@@ -234,8 +230,7 @@ describe('a gesture carries its own renormalization', () => {
     expect(citationGesture(scanOf('x[^1]\n\n[^1]: one'), []).empty).toBe(true)
   })
 
-  // The normalization reads the document through the editor's own exclusion set, so a
-  // citation-shaped line inside a fence is code and is neither reordered nor renumbered.
+  // A citation-shaped line inside a fence is code, not a citation.
   it('never rewrites a citation-shaped line inside a code fence', () => {
     const doc = 'x[^2] y[^1]\n\n```\n[^9]: code\n```\n\n[^1]: one\n[^2]: two'
     const out = citationGesture(scanDoc(doc), [])
@@ -245,8 +240,8 @@ describe('a gesture carries its own renormalization', () => {
   })
 })
 
-// The cascade against the cases the corpus above does not carry: a label two rows claim, a label
-// spelled in a different case, and the constructs a marker can sit inside.
+// Cases the corpus above doesn't carry: a duplicated label, a differently-cased label, and the
+// constructs a marker can sit inside.
 describe('the last reference takes its footnote in every shape the document can hold', () => {
   const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string => {
     const s = scanOf(doc)
@@ -258,8 +253,7 @@ describe('the last reference takes its footnote in every shape the document can 
     doc.split('\n').filter((l) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l))
   const live = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
 
-  // Two rows claim one label: the first binds, the second is a duplicate that lost. Removing the
-  // only marker orphans BOTH, so the gesture that made them orphans takes both.
+  // Two rows claim one label; removing the only marker orphans both, so the gesture takes both.
   it('a duplicate row travels with the row it duplicates', () => {
     const doc = 'body[^a] here\n\n[^a]: the winner\n[^a]: the loser'
     const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
@@ -327,10 +321,9 @@ const orders = [
   ['b', 'a', 'b'],
 ]
 
-// A label two rows claim can be interleaved with another label's rows, so the set a cascade cuts is
-// not a contiguous block. Every document shape below, put through every gesture and every whole-line
-// range: nothing throws on an overlapping span, and no `[^x]:` line is ever left outside a live
-// section — the one state the whole feature exists to prevent.
+// A label two rows claim can be interleaved with another label's rows, so the set a cascade cuts
+// is not a contiguous block. Nothing should throw on an overlapping span, and no `[^x]:` line
+// should ever be left outside a live section.
 describe('an interleaved duplicate survives every gesture at every range', () => {
   it('never throws and never strands a head', () => {
     const failures: string[] = []

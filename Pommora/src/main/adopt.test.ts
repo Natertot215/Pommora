@@ -12,9 +12,8 @@ import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from './p
 
 let root: string
 
-// A raw, sidecar-less nexus: a top folder (→ Collection), a nested folder (→ Set) and a
-// deeper one (→ Sub-Set), a page carrying foreign frontmatter but no id, and an excluded
-// folder that must stay untouched.
+// A raw, sidecar-less nexus: a top folder (→ Collection), a nested folder (→ Set), a deeper
+// one (→ Sub-Set), a page carrying foreign frontmatter but no id, and an excluded folder.
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-adopt-'))
   await mkdir(join(root, 'Notes', 'Daily', 'Deep'), { recursive: true })
@@ -56,7 +55,7 @@ describe('stampAdopted', () => {
 
     const note1 = readFrontmatterFields(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
     expect(typeof note1[PAGE_ID_KEY] === 'string' && isUlid(note1[PAGE_ID_KEY])).toBeTruthy()
-    expect(note1.aliases).toEqual(['foo']) // foreign key survived
+    expect(note1.aliases).toEqual(['foo'])
 
     const day1 = readFrontmatterFields(
       await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'),
@@ -87,11 +86,11 @@ describe('stampAdopted', () => {
     await writeFile(join(root, 'My Tasks', '_taskconfig.json'), '{}')
     await writeFile(join(root, 'My Tasks', 'Submit.md'), '# a member')
     await stampAdopted(root)
-    expect(await coll(join(root, 'My Tasks'))).toBeNull() // no _pagecollection.json written
+    expect(await coll(join(root, 'My Tasks'))).toBeNull()
   })
 
   it('never fabricates a Collection on an empty, sidecar-less folder', async () => {
-    await mkdir(join(root, 'Stray'), { recursive: true }) // no pages, no subfolders, no sidecar
+    await mkdir(join(root, 'Stray'), { recursive: true })
     await stampAdopted(root)
     expect(await coll(join(root, 'Stray'))).toBeNull()
   })
@@ -100,14 +99,14 @@ describe('stampAdopted', () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', 'Note.md'), '# a real page')
     await stampAdopted(root)
-    expect((await coll(join(root, 'Tasks')))?.id).toBeTruthy() // adopted as a normal Collection
+    expect((await coll(join(root, 'Tasks')))?.id).toBeTruthy()
   })
 
   it('never mints over a sidecar it could not read — the subtree still adopts around it', async () => {
     const sidecar = join(root, 'Notes', SIDECAR_FILENAME.collection)
     await writeFile(sidecar, '{ corrupt', 'utf8')
     await stampAdopted(root)
-    expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt') // byte-identical
+    expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt')
     // The children are independent entities, so they adopt regardless of the parent's state.
     const daily = await set(join(root, 'Notes', 'Daily'))
     expect(daily?.id).toBeTruthy()

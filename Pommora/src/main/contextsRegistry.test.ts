@@ -27,7 +27,7 @@ describe('readRegistry', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.contexts.map((c) => c.id)).toHaveLength(3)
-    expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3) // distinct minted ids
+    expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3)
     expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     const onDisk = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(onDisk.contexts).toHaveLength(3)
@@ -47,7 +47,7 @@ describe('readRegistry', () => {
 
     await ensureContextsRegistry(root)
     const again = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(again).toEqual(seeded) // idempotent — ids don't re-mint on the next open
+    expect(again).toEqual(seeded)
   })
 
   it('fails on corrupt JSON and leaves the file untouched', async () => {

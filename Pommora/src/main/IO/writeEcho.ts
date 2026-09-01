@@ -1,9 +1,7 @@
-// Self-write echo suppression: the watcher exists for EXTERNAL changes — the
-// app's own writes must not re-trigger it (every tree-relevant in-app write
-// already refetches explicitly, so an echo only buys a redundant full walk).
-// The funnel records every path the app writes, renames, moves, or trashes;
-// the watcher skips events landing inside the window. A recorded FOLDER also
-// suppresses its descendants — a folder rename/move echoes as child events too.
+// Self-write echo suppression: the watcher exists for EXTERNAL changes — the app's own writes
+// must not re-trigger it, since every tree-relevant in-app write already refetches explicitly.
+// The funnel records every path the app writes, renames, moves, or trashes; the watcher skips
+// events landing inside the window. A recorded FOLDER also suppresses its descendants.
 
 import { sep } from 'node:path'
 

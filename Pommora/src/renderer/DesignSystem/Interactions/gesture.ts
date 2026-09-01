@@ -23,9 +23,7 @@ export type PointerGestureSpec = {
   /** Release after activation — commit here. The skeleton has already swallowed the click. */
   onDrop: () => void
   /** Release BEFORE activation — the press was a click, not a drag. A cancel is not a tap, so
-   *  pointercancel, Escape, blur and a lost release all still route to `onAbort`. This is what
-   *  lets a click-or-drag surface — a list glyph that toggles a checkbox, a heading grip that
-   *  folds — live on the skeleton rather than hand-rolling the lifecycle to tell the two apart. */
+   *  pointercancel, Escape, blur and a lost release all still route to `onAbort`. */
   onTap?: () => void
   /** The gesture ended without a drop: pointercancel, Escape, blur, a lost release, an
    *  activation abort, or a throwing callback. */
@@ -33,21 +31,15 @@ export type PointerGestureSpec = {
   /** Runs on EVERY end — drop, abort, or sub-threshold tap — before onDrop/onAbort. The place to
    *  stop autoscroll, remove per-drag listeners, and end drag-disclose. */
   teardown?: () => void
-  /** Bound capture-phase on window for the ACTIVE gesture only — the invalidation hook for
-   *  scroll-sensitive geometry, removed with the rest of the listener set. When `scrollTarget`
-   *  is given, only a scroll that can move that element's subtree gets through — an unrelated
-   *  scroller costs nothing. */
+  /** Bound capture-phase on window for the ACTIVE gesture only. When `scrollTarget` is given,
+   *  only a scroll that can move that element's subtree gets through. */
   onWindowScroll?: (e: Event) => void
   scrollTarget?: () => Element | null
-  /** A collapsed disclosure group springs open on dwell while the gesture lives — the
-   *  `beginDragDisclose`/`endDragDisclose` pair is bound at press and ended in teardown here, the
-   *  same way `onWindowScroll` owns its listener, so a surface hands over the re-resolve instead of
-   *  bracketing it itself. The callback re-snapshots the surface's drop geometry once the opened
-   *  group's rows have shifted. */
+  /** A collapsed disclosure group springs open on dwell while the gesture lives; the callback
+   *  re-snapshots the surface's drop geometry once the opened group's rows have shifted. */
   onDisclose?: () => void
-  /** Bind Escape in the capture phase and swallow it while ACTIVE — for surfaces living inside a
-   *  dismissable host (a dropdown) whose own Escape must not fire mid-drag. A sub-threshold press
-   *  still leaves Escape to the host. */
+  /** Bind Escape in the capture phase and swallow it while ACTIVE — for a surface living inside a
+   *  dismissable host whose own Escape must not fire mid-drag. */
   swallowActiveEscape?: boolean
 }
 
@@ -203,8 +195,6 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   window.addEventListener('keydown', g.handlers.key, {
     capture: spec.swallowActiveEscape ?? false,
   })
-  // Bound at press like the listeners above, torn down in `detach` — a dwelling drag springs a
-  // collapsed group open and the surface's `onDisclose` re-aims against its shifted rows.
   if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
   return {
     abort: () => {

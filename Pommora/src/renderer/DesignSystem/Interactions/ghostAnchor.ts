@@ -1,8 +1,6 @@
-// The hover-ghost mechanism, one home for every view: dwell arms a ghost on the hovered
-// anchor, grace paces the close on a leave, entering the ghost keeps it (reversing an exit
-// already in flight), and suppression stands it down while a menu or editor owns the pointer.
-// The effect — what a ghost looks like and how it moves — belongs to each consumer; the hook
-// holds one anchor per consumer, so cross-view overlap is transient by leave-close.
+// The hover-ghost mechanism, one home for every view: dwell arms it, grace paces the close on a
+// leave, entering the ghost reverses an exit in flight, and suppression stands it down while a
+// menu or editor owns the pointer. The effect belongs to each consumer; the hook holds one anchor.
 
 import { createContext, useEffect, useRef, useState } from 'react'
 
@@ -30,11 +28,8 @@ export interface GhostAnchorOptions {
   /** Re-read at the dwell timer's fire time — a suppressor arriving mid-dwell (a cell editor,
    *  a naming session) must not leave a ghost armed to snap in the instant it closes. */
   suppressed: () => boolean
-  /** With a ghost standing, entering an anchor its zone admits reads as travel TOWARD the
-   *  ghost: the ghost holds with its disappear timer constrained to holdMs, and when the hold
-   *  expires the rested-on anchor's own dwell arms — travel never strands a zone anchor out of
-   *  its ghost. Cards pass the ghost's own grid row; views whose ghost sits flush against its
-   *  anchor omit it. */
+  /** Entering an anchor its zone admits reads as travel TOWARD the ghost: it holds for holdMs,
+   *  then the rested-on anchor's own dwell arms. Cards pass the ghost's own grid row. */
   travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
@@ -55,8 +50,7 @@ export interface GhostAnchor {
    *  mode, or a pointer went down (a drag must never measure a grid the ghost still occupies). */
   clear: (anchorId?: string) => void
   /** Wraps a menu pop that resolves on dismissal: the ghost stands down and stays unarmed
-   *  while any wrapped menu owns the pointer (pops can overlap — a right-click dismissing
-   *  another menu resolves the first wrapper after the second opened). */
+   *  while any wrapped menu owns the pointer (pops can overlap). */
   suppressWrap: <T>(menu: () => Promise<T>) => Promise<T>
 }
 
@@ -93,8 +87,6 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
     }
     const armDwell = (id: string): void => {
       timers.dwell = window.setTimeout(() => {
-        // Re-checked at fire time — a suppressor opened mid-dwell must not leave a ghost
-        // armed to snap in the instant it closes.
         if (!blocked()) setGhost((g) => (g?.anchorId === id ? g : { anchorId: id, closing: false }))
       }, optsRef.current.dwellMs)
     }

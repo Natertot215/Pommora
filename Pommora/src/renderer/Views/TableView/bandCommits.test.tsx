@@ -219,7 +219,7 @@ describe('structural band reorder', () => {
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
     expect(mutateSpy).not.toHaveBeenCalled()
-    expect(headerTexts()[0]).toContain('B') // the override renders without waiting on the round-trip
+    expect(headerTexts()[0]).toContain('B')
   })
 
   it('a collapse toggle right after the drag persists WITH the fresh band order (the clobber regression)', async () => {
@@ -480,7 +480,7 @@ describe('band reparent', () => {
       op: 'moveSet',
       path: 'Col/B',
       newParentPath: 'Col/A',
-      order: ['sA1', 'sB'], // current children + APPEND — never the visual slot
+      order: ['sA1', 'sB'],
     })
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])

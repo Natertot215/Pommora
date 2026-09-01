@@ -1,7 +1,5 @@
-// The action band — the shared home for toolbar-row affordances any surface can mount, embeds and
-// full views alike. ViewSegments is the first family: the view-switcher segments (icon + title,
-// hairline-bordered, active lift) with their create/delete slide. A new band affordance belongs
-// here beside them, not re-rolled at its surface.
+// The action band — shared home for toolbar-row affordances any surface can mount. A new band
+// affordance belongs here beside ViewSegments, not re-rolled at its own surface.
 
 import { keyframes, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
@@ -27,9 +25,9 @@ export const segmentRow = style({
   gap: SEGMENT_GAP,
 })
 
-/** One segment: icon + title, hairline-bordered. The active segment lifts on the selected-state
- *  fill (surfacepm idiom, not outline). Gap is zero — Button's collapsible `labelSlot`
- *  is the sole icon↔title spacing, so the hidden state sits pixel-identical to a bare icon segment. */
+/** One segment: icon + title, hairline-bordered, active state lifts on the selected-state fill.
+ *  Gap is zero — Button's collapsible `labelSlot` is the sole icon↔title spacing, so the hidden
+ *  state sits pixel-identical to a bare icon segment. */
 export const segment = style([
   text.control.emphasized,
   {

@@ -1,32 +1,23 @@
-// The app's device-level config: a single JSON file in Electron's userData dir,
-// owned by the main process. Holds cross-session state that is NOT nexus data —
-// which nexus to reopen on launch, the recents list (later: trash mode, window
-// bounds). Parametrized by the userData dir (not app.getPath) so the logic stays
-// pure Node and unit-testable without booting Electron.
+// The app's device-level config, not nexus data — which nexus to reopen, recents, trash mode.
+// Parametrized by the userData dir (not app.getPath) so the logic stays testable without Electron.
 
 import { join } from 'node:path'
 import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
 
 /** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
- *  macOS system Trash (Finder-recoverable). Device-level — system Trash isn't portable
- *  nexus data — so it lives in app config, not the nexus. */
+ *  macOS system Trash. Device-level since system Trash isn't portable nexus data. */
 export type TrashMode = 'nexus' | 'system'
 
-/** Default delete target: the portable in-nexus trash. */
 export const DEFAULT_TRASH_MODE: TrashMode = 'nexus'
 
 export interface AppConfig {
-  /** Absolute path of the last nexus opened; restored on launch if still readable. */
   lastNexusPath?: string
-  /** Most-recently-opened nexus paths, newest first (deduped, capped). */
   recents?: string[]
-  /** Delete target; defaults to DEFAULT_TRASH_MODE when absent/invalid. */
   trashMode?: TrashMode
 }
 
 const FILE = 'pommora.json'
 
-/** The config file's absolute path under the given userData directory. */
 export function appConfigPath(userDataDir: string): string {
   return join(userDataDir, FILE)
 }
@@ -44,14 +35,11 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
   }
 }
 
-/** Read-modify-write the config under its own lock — the one writer, so the adopt path and the
- *  menu's recents self-heal cannot each rebuild the file from a snapshot taken before the other
- *  landed. What `mutate` returns is overlaid onto the raw object, so a key this version doesn't
- *  model rides through instead of being dropped on every write. `current` is that same raw object
- *  under an `AppConfig` label, NOT the validated projection `readAppConfig` returns.
- *
- *  An unreadable file fails the write rather than replacing it. The read side stays lenient, so a
- *  damaged config still degrades to empty defaults for launch. */
+/** Read-modify-write under its own lock, so concurrent writers (adopt, recents self-heal) can't
+ *  each rebuild from a stale snapshot. `mutate`'s result is overlaid onto the raw object so a key
+ *  this version doesn't model survives; `current` is that raw object, not `readAppConfig`'s
+ *  validated projection. An unreadable file fails the write rather than replacing it — the read
+ *  side stays lenient so launch still degrades to empty defaults. */
 export async function updateAppConfig(
   userDataDir: string,
   mutate: (current: AppConfig) => AppConfig,
@@ -64,8 +52,7 @@ export async function updateAppConfig(
   if (!written.ok) throw new Error(written.error.message)
 }
 
-/** Prepend `path` to recents, removing any prior occurrence (move-to-front) and
- *  capping the list. The one shaper of the recents list. */
+/** Prepend `path` to recents, removing any prior occurrence, and cap the list. */
 export function addRecent(recents: string[], path: string, cap = 10): string[] {
   return [path, ...recents.filter((p) => p !== path)].slice(0, cap)
 }

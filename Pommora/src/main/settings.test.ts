@@ -73,9 +73,9 @@ describe('writeExcludedFolders', () => {
 
 describe('readDefaultViewScale', () => {
   it('defaults to 1.0 when the file or the key is absent', async () => {
-    expect(await readDefaultViewScale(root)).toBe(1) // no settings.json at all
+    expect(await readDefaultViewScale(root)).toBe(1)
     await write({ personalization: {} })
-    expect(await readDefaultViewScale(root)).toBe(1) // present, key absent
+    expect(await readDefaultViewScale(root)).toBe(1)
   })
 
   it('returns a valid in-range scale', async () => {
@@ -85,9 +85,9 @@ describe('readDefaultViewScale', () => {
 
   it('clamps out-of-range values so a typo cannot brick the window', async () => {
     await write({ personalization: { defaultViewScale: 125 } })
-    expect(await readDefaultViewScale(root)).toBe(1.5) // MAX
+    expect(await readDefaultViewScale(root)).toBe(1.5)
     await write({ personalization: { defaultViewScale: 0.1 } })
-    expect(await readDefaultViewScale(root)).toBe(0.5) // MIN
+    expect(await readDefaultViewScale(root)).toBe(0.5)
   })
 
   it('falls back to 1.0 on a non-numeric or malformed value', async () => {

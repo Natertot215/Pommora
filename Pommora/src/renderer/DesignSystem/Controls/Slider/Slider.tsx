@@ -35,9 +35,8 @@ export function Slider({
   const [draft, setDraft] = useState<number | null>(null)
   const stripRef = useRef<HTMLDivElement>(null)
   // Synchronous scrub flag — lostpointercapture fires right after a normal pointerup, and the
-  // draft-null guard would only hold as long as React happened to flush first. The unmount
-  // cleanup reasserts the committed value for any consumer whose onInput drives live DOM, so a
-  // host closing mid-scrub can't strand a scrubbed preview.
+  // draft-null guard would only hold as long as React happened to flush first. The unmount cleanup
+  // reasserts the committed value so a host closing mid-scrub can't strand a scrubbed preview.
   const scrubbing = useRef(false)
   const revertRef = useRef<() => void>(() => {})
   revertRef.current = () => {
@@ -57,8 +56,7 @@ export function Slider({
     const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width))
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
-  // A canceled scrub reverts: the per-tick onInput has already driven the consumer, so the
-  // committed value is reasserted through the same channel before the draft clears. The ref is
+  // A canceled scrub reverts through the same onInput channel before the draft clears. The ref is
   // the guard — synchronous where the draft state waits on a render flush.
   const revertScrub = (): void => revertRef.current()
   return (

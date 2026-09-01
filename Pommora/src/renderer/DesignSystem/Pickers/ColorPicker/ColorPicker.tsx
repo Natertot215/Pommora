@@ -15,12 +15,11 @@ import * as s from './colorPicker.css'
  * The 8×8 ramp grid — one row per family, dark → light, every spectrum solid on an exact cell.
  * Clicking the selected cell clears, so there is no separate clear affordance.
  *
- * `greyscale` is withheld by the surfaces that paint the RAW cell color: the row's dark end is the
- * window substrate itself, so a link wearing it would be invisible against the page. A surface that
- * resolves a cell through the chip recipe instead — the darkness offset and the borrowed outline —
- * can take the row, and asks for it. A value already stored there still shows its row either way,
- * because clearing is bound to clicking the ringed cell: hide the row it lives in and the value
- * becomes unclearable.
+ * `greyscale` is withheld by surfaces that paint the raw cell color: the row's dark end is the
+ * window substrate itself, so a link using it would be invisible against the page. A surface that
+ * resolves a cell through the chip recipe instead can take the row. A value already stored in the
+ * grey row still shows it either way — clearing is bound to clicking the ringed cell, so hiding the
+ * row it lives in would make the value unclearable.
  */
 export function ColorPicker({
   open,

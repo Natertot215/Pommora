@@ -1,6 +1,6 @@
-// The per-extension file glyphs — Tabler's `file-type-*` set, adopted at the same TABLER_SCALE the
-// curated registry already sits its Tabler glyphs at. Per-extension rather than per-family: a `.ts`
-// and a `.tsx` reading as one glyph loses the distinction a file label exists to make.
+// The per-extension file glyphs — Tabler's `file-type-*` set. Per-extension rather than
+// per-family: a `.ts` and a `.tsx` reading as one glyph loses the distinction a file label exists
+// to make.
 
 import type { LucideIcon } from 'lucide-react'
 import * as tabler from '@tabler/icons-react'

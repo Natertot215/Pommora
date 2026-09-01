@@ -1,13 +1,9 @@
-// The schema-op page cascades (option rename/remove/clear, [[link]] + Context cascades, property
-// delete/remove) and the cell-write path (mutate's setProperty/setContext) must serialize on the
-// SAME per-file lock — two independent locks would let a cascade racing a cell edit on one page
-// silently clobber a value.
-//
-// This drives the REAL keys: the cell-write locks on resolveUnderRoot's output (realpath'd) and
-// the cascade keys off sessionRoot(). They match ONLY because openSession canonicalizes the root
-// — on a symlinked-root ancestry (a tmpdir on macOS IS /var→/private/var) a raw sessionRoot would
-// split the two into different lock buckets and this test would go red. (fileLock.test proves the
-// other half — that a page rewrite reads FRESH inside the lock, so nothing is lost.)
+// The schema-op page cascades and the cell-write path must serialize on the SAME per-file lock —
+// two independent locks would let a cascade racing a cell edit on one page silently clobber a
+// value. This drives the REAL keys: the cell-write locks on resolveUnderRoot's output
+// (realpath'd) and the cascade keys off sessionRoot(). They match ONLY because openSession
+// canonicalizes the root — on a symlinked-root ancestry (a tmpdir on macOS IS /var→/private/var)
+// a raw sessionRoot would split the two into different lock buckets and this test would go red.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -23,8 +19,6 @@ import { openSession, closeSession, sessionRoot } from '../session'
 import { resolveUnderRoot } from '../pathSafety'
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
 
-/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
- *  The type only has to be one the value's kind can hold; the key comes from the name. */
 /** Must carry the name the registry holds — the cascade resolves its key from there, so a
  *  divergent name would leave it rewriting a page that holds nothing. */
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
@@ -42,8 +36,7 @@ afterEach(async () => {
   await rm(rawRoot, { recursive: true, force: true })
 })
 
-/** A Select property assigned to one collection whose page holds the option `value`. Built under
- *  `root` (the canonical session root); returns the property id and the page's nexus-relative path. */
+/** Built under `root`, the canonical session root. */
 async function setup(root: string, value: string): Promise<{ propertyId: string; rel: string }> {
   const c = await createProperty(root, {
     id: '',

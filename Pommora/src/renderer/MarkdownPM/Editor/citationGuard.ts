@@ -1,7 +1,7 @@
-// The citations section is the document's TAIL — the run has to reach the end, so anything left
-// standing after it does not corrupt one line, it literalizes every citation at once. Atomicity
-// stops CM's own motion and deletion but never a programmatic dispatch, which is why this sits at
-// the transaction layer beside the callout guard rather than in a decoration.
+// The citations section must reach the document's end — anything left standing after it
+// literalizes every citation at once. Atomicity stops CM's own motion and deletion but never a
+// programmatic dispatch, so this sits at the transaction layer beside the callout guard rather
+// than in a decoration.
 import type { EditorState } from '@codemirror/state'
 import { citationScan, lineEndOf, splitWithOffsets } from '../Detect'
 import type { CitationSlice } from './citationEdits'
@@ -9,23 +9,19 @@ import { docScan } from './docCache'
 import type { GuardVerdict } from './calloutGuard'
 import { verdictFilter } from './calloutGuard'
 
-/** Whether the text from `at` onward still reads as a citation run reaching the end. The question is
- *  local to the tail, so it is asked of the tail: a slice, not the document, and only for a change
- *  that reaches the section at all. */
+/** Whether the text from `at` onward still reads as a citation run reaching the end — checked
+ *  against a slice of the tail, not the full document. */
 function tailHolds(after: string, at: number): boolean {
   if (at >= after.length) return false
   const s = citationScan(splitWithOffsets(after.slice(at)), [])
   return s.firstLine === 0 && s.entries.length > 0
 }
 
-/** The verdict for one change against the section.
- *
- *  Two repairs, and nothing else. An insertion seated at a citation line's very first offset is
- *  clamped past its `[^label]:` — atomic skipping relocates only strictly-interior positions, so
- *  that one seat stays reachable, is invisible (the prefix is zero-width there), and the next
- *  keystroke would otherwise write ahead of the head and end the run. And a change that would leave
- *  the tail no longer reading as a citation run has its text relocated to the body above the
- *  section, where a stray paste at the foot of a page was always going to belong. */
+/** The verdict for one change against the section. Two repairs, nothing else: an insertion seated
+ *  at a citation line's first offset is clamped past its `[^label]:` (atomic skipping only relocates
+ *  strictly-interior positions, so that seat stays reachable and invisible, and the next keystroke
+ *  would otherwise write ahead of the head and end the run); and a change that would leave the tail
+ *  no longer reading as a citation run has its text relocated to the body above the section. */
 export function citationTailVerdict(
   doc: string,
   fromA: number,
@@ -37,10 +33,6 @@ export function citationTailVerdict(
   if (c.firstLine >= lines.length) return { kind: 'ok' }
   const tailStart = lineStarts[c.firstLine]
 
-  // The head's own first offset. Atomic skipping relocates only strictly-interior positions, so that
-  // one seat stays reachable and is invisible — the prefix is zero-width there — and what lands on
-  // it would otherwise write ahead of `[^label]:` and end the run. The seat moves past the head; the
-  // check below then answers for the text itself, since a paste arrives in exactly this shape.
   const head = fromA === toA && inserted.length > 0
   const entry = head ? c.entries.find((e) => lineStarts[e.line] === fromA) : undefined
   const from = entry ? entry.contentStart : fromA
@@ -51,26 +43,20 @@ export function citationTailVerdict(
   if (tailHolds(after, tailStart))
     return entry ? { kind: 'rewrite', edits: [{ from, to, insert: inserted }] } : { kind: 'ok' }
 
-  // The section could not survive this text where it landed, and moving it past the head does not
-  // save it either. Its text goes to the end of the body instead. Where the anchor line is the blank
-  // the section floats on, that means above the blank, so the gap survives; where the anchor holds
-  // prose — a file authored anywhere that puts its citations straight under the last paragraph — the
-  // body ends at that line's end, and seating text at its start would land it above the paragraph it
-  // was written below.
+  // The section can't survive this text, so its text is relocated to the end of the body instead.
+  // If the anchor line is the blank the section floats on, that's above the blank, keeping the gap;
+  // if the anchor holds prose, the body ends at that line's end (seating text at its start would
+  // land it above the paragraph it was written below).
   const prose = c.anchorLine >= 0 && lines[c.anchorLine].trim() !== ''
   const seat =
     c.anchorLine < 0 ? 0 : prose ? lineEndOf(scan, c.anchorLine) : lineStarts[c.anchorLine]
-  // Whitespace alone is not text to rescue. The space that turns a typed `-` into a list marker is
-  // what ends the run, and relocating it writes a line holding one space into the body — debris the
-  // reader never asked for from a keystroke that was never going to land here. It is refused instead.
+  // Whitespace alone isn't text to rescue (e.g. the space that turns a typed `-` into a list
+  // marker) — relocating it would write debris into the body, so it's refused instead.
   const body = inserted.trim() === '' ? '' : inserted.replace(/^\n+|\n+$/g, '')
   if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
-  // A sweep that began at or above the seat already owns a place in the body for what replaces it,
-  // and relocating past its own start would be two edits claiming one range. It goes through as the
-  // plain replacement it is: the guard stops text being STRANDED after the section, not removed.
+  // A sweep that already began at or above the seat owns a place in the body for its replacement,
+  // so it goes through as a plain replacement — the guard stops text being stranded, not removed.
   if (fromA <= seat) return { kind: 'ok' }
-  // The swept range goes where it stood, and its text goes to the end of the body — the line the
-  // divider draws on, which keeps the blank the section anchors to.
   return {
     kind: 'rewrite',
     edits: [

@@ -21,16 +21,14 @@ import {
   type MeasuredRow,
 } from './sidebarDndModel'
 
-// An Apple-style insertion line marks the drop; no row displacement.
-
 const LINE_INSET_RIGHT = 12
 const BASE_INDENT = 8 // MenuItem's base left padding
 const STEP_INDENT = DISCLOSURE_INDENT // MenuItem's per-depth inset — the shared disclosure step
 
 type Slot = {
-  depth: number // indent depth of the landing slot (the line)
+  depth: number
   lineY: number // relative to the content wrapper
-  commit: MutateRequest // the write this drop resolves to — handed straight to store.mutate
+  commit: MutateRequest // handed straight to store.mutate
 }
 
 type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
@@ -120,9 +118,8 @@ export function SidebarDnd({
       }
       const beforeId = entry.pageIds.find((x) => x !== id) ?? null
       const order = nextOrder(entry.pageIds, id, beforeId)
-      // Derived from the slot the drop resolves to, never from the row under the pointer — with
-      // folders first, a container's first page sits below its entire Sets block. Same rule the
-      // Set branch below already follows.
+      // Derived from the slot the drop resolves to, never the row under the pointer — with folders
+      // first, a container's first page sits below its entire Sets block.
       const firstRow = beforeId ? measured.find((m) => m.id === beforeId) : undefined
       return unless(over.id === draggedEntry.parentId && sameOrder(order, entry.pageIds), {
         depth: entry.depth + 1,
@@ -192,9 +189,8 @@ export function SidebarDnd({
   }
 
   const drag = useInsertionDrag<Slot, Snapshot>({
-    // Measured ONCE at drag activation, not per pointermove — no row displaces mid-drag, so frozen
-    // rects stay valid until a scroll or tree swap invalidates. The dragged row's sibling group is
-    // snapshot state too — invariant mid-drag, so it's filtered here once rather than per move.
+    // Measured once at drag activation, not per pointermove: no row displaces mid-drag, so frozen
+    // rects stay valid until a scroll or tree swap invalidates.
     take: (excludeId) => {
       const content = contentRef.current
       if (!content) return null

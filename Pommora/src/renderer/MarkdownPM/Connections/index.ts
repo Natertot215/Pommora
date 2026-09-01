@@ -3,12 +3,11 @@ import type { ConnCellApply, ConnEditAction, ConnSurface, ConnUrlAction } from '
 import { isValidLink, targetTitle } from '@shared/links'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
- *  function, so acting on the result needs a way back into the editor instance that was clicked —
- *  `apply` is that way, and its absence is what marks a display-only surface. It closes over the
- *  span it was built for, so no caller can aim an action at a link the menu wasn't popped on.
- *
- *  A link reaching a page and a link reaching a web address are different menus, not one menu with
- *  absences: the address has no page to preview, to name, or to give a location. */
+ *  function, so acting on the result needs a way back into the editor instance clicked — `apply`
+ *  is that way, and its absence marks a display-only surface. It closes over the span it was
+ *  built for, so no caller can aim an action at a link the menu wasn't popped on. A page link and
+ *  a web-address link are different menus, not one menu with absences: the address has no page
+ *  to preview, name, or locate. */
 export type ConnMenuTarget = {
   surface?: ConnSurface
   hideable?: boolean
@@ -67,8 +66,8 @@ export interface ConnectionsApi extends PageIndex {
 export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
 
 /** Resolve a markdown link's `( )`. Page resolution is tried FIRST and deliberately: `isValidLink`
- *  accepts any dotted host, so `Notes.md` and `Node.js` would otherwise be read as websites and the
- *  pages they name would be unreachable through this syntax entirely. */
+ *  accepts any dotted host, so `Notes.md` would otherwise read as a website and the page it names
+ *  would be unreachable through this syntax entirely. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
   const title = targetTitle(rawTarget)
   if (index && title) {
@@ -119,7 +118,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
 }
 
 /** Open a page the way a gesture asks for: ⌘ takes the host's other route when it offers one. The
- *  one modifier branch in the editor, read by both link syntaxes and by a resting table cell. */
+ *  one modifier branch in the editor. */
 export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
   if (bypass && api.bypass) api.bypass(page)
   else api.open(page)

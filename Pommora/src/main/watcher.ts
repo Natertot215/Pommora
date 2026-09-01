@@ -52,8 +52,7 @@ export function isNavPath(root: string, path: string): boolean {
 // must auto-refresh. Checks only the path BELOW the root, so a dot-segment in the root's own
 // absolute path (e.g. a nexus under ~/.something) can't blank the whole watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
-  // User-excluded folders never reach the tree, so their churn must not cost a reconcile
-  // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
+  // User-excluded folders never reach the tree, so their churn must not cost a reconcile.
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
@@ -63,18 +62,15 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     const segs = rel.split(sep)
     // The asset root's OWN segments are exempt from the rules below — the dot-prefix one would
     // blind a root named `.attachments`, and an exclusion entry would blind any of them. What
-    // sits below the root is ordinary cruft and still filtered: a synced folder's `.DS_Store`
-    // is not an asset.
+    // sits below the root is ordinary cruft and still filtered.
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
       segs.some(neverWatched) ||
-      // Block-host content loads through blocks:get, never the tree walk —
-      // a debounced block-body write must not cost a full re-walk. The
-      // homepage.json config FILE stays watched (the tree reads its banner).
+      // Block-host content loads through blocks:get, never the tree walk — a debounced
+      // block-body write must not cost a full re-walk. homepage.json stays watched.
       (segs[0] === NEXUS_DIR && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
-      // Space hosts get the same treatment file-granularly: a tile `.md` inside
-      // `.nexus/contexts/<C>/<S>/` never walks, while `_space.json` (banner/color/tags
-      // the tree reads) stays watched.
+      // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space
+      // never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
       (segs[0] === NEXUS_DIR &&
         segs[1] === CONTEXTS_DIRNAME &&
         segs.length >= 5 &&
@@ -99,18 +95,15 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   const onEvent =
     (event: WatchEventName) =>
     (path: string): void => {
-      // Navigation events skip the echo suppression BELOW it — the window exists to spare
-      // wasted tree work, and a nav event never touches the tree. A hand-edit landing right
-      // after the app's own write is therefore never swallowed; a self-write's echo is one
-      // debounced re-read of a small file whose content the renderer already holds.
+      // Navigation events skip the echo suppression BELOW it — a nav event never touches the
+      // tree, so a hand-edit landing right after the app's own write is never swallowed.
       if (isNavPath(root, path)) {
         if (navDebounce) clearTimeout(navDebounce)
         navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
         return
       }
-      // The app's own atomic writes echo back here — skip them: every tree-relevant
-      // in-app write confirms through its own channel, so the echo only buys wasted
-      // work (hot under block gestures + embed typing). External edits still land.
+      // The app's own atomic writes echo back here — skip them: every tree-relevant in-app
+      // write confirms through its own channel (hot under block gestures + embed typing).
       if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
@@ -122,9 +115,8 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     .on('unlink', onEvent('unlink'))
     .on('addDir', onEvent('addDir'))
     .on('unlinkDir', onEvent('unlinkDir'))
-    // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main
-    // process (EMFILE/ENOSPC from fd/inotify-watch exhaustion, EPERM, a watched dir
-    // vanishing). Log + no-op; the tree stays as last-read and ⌘R Reload recovers.
+    // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main process
+    // (EMFILE/ENOSPC, EPERM, a watched dir vanishing). Log + no-op; ⌘R Reload recovers.
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 
@@ -146,7 +138,8 @@ export function stopWatcher(): void {
 }
 
 /** The containers whose page values a batch touched, with the ids the tree resolves; a batch that
- *  degraded to a walk names its containers with no ids, so the renderer retires only settled overrides. */
+ *  degraded to a walk names its containers with no ids, so the renderer retires only settled
+ *  overrides. */
 function valueChangesOf(
   events: WatchEvent[],
   root: string,
@@ -170,9 +163,8 @@ function valueChangesOf(
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
-/** Spend the settle window's batch: patch what classifies, walk for the rest — through the
- *  seam either way, so what the renderer receives is exactly what main now holds. Push only
- *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
+/** Spend the settle window's batch: patch what classifies, walk for the rest. Push only when the
+ *  tree object moved (an all-index-only batch changes nothing anyone renders). */
 async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   const events = batch
@@ -194,22 +186,20 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
     const changed = valueChangesOf(events, root, scope, outcome === 'refresh' ? null : tree)
     if (changed.length) pushToWindow(win, 'values:changed', changed)
-    // One push for the whole batch, however many files the sync delivered. Nothing held before
-    // means nothing has asked for the map yet — the first ask serves it fresh.
+    // One push for the whole batch, however many files the sync delivered.
     const assets = getHeldAssetMap(root)
     if (assetsBefore && assets && assets !== assetsBefore)
       pushToWindow(win, 'assets:changed', assets)
     if (outcome !== 'refresh') return
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
     // reconciles the index for the same cost as the walk's own stats. Only a batch that could
-    // have moved the corpus owes it: a walk forced by a registry edit leaves the index exact.
+    // have moved the corpus owes it.
     if (touchesCorpus(root, events, scope)) await seedContentIndex(root)
     if (sessionRoot() !== root || win.isDestroyed()) return
     // The scope this watcher was armed with is spent state: an edit to either half classifies
-    // `refresh` above, but the classifier and chokidar's own ignore filter would keep reading
-    // the stale capture — and a note under a newly-excluded folder would ride `index-only` back
-    // into the queryable rows. A changed scope moves the corpus by definition, so the rows it
-    // now disowns are reconciled before the fresh watcher arms.
+    // `refresh` above, but the classifier and chokidar's ignore filter would keep reading the
+    // stale capture. A changed scope moves the corpus, so its disowned rows are reconciled
+    // before the fresh watcher arms.
     if (!sameScope(await readWatchScope(root), scope)) {
       await seedContentIndex(root)
       if (sessionRoot() !== root || win.isDestroyed()) return

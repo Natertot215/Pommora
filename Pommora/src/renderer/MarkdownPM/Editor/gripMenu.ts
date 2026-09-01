@@ -1,10 +1,10 @@
-// Every block grip's right-click menu. A press in the gutter strip resolves to the whole block through
-// `blockAt`, and that block's kind decides what it offers — Delete on all of them, "Type ▸" on a list,
-// "Source ▸" on an embed tile. The generic editor menu stands down over a grip because the rail
-// hover flags it hot to main (blockGripHover → setGripHot), so this is the only menu there.
+// Every block grip's right-click menu. A press in the gutter strip resolves to the whole block
+// through `blockAt`, and that block's kind decides what it offers — Delete on all of them, "Type ▸"
+// on a list, "Source ▸" on an embed tile. The generic editor menu stands down over a grip because
+// the rail hover flags it hot to main (blockGripHover → setGripHot).
 //
-// The span is resolved before the ask and the pick applied on the promise; the hot flag is cleared by
-// hand after a delete, since no mousemove fires under a modal native menu.
+// The span is resolved before the ask and the pick applied on the promise; the hot flag is cleared
+// by hand after a delete, since no mousemove fires under a modal native menu.
 import { EditorView } from '@codemirror/view'
 import { pageEmbedText } from '@shared/connections'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
@@ -21,18 +21,16 @@ import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from './
 import { focusRange } from './caretSeat'
 import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
 
-/** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip flag
- *  read this one list, so the generic editor menu can never stand down over a grip that offers nothing. */
+/** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip
+ *  flag read this one list. */
 export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
-/** Every gutter line whose right-press pops a custom menu — grips plus the heading chevron. The host's
- *  hot flag reads this so the generic editor menu stands down over exactly the lines the two hit-tests
- *  below claim, never one more or fewer. */
+/** Every gutter line whose right-press pops a custom menu — grips plus the heading chevron. */
 export const HOT_MENU_LINES = [...GRIP_MENU_LINES, HEADING_FOLD_LINE]
 
-/** The gutter-strip line a right-press landed on for a given class, or null on the line's own text — a
- *  press past the content column's left edge is never a gutter press. */
+/** The gutter-strip line a right-press landed on for a given class, or null on the line's own
+ *  text — a press past the content column's left edge is never a gutter press. */
 function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
   const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
   return line && e.clientX < line.getBoundingClientRect().left ? line : null
@@ -111,9 +109,8 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   if (level === undefined) return
   void window.nexus?.gripMenu?.({ kind: 'heading', level }).then((action) => {
     if (!action) return
-    // Re-found where the chevron was and matched against what the menu was built from, the same
-    // discipline the grip menu below keeps: a native menu is open for as long as the user likes, and
-    // an undo or an outside write can move the document under it.
+    // Re-found where the chevron was and matched against what the menu was built from — a native
+    // menu can stay open indefinitely, and an undo or outside write can move the document under it.
     const doc = docString(view.state.doc)
     const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
     const parts = headingParts(line.text)
@@ -176,11 +173,9 @@ export const gripMenu = EditorView.domEventHandlers({
     e.preventDefault()
     void window.nexus?.gripMenu?.(contextFor(view, doc, block)).then((action) => {
       if (!action) return
-      // A native menu can be held open for as long as the user likes, and an undo or an outside
-      // write can move the document underneath it. The block is re-found where the grip was and
-      // matched against what the menu was built from; a document that no longer holds it declines
-      // the action, exactly as a resting cell's link menu does. Spending the captured span instead
-      // reaches past the end of a shortened document, inside a promise, unhandled.
+      // A native menu can be held open indefinitely, and an undo or outside write can move the
+      // document underneath it, so the block is re-found and matched against what the menu was
+      // built from; a document that no longer holds it declines the action.
       const doc = docString(view.state.doc)
       const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
       if (!block || doc.slice(block.from, block.to) !== opened) return

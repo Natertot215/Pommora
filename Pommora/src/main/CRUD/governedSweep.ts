@@ -1,16 +1,6 @@
-// The one walk every governed-key sweep shares.
-//
-// Clearing a property, removing it from one Collection, unlinking a Context or a Space, cascading
-// an option rename, reconciling a returning artifact — each decides something different about a
-// key, and each was reaching that decision through its own copy of the same five steps: enumerate
-// the roots, take the file's lock, ask whether the file may be rewritten at all, run the decision,
-// write back only what changed. Copies of that drift: two of them swallowed a read failure the
-// others reported, and one reported a page it had refused as one it had touched.
-//
-// So the plumbing is stated once and the decision stays the caller's. What differs per caller is
-// genuinely different and rides as parameters: WHICH roots (a Collection's pages answer to a
-// schema; a Context tag is legal on any page and on a Space sidecar), and what the caller needs
-// captured on the way past.
+// The one walk every governed-key sweep shares: enumerate the roots, take the file's lock, ask
+// whether it may be rewritten at all, run the caller's decision, write back only what changed.
+// What differs per caller rides as parameters — WHICH roots, and what gets captured on the way past.
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -26,20 +16,15 @@ import { nowIso, sweepAdmits } from './util'
 
 export type Raw = Record<string, unknown>
 
-/** Which roots a sweep reaches. Not a detail — a Context tag is legal on any page and on a Space
- *  sidecar, while a property value only means anything inside the Collection whose schema governs
- *  it, so the scope IS the difference between the two families. */
+/** A Context tag is legal on any page and on a Space sidecar; a property value only means
+ *  anything inside the Collection whose schema governs it. */
 export type SweepScope =
-  /** The whole corpus — every `.md` the pens can reach — plus every Space sidecar. */
   | { kind: 'nexus' }
-  /** An explicit page list the call site already targeted and scoped (the key-holder query);
-   *  sidecars unreached. The query decision never lives in here — the Context cascade shares
-   *  this function and its governed keys are outside the index. */
+  /** An explicit, already-scoped page list (the key-holder query); sidecars unreached. */
   | { kind: 'files'; files: string[] }
 
-/** What the sweep did, per root. `skipped` is a root it could not read, `refused` one it may not
- *  rewrite — kept apart because a record built from this reports them as the same kind of
- *  thinness, and nothing else may conflate them. */
+/** `skipped` could not be read, `refused` may not be rewritten — kept apart so callers don't
+ *  conflate the two. */
 export interface SweepResult<C> {
   touched: string[]
   skipped: string[]
@@ -47,20 +32,14 @@ export interface SweepResult<C> {
   captured: C[]
 }
 
-/** The caller's decision for one root: the frontmatter/sidecar it should hold, plus whatever the
- *  caller wants remembered about it. `null` leaves the root untouched. */
 export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } | null
 
-/** A page decision stated as the file's TEXT rather than as its values. A raw decision is a
- *  decision about VALUES: it merges key-wise, and a key's own position and comment are not things
- *  it can name, let alone keep. Renaming a key where it sits needs the yaml document, which only
- *  the bytes carry — so that decision arrives as text and owns the whole file it returns. `null`
- *  leaves the root untouched, the same answer a raw decision gives. */
+/** A raw decision merges key-wise and can't name a key's own position or comment. Renaming a
+ *  key where it sits needs the yaml document, so that decision arrives as text and owns the
+ *  whole file it returns. `null` still means untouched. */
 export type RewriteText = (content: string, file: string) => string | null
 
 export interface SweepOptions {
-  /** Re-date every page the sweep changed. What a governed key means to a page differs by layer,
-   *  so whether changing one is a content edit is the caller's to say. */
   stamp?: boolean
   /** Pages take this instead of the raw decision; sidecars keep the raw one, JSON having neither
    *  position nor comments to preserve. */
@@ -85,20 +64,15 @@ async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {
   }
 }
 
-/** Space sidecars are context roots, so only a nexus-wide sweep reaches them: a property value
- *  answers to a Collection's schema, and no schema governs a Space. */
+// Only a nexus-wide sweep reaches sidecars — no schema governs a Space.
 const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
   scope.kind === 'nexus'
     ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
     : Promise.resolve([])
 
-/**
- * Run `rewrite` over every root the scope reaches, each under its own file lock. A page is merged
- * key-wise — only the governed keys that actually changed, so foreign frontmatter and the body
- * never move and a page the decision left alone is never re-dated — unless the caller states its
- * page decision as text, which then owns the file whole. A sidecar is written whole, which is what
- * a JSON root has always taken; `null` is how a decision says "untouched" everywhere.
- */
+/** A page merges key-wise — only the governed keys that changed, so foreign frontmatter and the
+ *  body never move — unless the caller states its decision as text, which then owns the file
+ *  whole. A sidecar is always written whole. */
 export async function sweepGovernedRoots<C>(
   root: string,
   scope: SweepScope,
@@ -116,8 +90,7 @@ export async function sweepGovernedRoots<C>(
         out.skipped.push(file)
         return
       }
-      // An Unknown file, or one whose frontmatter cannot round-trip, is left byte-identical —
-      // named as refused so a record built from this sweep can admit it was thin.
+      // An Unknown file, or one whose frontmatter cannot round-trip, is left byte-identical.
       if (!sweepAdmits(content)) {
         out.refused.push(file)
         return
@@ -138,8 +111,6 @@ export async function sweepGovernedRoots<C>(
       if (!keys.length) return
       const modeled: Raw = {}
       for (const k of keys) if (k in decided.next) modeled[k] = decided.next[k]
-      // Whether clearing a value re-dates the page is the caller's to say: a property value is a
-      // cell the user filled, a Context tag is a relation the layer maintains.
       if (opts.stamp) modeled.modified_at = nowIso()
       const merged = opts.stamp ? [...keys, 'modified_at'] : keys
       await atomicWriteFile(

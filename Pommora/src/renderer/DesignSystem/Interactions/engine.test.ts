@@ -30,20 +30,18 @@ const grid = (count: number, cols: number): Box[] =>
   })
 
 describe('reflow — the displacement core', () => {
-  // Dragging item 0 down to slot 2: items 1,2 shift up one slot, item 3 stays, active lands on slot 2.
   it('shifts the passed-over items up when dragging forward', () => {
     const r = column(4)
-    expect(reflow(r, 2, 0, 1).top).toBe(0) // item 1 → slot 0
-    expect(reflow(r, 2, 0, 2).top).toBe(10) // item 2 → slot 1
-    expect(reflow(r, 2, 0, 3).top).toBe(30) // item 3 → unchanged
+    expect(reflow(r, 2, 0, 1).top).toBe(0)
+    expect(reflow(r, 2, 0, 2).top).toBe(10)
+    expect(reflow(r, 2, 0, 3).top).toBe(30)
   })
 
-  // Dragging item 3 up to slot 1: items 1,2 shift down one slot, item 0 stays.
   it('shifts the passed-over items down when dragging backward', () => {
     const r = column(4)
-    expect(reflow(r, 1, 3, 0).top).toBe(0) // item 0 → unchanged
-    expect(reflow(r, 1, 3, 1).top).toBe(20) // item 1 → slot 2
-    expect(reflow(r, 1, 3, 2).top).toBe(30) // item 2 → slot 3
+    expect(reflow(r, 1, 3, 0).top).toBe(0)
+    expect(reflow(r, 1, 3, 1).top).toBe(20)
+    expect(reflow(r, 1, 3, 2).top).toBe(30)
   })
 
   it('is a no-op when over === active (hovering its own slot)', () => {
@@ -61,17 +59,17 @@ describe('keyboardNext — arrow navigation', () => {
 
   it('returns the same index when nothing lies ahead', () => {
     const r = column(5)
-    expect(keyboardNext(r, 4, ARROW_DIRS.ArrowDown)).toBe(4) // last row, nothing below
-    expect(keyboardNext(r, 0, ARROW_DIRS.ArrowUp)).toBe(0) // first row, nothing above
-    expect(keyboardNext(r, 0, ARROW_DIRS.ArrowLeft)).toBe(0) // a column has nothing to the side
+    expect(keyboardNext(r, 4, ARROW_DIRS.ArrowDown)).toBe(4)
+    expect(keyboardNext(r, 0, ARROW_DIRS.ArrowUp)).toBe(0)
+    expect(keyboardNext(r, 0, ARROW_DIRS.ArrowLeft)).toBe(0)
   })
 
   it('navigates a grid by row and column', () => {
-    const g = grid(9, 3) // 3x3
-    expect(keyboardNext(g, 0, ARROW_DIRS.ArrowRight)).toBe(1) // 0 → 1
-    expect(keyboardNext(g, 0, ARROW_DIRS.ArrowDown)).toBe(3) // 0 → directly below
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowUp)).toBe(1) // center → directly above
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowLeft)).toBe(3) // center → left neighbor
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowRight)).toBe(5) // center → right neighbor
+    const g = grid(9, 3)
+    expect(keyboardNext(g, 0, ARROW_DIRS.ArrowRight)).toBe(1)
+    expect(keyboardNext(g, 0, ARROW_DIRS.ArrowDown)).toBe(3)
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowUp)).toBe(1)
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowLeft)).toBe(3)
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowRight)).toBe(5)
   })
 })

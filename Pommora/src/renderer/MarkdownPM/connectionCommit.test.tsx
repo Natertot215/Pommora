@@ -40,8 +40,6 @@ async function pickFirst(body: string, caret: number): Promise<{ doc: string; he
 }
 
 describe('committing a connection leaves it reading as finished', () => {
-  // A caret on the closer keeps the token active, which would show the link just picked as raw
-  // syntax. The space is what the caret steps over.
   // The closer is the one caret position that leaves a connection rendered, so nothing is written
   // to move the caret off it — accepting a suggestion adds the link and not a character more.
   it('writes the link alone and rests the caret on its closer', async () => {

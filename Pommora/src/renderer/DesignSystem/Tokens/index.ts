@@ -4,8 +4,7 @@ import { size, type IconSize, type ButtonSize } from './size.css'
 import { mixAt, tintAt, TINT_STEPS, type TintStep } from './tint'
 import './theme-vars.css' // bridges tokens → stable CSS vars for plain-CSS consumers
 
-/** The single token object — vars.color.*, vars.font.*, vars.size.*. One import: `import { vars,
- *  text } from '@renderer/DesignSystem/Tokens'`. */
+/** The single token object — vars.color.*, vars.font.*, vars.size.*. */
 export const vars = {
   ...colorVars,
   font,
@@ -13,13 +12,11 @@ export const vars = {
 }
 
 export type { IconSize, ButtonSize }
-
-/** Composed text-style class names — `text.body.standard`, `text.headline.emphasized`. */
 export { text }
 
 /** The tint ladder and the mix it feeds — a consumer names a step, never a percentage. */
 export { mixAt, tintAt, TINT_STEPS }
 export type { TintStep }
-/** The stacking ladders — `stack.shell.*` (window frame) · `stack.local.*` (over own siblings) ·
- *  `stack.top.*` (fixed / body-portalled). Plain CSS reads the same steps as `--z-*`. */
+/** The stacking ladders — shell (window frame), local (own siblings), top (fixed / portalled).
+ *  Plain CSS reads the same steps as `--z-*`. */
 export { stack } from './stack'

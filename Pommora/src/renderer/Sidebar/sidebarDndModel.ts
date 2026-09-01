@@ -13,16 +13,13 @@ export type Entry = {
   depth: number
   parentId: string | null
   parentPath: string | null
-  pageIds: string[] // direct child pages in order ([] for non-containers)
-  containerIds: string[] // direct child Sets in order — Collection→sets, Set→sub-sets ([] else)
+  pageIds: string[] // [] for non-containers
+  containerIds: string[] // Collection→sets, Set→sub-sets ([] else)
 }
 export type Index = {
   byId: Map<string, Entry>
-  // Top-level reorder groups (ordered ids), persisted in `.nexus/state.json`.
-  collectionIds: string[]
-  // Registry Spaces per Context group (ordered ids) — a Space reorders within its group only.
-  spaceIdsByContext: Map<string, string[]>
-  // Context groups in display order — a group header reorders among its siblings.
+  collectionIds: string[] // persisted in `.nexus/state.json`
+  spaceIdsByContext: Map<string, string[]> // a Space reorders within its group only
   contextGroupIds: string[]
 }
 

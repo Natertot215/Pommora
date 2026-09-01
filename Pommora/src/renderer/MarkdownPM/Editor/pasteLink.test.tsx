@@ -49,8 +49,7 @@ beforeEach(() => {
     readClipboard: async () => clipboard,
     linkTitles: { fetch: async () => ({ ok: false, error: { code: 'offline' } }) },
   })
-  // The title cache is store state and outlives a test — one left populated makes the next paste
-  // resolve instantly and shifts every offset a hand-written edit depends on.
+  // The title cache outlives a test — one left populated shifts every offset a later test depends on.
   useSession.setState({ personalization: {}, linkTitles: {} })
 })
 afterEach(async () => {
@@ -79,8 +78,7 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  // Declining hands the event back to CodeMirror, which inserts the text as typed — so the address
-  // landing bare is the positive evidence that the gate held.
+  // Declining hands the event back to CodeMirror, which inserts the text as typed.
   it('leaves a non-address alone', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, 'App.tsx'))
@@ -125,10 +123,9 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
   })
 
-  // A site whose <title> IS its domain resolves to the text already on the page, so the swap writes
-  // nothing and the document never changes — meaning the validity prune, which only runs on a doc
-  // change, never fires. Without an explicit withdrawal the anchor would sit pending forever and
-  // re-dispatch on every store write thereafter.
+  // A site whose <title> IS its domain resolves to text already on the page, so the swap writes
+  // nothing and the validity prune (which only runs on a doc change) never fires — without an
+  // explicit withdrawal the anchor would sit pending forever.
   it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
@@ -151,7 +148,7 @@ describe('pasting an address into the editor', () => {
   })
 
   // The pair reads together: the same clipboard on the same line lands literal inside a destination
-  // (no nested `[` written) and formats outside one — proof the guard reads the column, not the line.
+  // and formats outside one — proof the guard reads the column, not the line.
   const LINKED = '[docs]() tail'
 
   it('lands literal inside a link destination', async () => {
@@ -192,9 +189,8 @@ describe('pasting an address into the editor', () => {
   })
 })
 
-// ⌘⇧V does the opposite of ⌘V, on whichever axis a selection selects: with text selected the
-// question is whether a paste wraps it, and without one it is the literal escape from the
-// always-formatted paste.
+// ⌘⇧V does the opposite of ⌘V: with text selected the question is whether a paste wraps it, and
+// without one it's the literal escape from the always-formatted paste.
 describe('the inverse chord', () => {
   it('leaves the address where a plain paste would have written a link', async () => {
     const view = await mountEditor({ initialBody: '' })
@@ -233,9 +229,8 @@ describe('the inverse chord', () => {
   })
 })
 
-// Paste As names the form outright. The two embeds are the only forms whose placement is a question:
-// each takes a line to itself, so each is written onto the blank line the caret already sits on and
-// nowhere else — the menu that offered it can hang open while the document moves.
+// The two embed forms take a line to themselves, so each is written onto the blank line the caret
+// already sits on and nowhere else.
 describe('pasting as an embed', () => {
   const seated = async (body: string, anchor: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })

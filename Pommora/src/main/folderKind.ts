@@ -2,9 +2,8 @@
 // folder carries — never by its name — and classification is depth-aware, so a nested agenda
 // config reads as Unknown rather than as an ordinary Set.
 //
-// An agenda config only counts where the nexus RECORDS it: registration by sidecar id is the
-// guard, which is what makes a duplicated, hand-made or relocated config inert bytes instead of a
-// second singleton feeding the same list. No special case does that work.
+// An agenda config only counts where the nexus RECORDS it: registration by sidecar id is what
+// makes a duplicated, hand-made, or relocated config inert bytes instead of a second singleton.
 
 import { join } from 'node:path'
 import { baseSidecar } from '@shared/schemas'
@@ -110,16 +109,14 @@ async function hasContainerSidecar(absDir: string): Promise<boolean> {
 /**
  * Build the context for a nexus, with contested slots dropped.
  *
- * Registration keys on the config sidecar's id, and every ordinary duplication mechanism — a
- * Finder duplicate, `cp -R`, a restored backup, a sync conflict copy — reproduces that id. Two
- * folders then answer to one record, which is the same ambiguity `resolveFolderKind` already
- * refuses within a single folder: when more than one claims a slot, no arm may pick between them.
+ * Registration keys on the config sidecar's id, and any ordinary duplication (Finder duplicate,
+ * `cp -R`, a restored backup, a sync conflict copy) reproduces that id — two folders then answer
+ * to one record, the same ambiguity `resolveFolderKind` already refuses within a single folder.
  *
- * Dropping the slot here rather than adding an arm to the resolver is what makes it total — every
- * consumer reads Unknown for free because `registered` is undefined, and the re-homing pass
- * short-circuits before it can relocate anyone's folder. The real singleton goes inert alongside
- * its copy, deliberately: nothing is written, so deleting the stray config restores the nexus
- * completely, which is exactly what stamping the copy's members would make impossible.
+ * Dropping the slot here rather than adding an arm to the resolver makes it total: every consumer
+ * reads Unknown for free, and re-homing short-circuits before it can relocate anyone's folder.
+ * The real singleton goes inert alongside its copy deliberately — nothing is written, so deleting
+ * the stray config restores the nexus completely, which stamping the copy's members would prevent.
  */
 export async function agendaContext(
   root: string,
@@ -131,9 +128,8 @@ export async function agendaContext(
     return { agenda: {}, homed: new Set(), sidecarMode, root }
   }
 
-  // An unreadable root yields no entries, which counts no claims, which contests no slot — the
-  // recorded registration stands. That is the right answer: a root Pommora cannot list is no
-  // evidence that anything duplicated it.
+  // An unreadable root yields no entries, so no claims are counted and the recorded registration
+  // stands — a root Pommora cannot list is no evidence that anything duplicated it.
   const entries = (await listEntries(root)).filter((e) => e.isDirectory())
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial
   // pass costs one round trip per root folder per slot before anything can render.

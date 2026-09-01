@@ -6,12 +6,8 @@ import { pageStats } from './subfieldStats'
 import type { SubfieldPage } from './subfieldItems'
 
 /** Show / Hide Footnotes for the open page — a lead control in the reveal band above the Subfield,
- *  facing the bar's own collapse chevron across it. It rides that band rather than the bar's item
- *  row so the two disclosures read as one kind of chrome.
- *
- *  Absent from a page with no citation lines: there is nothing to disclose. Present the moment one
- *  exists, an orphan included, so a section can never become unreachable. The label states what the
- *  click will do and reads the current state at once. */
+ *  facing the bar's own collapse chevron. Absent from a page with no citation lines; present the
+ *  moment one exists (an orphan included), so a section can never become unreachable. */
 export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.JSX.Element | null {
   const target = page?.target
   const stats = pageStats(page?.body ?? '')

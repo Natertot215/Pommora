@@ -1,6 +1,5 @@
-// THE heading scan: what counts as a heading, what its foldable section spans, and the outline over
-// the same walk. Kept apart from the fold state machine because both the folds and the block
-// resolver read it, and neither of those should have to import the other to ask what a heading is.
+// What counts as a heading, its foldable section span, and the outline, over one walk. Kept apart
+// from the fold state machine so the block resolver can ask what a heading is without importing it.
 import {
   headingParts,
   isHeadingLine,
@@ -10,7 +9,7 @@ import {
 } from '../Detect'
 
 /** What a heading scan reads. `DocScan` satisfies it structurally, so a caller already holding the
- *  cached whole-document scan asks without re-splitting the text or re-pairing a single fence. */
+ *  cached whole-document scan asks without re-splitting the text. */
 export interface HeadingSrc {
   lines: string[]
   lineStarts: number[]
@@ -57,8 +56,8 @@ function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[]
   const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
   for (let i = 0; i < lines.length; i++) {
-    // Fence parity: a `# comment` inside a code block is code, not a heading — treating it as one gives
-    // it a chevron, corrupts heading-drag extents, and poisons the persisted fold keys.
+    // A `# comment` inside a code block is code, not a heading — treating it as one gives it a
+    // chevron, corrupts heading-drag extents, and poisons the persisted fold keys.
     if (fences[i] || !headings[i]) continue
     const m = headingParts(lines[i])
     if (!m) continue
@@ -118,9 +117,8 @@ export function headingSections(src: HeadingSrc): HeadingSection[] {
     const from = starts[idx]
     const lineEnd = from + lines[idx].length
     const to = starts[endLine] + lines[endLine].length
-    // Strictly MORE than one line past the heading: a body of exactly one empty line has nothing to
-    // collapse, and admitting it hands out a chevron over a fold whose widget never renders — so the
-    // transition that ends the animation never fires and the entry strands mid-phase.
+    // Strictly more than one line past the heading: a body of exactly one empty line has nothing
+    // to collapse, and admitting it hands out a chevron over a fold whose widget never renders.
     if (to > lineEnd + 1) out.push({ from, lineEnd, level, key, to })
   }
   sectionCache.set(src, out)

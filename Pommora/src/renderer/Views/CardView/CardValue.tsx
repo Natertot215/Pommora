@@ -152,8 +152,7 @@ export function CardValue({
     else if (action === 'cell:edit') {
       if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')
-    } else if (action === 'cell:rename')
-      setMode('rename') // url alias edit (keeps the URL)
+    } else if (action === 'cell:rename') setMode('rename')
     else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
       if (parsed) onStyle(column.id, parsed.key, parsed.value)

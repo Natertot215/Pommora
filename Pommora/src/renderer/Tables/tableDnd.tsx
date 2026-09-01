@@ -9,11 +9,10 @@ import {
 import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
 import { DROP_LINE_INSET } from '@renderer/DesignSystem/Interactions/shared'
 
-// Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
-// the picked-up row mutes in place (--state-ghost), and NO row displaces. Where you drop disambiguates:
-// a slot inside the dragged row's own group reorders it (viewOrders); a slot in another group
-// reassigns the grouped property (setProperty). The commits live in TableView and are passed in — this
-// file owns only the hit-testing. The cursor ghost is omitted.
+// Table row drag — the sidebar drop-line gesture: an insertion line marks the slot, the picked-up
+// row mutes in place, no row displaces. A slot in the dragged row's own group reorders it; a slot
+// in another group reassigns the grouped property. Commits live in TableView and are passed in —
+// this file owns only the hit-testing.
 
 type Slot = { lineY: number; left: number; width: number; commit: () => void }
 type MeasuredRow = {

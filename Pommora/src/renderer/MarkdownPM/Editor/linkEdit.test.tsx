@@ -81,10 +81,8 @@ describe('the connection menu knows its span and its surface', () => {
     })
   })
 
-  // PageWindow starts read-only and silently drops doc changes, so Rename there would seat a
-  // caret and swallow every keystroke.
-  // The native editor menu carries spelling, autocorrect and substitutions. Inside a link's syntax
-  // you're editing prose, so that menu wins rather than being replaced by two link actions.
+  // The native editor menu carries spelling, autocorrect, and substitutions. Inside a link's
+  // syntax you're editing prose, so that menu wins over the two link actions.
   it('stands down inside the syntax, leaving the native menu', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => {
@@ -95,6 +93,8 @@ describe('the connection menu knows its span and its surface', () => {
     expect(connMenu).not.toHaveBeenCalled()
   })
 
+  // PageWindow starts read-only and silently drops doc changes, so Rename there would seat a
+  // caret and swallow every keystroke.
   it('withholds it from a read-only surface', async () => {
     const view = await mountEditor({
       initialBody: 'a [[Alpha]] b',
@@ -134,9 +134,8 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
   })
 
-  // Clicking another page both blurs this editor and unmounts it in the same task, so a collapse
-  // deferred to a macrotask fires against a destroyed view and silently does nothing — leaving the
-  // bare pipe in the text autosave last saw. The assertion is that no flush is needed.
+  // Clicking another page blurs and unmounts this editor in the same task, so a collapse deferred
+  // to a macrotask would fire against a destroyed view and do nothing.
   it('collapses on blur without waiting for a timer', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await act(async () => {

@@ -1,6 +1,6 @@
 // The SQLite seam. `node:sqlite` lives ONLY behind this module — swapping the driver is a
-// one-file change, callers unchanged. Node ships it inside Electron's own runtime, so there is
-// no native module to compile and no ABI to match.
+// one-file change. Node ships it inside Electron's own runtime, so there's no native module to
+// compile and no ABI to match.
 
 import { DatabaseSync } from 'node:sqlite'
 import { errText } from '@shared/result'

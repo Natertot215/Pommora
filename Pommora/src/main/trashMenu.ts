@@ -9,9 +9,9 @@ import {
 } from '@shared/trashMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
-/** A trashed row's menu. It pops through the nesting primitive rather than the flat model helper,
- *  which cannot express a submenu at all — and where a row's recorded home is gone, Restore stops
- *  being a verdict and becomes the question of where. */
+/** A trashed row's menu. Uses the nesting primitive, since the flat model helper can't express
+ *  a submenu — needed because a row whose recorded home is gone turns Restore into a question
+ *  of where, not a verdict. */
 export function popTrashMenu(
   win: BrowserWindow,
   ctx: TrashMenuContext,

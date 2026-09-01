@@ -15,12 +15,9 @@ export interface OptionChipData {
 /** The Compact glyph a select / multi option falls back to when it carries none of its own. */
 const defaultOptionIcon = (type: string): IconName => (type === 'multi_select' ? 'tags' : 'tag')
 
-/**
- * One option value as a chip — the single place a (type, look, option) becomes a Label. SHAPE is the
- * type's identity (pill for status, tag for select / multi); the LOOK is its size: Standard shows the
- * label, Compact an icon alone — a status group glyph, or the option's own icon falling back to the
- * single tag (select) or double tag (multi).
- */
+/** One option value as a chip — the single place a (type, look, option) becomes a Label. SHAPE is
+ *  the type's identity (pill for status, tag for select / multi); the LOOK is its size: Standard
+ *  shows the label, Compact an icon alone. */
 export function OptionChip({
   type,
   look,

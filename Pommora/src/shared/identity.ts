@@ -1,14 +1,11 @@
 // The single owner of the content-file identity key. A content file names its kind in the KEY it
-// stores its id under, so the universal question is "what is this?" before "what is its id" — the
-// folder's sidecar answers the first, this key must agree with it, and the value stays a bare ULID.
-// A sidecar's own `id` is NOT this key: a sidecar's kind is its filename.
-// Pure: no runtime imports, safe for main, preload and renderer alike.
+// stores its id under; the folder's sidecar answers "what is this?" first, and this key must agree
+// with it. A sidecar's own `id` is NOT this key — a sidecar's kind is its filename.
 
 export type ContentKind = 'page' | 'task' | 'event'
 
 // `as const satisfies` rather than a plain Record: a widened `string` would collapse the computed
-// key in `pageFrontmatter` into an index signature, blinding the type gate over the whole
-// frontmatter surface while still compiling.
+// key in `pageFrontmatter` into an index signature, blinding the type gate while still compiling.
 export const KIND_ID_KEY = {
   page: 'PageID',
   task: 'TaskID',
@@ -32,9 +29,8 @@ export function isUlidShaped(value: unknown): value is string {
   return typeof value === 'string' && ULID_RE.test(value)
 }
 
-/** A key with no value is an ABSENT key — clearing a property in an outside editor writes
- *  `PageID:` with nothing after it, and everywhere else in Pommora an emptied value deletes its
- *  key. Reading that as a malformed identity would make the file invisible and un-adoptable for
+/** A key with no value is an ABSENT key — clearing a property in an outside editor writes `PageID:`
+ *  with nothing after it. Reading that as a malformed identity would make the file invisible for
  *  what the user experienced as deleting a field. */
 const presentKeys = (fm: Record<string, unknown>) =>
   ALL_KIND_KEYS.filter((k) => fm[k] !== undefined && fm[k] !== null && fm[k] !== '')
@@ -48,10 +44,10 @@ export type Admission =
  * THE admission predicate, shared verbatim by the walk and the adoption pass — landing it in only
  * one of the two silently converts mislocated files.
  *
- * It is the one reader that checks ALL three keys, because distinguishing mismatched from missing
- * is definitionally a multi-key question: a `TaskID` file sitting in a Collection must read
- * invisible, not adoptable, or adoption stamps a second key onto it and the file becomes ambiguous
- * forever. Everything it rejects is Unknown — not an error, not a member, and never stamped over.
+ * It checks ALL three keys because distinguishing mismatched from missing is a multi-key question:
+ * a `TaskID` file sitting in a Collection must read invisible, not adoptable, or adoption stamps a
+ * second key onto it and the file becomes ambiguous forever. Everything it rejects is Unknown — not
+ * an error, not a member, and never stamped over.
  */
 export function admitContentFile(fm: Record<string, unknown>, expected: ContentKind): Admission {
   const present = presentKeys(fm)
@@ -66,8 +62,8 @@ export function admitContentFile(fm: Record<string, unknown>, expected: ContentK
 }
 
 /** The content id off a parsed frontmatter root, whichever kind key holds it — for readers whose
- *  kind context already decided admission. Deliberately WITHOUT shape validation: shape belongs to
- *  the predicate above, and keeping this lenient is what lets a hand-authored id still read. */
+ *  kind context already decided admission. Deliberately WITHOUT shape validation, so a hand-authored
+ *  id still reads. */
 export function contentId(fm: Record<string, unknown>): string | undefined {
   const present = presentKeys(fm)
   if (present.length !== 1) return undefined

@@ -106,10 +106,8 @@ describe('table single-live-cell navigation', () => {
     await mount()
     await clickCell(1, 0)
     expect(activeText()).toBe('c1')
-    // The regression: clicking another cell used to need multiple clicks (old cell tore down and
-    // stole focus back). After one click the editor must be the new cell AND focused.
     await clickCell(1, 1)
-    expect(editors().length).toBe(1) // still exactly one — never R×C
+    expect(editors().length).toBe(1)
     expect(focusInEditor()).toBe(true)
     expect(activeText()).toBe('c2')
   })

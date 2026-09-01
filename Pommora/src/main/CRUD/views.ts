@@ -1,7 +1,5 @@
-// View persistence CRUD — save / reorder / delete a SavedView in a Collection or Set sidecar's
-// `views[]`. Read-modify-write through readSidecar/writeSidecar so foreign keys ride through
-// untouched. A freshly-minted default view arrives with the `view_default` sentinel id; saveView
-// swaps it for a real `view_<ulid>` here (shared/ can't mint ids — see mintDefaultView).
+// A freshly-minted default view arrives with the `view_default` sentinel id; saveView swaps it
+// for a real `view_<ulid>` here (shared/ can't mint ids — see mintDefaultView).
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from '@shared/views'
@@ -10,7 +8,6 @@ import { newId } from '../ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { nowIso } from './util'
 
-/** Collection vs Set picks the sidecar kind + schema; both carry `views[]`. */
 type ViewContainerKind = 'collection' | 'set'
 
 function readViewSidecar(folder: string, kind: ViewContainerKind) {
@@ -21,8 +18,7 @@ function readViewSidecar(folder: string, kind: ViewContainerKind) {
 
 const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views ?? []
 
-/** Upsert a view by id. A `view_default` sentinel id is swapped for a real `view_<ulid>` and the
- *  assigned id is returned. Other views + foreign keys ride through untouched. */
+/** A `view_default` sentinel id is swapped for a real `view_<ulid>` and the assigned id returned. */
 export function saveView(
   folder: string,
   kind: ViewContainerKind,
@@ -42,7 +38,7 @@ export function saveView(
   })
 }
 
-/** Reorder views to match `orderedIds`; any views not named ride along at the end (defensive). */
+/** Views not named in `orderedIds` ride along at the end (defensive). */
 export function reorderViews(
   folder: string,
   kind: ViewContainerKind,
@@ -63,7 +59,7 @@ export function reorderViews(
   })
 }
 
-/** Delete a view by id; refuses to remove the last one (a container always keeps ≥1 view). */
+/** A container always keeps ≥1 view. */
 export function deleteView(
   folder: string,
   kind: ViewContainerKind,

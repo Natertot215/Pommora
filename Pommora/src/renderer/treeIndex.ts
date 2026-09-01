@@ -1,14 +1,12 @@
 // The one owner of every navigation-layer lookup derived from the tree. One walk per tree builds
-// one record per entity; the reconcile, resolve, search, connections, and thumbnail-key tables are
-// projections of those records, each built lazily and cached. Caches key on the tree object itself
-// — stabilize() preserves identity across echo pushes, so a real push invalidates everything at
-// once and every other access is a WeakMap hit. A new lookup belongs here as another projection,
-// never as its own walk. (The Views pipeline's context/space identity maps live apart in
-// `contextIdentity.ts` — same tree-keyed caching, different question.)
+// one record per entity; reconcile/resolve/search/connections/thumbnail-key tables are lazy,
+// cached projections of those records, keyed on the tree object — stabilize() preserves identity
+// across echo pushes, so a real push invalidates everything at once and every other access is a
+// WeakMap hit. A new lookup belongs here as another projection, never its own walk.
 //
 // The record LIST is the source — duplicate ids (a copied .md carries its id in frontmatter) stay
-// listed, so title resolution can still answer "ambiguous" and search still shows both. The keyed
-// projections collapse duplicates last-wins, which is what a Map built from a list always did.
+// listed, so title resolution can still answer "ambiguous". The keyed projections collapse
+// duplicates last-wins.
 
 import type { EntityRecord } from '@shared/record'
 import {

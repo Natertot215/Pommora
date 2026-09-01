@@ -20,8 +20,8 @@ export function popNavRowMenu(
       })
     if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-preview') })
     if (items.length > 0) items.push({ type: 'separator' })
-    // A recent is a stored ref, so its page is addressable only once the renderer has minted a live
-    // path against the tree — without one, none of the three actions has anything to act on.
+    // A recent is a stored ref, addressable only once the renderer has minted a live path
+    // against the tree.
     if (ctx.isPage && ctx.currentParentPath !== undefined) {
       items.push(...rowTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx))
       items.push({ type: 'separator' })

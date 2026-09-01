@@ -25,18 +25,17 @@ export function PageView({
   /** The tab this surface belongs to, so it warms and captures under the tab that owns it. */
   tabId: string
   pageId: string
-  /** Held open behind the active surface: the same DOM, off screen. Its editor stays out of the
-   *  page-editor registry, which answers for the surface the user is actually looking at. */
+  /** Held open behind the active surface, off screen. Its editor stays out of the page-editor
+   *  registry, which answers for the surface the user is actually looking at. */
   parked?: boolean
 }): React.JSX.Element {
   const slot = useSession((s) => s.pages[pageId])
-  // The editor reads its warm seam once at mount, so the capture it runs at teardown reads the
-  // slot and tab id of that moment through here — and stays silent after a clear, which is the
-  // very thing that unmounts a surface after a rename's cascade.
+  // The capture at teardown reads the slot/tab id of that moment through here, and stays silent
+  // after a clear — the very thing that unmounts a surface after a rename's cascade.
   const live = useRef({ slot, tabId })
   live.current = { slot, tabId }
-  // Re-armed per commit: a clear that tears THIS surface down runs its cleanup before the
-  // survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
+  // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors'
+  // effects, so the stale generation is seen exactly by the captures a clear caused.
   const mountedGen = useRef(warmGeneration())
   useEffect(() => {
     mountedGen.current = warmGeneration()
@@ -52,13 +51,13 @@ export function PageView({
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  // Whether this page's header draws its glyph. The glyph itself is on-page in frontmatter; only
-  // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
+  // Whether the header draws its glyph is chrome, not frontmatter, so it rides the keyed local
+  // store beside folds and heading columns.
   const [iconHidden, setIconHidden] = useState(true)
   useEffect(() => {
     let alive = true
-    // Hidden unless this page says otherwise: a page's glyph is a thing you opt a page into showing,
-    // where a Collection or a Space wears one by default.
+    // Hidden unless this page says otherwise — a page opts into showing its glyph, unlike a
+    // Collection or Space, which shows one by default.
     void window.nexus.headingIcon.get().then((all) => {
       if (alive) setIconHidden(all[pageId] ?? true)
     })
@@ -67,8 +66,7 @@ export function PageView({
     }
   }, [pageId])
   // The registry holds one editor — the one the outline, its rename, and its section mover act on.
-  // A surface publishes its own only while it is the shown one, and re-publishes when a parked
-  // surface becomes it, since the handle was registered before that flip.
+  // A surface publishes its own only while it's the shown one.
   const editorRef = useRef<EditorView | null>(null)
   useEffect(() => {
     if (parked) return
@@ -99,9 +97,8 @@ export function PageView({
     }
   }, [tree, select, openPreview, openInPreview])
 
-  // The debounced body write lives in the shared path-keyed autosave (pageFlush) — teardown paths
-  // (unmount inside the debounce, window close, nexus adopt) all flush THERE, so a pending write
-  // survives this component without any per-host flush machinery.
+  // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown
+  // path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
     if (liveTimer.current) clearTimeout(liveTimer.current)
     liveTimer.current = setTimeout(() => setPageBody(path, body), STATS_DEBOUNCE_MS)

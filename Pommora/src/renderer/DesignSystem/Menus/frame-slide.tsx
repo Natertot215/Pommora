@@ -79,9 +79,9 @@ export function FrameSlide({
   // instead of growing from 0 / sliding from an arbitrary start.
   useEffect(() => setEnabled(true), [])
 
-  // Height eases ONLY across a navigation flip (active a↔b). Between flips the height stays untransitioned
-  // so an in-place resize (a child Reveal, the spacer collapse) tracks content live — the child owns that
-  // beat, and the viewport can't lag-chase a ResizeObserver that fires every animating frame (the bounce).
+  // Height eases only across a navigation flip; between flips it stays untransitioned so an
+  // in-place resize (a child Reveal, spacer collapse) tracks content live instead of lag-chasing
+  // a ResizeObserver that fires every animating frame (the bounce).
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
   // Before paint, not after: the idle slot stops painting off this flag, and a passive effect would
@@ -98,11 +98,8 @@ export function FrameSlide({
   }, [active])
 
   const width = active === 'a' ? size.aw : size.bw
-  // The active slot's height (a MenuScrollFrame has already capped it) — the viewport animates to it.
   const height = active === 'a' ? size.ah : size.bh
-  // Slide left by slot A's width to bring B flush against the viewport's left edge.
   const shift = active === 'b' ? size.aw : 0
-  // Settled, the slot that isn't showing stops painting — see `slotIdle`.
   const idle = (slot: 'a' | 'b'): boolean => !navigating && active !== slot
   return (
     <div

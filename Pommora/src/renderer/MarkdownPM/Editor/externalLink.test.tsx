@@ -30,11 +30,9 @@ afterEach(async () => {
 })
 
 // `a [Home](https://x.test) b` — the token spans [2,25] and the label `Home` is drawn over [3,7],
-// which at rest is the only part of it with any width: `[` and `](url)` are replaced away.
-//
-// Opening a link is the one gesture in the editor that leaves the app, so a press that never
-// touched the label must not reach it. jsdom measures nothing, so the press point is pinned through
-// posAtCoords and the drawn label is addressed by the element the decoration puts it in.
+// the only part with any width at rest (`[` and `](url)` are replaced away). Opening a link is the
+// one gesture that leaves the app, so a press that never touched the label must not reach it. jsdom
+// measures nothing, so the press point is pinned through posAtCoords.
 const BODY = 'a [Home](https://x.test) b'
 
 const press = (view: EditorView, pos: number, target: HTMLElement): void => {
@@ -54,9 +52,8 @@ describe('an external link opens from its label and nowhere else', () => {
     expect(openExternal).toHaveBeenCalledWith('https://x.test')
   })
 
-  // The `](url)` tail is replaced to zero width, so a coordinate in the empty space past the label
-  // resolves back onto its last character. Following that would launch the system browser for a
-  // link the pointer was never on.
+  // The `](url)` tail is replaced to zero width, so a coordinate past the label resolves back onto
+  // its last character — following that would launch the browser for a link never actually pressed.
   it('a click that clamps in from beside the label does not open it', async () => {
     const view = await mountEditor({ initialBody: BODY })
     await act(async () => view.focus())
@@ -74,10 +71,9 @@ describe('an external link opens from its label and nowhere else', () => {
   })
 })
 
-// A target that names neither a page nor a web address has nothing to follow, so the press is not
-// claimed and falls through to CM, which seats a caret in the text you came to repair. (The seat
-// itself is a geometry fact jsdom cannot answer; what is pinned here is that nothing opens and
-// nothing is offered.)
+// A target that names neither a page nor a web address has nothing to follow, so the press falls
+// through to CM's own caret seat (a geometry fact jsdom can't answer) — what's pinned here is that
+// nothing opens and nothing is offered.
 describe('a link whose target names nothing is text, not a link', () => {
   const BROKEN = 'a [Home](not a url) b'
   const brokenLabel = (view: EditorView): HTMLElement =>
@@ -106,8 +102,8 @@ describe('a link whose target names nothing is text, not a link', () => {
   })
 })
 
-// What a `( )` target turns out to name is the resolver's answer, not the syntax's: `[Alpha](Alpha)`
-// reaches a page and carries everything a connection does, while a web address has only itself.
+// What a `( )` target names is the resolver's answer, not the syntax's: `[Alpha](Alpha)` reaches a
+// page and carries everything a connection does, while a web address has only itself.
 describe('a markdown link’s menu follows what its target names', () => {
   const conn: ConnectionsApi = {
     ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
