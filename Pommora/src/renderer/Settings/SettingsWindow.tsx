@@ -15,7 +15,11 @@ import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import { percentChoice, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import {
+  percentChoice,
+  stepsWith,
+  type PickerChoice,
+} from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
@@ -743,9 +747,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const steps = row.steps ?? SCALE_STEPS
   const commit = (factor: number): void =>
     setPersonalization(row.key, factor === row.fallback ? undefined : factor)
-  const choices = (
-    steps.some((f) => f === stored) ? steps : [...steps, stored].sort((a, b) => a - b)
-  ).map(percentChoice)
+  const choices = stepsWith(steps, stored).map(percentChoice)
   return (
     <MenuRowView
       row={settingsRow(row, {

@@ -27,7 +27,11 @@ import {
   MenuTopRow,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { factorChoice, PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
+import {
+  factorChoice,
+  PickerControl,
+  stepsWith,
+} from '@renderer/DesignSystem/Elements/PickerControl'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
@@ -116,16 +120,12 @@ export function SettingsFrame(): React.JSX.Element | null {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
   }
 
-  const viewScale = coerceScale(view.view_scale ?? 1, 1)
+  const viewScale = coerceScale(view.view_scale, 1)
   const setViewScale = (f: number): void => {
     const next = coerceScale(f, 1)
     void saveViewAdopting(node, { ...view, view_scale: next === 1 ? undefined : next })
   }
-  const scaleChoices = (
-    SCALE_STEPS.some((f) => f === viewScale)
-      ? SCALE_STEPS
-      : [...SCALE_STEPS, viewScale].sort((a, b) => a - b)
-  ).map(factorChoice)
+  const scaleChoices = stepsWith(SCALE_STEPS, viewScale).map(factorChoice)
 
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (

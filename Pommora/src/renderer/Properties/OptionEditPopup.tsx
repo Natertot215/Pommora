@@ -42,7 +42,7 @@ export function OptionEditPopup({
   onPickIcon: (icon: string | undefined) => void
   onPickColor: (color: string | undefined) => void
   onPickAppearance: (appearance: OptionAppearance) => void
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const iconRef = useRef<HTMLButtonElement>(null)
   const [iconOpen, setIconOpen] = useState(false)
   useEffect(() => {

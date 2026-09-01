@@ -34,7 +34,8 @@ export function ViewItemMenu({
   }
   const deleteView = async (): Promise<void> => {
     if (!(await window.nexus.views.confirmDelete())) return
-    await window.nexus.views.delete(source.path, source.kind, view.id)
+    const res = await window.nexus.views.delete(source.path, source.kind, view.id)
+    if (!res.ok) return void window.nexus.showError(res.error.message)
     onDeleted?.()
   }
 

@@ -27,6 +27,11 @@ export const factorChoice = (f: number): PickerChoice<string> => ({
   label: `${f.toFixed(2)}x`,
 })
 
+/** The steps a scale picker offers, admitting an off-step current value so a hand-typed factor
+ *  still has a row to sit selected on. */
+export const stepsWith = (steps: readonly number[], current: number): number[] =>
+  steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
+
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
  *  a menu; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
 export function PickerControl<T extends string>({

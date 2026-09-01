@@ -6,7 +6,9 @@ import { footingBar } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 
 const c = colorVars.color
-const seatFocus = focusRing()
+const fieldFocus = focusRing()
+/** Both seats rest on the same hairline, so the icon square and the title read as one run. */
+const restingRing = { '--field-ring': c.border.base }
 
 /** The grid is the pane's widest fixed row, so min-content pins the popup to ITS width and the
  *  title field yields instead of stretching the pane. */
@@ -38,9 +40,9 @@ export const iconSeat = style([
     border: 'none',
     outline: 'none',
     color: c.label.secondary,
-    vars: { '--field-ring': c.border.base },
-    transition: seatFocus.transition,
-    selectors: { '&:hover': { color: c.label.primary }, ...seatFocus.selectors },
+    vars: restingRing,
+    transition: fieldFocus.transition,
+    selectors: { '&:hover': { color: c.label.primary }, ...fieldFocus.selectors },
   },
 ])
 
@@ -54,8 +56,8 @@ export const titleField = style([
   {
     flex: '1 1 auto',
     minWidth: 0,
-    vars: { '--field-ring': c.border.base },
-    ...focusRing(),
+    vars: restingRing,
+    ...fieldFocus,
   },
 ])
 
