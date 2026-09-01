@@ -18,6 +18,7 @@ import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
 import { queryMentions } from '../Database/contentIndex'
 import { frontmatterValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
+import { noteValueWrite } from '../valuesChanged'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '@shared/properties'
 
@@ -55,6 +56,7 @@ export async function renameCascade(
     })
     if (wrote) {
       touched.push(file)
+      noteValueWrite(nexusRoot, file)
       await indexWrittenPage(nexusRoot, file)
     }
   }

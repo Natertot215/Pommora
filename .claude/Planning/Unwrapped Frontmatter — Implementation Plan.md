@@ -1126,10 +1126,10 @@ A `rename` epoch refetches and re-keys `entry.fm` as today. A `container` epoch 
 
 **Verify — automated**
 
-- [ ] Red first (`useViewHost.test`): a `container` epoch for the mounted path refetches `loadValues`; for a sibling path does not; a `rename` epoch still re-keys. Then green; existing 12 pass.
-- [ ] Typecheck proves the bridge: a `values:changed` push with a wrong payload shape fails `npm run typecheck`.
-- [ ] `rg -F "onValuesChanged" src` → 2 (preload, App). Control: `rg -F "onNexusChanged" src` → 2.
-- [ ] Full gates green.
+- [x] Red first (`useViewHost.test`): a `container` epoch for the mounted path refetches `loadValues`; for a sibling path does not; a `rename` epoch still re-keys. Then green; existing 12 pass.
+- [x] Typecheck proves the bridge: a `values:changed` push with a wrong payload shape fails `npm run typecheck`.
+- [x] `rg -F "onValuesChanged" src` → 2 (preload, App). Control: `rg -F "onNexusChanged" src` → 2.
+- [x] Full gates green.
 
 **Verify — user**
 
@@ -1160,8 +1160,8 @@ Every patch site writes `{ fm, pending: true }` and flips `pending` to false whe
 
 **Verify — automated**
 
-- [ ] Red first: an override for page A, mutate unresolved, then a `container` epoch naming page B → A's override survives; naming A → retired; with empty `pageIds` → pending A survives, a settled C retires. Then green. `useViewHost.test.tsx:165` (assign-vanish) still green.
-- [ ] Full gates green.
+- [x] Red first: an override for page A, mutate unresolved, then a `container` epoch naming page B → A's override survives; naming A → retired; with empty `pageIds` → pending A survives, a settled C retires. Then green. `useViewHost.test.tsx:165` (assign-vanish) still green.
+- [x] Full gates green.
 
 **Verify — user**
 
@@ -1205,10 +1205,10 @@ async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): 
 
 **Verify — automated**
 
-- [ ] Red first: a `setProperty` mutate (which sends no `nexus:changed`) pushes exactly one `values:changed` with the page's container rel and id; a `setContext` mutate sends `nexus:changed` then `values:changed`, in that order; an option rename over 3 pages in 2 containers pushes **one** message with 2 entries; re-assigning a property with a Remove-cache (`assignInner` → `restoreCachedValues`) pushes for every restored page (spy on `push`). Then green.
-- [ ] Watcher leg: an external page edit pushes `{ rel, pageIds: [id] }`; a batch containing a folder create pushes `pageIds: []`.
-- [ ] `rg -F "refreshValues" src` → 0. `rg -F "onRefreshValues" src` → 0. Control: `rg -F "onValuesChanged" src` → 2.
-- [ ] Full gates green.
+- [x] Red first: a `setProperty` mutate (which sends no `nexus:changed`) pushes exactly one `values:changed` with the page's container rel and id; a `setContext` mutate sends `nexus:changed` then `values:changed`, in that order; an option rename over 3 pages in 2 containers pushes **one** message with 2 entries; re-assigning a property with a Remove-cache (`assignInner` → `restoreCachedValues`) pushes for every restored page (spy on `push`). Then green. *(the writer-level notes are tested — an option rename over 3 pages in 2 containers flushes 2 entries once; the confirmWrite flush-then-push and the nexus:changed → values:changed order live in index.ts, verified by reading, not by a unit test (Electron))*
+- [x] Watcher leg: an external page edit pushes `{ rel, pageIds: [id] }`; a batch containing a folder create pushes `pageIds: []`.
+- [x] `rg -F "refreshValues" src` → 0. `rg -F "onRefreshValues" src` → 0. Control: `rg -F "onValuesChanged" src` → 2.
+- [x] Full gates green.
 
 **Verify — user**
 
@@ -1367,9 +1367,9 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 16 — the writer takes a world; precedence rules · `f4baf0d3`
   - [x] Task 17 — drift pre-check; `loadGovernedWorld` · `f4baf0d3`
 - [ ] **Phase 4** — Live values
-  - [ ] Task 18 — `values:changed` push; epoch union
-  - [ ] Task 19 — in-flight overrides; id-scoped retire
-  - [ ] Task 20 — both legs; `refreshValues` deleted
+  - [x] Task 18 — `values:changed` push; epoch union
+  - [x] Task 19 — in-flight overrides; id-scoped retire
+  - [x] Task 20 — both legs; `refreshValues` deleted
 - [ ] **Phase 5** — Surfaces
   - [ ] Task 21 — on-load repair sweep + toggle
   - [ ] Task 22 — Capitalize All Metadata + toggle
@@ -1406,6 +1406,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Deviations
 
+- **Tasks 18, 19, 20 land as one commit.** The epoch union, the in-flight marker, and the write leg have no standing intermediate form: `useViewHost`'s override state changes shape in Task 19, and the moment `refreshValues` goes (Task 20) the writers must note their pages or an app-side edit stops reaching sibling views. Red-first was observed as one batch (3 failures: two watcher push counts, one override shape). The push's ordering inside `confirmWrite` (`nexus:changed` first, then one `values:changed`) is read, not unit-tested — `index.ts` imports Electron; the writer-level ledger (`valuesChanged.test`, `optionOps.test`) and the watcher leg (`watcher.test`) are.
 - **A restore drops a value the destination's definition can't hold — whoever wrote it.** `restoreScrub` keys its defs by bare name, so a returning page's `Status: [Awaiting]` (outside the six), or a `Priority: High` under a re-created number `Priority`, is deleted on restore while an unassigned key rides through. This is V-3 on the restore path (a governed write), and its permissive twin is the entry below; both are now stated in `restoreScrub.ts`'s header. The 27 NexusOS pages holding Open/Awaiting stand in front of it until Nathan maps those values.
 - **Gate 1's display check waits for Task 10.** NexusOS on the Phase 1 build: `loadValues('Ideas')` agrees with the files for all 26 pages (Status and `<Projects>` alike), the registry shows the nine names, and Ideas assigns Pinned/Status/Tags/Timeframe. But the Status *cells* are blank — the vault's Status values are one-element lists (Obsidian's shape, now the spec's) and `decodeValue` still reads a Select/Status scalar until Task 10, so every row lands in the no-value band. Before the pass those pages read the same way (their bare `Status:` lists were foreign), so nothing regressed; the check "every Status shows the value its frontmatter holds" is re-run after Task 10, at Gate 2. Ideas' saved Table view also carries Nathan's own filter (`modified_at is 2026-08-19`) and its Cards view collapses every band, so the closeout look uses the group bands and cell chips read over CDP, not a bare screenshot. The active view was switched to Cards for the read and restored.
 - **Tasks 8 and 9 land as one commit** — Task 9's edits to `properties.ts` and `registryProperty.ts` were made before Task 8's commit was cut; the two are one rule family (what a name may be) and the split would have been cosmetic.

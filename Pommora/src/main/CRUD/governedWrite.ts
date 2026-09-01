@@ -17,6 +17,8 @@ import { atomicWriteFile } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { nowIso } from './util'
+import { sessionRoot } from '../session'
+import { noteValueWrite } from '../valuesChanged'
 
 // The caller's keys leave the root before the reconcile sees it, so an absence in `next` deletes.
 export async function setGovernedRootKeys(
@@ -39,5 +41,6 @@ export async function setGovernedRootKeys(
     splitEnvelope(existing).body,
   )
   await atomicWriteFile(absFile, content)
+  noteValueWrite(sessionRoot(), absFile)
   return adoptions
 }

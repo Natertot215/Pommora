@@ -1,9 +1,7 @@
-import type { Dispatch, SetStateAction } from 'react'
 import type { MutateRequest } from '@shared/mutate'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ViewRow } from '@shared/types'
-
-type ValueOverride = Record<string, PageFrontmatter> | null
+import { patchOverride, type SetOverrides } from './useValuesEpoch'
 
 /**
  * The optimistic context write both container views share: patch the row's resolved ids into
@@ -17,7 +15,7 @@ export function writeContextValue(
   contextId: string,
   ids: string[],
   base: PageFrontmatter,
-  setValueOverride: Dispatch<SetStateAction<ValueOverride>>,
+  setValueOverride: SetOverrides,
   mutate: (req: MutateRequest) => Promise<boolean>,
 ): void {
   const current =
@@ -28,6 +26,10 @@ export function writeContextValue(
     ...base,
     contextValues: { ...current, [contextId]: ids },
   } as PageFrontmatter
-  setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
-  void mutate({ op: 'setContext', path: row.path, contextId, spaceIds: ids })
+  patchOverride(
+    setValueOverride,
+    row.id,
+    patched,
+    mutate({ op: 'setContext', path: row.path, contextId, spaceIds: ids }),
+  )
 }

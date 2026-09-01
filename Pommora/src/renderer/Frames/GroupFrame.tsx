@@ -29,6 +29,7 @@ import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { declaredType } from '@renderer/Properties/value'
+import { useValuesEpoch } from '@renderer/Views/useValuesEpoch'
 import {
   bucketKey,
   bucketOrder,
@@ -786,6 +787,7 @@ function DateBucketList({
       canceled = true
     }
   }, [source.path])
+  useValuesEpoch(source.path, setValues, () => {})
 
   const granularity = group.date_granularity ?? 'month'
   const present = new Set<string>()

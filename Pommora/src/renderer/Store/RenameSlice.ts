@@ -4,6 +4,7 @@ import { normalizePropertyName } from '@shared/properties'
 import { orderWithSlot } from '../Views/creationOrder'
 import { findContainer, parentPathOf } from '../Interface/Scope'
 import type { Slice } from './SessionState'
+import type { ValuesEpoch } from '@shared/types'
 
 interface RenameClaim {
   token: number
@@ -48,8 +49,9 @@ export interface RenameSlice {
    *  container open and never re-reads, so without this the renamed column reads blank until the
    *  user navigates away. Carries the key pair because the effect must RE-KEY the optimistic
    *  overrides too — clearing them would revive the assign-vanish this codebase already fixed. */
-  valuesEpoch: { n: number; oldKey: string; newKey: string } | null
+  valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
+  bumpContainerValues: (changes: { rel: string; pageIds: string[] }[]) => void
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
@@ -179,7 +181,15 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   renamingProperty: null,
   valuesEpoch: null,
   bumpValuesEpoch: (oldKey, newKey) =>
-    set((st) => ({ valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, oldKey, newKey } })),
+    set((st) => ({
+      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
+    })),
+  bumpContainerValues: (changes) => {
+    for (const { rel, pageIds } of changes)
+      set((st) => ({
+        valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', rel, pageIds },
+      }))
+  },
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
   submitPropertyRename: async (newName) => {

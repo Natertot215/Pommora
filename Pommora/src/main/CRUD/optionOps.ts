@@ -6,6 +6,7 @@
 import { mutateRegistry, readRegistry } from '../IO/propertiesRegistry'
 import { rewritePageSerialized } from '../IO/atomicWrite'
 import { indexWrittenPage } from '../indexSeed'
+import { noteValueWrite } from '../valuesChanged'
 import { validateOptionValues } from '../Properties/schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
@@ -317,7 +318,10 @@ export async function cascadePages(
       return sweepAdmits(content) ? rewrite(content) : null
     })
     if (!read) unreadable++
-    if (wrote) await indexWrittenPage(root, file)
+    if (wrote) {
+      noteValueWrite(root, file)
+      await indexWrittenPage(root, file)
+    }
   }
   return unreadable
 }

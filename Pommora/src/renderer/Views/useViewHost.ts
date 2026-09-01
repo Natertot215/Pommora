@@ -25,7 +25,7 @@ import { flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { useValuesEpoch } from './useValuesEpoch'
+import { type Overrides, patchOverride, useValuesEpoch } from './useValuesEpoch'
 import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
 import { useViewCreation } from './useViewCreation'
@@ -71,7 +71,7 @@ export function useViewHost(
   pathRef.current = source.path
   // Optimistic property patches keyed by page id: the loaded values never re-read on a write, so
   // a changed row re-groups only because this patch feeds the pipeline.
-  const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
+  const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
   // Lazy value load on container open; `canceled` guards a fast container swap.
   useEffect(() => {
     let canceled = false
@@ -167,7 +167,13 @@ export function useViewHost(
   const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
 
   const effectiveValues = useMemo(
-    () => (valueOverride ? { ...values, ...valueOverride } : values),
+    () =>
+      valueOverride
+        ? {
+            ...values,
+            ...Object.fromEntries(Object.entries(valueOverride).map(([id, e]) => [id, e.fm])),
+          }
+        : values,
     [values, valueOverride],
   )
   const contextIds = contextIdsOf(tree)
@@ -273,8 +279,12 @@ export function useViewHost(
       def,
       value,
     ) as PageFrontmatter
-    setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
-    void mutate({ op: 'setProperty', path: row.path, propertyId, value })
+    patchOverride(
+      setValueOverride,
+      row.id,
+      patched,
+      mutate({ op: 'setProperty', path: row.path, propertyId, value }),
+    )
   }
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
     if (column.kind === 'context') {
@@ -294,12 +304,6 @@ export function useViewHost(
   const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
     if (column.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(column.id, tree)
-  }
-  const refreshValues = (): void => {
-    const path = source.path
-    void window.nexus.loadValues(path).then((v) => {
-      if (pathRef.current === path) setValues(v)
-    })
   }
 
   const creation = useViewCreation(() => ({
@@ -371,7 +375,6 @@ export function useViewHost(
     setProperty,
     commitValue,
     contextOptionsFor,
-    refreshValues,
     creation,
     mutate,
     select,

@@ -130,6 +130,9 @@ export function App(): React.JSX.Element {
     return window.nexus.onNexusChanged((next) => void applyTree(next))
   }, [applyTree])
 
+  const bumpContainerValues = useSession((s) => s.bumpContainerValues)
+  useEffect(() => window.nexus.onValuesChanged(bumpContainerValues), [bumpContainerValues])
+
   useEffect(() => {
     return window.nexus.onNavChanged((nav) => applyNavChanged(nav))
   }, [applyNavChanged])

@@ -165,7 +165,7 @@ describe('the reset keys', () => {
   it('manualOverride drops on a source-identity echo while valueOverride survives it', async () => {
     await mount(collection())
     act(() => api?.setManualOverride(['p2', 'p1']))
-    act(() => api?.setValueOverride({ p2: { id: 'p2' } as never }))
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
     expect(api?.manualOrder).toEqual(['p2', 'p1'])
     await mount(collection()) // same content, new object — the watcher echo
     expect(api?.manualOrder).toBeUndefined()
@@ -208,6 +208,70 @@ describe('the reset keys', () => {
     expect(saved.property_order).not.toEqual(['prop_status', '_title'])
     expect(saved.collapsed_groups).toEqual([])
     expect(saved.column_styles?.prop_status).toBeUndefined()
+  })
+})
+
+describe('the values epoch', () => {
+  const nexus = (): { loadValues: ReturnType<typeof vi.fn> } =>
+    (window as unknown as { nexus: { loadValues: ReturnType<typeof vi.fn> } }).nexus
+  const bump = (changes: { rel: string; pageIds: string[] }[]): void =>
+    act(() => useSession.getState().bumpContainerValues(changes))
+
+  beforeEach(() => {
+    nexus().loadValues = vi.fn(async () => VALUES)
+    useSession.setState({ valuesEpoch: null })
+  })
+
+  it('a container push refetches the mounted path and retires the named overrides', async () => {
+    await mount(collection())
+    nexus().loadValues.mockClear()
+    act(() =>
+      api?.setValueOverride({
+        p1: { fm: { id: 'p1' } as never, pending: true },
+        p2: { fm: { id: 'p2' } as never, pending: false },
+      }),
+    )
+    bump([{ rel: 'Col', pageIds: ['p1'] }])
+    await act(async () => {})
+    expect(nexus().loadValues).toHaveBeenCalledWith('Col')
+    expect(api?.effectiveValues.p1).toEqual(VALUES.p1)
+    expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
+  })
+
+  it('a push naming no ids retires the settled override and keeps the pending one', async () => {
+    await mount(collection())
+    act(() =>
+      api?.setValueOverride({
+        p1: { fm: { id: 'p1' } as never, pending: true },
+        p2: { fm: { id: 'p2' } as never, pending: false },
+      }),
+    )
+    bump([{ rel: 'Col', pageIds: [] }])
+    await act(async () => {})
+    expect(api?.effectiveValues.p1).toEqual({ id: 'p1' })
+    expect(api?.effectiveValues.p2).toBeUndefined()
+  })
+
+  it('a sibling container push neither refetches nor retires', async () => {
+    await mount(collection())
+    nexus().loadValues.mockClear()
+    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, pending: false } }))
+    bump([{ rel: 'Other', pageIds: ['p2'] }])
+    await act(async () => {})
+    expect(nexus().loadValues).not.toHaveBeenCalled()
+    expect(api?.effectiveValues.p2).toEqual({ id: 'p2' })
+  })
+
+  it('a rename re-keys the override instead of clearing it', async () => {
+    await mount(collection())
+    act(() =>
+      api?.setValueOverride({
+        p2: { fm: { id: 'p2', Status: ['Done'] } as never, pending: false },
+      }),
+    )
+    act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
+    await act(async () => {})
+    expect(api?.effectiveValues.p2).toEqual({ id: 'p2', State: ['Done'] })
   })
 })
 
