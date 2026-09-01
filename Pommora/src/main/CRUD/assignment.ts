@@ -29,8 +29,7 @@ const write = async (
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
 /** Drop one property's Remove-cache block, and the whole `property_cache` key with it once the
- *  last block goes. The no-empties rule reaches the cache too, and it lived in two spellings
- *  across the remove and delete paths before this. */
+ *  last block goes. The no-empties rule reaches the cache too. */
 export function withoutCacheBlock(
   sidecar: Record<string, unknown>,
   propertyId: string,
