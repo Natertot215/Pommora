@@ -204,8 +204,6 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 
 **Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.
 
----
-
 [^1]: [[ArchitecturePM]]
 [^2]: [[InterfacePM]] §Floating Windows
 [^3]: [[MarkdownPM]] · [[PagesPM]]
