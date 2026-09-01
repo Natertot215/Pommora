@@ -121,10 +121,6 @@ export function dropOptionFromDef(
   })
 }
 
-/** What a page cascade needs about the property it is rewriting: the key the values sit under,
- *  and the type the rewrite must speak. Resolved from the authoritative def, never re-read. */
-type CascadeTarget = { key: string }
-
 /** The gate that admits a def to an op — the one place Select and Status diverge outside a
  *  rename's def edit. */
 type RequireType = (type: PropertyType) => Result<null>
@@ -135,18 +131,18 @@ async function resolveForCascade(
   root: string,
   propertyId: string,
   requireType: RequireType,
-): Promise<Result<CascadeTarget>> {
+): Promise<Result<string>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
   const typeCheck = requireType(def.type)
   if (!typeCheck.ok) return typeCheck
-  return ok({ key: def.name })
+  return ok(def.name)
 }
 
-/** Strip `value` from every page holding the target's key — the shared tail of clear and remove
- *  on both Select and Status, which differ only in the type check that resolved the target. */
-function stripCascade(root: string, target: CascadeTarget, value: string): Promise<number> {
-  return cascadePages(root, target.key, (content) => stripPageValue(content, target.key, value))
+/** Strip `value` from every page holding `key` — the shared tail of clear and remove on both
+ *  Select and Status, which differ only in the type check that resolved the key. */
+function stripCascade(root: string, key: string, value: string): Promise<number> {
+  return cascadePages(root, key, (content) => stripPageValue(content, key, value))
 }
 
 /** Stage an option rename's record, def-gated so an op the registry will refuse outright journals
@@ -202,7 +198,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
   ): Promise<Result<null>> =>
     serializeSchemaOp(async () => {
       const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
-      const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
+      const edit = await mutateRegistry<Result<string>>(root, (registry) => {
         const def = registry.defs[propertyId]
         if (!def) return { result: fail('not-found', 'Property not found.') }
         const typeCheck = requireType(def.type)
@@ -212,15 +208,16 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         if (!check.ok) return { result: check }
         return {
           next: { ...registry, defs: { ...registry.defs, [propertyId]: edited.next } },
-          result: ok({ key: def.name }),
+          result: ok(def.name),
         }
       })
       if (!edit.ok) {
         await clearSchemaJournal(root, record)
         return edit
       }
-      const skipped = await cascadePages(root, edit.value.key, (content) =>
-        replacePageValue(content, edit.value.key, oldValue, newTitle),
+      const key = edit.value
+      const skipped = await cascadePages(root, key, (content) =>
+        replacePageValue(content, key, oldValue, newTitle),
       )
       if (!skipped) await clearSchemaJournal(root, record)
       return ok(null)

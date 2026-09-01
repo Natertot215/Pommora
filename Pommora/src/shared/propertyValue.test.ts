@@ -78,11 +78,21 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('a value whose shape contradicts its type reads as null, never as another type', () => {
     expect(decodeValue(def({ type: 'number' }), 'five')).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'checkbox' }), 'true')).toEqual({ kind: 'null' })
-    expect(decodeValue(def({ type: 'multi_select' }), 7)).toEqual({ kind: 'null' })
+    expect(decodeValue(def({ type: 'multi_select' }), { a: 1 })).toEqual({ kind: 'null' })
   })
 
   it('a checkbox is true or absent — false written from outside reads as no value', () => {
     expect(decodeValue(def({ type: 'checkbox' }), false)).toEqual({ kind: 'null' })
+  })
+
+  it('a YAML number or boolean names the option it spells — an outside `- 2024` is the option "2024"', () => {
+    const year = def({ type: 'select', select_options: [{ value: '2024', label: '2024' }] })
+    expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
+    expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
+    expect(decodeValue(def({ type: 'multi_select' }), [true, 'x'])).toEqual({
+      kind: 'multiSelect',
+      value: ['true', 'x'],
+    })
   })
 
   it('an option type reads a scalar as a list of one', () => {
@@ -282,8 +292,8 @@ describe('the no-empties rule — no value, no key', () => {
     })
   }
 
-  it('checkbox false and number 0 are real values, not blanks', () => {
-    expect(isBlankValue({ kind: 'checkbox', value: false })).toBe(false)
+  it('number 0 and a checked checkbox are real values, not blanks', () => {
     expect(isBlankValue({ kind: 'number', value: 0 })).toBe(false)
+    expect(isBlankValue({ kind: 'checkbox', value: true })).toBe(false)
   })
 })
