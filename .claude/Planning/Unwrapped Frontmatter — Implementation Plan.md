@@ -101,7 +101,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 
 **Why:** The files this plan rewrites carry prose asserting what is about to become false — "governance is by shape," "the ONE answer for every path that puts a value back," "a key already wearing it is genuinely the fresher," "every single-option kind … = bare string." An implementer reading them mid-plan is steered against the spec. Strip each target file to why-only comments before any behavior changes, so later tasks add the one new why they need to a clean slate instead of arguing with a paragraph.
 
-**Now** — baselines recorded at execution: `rg -F "KNOB" src` → `___`; `rg -F "(Nathan" src` → `___`:
+**Now** — baselines recorded at execution: `rg -F "KNOB" src` → 144; `rg -F "(Nathan" src` → 2:
 
 ```ts
 // Targets — every file a later task's Now fence names:
@@ -1335,6 +1335,8 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 ### Progress
 
+Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests · Biome clean, no warnings line.
+
 - [ ] **Phase 0** — One writer · base `<commit>`
   - [ ] Task 0 — comments stripped to why-only on every target file · `<commit>`
   - [ ] Task 1 — `setPageContext` delegates · `<commit>`
@@ -1378,6 +1380,8 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
   Dry-run first: print every file and every key the pass would change, with counts against the 08-31-2026 survey (`<Status>`×6, `<Pinned>`×4, `<Timeframe>`×1, six bare `Status:` twins), then run.
 - **Phase 1 verification is Nathan's; every later phase is verified by the executor** over CDP against scratch nexuses. NexusOS is opened again only at closeout, read-only.
 - **The Metadata section title** is Nathan's call; the other single-section leaves leave theirs untitled.
+- **Nathan drives only Gate 1** (Nathan, 08-31-2026, at launch). Every other user-facing behavior is covered by an interaction checklist the executor writes before closeout — the directive's manual list widened to every interaction the change touches (each action and its inverse, each toggle on and off, each external-write shape, each restore path) — and runs over CDP against a scratch nexus, expected-vs-observed recorded under Closeout.
+- **The run ends with a push.** The final commit closes the plan; the closing report is the summary plus an honest account, and `main` is pushed to `origin` afterward.
 
 ### Open Against Later Tasks
 
