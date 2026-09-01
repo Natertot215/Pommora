@@ -30,7 +30,7 @@ import {
   type WatchEvent,
   type WatchEventName,
 } from './watchPatch'
-import { pageIdIndex } from './valuesChanged'
+import { containerOf, pageIdIndex } from './valuesChanged'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
 import type { NexusTree, ValueChange } from '@shared/types'
 
@@ -164,7 +164,7 @@ function valueChangesOf(
     const c = classifyEvent(held, root, ev, scope)
     if (c.kind !== 'page-upsert') continue
     byPath ??= pageIdIndex(tree)
-    const container = c.rel.includes('/') ? c.rel.slice(0, c.rel.lastIndexOf('/')) : ''
+    const container = containerOf(c.rel)
     const ids = byContainer.get(container) ?? new Set<string>()
     byContainer.set(container, ids)
     const id = byPath.get(c.rel)
