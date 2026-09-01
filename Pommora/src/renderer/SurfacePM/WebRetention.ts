@@ -1,8 +1,6 @@
-// The hidden-guest budget: a webpage guest scrolled out of view keeps its state (the site's
-// scroll, half-typed input, playing media) by staying mounted invisible — but every retained
-// guest is a live renderer process, so the hidden set is capped. Visible guests are never the
-// registry's business: they are always live, and a tile leaving the registry on re-entry is what
-// keeps the ordering visible > hidden-recent > evicted.
+// The hidden-guest budget: a webpage guest scrolled out of view keeps its state by staying
+// mounted invisible — but every retained guest is a live renderer process, so the hidden set is
+// capped. Visible guests are never the registry's business, always live.
 
 // KNOB — how many hidden guests stay alive beyond the visible ones.
 export const WEB_RETAINED_MAX = 5

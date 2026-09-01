@@ -69,15 +69,14 @@ interface PointerSpec<H extends PointerTarget> {
 /** The pointer handlers every link-shaped construct wears. The wikilink and the markdown link differ
  *  only in what they find and where it leads; the gesture grammar over it is one. */
 export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): Extension {
-  // The pending hover intent — armed on mouseover of a drawn link, canceled the moment the pointer
-  // leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh).
+  // Armed on mouseover of a drawn link, canceled the moment the pointer leaves it (mouseout fires
+  // per CM6 text span; re-entry re-arms fresh).
   const intent = hoverIntent()
-  // Was the caret in this link BEFORE the press moved it? CM seats the caret on mousedown, so the
-  // click handler can no longer tell "I was editing this" from "I just clicked it" on its own.
+  // CM seats the caret on mousedown, so the click handler can no longer tell "I was editing this"
+  // from "I just clicked it" on its own.
   let editingOnPress = false
-  // A link that has just been acted on stops arming until the pointer leaves it. Cancelling once
-  // isn't enough: a native menu takes the pointer away and hands it back over the same link, and
-  // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
+  // Cancelling once isn't enough: a native menu takes the pointer away and hands it back over the
+  // same link, and that re-entry is a fresh mouseover that would bloom a preview behind the menu.
   let actedOnLink = false
   /** The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed, and
    *  dismiss what is already open. */
@@ -92,9 +91,8 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       if (!hit) return false
       const go = spec.follow(hit, view, event)
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
-      // exist to place it themselves — seating one here would land it somewhere first and make both
-      // of them meaningless. Claiming the press does preventDefault it, which Chromium generates
-      // `contextmenu` independently of, so the menu still opens.
+      // exist to place it themselves — seating one here would land it somewhere first. Claiming the
+      // press preventDefaults it, which Chromium generates `contextmenu` independently of.
       //
       // LOAD-BEARING for the menu itself: `contextmenu` reads the live caret to decide it's inside
       // the syntax and should stand down. Let this fall through and CM seats a caret in the link on
@@ -105,11 +103,10 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       // Everything below is the plain single left press. Extending a selection, double- and
       // triple-click, and the other buttons keep CM's own semantics over a link like anywhere else.
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
-      // A press that missed the link's drawn text but clamped INSIDE it belongs outside — the same
+      // A press that missed the link's drawn text but clamped inside it belongs outside — the same
       // zero-width marker that made the coordinate land here would otherwise drop the caret in the
       // middle of a label the pointer never touched. Only where something is actually hidden: a
-      // token drawn whole is aiming at exactly where it landed, and once a link is open for editing
-      // its syntax is real text, which is the same thing.
+      // token drawn whole is aiming at exactly where it landed.
       if (!hit.onText && hit.hidesSyntax && !editingOnPress)
         return seatAtNearerEdge(view, hit.pos, hit.range)
       // A press about to follow the link would flash its syntax on the way out. Pressing a link
@@ -125,9 +122,8 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       const el = (event.target as HTMLElement).closest?.(spec.hoverGate)
       if (!el || actedOnLink) return false
       const hit = spec.hitAt(view, event)
-      // A dwell reads the live caret safely — unlike a click, hovering never moves it. A link the
-      // caret is already inside is open for editing, and no dwell should carry you away from what
-      // you're typing.
+      // A link the caret is already inside is open for editing, and no dwell should carry you away
+      // from what you're typing.
       if (!hit || caretInside(view, hit.range)) return false
       const bloom = spec.dwell(hit, el)
       if (bloom) intent.arm(bloom)

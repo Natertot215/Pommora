@@ -150,7 +150,7 @@ export function RowShell({ id, children }: { id: string; children: ReactNode }):
   )
 }
 
-/** `ref` + `handle` spread on the row wrapper — the WHOLE row drags (buttons/inputs inside never arm one). */
+/** `ref` + `handle` spread on the row wrapper. */
 export function usePaneDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

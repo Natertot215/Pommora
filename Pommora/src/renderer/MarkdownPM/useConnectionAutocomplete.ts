@@ -45,10 +45,9 @@ export interface ConnectionAutocomplete {
   acCtl: RefObject<AcCtl>
 }
 
-// The `[[…]]` connection autocomplete state machine, shared by the page editor and table cells. The caller
-// supplies the live view (for the insert) + a candidate source — each bakes in its own getter/ref and
-// self-filter — and owns where the panel renders (inline vs portal) and its keymap. This owns the rest:
-// query state, index clamping, the commit, the panel anchor, and the keymap-facing `acCtl` ref. Pair it
+// The `[[…]]` connection autocomplete state machine, shared by the page editor and table cells. The
+// caller supplies the live view + a candidate source and owns where the panel renders and its keymap;
+// this owns query state, index clamping, the commit, the panel anchor, and the `acCtl` ref. Pair it
 // with detectConnectionQuery() in the editor's updateListener.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
@@ -104,8 +103,6 @@ export function useConnectionAutocomplete(
       changes,
       selection: { anchor },
       // A finished link rests rendered on its closer, but only because this gesture put the caret
-      // there. A link left open at its alias isn't finished, and says so by asking for the picker.
-      // A finished link rests rendered on its closer, but only because this gesture put the caret
       // there. A link left open at its alias isn't finished and claims nothing.
       ...(opensAlias ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
@@ -139,15 +136,10 @@ export function useConnectionAutocomplete(
 }
 
 /**
- * The surface the panel is bounded by — the editor's nearest SCROLLING ancestor, which is the detail
- * pane in the main window, a floating window's body inside one, and a tile's own box on a dashboard.
- * The editor itself never scrolls (its chain grows to its content), so its own box is the text column
- * rather than the room available, and `scrollDOM` is the wrong answer here.
- *
- * Cached per editor: this runs on the keystroke path while the panel is open, and walking ancestors
- * for computed styles on every one of those is exactly the work that rule forbids. Only the surface's
- * IDENTITY is cached — its rect is re-read each pass, so a resized pane or a scrolled surface stays
- * honest.
+ * The surface the panel is bounded by — the editor's nearest SCROLLING ancestor (the detail pane, a
+ * floating window's body, a tile's own box). The editor itself never scrolls, so `scrollDOM` is the
+ * wrong answer here. Only the surface's IDENTITY is cached per editor — its rect is re-read each pass,
+ * so a resized pane or a scrolled surface stays honest.
  */
 const surfaces = new WeakMap<HTMLElement, HTMLElement>()
 function surfaceOf(view: EditorView): HTMLElement {

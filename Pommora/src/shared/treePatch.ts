@@ -1,6 +1,6 @@
 // Pure tree patch transforms — the one definition both processes apply: the renderer
-// optimistically, main as canon. A request that can't be resolved against the given tree
-// returns null → the caller falls back to a full walk.
+// optimistically, main as canon. Unresolvable against the given tree returns null → the caller
+// falls back to a full walk.
 
 import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '@shared/mutate'
 import { titleFromPath } from '@shared/connections'
@@ -27,10 +27,9 @@ export const parentOf = (path: string): string => {
 }
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
-// ---------- node factories ----------
 // The walk's literal node shapes, stated once. Every producer builds nodes here, so a
-// transform-built node and a walk-built node of the same entity carry identical key sets —
-// which is what lets `stabilize` prove tree convergence by reference identity.
+// transform-built node and a walk-built node of the same entity carry identical key sets — what
+// lets `stabilize` prove tree convergence by reference identity.
 
 export function makePageNode(f: {
   id: string
@@ -203,10 +202,9 @@ function insert(
   return { containers: next, done }
 }
 
-/** Re-point (or, with `newPath` null, prune) the walk-owned unreadable bookkeeping riding a
- *  path change — a stale entry buys spurious walks at a dead address and blinds the classifier
- *  to the live one. The key is never invented: the walk's tree carries `unreadable` only when
- *  nonempty, and `stabilize` counts keys. */
+/** Re-point (or, with `newPath` null, prune) the walk-owned unreadable bookkeeping riding a path
+ *  change — a stale entry buys spurious walks at a dead address and blinds the classifier to the
+ *  live one. The key is never invented, since `stabilize` counts keys. */
 function repointUnreadable(
   tree: NexusTree | null,
   oldPath: string,
@@ -253,10 +251,9 @@ function holdsPath(containers: (CollectionNode | SetNode)[], path: string): bool
   )
 }
 
-/** Insert a just-created entity at its slot. Null when it's already present — the confirming
- *  push is deferred behind the invoke reply, but a watcher echo or a replay can still hand the
- *  optimistic layer a tree that holds the newborn, and a second insert would duplicate the
- *  node; null keeps the insert idempotent. */
+/** Insert a just-created entity at its slot. Null when it's already present — a watcher echo or a
+ *  replay can hand the optimistic layer a tree that holds the newborn, and a second insert would
+ *  duplicate the node; null keeps the insert idempotent. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
@@ -327,11 +324,10 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Install a re-read registry and re-point every Collection's embedded defs at it, so the one
- *  fact stays reference-identical in both of its homes the way the walk leaves them. `stabilize`
- *  recycles the defs that did not move, so only the edited property's assigners get a new node.
- *  Assignment order is the sidecar's and is untouched; an id the registry no longer carries drops
- *  out, exactly how the walk resolves a dangling ref. */
+/** Install a re-read registry and re-point every Collection's embedded defs at it, so the one fact
+ *  stays reference-identical in both of its homes the way the walk leaves them. `stabilize` recycles
+ *  the defs that did not move, so only the edited property's assigners get a new node. An id the
+ *  registry no longer carries drops out, exactly how the walk resolves a dangling ref. */
 export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
   const defs = stabilize(registry, tree.registry)
   const byId = new Map(defs.map((d) => [d.id, d]))
@@ -486,9 +482,8 @@ function updateInContainers(
  *  Only valid after the write succeeded — a collision fails main-side and never patches. */
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
   const parent = parentOf(path)
-  // A page path wears `.md`; every container and Space path is bare — the same distinction
-  // the per-kind arms below encode, needed here for the bookkeeping re-point. Case-insensitive
-  // to match the walk's admit: a `.MD` page renames onto the canonical lowercase extension.
+  // A page path wears `.md`; every container and Space path is bare. Case-insensitive to match the
+  // walk's admit: a `.MD` page renames onto the canonical lowercase extension.
   const newPath = /\.md$/i.test(path)
     ? joinPath(parent, `${newName}.md`)
     : joinPath(parent, newName)

@@ -5,26 +5,24 @@ import { blockMoveChanges } from '@renderer/MarkdownPM/Editor/listDragModel'
 import { headingParts } from '@renderer/MarkdownPM/Detect'
 
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
-// editor or the floating preview's can never be picked up instead.
+// or preview's editor can never be picked up instead.
 let pageView: EditorView | null = null
 
-/** The page surface's handle registration — PageView hands its editor's view in at mount and
- *  null at teardown, through MarkdownEditor's `register` seam. */
+/** PageView hands its editor's view in at mount and null at teardown, through MarkdownEditor's
+ *  `register` seam. */
 export function registerPageEditor(view: EditorView | null): void {
   pageView = view
 }
 
-/** Travel the OPEN PAGE to `pos` — the page-scoped call over the editor's own travel, resolving the
- *  registered handle so a caller that only knows an offset does not have to hold a view. */
+/** Travel the open page to `pos`, resolving the registered handle so a caller that only knows an
+ *  offset doesn't have to hold a view. */
 export function travelPageTo(pos: number): void {
   if (pageView) travelTo(pageView, pos)
 }
 
-/** Rewrite the text of the heading whose line begins at `from`, leaving its markers (`#`s, indent,
- *  and the space after them) untouched. Written straight through the live editor, so the edit rides
- *  the page's normal autosave. The offset is re-resolved against the current doc and the line is
- *  re-checked as a heading, so a stale `from` from a body that trailed the editor is a no-op, not a
- *  wrong write. */
+/** Rewrite the text of the heading whose line begins at `from`, leaving its markers untouched.
+ *  Written straight through the live editor, so the edit rides the page's normal autosave. The
+ *  offset is re-resolved and re-checked as a heading, so a stale `from` is a no-op, not a bad write. */
 export function renameHeadingAtOffset(from: number, next: string): void {
   const view = pageView
   if (!view) return
@@ -35,9 +33,8 @@ export function renameHeadingAtOffset(from: number, next: string): void {
   view.dispatch({ changes: { from: contentStart, to: line.to, insert: next } })
 }
 
-/** Move the heading identified by `dragKey` — and its whole section (body + sub-headings, everything
- *  down to the next heading of equal-or-higher level) — to sit before the heading `beforeKey`, or to
- *  the document end when it's null. */
+/** Move the heading identified by `dragKey` and its whole section (down to the next heading of
+ *  equal-or-higher level) to sit before `beforeKey`, or the document end when it's null. */
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageView
   if (!view) return
@@ -48,9 +45,8 @@ export function moveHeadingSection(dragKey: string, beforeKey: string | null): v
   const end = sectionEnd(heads, h)
   const from = heads[h].from
   const sectionEndPos = end < heads.length ? heads[end].from : doc.length
-  // Stop the range at the section's last non-blank character, not the blank line before the next
-  // heading — the mover re-fences with one blank, so carrying the trailing blank too would compound
-  // an extra blank on every reorder.
+  // Stop at the section's last non-blank character — the mover re-fences with one blank, so
+  // carrying the trailing blank too would compound an extra blank on every reorder.
   const range = { from, to: from + doc.slice(from, sectionEndPos).trimEnd().length }
   const at =
     beforeKey === null ? doc.length : (heads.find((x) => x.key === beforeKey)?.from ?? doc.length)

@@ -22,25 +22,23 @@ export {
   type OutlineHeading,
 } from './headingScan'
 
-/** Per-page fold persistence seam — reads/writes the device-local fold state via the host (kept
- *  Electron-free here, so this file never learns where that state lives). */
+/** Per-page fold persistence seam, kept Electron-free here so this file never learns where the
+ *  device-local state lives. */
 export interface FoldsApi {
   load: () => Promise<string[]>
   save: (keys: string[]) => void
 }
 
 /** The reveal's own beat, plus slack for the frame that draws its final height. Anything measuring a
- *  section that just opened has to wait it out: a folded region has no height to scroll to, so a
- *  travel timed any earlier lands on the collapsed document. */
+ *  section that just opened has to wait it out, or a travel timed any earlier lands on the
+ *  collapsed document. */
 export const FOLD_SETTLE_MS = ms(duration.fast) + 30
 
 /** Marks the mount-time re-apply of saved folds so the persist listener doesn't echo it straight back to disk. */
 const initialFoldAnnotation = Annotation.define<boolean>()
 
-// ── What a fold can be about ───────────────────────────────────────────────────
 // A heading section is one kind of foldable region; it is not the only possible one. A region is
-// named by its KIND and its anchor — the line the chevron sits on — and each kind says where its
-// regions are, what key persists one, and whether it starts collapsed. Everything below reads the
+// named by its kind and its anchor — the line the chevron sits on. Everything below reads the
 // registry rather than assuming a heading, so a second kind is a registration and not a fork.
 
 export type FoldKind = 'heading' | 'citations'
@@ -52,15 +50,13 @@ const CITATIONS_KEY = '\u0000citations'
 /** The heading's own gesture class — the drag gate, the grip menu's hit-test and the hover card's
  *  click-to-fold all read it. Kept apart from `md-foldable`, which means "draws a chevron" and
  *  nothing else: a non-heading anchor wearing one class would inherit all four behaviors, and the
- *  hit-test's would fail silently — the press defaulted away and main stood its own menu down, then
- *  the heading menu bailing on a line with no heading parts, leaving a press that opens nothing. */
+ *  hit-test would fail silently. */
 export const HEADING_FOLD_LINE = 'md-heading-fold'
 
 /** The citations divider — the section's visible boundary and its disclosure at once. It rides the
- *  rendered anchor line only when that line is blank: a table's last row is replaced by a block
- *  widget so a line decoration there never draws, a fence's closing line would put the rule inside
- *  the code, and a paragraph would read as if it headed the footnotes. With no blank line to take
- *  it the section falls back to its own top edge, and the footer's control remains the way in. */
+ *  rendered anchor line only when that line is blank: a table's last row is a block widget so a line
+ *  decoration there never draws, and a fence or paragraph there would read as part of the body.
+ *  With no blank line to take it, the section falls back to its own top edge. */
 const CITE_DIVIDER_LINE = 'md-cite-divider'
 
 /** Which kinds survive a session. The section's disclosure is its own per-page override, so letting
@@ -70,9 +66,8 @@ const persisted = (kind: FoldKind): boolean => kind === 'heading'
 /** One foldable region of some kind, in document order. */
 export interface FoldRegion {
   kind: FoldKind
-  /** The region's identity within the document — the first offset it hides. Deliberately not the
-   *  line it renders against: that line is prose the user edits, and one Enter there would move the
-   *  live anchor, orphan the entry and pop a hidden region open with nothing to resync it. */
+  /** The first offset it hides. Deliberately not the line it renders against: that line is prose
+   *  the user edits, and one Enter there would move the live anchor and orphan the entry. */
   anchor: number
   /** The line the chevron sits on. The same offset as `anchor` for a heading, which hides its own
    *  body; the line above the run for the section, which is entirely body. */
@@ -85,15 +80,12 @@ export interface FoldRegion {
   key: string
 }
 
-/** The document's citations section as a foldable region, or null where it has none. The section's
- *  geometry is derived here alone: its `lineEnd` is also the offset a collapsed section leaves
- *  visible above it, which the heading generator clamps against — a heading reaching past it
- *  swallows the footnotes whole when it collapses. The clamp lives here rather than in the heading
- *  scan because the scan takes a raw string and would have to derive the boundary a second time;
- *  this holds the `Text` the cached scan is keyed on.
+/** The document's citations section as a foldable region, or null where it has none. Its `lineEnd`
+ *  is also the offset a collapsed section leaves visible above it, which the heading generator
+ *  clamps against — a heading reaching past it would swallow the footnotes whole when it collapses.
  *
  *  A section starting at line 0 has nothing above it to anchor against, and hiding it would leave a
- *  blank page — so it offers no region and stays visible, which is the right answer. */
+ *  blank page — so it offers no region and stays visible. */
 function citationsRegion(doc: Text): FoldRegion | null {
   const { citations, lineStarts, lines } = docScan(doc)
   const a = citations.anchorLine
@@ -110,9 +102,8 @@ function citationsRegion(doc: Text): FoldRegion | null {
 }
 
 const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
-  // EVERY section whose end reaches the boundary clamps, not just the last: a page shaped
-  // `# Title` … `## Sources` … the run has two sections running to the document's end, and
-  // clamping one leaves the other spanning the footnotes.
+  // Every section whose end reaches the boundary clamps, not just the last, or a nested heading run
+  // would leave one section spanning the footnotes while its parent got clamped.
   heading: (doc) => {
     const cut = citationsRegion(doc)?.lineEnd ?? -1
     return headingSections(docScan(doc)).flatMap((s) => {
@@ -142,10 +133,9 @@ export function regionsOf(doc: Text): FoldRegion[] {
   return Object.values(KINDS).flatMap((of) => of(doc))
 }
 
-// ── Custom fold state ──────────────────────────────────────────────────────────
-// CM6's native fold removes the body lines instantly. To mirror the sidebar's Reveal
-// (grid 0fr↔1fr), each fold is a block widget over the body lines whose own DOM
-// animates; a per-frame requestMeasure keeps the lines below tracking the animated height.
+// CM6's native fold removes the body lines instantly. To mirror the sidebar's Reveal (grid 0fr↔1fr),
+// each fold is a block widget over the body lines whose own DOM animates; a per-frame
+// requestMeasure keeps the lines below tracking the animated height.
 
 type Phase = 'collapsing' | 'collapsed' | 'expanding'
 interface FoldEntry {
@@ -154,11 +144,9 @@ interface FoldEntry {
   from: number
   to: number
   phase: Phase
-  /** The folded body's line DOM, captured when it was still on screen. It rides the ENTRY rather
-   *  than a map beside it: the entry is what remaps when the document moves, and a clone kept under
-   *  the old offset is both an empty reveal and an orphan nothing frees. Optional because a region
-   *  collapsed before its lines were ever rendered has nothing to capture — the reveal opens on the
-   *  real lines instead, which is what an unanimated collapse wants anyway. */
+  /** The folded body's line DOM, captured when it was still on screen. It rides the entry rather
+   *  than a map beside it, since the entry is what remaps when the document moves. Optional because
+   *  a region collapsed before its lines were ever rendered has nothing to capture. */
   clone?: HTMLElement
 }
 
@@ -192,7 +180,7 @@ function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
 }
 
 /** A caret inside a body about to be hidden becomes unplaced rather than jumping to the next
- *  visible line — which would strand it on the divider, a blank line the section no longer owns. */
+ *  visible line, which would strand it on the divider. */
 function blurCaretInBody(view: EditorView, r: FoldRegion): void {
   const sel = view.state.selection.main
   if (sel.to > r.lineEnd && sel.from <= r.to) view.contentDOM.blur()
@@ -202,8 +190,8 @@ function blurCaretInBody(view: EditorView, r: FoldRegion): void {
 const closedAt = (entries: readonly FoldEntry[], anchor: number): boolean =>
   entries.some((e) => e.anchor === anchor && e.phase !== 'expanding')
 
-/** The effect that collapses a region, or null where it has no body to hide. Every collapse in the
- *  file goes through here, so what a fold captures is one fact rather than three copies. */
+/** Every collapse in the file goes through here, so what a fold captures is one fact rather than
+ *  three copies. */
 function collapseEffect(
   view: EditorView,
   r: FoldRegion,
@@ -238,7 +226,7 @@ class RevealWidget extends WidgetType {
     const inner = document.createElement('div')
     inner.className = 'mdpm-fold-reveal-inner'
     // A region collapsed before it was ever rendered has nothing to clone — the reveal opens on the
-    // real lines instead, which is what an unanimated collapse wants anyway.
+    // real lines instead.
     if (this.clone) inner.appendChild(this.clone.cloneNode(true))
     outer.appendChild(inner)
 
@@ -261,9 +249,9 @@ class RevealWidget extends WidgetType {
         requestAnimationFrame(tick)
       })
     })
-    // NOT `once`: a transition bubbling up from a cloned descendant would spend the listener before
-    // the row transition ever fires, leaving the entry animating and `tick` measuring every frame
-    // for the life of the view. The property guard is what ends it, so the removal goes with it.
+    // Not `once`: a transition bubbling up from a cloned descendant would spend the listener before
+    // the row transition ever fires, leaving `tick` measuring every frame for the life of the view.
+    // The property guard is what ends it, so the removal goes with it.
     const settle = (e: TransitionEvent): void => {
       if (e.propertyName !== 'grid-template-rows') return
       outer.removeEventListener('transitionend', settle)
@@ -292,9 +280,8 @@ const foldField = StateField.define<FoldEntry[]>({
           to: tr.changes.mapPos(e.to, -1),
         }))
     // Prune entries whose region no longer exists — deleting a folded heading would otherwise leave
-    // its body hidden behind a widget with no chevron anywhere to expand it (invisible until
-    // reload). Each entry is checked against the regions of ITS OWN kind: a kind absent from a
-    // document says nothing about a kind that is present.
+    // its body hidden behind a widget with no chevron to expand it. Each entry is checked against
+    // the regions of its own kind: a kind absent from a document says nothing about a kind present.
     if (tr.docChanged && next.length > 0) {
       const live = regionsOf(tr.state.doc)
       next = next.filter((e) => live.some((r) => r.kind === e.kind && r.anchor === e.anchor))
@@ -352,12 +339,12 @@ function toggleFold(view: EditorView, r: FoldRegion): void {
   view.dispatch({ effects: collapse })
 }
 
-/** Open every fold hiding `pos` — the innermost and each ancestor above it, since a heading can sit
- *  several collapsed sections deep. Returns whether anything was opened: a caller travelling to `pos`
- *  has to let the reveal land before it measures, because a folded section has no height to scroll to. */
+/** Open every fold hiding `pos` — the innermost and each ancestor above it. Returns whether anything
+ *  was opened: a caller travelling to `pos` has to let the reveal land before it measures, since a
+ *  folded section has no height to scroll to. */
 export function expandFoldsAt(view: EditorView, pos: number): boolean {
-  // An entry spans its heading's BODY, so a heading is opened by its own entry (matched on
-  // its anchor) and by every ancestor entry whose body contains it.
+  // An entry spans its heading's body, so a heading is opened by its own entry (matched on its
+  // anchor) and by every ancestor entry whose body contains it.
   const hiding = view.state
     .field(foldField)
     .filter((e) => e.anchor === pos || (pos >= e.from && pos <= e.to))
@@ -391,21 +378,19 @@ export function foldedRegions(
     })
 }
 
-// Every foldable heading carries a chevron anchored to its line in the CONTENT layer (a ::before), NOT a CM
-// gutter. The gutter is positioned from CM's line-height MODEL, which only measures the visible viewport and
-// estimates off-screen variable-height blocks (callouts, folds) at the default height — so every gutter
-// chevron below such a block drifts from its heading by a scroll-dependent amount. A line-anchored chevron
-// is laid out by the browser next to its heading and can't drift. Open → points down (hover-only); closed →
-// points right (dim + persistent). The fold state lives in foldField; this just maps it to a line class.
+// Every foldable heading carries a chevron anchored to its line in the content layer (a ::before),
+// not a CM gutter. The gutter is positioned from CM's line-height model, which estimates off-screen
+// variable-height blocks at the default height — so a gutter chevron below one would drift from its
+// heading by a scroll-dependent amount. A line-anchored chevron is laid out by the browser next to
+// its heading and can't drift. Open points down (hover-only); closed points right (dim + persistent).
 const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) => {
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
   for (const r of regionsOf(state.doc)) {
     const closed = closedAt(entries, r.anchor)
-    // The chevron is the heading's affordance. The section discloses from the footer's control and
-    // its own divider, so its anchor takes neither the chevron nor the open/closed classes — the
-    // closed one carries a color rule that would tint ordinary prose to the fold control's color.
-    // The divider stays stamped while hidden so it can fade out rather than vanish between frames.
+    // The section discloses from the footer's control and its own divider, so its anchor takes
+    // neither the chevron nor the open/closed classes — the closed one carries a color rule that
+    // would tint ordinary prose to the fold control's color.
     if (r.kind === 'heading') {
       ranges.push(
         Decoration.line({

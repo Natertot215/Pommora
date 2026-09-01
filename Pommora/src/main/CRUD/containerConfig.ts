@@ -1,7 +1,5 @@
-// Per-container non-view settings CRUD — the sidecar's open_in / view_button. A
-// read-modify-write through readSidecar/writeSidecar so foreign keys (and every field not in the
-// patch) ride through untouched. open_in is collection-owned; a Set write is refused. Errors flow as
-// Result, never thrown.
+// Per-container non-view settings CRUD — the sidecar's open_in / view_button. open_in is
+// collection-owned; a Set write is refused.
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import type { OpenIn, ViewButton } from '@shared/types'
@@ -11,7 +9,6 @@ import { nowIso } from './util'
 
 type ContainerKind = 'collection' | 'set'
 
-/** Only the keys a surface wants to change; omitted keys ride through untouched. */
 export type ContainerConfigPatch = {
   open_in?: OpenIn
   view_button?: ViewButton

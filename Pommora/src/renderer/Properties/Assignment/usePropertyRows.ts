@@ -19,10 +19,9 @@ import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
-// preview's inspector. What they share is everything about resolving a page into rows and writing a
-// value back; what they keep is their own frame, their own row chrome, and their own rule for which
-// rows show. Every write here goes through the same primitives the table and cards use, so this is
-// a shape over them rather than a second way to write.
+// preview's inspector — for resolving a page into rows and writing a value back. Every write here
+// goes through the same primitives the table and cards use, so this is a shape over them rather
+// than a second way to write.
 
 export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 

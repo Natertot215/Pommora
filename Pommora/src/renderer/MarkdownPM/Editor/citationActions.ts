@@ -1,7 +1,7 @@
 // What a footnote gesture writes, and where every one of them lands. A native menu stays open as long
-// as the reader likes and an undo or an outside write can move the document under it, so every
-// action re-finds its target in the LIVE document and matches it against what the menu was built
-// from before it writes — the discipline the connection and heading menus already keep.
+// as the reader likes and an undo or an outside write can move the document under it, so every action
+// re-finds its target in the live document and matches it against what the menu was built from before
+// it writes — the discipline the connection and heading menus already keep.
 import {
   type ChangeSet,
   type ChangeSpec,
@@ -28,14 +28,10 @@ import { docScan } from './docCache'
 import { editAcrossCitations } from './folding'
 import { travelTo } from './travel'
 
-/** What the surface around this editor answers for on its own page. `reveal` opens a hidden section
- *  by writing the page's visibility rather than folding behind the host's back, so the footer's
- *  control still reads the section's true state after a jump or a creation — and every surface showing
- *  that page reads the same row. A surface with no page at all — a Markdown block, a webpage tile —
- *  writes nothing, and the section stays where the nexus-wide default put it. */
+/** `reveal` opens a hidden section by writing the page's visibility rather than folding behind the
+ *  host's back, so every surface showing that page reads the same row. A surface with no page at all
+ *  writes nothing, and the section stays at the nexus-wide default. */
 export interface CitationHost {
-  /** Whether this surface's page shows its footnotes — the state the fold follows after any gesture
-   *  that rewrites the section, a first footnote on a page with none included. */
   shown: () => boolean
   reveal?: () => void
 }
@@ -44,9 +40,8 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
   combine: (v) => v[0] ?? { shown: () => false },
 })
 
-/** Go to the citation a label binds to, opening a hidden section on the way. THE arrival: the body's
- *  own marker click ends here, and so does one in a resting table cell, which has no editor of its
- *  own to carry a pointer path. An unmatched marker binds nothing and goes nowhere. */
+/** The one arrival point: the body's own marker click ends here, and so does one in a resting table
+ *  cell, which has no editor of its own to carry a pointer path. */
 export function travelToCitation(view: EditorView, label: string): void {
   const entry = citationFor(docScan(view.state.doc).citations, label)
   if (!entry) return
@@ -54,15 +49,12 @@ export function travelToCitation(view: EditorView, label: string): void {
   travelTo(view, entry.contentStart)
 }
 
-/** Whether a marker may be written where the selection ENDS — a footnote annotates the words it
- *  follows, so that offset is where every creation puts it, and asking about the selection's start
- *  would read a sweep out of the body and into the section as a body seat. The seat is outside the
- *  section, whose own `[^1]` stays literal, and outside code, where the syntax is characters rather
- *  than a reference. Both creation menus are offered under it and both write under it — a native
- *  menu can hang open while the document moves beneath it.
+/** Whether a marker may be written where the selection ends — a footnote annotates the words it
+ *  follows, so that offset is where every creation puts it. The seat is outside the section, whose own
+ *  `[^1]` stays literal, and outside code, where the syntax is characters rather than a reference.
  *
- *  It answers on every caret move, so both halves come off the cached scan or the caret's own line;
- *  the whole-document form would split the text and pair every fence from the top each time. */
+ *  Answers on every caret move, so both halves come off the cached scan or the caret's own line; a
+ *  whole-document form would split the text and pair every fence from the top each time. */
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
   const at = state.selection.main.to
@@ -72,10 +64,9 @@ export function citationSeatAt(state: EditorState): boolean {
   return !isInsideInlineCode(line.text, at - line.from)
 }
 
-/** Every footnote gesture's dispatch: the edit it asked for, the renormalization that follows it,
- *  and the fold teardown the section's rewrite needs — one transaction, so one undo takes the whole
- *  act rather than half of it. Returns what landed, in the original document's coordinates, so a
- *  caller can find what it just wrote. */
+/** The edit, the renormalization it triggers, and the fold teardown the section's rewrite needs, all
+ *  as one transaction so one undo takes the whole act. Returns what landed in the original document's
+ *  coordinates, so a caller can find what it just wrote. */
 export function commitCitation(
   view: EditorView,
   changes: ChangeSpec[],
@@ -88,9 +79,7 @@ export function commitCitation(
   return set
 }
 
-/** Write a creation gesture and answer for where it leaves the reader. Jump To Citation On Creation
- *  decides between the new citation and the marker just written; the disclosure is the page's own
- *  visibility, so the footer's control still reads the section's true state afterwards.
+/** Jump To Citation On Creation decides between the new citation and the marker just written.
  *
  *  The pair is found again in the finished document rather than assumed: a minted label is free, not
  *  final, and the normalization riding in the same transaction may well have renumbered it. */
@@ -111,8 +100,7 @@ function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec
 }
 
 /** Insert ▸ Footnote and Paste As ▸ Footnote: a complete pair in one transaction. The marker goes
- *  after whatever is selected — a footnote annotates the words it follows — and the citation lands at
- *  the document's end. */
+ *  after whatever is selected, and the citation lands at the document's end. */
 export function insertCitation(view: EditorView, text = ''): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
   const scan = docScan(view.state.doc)

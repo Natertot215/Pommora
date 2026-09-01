@@ -202,9 +202,8 @@ export function nexusFolderRefusal(raw: string): string | null {
 }
 
 /** The asset root's refusal. A refused value takes the default rather than narrowing the walk or
- *  widening the protocol handler's containment check: `.nexus/contexts` would drop every Space
- *  from the walk, a root-wide value would classify the whole nexus as asset, and nothing under
- *  `.trash` is watched at all. */
+ *  widening the protocol handler's containment check — e.g. `.nexus/contexts` would drop every
+ *  Space from the walk, and a root-wide value would classify the whole nexus as asset. */
 export const assetDirRefusal = nexusFolderRefusal
 
 /** An exclusion entry's refusal. A hand-edited entry that fails it is dropped from the list
@@ -321,9 +320,9 @@ const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
 /** The lenient sidecar read keeps the distinction its null destroys: absent stays silent (an
- *  un-adopted folder), present-but-unparseable records the owner's path. Recording happens
- *  HERE at the call site — a side effect inside a parse closure would go silent on every
- *  warm walk, because the cache serves non-null results without re-running it. */
+ *  un-adopted folder), present-but-unparseable records the owner's path. Recorded HERE at the
+ *  call site — a side effect inside the parse closure would go silent on every warm walk, since
+ *  the cache serves non-null results without re-running it. */
 async function readSidecarNaming(
   absSidecar: string,
   relOwner: string,
@@ -352,10 +351,9 @@ const readContainerMeta = (
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readJsonObject(absPath).then((v) => v ?? {})
 
-/** Raw context keys retained off the parse each entity read already does — the parenthesized root
- *  keys, keyed by the cached node object. Registry-INDEPENDENT
- *  data, so the parse cache never needs busting for registry changes; resolution runs at
- *  tree assembly each walk. */
+/** Raw context keys retained off the parse each entity read already does, keyed by the cached
+ *  node object. Registry-INDEPENDENT data, so the parse cache never needs busting for registry
+ *  changes — resolution runs at tree assembly each walk. */
 const rawContextByNode = new WeakMap<object, Json>()
 
 function retainContextKeys(node: object, raw: Json): void {
@@ -374,13 +372,12 @@ export interface PageRecord {
   fm: Json
 }
 
-/** THE per-page read: one stat-gated parse serves the walk (the node) and the view
- *  pipeline's value batch (the frontmatter) — the same bytes are never read twice.
+/** THE per-page read: one stat-gated parse serves the walk (the node) and the view pipeline's
+ *  value batch (the frontmatter) — the same bytes are never read twice.
  *
- *  Null for a file the folder's kind won't admit. That is not an error and never surfaces: an
- *  Unknown file is skipped exactly like an unreadable one, which is the same treatment a stray
- *  `.png` in a Collection already gets. A file with NO key is admitted and wears a synthetic id
- *  until adoption stamps it. */
+ *  Null for a file the folder's kind won't admit — not an error, skipped like an unreadable file
+ *  or a stray `.png`. A file with NO key is admitted and wears a synthetic id until adoption
+ *  stamps it. */
 export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord | null> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))

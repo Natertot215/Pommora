@@ -49,11 +49,9 @@ const tableConnections = Facet.define<ConnGetter, ConnGetter>({
   combine: (vals) => vals[0] ?? (() => undefined),
 })
 
-// Heading-column UI state: the indices of this page's tables whose first column renders as a heading.
-// A Pommora-only visual with no GFM equivalent, kept per machine rather than in the file — the host
-// stores it as `local_state` rows under the `headingCols` scope, keyed by page (see the load/save
-// seam below). `setHeadingColsEffect` is the mount-time load (whole set);
-// `toggleHeadingColEffect` is the menu action (one table index).
+// Heading-column UI state: which of this page's tables render their first column as a heading. A
+// Pommora-only visual with no GFM equivalent, kept per machine (`local_state` rows) rather than in the
+// file. `setHeadingColsEffect` is the mount-time load; `toggleHeadingColEffect` is the menu action.
 export interface TableHeadingColsApi {
   load: () => Promise<number[]>
   save: (indices: number[]) => void
@@ -344,8 +342,7 @@ class TableWidget extends WidgetType {
     return dom
   }
 
-  // Re-renders the existing React root in place (avoids CM destroy+recreate which re-mounts cell editors).
-  // Returns false before the first async render has created the root — CM recreates in that case.
+  // Re-renders the existing React root in place, avoiding a CM destroy+recreate that would re-mount cell editors.
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
     if (!MarkdownTableComp || !(dom as TableDom)._root) return false
     this.renderInto(dom as TableDom, view)
@@ -400,11 +397,10 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   return Decoration.set(ranges, true)
 }
 
-// A full rebuild re-decodes every table in the doc; skip it for edits that can't change any table —
-// map the existing widgets forward instead. A table changes when an edit touches its source, when a
-// delimiter row appears beside a changed range (the line that turns prose into a table), or when the
-// document's footnote numbering moves: a cell draws a number its own text never holds, so a marker
-// added anywhere above can renumber a cell the edit never came near.
+// A full rebuild re-decodes every table; skip it for edits that can't change one, and map the existing
+// widgets forward instead. A table changes when an edit touches its source, a delimiter row appears
+// beside the changed range, or the document's footnote numbering moves (a cell draws a number its own
+// text never holds, so a marker added anywhere above can renumber it).
 function editAffectsTables(deco: DecorationSet, tr: Transaction): boolean {
   for (const it = deco.iter(); it.value; it.next()) {
     if (tr.changes.touchesRange(it.from, it.to) !== false) return true
@@ -453,7 +449,7 @@ function swapTableWidget(
   return deco
 }
 
-/** One table's widget rebuilt from the current doc — the model the static cells draw from. */
+/** One table's widget rebuilt from the current doc. */
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
   const scan = docScan(state.doc)
   const region = scan.tables[index]

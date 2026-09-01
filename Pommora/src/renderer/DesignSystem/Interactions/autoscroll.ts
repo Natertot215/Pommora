@@ -62,10 +62,8 @@ export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLEle
   return null
 }
 
-/** The scroller to hand a drag that already knows its own element, for a surface whose element may or
- *  may not be the thing that scrolls. One that overflows scrolls itself; one at rest (an embed tile, a
- *  host grown to its content) scrolls nothing, so the drag climbs to the ancestor that does — without
- *  which it can never reach a candidate off-screen. Falls back to the element so a caller always has one. */
+/** The scroller for a drag that already knows its own element: one that overflows scrolls itself,
+ *  one at rest climbs to the nearest scrollable ancestor. Falls back to the element itself. */
 export function resolveScroller(el: HTMLElement, axis: Axis = 'xy'): HTMLElement {
   const cs = getComputedStyle(el)
   return scrollableInAxis(cs.overflowX, cs.overflowY, el, axis)
@@ -121,10 +119,9 @@ export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number
   }
 }
 
-// One drag at a time (pointer capture guarantees it). The loop scrolls every frame off the last
-// recorded point, so holding still at the edge keeps scrolling. It self-owns a termination
-// backstop (blur/visibilitychange/pointercancel) so a focus-steal can't strand it running — but
-// stops the LOOP only; each surface still aborts its OWN gesture on its own up/cancel/blur.
+// One drag at a time (pointer capture guarantees it). It self-owns a termination backstop
+// (blur/visibilitychange/pointercancel) so a focus-steal can't strand it running — but stops the
+// LOOP only; each surface still aborts its own gesture on its own up/cancel/blur.
 
 interface StartCfg {
   getPoint: () => { x: number; y: number }
@@ -173,16 +170,10 @@ function readParams(el: HTMLElement): Params {
 
 export type { StartCfg }
 
-/** Returns an INSTANCE-scoped stopper that halts only THIS loop (a no-op if another drag has
- *  since replaced it) — so a bystander's unmount teardown can't sabotage a live drag. Prefer this
- *  over the global `stopAutoScroll` wherever a stop might fire after ownership may have changed
- *  (e.g. unmount cleanup). */
-/** Arm the vertical edge-scroll for a drag that has just been picked up, and hand back the stopper
- *  its teardown calls — or null when the dragged element sits in nothing that scrolls. Every drag
- *  adapter wants the same four arguments and only ever varies the element and whether a held-still
- *  drag needs re-resolving as the rows move, so those are all this takes. The scroller is resolved
- *  here rather than left to `startAutoScroll`: a drag in an unscrollable container must not reach
- *  the loop at all, since entering it also takes the scroller from any travel in flight. */
+/** Arms the vertical edge-scroll for a drag just picked up, resolving the scroller here (rather
+ *  than in `startAutoScroll`) so a drag in an unscrollable container never enters the loop at all.
+ *  Returns an INSTANCE-scoped stopper — a no-op if another drag has since replaced it — safe to
+ *  call from unmount cleanup after ownership may have changed. */
 export function armAutoScroll(
   dragEl: HTMLElement | null,
   getPoint: () => { x: number; y: number },
@@ -234,11 +225,9 @@ export function stopAutoScroll(): void {
   live = null
 }
 
-// ── Glide ──────────────────────────────────────────────────────────────────────
-// The other way this module scrolls a container: a finite travel to a known destination, for a
-// surface sending the reader somewhere. It shares this module's scroller resolution and its
-// one-owner-at-a-time rule, and nothing else — the drag loop above is open-ended and takes its speed
-// from the pointer's distance to an edge, which is a different animation, not a parameter of this one.
+// Glide: the other way this module scrolls a container — a finite travel to a known destination,
+// for a surface sending the reader somewhere. It shares scroller resolution and the
+// one-owner-at-a-time rule with the drag loop above, but is otherwise a different animation.
 
 export interface GlideParams {
   /** px per ms of travel — the apparent speed the document moves at, before the floor and ceiling. */
@@ -279,15 +268,10 @@ export function stopGlide(): void {
 
 /** Travel `scroller` to `to` over a distance-proportional beat. Returns an instance-scoped stopper.
  *
- *  `to` may be a THUNK, and should be wherever the destination is measured rather than known: it is
- *  re-read every frame and the travel eases toward wherever it currently is. A host that renders
- *  lazily only estimates the height of what it hasn't drawn, so the destination sharpens as the
- *  travel reveals it — converging into the easing costs nothing, while landing on the first estimate
- *  and correcting afterwards is a visible jump at the end of an otherwise smooth move.
- *
- *  Cancels on any real scroll input — a glide that keeps pulling while the reader scrolls away fights
- *  them, which the drag loop never has to worry about because the pointer is held. Honors
- *  reduced-motion by arriving immediately. */
+ *  `to` may be a THUNK, re-read every frame so a lazily-rendered host's sharpening estimate is
+ *  followed rather than landed on and corrected afterward. Cancels on any real scroll input — a
+ *  glide that keeps pulling while the reader scrolls away fights them. Honors reduced-motion by
+ *  arriving immediately. */
 export function scrollGlide(
   scroller: HTMLElement,
   to: number | (() => number),

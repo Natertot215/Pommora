@@ -1,7 +1,6 @@
-// Page-title resolution for anything showing a link in its Page Title form — a URL property's cells
-// and a pasted link in the editor alike. Main owns the network (the
-// renderer never fetches) and the authoritative in-memory cache, persisted a row at a time in
-// nexus.db. A title is fetched at most once per URL per session. Off the read path entirely.
+// Page-title resolution for anything showing a link in its Page Title form. Main owns the network
+// (the renderer never fetches) and the authoritative in-memory cache, persisted a row at a time
+// in nexus.db. A title is fetched at most once per URL per session.
 import { StringDecoder } from 'node:string_decoder'
 import { net } from 'electron'
 import { isHttpLink, normalizeLinkUrl, LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
@@ -43,10 +42,10 @@ export function extractTitle(html: string): string | null {
 }
 
 /** Streaming <title> scanner: feed response chunks, decoding UTF-8 THROUGH chunk boundaries via a
- *  StringDecoder (a plain per-chunk `toString` splits a multi-byte char in two and corrupts it — any
- *  accented / CJK / emoji title). `push` returns the title (or null) once `</title>` or the byte cap
- *  arrives — i.e. stop reading — else undefined to keep going; `end` flushes the decoder for a stream
- *  that finished without either. Exported so the split-boundary reassembly is unit-testable. */
+ *  StringDecoder (a plain per-chunk `toString` splits a multi-byte char in two and corrupts it —
+ *  any accented/CJK/emoji title). `push` returns the title once `</title>` or the byte cap
+ *  arrives, else undefined to keep going; `end` flushes the decoder for a stream that finished
+ *  without either. */
 export function makeTitleScanner(maxBytes = MAX_BYTES): {
   push(chunk: Buffer): string | null | undefined
   end(): string | null

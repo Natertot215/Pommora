@@ -1,9 +1,7 @@
 // The open-time replay behind `.nexus/property-cascade.json` — forward-completes whatever a
 // crash interrupted, under one law: act only on a state the record exactly maps, identity-checked
-// by id, and clear on every other state. Rides serializeSchemaOp as ONE wrapped entry (everything
-// it calls is unwrapped internals), and never throws past itself: a failed heal logs, leaves the
-// record, and the next open retries — an open is never blocked. A sweep that could not read every
-// holder is an unfinished heal for the same purpose: the record survives it.
+// by id, and clear on every other state. Never throws past itself: a failed heal logs, leaves the
+// record, and the next open retries — an open is never blocked.
 
 import { errText } from '@shared/result'
 import { readRegistry } from '../IO/propertiesRegistry'

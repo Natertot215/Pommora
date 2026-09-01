@@ -12,7 +12,7 @@ export const propertyType = z.enum([
   'multi_select',
   'status',
   'url',
-  'context', // a registry Context's synthesized relation (one per entry); minted by the registry, not the schema editor
+  'context', // a registry Context's synthesized relation; minted by the registry, not the schema editor
   'last_edited_time',
   'file',
 ])
@@ -26,24 +26,20 @@ export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
 export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
   (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
 
-/** Read from the vocabulary rather than spelled at each caller, so "the first is the default" is
- *  a fact one place holds. */
 export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
 
-/** Duplicated rather than imported by every caller — main builds a link's Format menu and cannot
- *  read a renderer's list. */
+/** Duplicated rather than imported — main builds a link's Format menu and cannot read a renderer's list. */
 export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
   'link-full': 'Full Link',
   'link-short': 'Short Link',
   'link-title': 'Page Title',
 }
 
-/** Number format families. `number` = plain, `percent` = literal + `%` (NOT ×100), `currency` = an ISO code. */
+/** `percent` stores the literal (30 → "30%"), NOT ×100; `currency` stores an ISO code. */
 export const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
 export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
 
-/** The currencies seeded in the Format picker; `Intl.NumberFormat` renders any ISO code, so this is the
- *  curated common set, not a limit. */
+/** `Intl.NumberFormat` renders any ISO code — this is the curated common set, not a limit. */
 export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as const
 
 const selectOption = z.looseObject({
@@ -55,8 +51,8 @@ const selectOption = z.looseObject({
   color: z.string().optional().catch(undefined),
 })
 
-/** Status-group ids — an OPEN set, seeded with upcoming / in_progress / done. The count is
- *  deliberately uncapped: a group is identified by its id, never by its position in a fixed three. */
+/** Status-group ids — an OPEN set, seeded with upcoming / in_progress / done. A group is identified
+ *  by its id, never by its position, so the count is deliberately uncapped. */
 export const statusGroupId = z.string()
 export type StatusGroupId = z.infer<typeof statusGroupId>
 
@@ -94,11 +90,10 @@ export const propertyDefinition = z.looseObject({
   // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
   link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
   link_color: z.string().optional().catch(undefined),
-  // Tints both the checkbox fill and the switch on-track. The checkbox/switch LOOK itself is
-  // per-VIEW (column_styles), not here.
+  // Tints both the checkbox fill and switch on-track; the checkbox/switch LOOK is per-VIEW
+  // (column_styles), not here.
   checkbox_color: z.string().optional().catch(undefined),
-  // Kept per-def rather than per-view because a format rode as an inert foreign key. Percent
-  // stores the LITERAL (30 → "30%"); fraction renders "N out of number_denominator".
+  // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
   number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
   number_currency: z.string().optional().catch(undefined),
   number_separators: z.boolean().optional().catch(undefined),
@@ -106,17 +101,17 @@ export const propertyDefinition = z.looseObject({
     .union([z.literal('hidden'), z.number().int()])
     .optional()
     .catch(undefined),
+  // Renders "N out of number_denominator" instead of the formatted number.
   number_fraction: z.boolean().optional().catch(undefined),
   number_denominator: z.number().optional().catch(undefined),
-  // Relative to the asset root rather than the nexus, so re-pointing the root moves every
-  // property's folder with it. Governs new writes only — files already on disk keep resolving
-  // where they sit.
+  // Relative to the asset root, so re-pointing the root moves every property's folder with it.
+  // Governs new writes only — files already on disk keep resolving where they sit.
   file_directory: z.string().optional().catch(undefined),
 })
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
 /** One shape shared by the editor, the bridge's patch argument, and the whitelist main writes
- *  through, so a new link field is declared once. */
+ *  through — a new link field is declared once. */
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
 
 export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
@@ -131,14 +126,13 @@ export type NumberConfig = Pick<
   | 'number_denominator'
 >
 
-/** Built-in property IDs use a `_` prefix; user properties use `prop_<ulid>` (minted by
- *  `mintPropertyId` in ids.ts). */
+/** Built-in property IDs use a `_` prefix; user properties use `prop_<ulid>`. */
 export const RESERVED_PROPERTY_ID = {
   id: '_id',
   title: '_title',
   createdAt: '_created_at',
   modifiedAt: '_modified_at',
-  // Filter-only; never a column — the filter's location branch runs before the declaredType
+  // Filter-only, never a column — the filter's location branch runs before the declaredType
   // dispatch, so this id deliberately resolves to no type.
   location: '_location',
 } as const
@@ -165,8 +159,8 @@ export const KEY_REFUSAL = {
     `${n} ${n === 1 ? 'page already uses' : 'pages already use'} "${name}" as a key.`,
 } as const
 
-/** Applied once at write, so an untrimmed or denormalized name never reaches disk — which is what
- *  lets the key match stay an exact string compare with no normalization of its own. */
+/** Applied once at write, so an untrimmed or denormalized name never reaches disk — the key match
+ *  stays an exact string compare with no normalization of its own. */
 export function normalizePropertyName(raw: string): string {
   return raw.trim().normalize('NFC')
 }
@@ -188,8 +182,8 @@ export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<s
   new Set([...defs].map((d) => d.name))
 
 /** A status def's options flattened for display — an option without its own color wears its
- *  GROUP's (the on-disk contract: group color is the default, option color the override). THE
- *  read for status chips anywhere the group isn't separately in scope. */
+ *  GROUP's (group color is the default, option color the override). THE read for status chips
+ *  anywhere the group isn't separately in scope. */
 export function statusOptions(
   def: Pick<PropertyDefinition, 'status_groups'> | undefined,
 ): StatusOption[] {
@@ -198,16 +192,15 @@ export function statusOptions(
   )
 }
 
-/** The types whose options live in `select_options` — the array's validator, its seeder, and its
- *  editor all answer to this one predicate. A Status property's options live in `status_groups`
- *  instead, and every other type has none, so writing `select_options` onto one of those corrupts
- *  the definition and orphans the values its pages already hold. */
+/** The types whose options live in `select_options` — the array's validator, seeder, and editor all
+ *  answer to this predicate. A Status property's options live in `status_groups` instead, and every
+ *  other type has none, so writing `select_options` onto one of those corrupts the definition. */
 export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multi_select' =>
   type === 'select' || type === 'multi_select'
 
 /** Every option value a definition offers, whichever list holds them. Keyed on the DECLARED type,
- *  never on which array happens to be present: a type change retains the array it moved away from,
- *  so a Status property can still carry select_options and shape inference would read the stale one. */
+ *  never on which array happens to be present — a type change retains the array it moved away from,
+ *  so a Status property can still carry a stale select_options. */
 export function optionValues(
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
 ): string[] {
@@ -216,9 +209,8 @@ export function optionValues(
     : (def.select_options ?? []).map((o) => o.value)
 }
 
-/** Default 3-group seed written when a Status property is first added. Group IDs are stable — they
- *  are the identity a rename must not disturb. Labels are Open / Active / Done, and each group
- *  seeds one option whose value=label=its group label, carrying the group color. */
+/** Default 3-group seed written when a Status property is first added. Group IDs are stable — the
+ *  identity a rename must not disturb. */
 export function defaultStatusSeed(): StatusGroup[] {
   return [
     {

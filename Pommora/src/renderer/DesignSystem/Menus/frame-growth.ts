@@ -4,11 +4,8 @@
 /**
  * How a Frame sizes itself horizontally: fill the host frame first — its floor is the real
  * minimum — then stretch with the longest row up to the caller's ceiling. Without the floor a bare
- * `max-content` collapses the frame onto its widest row inside a wider host, stranding every row and
- * separator at part of the surface's width.
- *
- * The ceiling stays the caller's own knob: frames differ in what they hold, and one shared number
- * would be a ceiling nobody chose.
+ * `max-content` collapses the frame onto its widest row inside a wider host, stranding every row
+ * and separator at part of the surface's width. The ceiling stays the caller's own knob.
  */
 export const growToContent = (
   maxWidth: string,

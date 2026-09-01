@@ -43,8 +43,7 @@ interface SpaceRef {
   dir: string
 }
 
-/** Everything a context write resolves through: the live registry plus every Space's
- *  id/title/folder, scanned fresh per operation (a handful of small dirs). */
+/** The live registry plus every Space's id/title/folder, scanned fresh per operation. */
 export interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
@@ -68,7 +67,7 @@ export async function assignedDefs(
   )
 }
 
-/** The context arm stood down — a strict registry read that failed leaves property repair alone. */
+/** A strict registry read that failed leaves property repair alone. */
 export const NO_CONTEXT_WORLD: Omit<GovernedWorld, 'defs'> = {
   registry: null,
   spacesByContext: new Map(),
@@ -86,16 +85,14 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
       for (const e of await readdir(dir, { withFileTypes: true })) {
         if (!e.isDirectory()) continue
         // STRICT per sidecar: a folder without one simply isn't a Space, but an
-        // unreadable/corrupt sidecar (an evicted cloud placeholder) fails the whole load —
-        // a world missing a real Space would make the reconcile silently strip that
-        // Space's valid tags from every file it touches.
+        // unreadable/corrupt sidecar fails the whole load — a world missing a real Space
+        // would make the reconcile silently strip that Space's valid tags from every file it touches.
         const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
         if (!sc.ok) {
           if (sc.error.code === 'not-found') continue
           return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`)
         }
         const rel = spaceDirRel(def.title, e.name)
-        // Mirror the walk's id adoption so an id-less sidecar resolves identically here.
         const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
         spaces.push({ kind: 'space', id, title: e.name, path: rel, contextId: def.id })
         spaceById.set(id, {
@@ -112,8 +109,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
   return ok({ registry: reg.value, spacesByContext, spaceById, defs: NO_DEFS })
 }
 
-/** Resolve target Space ids → titles through the live registry. Unknown ids fail —
- *  a stale renderer id must never serialize as a guess. */
+/** Unknown ids fail — a stale renderer id must never serialize as a guess. */
 function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]> {
   const titles: string[] = []
   for (const id of spaceIds) {
@@ -174,7 +170,7 @@ export function contextDriftPresent(raw: Raw, tree: NexusTree | null): boolean {
   return false
 }
 
-// The strict Contexts world costs a read per Space; a failed load skips the context arm, never the edit.
+// A failed strict Contexts load skips the context arm, never the edit.
 export async function loadGovernedWorld(
   root: string,
   absFile: string,
@@ -188,8 +184,7 @@ export async function loadGovernedWorld(
   return world.ok ? { ...world.value, defs } : skipped
 }
 
-/** setContext on a Space's own `_space.json` (cross-Context allowed) — strict RMW,
- *  never fallback-to-empty. */
+/** Strict RMW, never fallback-to-empty. */
 export async function setSpaceContext(
   world: ContextWorld,
   spaceId: string,
@@ -225,8 +220,7 @@ export async function setContextOnPath(
   return fail('invalid-path', 'Not a context-taggable entity.')
 }
 
-/** Append a new Context to the registry (ULID id, no singular) + mkdir its folder. Title
- *  collisions disambiguate like every other create ("New Context 2"). */
+/** Title collisions disambiguate like every other create ("New Context 2"). */
 export async function createContextGroup(
   root: string,
   name: string,
@@ -243,8 +237,8 @@ export async function createContextGroup(
   const id = newId()
   const written = await mutateRegistryFile(root, (cur) => {
     if (cur.contexts.some((c) => c.title === title)) return cur
-    // No icon: a fresh group has made no choice, so it resolves to the kind's glyph and follows a
-    // nexus default. Stamping one would outrank that override forever.
+    // No icon: a fresh group resolves to the kind's glyph and follows a nexus default.
+    // Stamping one would outrank that override forever.
     return { contexts: [...cur.contexts, { id, title }] }
   })
   if (!written.ok) return written
@@ -254,9 +248,8 @@ export async function createContextGroup(
   return ok({ id, path: contextDirRel(title) })
 }
 
-/** Create a Space: folder + `_space.json` (no icon, no color) seeded with the 2×2 block
- *  document — four empty markdown tiles in two half/half bands, files first so a crash
- *  leaks at worst an orphan file, never an entry without one. */
+/** Seeded with the 2×2 block document — four empty markdown tiles in two half/half bands.
+ *  Files first, so a crash leaks at worst an orphan file, never an entry without one. */
 export async function createSpace(
   root: string,
   contextId: string,
@@ -287,7 +280,7 @@ export async function createSpace(
   })
 }
 
-/** Set/clear a Space's chip color on its `_space.json` — ramp cells and the legacy anchor names. */
+/** Accepts ramp cells and the legacy anchor names. */
 export async function setSpaceColor(
   root: string,
   spaceId: string,

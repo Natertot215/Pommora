@@ -122,16 +122,12 @@ export function CellEditor({
           markdownDecorations(connections ?? noConn),
           // A marker's number is a whole-document fact, and this editor's document is one cell.
           cellCitations(() => ordinalOfRef.current),
-          // A cell authors aliases like the body does, so it owes the memory the same writes — without
-          // this the mode it offers is one it can never contribute to, and an abandoned pipe reaches disk.
+          // A cell authors aliases like the body does — without this an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
           pasteLink,
-          // A cell's editor dies the moment the cell deactivates, so a fetch that lands after you
-          // tab away reaches nothing and the Short Link stands — recoverable later through Format.
+          // A cell's editor dies the moment it deactivates, so a fetch landing after you tab away
+          // reaches nothing and the Short Link stands, recoverable later through Format.
           pendingTitle,
-          // A link in a cell is a link: it follows, previews, and carries its own menu, the same as
-          // one in the body — both syntaxes of it. Nothing else pops a menu over a cell: the table
-          // widget reports as non-editable, so the prose menu stands down across the whole of it.
           // Ahead of pasteLink: a pipe-shaped clipboard is structural before it is cell text.
           Prec.highest(
             EditorView.domEventHandlers({
@@ -162,8 +158,7 @@ export function CellEditor({
                 ),
               },
               { key: 'Shift-Tab', run: consume(() => onNavigateRef.current('prev')) },
-              // With the connection pane open these keys drive it; when it's closed only Enter falls
-              // through to cell navigation (arrows/Escape are no-ops without an open pane).
+              // With the connection pane open these keys drive it; closed, only Enter falls through.
               {
                 key: 'Enter',
                 run: consume(() =>
@@ -179,8 +174,7 @@ export function CellEditor({
                 key: 'Shift-Enter',
                 run: consume((view) => view.dispatch(view.state.replaceSelection('\n'))),
               },
-              // Backspace inside an empty auto-pair deletes both halves (the cell otherwise falls to the default
-              // single-char delete, which would leave the stray closer); same autoDelete the page editor uses.
+              // Backspace inside an empty auto-pair deletes both halves; same autoDelete the page editor uses.
               {
                 key: 'Backspace',
                 run: (view) => {
@@ -192,9 +186,8 @@ export function CellEditor({
                   )
                 },
               },
-              // Undo/redo scope to the whole page (the main editor's history) like everywhere else — not a
-              // per-cell stack. The main editor can't catch these itself (the widget's ignoreEvent), so the
-              // cell forwards them.
+              // Undo/redo scope to the whole page's history, not a per-cell stack — the main editor can't
+              // catch these itself (the widget's ignoreEvent), so the cell forwards them.
               { key: 'Mod-z', run: consume(() => onUndoRef.current()) },
               { key: 'Mod-Shift-z', run: consume(() => onRedoRef.current()) },
               { key: 'Mod-y', run: consume(() => onRedoRef.current()) },
@@ -225,9 +218,8 @@ export function CellEditor({
       }),
     })
     viewRef.current = view
-    // Focus + land the caret: over the span a menu action asked for, else at the click point
-    // (posAtCoords) if one was captured, else at the end. posAtCoords reads layout and can throw
-    // before the view has measured — fall back to the end.
+    // Land the caret: the span a menu action asked for, else the click point (posAtCoords, which can
+    // throw before the view has measured), else the end.
     view.focus()
     const end = view.state.doc.length
     let pos: number | null = null
@@ -259,11 +251,10 @@ export function CellEditor({
     viewRef.current?.dispatch({ effects: citesChanged.of(null) })
   }, [ordinalOf])
 
-  // The model can re-render this positional cell with different text — a reorder moves content between
-  // cells, a page undo reverts it, a cell edit rebuilds its own table. Sync the live editor to it. Safe
-  // even while focused: a cell keystroke makes `initial` equal the text just typed (identical to the
-  // live doc, so the guard below no-ops); a reorder or focused undo brings genuinely different text and
-  // the sync applies — a focused undo MUST update the cell the caret sits in.
+  // The model can re-render this positional cell with different text (reorder, page undo, a sibling
+  // cell edit rebuilding the table) — sync the live editor to it. Safe while focused: a keystroke makes
+  // `initial` equal the text just typed, so the guard below no-ops; a reorder or focused undo brings
+  // genuinely different text and the sync must apply.
   useLayoutEffect(() => {
     const view = viewRef.current
     if (!view || view.state.doc.toString() === initial) return

@@ -17,15 +17,15 @@ export interface TrashMenuContext {
    *  right-click on an unchecked row acts on that row alone, whatever else is checked. */
   batch: boolean
   /** The places this row may be sent, when its recorded home no longer resolves. Absent means the
-   *  home is there and Restore acts without asking. A batch never carries one — checked rows can be
-   *  different kinds from different homes, and one pick cannot answer for all of them. */
+   *  home is there and Restore acts without asking. A batch never carries one, since checked rows
+   *  can be different kinds from different homes. */
   destinations?: MoveTarget[]
   /** Which address a destination pick carries, decided by the row's kind. */
   destinationKind?: RestoreDestination['kind']
 }
 
-/** The two actions, in both of their voices. A count in the label would be the first anywhere in
- *  the app; the plural carries the same meaning without inventing one. */
+/** A count in the label would be the first anywhere in the app; the plural carries the same
+ *  meaning without inventing one. */
 export function trashMenuLabels(batch: boolean): { restore: string; delete: string } {
   return batch
     ? { restore: 'Restore All', delete: 'Delete All' }

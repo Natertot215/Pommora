@@ -1,7 +1,6 @@
-// The re-mint half of the record: a duplicated id — content or container — stops sharing its
-// twin's identity. The prior session's baseline names the path that legitimately held each id;
-// what sits there is the original, everything else takes a fresh id and DUPLICATES of the
-// device-local rows keyed to the old one — the original is untouched by construction.
+// A duplicated id (content or container) stops sharing its twin's identity: the prior
+// session's baseline names the path that legitimately held each id, that claimant keeps it,
+// and every other claimant takes a fresh id plus duplicated device-local rows.
 
 import { join } from 'node:path'
 import { blockHostKey } from '@shared/blocks'
@@ -25,11 +24,9 @@ export interface RemintTarget {
   path: string
 }
 
-/** Who keeps a contested id. The recorded path is the only non-re-derivable fact, so it is the
- *  whole verdict: a readable claimant there is the original and every other claimant re-mints —
- *  an ambiguous mark is preserved evidence and is spent the session its path answers again.
- *  Everything else defers: no baseline, no entry, an unreadable recorded path (never guess),
- *  or no claimant at it (unadjudicable — the baseline writer drops that entry). */
+/** Who keeps a contested id. The baseline's recorded path is the only non-re-derivable fact:
+ *  a readable claimant there is the original, every other claimant re-mints. Everything else
+ *  defers — no baseline, no entry, an unreadable recorded path, or no claimant at it. */
 export function adjudicate(
   duplicates: Record<string, EntityRecord[]>,
   prior: Baseline | null,
@@ -55,9 +52,8 @@ export interface RemintedEntity {
   newId: string
 }
 
-/** Execute the verdicts: disk writes first (the identity), device-row duplicates second (the
- *  chrome) — a row failure leaves the copy on default chrome and the original untouched,
- *  never a half-minted identity. A refused disk write skips that target; the defer stands. */
+/** Execute the verdicts: disk writes (identity) first, device-row duplicates (chrome) second,
+ *  so a row failure never leaves a half-minted identity. A refused disk write skips that target. */
 export async function runRemintPass(
   root: string,
   projection: Projection,
@@ -85,8 +81,8 @@ async function writeFreshId(
   fresh: string,
 ): Promise<Map<string, string> | null> {
   try {
-    // The map is what the copy's device rows join on; a page carries no views, so a landed page
-    // write is an empty one — null keeps its single meaning, a refused write.
+    // A page carries no views, so a landed page write returns an empty map, not null —
+    // null must keep its single meaning, a refused write.
     if (target.kind === 'page')
       return (await remintPageFile(join(root, target.path), target.id, fresh)) ? new Map() : null
     if (target.kind === 'context') return null

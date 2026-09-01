@@ -4,8 +4,7 @@
 // its own row.
 //
 // Everything stored is a bare ref — this module strips to `{kind, id}` in both directions, and
-// the renderer's restore hydrator mints paths against the live tree and recomputes the history
-// pointer as dead refs prune.
+// the renderer's restore hydrator mints paths against the live tree.
 
 import { isPlainObject } from '@shared/propertyValue'
 import { toNavRef, type NavRef, type StoredTab, type StoredTabSet } from '@shared/types'
@@ -32,8 +31,8 @@ function readTab(v: unknown): StoredTab | null {
 }
 
 /** Shape-validate and strip a tab-set payload to bare refs — the ONE boundary for the row, shared
- *  by the read below and the `tabs:save` handler. Malformed tabs drop; ids are deduped, since
- *  closeTab drops by id and two tabs sharing one would close together. Null = not a tab set. */
+ *  by the read below and the `tabs:save` handler. Ids are deduped, since closeTab drops by id and
+ *  two tabs sharing one would close together. */
 export function sanitizeTabSet(raw: unknown): StoredTabSet | null {
   if (!isPlainObject(raw) || !Array.isArray(raw.tabs)) return null
   const seen = new Set<string>()

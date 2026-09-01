@@ -35,8 +35,8 @@ export interface NexusSlice {
 }
 
 let systemAccentCache: string | null | undefined
-// Read once per NEXUS, not per reconcile: applyTree runs on every tree change and must never carry
-// a round trip, but nexus.db travels inside the Nexus — so opening a different one reads again.
+// Read once per nexus, not per reconcile — applyTree runs on every tree change and must never
+// carry a round trip; nexus.db travels inside the Nexus, so a different one reads again.
 let devicePrefsLoaded = false
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
@@ -54,9 +54,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // Close before the root can flip, even if the adopt is then canceled — data safety
       // beats window persistence.
       set({ navOpen: false, preview: null })
-      // Flush every pending page-body write to the CURRENT nexus before an adopt flips the root —
-      // else a debounce timer or an embed's exit flush landing after the flip binds the NEW nexus
-      // and overwrites a same-relative-path file there. Awaited so main binds the old root.
+      // Awaited so main binds the old root: a debounce or an embed's exit flush landing after
+      // the flip would otherwise bind the new nexus and overwrite a same-path file there.
       await flushAllPageSaves()
       const opened = await attempt()
       if (!opened.ok) {
@@ -78,8 +77,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     error: undefined,
 
     load: async () => {
-      // Only the FIRST load shows the full-screen loading state — a mutation refetch keeps the
-      // tree mounted so the sidebar's expand/collapse + selection survive instead of resetting.
+      // Only the first load shows the full-screen loading state — a mutation refetch keeps the
+      // tree mounted so the sidebar's expand/collapse + selection survive.
       if (!get().tree) set({ status: 'loading', error: undefined })
       void window.nexus.systemAccent().then((c) => {
         systemAccentCache = c
@@ -89,8 +88,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
-            // Independent fetches, one round of latency. The raw database reads keep a catch and
-            // name what the surface falls back to; the envelope channels structurally cannot reject.
+            // Independent fetches, one round of latency; the raw database reads keep a catch,
+            // since the envelope channels structurally cannot reject.
             await Promise.all([
               window.nexus.subfield.get().then((cfg) => {
                 if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
@@ -115,11 +114,11 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 .then((aliases) => set({ pageAliases: aliases }))
                 .catch(() => undefined), // the picker offers titles only
             ])
-            // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
-            // the in-memory tab set, so a re-read would roll the tabs backward.
+            // A mutation refetch must NOT re-read the sidecar — its debounced write trails the
+            // in-memory tab set, so a re-read would roll the tabs backward.
             if (get().activeTabId === '') {
-              // Disk leads exactly here (the first load) and on the external-edit push —
-              // navigation is never re-read mid-session, so a just-made change can't roll back.
+              // Disk leads only here and on the external-edit push; navigation is never re-read
+              // mid-session, so a just-made change can't roll back.
               const [read, previews, stored] = await Promise.all([
                 window.nexus.nav.read().catch(() => null),
                 window.nexus.previews?.load().catch(() => null),
@@ -145,22 +144,18 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     },
 
     applyTree: async (incoming) => {
-      // A tree from a DIFFERENT nexus (the menu's reload-state adopts in main and never runs
-      // openVia's clear) must wipe the per-nexus session state before any reconcile below can
-      // mirror the old nexus's tabs/previews into the new one's synced sidecars.
+      // A tree from a different nexus (a reload-state adopt in main, bypassing openVia's clear)
+      // must wipe the per-nexus session state before reconciling.
       const prevRoot = get().tree?.nexus.rootPath
       if (prevRoot !== undefined && prevRoot !== incoming.nexus.rootPath) resetNexusSession()
-      // IPC strips identity, so without stabilize() every push would re-render every consumer —
-      // an echo lands as the same tree (a zustand no-op); an unrelated change keeps the open
-      // container's identity and its memoized pipeline.
+      // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const tree = stabilize(incoming, get().tree)
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
       get().reconcilePreview(index)
-      // Read from the module cache, not an awaited IPC call — applyTree runs on every push,
-      // and a round-trip here would gate the whole reconcile behind it. Each pass refreshes
-      // the cache fire-and-forget, so the NEXT push sees a system-accent change.
+      // Read from the module cache, not an awaited IPC call — a round-trip here would gate the
+      // whole reconcile behind it. Each pass refreshes the cache fire-and-forget.
       if (systemAccentCache === undefined) systemAccentCache = await window.nexus.systemAccent()
       else
         void window.nexus.systemAccent().then((c) => {
@@ -187,8 +182,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         await window.nexus.showError(res.error.message)
         return false
       }
-      // Instant optimistic patch; main's confirming push lands a beat later with no flicker
-      // (stabilize() makes a matching push a no-op).
+      // Instant optimistic patch; main's confirming push lands a beat later with no flicker.
       const cur = get().tree
       let patched: NexusTree | null = null
       if (cur) {
@@ -202,8 +196,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             break
           }
           case 'moveSet': {
-            // A same-parent moveSet is a pure reorder — relocate no-ops, so the order patch is
-            // what keeps the drop from snapping back until the confirm walk lands.
+            // A same-parent moveSet is a pure reorder — the order patch keeps the drop from
+            // snapping back until the confirm walk lands.
             const moved = relocateNodeInTree(cur, req.path, req.newParentPath)
             patched = reorderChildrenInTree(moved ?? cur, req.newParentPath, req.order) ?? moved
             break
@@ -251,10 +245,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (cur && res.value.created && onCreated) {
         const optimistic = insertCreatedInTree(cur, req, res.value.created)
         if (optimistic) {
-          // The callback's sync body runs BEFORE the tree applies, so its state — order
-          // splices, naming state, a held ghost seat — lands in the SAME commit that mounts
-          // the newborn. Applied first, the newborn paints one frame unseated (ranked last,
-          // no naming field) and then teleports into place.
+          // The callback's sync body runs before the tree applies, so its state (order splices,
+          // naming state, a held ghost seat) lands in the same commit that mounts the newborn.
           const settled = onCreated(res.value.created)
           await get().applyTree(optimistic)
           await settled

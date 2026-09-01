@@ -1,7 +1,6 @@
-// The editor's bracket around the shared pointer-gesture skeleton. A CodeMirror extension has no
-// React component to hang an unmount abort on, and the skeleton drives its drags from window
-// listeners — so an editor destroyed mid-drag would leave the gesture running against a dead view.
-// `editorGestureCleanup` is that abort, and it goes in every extension array that starts one.
+// CodeMirror extensions have no unmount hook of their own, and drags run off window listeners,
+// so a destroyed editor would leave a gesture running against a dead view. `editorGestureCleanup`
+// is the abort for that; include it in every extension array that starts a gesture.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
@@ -12,10 +11,9 @@ import {
 } from '@renderer/DesignSystem/Interactions/gesture'
 import { Overlay, setShade } from './dragChrome'
 
-// One handle, matching the skeleton's own singleton: only one editor gesture is live app-wide. It
-// carries the view that started it, because the plugin below is mounted in EVERY editor and a page
-// runs several at once — an embed tile, a hover card, a preview window. Aborting on any view's
-// teardown would let a sibling's unmount kill the drag you are in the middle of.
+// Only one editor gesture is live app-wide, but the cleanup plugin is mounted in every editor
+// (a page can run several — embed tile, hover card, preview window), so the handle carries the
+// view that started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
 
 export function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): boolean {
@@ -32,34 +30,24 @@ export const editorGestureCleanup = ViewPlugin.define((view) => ({
   },
 }))
 
-/** Keeps the insertion line readable against a short or deeply-indented target. */
 const MIN_LINE_WIDTH = 40
 
-/** What one relocation drag has to say for itself: where the slots are, how the line draws over
- *  one, and what a drop writes. */
 export interface RelocateDragSpec<C, S> {
-  /** Measure the drop candidates in viewport coords — at activation, then after every scroll. */
   measure: () => C[]
-  /** Hit-test the cached candidates. Runs per pointermove, so it reads no layout. */
+  /** Runs per pointermove, so it must not read layout. */
   pick: (cands: C[], clientY: number) => S | null
-  /** Where the insertion line draws for a slot — null for a slot that would move nothing. */
   lineFor: (slot: S) => { left: number; top: number; width: number } | null
-  /** The document changes a drop on this slot applies. */
   commit: (slot: S) => ChangeSpec[] | null
-  /** At activation, before the shade lands — a heading unfolds here, so the shade covers what the
-   *  unfold reveals rather than the folded stub. */
+  /** Fires before the shade lands, so a heading can unfold first and the shade covers the
+   *  unfolded content rather than the folded stub. */
   onDragStart?: () => void
-  /** A release that never crossed the threshold: the press was a click. */
   onTap?: () => void
 }
 
-/** Relocate a range of the document by dragging it: shade the source in place, track a fixed
- *  insertion line, and move the lines on release. Both editor surfaces that relocate — a list item
- *  with its nested descendants, a whole block by its gutter handle — are this gesture wearing a
- *  different `RelocateDragSpec`.
- *
- *  Candidates are measured at activation and re-measured only on scroll: the document is static
- *  during a drag, so re-measuring per pointermove would be pure layout thrash. */
+/** Shared drag gesture for relocating a document range: shades the source, tracks a fixed
+ *  insertion line, and moves the lines on release. Used by both list-item drag and block-handle
+ *  drag via a different `RelocateDragSpec`. Candidates are measured at activation and re-measured
+ *  only on scroll, since the document is otherwise static during a drag. */
 export function beginRelocateDrag<C, S>(
   view: EditorView,
   e: PointerEvent,
@@ -74,15 +62,13 @@ export function beginRelocateDrag<C, S>(
   let lastY = e.clientY
   let stopScroll: (() => void) | null = null
 
-  // Re-aim the insertion line at the slot under the last pointer Y — no re-measure.
   const repick = (): void => {
     slot = spec.pick(cands, lastY)
     const line = slot === null ? null : spec.lineFor(slot)
     if (line) overlay.show(line.left, line.top, Math.max(line.width, MIN_LINE_WIDTH))
     else overlay.hide()
   }
-  // Candidate coords are viewport-relative, so any scroll invalidates them — re-measure against the
-  // new layout, then re-aim.
+  // Candidates are viewport-relative, so a scroll invalidates them.
   const remeasure = (): void => {
     cands = spec.measure()
     repick()
@@ -98,10 +84,9 @@ export function beginRelocateDrag<C, S>(
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
       lastY = ev.clientY
       remeasure()
-      // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive
-      // scrollDOM); its scrollBy fires the native `scroll`, which the skeleton's capture-phase
-      // window listener carries to onWindowScroll, so far candidates (CM only renders ~viewport)
-      // become targetable as they scroll in.
+      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the
+      // native `scroll`, reaching onWindowScroll, so off-viewport candidates become targetable
+      // as they scroll in.
       stopScroll = startAutoScroll({
         getPoint: () => ({ x: 0, y: lastY }),
         scroller: resolveScroller(host, 'y'),

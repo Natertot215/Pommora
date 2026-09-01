@@ -1,10 +1,8 @@
 // The page context-menu meta block (Open · Rename · Edit Icon · Delete) and the send block that
-// closes it (Move To ▸ · Copy Link · Copy Path) — shared by every surface that right-clicks a page:
-// the table cell's title menu and the row grip's, the card's, the sidebar row's, a tab's, and a
-// NavWindow row's, so the page actions stay single-sourced. An already-open page reads "Open"
-// (focus its tab) rather than "Open New Tab". Each consumer names its item set explicitly —
-// the extras render only where they're requested, so no menu carries an action its router
-// doesn't serve.
+// closes it (Move To ▸ · Copy Link · Copy Path) — shared by every surface that right-clicks a page,
+// so the page actions stay single-sourced. An already-open page reads "Open" (focus its tab) rather
+// than "Open New Tab". Each consumer names its item set explicitly, so no menu carries an action
+// its router doesn't serve.
 
 import type { ActionItem } from './menuModel'
 import { connectionText } from './connections'
@@ -41,10 +39,9 @@ export const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
 
-/** One destination an entity may be sent to. `children` are its sub-sets (a nested submenu).
- *  Both addresses ride along because the two consumers address differently: `path` is the move's
- *  `newParentPath`, and `id` is what a restore resolves its parent by — deriving one from the
- *  other main-side would put name-addressing back at the seam built to avoid it. */
+/** One destination an entity may be sent to. `children` are its sub-sets (a nested submenu). Both
+ *  addresses ride along since the two consumers address differently: `path` is the move's
+ *  `newParentPath`, `id` is what a restore resolves its parent by. */
 export interface MoveTarget {
   id: string
   label: string
@@ -52,9 +49,8 @@ export interface MoveTarget {
   children?: MoveTarget[]
 }
 
-/** What a surface hands over so its page can be sent somewhere: the containers on offer, and the
- *  one the page already sits in — that destination is shown disabled, since moving there is a
- *  no-op rather than an absence. No targets, no Move To row. */
+/** The containers on offer, and the one the page already sits in — that destination shows disabled,
+ *  since moving there is a no-op rather than an absence. No targets, no Move To row. */
 export interface PageMoveContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
@@ -91,9 +87,8 @@ export function pageSendActions(ctx: PageMoveContext): readonly PageSendAction[]
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
-  // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" whose
-  // action is the flow-after (Below) path — a grid has no above.
-  // `clipboard` and `reveal` are separate because they cost different things: copying a page's link
+  // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" using the
+  // Below path — a grid has no above. `clipboard`/`reveal` are separate since copying a page's link
   // or path needs nothing but the page, where revealing it needs the filesystem underneath.
   opts: {
     preview?: boolean
@@ -137,9 +132,9 @@ export function pageMetaMenuItems(
   ]
 }
 
-/** A narrower menu drawn from the same list — the actions stay in the order the full menu gives
- *  them, so a surface offering four of them can't come to disagree with one offering ten. A
- *  separator that would lead the result is dropped, since it separates nothing. */
+/** A narrower menu drawn from the same list — actions stay in the order the full menu gives them,
+ *  so a surface offering four of them can't disagree with one offering ten. A separator that would
+ *  lead the result is dropped, since it separates nothing. */
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,

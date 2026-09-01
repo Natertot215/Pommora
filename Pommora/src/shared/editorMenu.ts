@@ -20,13 +20,11 @@ export interface FormatState {
   heading: number // 0 = paragraph, 1–6
   list: ListKind | null
   block: 'quote' | null
-  /** The caret sits on a blank line a lone-line embed may be written on — the placement clause the
-   *  Paste As embed forms are offered under. Main builds that menu and cannot see the caret, so the
-   *  renderer answers it here alongside the rest. */
+  /** The caret sits on a blank line a lone-line embed may be written on — gates the Paste As embed
+   *  forms, since main builds that menu and cannot see the caret itself. */
   embedSeat: boolean
   /** The caret sits where a footnote marker may be written — outside the citations section and
-   *  outside code. Insert ▸ Footnote and Paste As ▸ Footnote are both offered under it, for the same
-   *  reason the embed forms need `embedSeat`: main builds the menu and cannot see the caret. */
+   *  outside code. Gates Insert ▸ Footnote and Paste As ▸ Footnote for the same reason as `embedSeat`. */
   citeSeat: boolean
 }
 
@@ -37,12 +35,9 @@ export const EDITOR_ACTION_PREFIX = 'mdpm:'
  *  whether to offer it and the renderer decides what it writes. */
 export const INSERT_LINK_ACTION = 'link:insert'
 
-/** The formatting chords, declared once. A chord is one fact with two spellings: Electron wants
- *  `CmdOrCtrl+Shift+X`, CodeMirror wants `Mod-Shift-x`. Each side formats this map rather than
- *  restating the keys, so the menu can never display a shortcut the editor doesn't bind — the
- *  pattern `bridge.ts` already models for IPC.
- *
- *  A chord is `[modifiers, key]`: `mod` is ⌘ on macOS and Ctrl elsewhere. */
+/** A chord is one fact with two spellings: Electron wants `CmdOrCtrl+Shift+X`, CodeMirror wants
+ *  `Mod-Shift-x`. Each side formats this map rather than restating the keys, so the menu can never
+ *  display a shortcut the editor doesn't bind. */
 export const FORMAT_CHORDS = {
   'format:bold': { shift: false, key: 'b' },
   'format:italic': { shift: false, key: 'i' },

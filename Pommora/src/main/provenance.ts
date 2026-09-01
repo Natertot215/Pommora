@@ -4,10 +4,9 @@
 // it spends, never entering the live tree.
 //
 // The write is all-or-nothing per record: a kind's REQUIRED payload failing to gather (a Context
-// whose registry entry cannot be read) writes no record at all — a recordless bundle is not a
-// bundle, so it degrades that one entity to hand-restore where a silently incomplete record
-// would be trusted by restore. The parent is not a required payload: it degrades to
-// `unaddressable`.
+// whose registry entry cannot be read) writes no record at all, degrading that entity to
+// hand-restore rather than trusting a silently incomplete one. The parent is not required — it
+// degrades to `unaddressable`.
 
 import type { Dirent } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm } from 'node:fs/promises'

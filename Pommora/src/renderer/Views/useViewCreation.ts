@@ -129,11 +129,9 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       SEEK_GLIDE,
     )
   }
-  // Every live order settles in the create's own act — the store runs the caller's onCreated
-  // ahead of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit
-  // (a newborn left out of a live array would rank last; nothing re-emits viewOrders). A null
-  // anchor ranks it last: the band-add's "end of the group", since banding partitions before the
-  // manual order ranks.
+  // Every live order settles in the create's own act — onCreated runs ahead of the optimistic tree
+  // apply, so the splice and the newborn's mount land in ONE commit. A null anchor ranks it last:
+  // the band-add's "end of the group", since banding partitions before the manual order ranks.
   const settleOrders = (
     latest: ViewCreationConfig,
     createdId: string,
@@ -185,8 +183,6 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       const latest = cfg()
       latest.onCreated(created)
       if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, 'below')
-      // A frame later — this callback runs ahead of the optimistic tree apply (the one-commit
-      // law), so the row reaches the DOM only when that commit paints.
       requestAnimationFrame(() => glideToRow(created.id))
     })
   }
@@ -213,8 +209,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
       : undefined
     return createPageIn(parentPath, seeds, order, (created) => {
-      // A view switch across the round trip forfeits the settle — an order write keyed to the
-      // stranger view would mint a manual order it never gestured.
+      // Same forfeit-on-view-switch rule as bandAdd, above.
       const latest = cfg()
       latest.onCreated(created)
       if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)

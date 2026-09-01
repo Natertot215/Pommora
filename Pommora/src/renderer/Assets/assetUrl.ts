@@ -5,9 +5,8 @@ import { normalizeTitle, parseConnectionText } from '@shared/connections'
 import { WEB_ADDRESS } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
 
-// Per SEGMENT, not `encodeURI` over the whole path: that helper leaves `#` and `?` alone, so a
-// file the user named `Draft #2.png` would truncate at the fragment and 404. App-minted tokens
-// never carried either character; names from a shared folder do.
+// Per segment, not `encodeURI` over the whole path: that helper leaves `#` and `?` alone, so a
+// file named `Draft #2.png` would truncate at the fragment and 404.
 export const assetUrl = (rel: string): string =>
   `nexus-asset://nexus/${rel.split('/').map(encodeURIComponent).join('/')}`
 

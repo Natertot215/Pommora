@@ -13,8 +13,8 @@ export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line
   }
 }
 
-// Ghost-shade: shades the dragged block's lines in place via a StateField (CM rebuilds line DOM on every
-// change, so a raw class would be wiped — line decorations survive). One field, one effect, both gestures.
+// Shades the dragged block's lines in place via a StateField, since CM rebuilds line DOM on every
+// change (a raw class would be wiped, but line decorations survive). One field, one effect, both gestures.
 export const setShade = StateEffect.define<{ from: number; to: number } | null>()
 const shadeLine = Decoration.line({ class: 'md-li-drag-source' })
 
@@ -38,9 +38,9 @@ export const shadeField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 })
 
-// Imperative accent insertion line over the editor — no floating ghost (the in-place shade shows what's
-// moving). position:fixed → viewport coords, immune to the scroll-container ambiguity an absolute child of
-// scrollDOM has. Created/torn-down by the gesture; no React tree.
+// Imperative accent insertion line over the editor — no floating ghost, since the in-place shade
+// shows what's moving. position:fixed uses viewport coords, immune to the scroll-container
+// ambiguity an absolute child of scrollDOM has. Created/torn-down by the gesture; no React tree.
 export class Overlay {
   private line: HTMLElement | null = null
 

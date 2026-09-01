@@ -3,7 +3,7 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 
 const c = colorVars.color
 
-// ── KNOBS — the LayoutFrame grid + tiles (tune here) ──
+// KNOBS — the LayoutFrame grid + tiles
 const GRID = {
   gapX: 8,
   gapY: 8,

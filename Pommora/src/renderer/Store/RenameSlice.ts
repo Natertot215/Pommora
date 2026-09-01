@@ -18,13 +18,13 @@ interface RenameFence {
 
 export interface RenameSlice {
   renamingPath: string | null
-  /** The open rename is a just-created entity's naming session — the field opens empty and a
-   *  page's first commit rides the create (disambiguating, cascade-free). */
+  /** A just-created entity's naming session — the field opens empty and its first commit rides
+   *  the create (disambiguating, cascade-free). */
   renamingCreate: boolean
   /** The gesture-declared field host, when the caller knew its surface; null resolves by rank. */
   renamingHost: RenameHost | null
-  /** The owner fence: field hosts claim on mount; one claim wins (declared host first, then
-   *  rank — detail over sidebar — then first-come) and only the winner mounts an input. */
+  /** The owner fence: field hosts claim on mount; one claim wins (declared host, then rank, then
+   *  first-come) and only the winner mounts an input. */
   renameClaims: RenameClaim[]
   renameWinner: number | null
   claimRename: (path: string, host: RenameHost) => number | null
@@ -32,23 +32,21 @@ export interface RenameSlice {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
-  /** The page whose icon picker is open, from a menu's Edit Icon. One consumer — the sidebar row
-   *  — so it needs no owner fence: the row at this path opens the picker and clears it on dismiss. */
+  /** The page whose icon picker is open, from a menu's Edit Icon. One consumer, so it needs no
+   *  owner fence. */
   iconPath: string | null
   beginIcon: (path: string) => void
   endIcon: () => void
   /** A one-shot "an item just landed inside this container" pulse — a disclosure-locked folder
-   *  reads it to briefly reveal only that child. The nonce re-fires it for the same child. */
+   *  reads it to briefly reveal only that child. */
   peekSignal: { parentPath: string; childId: string; nonce: number } | null
   signalPeek: (parentPath: string, childId: string) => void
-  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives.
-   *  `host` carries the gesture's surface into the naming fence. */
+  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
   /** Set when a property rename lands. A mounted view's values snapshot is fetched once per
-   *  container open and never re-reads, so without this the renamed column reads blank until the
-   *  user navigates away. Carries the key pair because the effect must RE-KEY the optimistic
-   *  overrides too — clearing them would revive the assign-vanish this codebase already fixed. */
+   *  container open and never re-reads, so without this the renamed column reads blank. Carries
+   *  the key pair because the effect must re-key the optimistic overrides too. */
   valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
   bumpContainerValues: (changes: ValueChange[]) => void
@@ -102,9 +100,9 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       const claims = s.renameClaims.filter((c) => c.token !== token)
       return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
     })
-    // Waits a microtask: StrictMode's simulated remount releases and re-claims in one act —
+    // Waits a microtask: StrictMode's simulated remount releases and re-claims in one act, and
     // an immediate cancel would kill every dev rename. A rename whose winning surface left is
-    // abandoned rather than handed to a standing claimant (would focus-steal / reopen empty).
+    // abandoned rather than handed to a standing claimant.
     queueMicrotask(() => {
       const s = get()
       if (released === undefined || s.renamingPath !== released.path) return
@@ -122,7 +120,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       }
     })
     // Self-heals when no surface ever claims — a newborn a filter hides, or a navigate-away
-    // mid-create, would otherwise strand the session with an unprompted empty field later.
+    // mid-create, would otherwise strand the session with an empty field.
     window.clearTimeout(renameOrphanTimer)
     renameOrphanTimer = window.setTimeout(() => {
       const s = get()

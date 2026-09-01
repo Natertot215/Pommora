@@ -1,9 +1,6 @@
-// The candidate files a key-scoped sweep may open: the index's holders when one answers, else
-// the corpus. Either way the set is intersected with the sweep's own scope folders — the index
-// answers over the whole nexus, while a property value only means anything inside the
-// Collection whose schema governs it, so an unintersected query would strip keys from pages
-// the sweeps were written to leave alone. The per-file key check inside each rewrite stays as
-// the second belt; this one confirms the scope.
+// The set is intersected with the sweep's own scope folders — the index answers over the whole
+// nexus, while a property value only means anything inside the Collection whose schema governs
+// it, so an unintersected query would strip keys from pages the sweeps were meant to leave alone.
 
 import { queryKeyHolders } from '../Database/contentIndex'
 import { corpusUnder, nexusCorpus } from '../indexSeed'

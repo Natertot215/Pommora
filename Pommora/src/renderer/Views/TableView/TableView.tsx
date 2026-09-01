@@ -73,15 +73,11 @@ import {
 import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
 
-// ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
-// flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
-// smaller = snappier. Bump this one number to taste.
+// TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
 
-// ── TUNABLE ── how long a left ghost survives before its collapse starts — 0 closes on leave
-// immediately; landing in the ghost keeps it alive either way. The dwell is the shared
-// GHOST_DWELL_MS in useGhostAnchor.
-const GHOST_GRACE_MS = 0 // KNOB
+// KNOB — how long a left ghost survives before its collapse starts; 0 closes on leave immediately.
+const GHOST_GRACE_MS = 0
 
 /** The datetime cell's picker shell: PickerMenu portals off the cell (escaping the table's overflow
  *  clip) and self-dismisses via its own backdrop. The calendar's [data-calmenu] sub-menus portal
@@ -196,9 +192,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     // "Untitled" on disk) and its commit rides the create — disambiguating, cascade-free.
     fromCreate?: true
   } | null>(null)
-  // The picker/datetime is ONE table-level self-managed pane — it owns its Bloom-out off `open`, so the
-  // cell only tracks WHICH cell is editing + captures its element for placement. lastPicker holds the
-  // exiting picker's content rendered through the Bloom-out; the inline editor unmounts instantly.
   // A column resize is in progress (set on grab, cleared on commit) — a grid-level flag so the borderless
   // table reveals its vertical dividers while you resize (its reorder twin is colDrag → col-dragging-active).
   const [resizing, setResizing] = useState(false)
@@ -653,11 +646,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
-  // ONE self-managed picker/datetime pane for the whole table, hung off the editing cell (triggerElRef)
-  // and portaled to a body top layer, so it escapes the table's overflow clip (`.table-view` is an
-  // overflow-x scroller, which clips y too). `open` blooms it in on a picker cell, out when editing
-  // clears; lastPicker keeps the exiting cell's content through the out; the per-cell key remeasures on
-  // a cell switch (the position effect keys on the ref object, whose `.current` swap wouldn't re-fire it).
+  // ONE self-managed picker/datetime pane for the whole table, hung off the editing cell and
+  // portaled to a body top layer so it escapes the table's overflow clip. `open` blooms it in on a
+  // picker cell, out when editing clears; lastPicker keeps the exiting cell's content through the
+  // out; the per-cell key remeasures on a cell switch.
   const cellPicker = (): React.ReactNode => {
     const cell = editing?.mode === 'picker' ? editing : lastPicker.current
     const row = cell && rowById.get(cell.rowId)

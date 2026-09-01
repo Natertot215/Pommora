@@ -25,8 +25,6 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
   } = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
   const photoUrl = useAssetUrl(profileImage)
-  // The photo is an element, not a glyph — it needs the step's pixel value, and the fallback
-  // glyph is drawn inset within it.
   const px = ICON_PX[size]
   const dim = { width: px, height: px }
   return (

@@ -1,8 +1,6 @@
-// A cell editor's document is one cell, so its own scan can never bind a marker — the citations
-// that number it live in the page around it. The resting cell already draws from the numbering the
-// table carries; this gives the entered cell the same source, so the glyph does not change when the
-// caret arrives. The pairing is the one the whole table layer keeps: a resting cell and its editor
-// are two renderers over one answer, never one renderer with two answers.
+// A cell editor's document is one cell, so its own scan can never bind a marker — the citations that
+// number it live in the page around it. This gives the entered cell the same numbering source the
+// resting cell draws from, so the glyph does not change when the caret arrives.
 import {
   Decoration,
   EditorView,
@@ -16,9 +14,8 @@ import { CiteRefWidget } from '../Editor/decorations'
 
 type OrdinalOf = (label: string) => number | null
 
-/** The document's numbering moved. A cell's own document is one cell, so no transaction this editor
- *  can see ever says so — the host holding the whole-document answer says it instead, exactly as it
- *  hands the resting cell a fresh key to compare. */
+/** The document's numbering moved — no transaction this cell's own editor sees says so, so the host
+ *  holding the whole-document answer fires this instead. */
 export const citesChanged = StateEffect.define<null>()
 
 function marks(view: EditorView, ordinalOf?: OrdinalOf): DecorationSet {

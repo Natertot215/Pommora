@@ -27,9 +27,9 @@ import { serializeSchemaOp } from './schemaChain'
 const nameRefusal = (name: string): string =>
   isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
 
-// Seed defaults for a def that has NONE (the field is undefined — a fresh create, or a type-change
-// into select/status). An EMPTY array is a deliberate state (the user deleted every option), never
-// re-seeded — else emptying a select's options and then any unrelated edit resurrects the seed.
+// Seeds only when the field is undefined (fresh create, or a type-change into select/status).
+// An EMPTY array is a deliberate state and is never re-seeded, or emptying a select's options
+// then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
   let d = def
   if (d.type === 'status' && d.status_groups === undefined)
@@ -40,8 +40,7 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   return d
 }
 
-/** Mint + persist a nexus-wide definition, appending its id to the nexus order. A title already
- *  taken is refused, case-folded: the title IS the key a property's values write under. */
+/** A title already taken is refused, case-folded: the title IS the key values write under. */
 export async function createProperty(
   root: string,
   def: PropertyDefinition,
@@ -65,10 +64,9 @@ export async function createProperty(
       result: ok({ id: candidate.id }),
     }
   })
-  // A LANDED create wearing a journaled delete's name or id supersedes the record: it's a
-  // re-create (or a restore, which funnels through here with the recorded id), and a later
-  // replay completing that delete would strip the living property instead of a dead one. Only
-  // after the commit — a refused create must not spend the record it never displaced.
+  // A landed create wearing a journaled delete's name or id supersedes the record — it's a
+  // re-create or restore — or a later replay would strip the living property instead of the
+  // dead one. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
     if (
@@ -82,26 +80,21 @@ export async function createProperty(
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
-/** Rewrite one property's key across every page that holds it, in place — the key keeps its
- *  position and its comment. A page holding neither key is left untouched. Returns the holders
- *  it could not read, so a journaled caller holds its record while any remain. */
+/** Returns the holders it could not read, so a journaled caller holds its record while any remain. */
 export function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
-  // both holds the old one too, so the holder set covers every fold the collision arm can meet.
+  // both holds the old one too.
   return cascadePages(root, oldName, (content) =>
     renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER),
   )
 }
 
-/** The old and new names a committed rename has to sweep across the pages, or null when the edit
- *  left the name alone. */
 type Rename = { from: string; to: string }
 
-/** Stage a rename's record, or null when this edit renames nothing. BEFORE the commit:
- *  registry-first ordering means a crash between commit and sweep is recoverable from nowhere
- *  else — the old name survives only here. The pre-read is advisory (mutateRegistry revalidates);
- *  a record for an edit that then fails is cleared on that path, and one stranded by a throw is
- *  disposed of by the id-gated replay. */
+/** Staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is
+ *  recoverable from nowhere else, so the old name survives only here. The pre-read is advisory
+ *  (mutateRegistry revalidates); a record for an edit that then fails is cleared on that path,
+ *  one stranded by a throw disposed of by the id-gated replay. */
 async function stageRename(
   root: string,
   propertyId: string,
@@ -116,8 +109,7 @@ async function stageRename(
   return record
 }
 
-/** Edit the global definition in place — every assigning Collection sees the change on next read.
- *  A name change commits the registry first, then sweeps the pages once. */
+/** A name change commits the registry first, then sweeps the pages once. */
 export function editProperty(
   root: string,
   propertyId: string,
@@ -155,7 +147,6 @@ export function editProperty(
       if (record) await clearSchemaJournal(root, record)
       return edit
     }
-    // A holder the sweep could not read holds the record — the next open's replay retries.
     const skipped = edit.value ? await renameSweep(root, edit.value.from, edit.value.to) : 0
     if (record && !skipped) await clearSchemaJournal(root, record)
     return ok(null)

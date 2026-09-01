@@ -87,9 +87,9 @@ export function connectionClicks(getApi: GetApi): Extension {
         menu({
           kind: 'page',
           page,
-          // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
-          // the editor and PageWindow flips it at runtime through a Compartment, so a value captured
-          // in a memoized seam goes stale.
+          // Editability is read here rather than threaded through the host: `readOnly` is live
+          // inside the editor and flips at runtime through a Compartment, so a captured value
+          // would go stale.
           editable: !view.state.readOnly,
           hasAlias: hit.aliased,
           apply: (action) => applyLinkAction(view, action, hit.range),

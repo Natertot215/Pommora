@@ -4,12 +4,10 @@ import { pageBody, shownPage, useSession } from '../store'
 import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
 
-// The `.content-pane` fills the whole window; the sidebar, toolbar, and inspector are floating overlays
-// on top of it. Carve off the sidebar (start right of it) and the inspector (end left of it), each skipped
-// when parked off-screen. The toolbar is NOT carved — the banner is full-bleed and runs up under it — so the
-// band stays in the shot and main overpaints just the chrome band (maskTop): over a banner it's back-filled
-// from the banner just below (maskFill 'banner'); bannerless, that strip is empty (maskFill 'window'). Each
-// overlay edge is clamped inside the pane.
+// `.content-pane` fills the window; the sidebar and inspector are floating overlays carved off its
+// edges (skipped when parked off-screen). The toolbar is NOT carved — the banner is full-bleed under
+// it — so main overpaints just that chrome band (maskTop), back-filled from the banner when present
+// (maskFill 'banner') or left empty otherwise ('window').
 function contentRect(pane: Element): ThumbRect {
   const p = pane.getBoundingClientRect()
   let { left, right } = p
@@ -33,12 +31,11 @@ async function imagesReady(pane: Element): Promise<void> {
   )
 }
 
-// Snapshot the detail view as a gallery thumbnail — captured ONLY while the NavWindow is closed, so the
-// overlay never bakes into the (synced) shot. Runs on selection settle AND on the pane closing (navOpen
-// is a dep), so a page opened while browsing with the pane open gets its cover the moment the pane
-// closes. Waits for fonts + all images (the banner) so the banner has rendered first; a short delay
-// clears the pane's close animation and debounces rapid navigation. Only the detail rect (contentRect
-// carves off the sidebar/inspector overlays) is captured.
+// Snapshot the detail view as a gallery thumbnail — captured only while the NavWindow is closed, so
+// the overlay never bakes into the shot. Runs on selection settle and on the pane closing (navOpen is
+// a dep), so a page opened while browsing with the pane open still gets its cover once it closes. The
+// delay clears the close animation and debounces rapid navigation; fonts/images are awaited first so
+// the banner has rendered.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)

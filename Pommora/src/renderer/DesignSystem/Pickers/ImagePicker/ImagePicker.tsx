@@ -79,9 +79,7 @@ export function ImagePicker({
     if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
 
-  // Hold Save until the re-picked image's value actually lands on the seat, or a fast Save writes
-  // the crop to the just-replaced image and the new one lands uncropped. A dedup (or a failed
-  // adopt) lands on the value already shown and releases at once, so the hold never strands.
+  // A dedup (or a failed adopt) lands on the value already shown and releases the hold at once.
   const settleRepick = useCallback(
     (source: string): void => {
       if (!onRepick) return

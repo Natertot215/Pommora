@@ -5,18 +5,16 @@ import { type PageTarget, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'
 
-/** New item ids slot in here, and in the per-view default order below — the seam for future
- *  user-defined (scoped) items. */
+/** New item ids slot in here, and in the per-view default order below. */
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
 const ALL_ITEM_IDS: SubfieldItemId[] = ['pageStats', 'addMenu', 'viewType']
-/** Narrow a persisted (untrusted) id string to a known item id — drops stale/unknown entries. */
 export function isSubfieldItemId(id: string): id is SubfieldItemId {
   return (ALL_ITEM_IDS as string[]).includes(id)
 }
 
-/** The page a host's footer describes and the body it counts — the host hands it down, so the
- *  main pane and a floating window drive the same footer from their own page. */
+/** The page a host's footer describes and the body it counts — hands down so the main pane and a
+ *  floating window drive the same footer from their own page. */
 export interface SubfieldPage {
   target: PageTarget
   body: string
@@ -69,8 +67,8 @@ function AddMenuItem(): React.JSX.Element | null {
   )
 }
 
-/** List ⇄ Gallery toggle for NavView (the `none` empty state) — drives the persisted `navViewMode`
- *  slice (separate from NavWindow's `navWindowMode`). Mirrors the NavWindow rail toggle's markup. */
+/** List ⇄ Gallery toggle for NavView — drives `navViewMode`, separate from NavWindow's own
+ *  `navWindowMode`. */
 function ViewTypeItem(): React.JSX.Element {
   const mode = useSession((s) => s.navViewMode)
   const setMode = useSession((s) => s.setNavViewMode)

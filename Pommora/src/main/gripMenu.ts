@@ -1,5 +1,5 @@
-// The block grip's native menu: Delete on every kind, with that kind's own arm above it — "Page
-// Source ▸" on an embed tile, "Type ▸" on a list. The pick tree crosses IPC in the ctx.
+// The block grip's native menu: Delete on every kind, with that kind's own arm above it —
+// "Page Source ▸" on an embed tile, "Type ▸" on a list.
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import {
   type GripMenuAction,

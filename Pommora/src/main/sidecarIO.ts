@@ -1,8 +1,7 @@
 // The single read/write pair for folder sidecars, and the lock every read-modify-write of one
 // runs under. Validates through a zod schema on read (foreign keys retained via looseObject) and
-// writes atomically with stable, sorted JSON. CRUD reads the sidecar, mutates modeled fields on
-// the returned object (foreign keys ride along), and writes it back — so foreign data is
-// preserved.
+// writes atomically with stable, sorted JSON. CRUD reads, mutates modeled fields on the returned
+// object (foreign keys ride along), and writes it back — so foreign data is preserved.
 
 import { readFile } from 'node:fs/promises'
 import type { z } from 'zod'

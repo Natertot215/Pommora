@@ -28,19 +28,16 @@ import {
 } from '@shared/properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
-/** These ops edit `select_options`, so they apply to Select / Multi-Select only — rejected up front
- *  rather than left to the write. */
+/** Applies to Select / Multi-Select only — rejected up front rather than left to the write. */
 function requireOptionType(type: PropertyType): Result<null> {
   return hasSelectOptions(type)
     ? ok(null)
     : fail('invalid-property', 'Options can only be edited on Select or Multi-Select properties.')
 }
 
-/** Replace a Select / Multi-Select property's options wholesale. Validates unique titles and writes
- *  the array verbatim — an emptied array stays empty (no re-seed; the >=1 floor is gone), matching
- *  createProperty and editProperty, which seed only a field that is absent. Rides serializeSchemaOp (like
- *  the page-touching ops) so it can't land inside a concurrent renameOption's cascade and desync the
- *  registry from pages; the actual registry write still goes through mutateRegistry inside. */
+/** An emptied array stays empty (no re-seed), matching createProperty/editProperty, which seed
+ *  only a field that is absent. Rides serializeSchemaOp so it can't land inside a concurrent
+ *  renameOption's cascade and desync the registry from pages. */
 export function setOptions(
   root: string,
   propertyId: string,
@@ -63,10 +60,8 @@ export function setOptions(
   )
 }
 
-/** Replace a Status property's `status_groups` wholesale — the registry-only path behind add / recolor
- *  / reorder (the Status analog of setOptions). Validates unique option values PROPERTY-WIDE (a page's
- *  the value is referenced across all groups), then writes verbatim. Rides serializeSchemaOp so
- *  it can't interleave with a concurrent page cascade. */
+/** The Status analog of setOptions. Validates unique option values property-wide, across all
+ *  groups, since a page's value is referenced across all groups. */
 export function setStatusGroups(
   root: string,
   propertyId: string,
@@ -92,7 +87,7 @@ export function setStatusGroups(
   )
 }
 
-// mutateRegistry alone: the repair calling this holds a page lock the schema chain's cascades take.
+// mutateRegistry alone: the caller holds a page lock the schema chain's cascades take.
 export function addOptionToDef(
   root: string,
   propertyId: string,
@@ -159,12 +154,8 @@ export function dropOptionFromDef(
   })
 }
 
-/** The gate that admits a def to an op — the one place Select and Status diverge outside a
- *  rename's def edit. */
 type RequireType = (type: PropertyType) => Result<null>
 
-/** The opening move every page-touching option op makes: resolve the property, refuse a type the
- *  op doesn't apply to, and hand back the frontmatter key its values live under. */
 async function resolveForCascade(
   root: string,
   propertyId: string,
@@ -177,17 +168,15 @@ async function resolveForCascade(
   return ok(def.name)
 }
 
-/** Strip `value` from every page holding `key` — the shared tail of clear and remove on both
- *  Select and Status, which differ only in the type check that resolved the key. */
+/** Strips `value` — the shared tail of clear and remove on both Select and Status, which
+ *  differ only in the type check that resolved `key`. */
 function stripCascade(root: string, key: string, value: string): Promise<number> {
   return cascadePages(root, key, (content) => stripPageValue(content, key, value))
 }
 
-/** Stage an option rename's record, def-gated so an op the registry will refuse outright journals
- *  nothing. BEFORE the commit (registry-first order): a crash between commit and cascade is
- *  recoverable only from this record, and one stranded by a refusal or throw is disposed of by the
- *  replay's holds-to-and-not-from gate. Returned staged or not — clearing a record the slot never
- *  held is already a no-op, so the caller's settle reads the same either way. */
+/** Def-gated so an op the registry will refuse outright journals nothing. Staged BEFORE the
+ *  commit: a crash between commit and cascade is recoverable only from this record, and one
+ *  stranded by a refusal or throw is disposed of by the replay's holds-to-and-not-from gate. */
 async function stageOptionRename(
   root: string,
   propertyId: string,
@@ -199,15 +188,12 @@ async function stageOptionRename(
   return record
 }
 
-/** These ops edit a Status property's `status_groups`; reject anything else up front. */
 function requireStatusType(type: PropertyType): Result<null> {
   return type === 'status'
     ? ok(null)
     : fail('invalid-property', 'Status options can only be edited on a Status property.')
 }
 
-/** What a rename does to the def it edits, per option shape: the edited def plus the option
- *  list uniqueness validates over. */
 type OptionEdit = (
   def: PropertyDefinition,
   oldValue: string,
@@ -224,9 +210,7 @@ const editStatusGroups: OptionEdit = (def, oldValue, newTitle) => {
   return { next: { ...def, status_groups: groups }, values: groups.flatMap((g) => g.options) }
 }
 
-/** Rename an option value and cascade the new value onto every page that held the old one. The
- *  registry edit rides mutateRegistry and validates unique values — a collision fails before any
- *  page is touched; the page cascade rides serializeSchemaOp. */
+/** The registry edit validates unique values — a collision fails before any page is touched. */
 function renameOp(requireType: RequireType, editDef: OptionEdit) {
   return (
     root: string,
@@ -262,10 +246,8 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
     })
 }
 
-/** Clear an option's value from every page, keeping the option in the def. Page-only fan-out on
- *  the serializeSchemaOp chain; the registry is untouched — which is why it is also unjournaled:
- *  its crash residue disagrees with nothing (every remaining value is still a legal option), the
- *  same razor that keeps removeProperty outside the journal. */
+/** Page-only fan-out; the registry is untouched, which is why it is also unjournaled: its crash
+ *  residue disagrees with nothing, since every remaining value is still a legal option. */
 function clearOp(requireType: RequireType) {
   return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
     serializeSchemaOp(async () => {
@@ -276,9 +258,8 @@ function clearOp(requireType: RequireType) {
     })
 }
 
-/** Remove an option: strip its value from every page, then drop it from the def. Pages first (as
- *  deleteProperty does) so a def-edit failure never leaves the option gone with its values
- *  orphaned. A strip that could not read every holder defers the registry drop with it — the
+/** Pages first (as deleteProperty does) so a def-edit failure never leaves the option gone with
+ *  its values orphaned. A strip that could not read every holder defers the registry drop — the
  *  record stays, and the next open's replay re-runs both once the pages read. */
 function removeOp(requireType: RequireType) {
   return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
@@ -295,15 +276,10 @@ function removeOp(requireType: RequireType) {
     })
 }
 
-/** Rewrite the pages holding `key` through `rewrite` (null = the page doesn't hold it, skip) —
- *  the key's queried holders when an index answers, else the corpus, both intersected with the
- *  Collection folders whose schemas govern values. Each page's read-modify-write runs under its
- *  file lock — the SAME lock the cell-write path takes — so a cascade and a concurrent cell
- *  edit on one page can't clobber each other. Per file, not all-or-nothing across pages: a
- *  partly-applied rename/strip is recoverable by re-running and each page stays individually
- *  valid. Shared by rename (replace) and remove/clear (strip). Returns how many holders it
- *  could not read — the rewrite callback only runs on a read that landed, so its silence is
- *  the skip signal; a journaled caller holds its record while any remain. */
+/** Each page's read-modify-write runs under its file lock — the SAME lock the cell-write path
+ *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other. Per
+ *  file, not all-or-nothing: a partly-applied rename/strip is recoverable by re-running. Returns
+ *  how many holders it could not read; a journaled caller holds its record while any remain. */
 export async function cascadePages(
   root: string,
   key: string,

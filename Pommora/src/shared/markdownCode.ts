@@ -1,12 +1,9 @@
-// Where code lives in a Markdown body — fenced blocks and inline `spans`. THE mask both processes
-// read: the editor refuses to tokenize a construct inside code, and the write side refuses to
-// rewrite one, so a `[[Title]]` shown in a code sample survives a rename of the page it names.
-// Pure: no fs, no React.
+// Where code lives in a Markdown body — fenced blocks and inline `spans`. THE mask both the editor
+// (tokenizing) and the write side (rewriting) read, so a `[[Title]]` shown in a code sample survives
+// a rename of the page it names.
 
-// A fence's marker-run LENGTH is part of its identity — it's what lets a longer fence hold shorter ones
-// as literal text.
-// Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` already stops at a CRLF line's carriage
-// return, while a trailing `$` would fail to match past it and blank every fence in the document.
+// Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` already stops at a CRLF line's
+// carriage return, while a trailing `$` would fail to match past it and blank every fence.
 const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(`{3,}|~{3,})[ \t]*(.*)/
 const QUOTE_PREFIX_RE = /^[ \t]*(?:>[ \t]?)*/
 
@@ -38,8 +35,8 @@ export function lineOffsetsOf(lines: string[]): number[] {
 function fenceAt(line: string): Fence | null {
   const m = FENCE_RE.exec(line)
   if (!m) return null
-  // A backtick fence's info string may hold no backtick — the run would be ambiguous with an inline
-  // span, so the line is prose. Tilde fences carry no such restriction.
+  // A backtick fence's info string can't hold a backtick — ambiguous with an inline span — so the
+  // line is prose instead. Tilde fences have no such restriction.
   if (m[2][0] === '`' && m[3].includes('`')) return null
   return {
     depth: quoteDepthOf(line),
@@ -50,14 +47,13 @@ function fenceAt(line: string): Fence | null {
   }
 }
 
-/** An opener's language word — the first token of its info string (```` ``` json extra ```` types as
- *  json). Bare fences and every closer return ''. */
+/** An opener's language word — the first token of its info string. Bare fences and closers return ''. */
 export function fenceLang(f: Fence): string {
   return /^[^`~\s]*/.exec(f.info)?.[0] ?? ''
 }
 
 /** Anything shorter, differently marked, or carrying an info word of its own is content, not a close —
- *  which is how a ````` block holds ``` lines verbatim instead of ending at the first one. */
+ *  how a longer-fenced block holds shorter fence lines verbatim instead of ending at the first one. */
 function fenceCloses(open: Fence, candidate: Fence): boolean {
   return (
     candidate.marker === open.marker &&
@@ -117,11 +113,10 @@ export function fencedLineMask(lines: string[]): Uint8Array {
   return mask
 }
 
-/** Inline-span interiors on ONE line, as line-relative half-open ranges. A span opens with a run of
- *  N backticks and closes with a matching run; the marker positions are boundaries, NOT interior —
- *  so the closing backtick of `code|` still type-overs. An UNCLOSED opener claims the rest of the
- *  line: while a span is being typed it is always unclosed, and that is exactly when transforms
- *  must already stay out. */
+/** Inline-span interiors on ONE line, as line-relative half-open ranges. Marker positions are
+ *  boundaries, not interior, so the closing backtick still type-overs. An unclosed opener claims the
+ *  rest of the line — while a span is being typed it's always unclosed, exactly when transforms must
+ *  stay out. */
 function inlineSpans(line: string): [number, number][] {
   const spans: [number, number][] = []
   let i = 0
@@ -158,13 +153,10 @@ function inlineSpans(line: string): [number, number][] {
   return spans
 }
 
-/** The body's code ranges, resolved in ONE pass, as a membership test. Build it once per body and
- *  query it per match — the per-offset form re-walks the whole document, which is O(doc × matches)
- *  over a scan or a rename cascade.
- *
- *  An offset on a fence line counts as inside (the fence is part of the construct). Pairing is
- *  `fenceSpans`' — the same pass the editor renders from, so the two can never disagree about which
- *  bytes a rename is allowed to touch. */
+/** The body's code ranges, resolved in ONE pass, as a membership test. Build once per body and query
+ *  per match — the per-offset form re-walks the whole document, O(doc × matches) over a scan or
+ *  rename cascade. Pairing reuses `fenceSpans`, the same pass the editor renders from, so the two can
+ *  never disagree about which bytes a rename may touch. */
 export type CodeMask = (offset: number) => boolean
 
 export function codeMask(text: string): CodeMask {
@@ -173,9 +165,9 @@ export function codeMask(text: string): CodeMask {
   return codeMaskOf(lines, lineOffsetsOf(lines), (i) => fenced[i] === 1)
 }
 
-/** The same mask over a document already split and already paired. A caller holding the whole-document
- *  scan takes this: pairing every fence a second time to answer the same question is the cost that
- *  makes a per-keystroke reader scale with document length. */
+/** The same mask over a document already split and paired. For a caller holding the whole-document
+ *  scan — pairing every fence again is the cost that makes a per-keystroke reader scale with
+ *  document length. */
 export function codeMaskOf(
   lines: string[],
   starts: number[],
@@ -189,8 +181,8 @@ export function codeMaskOf(
       i++
       continue
     }
-    // A run of fenced lines is one range. Adjacent blocks merging is harmless — membership is the
-    // only question a mask answers, and both sides of the seam are code either way.
+    // A run of fenced lines is one range; adjacent blocks merging is harmless since both sides of
+    // the seam are code either way.
     const open = i
     while (i < lines.length && fencedLine(i)) i++
     const close = i - 1
@@ -200,9 +192,8 @@ export function codeMaskOf(
 }
 
 /** Single-offset form, for callers holding one position rather than a run of matches. Fence pairing
- *  has to start from the document's first line — a line cannot know it sits in a block without them —
- *  but inline spans are a line-local question, so only the offset's own line is scanned for them.
- *  Answers exactly what `codeMask` answers; a caller with a run of offsets still wants that instead. */
+ *  still has to start from the document's first line, but inline spans are line-local, so only the
+ *  offset's own line is scanned for them. A caller with a run of offsets still wants `codeMask`. */
 export function isInsideCode(offset: number, text: string): boolean {
   if (offset < 0) return false
   const lines = text.split('\n')
@@ -215,9 +206,8 @@ export function isInsideCode(offset: number, text: string): boolean {
   return false
 }
 
-/** The inline half of `isInsideCode`, line-local. A caller already holding a cached fence answer for
- *  the line takes this instead: the whole-document form has to split the text and pair every fence
- *  from the top, which is a per-document cost no per-caret reader should pay. */
+/** The inline half of `isInsideCode`, line-local — for a caller already holding a cached fence answer
+ *  for the line, avoiding the whole-document form's per-document split-and-pair cost. */
 export function isInsideInlineCode(line: string, offset: number): boolean {
   return inlineSpans(line).some(([a, b]) => offset >= a && offset < b)
 }

@@ -1,6 +1,5 @@
-// On-demand single-page read for the detail view.
-// Reuses splitFrontmatter from the nexus walk; adds body extraction
-// (everything after the closing fence). Read-only — never opens for writing.
+// On-demand single-page read for the detail view. Reuses splitFrontmatter from the nexus walk
+// and adds body extraction. Read-only — never opens for writing.
 
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
@@ -11,11 +10,9 @@ import { splitEnvelope } from './IO/pageFile'
 import { basenameNoMd } from './coerce'
 import { adoptedId } from './ids'
 
-/**
- * Read one page's full content. `relPath` is nexus-relative POSIX (as carried on
- * PageNode.path); `rootPath` is the nexus root. Callers must validate `relPath`
- * stays under root before invoking (the IPC layer does this).
- */
+/** Read one page's full content. `relPath` is nexus-relative POSIX (as carried on
+ *  PageNode.path). Callers must validate `relPath` stays under root before invoking
+ *  (the IPC layer does this). */
 export async function readPage(rootPath: string, relPath: string): Promise<PageDetail> {
   const absFile = join(rootPath, relPath)
   const content = await readFile(absFile, 'utf8')

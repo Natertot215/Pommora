@@ -18,9 +18,8 @@ const stream = (mode: Promise<unknown>): Promise<LanguageSupport> =>
 
 /** How each language's parser arrives, keyed by the name the roster gives it. The specifier is
  *  written out per entry rather than built from the name: only a literal one is a chunk the bundler
- *  can split — from a template, all thirty-odd modes land in the main bundle whether or not a page
- *  ever fences one. The legacy modes ship in `@codemirror/legacy-modes`, already a dependency, so a
- *  language there costs a row here and a row in the roster. */
+ *  can split — from a template, all thirty-odd modes would land in the main bundle regardless of
+ *  whether a page ever fences one. */
 const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
   JavaScript: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true })),
   TypeScript: () =>

@@ -15,8 +15,7 @@ const FILTER_MAX_WIDTH = '420px'
 const LEAD_GAP = '6px'
 
 /** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the
- *  Operator cell is the row's compactness priority, and its chevron is all that stands between the
- *  label and the field's edge. */
+ *  Operator cell is the row's compactness priority. */
 const TRAILING_GAP = '2px'
 
 /** KNOB — the frame's height floor (matches the hosts' leaf slider floor). */

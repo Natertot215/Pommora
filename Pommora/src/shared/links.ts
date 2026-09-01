@@ -1,59 +1,47 @@
-// External markdown-link URL handling. No fs, no React — imported by both main (the opener) and the
-// renderer (the decoration that styles valid vs invalid), so a link's appearance can never disagree
-// with whether it actually opens.
+// External markdown-link URL handling. Imported by both main (the opener) and the renderer (the
+// decoration that styles valid vs invalid), so a link's appearance can never disagree with
+// whether it actually opens.
 
 import { normalizeTitle } from './connections'
 
-/** The URI-scheme prefix. One expression, because two callers make opposite decisions from it — a
- *  target carrying a scheme is left exactly as written, and is refused as a page title — and a
- *  second copy widened on its own would disagree with the first about what a URL even is. */
+/** One expression because two callers make opposite decisions from it: a target carrying a
+ *  scheme is left as-written and refused as a page title. A second copy would risk disagreeing
+ *  about what a URL even is. */
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
 
-/** An explicit http(s) scheme, spelled written-out rather than inferred. Normalization promotes a
- *  bare `example.com` to https, so every surface that must know what the author actually wrote —
- *  the embed grammar, the guest attach gate, the website hover route — layers this on top of link
- *  validity instead of trusting the normalized form. */
+/** Written-out rather than inferred: normalization promotes a bare `example.com` to https, so
+ *  surfaces that must know what the author actually wrote layer this on top of link validity. */
 const WEB_SCHEME = /^https?:\/\//i
 export const hasWebScheme = (url: string): boolean => WEB_SCHEME.test(url)
 
-/** How long a link is given to resolve — the title fetch and the hover card's site load share
- *  the one deadline, so "resolves" means the same thing everywhere. */
+/** The title fetch and the hover card's site load share this one deadline. */
 export const LINK_RESOLVE_TIMEOUT_MS = 6000
 
-/** The `[alias](url)` markdown-link shape — a URL property's Renamed (aliased) form. The codec stores
- *  it as a plain string (the declared-type coercion re-tags it as a url at read time); this regex backs
- *  the renderer's link parse + the Edit/Rename writes.
- *  Group 1 = the (still-escaped) alias, group 2 = the target URL. The alias group allows escape
+/** Group 1 = the (still-escaped) alias, group 2 = the target URL. The alias group allows escape
  *  sequences (`\]`, `\\`) so a user title containing `]` survives — see escape/unescapeAlias. */
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 
 /** The `[label](target)` markdown-link grammar, fresh per call so no caller shares `lastIndex`.
- *  Lives here rather than beside the editor's other matchers because the rename cascade parses the
- *  same syntax main-side — one grammar, or a link the renderer draws is one the rewriter can't find.
+ *  Lives here rather than beside the editor's other matchers because the rename cascade parses
+ *  the same syntax main-side.
  *
  *  The label reads escapes (`\]`, `\\`) exactly as `MD_LINK` does, so a page titled `Notes [WIP]`
- *  can be named in this form at all; unescaped, its `]` ends the label early and the whole link
- *  tokenizes as nothing.
+ *  can be named in this form; unescaped, its `]` would end the label early.
  *
- *  The target admits balanced parentheses, as CommonMark's link destination does, so an address that
- *  carries them survives however it was authored — by hand, by another app, or by this one. Nesting
- *  goes two levels, which is what cmark renders; a third is read as prose, as is any target holding
- *  an unmatched `(`.
+ *  The target admits balanced parentheses (CommonMark's rule), nested two levels deep — what
+ *  cmark renders; a third level or an unmatched `(` is read as prose.
  *
- *  Both groups are length-capped, and the label's cap is load-bearing rather than cosmetic: reading
- *  escapes makes it an alternation under a quantifier, which on a long run of unclosed `[` backtracks
- *  quadratically at every start position — the same ReDoS `pageLinkPattern` caps itself against, and
- *  it freezes the cascade and the live tokenizer alike on one pathological body. The target's nested
- *  alternations avoid adding a second such run because each level's branches are disjoint on their
- *  first character (`(` against not-`(`), leaving nothing for the quantifiers to backtrack between.
+ *  Both groups are length-capped, and the label's cap is load-bearing: reading escapes makes it
+ *  an alternation under a quantifier, which on a long run of unclosed `[` backtracks
+ *  quadratically at every start position — the same ReDoS `pageLinkPattern` caps itself against.
+ *  The target's nested alternations avoid a second such run since each level's branches are
+ *  disjoint on their first character.
  *
  *  A label may not open with `^`: GFM reads `[^1](url)` as a footnote reference followed by the
- *  prose `(url)`, never as a link, so admitting it here would have the counter swallow seven
- *  characters the file holds and the editor draw a link over a footnote marker.
+ *  prose `(url)`, never as a link.
  *
- *  Both halves are assembled from one fragment each, shared with the empty-tolerant variant below —
- *  the escape class, the paren nesting, and the caps are stated once, so the two grammars can only
- *  differ by the floors that define them. */
+ *  Both halves share one fragment each with the empty-tolerant variant below, so the two grammars
+ *  can only differ by the floors that define them. */
 const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
 const LINK_DEST = (min: 0 | 1): string =>
   `((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){${min},2048})`
@@ -62,43 +50,38 @@ export const markdownLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL(1)}\\]\\(${LINK_DEST(1)}\\)`, 'dg')
 
 /** The same grammar with empty halves admitted — the shapes mid-authoring leaves behind (`[]()`,
- *  `[docs]()`) that the tokenizer deliberately refuses. Only the surfaces that must recognize a link
- *  before it is one read this form. */
+ *  `[docs]()`) that the tokenizer deliberately refuses. Only surfaces that must recognize a link
+ *  before it's one read this form. */
 export const emptyTolerantLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL(0)}\\]\\(${LINK_DEST(0)}\\)`, 'dg')
 
-/** Escape a user-typed alias for the `[alias](url)` form: `\` and `]` (the only chars that can break
- *  the shape) become `\\` and `\]`, standard-markdown style. Inverse of unescapeAlias. */
+/** `\` and `]` (the only chars that can break `[alias](url)`) become `\\` and `\]`,
+ *  standard-markdown style. */
 export function escapeAlias(alias: string): string {
   return alias.replace(/[\\\]]/g, '\\$&')
 }
 
-/** Recover the raw alias from its escaped stored form (`\]` → `]`, `\\` → `\`). Inverse of escapeAlias. */
 export function unescapeAlias(alias: string): string {
   return alias.replace(/\\(.)/g, '$1')
 }
 
-/** Encode a page's title for a markdown link's `( )`. `encodeURI` rather than `encodeURIComponent`
- *  so a separator survives being written by hand, with the parens escaped on top of it: neither
- *  built-in touches them, and a title's parens answer to nobody's grammar — `Notes (draft` is a
- *  legal page name whose lone `(` would leave the whole link untokenizable. Escaping every one keeps
- *  a written target independent of how deeply the reader is willing to nest. */
+/** `encodeURI` rather than `encodeURIComponent` so a separator survives being written by hand,
+ *  with parens escaped on top: neither built-in touches them, and `Notes (draft` is a legal page
+ *  name whose lone `(` would leave the whole link untokenizable. */
 export function encodeLinkTarget(target: string): string {
   try {
-    // Parens and the colon on top of encodeURI: neither is touched by it, an unbalanced paren breaks
-    // the target's grammar, and a raw colon is how a target declares itself a URL — so a page titled
-    // `Meeting: Notes` would encode to something this module's own reader then refuses.
+    // Colon escaped too: a raw colon declares a target a URL, so `Meeting: Notes` would
+    // otherwise encode to something this module's own reader refuses.
     return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/:/g, '%3A')
   } catch {
-    // A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped — where a
-    // throw is turned into a reverted rename, not a skipped link. Guarded like its inverse is.
+    // A lone surrogate makes encodeURI throw; the rename cascade calls this unwrapped, where a
+    // throw is turned into a reverted rename rather than a skipped link.
     return target
   }
 }
 
-/** The inverse, and it never throws. `decodeURIComponent` raises `URIError` on a lone `%`, which is
- *  an ordinary character to type — and CodeMirror deactivates a ViewPlugin that throws for the rest
- *  of the session, so one keystroke would cost every decoration on the page. */
+/** Never throws: `decodeURIComponent` raises on a lone `%`, an ordinary character to type — and
+ *  CodeMirror deactivates a throwing ViewPlugin for the rest of the session. */
 export function decodeLinkTarget(target: string): string {
   try {
     return decodeURIComponent(target)
@@ -107,22 +90,20 @@ export function decodeLinkTarget(target: string): string {
   }
 }
 
-/** The title a markdown link's target names, or null when it can't name one. A target carrying a
- *  scheme or a separator is addressing something outside the nexus, and is left to the external gate
- *  — otherwise `https://example.com/Notes` would reach a page called Notes by its last segment. */
+/** The title a markdown link's target names, or null. A target carrying a scheme or separator is
+ *  addressing something outside the nexus — otherwise `https://example.com/Notes` would reach a
+ *  page called Notes by its last segment. */
 export function targetTitle(rawTarget: string): string | null {
   const raw = rawTarget.trim()
-  // Read on the RAW target, not the decoded one. A URL is written with its scheme and separators
-  // literal; an encoded page title spells them out, so the encoder's own output can never be
-  // mistaken for an address here.
+  // Read on the RAW target, not the decoded one: a URL's scheme and separators are literal,
+  // while an encoded page title spells them out.
   if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null
   const decoded = decodeLinkTarget(raw).trim()
   return decoded ? decoded.replace(/\.md$/i, '') : null
 }
 
-/** Whether a target names the page holding this normalized key. The rename cascade's prefilter and
- *  its rewriter both ask it, and they must never answer differently: a prefilter that missed what
- *  the rewriter would change leaves the body unopened and the link silently rotting. */
+/** The rename cascade's prefilter and rewriter both ask this and must never answer differently:
+ *  a missed prefilter leaves the link silently rotting in an unopened body. */
 export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
   const named = targetTitle(rawTarget)
   return named !== null && normalizeTitle(named) === normalizedKey
@@ -134,10 +115,9 @@ export function normalizeLinkUrl(url: string): string {
   return HAS_SCHEME.test(u) ? u : `https://${u}`
 }
 
-/** The bare display domain for a URL — its host with a leading `www.` dropped (`https://www.github.com/x`
- *  → `github.com`). This is what Short Link shows, and it doubles as Page Title's placeholder and its
- *  offline/404 fallback, so a title-mode link still reads cleanly before (or without) a fetched title.
- *  Unparseable input → itself. */
+/** The host with a leading `www.` dropped (`https://www.github.com/x` → `github.com`). What Short
+ *  Link shows, and also Page Title's placeholder and offline/404 fallback, so a title-mode link
+ *  still reads cleanly before or without a fetched title. Unparseable input → itself. */
 export function linkDomain(url: string): string {
   try {
     return new URL(normalizeLinkUrl(url)).hostname.replace(/^www\./i, '') || url.trim()
@@ -146,15 +126,14 @@ export function linkDomain(url: string): string {
   }
 }
 
-/** A link the title-fetcher can actually hit: a valid http(s) URL. Excludes mailto (which passes
- *  isValidLink but has no page to fetch) so the main fetch gate and the cell's fetch trigger never
- *  disagree by a scheme — a mailto in title mode shows itself, it doesn't waste a round-trip. */
+/** A valid http(s) URL. Excludes mailto (which passes isValidLink but has no page to fetch) so a
+ *  mailto in title mode shows itself rather than wasting a round-trip. */
 export function isHttpLink(url: string): boolean {
   return isValidLink(url) && hasWebScheme(normalizeLinkUrl(url))
 }
 
-/** A statically-openable link: a well-formed http(s) URL with a dotted host, or a plausible mailto.
- *  No network — this is the local check that mirrors how connections resolve against the index. */
+/** A well-formed http(s) URL with a dotted host, or a plausible mailto. No network — the local
+ *  check that mirrors how connections resolve against the index. */
 export function isValidLink(url: string): boolean {
   const u = url.trim()
   if (!u || /\s/.test(u)) return false

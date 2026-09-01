@@ -81,13 +81,11 @@ function buildBaseline(tree: NexusTree): Projection {
   return { entries, duplicates }
 }
 
-/** The writer's merge. Three rules, each keeping the baseline honest about what it knows:
- *  a walked path on the unreadable list records `unreadable` (the listing wins — conservative);
- *  a duplicated id keeps the prior entry marked ambiguous while its recorded path still answers,
- *  records the first claimant unmarked when there is no prior to defer to, and drops entirely
- *  when the recorded path is gone (no future session can adjudicate either); an id the walk
- *  lost whose recorded home is on the unreadable list carries through instead of reading as
- *  deleted. */
+/** The writer's merge. Three rules keep the baseline honest about what it knows: a walked path on
+ *  the unreadable list records `unreadable` (the listing wins); a duplicated id keeps the prior
+ *  entry marked ambiguous while its path still answers, records the first claimant unmarked when
+ *  there's no prior, and drops entirely when the recorded path is gone; an id the walk lost whose
+ *  recorded home is on the unreadable list carries through instead of reading as deleted. */
 export function latchBaseline(
   projection: Projection,
   unreadablePaths: readonly string[],
@@ -120,10 +118,9 @@ export function latchBaseline(
   return out
 }
 
-/** With no prior evidence, the claimant the baseline records is the ELDEST file, not whatever
- *  the walk enumerated first: a copy is born after its original and birth time survives a
- *  rename, so the next open's adjudication crowns the likely original — a walk-order pick
- *  would let the accidental copy keep the identity and re-mint the live original. */
+/** With no prior evidence, the claimant the baseline records is the ELDEST file, not whatever the
+ *  walk enumerated first: a copy is born after its original and birth time survives a rename, so
+ *  a walk-order pick would let the accidental copy keep the identity and re-mint the original. */
 async function recordEldest(
   root: string,
   projection: Projection,
@@ -147,8 +144,8 @@ async function recordEldest(
 }
 
 /** The open path's record pass: one explicit walk, latched against the prior session, the new
- *  baseline written last. Best-effort end to end — a failed walk or a failed row write retains
- *  the prior record, and the open itself proceeds. */
+ *  baseline written last. Best-effort end to end — a failed walk or row write retains the prior
+ *  record, and the open itself proceeds. */
 export async function runOpenRecord(root: string): Promise<void> {
   try {
     const tree = await readNexus(root)
@@ -161,10 +158,9 @@ export async function runOpenRecord(root: string): Promise<void> {
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
     writeBaseline(latchBaseline(projection, unreadablePaths, prior))
-    // This walk observed pre-remint disk, so it may seed the session only when the remint
-    // wrote nothing — otherwise two entities would share an id all session, colliding every
-    // id-keyed store. A written remint forces the fresh walk; if that fails, the pre-remint
-    // tree still serves (stale ids beat no tree).
+    // This walk observed pre-remint disk, so it may seed the session only when the remint wrote
+    // nothing — otherwise two entities would share an id, colliding every id-keyed store. A
+    // written remint forces the fresh walk; if that fails, the pre-remint tree still serves.
     seedLiveTree(tree)
     if (reminted.length > 0) {
       try {

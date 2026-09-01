@@ -1,7 +1,6 @@
-// The in-app browser — the floating window's browser flavor: back/forward lead the toolbar, the
-// centered title is the link itself (click escalates the CURRENT page to the system browser), and
-// one webview owns the whole body on the shared partition. A summon while open retakes the window
-// in place; the singleton the page window also is.
+// The in-app browser — back/forward lead the toolbar, the centered title is the link itself (click
+// escalates the current page to the system browser), and one webview owns the whole body on the
+// shared partition. A summon while open retakes the window in place.
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { cx } from '@renderer/DesignSystem/Util/cx'

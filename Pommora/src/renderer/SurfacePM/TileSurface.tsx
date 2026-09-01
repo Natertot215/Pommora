@@ -95,9 +95,6 @@ function viewPickerItems(
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
-// A leaf whose id has no entry — or an entry this build doesn't know — renders inert and keeps
-// its space, never crashes the host.
-
 export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element | null {
   const { layout, blocks, ready, setLayout, commitLayout, refreshEntries, saveBlocks } =
     useTileDoc(host)
@@ -148,14 +145,12 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   useEffect(() => {
     if (!editingId) return
     // Capture phase — a gesture handler's stopPropagation (SurfacePM's handles/edges) must not
-    // swallow the click-out. Matches is-editing-tile (any kind) rather than one content class, so
-    // a click anywhere inside the active tile keeps it active.
+    // swallow the click-out.
     const onDown = (e: PointerEvent): void => {
       if (!(e.target as Element | null)?.closest?.('.spm-tile.is-editing-tile')) setEditingId(null)
     }
     const onKey = (e: KeyboardEvent): void => {
-      // CM6 consumes Esc first when its autocomplete is open (preventDefault) —
-      // that press closes the popup only, the next one exits the editor.
+      // CM6 consumes Esc first when its autocomplete is open — that press closes the popup only.
       if (e.key === 'Escape' && !e.defaultPrevented) setEditingId(null)
     }
     document.addEventListener('pointerdown', onDown, true)
@@ -166,7 +161,6 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
     }
   }, [editingId])
 
-  // THE removal flow — the handle menu's Remove (main-confirmed) is its trigger.
   // Order is load-bearing: suppress the tile's editor flush, layout first
   // (invisible orphan beats a dead box on a crash), then the entry + file.
   const removeBlock = useCallback(
@@ -211,8 +205,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
 
   const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
   const nativeMenus = useNativeMenus()
-  // The native path never sets `handleMenu`, so the in-app pane is never mounted for it — one menu
-  // opens, and which one is the preference's whole job.
+  // The native path never sets `handleMenu`, so the in-app pane is never mounted for it.
   const popNativeMenu = useRef<(id: string, el: HTMLElement) => void>(() => undefined)
   const onHandleMenu = useCallback(
     (id: string, e: React.MouseEvent) => {
@@ -285,8 +278,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
     [entries, editingId, handleMenu],
   )
 
-  // Hands the embed the RAW entry — raw spreads inside the transforms so foreign keys on the
-  // entry AND its elements survive.
+  // Hands the embed the raw entry so foreign keys on it and its elements survive.
   const mutateViewEntry = useCallback(
     (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
       saveBlocks((cur) =>
@@ -393,9 +385,8 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
       }
     : undefined
-  // The same offering the pane draws, popped by the OS instead. Assigned rather than called: the
-  // gesture handler is memoized against the preference alone, so it must reach the current build
-  // through a ref rather than closing over this render's tiles.
+  // Assigned rather than called: the gesture handler is memoized against the preference alone, so
+  // it must reach the current build through a ref rather than closing over this render's tiles.
   popNativeMenu.current = (id, el) => {
     const entry = entries.get(id)
     if (!entry || !tree) return

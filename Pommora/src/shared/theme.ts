@@ -1,16 +1,12 @@
-// Single source for the app substrate color (the window background). The main
-// process can't read renderer CSS vars or vanilla-extract tokens, so this plain
-// constant is the seam both sides share:
-//   main/index.ts → BrowserWindow backgroundColor: WINDOW_BG
-//   color.css.ts  → background.window token = WINDOW_BG → --bg-window bridge var
-//   styles.css    → --main-bg: var(--bg-window)
-// Change it here and all three follow.
+// Single source for the app substrate color (the window background). The main process can't read
+// renderer CSS vars or vanilla-extract tokens, so this plain constant is the seam both sides
+// share — main's BrowserWindow backgroundColor, color.css.ts's background.window token, and
+// styles.css's --main-bg all trace back here.
 export const WINDOW_BG = '#1A1A1C'
 
 // The spectrum solids, for the same reason: main can't read a vanilla-extract token, while
-// color.css.ts needs the values to build the :root vars.
-//   color.css.ts → color.solid tokens → every --color-* consumer
-//   isColorKey   → the legacy half of the storable-color vocabulary, beside the ramp cells
+// color.css.ts needs the values to build the :root vars. The legacy half of the storable-color
+// vocabulary, beside the ramp cells.
 export const SPECTRUM = {
   red: '#FF453A',
   orange: '#FF9F0A',
@@ -34,7 +30,7 @@ export const PINK = '#EF7697'
 
 // The color-ramp vocabulary: the grammar a stored color key is written in. Main validates a stored
 // Space color against these keys and cannot read a renderer token, so the KEY SET lives here while
-// every cell's VALUE stays renderer-side (they are color-mix strings over CSS vars main can't resolve).
+// every cell's VALUE stays renderer-side.
 export const RAMP_FAMILIES = [
   'red',
   'orange',

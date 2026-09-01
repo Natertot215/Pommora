@@ -1,11 +1,7 @@
-// Module state, not store state — none of it is render state, and it must survive React remounts
-// while dying with the session. Two stores live here. The per-tab entries are written by a page
-// surface at unmount — editorState, scrollTop, and the page's detail with its live body under
-// the tab that holds it (a capture under an already-closed tabId leaves one inert entry — tab ids
-// are never reused — that the nexus-switch clear reaps). The PATH-KEYED detail slot serves embed
-// rehydration: written on fetch and written THROUGH by the shared save scheduler, so a returning
-// tile always seeds on the newest body from any host — the per-tab snapshots can't serve that
-// (their body freshness lives in serialized editor state, which embeds deliberately don't keep).
+// Module state, not store state — it survives React remounts while dying with the session. Two
+// stores live here: per-tab entries (editorState, scrollTop, live-body detail) written at
+// unmount, and a path-keyed detail slot for embed rehydration, written through by the shared save
+// scheduler so a returning tile always seeds on the newest body.
 import type { PageDetail } from '@shared/types'
 
 export interface WarmEntry {
@@ -62,10 +58,9 @@ export function readPageDetail(path: string): PageDetail | undefined {
 
 const inFlight = new Map<string, Promise<PageDetail | null>>()
 
-/** The one fetch for a path — concurrent callers (the preview's embed and inspector mount in the
- *  same frame) share a single openPage round-trip. A landed detail is cached; a failed open
- *  resolves null. A drop or clear mid-flight disowns the fetch: its caller still gets the read,
- *  but the landing can't seed the cache with a pre-write or previous-nexus detail. */
+/** The one fetch for a path — concurrent callers share a single openPage round-trip. A drop or
+ *  clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed
+ *  the cache with a pre-write or previous-nexus detail. */
 export function fetchPageDetail(path: string): Promise<PageDetail | null> {
   const pending = inFlight.get(path)
   if (pending) return pending
@@ -92,9 +87,8 @@ export function dropPageDetail(path: string): void {
   inFlight.delete(path)
 }
 
-/** Drop every warm `pageDetail` captured for `path`, across all tabs — a frontmatter fact changed
- *  outside the open copy, and a warm return would resurrect the pre-write value. Editor state and
- *  scroll stay warm; only the detail refetches. */
+/** Drop every warm `pageDetail` captured for `path` — a warm return would resurrect the pre-write
+ *  value. Editor state and scroll stay warm; only the detail refetches. */
 export function dropWarmDetail(path: string): void {
   for (const tabMap of cache.values())
     for (const entry of tabMap.values())

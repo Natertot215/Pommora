@@ -49,7 +49,6 @@ export async function mutateRegistryFile(
 ): Promise<Result<ContextsRegistry>> {
   const written = await rmwJsonStrict(contextsRegistryFile(root), (raw) => {
     const parsed = parseRegistry(raw)
-    // An invalid shape throws inside the RMW so nothing is written; caught below.
     if (!parsed.ok) throw new Error(parsed.error.message)
     // Overlay onto the raw object so registry-level foreign fields survive even a
     // mutator that rebuilds `{ contexts }` from scratch.

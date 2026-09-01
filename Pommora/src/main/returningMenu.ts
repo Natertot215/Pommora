@@ -4,18 +4,17 @@
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 
-/** `buildItems` receives `pick`, a factory turning an action into a click handler that resolves it,
- *  and `pickAfter`, the same for a row that must ask something first — a confirm dialog — and
- *  resolves what that answers with. Both mark the menu acted at click, before any await, so a
- *  dialog opening over the closing menu can't be read as a dismissal. */
+/** `pick` resolves a click straight to its action; `pickAfter` resolves what a row must ask
+ *  first (a confirm dialog) instead. Both mark the menu acted at click, before any await, so
+ *  a dialog opening over the closing menu can't be read as a dismissal. */
 export function popReturningMenu<A>(
   win: BrowserWindow,
   buildItems: (
     pick: (action: A) => () => void,
     pickAfter: (ask: () => Promise<A | null>) => () => void,
   ) => MenuItemConstructorOptions[],
-  /** Where the menu opens, in window DIPs. Omitted pops at the cursor — right where a right-click
-   *  already is, and wrong for a control the user clicked, which the menu should hang from. */
+  /** Where the menu opens, in window DIPs. Omitted pops at the cursor — wrong for a menu that
+   *  should hang from a clicked control rather than the pointer. */
   at?: { x: number; y: number },
 ): Promise<A | null> {
   return new Promise((resolve) => {
@@ -29,8 +28,7 @@ export function popReturningMenu<A>(
       void ask().then(resolve)
     }
     const template = buildItems(pick, pickAfter)
-    // A model that gated every one of its items away has nothing to show; popping it would leave an
-    // empty frame under the cursor.
+    // A model that gated every item away has nothing to show; popping it would leave an empty frame.
     if (template.length === 0) {
       resolve(null)
       return
@@ -46,9 +44,8 @@ export function popReturningMenu<A>(
 }
 
 /** A destination tree as native submenus. A parent item cannot itself be clicked, so a container
- *  repeats its own name as its submenu's first row above a separator — the convention both the
- *  card's Move To ▸ and the trash's Restore ▸ need, stated once. `disabled` grays a destination
- *  that would be a no-op rather than hiding it, so the tree reads the same either way. */
+ *  repeats its own name as its submenu's first row above a separator. `disabled` grays a
+ *  destination that would be a no-op rather than hiding it. */
 export function destinationNodes<T extends { label: string; children?: T[] }>(
   targets: readonly T[],
   pick: (target: T) => () => void,

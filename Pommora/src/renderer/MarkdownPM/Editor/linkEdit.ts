@@ -8,13 +8,9 @@ import { tokenize, type Token } from '../Tokens'
 import { focusRange } from './caretSeat'
 import { restedOnLink } from './linkGestures'
 
-/** Where a wikilink's authoring gesture lands in the text holding it: the pipe it may have to write
- *  first, and the span to select or seat afterwards, in the text as that write leaves it.
- *
- *  Pure of any editor, because a connection in a resting table cell has none — that cell commits the
- *  pipe and enters with the same span selected rather than keeping its own idea of where a link keeps
- *  its parts. It reads the token's spans rather than the rendered text: a displayed alias hides where
- *  the title is, so the only thing that still knows both is the token. */
+/** Pure of any editor, because a connection in a resting table cell has none — that cell commits the
+ *  pipe and enters with the same span selected. It reads the token's spans rather than the rendered
+ *  text: a displayed alias hides where the title is, so only the token still knows both. */
 export function wikiAuthorTarget(
   text: string,
   tk: Token,
@@ -40,9 +36,9 @@ export function applyLinkAction(
   action: ConnEditAction,
   range: [number, number],
 ): void {
-  // The span was captured before a native menu opened, and a native menu can be held open for as
-  // long as the user likes. `lineAt` throws past the document's end rather than clamping, and the
-  // throw would land unhandled inside the menu's promise.
+  // The span was captured before a native menu opened, which can be held open indefinitely.
+  // `lineAt` throws past the document's end rather than clamping, and the throw would land
+  // unhandled inside the menu's promise.
   if (range[0] > view.state.doc.length) return
   const line = view.state.doc.lineAt(range[0])
   const tk = tokenize(line.text).find(
@@ -56,11 +52,9 @@ export function applyLinkAction(
   focusRange(view, at(select[0]), at(select[1]))
 }
 
-/** Enter inside an alias finishes it rather than breaking the line. The picker is bounded to the
- *  title, so nothing else claims this key there and Enter would otherwise split the link in half.
- *  The caret lands on the closer and the link reads as finished there — no space is written to put
- *  distance between them, because the closer is the one caret position that doesn't reveal a
- *  connection's syntax (see `activeTokenIndices`). */
+/** Enter inside an alias finishes it rather than breaking the line. The caret lands on the closer
+ *  with no space written to separate them, since the closer is the one caret position that doesn't
+ *  reveal a connection's syntax (see `activeTokenIndices`). */
 export function commitAliasOnEnter(view: EditorView): boolean {
   const sel = view.state.selection.main
   if (!sel.empty) return false
@@ -95,9 +89,8 @@ function emptyPipeNear(state: EditorState, at: number): number | null {
   return pipe === null ? null : line.from + pipe
 }
 
-/** Put a written alias into its target page's memory, so it can be offered back the next time that
- *  page is linked. Authoring is the only moment the memory is written: a body scan can't honor a
- *  real forget, and there is no other point at which the words are known to be finished. */
+/** Authoring is the only moment the memory is written: a body scan can't honor a real forget, and
+ *  there is no other point at which the words are known to be finished. */
 function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
   if (!api) return
   const { line, rel } = lineNear(view.state, at)
@@ -111,16 +104,16 @@ function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at
   if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
 }
 
-/** Remove the pipe, having first confirmed it's still the character sitting there. The check is what
- *  makes the call safe to make late: an offset computed one turn and spent the next would otherwise
- *  delete whatever had drifted into it. */
+/** Confirms it's still the character sitting there — the check is what makes the call safe to make
+ *  late, since an offset computed one turn and spent the next would otherwise delete whatever had
+ *  drifted into it. */
 function collapseAt(view: EditorView, at: number): void {
   if (view.state.doc.sliceString(at, at + 1) !== '|') return
   view.dispatch({ changes: { from: at, to: at + 1 } })
 }
 
-/** Which alias the caret is in, as that alias's absolute start — the identity both gestures below
- *  compare against to tell editing an alias from having finished with it. */
+/** The identity both gestures below compare against to tell editing an alias from having finished
+ *  with it. */
 function aliasStartNear(state: EditorState, at: number): number | null {
   const { line, rel } = lineNear(state, at)
   const span = aliasSpanAt(line.text, rel)
@@ -142,15 +135,15 @@ function leaveAlias(
   else collapseAt(view, pipe)
 }
 
-/** Both gestures fire on LEAVING the alias, never the moment it changes: clearing one to retype it
+/** Both gestures fire on leaving the alias, never the moment it changes: clearing one to retype it
  *  would otherwise pull the pipe out from under the caret, and every keystroke would be remembered
  *  as its own name for the page.
  *
- *  Leaving by losing focus is handled on the `blur` event rather than through the update listener,
- *  and that split is the point. A blur handler runs outside the update cycle, so it can dispatch
- *  straight away; the listener can't, and has to defer to a macrotask that the editor's own teardown
- *  can outrun — which is exactly what blurring often precedes, since clicking another page both
- *  blurs this editor and unmounts it. Deferred, an abandoned pipe would reach disk. */
+ *  Leaving by losing focus is handled on the `blur` event rather than through the update listener: a
+ *  blur handler runs outside the update cycle and can dispatch straight away, while the listener has
+ *  to defer to a macrotask the editor's own teardown can outrun — exactly what blurring often
+ *  precedes, since clicking another page both blurs this editor and unmounts it. Deferred, an
+ *  abandoned pipe would reach disk. */
 export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
   return [
     EditorView.domEventHandlers({

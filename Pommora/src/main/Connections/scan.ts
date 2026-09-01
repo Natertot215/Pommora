@@ -1,7 +1,6 @@
-// The rename cascade's prefilter. `[[ ]]` is the only connection syntax; `{{ }}` is excluded by
-// the pattern and anything inside code is a sample. `![[ ]]` embeds are NOT connections, but the
-// cascade still sweeps them so a rename reaches them without giving them a link-graph edge —
-// which is why one predicate answers for both syntaxes. No I/O.
+// The rename cascade's prefilter. `[[ ]]` is the only connection syntax; anything inside code is
+// a sample. `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename
+// reaches them without giving them a link-graph edge — one predicate answers for both syntaxes.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
 import { markdownLinkRegex, targetTitle } from '@shared/links'
@@ -13,7 +12,7 @@ import { codeMask } from '@shared/markdownCode'
  *  recorded is exactly one the prefilter would affirm. The gate in front is on SYNTAX rather
  *  than any title: a substring test would break the NFC invariant normalizeTitle exists for, so
  *  an NFD-composed body would stop matching the NFC title it names and a rename would skip it
- *  silently. Code-interior matches stay samples for all three syntaxes. */
+ *  silently. */
 export function extractMentions(body: string): Set<string> {
   const out = new Set<string>()
   if (!body.includes('[[') && !body.includes('](')) return out
@@ -45,8 +44,7 @@ export function mentionsTitle(body: string, normalizedKey: string): boolean {
 
 /** Every normalized title a page's FRONTMATTER names. A Link property holds a connection as its
  *  whole value, so the page it names is a reference like any in the body — and a rename reaching
- *  only bodies would leave it pointing at a name nothing answers to. Values are read as written,
- *  without the schema: only the connection syntax names a page, and no declared type changes that. */
+ *  only bodies would leave it pointing at a name nothing answers to. */
 export function frontmatterMentions(values: Record<string, unknown>): Set<string> {
   const out = new Set<string>()
   for (const value of Object.values(values)) {

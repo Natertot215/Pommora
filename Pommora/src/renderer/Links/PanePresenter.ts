@@ -1,10 +1,10 @@
 // The hover preview's presenter slot, apart from the pane itself. The pane claims it at mount and
 // releases it on unmount; every call that opens, retargets, or closes a pane goes through here.
 //
-// It is a leaf on purpose. The pane's own module reaches into MarkdownPM — the editor's fold and its
-// connections model — while the editor's pointer path and the table's resting cells both have to be
-// able to close a pane. Importing the component for that closes a cycle between the two, which the
-// runtime resolves by leaving one side's bindings uninitialized at first render.
+// A leaf on purpose: the pane's own module reaches into MarkdownPM, while the editor's pointer path
+// and the table's resting cells both have to be able to close a pane. Importing the component for
+// that closes a cycle between the two, which the runtime resolves by leaving one side's bindings
+// uninitialized at first render.
 import type { Hovered } from './ConnectionPane'
 
 let present: ((next: Hovered | null) => void) | null = null

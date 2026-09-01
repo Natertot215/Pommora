@@ -19,8 +19,7 @@ export function NavView(): React.JSX.Element {
   // resolvedRecents arrives already pin-deduped (useNavData filters against the pin set).
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
   const viewMode = useSession((s) => s.navViewMode)
-  // NavWindow's freeze-at-open is for its persistent pane — NavView opens fresh each time, so it
-  // isn't needed here.
+  // NavWindow's freeze-at-open is for its persistent pane — NavView opens fresh each time.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderRecent = (activeKey: string, overKey: string): void => {
     const next = moveByKey(resolvedRecents, (r) => r.key, activeKey, overKey)
@@ -30,8 +29,7 @@ export function NavView(): React.JSX.Element {
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
   const bannerSrc = useAssetUrl(ownBanner ?? homeBanner)
   const bannerRef = useRef<HTMLDivElement>(null)
-  // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
-  // while an override exists (`noRemove` when the shown banner is the inherited homepage one).
+  // Remove clears only NavView's own override — `noRemove` when the shown banner is inherited.
   const { openMenu, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
     useBannerMenu('', 'navview', {
       value: ownBanner ?? homeBanner,

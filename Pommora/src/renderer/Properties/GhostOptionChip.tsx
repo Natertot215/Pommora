@@ -1,8 +1,6 @@
-// The seat between two option chips, shared by the flat and the grouped editor: the New Option slot
-// that offers it, and the caret that names what lands there. The slot is the property editors'
-// member of the hover-ghost family — it rides the same anchor mechanism the table's New Page row
-// does, so the dwell before it arms, the grace on a leave, and the disclosure beat are the table's
-// rather than this surface's own; only the thing being created differs.
+// The New Option slot between two option chips, shared by the flat and the grouped editor. It's
+// the property editors' member of the hover-ghost family, riding the same anchor mechanism the
+// table's New Page row does — only the thing being created differs.
 import { useRef } from 'react'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import {
@@ -20,9 +18,8 @@ import { Label, type LabelShape } from '@renderer/DesignSystem/Labels'
 const GHOST_GRACE_MS = 0 // KNOB
 
 /** One anchor per option list — a Status property has one per group, a Select has the single list.
- *  `busy` stands the slot down while a row is being named or recolored; it latches in a ref because
- *  the mechanism re-reads it at the dwell's fire time, long after the render that set it — the way a
- *  cell editor stands the table's ghost down. */
+ *  `busy` stands the slot down while a row is being named or recolored; it latches in a ref since
+ *  the mechanism re-reads it at the dwell's fire time, long after the render that set it. */
 export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
   const busyRef = useRef(busy)
   busyRef.current = busy
@@ -33,9 +30,8 @@ export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
   })
 }
 
-/** The inline name caret — an EditableInput wearing the chrome of the thing being named, whether
- *  that's an option's chip or a status group's label. Creating and renaming are the same gesture in
- *  the same seat, so what a name caret IS (auto-sizing, bare inside its chrome) is settled here. */
+/** The inline name caret — an EditableInput carrying the chrome of the thing being named, whether
+ *  that's an option's chip or a status group's label. Creating and renaming share this one seat. */
 export function OptionNameCaret({
   className,
   value = '',

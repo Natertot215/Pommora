@@ -1,7 +1,6 @@
 // The editor's native right-click menu. Built from the OS `context-menu` event (so spelling,
 // Share, Speech, and the system edit roles come native) plus Pommora formatting submenus drawn
-// from the renderer's last-pushed FormatState (Electron's static params can't see CM6 state).
-// Sidebar right-clicks (non-editable) fall through to their own React→IPC menu untouched.
+// from the renderer's last-pushed FormatState, since Electron's static params can't see CM6 state.
 
 import { Menu, clipboard } from 'electron'
 import type {
@@ -26,16 +25,16 @@ export function setFormatState(s: FormatState): void {
   lastState = s
 }
 
-// The renderer flags when the pointer sits on any block grip (set on hover, so it's live before the
-// right-press). Grips are editable content — unlike the non-editable table widget — so the generic
-// editor menu would otherwise fire over them; this lets each grip's own menu be the only one.
+// The renderer flags when the pointer sits on any block grip (set on hover, live before the
+// right-press). Grips are editable content, so the generic editor menu would otherwise fire over
+// them too; this lets each grip's own menu be the only one.
 let gripHot = false
 export function setGripHot(on: boolean): void {
   gripHot = on
 }
 
-// raw send: the context-menu event hands over a bare WebContents, not a BrowserWindow,
-// so the typed push (which takes a window) can't be used here.
+// The context-menu event hands over a bare WebContents, not a BrowserWindow, so the typed
+// push (which takes a window) can't be used here.
 const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 
@@ -67,11 +66,10 @@ function systemItems(
     { role: 'cut', enabled: f.canCut },
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
-    // The paste block reads outward from the plain act: paste, paste as something else, paste with
-    // nothing carried over. Paste As only means anything where a markdown surface is receiving it.
+    // Paste As only means anything where a markdown surface is receiving it.
     ...(editorFocused ? pasteAsItems(wc) : []),
-    // The `pasteAndMatchStyle` role would take ⌘⇧V's accelerator back, and that chord belongs to the
-    // inverse paste now (→ ConfigurationPM §Commands). The act itself is unchanged.
+    // The `pasteAndMatchStyle` role would take back ⌘⇧V's accelerator, which now belongs to the
+    // inverse paste command (→ ConfigurationPM §Commands).
     {
       label: 'Paste Without Formatting',
       enabled: f.canPaste,
@@ -92,14 +90,12 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
-/** The FormatState fields a checkbox row can wear a checkmark from — the boolean ones, since a row
- *  is a checkbox. */
+/** The FormatState fields a checkbox row can wear a checkmark from. */
 type FormatFlag = {
   [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
 }[keyof FormatState]
 
-/** The Format submenu's rows, in the order they read. Each names the chord it displays and the
- *  FormatState flag whose checkmark it wears. */
+/** The Format submenu's rows, in display order. */
 const FORMAT_ROWS: readonly {
   label: string
   action: FormatChordAction
@@ -122,10 +118,8 @@ function pommoraItems(
   const act = (a: string): (() => void) => dispatch(wc, a)
   return [
     { type: 'separator' },
-    // An address sitting in the prose as ordinary text, selected: the one gesture that turns it into
-    // a link without retyping it. Offered only when the selection IS one, which is what keeps it
-    // apart from Format ▸ Link — that one opens an empty target for words you have yet to point
-    // anywhere.
+    // Turns a selected address into a link without retyping it; offered only when the selection IS
+    // one, which is what keeps it apart from Format ▸ Link (an empty target for un-pointed words).
     ...(isValidLink(selection) ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }] : []),
     {
       label: 'Insert',

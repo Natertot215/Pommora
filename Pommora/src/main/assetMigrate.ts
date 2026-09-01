@@ -1,13 +1,13 @@
-// Moving what Pommora minted under `.nexus/assets` into the directory the user configured, once.
+// Moves what Pommora minted under `.nexus/assets` into the user-configured directory, once.
 //
-// It walks the STORES rather than the directory: nothing cleans up `.nexus/assets/<id>/` when an
-// entity is deleted, so a directory-driven copy would carry orphans from long-dead entities into
-// a folder the user shares with Obsidian. Only a referenced file is copied and renamed; once
-// every reference points elsewhere, everything left under `.nexus/assets` is spent and swept.
+// Walks the STORES rather than the directory: nothing cleans up `.nexus/assets/<id>/` when an
+// entity is deleted, so a directory-driven copy would carry orphans into a folder the user
+// shares with Obsidian. Only a referenced file is copied and renamed; once every reference
+// points elsewhere, everything left under `.nexus/assets` is spent and swept.
 //
 // Idempotent per reference, not per pass: a reference still naming a file under `.nexus/assets`
-// migrates and one already elsewhere is skipped, so a run after a partial failure finishes the
-// job rather than wedging on counts that have legitimately moved.
+// migrates, one already elsewhere is skipped — so a run after a partial failure finishes the
+// job instead of wedging on counts that have legitimately moved.
 
 import { basename, dirname, extname, join } from 'node:path'
 import { readFile, rm } from 'node:fs/promises'
@@ -34,9 +34,8 @@ import { basenameNoMd } from './coerce'
 export interface AssetMigration {
   /** Every distinct file moved, source → the name it now wears. */
   moved: { from: string; to: string }[]
-  /** How many stored references were rewritten. */
   rewritten: number
-  /** A reference left alone, and why — never silently claimed. */
+  /** A reference left alone, and why. */
   skipped: { store: string; why: string }[]
   /** Files swept out of `.nexus/assets` once nothing referenced them. */
   trashed: number
@@ -49,7 +48,7 @@ interface StoreRef {
   /** The name the file takes when its own is one Pommora invented. */
   owner: string
   read: () => Promise<unknown>
-  /** Answers whether the value actually landed — a store that refused is not a rewrite. */
+  /** False means the store refused — not a rewrite. */
   write: (link: string) => Promise<boolean>
 }
 
@@ -64,7 +63,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   const homeFile = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
   const settingsFile = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
 
-  // The nexus-level singletons lead, so a file several owners share takes the nexus's own name.
+  // Nexus-level singletons lead, so a file several owners share takes the nexus's own name.
   refs.push({
     store: 'navigation.json',
     owner: 'nexus-banner',

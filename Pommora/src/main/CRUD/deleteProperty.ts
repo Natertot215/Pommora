@@ -1,9 +1,8 @@
-// Global property delete — the nexus-wide fan-out that removes a definition outright. Record-first
-// (an artifact-less bundle in `.trash` holds the def, the Collections that assigned it, and every
-// page value keyed by page id), then strips the value from every collection's page under its file
-// lock, drops the id from every assignment, purges every Remove-cache block, and finally removes
-// the def from the registry. That bundle is what restore spends to rebuild it. The daily
-// non-destructive op is Remove (crud/removeProperty); this is the rare one.
+// Record-first: an artifact-less bundle in `.trash` holds the def, the Collections that assigned
+// it, and every page value keyed by page id — that bundle is what restore spends to rebuild it.
+// Then strips the value from every collection's page, drops the id from every assignment, purges
+// every Remove-cache block, and removes the def from the registry. The daily non-destructive op
+// is Remove (crud/removeProperty); this is the rare one.
 
 import { readFile } from 'node:fs/promises'
 import { contentId } from '@shared/identity'
@@ -37,8 +36,8 @@ async function snapshot(
   const assignments: string[] = []
   let partial = false
   for (const folder of folders) {
-    // Which Collections carried it, by sidecar id — a property restored into no Collection is
-    // defined but belongs nowhere, so this is gathered before the unassign strips it.
+    // Gathered before the unassign strips it — a property restored into no Collection is
+    // defined but belongs nowhere.
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     const holds = ((sidecar?.properties as string[] | undefined) ?? []).includes(propertyId)
     if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
@@ -53,7 +52,7 @@ async function snapshot(
     }
     if (!(key in fm)) continue
     const id = contentId(fm)
-    // A duplicated id can hold only one entry — last wins, and the record says it is thin.
+    // A duplicated id can hold only one entry — last wins, and the record is marked thin.
     if (id && id in values) partial = true
     if (id) values[id] = fm[key]
     else partial = true
@@ -80,23 +79,20 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
   // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  // The one candidate set for the snapshot AND the sweep: the key's holders, scope-intersected.
   const files = await keyHolderFiles(root, key, folders)
   await snapshot(root, propertyId, def, folders, files)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
-  // Strip the value from every page a Collection's schema governs — the one sweep, scoped to
-  // the folders that carry the schema this definition belonged to.
   const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), {
     stamp: true,
   })
 
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const removed = await removeFromRegistry(root, propertyId)
-  // A holder the sweep could not read holds the record — with the def now gone and the name
-  // free, the replay's freed-name arm re-strips the stragglers at the next open.
+  // With the def now gone and the name free, the replay's freed-name arm re-strips stragglers
+  // a holder-unreadable sweep left behind, at the next open.
   if (!swept.skipped.length) await clearSchemaJournal(root, record)
   return removed
 }
@@ -111,9 +107,8 @@ export function stripKeyRewrite(key: string): Rewrite<never> {
   }
 }
 
-/** Drop the id from one Collection's assignments and purge its Remove-cache block, under that
- *  sidecar's lock so a concurrent view/order/icon write can't be reverted by this read-merge-write.
- *  The `.trash` bundle is the recovery net, so this needn't be atomic. */
+/** Under the sidecar's lock so a concurrent view/order/icon write can't be reverted by this
+ *  read-merge-write. The `.trash` bundle is the recovery net, so this needn't be atomic. */
 export function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
   return withSidecarLock(folder, 'collection', async () => {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)

@@ -18,28 +18,28 @@ import {
 } from './listDragModel'
 
 interface ResolvedSlot extends Slot {
-  lineLeft: number // viewport x of the insertion line's left edge
-  lineTop: number // viewport y
+  lineLeft: number
+  lineTop: number
   lineWidth: number
   indent: string // depth the dropped block adopts — the target line's leading whitespace
 }
 
-// A drop candidate — a visible list line outside the dragged block, measured in viewport coords at drag
-// start and re-measured only on scroll (wheel or the auto-scroll loop): the doc is static during a drag,
-// so re-measuring per pointermove would be pure layout thrash.
+// A drop candidate — a visible list line outside the dragged block, measured in viewport coords at
+// drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per
+// pointermove would be pure layout thrash.
 interface Cand {
   from: number
   to: number
-  top: number // viewport y of the line top
-  bottom: number // viewport y of the line bottom
-  left: number // viewport x of the marker — the line's left follows the item's indent
-  right: number // viewport x of the right gutter (wrap boundary) — the line spans the writing column
-  indent: string // the line's leading whitespace — the dropped block adopts this depth
+  top: number
+  bottom: number
+  left: number // the line's left follows the item's indent
+  right: number // wrap boundary — the line spans the writing column
+  indent: string
 }
 
-// The right edge a drop line reaches on a given line: the page wrap boundary, except inside a box (callout /
-// quote), where it's that line's own content-box right — read from the rendered element so the callout's CSS
-// padding owns the width (no recomputing the inset here).
+// The right edge a drop line reaches: the page wrap boundary, except inside a box (callout/quote),
+// where it's that line's own content-box right — read from the rendered element so the callout's
+// CSS padding owns the width.
 function lineRightEdge(view: EditorView, from: number, fallback: number): number {
   const n = lineElementAt(view, from)
   if (!n || (!n.classList.contains('md-callout') && !n.classList.contains('md-bq'))) return fallback
@@ -85,10 +85,9 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
   return out
 }
 
-// Cheap per-move hit-test against the cached candidates — all viewport coords (matching the pointer's
-// clientY and the position:fixed line). Each candidate offers two insertion boundaries, before it and
-// after it, so a paragraph between two bullets splits to the nearer bullet's edge instead of one
-// bullet owning the whole gap.
+// Cheap per-move hit-test against the cached candidates. Each candidate offers two insertion
+// boundaries, before and after, so a paragraph between two bullets splits to the nearer edge
+// instead of one bullet owning the whole gap.
 function slotFrom(
   cands: Cand[],
   clientY: number,
@@ -102,7 +101,7 @@ function slotFrom(
   }
   const best = nearestBoundary(bs, clientY)
   if (best === null) return null
-  if (best.at >= block.from && best.at <= block.to + 1) return null // landing inside the dragged block → no slot
+  if (best.at >= block.from && best.at <= block.to + 1) return null
   return {
     at: best.at,
     lineLeft: best.slot.left,
@@ -126,8 +125,8 @@ export const listDragExtension: Extension = [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
-    // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't cancel the
-    // compatibility mousedown — so without this, pressing a glyph to drag would also select text under it.
+    // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't
+    // cancel the compatibility mousedown, so this is needed to stop the drag from also selecting text.
     mousedown(e) {
       if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-li-glyph')) {
         e.preventDefault()

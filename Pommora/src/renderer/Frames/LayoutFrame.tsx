@@ -56,20 +56,18 @@ const BANNERS: PickerChoice<CardBanner>[] = [
   { value: 'none', label: 'None' },
 ]
 
-// Live scrub: while the Scale knob drags, push the factor straight onto the configured view's mounted
-// cards root(s) — scoped by data-view-id so a sibling cards view on the same surface isn't dragged
-// along (its own card_size never changed, so React wouldn't reassert it). No per-tick save, no churn.
+// Live scrub: while the Scale knob drags, push the factor straight onto the configured view's
+// mounted cards root(s), scoped by data-view-id so a sibling cards view isn't dragged along.
 const scrubCardScale = (v: number, viewId: string): void => {
   for (const el of document.querySelectorAll<HTMLElement>(`.cards-view[data-view-id="${viewId}"]`))
     el.style.setProperty('--card-scale', String(v))
 }
 
-// ── KNOB — LayoutFrame's own height ceiling (its own, not the shared MENU_MAX_HEIGHT): the full door
-// stacks the tallest content (title + grid + four frame rows + the pinned footing), so it earns more
-// room before the body scrolls. Applies to the editor + its Layout frame. ──
+// KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks
+// the tallest content (title + grid + four frame rows + the pinned footing), so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
-// ── KNOB — the frame slider's floors (matches the SettingsFrame sibling): a blank Group/Filter/Sort frame
-// reserves this square instead of collapsing to a bare header strip mid-slide. ──
+// KNOB — the frame slider's floors (matches the SettingsFrame sibling): a blank Group/Filter/Sort
+// frame reserves this square instead of collapsing to a bare header strip mid-slide.
 const LEAF_MIN_WIDTH = 225
 const LEAF_MIN_HEIGHT = 245
 

@@ -3,8 +3,8 @@
 // mechanism. It mirrors `buildPageIndex`: a normalized-name map answering resolved, phantom, or
 // ambiguous, so the trichotomy has one meaning across pages and files alike.
 //
-// Held in memory and never persisted. Nothing derived from an asset needs to survive a restart,
-// which is what keeps `nexus.db`'s stat gate, seed and prune out of this feature entirely.
+// Held in memory and never persisted — nothing derived from an asset needs to survive a
+// restart, which keeps `nexus.db`'s stat gate, seed and prune out of this feature entirely.
 
 import { normalizeTitle } from '@shared/connections'
 import { stabilize } from '@shared/treeStabilize'
@@ -17,11 +17,10 @@ import { readWatchScope } from './settings'
 import type { WatchEventName } from './watchPatch'
 
 /** Whether this path is one the map may hold. The root's OWN segments are exempt, exactly as
- *  they are in the watcher's ignore — a root named `.attachments` is the case that exemption
- *  exists for, and applying the cruft rule to it would yield a permanently empty map. Below the
- *  root the rule matches the watcher's, so the map never holds what no event can update.
- *  Thumbnails are Pommora's own derived files and are skipped under the default root alone; a
- *  user's folder that happens to be called `thumbnails` is theirs. */
+ *  in the watcher's ignore — a root named `.attachments` is the case that exemption exists
+ *  for. Below the root the rule matches the watcher's, so the map never holds what no event
+ *  can update. Thumbnails are skipped under the default root alone; a user's folder that
+ *  happens to be called `thumbnails` is theirs. */
 export function indexable(rel: string, assetDir: string): boolean {
   const below = rel.split('/').slice(rootSegs(assetDir).length)
   if (below.some(neverWatched)) return false

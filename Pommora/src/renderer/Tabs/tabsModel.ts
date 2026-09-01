@@ -37,10 +37,9 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
   return r.kind === 'none' ? null : r
 }
 
-/** Stored tabs made live at restore — prune refs that no longer resolve, mint paths for those
- *  that do, and carry the history pointer through the pruning (re-pointed by key if it lands
- *  wrong, degraded to a single-entry stack if its target vanished) — restored lockstep is
- *  established here or nowhere. */
+/** Stored tabs made live at restore — prune refs that no longer resolve, mint paths for those that
+ *  do, and carry the history pointer through the pruning (re-pointed by key if it lands wrong,
+ *  degraded to a single-entry stack if its target vanished). */
 export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): Tab[] {
   if (!index) return []
   const tabs: Tab[] = []

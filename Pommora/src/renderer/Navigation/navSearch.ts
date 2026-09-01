@@ -1,7 +1,6 @@
 // Client-side title search over the live tree — title/kind only; full-text/body search is a
 // deferred Prospect resting on a SQLite FTS layer. The index carries a ready-to-select NavRef per
-// hit and is built by treeIndex's searchEntriesOf, memoized per tree; filterNav is pure and
-// re-runs per keystroke.
+// hit and is memoized per tree; filterNav is pure and re-runs per keystroke.
 
 import type { NavRef } from '@shared/types'
 
