@@ -3,6 +3,7 @@ import {
   addOption,
   recolorOption,
   reorderOption,
+  setOptionAppearance,
   setOptionIcon,
   fallbackTitle,
   type Option,
@@ -44,9 +45,9 @@ export function OptionEditor({
 }): React.JSX.Element {
   const [adding, setAdding] = useState<number | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
-  const [coloring, setColoring] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
   const [iconEditing, setIconEditing] = useState<string | null>(null)
-  const paletteBtnRef = useRef<HTMLButtonElement>(null)
+  const editBtnRef = useRef<HTMLButtonElement>(null)
   const optionOrder = useMemo(() => options.map((o) => o.value), [options])
   const entering = useEntrance(options, (o) => o.value)
   const reorder = useOptionReorder(
@@ -57,7 +58,7 @@ export function OptionEditor({
   // Each option is its own anchor, so the slot opens under whichever chip the pointer rests on; an
   // empty list has no chip to anchor to, so the list itself stands in for the first one.
   const ghostApi = useGhostOptionAnchor(
-    adding !== null || renaming !== null || coloring !== null || iconEditing !== null,
+    adding !== null || renaming !== null || editing !== null || iconEditing !== null,
   )
 
   const commitAdd = (raw: string, at: number): void => {
@@ -94,7 +95,6 @@ export function OptionEditor({
     else if (action === 'option:clear') onClearOption(o.value)
   }
   const pickColor = (o: Option, color: string | undefined): void => {
-    setColoring(null)
     onSetOptions(recolorOption(options, o.value, color))
   }
   const pickIcon = (o: Option, icon: string | undefined): void => {
@@ -121,7 +121,7 @@ export function OptionEditor({
       >
         {reorder.ghost}
         {options.map((o, i) => {
-          const isColoring = coloring === o.value
+          const isEditing = editing === o.value
           return (
             <Fragment key={o.value}>
               <Reveal open enterOnMount={entering(o.value)} fill>
@@ -135,15 +135,17 @@ export function OptionEditor({
                   label={o.label}
                   color={o.color}
                   icon={o.icon}
+                  appearance={o.appearance}
                   renaming={renaming === o.value}
-                  coloring={isColoring}
+                  editing={isEditing}
                   iconEditing={iconEditing === o.value}
-                  paletteRef={paletteBtnRef}
+                  editButtonRef={editBtnRef}
                   onCommitRename={(raw) => commitRename(o.value, raw)}
                   onCancelRename={() => setRenaming(null)}
-                  onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                  onCloseColoring={() => setColoring(null)}
+                  onToggleEditing={() => setEditing((v) => (v === o.value ? null : o.value))}
+                  onCloseEditing={() => setEditing(null)}
                   onPickColor={(color) => pickColor(o, color)}
+                  onPickAppearance={(a) => onSetOptions(setOptionAppearance(options, o.value, a))}
                   onEditIcon={(icon) => pickIcon(o, icon)}
                   onCloseIcon={() => setIconEditing(null)}
                 />

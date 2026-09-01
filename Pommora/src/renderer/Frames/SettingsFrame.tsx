@@ -27,7 +27,7 @@ import {
   MenuTopRow,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerControl, percentChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { factorChoice, PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
@@ -125,7 +125,7 @@ export function SettingsFrame(): React.JSX.Element | null {
     SCALE_STEPS.some((f) => f === viewScale)
       ? SCALE_STEPS
       : [...SCALE_STEPS, viewScale].sort((a, b) => a - b)
-  ).map(percentChoice)
+  ).map(factorChoice)
 
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (
@@ -206,11 +206,11 @@ export function SettingsFrame(): React.JSX.Element | null {
             options={scaleChoices}
             onPick={(v) => setViewScale(Number(v))}
             typeable={{
-              text: String(Math.round(viewScale * 100)),
-              suffix: '%',
+              text: viewScale.toFixed(2),
+              suffix: 'x',
               onCommit: (written) => {
-                const percent = Number.parseFloat(written.replace('%', '').trim())
-                if (Number.isFinite(percent)) setViewScale(percent / 100)
+                const factor = Number.parseFloat(written.replace(/x/i, '').trim())
+                if (Number.isFinite(factor)) setViewScale(factor)
               },
             }}
           />
