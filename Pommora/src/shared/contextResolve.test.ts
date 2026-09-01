@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { reconcileContextKeys, resolveContextKeys } from './contextResolve'
+import { type GovernedWorld, reconcileGovernedRoot, resolveContextKeys } from './contextResolve'
+import type { PropertyDefinition } from './properties'
+import { decodeValue } from './propertyValue'
 import type { ContextsRegistry } from './contexts'
 import type { SpaceNode } from './types'
 
@@ -65,48 +67,109 @@ describe('resolveContextKeys', () => {
   })
 })
 
-describe('reconcileContextKeys', () => {
+const statusDef: PropertyDefinition = {
+  id: 'prop_status',
+  name: 'Status',
+  type: 'select',
+  select_options: [
+    { value: 'Open', label: 'Open' },
+    { value: 'Active', label: 'Active' },
+  ],
+}
+const tagsDef: PropertyDefinition = {
+  id: 'prop_tags',
+  name: 'Tags',
+  type: 'multi_select',
+  select_options: [{ value: 'alpha', label: 'alpha' }],
+}
+const world: GovernedWorld = {
+  registry,
+  spacesByContext,
+  defs: new Map([
+    ['Status', statusDef],
+    ['Tags', tagsDef],
+  ]),
+}
+
+describe('reconcileGovernedRoot — the context arm', () => {
   it('repairs near-misses, drops unknowns, keeps exacts', () => {
-    const { root, changed } = reconcileContextKeys(
+    const { root, changed } = reconcileGovernedRoot(
       { '<Projects>': ['pommora', 'Pomora', 'CS 161'] },
-      registry,
-      spacesByContext,
+      world,
     )
     expect(root['<Projects>']).toEqual(['Pommora', 'CS 161'])
-    expect(changed).toBe(true)
+    expect(changed).toEqual(['<Projects>'])
   })
 
   it('repairs scalar-typed values to their canonical string titles', () => {
-    const { root, changed } = reconcileContextKeys(
-      { '<Classes>': [2024, true] },
-      registry,
-      spacesByContext,
-    )
+    const { root } = reconcileGovernedRoot({ '<Classes>': [2024, true] }, world)
     expect(root['<Classes>']).toEqual(['2024', 'true'])
-    expect(changed).toBe(true)
   })
 
-  it('removes a key whose values all drop (no empties)', () => {
-    const { root, changed } = reconcileContextKeys(
+  it('removes a key whose values all drop, and a present-but-empty list (no empties)', () => {
+    const { root, changed } = reconcileGovernedRoot(
       { '<Projects>': ['Pomora'], '<Classes>': [] },
-      registry,
-      spacesByContext,
+      world,
     )
     expect('<Projects>' in root).toBe(false)
     expect('<Classes>' in root).toBe(false)
-    expect(changed).toBe(true)
+    expect(changed.sort()).toEqual(['<Classes>', '<Projects>'])
   })
 
-  it('leaves unknown wrapped keys and non-context keys verbatim', () => {
-    const input = {
-      '<Nonexistent>': ['Whatever'],
-      title_note: 'keep',
-      '<Projects>': ['Pommora'],
-    }
-    const { root, changed } = reconcileContextKeys(input, registry, spacesByContext)
-    expect(root['<Nonexistent>']).toEqual(['Whatever'])
-    expect(root.title_note).toBe('keep')
-    expect(root['<Projects>']).toEqual(['Pommora'])
-    expect(changed).toBe(false)
+  it('leaves unknown wrapped keys and foreign keys verbatim', () => {
+    const input = { '<Nonexistent>': ['x'], title_note: 'keep', '<Projects>': ['Pommora'] }
+    const { root, changed } = reconcileGovernedRoot(input, world)
+    expect(root).toEqual(input)
+    expect(changed).toEqual([])
+  })
+
+  it('a null registry skips the context arm while the property arm still runs', () => {
+    const { root, changed } = reconcileGovernedRoot(
+      { '<Projects>': ['pommora'], Status: 'Active' },
+      { ...world, registry: null },
+    )
+    expect(root['<Projects>']).toEqual(['pommora'])
+    expect(root.Status).toEqual(['Active'])
+    expect(changed).toEqual(['Status'])
+  })
+})
+
+describe('reconcileGovernedRoot — the property arm', () => {
+  it('re-encodes an assigned key as its definition reads it', () => {
+    const { root, changed, adoptions } = reconcileGovernedRoot({ Status: 'Active' }, world)
+    expect(root.Status).toEqual(['Active'])
+    expect(changed).toEqual(['Status'])
+    expect(adoptions).toEqual([])
+  })
+
+  it('keeps a list that already reads canonically, unchanged', () => {
+    const { changed } = reconcileGovernedRoot({ Status: ['Active'] }, world)
+    expect(changed).toEqual([])
+  })
+
+  it('deletes an assigned key whose value reads as nothing', () => {
+    const { root, changed } = reconcileGovernedRoot({ Status: ['Wip'] }, world)
+    expect('Status' in root).toBe(false)
+    expect(changed).toEqual(['Status'])
+  })
+
+  it('a Multi-Select keeps an unregistered option and reports it for adoption', () => {
+    const { root, changed, adoptions } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta'] }, world)
+    expect(root.Tags).toEqual(['alpha', 'zeta'])
+    expect(changed).toEqual([])
+    expect(adoptions).toEqual([{ propertyId: 'prop_tags', value: 'zeta' }])
+  })
+
+  it('a registered key the Collection does not assign passes verbatim', () => {
+    const { root, changed } = reconcileGovernedRoot({ Priority: 5 }, world)
+    expect(root.Priority).toBe(5)
+    expect(changed).toEqual([])
+  })
+
+  it('agrees with decodeValue on every fixture (the crossing)', () => {
+    for (const raw of [['Active'], 'Active', ['Open', 'Active'], ['Active', 'Wip'], ['Wip'], ''])
+      expect(
+        decodeValue(statusDef, reconcileGovernedRoot({ Status: raw }, world).root.Status),
+      ).toEqual(decodeValue(statusDef, raw))
   })
 })

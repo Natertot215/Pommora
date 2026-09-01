@@ -114,13 +114,13 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md')).Priority).toBe('hi')
   })
 
-  it('drops a tag whose Context was erased while it sat in the trash', async () => {
+  it('keeps a tag whose Context was erased while it sat in the trash — the key is foreign now', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
       await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
     })
     const f = await fm('Notes/Alpha.md')
-    expect(f['<Projects>']).toBeUndefined()
+    expect(f['<Projects>']).toEqual(['Pommora'])
     expect(f.Priority).toEqual(['hi'])
   })
 
@@ -140,15 +140,13 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('keeps a near-miss Space title exactly as the file spelled it', async () => {
-    // The live tree resolves `pommora` to the Space "Pommora"; so does restore. And it comes back
-    // as written — standing decides what to drop, never what to rewrite.
+  it('repairs a near-miss Space title to the canonical spelling on the way back', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nPageID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('a value an outside write left as a number still names its Space', async () => {
@@ -162,10 +160,10 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nPageID: ${PAGE_A}\n<Projects>:\n  - 2024\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual([2024])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['2024'])
   })
 
-  it('prunes the dead Space from a near-miss tag and leaves the survivor as written', async () => {
+  it('prunes the dead Space from a near-miss tag and repairs the survivor', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
@@ -178,7 +176,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
@@ -187,15 +185,14 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\nPriority: lo\n---\nb`,
     )
     await cycle('Notes/Daily', 'set', async () => {
-      await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-      await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
+      await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
     })
     const f = await fm('Notes/Daily/Journal.md')
     expect(f['<Projects>']).toBeUndefined()
     expect(f.Priority).toEqual(['lo'])
   })
 
-  it('drops a value whose OPTION was deleted while it sat in the trash', async () => {
+  it('keeps a Multi-Select option deleted while it sat in the trash, and adopts it back', async () => {
     // The definition still stands; the value it held no longer can. Both restore routes ask the
     // same standing check, so this cannot survive here and be dropped by a property restore.
     await cycle('Notes/Alpha.md', 'page', async () => {
@@ -255,7 +252,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
         }),
       )
     })
-    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
+    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a', 'b'])
+    const def = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8')).defs[
+      PROP
+    ]
+    expect(def.select_options.map((o: { value: string }) => o.value)).toEqual(['a', 'b'])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
@@ -264,8 +265,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nPageID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - Pommora\nPriority: hi\n---\nthe body\n`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-      await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
+      await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
     })
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
     expect(raw).toContain('author: Username')
@@ -302,7 +302,7 @@ describe('a Space sidecar is a context root too', () => {
   const sidecar = async (rel: string): Promise<Record<string, unknown>> =>
     JSON.parse(await readFile(join(contextsDir(root), rel, '_space.json'), 'utf8'))
 
-  it('drops a passenger tag whose Context died while the subtree sat in the trash', async () => {
+  it('drops a passenger tag whose Space died while the subtree sat in the trash', async () => {
     await seedPassenger()
     expect(
       (
@@ -315,7 +315,7 @@ describe('a Space sidecar is a context root too', () => {
     expect(
       (
         await handleMutate(
-          { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
+          { op: 'delete', path: '.nexus/contexts/Areas/Work', kind: 'space' },
           nexusDeps,
         )
       ).ok,

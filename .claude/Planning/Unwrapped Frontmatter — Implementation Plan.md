@@ -892,9 +892,9 @@ export function contextTagStands(coercedSpaceTitles: Set<string> | undefined, ra
 
 **Verify — automated**
 
-- [ ] Red first: restoring `Tags: [alpha, zeta]` (zeta unregistered) through `restoreProperty` keeps `zeta` on disk **and** adopts it (today drops it); through Remove→Restore likewise. Then green. A Select `[Wip]` unknown restores to no key.
-- [ ] `rg -F "propertyValueStands" src` → 0. Control: `rg -F "contextTagStands" src` → ≥ 2.
-- [ ] Full gates green.
+- [x] `restoreProperty.test` and `removeProperty.test`: `Tags: [alpha, zeta]` comes back holding `zeta` and the definition gains it; `restoreScrub.test`: a Multi-Select option deleted while the page sat in the trash is kept and adopted back. An unknown Select option still restores to no key.
+- [x] `propertyValueStands` → 0. `contextTagStands` → 0 as well — with both restore arms on the one reconcile, `standing.ts` had no caller left and is deleted (the plan kept `contextTagStands`; nothing used it).
+- [x] Full gates green (one commit with Task 15). `reconcilePropertyValue` returns `{ value, adoptions }` rather than the plan's `{ next, adoptions }` — the restore paths hand `updatePageProperty` a `PropertyValue`, and the reconcile encodes it once.
 
 **Verify — user**
 
@@ -937,10 +937,10 @@ The context arm runs as before and is skipped when `world.registry` is null; the
 
 **Verify — automated**
 
-- [ ] Red first (`contextResolve.test`): `{ Status: 'Active' }` with `Status` in defs → `{ Status: ['Active'] }`, `changed: ['Status']`; `{ Tags: ['alpha','zeta'] }` → unchanged root, `adoptions: [{…,'zeta'}]`; `{ '<Areas>': [] }` → key deleted; `{ '<Notes>': ['x'] }` (no such Context) → verbatim; `registry: null` → context keys verbatim, property arm still runs; `Priority: 5` registered but not in `defs` → verbatim. Then green; the 4 existing reconcile cases pass renamed.
-- [ ] Crossing test: `reconcileGovernedRoot` and `decodeValue` agree — for every fixture, `decodeValue(def, reconciled.root[k])` deep-equals `decodeValue(def, raw)`.
-- [ ] `rg -F "reconcileContextKeys" src` → 0. Control: `rg -F "reconcileGovernedRoot" src` → ≥ 3.
-- [ ] Full gates green.
+- [x] `contextResolve.test`: every case in the fence, plus the four former `reconcileContextKeys` cases renamed; `changed` is the key list.
+- [x] Crossing test: `decodeValue(def, reconciled.root.Status)` equals `decodeValue(def, raw)` for six shapes.
+- [x] `reconcileContextKeys` → 0. Control: `reconcileGovernedRoot` → 20.
+- [x] Full gates green: typecheck 0 · 304 files / 3776 tests · lint clean. Two restore behaviors followed the one reconcile and the tests now say so: a near-miss Space title (`pommora`, `2024`) comes back canonical rather than as spelled, and a `<Context>` key whose Context the registry no longer names rides through as foreign (K-1) instead of being dropped.
 
 **Verify — user**
 

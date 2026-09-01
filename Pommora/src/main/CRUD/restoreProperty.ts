@@ -18,8 +18,9 @@ import { readSidecar } from '../sidecarIO'
 import { serializeOnFile } from '../IO/fileLock'
 import { collectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
+import { applyAdoptions } from './optionOps'
+import { type Adoption, isBlankValue, reconcilePropertyValue } from '@shared/propertyValue'
 import { createProperty } from './registryProperty'
-import { propertyValueStands } from './standing'
 import { serializeSchemaOp } from './schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
@@ -64,23 +65,26 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
 
   const roots = projectBaseline(await refreshTree(root)).entries
   let dropped = 0
+  const adoptions: Adoption[] = []
   for (const [pageId, raw] of Object.entries(record.values)) {
     const entry = roots[pageId]
     if (entry?.kind !== 'page') {
       dropped++
       continue
     }
-    // The same standing check the artifact restore asks, so a value cannot survive one route
-    // and be dropped by the other.
-    const standing = propertyValueStands(def, raw)
-    if (!standing.stands) {
+    const reconciled = reconcilePropertyValue(def, raw)
+    if (isBlankValue(reconciled.value)) {
       dropped++
       continue
     }
     const file = join(root, entry.path)
-    const written = await serializeOnFile(file, () => updatePageProperty(file, def, standing.value))
-    if (!written.ok) dropped++
+    const written = await serializeOnFile(file, () =>
+      updatePageProperty(file, def, reconciled.value),
+    )
+    if (written.ok) adoptions.push(...reconciled.adoptions)
+    else dropped++
   }
+  await applyAdoptions(root, adoptions)
   if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)
   return ok(null)
 }

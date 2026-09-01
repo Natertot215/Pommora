@@ -174,4 +174,29 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await listBundles(root)).toHaveLength(0)
   })
+
+  it('a Multi-Select value keeps an option the definition lost, and adopts it back', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Tags',
+      type: 'multi_select',
+      select_options: [{ value: 'alpha', label: 'alpha' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    const page = await createPage(notes, 'T', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+      kind: 'multiSelect',
+      value: ['alpha', 'zeta'],
+    })
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha', 'zeta'])
+    expect((await liveDef(c.value.id)).select_options?.map((o) => o.value)).toEqual([
+      'alpha',
+      'zeta',
+    ])
+  })
 })
