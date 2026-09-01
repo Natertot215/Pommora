@@ -11,7 +11,7 @@
 // that governs it without supplying it, which is the same trap one field over.
 
 import { readFile } from 'node:fs/promises'
-import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
+import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from '@shared/contextResolve'
 import type { Adoption } from '@shared/propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
@@ -28,13 +28,13 @@ export async function setGovernedRootKeys(
   const existing = await readFile(absFile, 'utf8')
   const raw = splitFrontmatter(existing)
   const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
-  const { root, changed, adoptions } = world
+  const reconciled = world
     ? reconcileGovernedRoot(own, world)
     : { root: own, changed: [], adoptions: [] }
-  const repaired = Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
+  const { changed, adoptions } = reconciled
   const content = mergeFrontmatter(
     existing,
-    { ...repaired, ...next, modified_at: nowIso() },
+    { ...survivingChanges(reconciled), ...next, modified_at: nowIso() },
     [...changed, ...govern, 'modified_at'],
     splitEnvelope(existing).body,
   )

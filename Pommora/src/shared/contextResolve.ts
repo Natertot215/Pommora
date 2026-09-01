@@ -6,11 +6,15 @@ import type { SpaceNode } from './types'
 
 export type ResolvedLinks = Map<string, string[]>
 
+const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
+
 export interface GovernedWorld {
   registry: ContextsRegistry | null
   spacesByContext: Map<string, SpaceNode[]>
   defs: ReadonlyMap<string, PropertyDefinition>
 }
+
+export const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
 /** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted
  *  key is foreign data, never a link. */
@@ -35,12 +39,12 @@ export function resolveContextKeys(
   const contextIds = idsByExactTitle(registry)
   for (const [key, raw] of Object.entries(root)) {
     const title = parseContextKey(key)
-    if (title === null || !Array.isArray(raw)) continue
+    if (title === null || raw == null) continue
     const contextId = contextIds.get(title)
     if (contextId === undefined) continue
     const byTitle = spacesByTitle(spacesByContext.get(contextId))
     const ids: string[] = []
-    for (const value of raw) {
+    for (const value of listOf(raw)) {
       const match = byTitle.get(normalizeContextValue(value))
       if (match) ids.push(match.id)
     }
@@ -82,13 +86,13 @@ export function reconcileGovernedRoot(
     }
     const title = parseContextKey(key)
     const contextId = title !== null && contextIds ? contextIds.get(title) : undefined
-    if (contextId === undefined || !Array.isArray(raw)) {
+    if (contextId === undefined) {
       out[key] = raw
       continue
     }
     const byTitle = spacesByTitle(world.spacesByContext.get(contextId))
     const repaired: string[] = []
-    for (const value of raw) {
+    for (const value of listOf(raw)) {
       const match = byTitle.get(normalizeContextValue(value))
       if (match) repaired.push(match.title)
     }
@@ -96,4 +100,10 @@ export function reconcileGovernedRoot(
     else changed.push(key)
   }
   return { root: out, changed, adoptions }
+}
+
+/** The changed keys that survived; a changed key absent from the root is a delete, which the
+ *  frontmatter merge signals by omission. */
+export function survivingChanges({ root, changed }: Reconciled): Record<string, unknown> {
+  return Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
 }
