@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { useSession } from '../store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
@@ -22,8 +22,8 @@ function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   const def = schema.find((d) => d.id === id)
   if (def) return <Icon name={propertyIcon(def)} size={s.ICON.doc} />
   if (id === RESERVED_PROPERTY_ID.title) return <PropertyTypeIcon type="title" size={s.ICON.doc} />
-  if (id === RESERVED_PROPERTY_ID.modifiedAt)
-    return <PropertyTypeIcon type="last_edited_time" size={s.ICON.doc} />
+  const stamp = STAMP_TYPE[id]
+  if (stamp) return <PropertyTypeIcon type={stamp} size={s.ICON.doc} />
   return <PropertyTypeIcon type="context" size={s.ICON.doc} />
 }
 
