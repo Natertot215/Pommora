@@ -380,9 +380,14 @@ export interface PickFileOptions {
   any?: boolean
 }
 
+export interface ValueChange {
+  rel: string
+  pageIds: string[]
+}
+
 export type ValuesEpoch = { n: number } & (
   | { kind: 'rename'; oldKey: string; newKey: string }
-  | { kind: 'container'; rel: string; pageIds: string[] }
+  | { kind: 'container'; changes: ValueChange[] }
 )
 
 export interface NexusTree {

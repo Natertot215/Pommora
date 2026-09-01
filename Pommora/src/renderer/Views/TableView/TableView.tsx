@@ -1161,13 +1161,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const patchBandValue = (pageId: string, value: PropertyValue | null): PageFrontmatter | null => {
     const def = schema.find((d) => d.id === groupPropId)
     if (!def) return null
-    const prior = values[pageId]
-    const patched = applyValueAtRoot(
-      (prior ?? { id: pageId }) as Record<string, unknown>,
+    return applyValueAtRoot(
+      (values[pageId] ?? { id: pageId }) as Record<string, unknown>,
       def,
       value,
     ) as PageFrontmatter
-    return patched
   }
   const reassignRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
@@ -1194,14 +1192,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return
     }
     const value = groupKeyToValue(destGroupKey, groupPropType)
+    const write = mutate({ op: 'setProperty', path, propertyId: groupPropId, value })
     const patched = patchBandValue(pageId, value)
-    if (patched)
-      patchOverride(
-        setValueOverride,
-        pageId,
-        patched,
-        mutate({ op: 'setProperty', path, propertyId: groupPropId, value }),
-      )
+    if (patched) patchOverride(setValueOverride, pageId, patched, write)
   }
   // Cross-folder move (plain location grouping): a row dropped into a DIFFERENT location band relocates
   // the page into that band's Set (the root band → the container itself). movePage; the tree reload
