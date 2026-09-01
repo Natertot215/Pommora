@@ -240,25 +240,33 @@ export function FooterLockButton({
   )
 }
 
-export function FooterMoreButton({
-  onClick,
-  disabled,
-}: {
-  onClick?: () => void
-  disabled?: boolean
-}): React.JSX.Element {
+export const FooterIconButton = forwardRef<
+  HTMLButtonElement,
+  {
+    icon: string
+    ariaLabel: string
+    onClick?: () => void
+    disabled?: boolean
+    pressed?: boolean
+  }
+>(function FooterIconButton(
+  { icon, ariaLabel, onClick, disabled, pressed },
+  ref,
+): React.JSX.Element {
   return (
     <Button
+      ref={ref}
       size="button-inline"
-      aria-label="More actions"
+      aria-label={ariaLabel}
       className={s.footerLockAction}
       onClick={onClick}
       disabled={disabled}
+      pressed={pressed}
     >
-      <Icon name="ellipsis" size="body" />
+      <Icon name={icon} size="body" />
     </Button>
   )
-}
+})
 
 export function Menu({
   className,

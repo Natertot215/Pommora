@@ -319,7 +319,6 @@ export interface Asks {
         toggleIcon?: boolean
         iconHidden?: boolean
         noEditIcon?: boolean
-        changeColor?: boolean
       },
     ]
     reply: TitleMenuAction | null

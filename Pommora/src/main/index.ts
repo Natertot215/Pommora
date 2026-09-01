@@ -1790,19 +1790,12 @@ serveBridge(
           toggleIcon?: boolean
           iconHidden?: boolean
           noEditIcon?: boolean
-          changeColor?: boolean
         }
         return popReturningMenu<TitleMenuAction>(win, (pick) => [
           { label: 'Rename', click: pick('rename') },
           ...(opts.noEditIcon ? [] : [{ label: 'Edit Icon', click: pick('editIcon') }]),
           ...(opts.toggleIcon
             ? [{ label: iconLabel(!opts.iconHidden), click: pick('toggleIcon') }]
-            : []),
-          ...(opts.changeColor
-            ? [
-                { type: 'separator' as const },
-                { label: 'Change Color', click: pick('changeColor') },
-              ]
             : []),
         ])
       },
