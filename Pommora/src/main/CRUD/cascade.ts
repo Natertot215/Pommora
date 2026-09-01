@@ -19,7 +19,7 @@ import { ok, type Result } from '@shared/result'
 import { queryMentions } from '../Database/contentIndex'
 import { frontmatterValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { propertyNames } from '@shared/properties'
+import { isRegisteredPropertyName, propertyNames } from '@shared/properties'
 
 /** Rewrite every reference to `oldTitle` — the body's own links, and any frontmatter Link property
  *  naming the page — to name `newTitle`, atomically. `modified_at` is preserved untouched either
@@ -41,7 +41,9 @@ export async function renameCascade(
       if (!sweepAdmitsBody(content)) return null // connections live only on files the tree admits
       const { body } = splitEnvelope(content)
       const values = Object.fromEntries(
-        Object.entries(frontmatterValues(content)).filter(([k]) => names.has(k)),
+        Object.entries(frontmatterValues(content)).filter(([k]) =>
+          isRegisteredPropertyName(k, names),
+        ),
       )
       const patch = rewriteFrontmatterConnections(values, oldKey, newTitle)
       const keys = Object.keys(patch)
