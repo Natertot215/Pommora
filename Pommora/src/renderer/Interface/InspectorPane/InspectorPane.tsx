@@ -3,9 +3,8 @@ import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './inspectorPane.css'
 
-/**
- * `open` only sets aria-hidden here — the actual reserve/push happens in the shell. Empty scaffold for now: selection-aware content (frontmatter → properties → page info) mounts in `.inspector-body`.
- */
+/** `open` only sets aria-hidden here — the actual reserve/push happens in the shell.
+ *  `.inspector-body` is where selection-aware content mounts. */
 export function InspectorPane({ open }: { open: boolean }): React.JSX.Element {
   return (
     <GlassPane

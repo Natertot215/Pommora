@@ -5,9 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameCascade } from './cascade'
 import { encodeLinkTarget } from '@shared/links'
 
-// The arc's acceptance criterion, at the layer that owns the file: a body carrying every form a
-// connection can take survives a real rename against real files on disk. Per-task suites prove each
-// piece; this proves they still agree once a rename runs through all of them at once.
+// A body carrying every form a connection can take survives a real rename against real files on
+// disk. Per-task suites prove each piece; this proves they still agree all at once.
 
 let root: string
 let host: string

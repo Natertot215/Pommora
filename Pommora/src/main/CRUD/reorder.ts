@@ -1,7 +1,6 @@
-// Order persistence. The renderer computes a new order (drag/drop) and sends the full
-// id list; main just persists it — top-level orders to .nexus/state.json, within-
-// container orders to the container's sidecar. Read-modify-write so a reorder doesn't
-// clobber other state keys.
+// The renderer computes a new order and sends the full id list; main just persists it — top-level
+// orders to .nexus/state.json, within-container orders to the container's sidecar.
+// Read-modify-write so a reorder doesn't clobber other state keys.
 
 import { mkdir } from 'node:fs/promises'
 import type { z } from 'zod'
@@ -12,17 +11,15 @@ import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { ok, type Result } from '@shared/result'
 import type { StateOrderKey, ChildOrderKey } from '@shared/mutate'
 
-// `StateOrderKey` (top Collections + Context groups) is the shared IPC type. The within-container keys add
-// `page_order` (written on a page move, never a reorderChildren) onto the shared child keys.
 export type { StateOrderKey }
+// `page_order` is written on a page move, never a reorderChildren.
 export type ContainerOrderKey = ChildOrderKey | 'page_order'
 
-// Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter
-// stamps a real ULID before any write captures them. Strip them so a transient id never
-// lands in a persisted order array (and re-stamps to a fresh ULID, breaking continuity).
+// Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps
+// a real ULID before any write captures them. Strip them so a transient id never lands in a
+// persisted order array.
 const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
 
-/** Persist a top-level order (top Collections or a Context group) to .nexus/state.json. */
 export async function setStateOrder(
   nexusRoot: string,
   key: StateOrderKey,
@@ -39,8 +36,6 @@ export async function setStateOrder(
   return ok(clean)
 }
 
-/** Persist one Context's Space order into the state.json `space_orders` map (keyed by
- *  context id), preserving every sibling context's order. */
 export async function setSpaceOrder(
   nexusRoot: string,
   contextId: string,
@@ -63,8 +58,6 @@ export async function setSpaceOrder(
   return ok(clean)
 }
 
-/** Persist a within-container order (collections/sets/pages) to the container sidecar,
- *  preserving its other (incl. foreign) keys. */
 export async function setContainerOrder<S extends z.ZodType>(
   absFolder: string,
   kind: SidecarKind,
@@ -77,17 +70,13 @@ export async function setContainerOrder<S extends z.ZodType>(
   >)
 }
 
-// The container folder kinds, detected by which sidecar exists on disk — so an order
-// (page_order on either; set_order on a Collection or a Set) persists with one call
-// regardless of the parent's kind.
 const CONTAINER_SIDECARS = [
   { kind: 'collection' as const, schema: pageCollectionSidecar },
   { kind: 'set' as const, schema: pageSetSidecar },
 ]
 
-/** Persist a within-folder order (`page_order` / `collection_order` / `set_order`), resolving
- *  the folder's kind from its sidecar on disk. A raw/adopted folder with no recognized sidecar
- *  is a no-op (order falls back to title). */
+/** Resolves the folder's kind from its sidecar on disk. A raw/adopted folder with no
+ *  recognized sidecar is a no-op (order falls back to title). */
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,

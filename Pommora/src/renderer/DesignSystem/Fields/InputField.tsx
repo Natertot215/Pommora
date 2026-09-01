@@ -37,9 +37,8 @@ export function InputField({
   chrome?: 'boxed' | 'bordered'
   /** Press-to-edit: the children at rest, a caret over the raw value under a click. */
   edit?: FieldEdit
-  /** Before the content — one lead glyph. */
   leading?: ReactNode
-  /** After the content, outside the caret — an action the field carries. */
+  /** Outside the caret — an action the field carries. */
   trailing?: ReactNode
   label?: string
 }): React.JSX.Element {

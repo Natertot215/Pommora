@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level frame tests: the row stack per grouping mode + the write shapes. Visual truth = CDP.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -343,7 +342,6 @@ describe('GroupFrame rows', () => {
     await mount(v)
     await openPicker('Group By')
     await pickOption('Status')
-    // the write replaced only `group`; the view-level sub_group rode through untouched
     expect(lastSaved().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',

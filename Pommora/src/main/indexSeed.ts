@@ -58,17 +58,16 @@ export function corpusUnder(root: string, rels: string[], folders: string[]): st
     .filter((abs) => folders.some((folder) => abs.startsWith(folder + sep)))
 }
 
-/** The corpus under one folder, as absolute paths — the subtree walked directly, never the
- *  whole nexus (this sits on the container-open hot path). The per-folder sweeps and readers
- *  enumerate through here so a folder nested inside a Collection but named by
- *  `excluded_folders` stays exactly as unreachable as the walk says. */
+/** The corpus under one folder, as absolute paths — the subtree walked directly, never the whole
+ *  nexus (this sits on the container-open hot path), so a folder named by `excluded_folders`
+ *  stays exactly as unreachable as the walk says. */
 export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
   const rels = await corpusFilesUnder(root, absFolder, await readWatchScope(root))
   return rels.map((rel) => join(root, rel))
 }
 
-/** Nexus-relative POSIX path when `abs` sits inside the corpus's reach, else null — the app's
- *  pens never write into excluded folders, so the shape check alone suffices here. */
+/** Nexus-relative POSIX path when `abs` sits inside the corpus's reach, else null — Pommora
+ *  never writes into excluded folders, so the shape check alone suffices here. */
 function relCorpusPath(root: string, abs: string): string | null {
   const rel = relative(root, abs)
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
@@ -130,9 +129,8 @@ export async function seedContentIndex(root: string): Promise<void> {
   const indexed = readIndexedStats()
   if (!indexed) return
   // The handle this seed started against. Every await below is a window for a nexus switch to
-  // swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database
-  // and then prune everything the new nexus holds — so the seed bails wherever the identity
-  // moved, and the new session's own adopt-time seed covers its nexus.
+  // swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database —
+  // so it bails wherever the identity moved, and the new session's own seed covers its nexus.
   const db0 = sessionDb()
   // A database with no rows re-reads the whole corpus; that is a first open, not drift.
   reread = { db: db0, rels: [], cold: indexed.size === 0 }

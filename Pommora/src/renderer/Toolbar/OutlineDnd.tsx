@@ -10,8 +10,8 @@ import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interacti
 import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/Editor/folding'
 import { moveHeadingSection } from '../Interface/pageEditor'
 
-// A flat insertion line marks the drop; levels never change, so no depth-indented line — the outline
-// re-nests the moved section by level once the document edit lands.
+// A flat insertion line marks the drop — the outline re-nests the moved section by level once the
+// document edit lands, so no depth-indented line is needed.
 const LINE_INSET_RIGHT = 12
 const LINE_INSET_LEFT = 8
 

@@ -36,8 +36,8 @@ const conn: ConnectionsApi = {
 }
 
 // jsdom draws no layout, so posAtCoords can't hit-test — pin it inside the displayed title. It has
-// to be the CONTENT span rather than the token's start: the edges beside the syntax are left to
-// caret placement, so a pin at 0 suppresses the very hover these tests assert.
+// to be the content span, not the token's start: the edges beside the syntax are left to caret
+// placement, so a pin at 0 would suppress the very hover these tests assert.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
   const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
@@ -77,8 +77,7 @@ describe('the hover intent', () => {
     expect(hover).not.toHaveBeenCalled()
   })
 
-  // A native menu takes the pointer and hands it back over the same link, and that re-entry is a
-  // fresh mouseover — cancelling once would let a preview bloom behind the menu just used.
+  // A native menu hands the pointer back over the same link, and that re-entry is a fresh mouseover.
   it('re-entry over a link that was just acted on does not re-arm', async () => {
     const { span } = await mountLink()
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -111,8 +110,7 @@ describe('the hover intent', () => {
 
 describe('read-only autocomplete gate', () => {
   const coords = { left: 10, right: 10, top: 10, bottom: 20 }
-  // A PARTIAL title, deliberately: a complete one suggests only itself, and the picker stands down
-  // rather than offer a no-op — which would make this pass for the wrong reason.
+  // A partial title, deliberately: a complete one suggests only itself, and the picker stands down.
   it('a caret seated inside a link opens the picker only when the editor can edit', async () => {
     const editable = await mountEditor({ initialBody: '[[Alph]]', connections: conn })
     vi.spyOn(editable, 'coordsAtPos').mockReturnValue(coords)

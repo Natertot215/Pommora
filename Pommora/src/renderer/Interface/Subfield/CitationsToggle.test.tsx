@@ -53,7 +53,6 @@ describe('the footnotes control appears only where there is something to disclos
     expect(button()?.textContent).toBe('Show Footnotes')
   })
 
-  // An orphan is still a citation line, and a section that exists must stay reachable.
   it('a page whose only citation is an orphan still offers the control', async () => {
     await mount('body with no marker\n\n[^a]: nothing points here')
     expect(button()?.textContent).toBe('Show Footnotes')
@@ -69,8 +68,6 @@ describe('the control writes one row, and clears it on the default', () => {
     expect(button()?.textContent).toBe('Hide Footnotes')
   })
 
-  // A row written to the value it already follows would pin the page forever — a later change to
-  // the nexus-wide default could never reach it again.
   it('toggling back to the default deletes the row rather than restating it', async () => {
     await mount(CITED)
     await click()
@@ -90,9 +87,8 @@ describe('the control writes one row, and clears it on the default', () => {
   })
 })
 
-// One state, two controls, one writer. The divider does not fold the section — it reports its press
-// to the same flip the footer's control calls, so the two can never disagree about what a toggle
-// means, including that landing back on the default clears the row rather than restating it.
+// One state, two controls, one writer: the divider reports its press to the same flip the
+// footer's control calls, so the two can never disagree about what a toggle means.
 describe('the divider and the footer control write the same row', () => {
   const flip = (): void => useSession.getState().toggleCitations('page-1')
 

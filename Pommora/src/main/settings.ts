@@ -16,9 +16,8 @@ import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { readSettingsLeaves, scopeOf, type SettingsLeaves } from './readNexus'
 
 /** Serialized read-modify-write of a `.nexus` config file — the one primitive every writer funnels
- *  through, so concurrent writes to different keys can't clobber each other. A missing file
- *  starts empty; an unreadable one fails the write (the throw lands as the operation's error
- *  envelope) rather than replacing what's already on disk. */
+ *  through, so concurrent writes to different keys can't clobber each other. A missing file starts
+ *  empty; an unreadable one fails the write rather than replacing what's already on disk. */
 export async function updateNexusConfig(
   root: string,
   file: keyof typeof NEXUS_CONFIG_FILES,
@@ -50,10 +49,8 @@ export function updateCrops(
 }
 
 /** The leaves `settings.json` feeds, for the main-side consumers that want one of them and not a
- *  whole tree. Served from the tree main already holds — the walk decoded this exact file through
- *  these exact coercions and the watcher's settings patch keeps it current — so the daily callers
- *  (every mutate, every context-menu pop, every cascade scan) cost nothing. The disk read covers
- *  the moments before a walk has installed a tree for this root: launch-restore and adoption. */
+ *  whole tree. Served from the tree main already holds, so the daily callers cost nothing; the
+ *  disk read covers the moments before a walk has installed a tree: launch-restore and adoption. */
 async function liveLeaves(
   root: string,
 ): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory'>> {
@@ -72,14 +69,14 @@ export const readLivePersonalization = async (root: string): Promise<Personaliza
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))
 
-/** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
- *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */
+/** The nexus's default window zoom — the factor the window opens at and ⌘0 resets to, clamped
+ *  to a usable range; absent/malformed → 1.0. */
 export async function readDefaultViewScale(root: string): Promise<number> {
   return coerceViewScale((await readLivePersonalization(root)).defaultViewScale)
 }
 
 /** Whether emptying the trash erases outright rather than handing the artifact to the operating
- *  system. Anything that is not literally `true` reads as off: the destructive direction is never
+ *  system. Anything not literally `true` reads as off — the destructive direction is never
  *  reached by a truthy coercion. */
 export async function readPermanentDelete(root: string): Promise<boolean> {
   return (await readLivePersonalization(root)).permanentDelete === true
@@ -133,9 +130,8 @@ export function writeNavViewModes(root: string, modes: NavViewModes): Promise<vo
   return updateSettings(root, (cur) => ({ ...cur, navViewModes: modes }))
 }
 
-/** Merge one personalization key into `settings.json` `personalization` (serialized; foreign +
- *  sibling keys preserved). An `undefined` value resets the key to its built-in default — JSON
- *  omits it on write. The read-side coercion + renderer apply-map own validation. */
+/** Merge one personalization key into `settings.json` (serialized; foreign + sibling keys
+ *  preserved). An `undefined` value resets the key to its built-in default — JSON omits it. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
   return updateSettings(root, (cur) => {
     const p =

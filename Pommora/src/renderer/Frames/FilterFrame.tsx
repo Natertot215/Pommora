@@ -142,10 +142,9 @@ function ValueInput({
   numeric: boolean
   onCommit: (next: string | undefined) => void
 }): React.JSX.Element {
-  // The LAST live input, kept through a ref callback that ignores the detach. Two things defeat a
-  // plain ref here: React detaches refs before passive cleanups, and the `key` below remounts the
-  // input on every committed round-trip — so a node captured at mount is a DEAD earlier one whose
-  // value is stale, and the flush then compares stale-to-current, finds them equal, and saves nothing.
+  // Kept through a ref callback that ignores the detach: React detaches refs before passive
+  // cleanups, and the `key` below remounts the input on every committed round-trip, so a plain
+  // ref captured at mount would be a dead earlier node with a stale value.
   const node = useRef<HTMLInputElement | null>(null)
   const keepNode = (n: HTMLInputElement | null): void => {
     if (n) node.current = n

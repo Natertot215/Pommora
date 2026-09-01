@@ -1,6 +1,6 @@
-// Assignment ops — a Collection's sidecar `properties` is a flat array of registry prop-ids
-// (which nexus-wide defs this Collection validates). References, not definitions: assign runs no
-// name-clash check and restores any Remove-cache; the unassign leg lives in crud/removeProperty.
+// A Collection's sidecar `properties` is a flat array of registry prop-ids. References, not
+// definitions: assign runs no name-clash check and restores any Remove-cache; the unassign
+// leg lives in crud/removeProperty.
 
 import { join, sep } from 'node:path'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
@@ -28,8 +28,8 @@ const write = async (
   ids: string[],
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
-/** Drop one property's Remove-cache block, and the whole `property_cache` key with it once the
- *  last block goes. The no-empties rule reaches the cache too. */
+/** The no-empties rule reaches the cache too: the whole `property_cache` key drops once its
+ *  last block goes. */
 export function withoutCacheBlock(
   sidecar: Record<string, unknown>,
   propertyId: string,
@@ -44,16 +44,15 @@ export function withoutCacheBlock(
   return next
 }
 
-// Unchained internals — the chained publics compose them; a chained fn awaiting another
-// chained fn would deadlock the schema chain. `assignInner` is exported for exactly that reason:
-// the property restore is itself a chained op and composes the assign inside its own slot.
+// A chained fn awaiting another chained fn would deadlock the schema chain, so these are
+// unchained internals; `assignInner` is exported so a chained op can compose it in its own slot.
 export async function assignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  // The restore stays OUTSIDE the sidecar lock: it walks and rewrites every member page, long
-  // enough that holding the lock across it would stall every sibling sidecar write.
+  // Restore stays OUTSIDE the sidecar lock: it walks every member page, long enough that
+  // holding the lock would stall every sibling sidecar write.
   const appended = await withSidecarLock(collectionFolder, 'collection', async () => {
     const r = await read(collectionFolder)
     if (!r) return fail('not-found', 'Collection not found.')
@@ -84,8 +83,6 @@ function reorderInner(
   })
 }
 
-/** Assign appends the id (idempotent), then restores any Remove-cache for it —
- *  root scopes the registry read the per-value reconciliation needs. */
 export function assignProperty(
   root: string,
   collectionFolder: string,
@@ -94,8 +91,8 @@ export function assignProperty(
   return serializeSchemaOp(() => assignInner(root, collectionFolder, propertyId))
 }
 
-/** The atomic assign-at-slot: append + restore + placement land in ONE chain slot,
- *  so no sibling op can interleave between the assign and its reorder. */
+/** Append + restore + placement land in ONE chain slot, so no sibling op can interleave
+ *  between the assign and its reorder. */
 export function assignPropertyAt(
   root: string,
   collectionFolder: string,
@@ -109,11 +106,10 @@ export function assignPropertyAt(
   })
 }
 
-/** Absolute folder paths of EVERY Collection (schema-owning folders only — Sets inherit),
- *  read from the live tree. The shared list for global fan-outs that must reach
- *  non-assigners too: a Remove-cache lives on a sidecar that no longer assigns the id. */
+/** Schema-owning folders only — Sets inherit. The shared list for global fan-outs that must
+ *  reach non-assigners too: a Remove-cache lives on a sidecar that no longer assigns the id. */
 export async function collectionFolders(root: string): Promise<string[]> {
-  // Root-pinned like every patch consumer: a held tree answers only for its own nexus.
+  // Root-pinned: a held tree answers only for its own nexus.
   const held = getLiveTree()
   const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
   const out: string[] = []

@@ -141,7 +141,7 @@ describe('renumberOrderedRun', () => {
   it('produces minimal digit rewrites', () => {
     const doc = '3. a\n4. b\n5. c'
     const changes = renumberOrderedRun(doc, 0)
-    expect(applyChanges(doc, changes)).toBe('3. a\n4. b\n5. c') // already sequential from its start
+    expect(applyChanges(doc, changes)).toBe('3. a\n4. b\n5. c')
   })
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'
@@ -231,8 +231,8 @@ describe('blockMoveChanges (blank-separated block move)', () => {
     expect(blockMoveChanges('only', { from: 0, to: 4 }, { at: 4 })).toBeNull()
   })
 
-  // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on a drop —
-  // blockStarts splits these into separate grips, so the move has to re-blank-separate both new seams.
+  // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on
+  // a drop — the move has to re-blank-separate both new seams.
   it('does not lazily-continue a list when a block drops under it (no blank below the list)', () => {
     const doc = '- a\n- b\npara X\n\nmover'
     expect(apply(doc, { from: doc.indexOf('mover'), to: doc.length }, doc.indexOf('para X'))).toBe(

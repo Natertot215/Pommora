@@ -67,7 +67,7 @@ describe('hostile hand-edited files (breaker M-2/L-1)', () => {
 
   it('orderedDefs lists a key≠id desync exactly once', async () => {
     const desynced = { ...def('prop_b', 'Desync'), id: 'prop_b' }
-    const reg = { order: ['prop_a'], defs: { prop_a: desynced } } // map key prop_a, internal id prop_b
+    const reg = { order: ['prop_a'], defs: { prop_a: desynced } }
     expect(orderedDefs(reg)).toHaveLength(1)
   })
 

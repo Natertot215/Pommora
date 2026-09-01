@@ -8,9 +8,7 @@ import { COLUMN_ALIGNS, type ColumnAlign } from './views'
 export type TableMenuKind = 'column' | 'row' | 'header'
 
 // `index` is the column index (kind 'column') or the visual row index (kind 'row'; 0 = header → kind
-// 'header'). `align` carries the column's current alignment so the Align radio renders checked.
-// `headingColumn` carries whether THIS table already has a heading column so the toggle (shown only on
-// the first column) renders checked.
+// 'header'). `align`/`headingColumn` carry current state so their menu rows render checked.
 export interface TableMenuContext {
   kind: TableMenuKind
   index: number
@@ -39,10 +37,8 @@ export type TableMenuAction =
   | 'table:clear'
   | 'table:delete'
 
-/** The rows a table grip's menu offers, by where the click landed. The Align row leads a nested
- *  list — one row per alignment, the current one checked — and the heading-column toggle is offered
- *  on the first column alone, since only it can read as the header. The heading row's grip speaks
- *  for the whole table, so its Clear Row means that row's own cells. */
+/** The rows a table grip's menu offers, by where the click landed. The heading-column toggle is
+ *  offered on the first column alone, since only it can read as the header. */
 export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuAction>[] {
   if (ctx.kind === 'header')
     return [

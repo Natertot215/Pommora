@@ -58,8 +58,7 @@ describe('cellCommitChange — minimal-diff cell edit (replace just the cell spa
 })
 
 // A row short of the columns its delimiter declares is read through a padded model, so a cell being
-// typed in has a position in the model and no span in the source. The edit used to be dropped and
-// the typing vanished on demote.
+// typed in has a position in the model and no span in the source.
 describe('a ragged row keeps what is typed into the columns it is short of', () => {
   const doc = '| a | b |\n| --- | --- |\n| 1 |'
 

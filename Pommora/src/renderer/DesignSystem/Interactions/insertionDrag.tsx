@@ -16,10 +16,8 @@ import { armAutoScroll } from './autoscroll'
 import { announce } from './a11y'
 
 // The one insertion-line drag frame: every surface that marks its drop with a line (no
-// displacement) rides this over the pointer-gesture skeleton. The frame owns the shared
-// lifecycle — point tracking, the frozen snapshot and its invalidations, autoscroll,
-// ghost and line chrome, announcements — and the adapter passes only its drop model:
-// how to measure, how a point becomes a slot, what a slot commits, and its wording.
+// displacement) rides this over the pointer-gesture skeleton. The frame owns the shared lifecycle;
+// the adapter passes only its drop model — how to measure, resolve a slot, and commit it.
 
 export interface InsertionDragSpec<Slot, Snap> {
   /** Frozen geometry for the drag of `id` — taken at activation, retaken lazily after an

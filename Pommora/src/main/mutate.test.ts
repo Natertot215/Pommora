@@ -355,15 +355,15 @@ describe('handleMutate — move + guards', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(await pathExists(join(root, 'Notes/Weekly/SetX/_pageset.json'))).toBe(true) // folder moved
-    expect(await pathExists(join(root, 'Notes/Weekly/SetX/Inner.md'))).toBe(true) // its pages travel with it
-    expect(await pathExists(join(root, 'Notes/Daily/SetX'))).toBe(false) // gone from the source set
+    expect(await pathExists(join(root, 'Notes/Weekly/SetX/_pageset.json'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Weekly/SetX/Inner.md'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Daily/SetX'))).toBe(false)
     expect(JSON.parse(await read('Notes/Weekly/_pageset.json')).set_order).toEqual(['sx'])
     const tree = await readNexus(root)
     const weekly = tree.collections
       .find((c) => c.title === 'Notes')
       ?.sets.find((s) => s.title === 'Weekly')
-    expect(weekly?.sets?.map((s) => s.id)).toEqual(['sx']) // readNexus reflects the move
+    expect(weekly?.sets?.map((s) => s.id)).toEqual(['sx'])
   })
 
   it('moveSet into its current collection is an in-place reorder (no folder move)', async () => {
@@ -387,7 +387,7 @@ describe('handleMutate — move + guards', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(await pathExists(join(root, 'Notes/Daily/SetA/_pageset.json'))).toBe(true) // stayed put
+    expect(await pathExists(join(root, 'Notes/Daily/SetA/_pageset.json'))).toBe(true)
     expect(JSON.parse(await read('Notes/Daily/_pageset.json')).set_order).toEqual(['sb', 'sa'])
   })
 

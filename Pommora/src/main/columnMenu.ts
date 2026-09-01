@@ -8,9 +8,8 @@ import {
 import { popReturningMenu } from './returningMenu'
 import { alignSubmenu, styleSubmenu } from './styleMenu'
 
-// The table-view column header's right-click menu — Align (a radio L/C/R, current checked) + the
-// type's own submenu (per-type radios and the name they sit under, both from the shared builder) +
-// Hide; the Title column carries none, and an empty menu is a dismissal.
+// The table-view column header's right-click menu — Align (a radio L/C/R) + the type's own
+// submenu (per-type radios from the shared builder) + Hide; the Title column carries none.
 export function popColumnMenu(
   win: BrowserWindow,
   ctx: ColumnMenuContext,

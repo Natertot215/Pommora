@@ -1,7 +1,7 @@
 // The tree as last verified or patched — main's one holder, what reads serve and patches
 // mutate. The walk is single-flight: concurrent refreshes share the in-flight promise. A walk
-// that raced a mutation observed pre-mutation disk, so its result is discarded and the walk
-// re-runs; a walk whose slot was dropped or superseded installs nothing.
+// that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a
+// walk whose slot was dropped or superseded installs nothing.
 
 import type { NexusTree } from '@shared/types'
 import { pathExists } from './IO/atomicWrite'

@@ -3,8 +3,8 @@ import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { useSession } from '../store'
 import { captureWindowWarm, readWindowWarm, type WindowWarmEntry } from './windowWarm'
 
-// Captures are LIVENESS-GATED — the editor's unmount capture trails the store's drop, and
-// ungated it would re-insert one ghost editorState per close.
+// Captures are liveness-gated — the editor's unmount capture trails the store's drop, and ungated
+// it would re-insert one ghost editorState per close.
 
 export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,

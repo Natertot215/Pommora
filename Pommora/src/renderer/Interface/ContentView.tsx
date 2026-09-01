@@ -82,8 +82,8 @@ function useHosts(): Host[] {
       hosts.push({ tabId: id, pageId: target.id })
       parked++
     }
-    // Rendered in a fixed order, never most-recent-first: reordering keyed children moves their
-    // DOM, and a moved webview is re-attached — which ends the very guest this exists to keep.
+    // Fixed order, never most-recent-first: reordering keyed children moves their DOM, and a
+    // moved webview re-attaches, ending the very guest this exists to keep.
     return hosts.sort((a, b) => (a.pageId < b.pageId ? -1 : 1))
   }, [selection, tabs, tabMru, activeTabId, readyIds])
 }

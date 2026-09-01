@@ -7,9 +7,9 @@ import type { CellKey } from '@shared/theme'
 import * as s from './colorSwatch.css'
 
 /**
- * The swatch-and-picker pair: a chip wearing the resolved color, and the grid it opens. Its open
- * state is its own — no surface that shows a color field has ever needed to drive it from outside.
- * Greyscale is offered on request, resolved as a chip rather than painted raw — see the picker.
+ * The swatch-and-picker pair: a chip using the resolved color, and the grid it opens. Its open
+ * state is its own. Greyscale is offered on request, resolved as a chip rather than painted raw —
+ * see the picker.
  */
 export function ColorSwatch({
   label,
@@ -26,8 +26,8 @@ export function ColorSwatch({
   greyscale?: boolean
   onPick: (color: string | undefined) => void
 }): React.JSX.Element {
-  // Through the chip recipe — painted raw a grey cell sinks into the pane at its dark end, which is
-  // exactly why that row is withheld from surfaces that do that.
+  // Painted raw, a grey cell sinks into the pane at its dark end — why that row is withheld from
+  // surfaces that paint directly.
   const cell = selected.startsWith('grey-') ? cellPaint(selected as CellKey) : null
   const [open, setOpen] = useState(false)
   const chipRef = useRef<HTMLButtonElement>(null)

@@ -69,8 +69,8 @@ export function Checkbox({
   )
 }
 
-// Drawn rather than drawn from the registry: these ride inside a 16px box at a stroke the icon
-// components don't offer, and the editor's widget emits the identical markup as a raw string.
+// Drawn rather than pulled from the icon registry: this rides inside a 16px box at a stroke the
+// icon components don't offer, and the editor's widget emits the identical markup as a raw string.
 const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"

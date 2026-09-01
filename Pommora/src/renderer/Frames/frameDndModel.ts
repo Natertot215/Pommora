@@ -1,7 +1,7 @@
-// Pure model behind the Properties frame's two-region drag — no React, no DOM. One gesture
-// surface, two persistence targets: the pointer's REGION decides everything; the rows
-// only refine the insertion slot within it. Slot indexes land in the persisted arrays'
-// without-dragged coordinates — the filter-then-splice idiom both reorder ops share.
+// Pure model behind the Properties frame's two-region drag — no React, no DOM. The pointer's
+// region decides everything; the rows only refine the insertion slot within it. Slot indexes
+// land in the persisted arrays' without-dragged coordinates — the filter-then-splice idiom
+// both reorder ops share.
 
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 

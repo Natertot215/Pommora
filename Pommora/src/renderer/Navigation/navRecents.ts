@@ -1,6 +1,5 @@
 // Pure recents-stream logic for the Navigation layer. Storage is a plain MRU list of bare refs
-// (newest first) — durable pins and favorites are their own arrays in navigation.json. All
-// functions are pure (no store, no IPC) so they unit-test without a DOM.
+// (newest first) — durable pins and favorites are their own arrays in navigation.json.
 
 import { toNavRef } from '@shared/types'
 import type { NavRef, SelectTarget } from '@shared/types'

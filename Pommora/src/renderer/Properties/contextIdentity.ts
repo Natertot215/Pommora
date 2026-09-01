@@ -1,8 +1,6 @@
-// The ONE identity seam between the tree's context data and every surface: memoized
-// per-tree accessors resolving a Context id → its title/singular/icon and a Space id →
-// its title/icon/color. Resolve through here rather than walking the tree: a Context's icon and a
-// Space's icon+color then render identically everywhere by construction.
-// Pure: no fs, no React.
+// The one identity seam between the tree's context data and every surface: memoized per-tree
+// accessors resolving a Context id → title/singular/icon and a Space id → title/icon/color, so
+// both render identically everywhere by construction. Pure: no fs, no React.
 
 import type { NexusTree } from '@shared/types'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
@@ -37,10 +35,8 @@ const mapsByTree = new WeakMap<NexusTree, IdentityMaps>()
 function mapsFor(tree: NexusTree): IdentityMaps {
   let maps = mapsByTree.get(tree)
   if (!maps) {
-    // The user's Space glyph, not the curated seed: personalization rides the tree, so a surface
-    // resolving through this seam lands on the same icon the sidebar shows. Resolving without the
-    // overrides is what let a personalized nexus wear one glyph in the sidebar and another in a
-    // table chip. The memo keys on the tree, so a settings change invalidates with the push.
+    // The user's Space glyph, not the curated seed — personalization rides the tree, so every
+    // surface resolving through this seam lands on the same icon the sidebar shows.
     const di = tree.personalization.defaultIcons
     const contexts = new Map<string, ContextIdentity>()
     const spaces = new Map<string, SpaceIdentity>()

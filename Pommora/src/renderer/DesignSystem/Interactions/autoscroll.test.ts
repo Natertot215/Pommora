@@ -32,7 +32,7 @@ describe('edgeVelocity — proximity ramp', () => {
     expect(near).toBeGreaterThan(far)
   })
   it('caps at full speed past the edge (no viewport clamp needed)', () => {
-    expect(edgeVelocity(0, 300, 400, P)).toBe(P.speed) // 100px past the high edge → max
+    expect(edgeVelocity(0, 300, 400, P)).toBe(P.speed)
   })
 })
 
@@ -42,8 +42,8 @@ describe('accelFactor — distance-based acceleration', () => {
     expect(accelFactor(0, P)).toBeGreaterThan(0)
   })
   it('climbs toward the ceiling as scroll distance accumulates', () => {
-    expect(accelFactor(300, P)).toBeCloseTo(1.0) // halfway up the ramp distance
-    expect(accelFactor(600, P)).toBe(1.5) // at the ramp distance → the ceiling
+    expect(accelFactor(300, P)).toBeCloseTo(1.0)
+    expect(accelFactor(600, P)).toBe(1.5)
   })
   it('caps at the ceiling past the ramp distance', () => {
     expect(accelFactor(5000, P)).toBe(1.5)
@@ -79,11 +79,8 @@ describe('stepPixels — sub-pixel accumulation', () => {
 describe('gateIntent — direction-intent', () => {
   it('blocks a direction until the pointer has left that band once', () => {
     const intent: Intent = { up: false, down: false, left: false, right: false }
-    // Grab pinned at the bottom edge: downward velocity, down not yet armed → blocked.
-    expect(gateIntent(intent, 0, 10).vy).toBe(0)
-    // Pointer moves up out of the band (vy <= 0 arms down) …
-    gateIntent(intent, 0, -10)
-    // … now a downward push is allowed.
+    expect(gateIntent(intent, 0, 10).vy).toBe(0) // pinned at the bottom edge — down not yet armed
+    gateIntent(intent, 0, -10) // moves up out of the band — arms down
     expect(gateIntent(intent, 0, 10).vy).toBe(10)
   })
 })
@@ -188,7 +185,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const { el, scrolls } = fakeScroller()
     startAutoScroll({ getPoint: () => ({ x: 150, y: 299 }), scroller: el, dragEl: doc, axis: 'y' })
     flush(40)
-    expect(scrolls()).toBe(400) // never armed `down` → never scrolled
+    expect(scrolls()).toBe(400)
   })
 
   it('stopAutoScroll halts the loop — no further scrolling', () => {
@@ -198,11 +195,11 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     flush(3)
     y = 299
     flush(20)
-    expect(scrolls()).toBeGreaterThan(400) // it was actively scrolling
+    expect(scrolls()).toBeGreaterThan(400)
     stopAutoScroll()
     const settled = scrolls()
     flush(30)
-    expect(scrolls()).toBe(settled) // and stopped dead
+    expect(scrolls()).toBe(settled)
   })
 
   it('a blur event stops the loop (backstop against a leaked rAF)', () => {
@@ -228,7 +225,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     y = 299
     flush(20)
     const aBeforeReplace = a.scrolls()
-    expect(aBeforeReplace).toBeGreaterThan(400) // A was driven
+    expect(aBeforeReplace).toBeGreaterThan(400)
     // Replace with B — a fresh loop with fresh intent, so re-arm it out of the band, then into it.
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
     expect(rafMap.size).toBe(1) // the one-driver invariant: A's rAF was actually canceled, not orphaned
@@ -236,9 +233,9 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     flush(3)
     y = 299
     flush(20)
-    expect(a.scrolls()).toBe(aBeforeReplace) // A is abandoned — frozen since the replace
-    expect(b.scrolls()).toBeGreaterThan(400) // B is now the one being driven
-    expect(rafMap.size).toBe(1) // still exactly one loop in flight
+    expect(a.scrolls()).toBe(aBeforeReplace)
+    expect(b.scrolls()).toBeGreaterThan(400)
+    expect(rafMap.size).toBe(1)
   })
 
   it('the returned stopper is instance-scoped — a stale handle will not stop a loop that replaced it', () => {
@@ -251,13 +248,13 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
       dragEl: doc,
       axis: 'y',
     })
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' }) // B replaces A
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
     stopA() // stale handle from A — must be a no-op, not a stop of B
     y = 150
     flush(3)
     y = 299
     flush(20)
-    expect(b.scrolls()).toBeGreaterThan(400) // B kept running — stopA didn't touch it
+    expect(b.scrolls()).toBeGreaterThan(400)
   })
 
   it('accelerates over a sustained scroll — a later window covers more distance than an early one', () => {

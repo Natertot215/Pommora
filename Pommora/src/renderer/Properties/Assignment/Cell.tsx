@@ -58,14 +58,13 @@ export function Cell({
   }
 
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  // The declared type drives every per-type look. A status value is a bare label on disk and in
-  // memory, indistinguishable from a select, so the schema is the only thing that knows.
+  // A status value is a bare label on disk, indistinguishable from a select — the schema is the
+  // only thing that knows the declared type.
   const dt = declaredType(column.id, ctx.schema)
   const def = ctx.schema.find((d) => d.id === column.id)
 
-  // A checkbox column ALWAYS shows its box — even on a page with no stored value — so it toggles in
-  // place without first assigning the property. The box keys off the column's schema TYPE, not the
-  // value's presence; unchecked means no frontmatter value at all (the toggle strips the key).
+  // A checkbox column always shows its box, keyed off the schema TYPE rather than value presence,
+  // so it toggles in place without first assigning the property.
   if (dt === 'checkbox') {
     const checked = v.kind === 'checkbox' && v.value
     const color = def?.checkbox_color
@@ -178,16 +177,14 @@ export function Cell({
         <OverScroll className="cell-chips">
           {v.value.map((f, i) => (
             <span
-              // Positional, never the value: two identical wikilinks — a hand-edit, a sync merge —
-              // would collide as keys and send the hover-× to the wrong one. The stamp is what the
-              // click and the menu hit-test, so a chip knows which file it names.
+              // Positional, never the value: two identical wikilinks would collide as keys and
+              // send the hover-× to the wrong one.
               key={String(i)}
               {...{ [SEGMENT_INDEX_ATTR]: i }}
             >
               <FileChip
                 name={fileName(f)}
-                // A name nothing answers to still renders. The value is in frontmatter and the
-                // user has to be able to see it to remove it.
+                // Renders even unresolved, so the user can still see and remove it.
                 unresolved={resolveFileValue(f, ctx.assets).kind === 'unresolved'}
                 {...(remove ? { onRemove: () => remove(fileValueWithout(v, i)) } : {})}
               />

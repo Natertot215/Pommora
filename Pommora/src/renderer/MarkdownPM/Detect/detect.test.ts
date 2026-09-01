@@ -27,7 +27,6 @@ describe('thematic break (HR)', () => {
     expect(isThematicBreakLine('- a')).toBe(false)
   })
   it('--- is always HR (no setext interpretation)', () => {
-    // Detection is per-line, so a lone "---" is HR regardless of any preceding text.
     expect(isThematicBreakLine('---')).toBe(true)
   })
 })
@@ -36,10 +35,10 @@ describe('heading', () => {
   it('needs 1-6 # then a space or EOL, ≤3 leading spaces', () => {
     expect(isHeadingLine('# H')).toBe(true)
     expect(isHeadingLine('###### H')).toBe(true)
-    expect(isHeadingLine('   # H')).toBe(true) // 3 leading spaces ok
-    expect(isHeadingLine('#H')).toBe(false) // no space → not a heading
-    expect(isHeadingLine('####### H')).toBe(false) // 7 # → not a heading
-    expect(isHeadingLine('    # H')).toBe(false) // 4 spaces → indented code
+    expect(isHeadingLine('   # H')).toBe(true)
+    expect(isHeadingLine('#H')).toBe(false)
+    expect(isHeadingLine('####### H')).toBe(false)
+    expect(isHeadingLine('    # H')).toBe(false)
   })
 })
 
@@ -92,7 +91,7 @@ describe('parseListMarker (single marker source)', () => {
   it('indentLevel: tabs + ⌊spaces/2⌋, capped at the max', () => {
     expect(indentLevel('')).toBe(0)
     expect(indentLevel('    ')).toBe(2)
-    expect(indentLevel('\t\t\t\t')).toBe(3) // capped
+    expect(indentLevel('\t\t\t\t')).toBe(3)
   })
 })
 
@@ -137,8 +136,8 @@ describe('inline math heuristic', () => {
   it('accepts mathy / short letter content; rejects currency + prose', () => {
     expect(isInlineMathContent('x+1')).toBe(true)
     expect(isInlineMathContent('x')).toBe(true)
-    expect(isInlineMathContent('5')).toBe(false) // currency-like
-    expect(isInlineMathContent('word')).toBe(false) // prose, no mathy chars
+    expect(isInlineMathContent('5')).toBe(false)
+    expect(isInlineMathContent('word')).toBe(false)
   })
 })
 
@@ -174,7 +173,7 @@ describe('parseListMarkerPrefixed (lists behind a quote/callout prefix)', () => 
   it('finds a bullet behind `> ` with full-line offsets', () => {
     const lm = parseListMarkerPrefixed('> - item')!
     expect(lm.kind).toBe('bullet')
-    expect(lm.markerStart).toBe(2) // the `-` position, prefix included
+    expect(lm.markerStart).toBe(2)
     expect(lm.contentStart).toBe(4)
   })
   it('finds a checkbox behind `> ` with shifted box offsets', () => {
@@ -188,7 +187,7 @@ describe('parseListMarkerPrefixed (lists behind a quote/callout prefix)', () => 
     expect(lm.markerStart).toBe(0)
   })
   it('does NOT strip a `>` with no space after it (not a real quote — agrees with the renderer)', () => {
-    expect(parseListMarkerPrefixed('>- x')).toBeNull() // `>-` isn't a quoted list; renderer shows it raw
+    expect(parseListMarkerPrefixed('>- x')).toBeNull()
   })
 })
 
@@ -280,9 +279,8 @@ describe('fence run length — a longer fence holds shorter ones', () => {
   })
 })
 
-// The label group reads escapes, and its cap is what keeps that from backtracking.
 describe('the markdown-link label', () => {
-  // The label group reads escapes now, so a title carrying `]` can be named in this form at all.
+  // The label group reads escapes, so a title carrying `]` can be named in this form at all.
   it('an escaped label tokenizes rather than producing nothing', () => {
     const doc = 'see [Notes \\[WIP\\] final](Target) end'
     const link = tokenize(doc).find((t) => t.kind === 'link')
@@ -298,7 +296,7 @@ describe('the markdown-link label', () => {
     expect(tokens.some((t) => t.kind === 'link')).toBe(false)
   })
 
-  // The cap on that group is what keeps the alternation from backtracking quadratically.
+  // The cap on the label group is what keeps the alternation from backtracking quadratically.
   it('a pathological bracket run completes rather than hanging', () => {
     expect(() => tokenize('['.repeat(50000))).not.toThrow()
     expect(tokenize(`[${'x'.repeat(256)}](t)`).some((t) => t.kind === 'link')).toBe(false)

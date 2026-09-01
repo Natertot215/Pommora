@@ -31,17 +31,15 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   // re-reading the clock there would record the end of seeding as the nexus's creation moment.
   const createdAt = nowIso()
   // A file that EXISTS but carries no readable id is an established nexus with a damaged
-  // identity, not a new one: mint an id over it and seed nothing. Fusing the two would recreate
-  // folders its owner deleted and orphan every asset keyed to the old id.
+  // identity, not a new one: mint an id over it and seed nothing, or folders its owner deleted
+  // would be recreated and every asset keyed to the old id orphaned.
   if (existing) {
     await writeJson(path, { ...existing, id, createdAt })
     return { id, created: false }
   }
 
-  // Identity lands BEFORE the folders exist. The reverse order can strand them: seeding writes
-  // real folders, and a failure before the record persists leaves them permanently unregistered
-  // — invisible to the walk, skipped by adoption, with no repair path, since registration is
-  // written here and nowhere else.
+  // Identity lands BEFORE the folders exist — the reverse order can strand a seeding failure as
+  // permanently unregistered folders, since registration is written here and nowhere else.
   await writeJson(path, { id, createdAt })
   const agenda_singletons = await seedAgendaSingletons(root)
   // No empties: a nexus that could seed neither slot records no registration at all.
@@ -56,11 +54,9 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
  * only — an existing nexus is never retro-seeded, or reopening one would silently recreate the
  * folders a user removed.
  *
- * The configs carry identity and nothing else: what fills them is the Agenda work's call.
- * `createFolderEntity` refuses a name already on disk, which is what keeps this from claiming a
- * user's own `Tasks/` of notes — opening a plain folder as a nexus reaches this code, and stamping
- * an agenda config into their content would drop the whole folder out of Collections. A slot whose
- * name is taken simply goes unregistered rather than unregistering something else.
+ * `createFolderEntity` refuses a name already on disk, which keeps this from claiming a user's
+ * own `Tasks/` of notes — stamping an agenda config into their content would drop the whole
+ * folder out of Collections. A slot whose name is taken simply goes unregistered.
  */
 async function seedAgendaSingletons(root: string): Promise<AgendaRegistration> {
   const out: AgendaRegistration = {}

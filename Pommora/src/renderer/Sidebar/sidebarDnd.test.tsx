@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// State-level gesture tests over the pointer harness — geometry truth lives in the CDP pass.
+// State-level gesture tests — geometry truth lives in the CDP pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -67,15 +67,13 @@ afterEach(() => {
 })
 
 const row = (id: string): HTMLElement => host.querySelector(`[data-row="${id}"]`) as HTMLElement
-// The drag ghost is the shared DragGhost chip — the a11y announce live region also carries the
-// title text, so a bare body-text probe would false-positive.
+// Scoped to .drag-ghost — the a11y announce live region also carries the title text.
 const ghost = (): boolean =>
   [...document.body.querySelectorAll<HTMLElement>('.drag-ghost')].some(
     (el) => el.textContent === 'P1',
   )
 
-// Move/up listeners ride the row element (pointer capture in the real DOM), so the harness
-// drives them on the row itself.
+// Move/up listeners ride the row element (pointer capture in the real DOM).
 const startDrag = async (): Promise<void> => {
   await act(async () => {
     firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 })
@@ -144,9 +142,8 @@ describe('sidebar drag — Esc abort', () => {
     expect(commitSpy).not.toHaveBeenCalled()
   })
 
-  // Identity, not counts — the historical leak removed a DIFFERENT function than it added, which
-  // a count-based assertion passes on. A completed drag first, so the drag's closures no longer
-  // come from the mount render the unmount cleanup captured.
+  // Identity, not counts — a leak that removes a DIFFERENT function than it added still passes a
+  // count-based assertion.
   it('an unmount mid-drag removes the exact window listeners it added', async () => {
     await startDrag()
     await act(async () => {
@@ -164,7 +161,6 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-// Geometry is stubbed; the seam decision is the truth.
 describe('sidebar drag — page↔Set seam', () => {
   const seamTree = {
     collections: [
@@ -282,8 +278,7 @@ describe('sidebar drag — page↔Set seam', () => {
   })
 })
 
-// The indicator promises a position; the drop has to land there. Rects are stubbed, so what's
-// under test is which measured row the line is derived FROM, not the pixel.
+// Rects are stubbed — what's under test is which measured row the line derives from, not the pixel.
 describe('sidebar drag — the line marks where the drop lands', () => {
   const hostTree = {
     collections: [

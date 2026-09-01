@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// State-level frame tests: decode → row stack, the wholesale write shapes, and the two independent
-// axes (match mode vs parked). Visual truth = CDP.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -131,7 +129,6 @@ const twoRules = (): SavedView =>
 describe('FilterFrame', () => {
   it('renders the match mode + a row per decoded rule', async () => {
     await mount(twoRules())
-    // The mode control carries no visible label — its value IS the label (All / Any).
     expect(texts()).not.toContain('Matches')
     expect(texts()).toContain('All')
     expect(texts()).toContain('Status')
@@ -147,7 +144,6 @@ describe('FilterFrame', () => {
     expect(saved.filter).toEqual(twoRules().filter)
   })
 
-  // Parking is exactly when you want to keep authoring — the table just stops reacting.
   it('parked rows stay live', async () => {
     await mount(view({ ...twoRules(), filter_enabled: false }))
     expect(byLabel('Matches')).toBeTruthy()
@@ -172,7 +168,6 @@ describe('FilterFrame', () => {
 
   it('a mode picked on an empty filter sticks and lands on the first rule', async () => {
     await mount(view())
-    // Two options, so the control flips in place — no menu to open.
     await click(byLabel('Matches'))
     expect(saveSpy).not.toHaveBeenCalled()
     expect(byLabel('Matches')?.textContent).toContain('Any')
@@ -201,8 +196,6 @@ describe('FilterFrame', () => {
     expect(lastSaved().filter_enabled).toBe(false)
   })
 
-  // The Or is what splits the list into runs, so flipping it on the DRAFT is how a group boundary
-  // gets authored before the rule is written.
   it("the draft's connector toggles, and its Or splits the run on completion", async () => {
     await mount(
       view({
@@ -217,11 +210,10 @@ describe('FilterFrame', () => {
     const connectors = [...host.querySelectorAll('button')].filter(
       (b) => b.getAttribute('aria-label') === 'Toggle connector',
     )
-    // Row 0 carries no connector, so the draft's is the only one.
     expect(connectors.length).toBe(1)
     await click(connectors.at(-1))
     expect(saveSpy).not.toHaveBeenCalled()
-    // The draft's picker is the LAST one — the existing row carries its own.
+    // The draft's picker is the last one — the existing row carries its own.
     await click(
       [...host.querySelectorAll('button')]
         .filter((b) => b.getAttribute('aria-label') === 'Filter property')
@@ -240,8 +232,6 @@ describe('FilterFrame', () => {
     })
   })
 
-  // Two writes in one gesture — a value's blur-commit, then the click that caused it — must not
-  // both build from the same pre-save render prop, or the second silently drops the first.
   it('a value committed on blur survives the click that caused the blur', async () => {
     await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
@@ -259,9 +249,8 @@ describe('FilterFrame', () => {
     expect(saved.filter?.rules).toEqual([{ property_id: '_title', op: 'is', value: 'urgent' }])
   })
 
-  // The same gesture, but the second write lands on the SAME axis. Sharing `filter` is the harder
-  // case: the base object alone isn't enough, because the second write re-serializes the whole rule
-  // list — from a snapshot that predates the first unless the rows are re-read at call time.
+  // The second write re-serializes the whole rule list, so it must re-read the rows at call time
+  // rather than a snapshot predating the first write.
   it('a blur-committed value survives a second write to the filter itself', async () => {
     await mount(
       view({
@@ -293,7 +282,6 @@ describe('FilterFrame', () => {
     })
   })
 
-  // Two removals in one beat: the second must map against a snapshot that already reflects the first.
   it('two removals in one beat both stick', async () => {
     await mount(
       view({
@@ -445,8 +433,7 @@ describe('FilterFrame', () => {
         .filter((b) => b.getAttribute('aria-label') === 'Remove filter')
         .at(0),
     )
-    // The write lands immediately; the collapse plays against the still-live rows. Deferring it
-    // would fire against state captured at click time and clobber anything committed in the beat.
+    // The write lands immediately; deferring it would fire against state captured at click time.
     expect(lastSaved().filter).toEqual({
       match: 'all',
       rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }],
@@ -466,7 +453,6 @@ describe('FilterFrame value editors', () => {
     let rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
     expect(rule.values).toEqual(['todo'])
     expect('value' in rule).toBe(false)
-    // Stays open: the second option is still clickable without reopening.
     await mount(view({ filter: lastSaved().filter }))
     await click(host.querySelector('[aria-label="Filter values"]'))
     await click(

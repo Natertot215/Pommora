@@ -1,7 +1,7 @@
-// Per-kind native context menu for a sidebar entity. The renderer captures the right-click
-// and hands main a ContextTarget; main pops a native Menu whose items run main-side
-// (handleMutate / a native confirm / Finder), then signals the renderer to refetch on change.
-// Rename is intentionally absent here — it needs an inline rename in the renderer.
+// Per-kind native context menu for a sidebar entity. The renderer captures the right-click and
+// hands main a ContextTarget; main pops a native Menu whose items run main-side (handleMutate /
+// a native confirm / Finder), then signals the renderer to refetch on change. Rename is
+// intentionally absent here — it needs an inline rename in the renderer.
 
 import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
@@ -26,9 +26,9 @@ import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared
 import { openLabel } from '@shared/toggleLabels'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
- *  kinds offer none. Collections and Sets route through the shared rule, so this menu and the
- *  subfield's add button can't come to offer different things inside the same container. A Context
- *  group offers "New <Singular>" — resolved from the registry by the folder's title. */
+ *  kinds offer none. Collections and Sets route through the shared rule so this menu and the
+ *  subfield's add button can't drift. A Context group offers "New <Singular>", resolved from
+ *  the registry by the folder's title. */
 async function creatorsFor(
   root: string,
   kind: MutableKind,
@@ -68,7 +68,7 @@ export async function showContextMenu(
     const res = await handleMutate(req, deps)
     if (res.ok) {
       onChanged(req, res.value)
-      // A create lands in its rename field — same contract as the renderer's own create menus.
+      // A create lands in its rename field, same as the renderer's own create menus.
       if (res.value.created)
         push(win, 'begin-rename', { path: res.value.created.path, create: true, host: target.host })
     } else

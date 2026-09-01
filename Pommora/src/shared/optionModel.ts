@@ -18,14 +18,12 @@ export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
   return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
 }
 
-/** Append a new option whose value and label both equal the title. No color — it renders as the
- *  neutral default (grey-default) until recolored. */
 export function addOption(
   options: Option[],
   title: string,
   groupId?: string,
-  /** Where the new option lands. Omitted appends — the ghost slot passes the seat it was standing in,
-   *  so an option created off a chip takes that chip's place in the order rather than the list's end. */
+  /** Omitted appends — the ghost slot passes the seat it was standing in, so an option created off a
+   *  chip takes that chip's place in the order rather than the list's end. */
   atIndex?: number,
 ): Option[] {
   const next = { value: title, label: title, ...(groupId ? { group_id: groupId } : {}) }
@@ -33,10 +31,7 @@ export function addOption(
   return [...options.slice(0, i), next, ...options.slice(i)]
 }
 
-// ── Status: the same transforms, applied to one group's options within the StatusGroup[] array ──
-
-/** Append an option to one status group (matched by id). value = label = title (the value=title
- *  model); no color, so the chip inherits the group's color until it's recolored. */
+/** Adds to one status group (matched by id). No color, so the chip inherits the group's until recolored. */
 export function addStatusOption(
   groups: StatusGroup[],
   groupId: string,
@@ -52,8 +47,7 @@ export function addStatusOption(
   })
 }
 
-/** Recolor a status option (by value, wherever it lives). undefined clears the key → the chip falls
- *  back to its group's color. */
+/** undefined clears the key → the chip falls back to its group's color. */
 export function recolorStatusOption(
   groups: StatusGroup[],
   value: string,
@@ -69,8 +63,7 @@ export function recolorStatusOption(
   }))
 }
 
-/** Rename a status option (by its OLD value, wherever it lives); value + label both become the new
- *  title (value=title). The page cascade (main-process) rewrites the stored label on every assigning page. */
+/** By its OLD value. The page cascade (main-process) rewrites the stored label on every assigning page. */
 export function renameStatusOption(
   groups: StatusGroup[],
   oldValue: string,
@@ -93,9 +86,8 @@ export function relabelStatusGroup(
   return groups.map((g) => (g.id === groupId ? { ...g, label } : g))
 }
 
-/** Move an option (by value) into `toGroupId` at `toIndex`, reassigning its group_id. Same group = a
- *  reorder; a different group = a cross-group move (it inherits the new group's color unless it carries
- *  its own). toIndex is in the target group's without-the-dragged coordinate space. */
+/** Same group = a reorder; a different group = a cross-group move that inherits the new group's color
+ *  unless it carries its own. toIndex is in the target group's without-the-dragged coordinate space. */
 export function moveStatusOption(
   groups: StatusGroup[],
   value: string,
@@ -113,12 +105,10 @@ export function moveStatusOption(
   })
 }
 
-/** Rename by OLD value; value and label both become the new title. Identity keys on the old value. */
 export function renameOption(options: Option[], oldValue: string, title: string): Option[] {
   return options.map((o) => (o.value === oldValue ? { ...o, value: title, label: title } : o))
 }
 
-/** Set or clear an option's color key (undefined removes the field, so it renders as default). */
 export function recolorOption(
   options: Option[],
   value: string,
@@ -131,8 +121,8 @@ export function recolorOption(
   })
 }
 
-/** Set or clear an option's Compact glyph (undefined removes the field → the chip falls back to the
- *  type default, single tag for select and double for multi). */
+/** undefined removes the field → the chip falls back to the type default, single tag for select and
+ *  double for multi. */
 export function setOptionIcon(
   options: Option[],
   value: string,

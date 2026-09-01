@@ -53,8 +53,8 @@ import type { SessionState, Slice } from './SessionState'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
-/** An open page's current state, keyed by page id — one slot per document however many tabs point
- *  at it. `body` is the live editing buffer; `detail.body` is the load snapshot autosave never updates. */
+/** An open page's current state, keyed by page id. `body` is the live editing buffer; `detail.body`
+ *  is the load snapshot autosave never updates. */
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
   | { status: 'error'; target: PageTarget; error: PommoraError }
@@ -64,13 +64,13 @@ type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 /** One slice because `select`, the pin gestures, and the restore each write across all of it in
  *  one act. */
 export interface NavigationSlice {
-  /** What the pane is showing. During a cold page open it lags the active tab's target until the
-   *  fetch lands or the deadline passes — that lag is the pause-on-change. */
+  /** What the pane is showing. A cold page open lags the active tab's target until the fetch
+   *  lands or the deadline passes — the pause-on-change. */
   selection: SelectionState
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
-  /** `{ record: false }` refreshes the shown detail without touching the tab set or recents
-   *  (Back/Forward, a path refetch, a tab activation, a preview open). `{ newTab: true }` forces a new tab. */
+  /** `{ record: false }` refreshes the shown detail without touching the tab set or recents.
+   *  `{ newTab: true }` forces a new tab. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
@@ -86,12 +86,11 @@ export interface NavigationSlice {
   unpinTab: (pinId: string) => void
   goBack: () => void
   goForward: () => void
-  /** The deepest node visited on the active breadcrumb path — what the footer dims its tail down to.
-   *  Held while walking up the same spine, reset on a branch (→ [[SubfieldPM]]). */
+  /** The deepest node visited on the active breadcrumb path — what the footer dims its tail to.
+   *  Held while walking up the same spine, reset on a branch. */
   crumbDepth: SelectTarget | null
-  /** Navigate a breadcrumb segment — a normal move (switches to a tab already showing the target, or
-   *  replaces the current tab when it's open nowhere), but the dimmed tail survives the hop because
-   *  `crumbDepth` is held across it. `dir` sets the slide (up the path is 'back', re-descending 'forward'). */
+  /** Navigate a breadcrumb segment (switches to a tab already showing the target, or replaces the
+   *  current one) — the dimmed tail survives because `crumbDepth` holds across it. */
   navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
   navSlide: {
     tabId: string
@@ -102,7 +101,7 @@ export interface NavigationSlice {
   recents: NavRef[]
   favorites: NavRef[]
   pinned: NavRef[]
-  /** The pinned refs hydrated against the live tree — stored, so hot readers never rebuild the index. */
+  /** The pinned refs hydrated against the live tree, stored so hot readers never rebuild the index. */
   pinnedTabs: Tab[]
   navBanner: string | undefined
   pinTarget: (target: NavRef | SelectTarget) => void
@@ -189,10 +188,8 @@ const PER_NEXUS = {
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   const syncActiveDetail = (): void => {
-    // A tab-focus change (activate, new tab, a close refocusing) is not navigation — the breadcrumb
-    // tail belongs to the tab you were walking, so it resets rather than leaking onto the new one.
-    // In-tab moves and the breadcrumb-click dedup switch load detail through `select` directly, never
-    // here, so their held depth is untouched.
+    // A tab-focus change isn't navigation — the breadcrumb tail belongs to the tab you were
+    // walking, so it resets here rather than leaking onto the new one.
     set({ crumbDepth: null })
     const active = activeTabOf(get())
     if (!active || active.target.kind === 'newtab') {
@@ -217,8 +214,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     void window.nexus.tabs.save({ tabs, activeTabId: s.activeTabId }).catch(() => undefined)
   }
 
-  // The slot deleters route here. Silent when nothing goes: a fresh record for an unchanged set
-  // would re-identify every page surface's host.
+  // Silent when nothing goes: a fresh record for an unchanged set would re-identify every page
+  // surface's host.
   const keepSlots = (keep: (id: string, slot: PageSlot) => boolean): void => {
     const pages = get().pages
     const kept = Object.entries(pages).filter(([id, slot]) => keep(id, slot))
@@ -251,9 +248,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     persistTabs()
   }
 
-  /** The active pointer's one keeper: whenever the live tab set may have shrunk (a tree push
-   *  dropping a pinned entity, a synced-in unpin), re-point a dangling active at MRU-top — and
-   *  when NOTHING is live, seed a fresh NavView tab rather than strand the app at zero tabs. */
+  /** Re-points a dangling active tab (after a tree push drops it) at MRU-top, or seeds a fresh
+   *  NavView tab when nothing is live rather than stranding the app at zero tabs. */
   const ensureLiveActive = (): void => {
     const s = get()
     // '' is the never-seeded sentinel — load()'s restore owns seeding, so the keeper stands down.
@@ -276,16 +272,14 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     syncActiveDetail()
   }
 
-  // A failed persist is a fact the console must hold — the envelope never rejects, so a
-  // silently-dropped ack would be the only witness.
+  // The envelope never rejects, so a silently-dropped ack would be the only failure witness.
   const writeNav = (patch: Partial<NavigationState>): void => {
     void window.nexus.nav.write(patch).then((ack) => {
       if (!ack.ok) console.error('navigation write failed:', ack.error.message)
     })
   }
 
-  // pinnedTabs' one writer. Identity-preserving, like stabilize(): an echo keeps the same array,
-  // so memos hold.
+  // Identity-preserving, like stabilize(): an echo keeps the same array, so memos hold.
   const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
     const next = derivePinnedTabs(pinned, index)
     set((s) => ({ pinned, pinnedTabs: sameTabs(s.pinnedTabs, next) ? s.pinnedTabs : next }))
@@ -297,7 +291,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     writeNav({ pinned })
   }
 
-  // In-memory recents lead disk everywhere; the persist rides along so the two can't part.
+  // In-memory recents lead disk everywhere; the persist rides along.
   const commitRecents = (recents: NavRef[]): void => {
     set({ recents })
     writeNav({ recents })
@@ -320,8 +314,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     persistTabs()
   }
 
-  // Move the active tab's history pointer to an absolute stack index, showing what sits there without
-  // re-recording — the one mover behind Back/Forward and breadcrumb re-navigation alike.
+  // Move the active tab's history pointer to an absolute stack index without re-recording — the
+  // one mover behind Back/Forward and breadcrumb re-navigation alike.
   const jumpActiveHistory = (i: number): void => {
     const s = get()
     const active = activeUnpinnedTab(s.tabs, s.activeTabId)
@@ -367,8 +361,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     goBack: () => stepActiveHistory(-1),
     goForward: () => stepActiveHistory(1),
     navigateCrumb: (target, dir) => {
-      // A normal navigation: openTab switches to a tab already showing the target, or replaces the
-      // current one. crumbDepth (kept current inside select) holds the deeper path across the move.
+      // crumbDepth (kept current inside select) holds the deeper path across the move.
       void get().select(target)
       // select always slides 'forward'; a move up the path reads as 'back'.
       if (dir === 'back') {
@@ -456,8 +449,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     pinTarget: (target) => {
-      // A pin must resolve for as long as it is stored: agenda kinds resolve against nothing,
-      // and an adopted id is re-minted on the next walk.
+      // A pin must resolve for as long as it's stored: agenda kinds resolve against nothing, and
+      // an adopted id is re-minted on the next walk.
       if (target.kind === 'task' || target.kind === 'event') return
       if ('id' in target && target.id.startsWith('adopted-')) return
       const ref = toNavRef(target)
@@ -474,8 +467,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)
       if (pinned) commitPinned(pinned)
     },
-    // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
-    // aren't in the file — the in-memory stream always leads.
+    // The push carries the file's keys: pinned, favorites, banner. Recents aren't in the file —
+    // the in-memory stream always leads.
     applyNavChanged: (nav) => {
       const tree = get().tree
       setPinned(nav.pinned ?? [], tree ? reconcileIndexOf(tree) : null)
@@ -533,8 +526,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
     select: async (target, opts) => {
       pageFetchSeq++
-      // The breadcrumb's deepest node follows every navigation — held while walking up its spine, so
-      // the tail stays dimmed; reset on a branch. Runs for record:false too (Back/Forward, breadcrumb).
+      // Held while walking up the breadcrumb spine so the tail stays dimmed; reset on a branch.
       {
         const depth = crumbDepthFor(get().tree, get().crumbDepth, target)
         if (depth !== get().crumbDepth) set({ crumbDepth: depth })
@@ -598,8 +590,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           const pageSel: PageTarget = { kind: 'page', id: target.id, path: target.path }
           const land = (slot: PageSlot): void =>
             set((s) => ({ selection: pageSel, pages: { ...s.pages, [target.id]: slot } }))
-          // The path equality keeps a loaded or warm page honest across renames — a stale-path
-          // detail would route saves at the old file.
+          // Path equality keeps a loaded or warm page honest across renames.
           const loaded = get().pages[target.id]
           if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
             set({ selection: pageSel })
@@ -610,8 +601,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             land(readySlot(pageSel, cached))
             break
           }
-          // Pause-on-change: the outgoing view holds until the fetch lands or COLD_SWAP_DEADLINE
-          // passes; the seq fence drops a stale response after a newer navigation.
+          // Pause-on-change: holds the outgoing view until the fetch lands or the deadline passes;
+          // the seq fence drops a stale response.
           const seq = pageFetchSeq
           coldStampSeq = get().navSlide?.seq ?? -1
           const fallback = setTimeout(() => {
@@ -682,8 +673,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           void get().select(next, { record: false })
         }
       }
-      // The shown slot is spared: its re-select above lands a fresh one over it, and the pause
-      // holds meanwhile. Every other slot whose page is gone or re-pathed refetches on return.
+      // The shown slot is spared — its re-select above lands a fresh one over it. Every other
+      // slot whose page is gone or re-pathed refetches on return.
       const shownSlotId = prev.kind === 'page' ? prev.id : null
       keepSlots((id, slot) => {
         if (id === shownSlotId) return true
@@ -706,8 +697,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         for (const t of s.tabs) if (!rec.tabs.some((n) => n.id === t.id)) dropWarmTab(t.id)
         applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
       }
-      // reconcileTabs only re-points when an UNPINNED tab changed — a deleted pinned entity
-      // with nothing else open leaves the pointer dangling, so the keeper always runs.
+      // reconcileTabs only re-points when an unpinned tab changed, so the keeper always runs.
       ensureLiveActive()
     },
 
@@ -726,8 +716,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         seen.add(k)
         return true
       })
-      // ONE hydration pass owns the restore: dead refs prune, paths mint, the history
-      // pointer recomputes. The derived pinned set is already live by construction.
+      // One hydration pass owns the restore: dead refs prune, paths mint, the history pointer
+      // recomputes.
       const tabs = hydrateTabs(storedTabs, index)
       const livePinnedTabs = get().pinnedTabs
       const storedActive = stored?.activeTabId ?? ''
@@ -747,14 +737,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     patchPagesFor: (req) => {
       switch (req.op) {
         case 'rename': {
-          // The cascade rewrites bodies NEXUS-WIDE — every warm copy is suspect, and the
-          // tab-keyed editorState has no path fence (its key survives the rename): a warm
-          // restore would revive the pre-cascade body and the next keystroke would write it
-          // back over the heal.
+          // The cascade rewrites bodies nexus-wide; every warm copy is suspect (editorState's
+          // key survives the rename, so a warm restore would revive the pre-cascade body).
           clearWarm()
           keepSlots(() => false)
-          // The shown page's editor binds its document at mount, so a healed body reaches it only
-          // through a remount — the cold re-select drops the slot out from under the surface.
+          // A remount is the only way a healed body reaches the shown page's editor.
           const shown = get().selection
           if (shown.kind === 'page') void get().select(shown, { record: false })
           break
@@ -764,8 +751,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           keepSlots((_, slot) => slot.target.path !== req.path)
           break
         case 'setIcon':
-          // The page's detail is a separate copy of the same fact — patch the open one and drop
-          // any warm one, or the header re-reads the pre-write value until the page refetches.
+          // Patch the open detail and drop any warm one, or the header re-reads the stale value.
           if (req.kind === 'page') {
             dropWarmDetail(req.path)
             patchReadyAt(req.path, (slot) => {

@@ -1,8 +1,8 @@
 // A channel with no handler, a handler with no channel, or a mismatched signature is a
 // compile error here, never a runtime discovery.
 //
-// Pure types — zero runtime values, zero runtime imports — so the sandboxed preload (whose
-// bundle may require only 'electron') consumes it freely from both tsconfig projects.
+// Pure types, zero runtime imports, so the sandboxed preload (whose bundle may require only
+// 'electron') consumes it freely from both tsconfig projects.
 
 import type {
   AssetMap,

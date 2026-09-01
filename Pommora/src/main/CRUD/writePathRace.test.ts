@@ -1,12 +1,10 @@
-// Every writer of a container's sidecar rewrites that file WHOLE — views, within-folder orders,
-// the open_in/view_button config, property assignments, the icon/banner patch — so they all have
-// to serialize on one key: the sidecar's own path. A read-merge-write that takes any other key
-// races its siblings and silently drops whatever they just set.
+// Every writer of a container's sidecar rewrites that file WHOLE, so they all have to serialize
+// on one key: the sidecar's own path. A read-merge-write that takes any other key races its
+// siblings and silently drops whatever they just set.
 //
-// The page half is the same law across a path change. A relocate takes the SOURCE page's lock, so
-// a body write already in flight lands first, and one queued behind the move finds its path gone
-// and fails — rather than re-creating the vacated file around its own stale content and leaving a
-// ghost page beside the renamed one.
+// The page half is the same law across a path change: a relocate takes the SOURCE page's lock,
+// so a body write already in flight lands first, and one queued behind the move finds its path
+// gone and fails — rather than re-creating the vacated file around its stale content.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises'

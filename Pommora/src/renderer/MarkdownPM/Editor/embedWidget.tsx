@@ -1,8 +1,8 @@
 // The embedded-page tile: a claimed lone-line `![[Title]]` renders as a live page tile on its own
 // real .cm-line. A StateField owns the replace decorations — only static decorations reach CM's
 // height map, so a ViewPlugin-sourced tile would under-report the scrollbar for every off-screen
-// embed. The claim (resolved + first-per-normalized-title) is claimedEmbeds — the same predicate
-// the token suppression reads, so the tile and the dim token can never disagree about a line.
+// embed. The claim predicate is claimedEmbeds, shared with the token suppression so the tile and
+// the dim token can never disagree about a line.
 import { createRoot, type Root } from 'react-dom/client'
 import { createElement, Fragment, lazy, Suspense, type ReactNode } from 'react'
 import {
@@ -100,8 +100,8 @@ interface EmbedTiles {
 }
 
 // PageTile mounts MarkdownEditor, which registers this extension — a static import would be the
-// cycle. React.lazy owns the load-order problem the manual then-capture pattern mishandles under
-// async module graphs; Suspense's null fallback is the loading frame estimatedHeight covers.
+// cycle. React.lazy owns the load-order problem; Suspense's null fallback is the loading frame
+// estimatedHeight covers.
 const LazyPageTile = lazy(() =>
   import('@renderer/SurfacePM/PageTile').then((m) => ({ default: m.PageTile })),
 )
@@ -110,10 +110,9 @@ interface TileDom extends HTMLElement {
   _root?: Root
 }
 
-/** Mount a tile's tree into its own React root, created on first render. Both tiles lazy-load their
- *  surface, so the body sits under a Suspense boundary — and the resize handle deliberately sits
- *  OUTSIDE it: the handle depends on nothing that suspends and must exist through the loading frame
- *  too. */
+/** Both tiles lazy-load their surface, so the body sits under a Suspense boundary — the resize
+ *  handle deliberately sits outside it, since it depends on nothing that suspends and must exist
+ *  through the loading frame too. */
 function mountTile(dom: TileDom, body: ReactNode, handle: ReactNode): void {
   let root = dom._root
   if (!root) {
@@ -135,9 +134,9 @@ function mountTile(dom: TileDom, body: ReactNode, handle: ReactNode): void {
 }
 
 // CM hands a tile's DOM to its successor widget on rebuilds and relocations, and calls destroy
-// BEFORE detaching on a real delete — so connectivity is only decidable after the update settles:
-// an adopted node is still in the document (unmounting would blank the reused tile), a deleted one
-// is gone and its root must unmount or the nested editor leaks whole.
+// before detaching on a real delete — so connectivity is only decidable after the update settles:
+// an adopted node is still in the document, a deleted one is gone and its root must unmount or the
+// nested editor leaks whole.
 function unmountIfDetached(d: TileDom): void {
   queueMicrotask(() => {
     const root = d._root
@@ -147,9 +146,9 @@ function unmountIfDetached(d: TileDom): void {
   })
 }
 
-/** The bottom-edge resize strip: drag sets the tile's height live (writing the widget span and
- *  remeasuring — CM's observer watches only scrollDOM, so a widget growing inside it is invisible
- *  without requestMeasure), Escape restores, drop persists through the host's save callback. */
+/** Drag sets the tile's height live and calls requestMeasure — CM's observer watches only
+ *  scrollDOM, so a widget growing inside it is invisible otherwise. Escape restores, drop persists
+ *  through the host's save callback. */
 function EmbedResizeHandle({
   view,
   targetId,
@@ -168,9 +167,8 @@ function EmbedResizeHandle({
       if (!span) return
       const startH = span.getBoundingClientRect().height
       const startY = e.clientY
-      // The drop commits the height the drag computed, never a DOM re-read — a tile degrading under
-      // the pointer (target deleted or renamed mid-drag) detaches the span, and a detached rect's 0
-      // would fail the main-process guard and silently refuse every later save on this page.
+      // The drop commits the height the drag computed, never a DOM re-read — a detached span (target
+      // deleted or renamed mid-drag) would rect to 0 and silently refuse every later save.
       let lastH = Math.round(startH)
       beginGesture({
         el: strip,

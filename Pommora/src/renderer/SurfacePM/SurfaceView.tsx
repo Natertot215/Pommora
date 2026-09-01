@@ -21,11 +21,10 @@ import { startPointerDrag } from './Sensors/pointerDrag'
 import '@renderer/SurfacePM/block-tile-base.css'
 import './tile-surface.css'
 
-// Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its
-// siblings reflow through the shared Feel transition; releasing settles it into its slot as an
-// animation and the layout commits on transitionend (decide-then-animate, with the engine's
-// fallback timer). Every gesture is snapshot → preview → commit/abort against the frozen
-// drag-origin layout; Esc settles home.
+// Moving a block lifts the block itself under the pointer (shadowed, 1:1, no ghost) while its
+// siblings reflow through the shared Feel transition; releasing settles it into its slot and the
+// layout commits on transitionend (decide-then-animate). Every gesture is snapshot → preview →
+// commit/abort against the frozen drag-origin layout; Esc settles home.
 
 export interface SurfaceViewProps {
   layout: SurfaceLayout

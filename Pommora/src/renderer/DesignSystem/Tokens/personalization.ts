@@ -11,8 +11,7 @@ import { labelColorFor } from './colorMap'
 import { cellColor, cellPaint } from './ramp'
 
 /** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,
- *  `system`, `default` — and the absent key alike read as no cell, which `labelColorFor` already
- *  answers for: naming them again here would be a second roster to keep in step with the first. */
+ *  `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
 function settingCell(setting: unknown): CellKey | null {
   const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
   return key === 'default' ? null : key
@@ -74,9 +73,8 @@ const ROOT_VALUE_CLASSES: Partial<Record<keyof Personalization, { value: string;
   pickerSelection: { value: 'checked', cls: 'picker-checked' },
 }
 
-/** The three tables are the whole roster: a key with a DOM effect belongs to exactly one, and the
- *  sweep below reads them rather than a second list naming the same keys — which is what lets a new
- *  setting be an entry rather than an entry and a line someone has to remember. */
+/** The three tables are the whole roster: a key with a DOM effect belongs to exactly one, so a new
+ *  setting is only ever an entry, never a second list to keep in step. */
 const TABLES = [ROOT_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES] as const
 
 export function applyPersonalizationKey<K extends keyof Personalization>(

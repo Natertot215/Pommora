@@ -31,12 +31,10 @@ const apply = (state: EditorState, spec: TransactionSpec): string =>
   state.update(spec).state.doc.toString()
 
 // The lone-line guard: a live tile can be removed whole but never eroded in place; boundary-seat
-// insertions repair onto their own line. Each refusal test dispatches the real change shape and
-// must go red with the guard deleted — without it the change lands and the doc differs.
+// insertions repair onto their own line.
 describe('embed lone-line guard', () => {
   it('refuses a join that would drag prose onto the tile line', () => {
     const doc = 'alpha\n![[Alpha]]\nbeta'
-    // Deleting the newline between the embed line and beta (a backspace-join shape).
     expect(apply(mk(doc), { changes: { from: 16, to: 17, insert: '' } })).toBe(doc)
   })
 
@@ -69,7 +67,6 @@ describe('embed lone-line guard', () => {
     expect(apply(mk(doc), { changes: { from: 0, to: 5, insert: 'gamma' } })).toBe(
       'gamma\n![[Alpha]]\n![[Nowhere]]',
     )
-    // The unresolved line is plain text — joining into it is ordinary editing.
     const doc2 = 'a\n![[Nowhere]]'
     expect(apply(mk(doc2), { changes: { from: 1, to: 2, insert: '' } })).toBe('a![[Nowhere]]')
   })
@@ -78,7 +75,6 @@ describe('embed lone-line guard', () => {
 describe('the fencing blank', () => {
   it('refuses deleting the lone blank below a tile', () => {
     const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
-    // Backspace-at-beta-start shape: deletes the newline joining beta up onto the blank.
     expect(apply(mk(doc), { changes: { from: 18, to: 19, insert: '' } })).toBe(doc)
   })
 
@@ -102,7 +98,6 @@ describe('the fencing blank', () => {
 
 describe('the rebuild gate reads the scanner', () => {
   it('a fence typed above a tile dissolves it; deleting the fence restores it', () => {
-    // The field must track the scan's exclusion set, not just the tile's own lines.
     let state = mk('x\n\n![[Alpha]]')
     const tiles = (): number =>
       state.field(embedField as never, false) === undefined
@@ -239,11 +234,10 @@ describe('a page is excluded from embedding itself', () => {
 
 describe('per-tile fence accounting', () => {
   it('removing one tile whole cannot legalize gluing another', () => {
-    // Hand-glued first tile + fenced second; spanning-delete of the first must not be paid for
-    // by the second losing its blank.
+    // Spanning-delete of the first tile must not be paid for by the second losing its blank.
     const doc = 'text\n![[Alpha]]\n\n![[Beta]]'
     const out = apply(mk2(doc), { changes: { from: 5, to: 17, insert: '' } })
-    expect(out).toBe(doc) // Beta would become glued to text — refused
+    expect(out).toBe(doc)
   })
 
   it('removing one tile with its own seams intact stays legal', () => {

@@ -28,14 +28,10 @@ const conn: ConnectionsApi = {
 }
 
 // `a [[Alpha]] b` — token [2,11], the displayed title [4,9]. jsdom measures nothing, so the click
-// point is pinned through posAtCoords.
-//
-// The mousedown and the caret seat are not ceremony: CM moves the caret on mousedown, so a bare
-// click() dispatch tests a sequence the app never runs — and a rule reading the live caret passes
-// here while failing on every real click.
-// The span is re-queried before each dispatch, never captured: seating the caret activates the
-// token, which changes its class, and CM answers that by REPLACING the element. A held reference is
-// detached by then, and an event dispatched on it never reaches the editor's handlers at all.
+// point is pinned through posAtCoords. Mousedown + caret seat aren't ceremony: CM moves the caret
+// on mousedown, so a bare click() tests a sequence the app never runs. The span is re-queried
+// before each dispatch, never captured: seating the caret changes its class, and CM replaces the
+// element, so a held reference is detached and an event on it never reaches the handlers.
 const linkSpan = (view: EditorView): HTMLElement =>
   (view.dom.querySelector('.md-connection-resolved') ?? view.dom) as HTMLElement
 
@@ -56,10 +52,9 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
-  // NOT covered here: that a navigating press refuses the caret seat. CM seats the caret from real
-  // coordinates, which jsdom never produces, and `defaultPrevented` reads true at every position
-  // because CM prevents default on its own content — so any assertion about it passes with the
-  // behavior removed. Live check only.
+  // NOT covered here: that a navigating press refuses the caret seat. jsdom never produces real
+  // coordinates and `defaultPrevented` reads true everywhere, so an assertion on it would pass with
+  // the behavior removed. Live check only.
   it('a link the caret was already inside when pressed does not navigate', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
@@ -68,10 +63,9 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).not.toHaveBeenCalled()
   })
 
-  // The bug a coordinate check alone can't catch: posAtCoords clamps to the nearest RENDERED
-  // position and the closing `]]` is replaced to zero width, so a click in the blank space past a
-  // short alias resolves back onto its last character. Only the event's target knows the pointer
-  // was never on the link — so this dispatches off the span while the offset says otherwise.
+  // posAtCoords clamps to the nearest rendered position, and the closing `]]` is zero width, so a
+  // click past a short alias resolves onto its last character — only the event target reveals the
+  // pointer was never on the link, so this dispatches off the span while the offset says otherwise.
   it('a click in the space past a link does not follow it', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
@@ -83,8 +77,7 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).not.toHaveBeenCalled()
   })
 
-  // Same clamping, other symptom: the caret would land mid-alias, in text the pointer never
-  // touched. It belongs at the bracket edge nearest where the click actually was.
+  // Same clamping: the caret must land at the bracket edge nearest the click, not mid-alias.
   it('a click that clamps into a resting link seats at the nearer bracket edge', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => view.focus())
@@ -123,9 +116,8 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
   })
 })
 
-// The edge seat above exists because a hidden marker is zero width and coordinates beside a link
-// therefore clamp into it. That reasoning covers exactly the links that hide something. These two
-// don't resolve, and the seat has to tell them apart rather than treating "no page" as "no hit".
+// The edge seat exists because a hidden marker is zero width, so coordinates beside a link clamp
+// into it — but these two links don't resolve, and the seat has to tell "no page" from "no hit".
 describe('a link that leads nowhere still takes the caret where it was pressed', () => {
   const ambiguous: ConnectionsApi = {
     ...buildPageIndex([
@@ -135,13 +127,12 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
     open: (p: ConnPage) => opened(p.id),
   }
 
-  // These two assert the seat DIDN'T fire, never where the caret ended up instead: declining leaves
-  // the press to CM, whose own seat needs coordinates jsdom can't produce and lands on the doc end
-  // in every case. Both bracket edges are excluded, since which one is nearer isn't the point.
+  // These assert only that the seat didn't fire — declining leaves the press to CM, whose own seat
+  // needs coordinates jsdom can't produce and lands on the doc end regardless.
   const bracketEdges = [2, 10]
 
-  // A phantom is drawn as its own raw bracketed text — every character has width, so nothing can
-  // clamp in from beside it and the press means exactly where it landed.
+  // A phantom is drawn as its own raw bracketed text — every character has width, so the press
+  // means exactly where it landed.
   it('a press inside an unresolved link is left to the editor', async () => {
     const view = await mountEditor({ initialBody: 'a [[Zeta]] b', connections: conn })
     await act(async () => view.focus())
@@ -151,8 +142,7 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
     expect(bracketEdges).not.toContain(view.state.selection.main.head)
   })
 
-  // An ambiguous link hides its brackets like a resolved one, so it keeps the edge seat — but its
-  // own drawn text has to be recognized as drawn text. `a [[Beta]] b` draws its content over [4,8].
+  // An ambiguous link hides its brackets like a resolved one, so it keeps the edge seat.
   it('a press on an ambiguous link’s text is left to the editor', async () => {
     const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
     await act(async () => view.focus())

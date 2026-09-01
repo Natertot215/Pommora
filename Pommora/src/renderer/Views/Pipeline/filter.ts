@@ -1,13 +1,8 @@
-// Type-aware view filter. A per-rule, per-type operator matrix with
-// nested groups (a rule child may itself be a FilterGroup, expressing mixed AND/OR like
-// `(A AND B) OR C`), title + context + any-depth location matrices, and multi-operand `values[]`
-// chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND and
-// any = OR at every depth; negation lives on the per-rule operators.
-//
-// A rule that CANNOT be applied — unknown op, dead property or set, an operand not yet supplied —
-// abstains rather than voting, so a filter never excludes on what it can't apply. That has to be a
-// third verdict, not a `true`: a pass would hand the parent group a vote it never earned.
-// Pure: no fs, no React.
+// Type-aware view filter. A per-rule, per-type operator matrix with nested groups (a rule child
+// may itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`), title + context +
+// any-depth location matrices, and multi-operand `values[]` chip ops. `op` raw strings are
+// snake_case (on-disk parity). Match modes are all = AND and any = OR at every depth; negation
+// lives on the per-rule operators. Pure: no fs, no React. (See NO_OP below for the abstain rule.)
 
 import type { FilterGroup, FilterRule } from '@shared/views'
 import type { ViewRow } from '@shared/types'

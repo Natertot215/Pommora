@@ -1,16 +1,9 @@
-// What a returning artifact missed while it sat in the trash.
-//
-// Every nexus-wide sweep is tree-derived, and the tree excludes `.trash` — deliberately, because
-// nothing may rewrite trashed content. So a bundle is frozen at the moment of its delete while
-// the world moves on: a property deleted or unassigned since, a Context erased since, a Space
-// gone. Replaying that content verbatim would reintroduce governed keys nothing stands behind,
-// and the danger is not the dormant key itself — it is that a later property or Context taking
-// that name inherits values the page never legitimately held.
-//
-// So the returning content is reconciled against the CURRENT world before it lands, by the one
-// reconcile every governed write runs: a registered Context's key is repaired against the Spaces it
-// still holds, a key the destination's schema assigns is re-read as its definition reads it, and
-// every other key — a Context or property the registry no longer names included — rides through.
+// Every nexus-wide sweep is tree-derived, and the tree excludes `.trash` — nothing may rewrite
+// trashed content — so a bundle is frozen at the moment of its delete while the world moves on.
+// Replaying it verbatim would reintroduce governed keys nothing stands behind: a later property
+// or Context taking a dormant key's name would inherit values the page never legitimately held.
+// So returning content is reconciled against the CURRENT world before it lands, by the one
+// reconcile every governed write runs.
 
 import type { NexusTree } from '@shared/types'
 import { assignedDefs } from './contextWrite'
@@ -58,14 +51,12 @@ function reconciledSidecar(
 
 /**
  * Reconcile a returning artifact against the live world, IN THE TRASH, before anything moves.
- * `absArtifact` is a page file or a folder; `destCollectionFolder` is the Collection whose schema
- * the returning pages will answer to (null when the artifact is not landing under one).
  *
  * `inTransitKey` names the returning Context's own key. The live world cannot answer for a subject
  * still in the trash — it is absent from the tree by definition, and a Context that has since
  * taken its title would answer in its place — so that one key is left for the post-move rekey,
- * which is what settles it. Nothing under a trashed Context can have gone stale beneath its own
- * key: the whole subtree froze together.
+ * which settles it. Nothing under a trashed Context can have gone stale beneath its own key:
+ * the whole subtree froze together.
  */
 export async function scrubReturning(
   root: string,
@@ -77,8 +68,8 @@ export async function scrubReturning(
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
   for (const file of pages) {
-    // Under the page lock, and admission-gated exactly as every other nexus-wide sweep is: an
-    // Unknown file is left byte-identical here too.
+    // Admission-gated exactly as every other nexus-wide sweep: an Unknown file is left
+    // byte-identical here too.
     await rewritePageSerialized(file, (content) => {
       if (!sweepAdmits(content)) return null
       const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
@@ -86,8 +77,7 @@ export async function scrubReturning(
       return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
     }).catch(() => false)
   }
-  // A Space sidecar is a context root too — the sweeps have always treated it as one, so the
-  // reconcile reaches it on the way back for the same reason.
+  // A Space sidecar is a context root too, so the reconcile reaches it on the way back as well.
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
     await serializeOnFile(file, async () => {
       const raw = await readJsonObject(file)

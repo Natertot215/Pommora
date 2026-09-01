@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level frame tests: the row stack per sort state + the wholesale write shapes. Visual truth = CDP.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

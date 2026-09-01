@@ -1,8 +1,7 @@
 // The on-disk names, nexus-relative and POSIX. Both processes build the same strings: main
 // resolves them against the nexus root (`main/paths.ts` holds every absolute-path builder — this
-// module has no node:path and no fs), and the renderer names the same folders in the tree paths
-// it hands back over the bridge. A path a lock, a watcher rule, and a menu row all speak has to
-// be one spelling, or the three disagree the moment a name changes.
+// module has no node:path and no fs), and the renderer names the same folders in the tree paths it
+// hands back. A path a lock, a watcher rule, and a menu row all speak has to be one spelling.
 
 /** The app's own folder inside a nexus — config, the Contexts registry, assets. */
 export const NEXUS_DIR = '.nexus'
@@ -10,17 +9,16 @@ export const NEXUS_DIR = '.nexus'
 /** The deletion record's folder, mirroring the nexus. */
 export const TRASH_DIR = '.trash'
 
-/** The top-level folders that are not content: the walk skips them, the index refuses to key
- *  anything under them, and a mutation refuses to target them. The watcher is not among the
- *  readers — it watches `.nexus` on purpose, since Contexts and settings live there. */
+/** The walk skips these, the index refuses to key anything under them, and a mutation refuses to
+ *  target them. The watcher is not among the readers — it watches `.nexus` on purpose. */
 export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR])
 
 /** The Contexts registry — the one identity source for every Context (id, title, singular, icon). */
 export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/contexts.json`
 
 /** Where Contexts live, and its bare name — the watcher matches path segments rather than
- *  prefixes. `.trash` mirrors the nexus, so a trashed Space's frozen chain wears this prefix and
- *  the trash browser strips it back off. */
+ *  prefixes. `.trash` mirrors the nexus, so a trashed Space's frozen chain wears this prefix and the
+ *  trash browser strips it back off. */
 export const CONTEXTS_DIRNAME = 'contexts'
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
@@ -28,10 +26,9 @@ export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
 /** The asset root a file property's files land under — the configured root, or the subfolder its
- *  Directory names beneath it. An absent subfolder resolves to the root itself, so nothing
- *  downstream special-cases one. Both processes compose it: main to aim the write, the renderer to
- *  aim the dialog it opens, and a second spelling on either side would point them at two folders.
- *  It composes only — the destination is REFUSED at `adoptFile`, where the write happens. */
+ *  Directory names beneath it. An absent subfolder resolves to the root itself. Both processes
+ *  compose it: main to aim the write, the renderer to aim the dialog it opens. It composes only —
+ *  the destination is REFUSED at `adoptFile`, where the write happens. */
 export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
   return [assetDir, subfolder].filter(Boolean).join('/')
 }
@@ -40,10 +37,9 @@ export function assetSubRoot(assetDir: string, subfolder: string | undefined): s
  *  and hostile in a filename. Stated here because the writer and every reader must agree on it. */
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
 
-/** A nexus's synced thumbnail folder, and one thumbnail inside it. Served to the renderer through
- *  the `nexus-asset://` scheme, so the same string addresses the file and the request for it.
- *  Pinned to `ASSETS_DIR_REL` deliberately: these are Pommora's own derived files, so they stay
- *  where the app owns them rather than following `asset_directory` into a shared folder. */
+/** A nexus's synced thumbnail folder, and one thumbnail inside it. Pinned to `ASSETS_DIR_REL`
+ *  deliberately: these are Pommora's own derived files, so they stay where the app owns them
+ *  rather than following `asset_directory` into a shared folder. */
 export const THUMBNAILS_SEGMENT = 'thumbnails'
 export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`

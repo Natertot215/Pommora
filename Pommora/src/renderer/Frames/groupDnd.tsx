@@ -1,7 +1,6 @@
-// The pure model is SHARED (bandDndModel: slots, nest cycle-guard, order math); only the drop
-// semantics live here — the lifecycle is the insertion-drag frame's. frameDnd doesn't fit: its
-// two-region assigned/all vocabulary has no parent/nest concept, and the hierarchy list needs
-// reparent drops.
+// The pure model is shared (bandDndModel: slots, nest cycle-guard, order math); only the drop
+// semantics live here. frameDnd doesn't fit: its two-region assigned/all vocabulary has no
+// parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
 import type { Band, BandIndex, BandSlot } from '@renderer/Views/bandDndModel'
@@ -16,9 +15,8 @@ export interface GroupingDrop {
 type Snapshot = { index: BandIndex; boxTop: number; endY: number }
 type Slot = BandSlot & { topInBox: number }
 
-/** The list is small and single-instance, so rows register through props (a context-free API)
- *  rather than React Context. `bands` is the VISIBLE flat row list, identity-stable across the
- *  hook's own per-move re-renders. */
+/** The list is small and single-instance, so rows register through props rather than React
+ *  Context. `bands` is the visible flat row list, identity-stable across per-move re-renders. */
 export function useGroupingListDrag({
   bands,
   nestable,

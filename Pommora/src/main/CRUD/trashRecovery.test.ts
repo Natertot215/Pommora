@@ -1,5 +1,5 @@
-// The end-to-end proof: every restoration combination the surface can produce, driven through the
-// same ops the leaf calls, against a real nexus on disk.
+// Every restoration combination the surface can produce, driven through the same ops the leaf
+// calls, against a real nexus on disk.
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

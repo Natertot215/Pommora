@@ -5,9 +5,9 @@ import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
 import { createBodyWriter } from './PageTileWrite'
 
-// The markdown tile's body shares the page autosave's debounce machinery; a tile's id (a ULID) keys
-// its pending write. Editability reconfigures the SAME CM6 view in place while this tile is the
-// surface's single live editor — no remount, no jitter.
+// The markdown tile's body shares the page autosave's debounce machinery; a tile's id (a ULID)
+// keys its pending write. Editability reconfigures the same CM6 view in place while this tile is
+// the surface's single live editor — no remount, no jitter.
 const saves = createBodyWriter()
 
 export function MarkdownTile({
@@ -41,9 +41,8 @@ export function MarkdownTile({
     }
   }, [tileId])
 
-  // On removal the pending write is dropped, not landed — a write after the trash would resurrect the
-  // file as an entry-less orphan. The guard rides both the settle paths and the debounced write
-  // itself, so a timer firing mid-removal can't slip a write through.
+  // On removal the pending write is dropped, not landed — a write after the trash would resurrect
+  // the file as an entry-less orphan. The guard rides both the settle paths and the debounced write.
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
   const settleRef = useRef<() => void>(() => {})

@@ -11,16 +11,16 @@ import { resolveUnderRoot } from './pathSafety'
 import { assetDirRefusal } from './readNexus'
 import { SIDECARS, relPosix } from './paths'
 
-/** The nexus-relative POSIX path of a folder fit to hold assets, or the reason it is not. Selection
- *  is validated, never restricted: any folder inside the nexus qualifies unless it already holds
- *  content, which is what would make the same folder both corpus and not. */
+/** The nexus-relative POSIX path of a folder fit to hold assets, or the reason it is not. Any
+ *  folder inside the nexus qualifies unless it already holds content, which would make the
+ *  same folder both corpus and not. */
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
   const rel = relPosix(root, abs)
   if (!rel) return fail('invalid-path', 'The nexus root itself cannot hold assets.')
   const resolved = await resolveUnderRoot(root, rel)
   if (!resolved.ok) return resolved
-  // Asked of the reader that owns the rule, not restated: a folder the reader would coerce back
-  // to the default is one the setting cannot name, however the dialog spelled it.
+  // Asked of the reader that owns the rule: a folder it would coerce back to the default is
+  // one the setting cannot name, however the dialog spelled it.
   const refusal = assetDirRefusal(rel)
   if (refusal) return fail('invalid-path', refusal)
   let stats: Stats
@@ -32,9 +32,8 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
   // `realpath` succeeds on a file and a directory listing of one reads as empty, so without this
   // a picked image would be accepted and every asset would quietly stop resolving.
   if (!stats.isDirectory()) return fail('invalid-path', 'That is a file, not a folder.')
-  // The WHOLE subtree, not the folder's own entries: the asset root is pruned by segment prefix,
-  // so a Collection nested three levels down would vanish from the tree and the index alongside
-  // it. Short-circuits on the first page or sidecar it meets.
+  // The WHOLE subtree, not the folder's own entries — the asset root is pruned by segment
+  // prefix, so a Collection nested three levels down would vanish along with it.
   return (await holdsContent(resolved.value))
     ? fail('invalid-path', 'That folder holds pages.')
     : ok(rel)

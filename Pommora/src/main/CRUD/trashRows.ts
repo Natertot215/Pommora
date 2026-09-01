@@ -1,7 +1,6 @@
 // The trash browser's read shape. Main owns every parse the renderer would otherwise have to
-// learn — the bundle's stamp encoding, the `.deleted` suffix, and the record union — and answers
-// two questions the menu needs before any restore is attempted: what kind this is, and whether the
-// place it came from still exists.
+// learn, and answers two questions the menu needs before any restore is attempted: what kind
+// this is, and whether the place it came from still exists.
 
 import { basename, dirname } from 'node:path'
 import type { NexusTree, TrashCrumb, TrashRow } from '@shared/types'
@@ -13,9 +12,8 @@ import {
   resolveRecord,
 } from '../provenance'
 
-/** `trashStamp` writes an ISO instant with `:` and `.` flattened to `-`, so reading it back is a
- *  fixed unreplace rather than a guess. The optional counter that follows de-collides same-instant
- *  deletes and carries no time of its own. */
+/** `trashStamp` writes an ISO instant with `:` and `.` flattened to `-`. The optional counter
+ *  that follows de-collides same-instant deletes and carries no time of its own. */
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 
 function deletedAtOf(bundlePath: string): number | null {
@@ -25,12 +23,9 @@ function deletedAtOf(bundlePath: string): number | null {
   return Number.isNaN(t) ? null : t
 }
 
-/** The frozen `.trash` chain the bundle sits in — the only surviving evidence of where something
- *  lived once its recorded parent is gone. Folder names, so the crumbs carry no kind.
- *
- *  `.trash` mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing the
- *  internal folders the live breadcrumb never shows. Both prefixes come back off: a location the
- *  user is shown reads the way it read before the delete. */
+/** The only surviving evidence of where something lived once its recorded parent is gone.
+ *  `.trash` mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing
+ *  the internal folders the live breadcrumb never shows — both prefixes come back off. */
 function frozenCrumbs(bundlePath: string): TrashCrumb[] {
   const segments = dirname(bundlePath)
     .split('/')
@@ -40,9 +35,8 @@ function frozenCrumbs(bundlePath: string): TrashCrumb[] {
   return (inContexts ? segments.slice(contexts.length) : segments).map((title) => ({ title }))
 }
 
-/** Live crumbs, or null when the recorded parent resolves to nothing. A Collection and a Context
- *  both sit at a root that cannot go missing, so both resolve to an empty chain rather than to
- *  nothing. */
+/** Null when the recorded parent resolves to nothing. A Collection and a Context both sit at a
+ *  root that cannot go missing, so both resolve to an empty chain rather than to nothing. */
 function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | null {
   if (record.entity === 'context') return []
   if (record.entity === 'space') {
@@ -57,17 +51,16 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | nul
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
 }
 
-/** A restore would land this where it came from. `id-live` is deliberately not a homeless verdict —
- *  the home is there and a destination cannot fix a duplicate identity. */
+/** `id-live` is deliberately not a homeless verdict — the home is there and a destination
+ *  cannot fix a duplicate identity. */
 function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: NexusTree): boolean {
   const resolution = resolveRecord(record, artifactName, tree)
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
-/** Shape one bundle, or null for the kinds this list cannot show. The filter is the record's own
- *  discriminator rather than the absence of an artifact: `listBundles` waives the artifact
- *  requirement for a property bundle on purpose, so testing for one would admit it as a titleless,
- *  dateless row that Delete All would then destroy unread. */
+/** The filter is the record's own discriminator rather than the absence of an artifact:
+ *  `listBundles` waives the artifact requirement for a property bundle on purpose, so testing for
+ *  one would admit it as a titleless, dateless row that Delete All would then destroy unread. */
 export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property' || !artifactName) return null
@@ -83,8 +76,8 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
   }
 }
 
-/** Newest first: `listBundles` returns filesystem order, and what was just lost belongs at the top.
- *  A row whose stamp wouldn't parse still lists — it sorts last rather than disappearing. */
+/** Newest first — what was just lost belongs at the top. A row whose stamp wouldn't parse
+ *  still lists; it sorts last rather than disappearing. */
 export function trashRows(bundles: ListedBundle[], tree: NexusTree): TrashRow[] {
   return bundles
     .map((b) => trashRowOf(b, tree))

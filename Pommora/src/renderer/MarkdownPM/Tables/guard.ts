@@ -6,10 +6,10 @@ import { parseDelimiter } from './codec'
 import { decodePayload } from './clipboard'
 import { tableSelfEdit } from './sync'
 
-// A GFM table is its own block only while a blank line fences it; with the separator gone, two tables fuse
-// into one — the second table's header + delimiter become body rows, so the region carries a SECOND
-// delimiter row. Count the tables that carry more than one (the fused ones). This reads the RESULT doc
-// only, so it's immune to the offset shift a deletion causes (the bug a cross-before/after comparison hits).
+// A GFM table is its own block only while a blank line fences it; with the separator gone, two tables
+// fuse and the second one's header + delimiter become body rows, so the region carries a second
+// delimiter row. Counts the fused tables. Reads the RESULT doc only, immune to the offset shift a
+// deletion causes (the bug a cross-before/after comparison hits).
 export function fusedTableCount(scan: DocScan): number {
   let n = 0
   for (const r of scan.tables) {

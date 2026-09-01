@@ -7,9 +7,9 @@ import { PickerOption } from '../Pickers/picker-base'
 import { side } from './menu-base.css'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
-/** Which nodes are disclosed. The set holds the EXCEPTIONS to `defaultOpen`, never the open nodes
+/** Which nodes are disclosed. The set holds the exceptions to `defaultOpen`, never the open nodes
  *  themselves — so a default-open tree needs no seed and stays right as nodes appear and vanish
- *  beneath it, which a seeded set of ids can't do without re-seeding on every change. */
+ *  beneath it. */
 export function useDisclosureSet(defaultOpen = false): {
   has: (id: string) => boolean
   toggle: (id: string) => void

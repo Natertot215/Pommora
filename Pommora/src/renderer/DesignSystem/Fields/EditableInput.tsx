@@ -35,10 +35,9 @@ export function EditableInput({
   const settled = useRef(false)
   const mirror = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  // Focus so an active caret blinks the moment the field appears. Mounted already-visible (the sidebar /
-  // chip rename) it takes focus at once; mounted inside PickerMenu's rename pane it can't yet — the pane
-  // is visibility:hidden until measured, and it's launched from a native menu whose focus-return is
-  // async — so a short backstop re-asserts once it's shown. Re-focusing a focused field is a no-op.
+  // Focus so an active caret blinks the moment the field appears. Mounted inside PickerMenu's
+  // rename pane it can't focus yet (visibility:hidden until measured, launched async from a native
+  // menu) — a short backstop re-asserts once shown. Re-focusing a focused field is a no-op.
   useEffect(() => {
     const el = inputRef.current
     if (!el) return

@@ -1,15 +1,8 @@
-// Field-value extraction for the view pipeline. Two functions, two AXES that must NOT be
-// confused:
-//   - declaredType: the column's SCHEMA type — a snake_case PropertyType (e.g. 'multi_select',
-//     'last_edited_time') plus the synthetic 'title'/'context' sentinels for reserved columns. This
-//     is what sort/group/filter switch on to choose type-aware behavior.
-//   - resolveFieldValue: the row's VALUE as a PropertyValue, whose `.kind` is camelCase (e.g.
-//     'multiSelect', 'lastEditedTime'). Resolution is definition-first: the definition supplies the
-//     key, the frontmatter is read at it, and `decodeValue` decides by the DECLARED type. Nothing is
-//     inferred from a value's shape, so a url column always reads url and a select column select
-//     even though both are plain strings on disk. Without a definition the field reads null — an
-//     unknown column has no value, rather than a guessed one.
-// Pure: no fs, no React.
+// Two axes that must not be confused: declaredType is the column's snake_case SCHEMA type (plus
+// the synthetic 'title'/'context' sentinels), what sort/group/filter switch on; resolveFieldValue
+// is the row's camelCase-`.kind` VALUE, decoded definition-first by the declared type — never
+// inferred from a value's shape, so a url column always reads url even though both are plain
+// strings on disk. Pure: no fs, no React.
 
 import type { ViewRow } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
@@ -41,15 +34,12 @@ export function declaredType(
   }
 }
 
-/** The row's value for a column, as a PropertyValue. Reserved columns read intrinsic/frontmatter
- *  fields; a user column decodes against the type its own definition declares, so nothing is ever
- *  inferred from the bytes. The decode is cached (the measured grouped-view hot spot) and keyed on
- *  the definition, so a schema type-change re-resolves rather than serving a stale kind. Absent OR
- *  unreadable ⇒ `{ kind: 'null' }` — a single bad cell never poisons a view.
+/** The row's value for a column, as a PropertyValue. Absent or unreadable ⇒ `{ kind: 'null' }` —
+ *  a single bad cell never poisons a view.
  *
- *  A CONTEXT column bypasses the cache: its ids resolve at walk assembly onto the row's own
- *  `contextValues` (the tree node's field), with the optimistic write layer's `contextValues`
- *  rider on the patched frontmatter winning while a commit is in flight. */
+ *  A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own
+ *  `contextValues`, with the optimistic write layer's patched-frontmatter rider winning while a
+ *  commit is in flight. */
 export function resolveFieldValue(
   row: ViewRow,
   propertyId: string,

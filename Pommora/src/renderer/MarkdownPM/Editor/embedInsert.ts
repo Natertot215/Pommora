@@ -6,10 +6,8 @@ import { blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
 
 /** The fenced insert below a block: blank-separated above and below wherever content adjoins,
- *  reusing the blank lines already standing — a caret on a blank line supplies one fence newline
- *  and takes the token itself, a blank (or the doc's start) above it supplies the other. `token`
- *  is the placed text — a full `![[Title]]`, or the bare opener when the autocomplete finishes
- *  the title. Returns the change spec plus where the caret lands. */
+ *  reusing the blank lines already standing. `token` is the placed text — a full `![[Title]]`, or
+ *  the bare opener when the autocomplete finishes the title. */
 export function embedInsertAfter(
   doc: string,
   blockTo: number,
@@ -35,10 +33,8 @@ export function embedInsertAfter(
 }
 
 /** Whether the caret already sits where a lone-line embed may be written: a blank line, outside the
- *  regions that would make the token content rather than a construct. Both embed grammars are line
- *  constructs, so this is the placement Paste As offers its embed forms on — and the one it writes
- *  under, since a native menu can hang open while the document moves beneath it. Read off the
- *  per-version scan, because it answers on every caret move. */
+ *  regions that would make the token content rather than a construct. This is the placement Paste
+ *  As offers its embed forms on. Read off the per-version scan, since it answers on every caret move. */
 export function embedSeatAt(state: EditorState): boolean {
   const line = state.doc.lineAt(state.selection.main.from)
   if (line.text.trim() !== '') return false

@@ -85,12 +85,10 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
     valueMenu: valueMenuShared,
   } = usePropertyRows(page, fm, setFm)
 
-  // A row shows when it holds a real value OR was assigned this session (session-only — disk
-  // never carries an empty key). Contexts included — nothing pre-shows here.
-  //
-  // A standing design decision, not drift: the Settings pane's Properties leaf deliberately keeps
-  // every Context slot open until one is set aside. That surface is where a Page gets filed; this
-  // one reads a page you are looking past, so it shows only what the page actually holds.
+  // A row shows when it holds a real value or was assigned this session (session-only — disk
+  // never carries an empty key). Deliberately unlike the Settings Properties leaf, which keeps
+  // every Context slot open until set aside — that surface is where a page gets filed, this one
+  // just reads one.
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
     if (isContextRow(id)) return (contextValues?.[id]?.length ?? 0) > 0
@@ -112,9 +110,9 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
       from,
     )
 
-  // Revealing a row and then editing it is the ORDINARY click one frame later — the row mounts
-  // next frame, so its value field can only be anchored to after paint. It routes through the same
-  // `editRow` every other click takes, so a new type is taught to one place. A Context row carries no def and opens its own picker.
+  // The row mounts next frame, so its value field can only be anchored to after paint; from there
+  // it routes through the same `editRow` every other click takes. A Context row carries no def and
+  // opens its own picker.
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
     setRevealed((prev) => new Set([...prev, id]))

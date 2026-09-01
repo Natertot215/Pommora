@@ -16,10 +16,8 @@ import type { PropertyDefinition } from '@shared/properties'
 
 const MD = '.md'
 
-/** Create a `.md` page in `parentDir` with a fresh ULID and
- *  created/modified timestamps (no context keys — presence is value-driven). Optional
- *  icon, initial body, and resolved property values stamped in the same birth write —
- *  a seeded page is never observable unstamped. Blank values write no key (no-empties). */
+/** No context keys — presence is value-driven. Icon, body, and property values stamp in the
+ *  same birth write, so a seeded page is never observable unstamped. Blank values write no key. */
 export async function createPage(
   parentDir: string,
   name: string,
@@ -51,14 +49,11 @@ export async function createPage(
   return ok({ id, path: file })
 }
 
-/** Relocate a page file and stamp the edit. A rename and a move are the same write to disk and
- *  both change the page, so they share one primitive; governing only modified_at leaves every
- *  other frontmatter key untouched. */
+/** A rename and a move are the same write to disk, so they share one primitive; governing only
+ *  modified_at leaves every other frontmatter key untouched. */
 async function relocatePage(absFile: string, target: string): Promise<void> {
-  // Under the SOURCE path's lock — the same key every other write to this page takes. An
-  // in-flight body or value write finishes before the file moves; one that queues behind the
-  // move finds its path gone and fails not-found, rather than recreating the vacated file
-  // around its own stale content and leaving a ghost beside the renamed page.
+  // Under the SOURCE path's lock, the same key every other write to this page takes: a write
+  // queued behind the move fails not-found rather than recreating the vacated file as a ghost.
   await serializeOnFile(absFile, async () => {
     recordWrite(absFile)
     recordWrite(target)
@@ -74,8 +69,7 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
   })
 }
 
-/** Rename a page file (filename = title). No-op when unchanged; bumps modified_at
- *  on a real rename — the title changed, which counts as an edit. */
+/** Rename a page file (filename = title). No-op when unchanged. */
 export async function renamePage(
   absFile: string,
   newName: string,
@@ -88,10 +82,9 @@ export async function renamePage(
   return ok({ path: target })
 }
 
-/** Replace the body, bumping modified_at. Governs only modified_at, so all other
- *  frontmatter (id, Contexts, properties, foreign keys, comments) is preserved. */
+/** Governs only modified_at, so all other frontmatter is preserved. */
 export async function updatePageBody(absFile: string, body: string): Promise<Result<null>> {
-  // Locked here rather than at the caller: the existence check and the write have to sit inside
+  // Locked here rather than at the caller: the existence check and the write must sit inside
   // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
   return serializeOnFile(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
@@ -100,10 +93,8 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
   })
 }
 
-/** Move a page to a different container folder (same filename), bumping modified_at — a location
- *  change is an edit. A Page's Collection membership is its folder location, so its wrapped
- *  name-keyed values re-join the destination schema on next read (unrecognized keys stay as
- *  preserved foreign frontmatter); no strip, no schema logic lives in the move. */
+/** A Page's Collection membership is its folder location, so its name-keyed values re-join the
+ *  destination schema on next read; no strip, no schema logic lives in the move. */
 export async function movePage(
   absFile: string,
   newParentDir: string,
@@ -117,17 +108,13 @@ export async function movePage(
 }
 
 /**
- * Set or clear one property value on a page. Governs only that property's own key, so every other
- * key — id, Contexts, sibling properties, foreign frontmatter, comments — is preserved. A null
- * value (or the `null` kind) or an empty one removes the key entirely; a page without a value
- * carries no key at all. The definition arrives resolved, and no key is ever built renderer-side
- * except for the optimistic patch.
+ * Governs only that property's own key. A null or empty value removes the key entirely.
  *
  * CALL THIS UNDER THE PAGE'S OWN `serializeOnFile` LOCK. Unlike `updatePageBody` it does not take
- * one for itself, because its callers need a WIDER span than the write: the definition has to be
- * resolved inside the same slot, or a rename sweep that passes this page between the read and the
- * write leaves the value written under a key the sweep has already moved past. Taking the lock
- * here would deadlock those callers, since the chain is sequential rather than reentrant.
+ * one for itself: its callers need a WIDER span than the write, since the definition must resolve
+ * inside the same slot or a rename sweep passing this page between read and write leaves the
+ * value written under a key the sweep already moved past. Taking the lock here would deadlock
+ * those callers — the chain is sequential, not reentrant.
  */
 export async function updatePageProperty(
   absFile: string,

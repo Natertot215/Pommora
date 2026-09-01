@@ -1,8 +1,7 @@
-// The write channels' confirmation: after a successful write, main applies the matching
-// change to the live tree — a pure transform where the request carries the whole fact, a
-// one-file disk re-read where the writer normalizes (exact by construction, through the
-// walk's own readers) — and the caller pushes when the tree object moved. A write with no
-// patch degrades to one verification walk, never to a silently stale tree.
+// The write channels' confirmation: after a successful write, main applies the matching change
+// to the live tree — a pure transform where the request carries the whole fact, or a one-file
+// disk re-read through the walk's own readers — and the caller pushes when the tree object
+// moved. A write with no patch degrades to one verification walk, never a silently stale tree.
 
 import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
@@ -40,9 +39,9 @@ export interface MutateOutcome {
 }
 
 /** The pure-transform arms — the request (plus what actually landed) carries the whole fact.
- *  `'no-change'` relocates the renderer's old `invisible` knowledge: a value write and a
- *  trash-internal write cannot move the tree, so the hottest ops cost zero IPC. Null = no
- *  transform owns the op; the caller confirms another way or walks. */
+ *  `'no-change'` means a value write or a trash-internal write cannot move the tree, so the
+ *  hottest ops cost zero IPC. Null = no transform owns the op; the caller confirms another
+ *  way or walks. */
 export function patchForMutation(
   tree: NexusTree,
   req: MutateRequest,
@@ -60,7 +59,7 @@ export function patchForMutation(
     case 'movePage': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
       // A null relocate means "already in that parent" only when it IS that parent — an
-      // unresolved node must walk, never commit an order-only patch that lies about the move.
+      // unresolved node must walk rather than commit an order-only patch that lies about the move.
       if (!moved && parentOf(req.path) !== req.newParentPath) return null
       return req.order
         ? (reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved)

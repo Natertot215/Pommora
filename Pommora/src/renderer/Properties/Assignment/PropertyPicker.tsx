@@ -115,8 +115,7 @@ export function PropertyOptionRows({
   onPick: (value: string) => void
 }): React.JSX.Element {
   if (options.length === 0)
-    // An empty option list (a Select/Multi with all options removed) — the spacer keeps the pane's
-    // proportions so it doesn't collapse to nothing. Tune here.
+    // The spacer keeps the pane's proportions so an emptied option list doesn't collapse to nothing.
     return <div style={{ minWidth: 96, height: 24 }} />
   return (
     <>
@@ -129,8 +128,6 @@ export function PropertyOptionRows({
           {contextOptions ? (
             <SpaceChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
           ) : (
-            // Select/multi options stay labeled even in a Compact column — you pick a value by name;
-            // status keeps its group-glyph picker.
             <OptionChip
               type={def.type}
               look={def.type === 'status' ? look : undefined}

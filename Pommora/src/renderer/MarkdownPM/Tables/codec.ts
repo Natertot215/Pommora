@@ -10,13 +10,10 @@ export interface RowSplit {
   segments: [number, number][] // untrimmed pipe-to-pipe span per cell (one flex item each)
 }
 
-// GFM table-cell escaping: a pipe inside a cell is backslash-escaped so it round-trips through the
-// pipe-delimited row without reading as a column boundary, and so is a backslash that would
-// otherwise be read as escaping one. A backslash carrying anything else is ordinary markdown the
-// cell is passing through — `a \* b` is an escaped asterisk to every reader, and doubling it here
-// would rewrite a hand-authored file into `a \\* b` the first time it passed through the editor.
-// Inverse pair — escape on commit (sync.ts), unescape at the cell-display boundary (MarkdownTable). The
-// model + segments stay in raw source form; only the editable display is unescaped.
+// GFM table-cell escaping: a pipe (and a backslash that would escape one) is backslash-escaped so it
+// round-trips without reading as a column boundary. A backslash carrying anything else is ordinary
+// markdown passing through — doubling it would rewrite `a \* b` into `a \\* b`. Inverse pair — escape
+// on commit (sync.ts), unescape at the cell-display boundary; model + segments stay in raw source form.
 export const escapeCell = (s: string): string => s.replace(/\\(?=[\\|])|\|/g, (m) => `\\${m}`)
 export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')
 

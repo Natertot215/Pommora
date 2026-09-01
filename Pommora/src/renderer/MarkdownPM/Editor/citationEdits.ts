@@ -3,9 +3,8 @@
 // Delete and its atomic backspace are the other one.
 //
 // Cascades are keyed to the RANGE, never to the gesture (B-11): a cascade fires only where the
-// deleted range is exactly the construct. That is what stops a wide sweep from silently taking
-// citations the reader never saw, and it is why backspace at a citation's start and the menu's
-// Delete land the same result while a mixed body-and-section sweep lands neither.
+// deleted range is exactly the construct — stopping a wide sweep from silently taking citations
+// the reader never saw.
 import { ChangeSet, type ChangeSpec, Text } from '@codemirror/state'
 import {
   type CitationEntry,
@@ -22,9 +21,8 @@ import {
 import { scanDoc } from '../Decorations/intent'
 import { diffAsSingleReplace } from './listDragModel'
 
-/** The line table plus the citation scan — the slice of a document scan every citation rule reads,
- *  which a caller can also answer from a bare split. The text comes with it so no rule has to be
- *  handed a document length that could disagree with the scan it arrived beside. */
+/** The slice of a document scan every citation rule reads. The text comes with it so no rule has to
+ *  be handed a document length that could disagree with the scan it arrived beside. */
 export type CitationSlice = DocLines & { citations: CitationScan }
 
 const erase = ({ from, to }: { from: number; to: number }): ChangeSpec => ({ from, to, insert: '' })
@@ -52,13 +50,11 @@ function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
   return runs.map((run) => erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine)))
 }
 
-/** A whole footnote: every row its label claims, and every marker bound to it. THE definition of
- *  what "the footnote" is, so the marker's cascade, the citation's cascade and a swept run of rows
- *  cannot come to disagree about how much of it goes. */
+/** The definition of what "the footnote" is, so the marker's cascade, the citation's cascade and a
+ *  swept run of rows cannot come to disagree about how much of it goes. */
 function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec[] {
   const labels = [...new Set(entries.map((e) => foldLabel(e.label)))]
-  // Line order, because `cutRows` merges neighbours by comparing their line numbers and a
-  // label-grouped list interleaves them.
+  // Line order, since `cutRows` merges neighbours by line number and a label-grouped list interleaves them.
   const rows = labels
     .flatMap((l) => citationsFor(scan.citations, l))
     .sort((a, b) => a.line - b.line)
@@ -66,30 +62,24 @@ function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec
   return [...markers.map(erase), ...cutRows(scan, rows)]
 }
 
-/** Deleting exactly one marker. It takes its footnote with it when it was the last reference — a
- *  footnote nothing points at is an orphan, and the gesture that made it one is the one that should
- *  answer for it. The whole footnote goes through the shared cut, which erases the marker along with
- *  it: being the last reference is exactly the statement that this marker is the only one it has. */
+/** Takes its footnote with it when it was the last reference — a footnote nothing points at is an
+ *  orphan, and the gesture that made it one is the one that should answer for it. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
   if (!entry || !isLastReference(scan.citations, marker)) return [erase(marker)]
   return cutFootnotes(scan, [entry])
 }
 
-/** Deleting exactly one citation. Every marker bound to it goes in the same transaction — the
- *  inverse of the body-side cascade, and the alternative is leaving raw `[^label]` scattered through
- *  prose that used to read as a number. */
+/** Every marker bound to the citation goes in the same transaction — the alternative is leaving raw
+ *  `[^label]` scattered through prose that used to read as a number. */
 export function deleteCitationChanges(scan: CitationSlice, entry: CitationEntry): ChangeSpec[] {
   return cutFootnotes(scan, [entry])
 }
 
 /** What deleting exactly `[from, to)` means for the footnotes, or null where that range is not
- *  exactly one construct — which is the whole of the range-keyed rule. A caret counts: backspace at
- *  a citation's content start IS that citation, and backspace against a marker's trailing edge IS
- *  that marker, because the marker is atomic and has no interior to land in.
- *
- *  Anything wider — a marker plus the words beside it, a sweep across body and section — returns
- *  null and the deletion goes through as the plain removal of what was swept. */
+ *  exactly one construct. A caret counts: backspace at a citation's content start is that citation,
+ *  and backspace against a marker's trailing edge is that marker, since the marker is atomic and has
+ *  no interior to land in. Anything wider returns null and the deletion goes through as a plain removal. */
 export function citationDeleteIntent(
   scan: CitationSlice,
   from: number,
@@ -104,8 +94,8 @@ export function citationDeleteIntent(
   }
   const marker = c.markers.find((m) => m.from === from && m.to === to)
   if (marker) return deleteMarkerChanges(scan, marker)
-  // Whole citation lines, and nothing else: every line the range covers has to be one this section
-  // owns, and the range has to start and end on those lines' own edges.
+  // Whole citation lines only: every line the range covers must be one this section owns, and the
+  // range must start and end on those lines' own edges.
   const covered = c.entries.filter(
     (e) => scan.lineStarts[e.line] >= from && lineEndOf(scan, e.lastLine) <= to,
   )
@@ -119,29 +109,22 @@ export function citationDeleteIntent(
 
 const numericLabel = (label: string): boolean => /^\d+$/.test(label)
 
-/** The whole section rewritten into canonical form: numeric labels renumbered to first-use order in
- *  the body and the section together, the rows sorted into that order, and the ones holding no
- *  position — an orphan, a duplicate that lost — collected below them.
+/** The whole section rewritten into canonical form: numeric labels renumbered to first-use order,
+ *  rows sorted into that order, and the ones holding no position (an orphan, a losing duplicate)
+ *  collected below them. Every creation and deletion gesture ends here, so order and labels are
+ *  settled in one place. Numeric labels are the gesture's to rewrite; a word label is the user's and
+ *  only ever moves.
  *
- *  Every creation and deletion gesture ends here, so the order a reader sees and the labels on disk
- *  are settled in one place rather than three. Numeric labels are the gesture's to rewrite; a word
- *  label is the user's and only ever moves. A label a renumber cannot claim, because a row that
- *  keeps its own already holds it, is left where it is rather than minted into a collision.
- *
- *  The result is diffed back rather than derived edit by edit: a reorder's edits do not commute, and
- *  the differ's trimmed prefix also keeps the replacement from ever starting on the section's first
- *  offset — every citation opens `[^`, so the change begins inside the section. */
+ *  The result is diffed back rather than derived edit by edit, since a reorder's edits do not commute. */
 export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
   const { text, lines, lineStarts, citations: c } = scan
   if (c.entries.length === 0) return []
 
   const placed = c.entries.filter((e) => e.ordinal !== null)
   const loose = c.entries.filter((e) => e.ordinal === null)
-  // A number is genuinely occupied only by a row that KEEPS it. An orphan keeps its own; a duplicate
-  // that lost travels with the winner it shares a label with, so its number is being vacated. And a
-  // rename this pass refuses leaves that row's own number standing, which can occupy the number the
-  // next row wanted — so the set is grown until it stops growing, and no two rows can be renamed
-  // onto one label and silently fused.
+  // A number is genuinely occupied only by a row that keeps it: a rename this pass refuses leaves
+  // that row's own number standing, which can occupy the number the next row wanted — so the set is
+  // grown until it stops growing, and no two rows can be renamed onto one label and silently fused.
   const shadowed = new Set(placed.map((e) => foldLabel(e.label)))
   const held = new Set(
     loose

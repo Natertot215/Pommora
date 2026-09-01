@@ -1,7 +1,6 @@
 // Module state, never render state. Tab ids re-mint at every summon/restore, so the map lives and
-// dies with the OPEN window — window close/overtake/adopt clear it wholesale; a tab close drops
-// its key. A capture landing under an already-closed id (the store-first close beats the unmount
-// capture) leaves one inert entry, reaped by the next wholesale clear.
+// dies with the open window — close/overtake/adopt clear it wholesale, a tab close drops its key.
+// A capture landing under an already-closed id leaves one inert entry, reaped by the next clear.
 
 export interface WindowWarmEntry {
   editorState?: unknown

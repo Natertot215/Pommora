@@ -76,9 +76,8 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
       case 'title:copypath':
         void window.nexus.writeClipboard(pagePathText(page.path))
         return
-      // The authoring gestures and the two that act on a cell's value, named rather than caught:
-      // the action vocabulary is wider than any one menu, and an item this context never offered
-      // has no span or value here to act on.
+      // Named rather than caught: the action vocabulary is wider than any one menu, and an item
+      // this context never offered has no span or value here to act on.
       case 'rename':
       case 'editLink':
         target.apply?.(action)

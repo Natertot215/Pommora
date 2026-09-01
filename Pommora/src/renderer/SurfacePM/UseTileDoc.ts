@@ -84,7 +84,7 @@ export function useTileDoc(host: BlockHostRef): BlockDocSession {
 
   // Structural mutations write the layout NOW, before their entry op runs, so a crash leaves an
   // invisible orphan rather than a dead box. Takes an updater so async callers compose with the
-  // LIVE layout, never a stale render capture.
+  // live layout, never a stale render capture.
   const commitLayout = useCallback(
     (update: SurfaceLayout | ((cur: SurfaceLayout) => SurfaceLayout)) => {
       const layout = typeof update === 'function' ? update(liveLayout.current) : update

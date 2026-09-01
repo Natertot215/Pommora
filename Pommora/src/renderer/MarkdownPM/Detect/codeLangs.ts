@@ -1,7 +1,6 @@
 // The languages a fence's info word can name, as plain data. It sits apart from the CodeMirror
 // wiring that loads them so the pure decoration layer can ask what a word resolves to without
-// pulling an editor into itself — one roster either way, since the wiring reads this list rather
-// than restating it.
+// pulling an editor into itself; the wiring reads this list rather than restating it.
 
 /** One language: what it is called, and every word a fence may spell it with. */
 export interface CodeLang {

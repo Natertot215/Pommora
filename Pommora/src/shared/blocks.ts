@@ -1,8 +1,7 @@
 // The host-agnostic contract a BlockHost carries: a SurfacePM layout tree under `layout`,
-// tagged-union tile payloads under `blocks`, and the host lock under `blocks_locked`. Entries
-// ride RAW through reads and writes so foreign or future tile types survive rewrites;
-// `knownBlock` is the read lens typing the entries this build understands. The layout's raw
-// wire schemas live here so main and the renderer validate one shape.
+// tagged-union tile payloads under `blocks`, and the host lock under `blocks_locked`. Entries ride
+// RAW through reads and writes so foreign or future tile types survive rewrites; `knownBlock` is
+// the read lens typing the entries this build understands.
 
 import { z } from 'zod'
 import type { ViewButton, ViewStyle } from './types'
@@ -79,9 +78,9 @@ export interface MarkdownBlockEntry {
   id: string
   type: 'markdown'
   style?: BlockStyle
-  /** Per-tile content lock: frozen prose can't be entered for editing. Absent = unlocked. */
+  /** Frozen prose can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
+  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
@@ -94,25 +93,23 @@ export interface PageBlockEntry {
   style?: BlockStyle
   banner?: boolean
   title?: boolean
-  /** Per-tile content lock: a frozen page embed can't be entered for editing. Absent = unlocked. */
+  /** A frozen page embed can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
+  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
-/** One view a view-embed tile carries: its own source container + the copied
- *  config (snapshotted at pick time, never synced). The config's `id` is
- *  payload-local, minted at copy — never the source view's id and never the
- *  DEFAULT_VIEW_ID mint sentinel; both are live keys outside the payload. */
+/** One view a view-embed tile carries: its own source container + the copied config (snapshotted
+ *  at pick time, never synced). The config's `id` is payload-local, minted at copy — never the
+ *  source view's id and never the DEFAULT_VIEW_ID mint sentinel. */
 export interface EmbeddedView {
   source_id: string
   config?: unknown
 }
 
-/** View embed: `views` is the switcher's list; `active` indexes into it. The header
- *  chrome follows the page embed's absent-=-shown convention — `title` hides the title row,
- *  `icon` the view icon beside it — and the switcher reuses the container presentation vocabulary
- *  (`view_button` icon/labeled pills, `view_style` toolbar/dropdown), defaulting labeled + toolbar. */
+/** View embed: `views` is the switcher's list; `active` indexes into it. The header chrome follows
+ *  the page embed's absent-=-shown convention — `title` hides the title row, `icon` the view icon
+ *  beside it — and the switcher reuses the container presentation vocabulary. */
 export interface ViewBlockEntry {
   id: string
   type: 'view'
@@ -126,10 +123,10 @@ export interface ViewBlockEntry {
   title_level?: number
   view_button?: ViewButton
   view_style?: ViewStyle
-  /** Per-tile config lock: freezes this embed's view config + view CRUD (data interaction stays
-   *  live). The SettingsPane footer lock writes it; absent = unlocked. */
+  /** Freezes this embed's view config + view CRUD (data interaction stays live). The SettingsPane
+   *  footer lock writes it; absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
+  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
@@ -221,9 +218,8 @@ export interface BlockDocPatch {
   locked?: boolean
 }
 
-/** Main-side gate for a blocks:save patch (the views:save convention) — a shape CHECK
- *  only: the ORIGINAL values are what get written, since zod's parse output strips
- *  unknown keys and foreign keys must survive. Returns the problem, or null. */
+/** Main-side gate for a blocks:save patch — a shape CHECK only: the ORIGINAL values are what get
+ *  written, since zod's parse output strips unknown keys and foreign keys must survive. */
 export function blockPatchProblem(patch: BlockDocPatch): string | null {
   if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
     return 'Malformed layout.'

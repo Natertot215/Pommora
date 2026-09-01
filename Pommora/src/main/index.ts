@@ -347,15 +347,13 @@ async function prepareOpenedNexus(path: string): Promise<void> {
 }
 
 // Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt
-// save can't land in the NEW nexus's sidecars; the drop path is non-modal so the renderer
-// stays interactive through the adopt. A COUNT, not a flag: the open path runs more than one
-// pass, and a boolean would let whichever finishes first clear the suppression the other needs.
+// save can't land in the NEW nexus's sidecars. A COUNT, not a flag: the open path runs more than
+// one pass, and a boolean would let whichever finishes first clear the suppression the other needs.
 let adoptingDepth = 0
 const adopting = (): boolean => adoptingDepth > 0
 
-// `latchRecord: false` is the mid-session re-point's opt-out: only a genuine open latches the
-// record baseline — a re-point that latched would diff the live session against the launch
-// baseline, reporting every in-session change as drift and overwriting the closed-window record.
+// `latchRecord: false` is the mid-session re-point's opt-out — a re-point that latched would
+// diff the live session against the launch baseline, reporting every change as drift.
 async function adoptNexus(path: string, latchRecord = true): Promise<void> {
   adoptingDepth++
   try {

@@ -1,7 +1,5 @@
-// What a pasted URL becomes. Pure: a clipboard string, the selection, the settings and the
-// chord in; the text to insert out. Split from the editor's paste handler because the same answer
-// has to serve two editors — the page body and a table cell each build their own EditorView — and
-// because a decision this branchy is worth exercising without fabricating clipboard events.
+// What a pasted URL becomes. Pure, so the same decision serves both editors (page body and table
+// cell) and is testable without fabricating clipboard events.
 
 import { isValidLink } from './links'
 import { linkDisplayText, serializeLink } from './linkValue'
@@ -12,36 +10,31 @@ export interface PasteInput {
   /** Empty when the caret is bare. */
   selectionText: string
   pasteIntoText: boolean
-  /** The inverse chord was used, so whichever axis applies does the opposite. */
+  /** Inverts whichever axis applies. */
   inverse: boolean
   format: LinkDisplay
-  /** A page title already in the cache. Absent means Page Title has to ask for one. */
+  /** A cached page title; absent means Page Title has to fetch one. */
   title?: string
 }
 
-/** A link a paste should be written as, rather than the text it arrived as. */
 export interface LinkPaste {
   kind: 'link'
   text: string
-  /** The address the link points at, for a title fetch to resolve against. */
+  /** The address a title fetch resolves against. */
   target: string
-  /** Whether the label is standing in until a page title arrives. */
+  /** Whether the label is a placeholder pending a page title. */
   wantsTitle: boolean
 }
 
 export type PasteDecision =
-  /** Nothing to do — let the editor's own paste run. */
+  /** Let the editor's own paste run. */
   { kind: 'literal' } | LinkPaste
 
 const LITERAL: PasteDecision = { kind: 'literal' }
 
-/** The address a paste may format, or null.
- *
- *  Deliberately stricter than `isValidLink`, which asks whether something *would open* and therefore
- *  says yes to `App.tsx`, `readme.md` and `3.14` — all of them things a person copies constantly and
- *  none of them an address. A paste has to ask the different question of whether the user copied an
- *  address at all, and an explicit scheme is what answers it. Paste As uses the looser test, because
- *  there the user picked the form by hand. */
+/** Deliberately stricter than `isValidLink`, which also accepts things like `App.tsx` or `3.14` that
+ *  people copy constantly but aren't addresses; a paste requires an explicit scheme. Paste As uses
+ *  the looser test since there the user picked the form by hand. */
 export function pastedUrl(clipboard: string): string | null {
   const s = clipboard.trim()
   // One token, so a pasted document holding an address among prose stays a document.
@@ -57,20 +50,14 @@ const link = (text: string, target: string, wantsTitle = false): LinkPaste => ({
   wantsTitle,
 })
 
-/** The markdown a link takes in a given form. The editor's deferred title rewrite composes the same
- *  two steps against the same link once its fetch lands, and reads them here rather than spelling
- *  the shape out again — a paste and its swap-in can never disagree about the form.
- *
- *  The property codec's serializer does the writing, so a label carrying `]` or `\` is escaped
- *  exactly once and in exactly one place. */
+/** The editor's deferred title rewrite reads this same function once its fetch lands, so a paste and
+ *  its swap-in can never disagree about the form. */
 export function linkMarkdown(url: string, display: LinkDisplay, title?: string): string {
   return serializeLink({ url, alias: linkDisplayText(url, display, title) })
 }
 
-/** The link an address becomes in a given form: its markdown, and whether the label is only standing
- *  in until a fetched title arrives. Every writer of a formatted link comes through here — the paste,
- *  the Paste As pick, and the Format rewrite — so none of them can answer either question
- *  differently, and a link waiting on a title is announced the same way however it came to be. */
+/** Every writer of a formatted link — paste, Paste As, Format rewrite — comes through here, so a
+ *  link waiting on a title is announced the same way regardless of how it came to be. */
 export function linkPaste(url: string, display: LinkDisplay, title?: string): LinkPaste {
   return link(
     linkMarkdown(url, display, title),
@@ -84,14 +71,12 @@ export function decidePaste(input: PasteInput): PasteDecision {
   if (!target) return LITERAL
 
   // A selection chooses the wrap axis; a bare caret chooses the format axis. The chord inverts
-  // whichever one is in play, and only that one.
+  // only whichever axis is in play.
   const wrappable = input.selectionText !== '' && !/[\r\n]/.test(input.selectionText)
   if (wrappable && (input.inverse ? !input.pasteIntoText : input.pasteIntoText))
     return link(serializeLink({ url: target, alias: input.selectionText }), target)
 
-  // Not wrapping means the selection is simply replaced, which is an ordinary paste at a caret —
-  // and a caret paste formats, unless the chord asked for the literal text. A chord spent choosing
-  // the wrap axis does not flip the format a second time.
+  // A chord spent choosing the wrap axis does not also flip the format axis.
   if (!wrappable && input.inverse) return LITERAL
 
   return linkPaste(target, input.format, input.title)

@@ -109,7 +109,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
 
 describe('activeTokenIndices', () => {
   it('caret inside a token marks it active; before it does not', () => {
-    const t = 'a *b* c' // italic at [2,5]
+    const t = 'a *b* c'
     const tokens = tokenize(t)
     const idx = tokens.findIndex((tk) => tk.kind === 'italic')
     expect(activeTokenIndices(tokens, 3, 3).has(idx)).toBe(true)
@@ -120,7 +120,7 @@ describe('activeTokenIndices', () => {
   // aiming at the syntax, and reveals it like any other construct — the distinction is the gesture,
   // which the caller reports, not the offset.
   it('a caret rested on the closer by finishing leaves it rendered', () => {
-    const tokens = tokenize('[[P]]') // wikilink [0,5]
+    const tokens = tokenize('[[P]]')
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
     expect(activeTokenIndices(tokens, 5, 5, 5).has(idx)).toBe(false)
   })

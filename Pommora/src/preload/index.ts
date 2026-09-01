@@ -4,9 +4,8 @@ import type { Asks, Pushes, Tells } from '@shared/bridge'
 import type { Personalization } from '@shared/types'
 import type { Result } from '@shared/result'
 
-// Every dialer derives from the bridge map — the channel key is the only thing written here,
-// and its signature (arg names included) flows from `Asks`. A typo'd or drifted channel is a
-// compile error, never a dead line.
+// Every dialer derives from the bridge map — the channel key is the only thing written here, and
+// its signature flows from `Asks`. A typo'd or drifted channel is a compile error, never a dead line.
 const ask =
   <K extends keyof Asks>(k: K) =>
   (...args: Asks[K]['args']): Promise<Asks[K]['reply']> =>
@@ -33,8 +32,7 @@ const on =
 const api = {
   state: ask('nexus:state'),
   choose: ask('nexus:choose'),
-  // Resolve a dropped folder's path here (the renderer can't) and send only the
-  // path to main — the absolute path never enters web content.
+  // Resolve a dropped folder's path here (the renderer can't) and send only the path to main.
   openDropped: (file: File) => ask('nexus:openPath')(webUtils.getPathForFile(file)),
   openPage: ask('page:open'),
   updatePageBody: ask('page:updateBody'),
@@ -61,9 +59,8 @@ const api = {
     delete: ask('schema:delete'),
     assign: ask('schema:assign'),
   },
-  // `property.delete` is the global destructive op (snapshot, scrub every collection, purge
-  // caches, drop the def); `schema.delete` above is the per-Collection Remove (strip + cache
-  // restorably).
+  // `property.delete` is the global destructive op; `schema.delete` above is the per-Collection
+  // Remove (strip + cache restorably).
   property: {
     delete: ask('property:delete'),
     setOptions: ask('property:setOptions'),
@@ -115,8 +112,7 @@ const api = {
   devicePrefs: { load: ask('devicePrefs:load'), save: ask('devicePrefs:save') },
   rowMenu: ask('row-menu'),
   capture: { thumbnail: ask('capture:thumbnail'), evict: ask('nav:evictThumbs') },
-  // Persists one key; the tree surfaces current values, so there's no get. Hand-typed so the
-  // key↔value correlation the map's tuple can't express survives for callers.
+  // Persists one key; the tree surfaces current values, so there's no get.
   personalization: {
     set: <K extends keyof Personalization>(
       key: K,

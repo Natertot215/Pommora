@@ -21,9 +21,9 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   unparsed: Record<string, unknown>
 } {
   // File-shape iff `defs` is a plain object AND `order` is an array — both keys our writer
-  // always emits. A legacy bare-Record can collide on one (a def keyed "defs", junk keyed
-  // "order") but never both-with-these-shapes; and no per-VALUE check belongs here, because
-  // that's what let one junk entry misclassify a whole real file as legacy.
+  // always emits. A legacy bare-Record can collide on one but never both-with-these-shapes;
+  // no per-VALUE check belongs here, since that's what let one junk entry misclassify a whole
+  // real file as legacy.
   const fileShape: { defs: Record<string, unknown>; order: unknown[] } | null =
     isPlainObject(obj.defs) && Array.isArray(obj.order)
       ? { defs: obj.defs, order: obj.order }
@@ -52,9 +52,8 @@ export async function readRegistry(root: string): Promise<RegistryFile> {
   return normalizeRegistry(obj).registry
 }
 
-/** Every def in the nexus-wide cosmetic order — order-listed first, unlisted appended.
- *  ONE ordering rule, so a consumer never re-derives it. Both halves key on
- *  the MAP KEY, so a hand-edited key≠id desync lists once, never twice. */
+/** Every def in the nexus-wide cosmetic order — order-listed first, unlisted appended. ONE
+ *  ordering rule, so a consumer never re-derives it. */
 export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   const listed = new Set(reg.order)
   return [
@@ -67,8 +66,7 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
 
 /** Overwrite the whole registry file — module-private, so every write rides `mutateRegistry` and
  *  therefore the registry file's lock (a bare write outside it can lose a concurrent mutation's
- *  update). Takes the on-disk shape (defs loosely typed) so unparsed entries carry through
- *  unmodeled. */
+ *  update). */
 async function writeRegistry(
   root: string,
   registry: { order: string[]; defs: Record<string, unknown> },
@@ -78,11 +76,10 @@ async function writeRegistry(
 }
 
 /** Read-modify-write of the registry, under that file's own lock. `fn` returns the next registry
- *  to persist (or nothing to leave disk untouched, e.g. a validation failure) plus the caller's
- *  result. The read is strict: absent seeds an empty registry, unreadable/corrupt throws (landing
- *  as the op's error envelope) so the file is never replaced by what a failed read pretended it
- *  held. Entries that don't parse as defs ride through the write untouched, by id — `fn` never
- *  sees them, so it can never drop them. */
+ *  to persist (or nothing to leave disk untouched) plus the caller's result. The read is strict:
+ *  absent seeds an empty registry, unreadable/corrupt throws, so the file is never replaced by
+ *  what a failed read pretended it held. Entries that don't parse as defs ride through the write
+ *  untouched, by id — `fn` never sees them, so it can never drop them. */
 export function mutateRegistry<T>(
   root: string,
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
@@ -95,8 +92,8 @@ export function mutateRegistry<T>(
     if (next) {
       const defs: Record<string, unknown> = { ...next.defs }
       for (const [id, raw] of Object.entries(unparsed)) if (!(id in defs)) defs[id] = raw
-      // Unparsed ids keep their order membership too (appended — a repaired def re-lists
-      // rather than vanishing from the pane), while fn's own ordering stays authoritative.
+      // Unparsed ids keep their order membership too, appended, so a repaired def re-lists
+      // rather than vanishing from the pane.
       const order = [
         ...next.order,
         ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),

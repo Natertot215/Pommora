@@ -2,10 +2,9 @@ import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { readPageDetail } from '../Store/TabState'
 
 // The tile counterpart of the tab and preview warm caches: the outer editor tears a tile's DOM
-// down whenever it leaves the viewport or a rebuild drops the widget, and the nested editor
-// re-creates from scratch — this holds its doc, selection, undo history, and scroll for the
-// session, keyed by the full host chain so the same page embedded under two hosts keeps two
-// positions. In-memory only: a fresh session mounts cold.
+// down whenever it leaves the viewport, and the nested editor re-creates from scratch — this
+// holds its doc, selection, undo history, and scroll for the session, keyed by the full host
+// chain so the same page embedded under two hosts keeps two positions. In-memory only.
 const tileWarm = new Map<string, { editorState: unknown; scrollTop: number }>()
 
 export function tileWarmSeam(chain: readonly string[]): WarmSeam {
@@ -30,10 +29,9 @@ export function tileWarmSeam(chain: readonly string[]): WarmSeam {
 }
 
 // The browser zeroes every scroller inside a disconnected subtree, and the outer editor detaches
-// tile DOM mid-sync whenever it re-slots a rebuild's range — silently: no scroll event, no
-// unmount, and a full-reuse re-slot skips the widget callbacks entirely. So warm editors register
-// a self-check here, and the host editor runs the set from its measure phase after any update on
-// a tile-bearing doc — the one signal that always accompanies a re-slot.
+// tile DOM mid-sync whenever it re-slots a rebuild's range — silently, with no scroll event or
+// unmount. So warm editors register a self-check here, and the host editor runs the set from its
+// measure phase after any update on a tile-bearing doc.
 const heals = new Set<() => void>()
 
 export function registerScrollHeal(fn: () => void): () => void {

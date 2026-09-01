@@ -3,11 +3,8 @@
 import { z } from 'zod'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS, type PropertyDefinition } from './properties'
 
-/** A url column's looks ARE the link forms — one vocabulary for how a link reads, whether it is read
- *  from a property's own Format, a view's column, or a link in a page body. The two it used to carry
- *  (`title`, `full`) named the same idea in words nothing else used, and offered two of three. They
- *  are simply gone: the schema drops a value it no longer knows, so a column saved with one falls
- *  back to its property's Format, which is what it was showing anyway. */
+/** A url column's looks ARE the link forms — one vocabulary for how a link reads, whether from a
+ *  property's own Format, a view's column, or a link in a page body. */
 export const COLUMN_LOOKS = [
   'standard',
   'compact',
@@ -38,9 +35,9 @@ export type TimeFormat = (typeof TIME_FORMATS)[number]
 export const WEEKDAY_FORMATS = ['long', 'short', 'none'] as const
 export type WeekdayFormat = (typeof WEEKDAY_FORMATS)[number]
 
-/** One column's saved style entry. Loose + per-field catch ⇒ a bad value drops that field,
- *  never the entry; unknown keys ride through. Number FORMAT is def-level (property-wide), not here —
- *  a number's per-view style is its `look` (number/bar). */
+/** Loose + per-field catch ⇒ a bad value drops that field, never the entry; unknown keys ride
+ *  through. Number FORMAT is def-level (property-wide), not here — a number's per-view style is
+ *  just its `look` (number/bar). */
 export const columnStyle = z.looseObject({
   look: z.enum(COLUMN_LOOKS).optional().catch(undefined),
   date_format: z.enum(DATE_FORMATS).optional().catch(undefined),
@@ -49,9 +46,7 @@ export const columnStyle = z.looseObject({
 })
 export type ColumnStyle = z.infer<typeof columnStyle>
 
-/** The type-default style — string-keyed so `shared/` needs nothing from the renderer's
- *  `declaredType`. Status and select/multi share the Standard/Compact axis; the shape stays each
- *  type's own (pill for status, tag for select). */
+/** String-keyed so `shared/` needs nothing from the renderer's `declaredType`. */
 export function defaultStyleFor(
   declaredType: string | undefined,
   /** The column's property, for the one type whose default look is a setting rather than a constant. */
@@ -60,6 +55,7 @@ export function defaultStyleFor(
   nexusDateFormat?: DateFormat,
 ): ColumnStyle {
   switch (declaredType) {
+    // Status and select/multi share the Standard/Compact axis; the shape stays each type's own.
     case 'status':
     case 'select':
     case 'multi_select':

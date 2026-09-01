@@ -82,7 +82,7 @@ describe('blockAt', () => {
   it('a thematic break is its own block and is never absorbed by an adjacent paragraph', () => {
     const doc = 'para one\n---\npara two'
     expect(blockAt(doc, 0)?.kind).toBe('paragraph')
-    expect(slice(doc, blockAt(doc, 0))).toBe('para one') // stops at the hr
+    expect(slice(doc, blockAt(doc, 0))).toBe('para one')
     const hr = blockAt(doc, doc.indexOf('---'))
     expect(hr?.kind).toBe('hr')
     expect(slice(doc, hr)).toBe('---')
@@ -122,9 +122,9 @@ describe('blockAt', () => {
 
   it('a multi-line list item keeps its wrapped body in the list block', () => {
     const doc = '- item one\n  wrapped text\n- item two'
-    expect(slice(doc, blockAt(doc, 0))).toBe(doc) // from the marker
+    expect(slice(doc, blockAt(doc, 0))).toBe(doc)
     const wrap = blockAt(doc, doc.indexOf('wrapped'))
-    expect(wrap?.kind).toBe('list') // the wrapped line is the list, not an orphan paragraph
+    expect(wrap?.kind).toBe('list')
     expect(slice(doc, wrap)).toBe(doc)
   })
 
@@ -249,7 +249,7 @@ describe('blockAt', () => {
     const doc = '- item one\n  $$\n  x\n\n  y\n  $$\n- item two'
     const b = blockAt(doc, 0)
     expect(b?.kind).toBe('list')
-    expect(slice(doc, b)).toBe(doc) // the run holds both items and the whole formula
+    expect(slice(doc, b)).toBe(doc)
     expect(blockAt(doc, doc.indexOf('  x'))?.kind).toBe('math')
   })
 
@@ -276,7 +276,7 @@ describe('blockAt', () => {
     ])
   })
 
-  // A code/table block on the FIRST line looks its previous line up off the top edge — that neighbor
+  // A code/table block on the first line looks its previous line up off the top edge — that
   // lookup must not crash the editor's initial parse.
   it('a doc starting with a code fence does not crash and starts a code block at 0', () => {
     const doc = '```js\nconst x = 1\n```\npara'
@@ -329,8 +329,7 @@ describe('embed blocks', () => {
   })
 })
 
-// The citations section owns no block, the way a blank line owns none — no grip on its rows, no drop
-// target inside it, and no absorption into the paragraph above.
+// The citations section owns no block, the way a blank line owns none.
 describe('the citations section is inert to the block layer', () => {
   const doc = 'intro line\n\nbody [^1] text\n\n[^1]: one\ncontinued\n[^2]: two'
 

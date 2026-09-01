@@ -16,14 +16,10 @@ interface LinkHit extends PointerTarget {
   target: MdTarget
 }
 
-// The external markdown link under a pointer gesture. Works even when the markers are hidden
-// off-caret, since the source still holds them.
-//
-// Where the pointer landed is asked of the drawn label rather than computed from offsets:
-// `posAtCoords` clamps to the nearest RENDERED position and a valid link's `[` and `](url)` are
-// replaced to zero width, so a click in the space past a short label resolves back onto the label's
-// last character. Following that would launch the system browser for a link the pointer never
-// touched. An invalid link draws its whole syntax, so there's nothing beside it to clamp from.
+// The external markdown link under a pointer gesture. `posAtCoords` clamps to the nearest rendered
+// position, and a valid link's `[` and `](url)` are replaced to zero width, so a click past a short
+// label resolves back onto its last character — following that would launch the browser for a link
+// never touched. An invalid link draws its whole syntax, so there's nothing beside it to clamp from.
 function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
@@ -51,8 +47,8 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
 }
 
 /** Where a markdown link's target leads, for a caller with no editor to hit-test against — a
- *  resting table cell reads the same answer the body's own click path does, so a link can't be
- *  colored as a page and then opened as a website. Null when it names nothing to follow. */
+ *  resting table cell reads the same answer the body's own click path does. Null when it names
+ *  nothing to follow. */
 export function followTarget(
   target: MdTarget,
   url: string,
@@ -69,8 +65,8 @@ export function followTarget(
 }
 
 /** What a dwell over a markdown link blooms — the page card for a target naming a page, the live
- *  site card for a web address. Normalized to what a guest can actually load: the attach gate
- *  refuses anything but http(s), so a mailto: arms nothing rather than a blank card. */
+ *  site card for a web address. The attach gate refuses anything but http(s), so a mailto: arms
+ *  nothing rather than a blank card. */
 export function dwellTarget(
   target: MdTarget,
   url: string,
