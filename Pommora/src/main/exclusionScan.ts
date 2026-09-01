@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { parseGovernedKey } from '@shared/governedKeys'
 import { KIND_ID_KEY } from '@shared/identity'
 import { ok, type Result } from '@shared/result'
+import { PAGE_STAMP_KEYS } from '@shared/schemas'
 import type { ClearReport } from '@shared/types'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
 import { assetMatcher, rootSegs } from './exclusion'
@@ -24,7 +25,7 @@ const AGENDA_CONFIGS: readonly string[] = [
   SIDECAR_FILENAME.taskConfig,
   SIDECAR_FILENAME.eventConfig,
 ]
-const IDENTITY_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
+const BOOKKEEPING_KEYS: readonly string[] = [...Object.values(KIND_ID_KEY), ...PAGE_STAMP_KEYS]
 
 export async function excludedArtifacts(
   root: string,
@@ -71,7 +72,7 @@ function clearRewrite(preserveProperties: boolean): RewriteText {
       const parsed = parseGovernedKey(k)
       return parsed ? [{ key: k, name: parsed.name }] : []
     })
-    const identity = keys.filter((k) => IDENTITY_KEYS.includes(k))
+    const bookkeeping = keys.filter((k) => BOOKKEEPING_KEYS.includes(k))
     let text = content
     if (preserveProperties) {
       for (const { key, name } of governed) {
@@ -79,7 +80,9 @@ function clearRewrite(preserveProperties: boolean): RewriteText {
         if (renamed !== null) text = renamed
       }
     }
-    const remove = preserveProperties ? identity : [...identity, ...governed.map((g) => g.key)]
+    const remove = preserveProperties
+      ? bookkeeping
+      : [...bookkeeping, ...governed.map((g) => g.key)]
     if (remove.length > 0) text = mergeFrontmatter(text, {}, remove, splitEnvelope(text).body)
     return text === content ? null : text
   }
@@ -93,8 +96,8 @@ export function clearConfirmCopy(
   return {
     message: `Clear Pommora’s data from ${folders}?`,
     detail: preserveProperties
-      ? 'Pommora’s container files are removed and each page’s identity key is dropped; the property and Context values a page holds are kept as ordinary frontmatter. This cannot be undone.'
-      : 'Pommora’s container files are removed and each page’s identity key and property values are deleted outright. This cannot be undone.',
+      ? 'Pommora’s container files are removed and each page’s identity key and timestamps are dropped; the property and Context values a page holds are kept as ordinary frontmatter. This cannot be undone.'
+      : 'Pommora’s container files are removed and each page’s identity key, timestamps, and property values are deleted outright. This cannot be undone.',
   }
 }
 
