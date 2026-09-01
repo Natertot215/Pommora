@@ -26,16 +26,19 @@ How to run, test, and not break the app while working on it. For how the app its
 - **`biome lint` exits 0 WITH warnings** — read the `Found N warnings` line; the zero-warnings gate lives in the text, not the exit code.
 - **CDP drives most surfaces but not all** — synthetic clicks work on tabs/rows/buttons but never fire `PickerMenu` items (drive those with `el.click()` inside `Runtime.evaluate`); native Electron menus are OS-level, so unit-test their models and leave the popup to a human. A CDP drag must pass `buttons: 1` on its move events or it aborts on the first move.
 - **Measure the built CSS in headless Chrome** after one failed static derivation for cross-zoom alignment: read `getBoundingClientRect` across a zoom sweep, comparing the glyphs users see rather than container edges. A live screenshot isn't evidence while `*.css.ts` changes are in flight (the stale serve stacks old rules under new).
+- **A Features doc's on-disk examples are claims, not evidence** — a format line in a doc was written against a belief about the writer; verify a serialized shape against a real file in the vault or against the serializer itself before designing around it, and audit value shapes type by type rather than key names alone.
 - **A mechanical sweep verifies before it writes** — dry-run the pattern and read what it would touch. A token sweep must match Biome's wrapped form (`rg -U "var\(\s*--name"`), and one undefined var in a comma list (box-shadow, transition) silently voids the whole declaration. `rg -r` is `--replace`, not recursive.
 
 ### Parallel Write Agents
 
+- **Commit as soon as a gate is green.** A parallel session's commit-and-revert on the same tree rolls back every uncommitted edit inside its scope; stage explicit paths, never a directory, and attribute a surprise failure to the other session's dirty set before your own.
 - **Whole-tree git operations are forbidden** — `git stash` / `checkout .` / `clean` / `reset` act on everything, including other agents' in-flight files; an agent needing a clean baseline uses a worktree. Tell each agent the tree is shared and not clean.
 - **A store slice imports nothing that imports `store.ts`** — the composition root calls each `create*Slice` at module scope, so a cycle (reachable through a stylesheet's imports) throws `create…Slice is not a function` at boot while the suite still passes (tests enter at `store.ts`). What a slice needs of a hook module moves to a store-free module beside it.
 - **Running a second instance beside the live session:** the single-instance lock lives in userData, so set `app.setPath('userData', …)` from a `POMMORA_USERDATA` env at the top of `src/main/index.ts` (instrumentation — removed before committing, grep-verified gone), point it at a scratch dir with its own `pommora.json`, and launch with `--remote-debugging-port=9333`; drive it over CDP with `Runtime.evaluate` against `window.nexus.*`.
 
 ### Data-Layer Traps
 
+- **A test nexus without `.nexus/nexus.json` is raw mode** — the walk ignores every sidecar, so a Collection's assignments and views read as absent; a fixture that exercises schema writes seeds an identity first. And `refreshTree` joins an in-flight walk, so a test that writes then walks reads a pre-write tree — use `refreshAfterWrite`, which bumps the epoch and re-walks.
 - **SQLite `length` counts code points; JS `.length` counts UTF-16 units** — they diverge on astral characters, so offset math must agree on which it means.
 - **"No result" (`null`) and "no index" (empty array) are distinct types** — collapsing them loses the distinction the caller needs.
 - **Containment is not reachability** — an entity inside a folder chain isn't necessarily reachable through it; check the actual path, not the prefix.
