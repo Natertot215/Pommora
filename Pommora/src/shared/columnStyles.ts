@@ -67,6 +67,7 @@ export function defaultStyleFor(
     case 'url':
       return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time':
       return { date_format: nexusDateFormat ?? 'full', time_format: 'none', weekday: 'none' }
     case 'number':

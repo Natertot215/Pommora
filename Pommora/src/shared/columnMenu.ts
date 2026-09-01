@@ -87,6 +87,7 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
         ? [look('Number', 'number'), look('Bar', 'bar')]
         : [look('Number', 'number')]
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time': {
       const date = row('date_format', current.date_format)
       const weekday = row('weekday', current.weekday)

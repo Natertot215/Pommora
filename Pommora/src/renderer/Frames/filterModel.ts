@@ -172,6 +172,7 @@ export function operatorsFor(
     case 'number':
       return NUMBER_OPS
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time':
       return DATE_OPS
     case 'checkbox':

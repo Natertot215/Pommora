@@ -6,12 +6,7 @@
 import type { SortCriterion } from '@shared/views'
 import type { ViewRow } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
-import {
-  declaredType,
-  fileName,
-  modifiedStampString,
-  resolveFieldValue,
-} from '@renderer/Properties/value'
+import { declaredType, fileName, resolveFieldValue } from '@renderer/Properties/value'
 import { linkDisplayText } from '@shared/linkValue'
 
 type SortKey = number | string
@@ -24,7 +19,6 @@ interface ResolvedCriterion {
 }
 
 const numericLess: Less = (a, b) => (a as number) < (b as number)
-const plainLess: Less = (a, b) => (a as string) < (b as string)
 const ciLess: Less = (a, b) =>
   (a as string).localeCompare(b as string, undefined, { sensitivity: 'accent' }) < 0
 
@@ -99,25 +93,12 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
   }
 }
 
-function modifiedStamp(row: ViewRow): number {
-  const s = modifiedStampString(row)
-  if (!s) return Number.NEGATIVE_INFINITY
-  const t = Date.parse(s)
-  return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t
-}
-
 /** Resolve one criterion to an extract+less pair, or null when the property isn't sortable
  *  (unknown id, or a Context column). */
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
-  switch (c.property_id) {
-    case RESERVED_PROPERTY_ID.title:
-      return { extract: (r) => r.title, less: ciLess, ascending }
-    case RESERVED_PROPERTY_ID.id:
-      return { extract: (r) => r.id, less: plainLess, ascending }
-    case RESERVED_PROPERTY_ID.modifiedAt:
-      return { extract: modifiedStamp, less: numericLess, ascending }
-  }
+  if (c.property_id === RESERVED_PROPERTY_ID.title)
+    return { extract: (r) => r.title, less: ciLess, ascending }
   switch (declaredType(c.property_id, schema)) {
     case 'select':
     case 'status': {
@@ -137,6 +118,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'number':
       return { extract: (r) => numberOf(r, c.property_id, schema), less: numericLess, ascending }
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time':
       return { extract: (r) => dateOf(r, c.property_id, schema), less: numericLess, ascending }
     case 'checkbox':

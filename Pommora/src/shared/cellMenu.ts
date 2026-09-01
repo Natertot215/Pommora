@@ -86,7 +86,12 @@ function baseCellMenu(
   if (type === 'file') return { kind: 'file', onChip }
   if (type === 'status' || type === 'datetime')
     return { kind: 'style-only', type, current: style, clearable: filled }
-  if (type === 'checkbox' || type === 'number' || type === 'last_edited_time') {
+  if (
+    type === 'checkbox' ||
+    type === 'number' ||
+    type === 'created_time' ||
+    type === 'last_edited_time'
+  ) {
     return {
       kind: 'style-only',
       type,
