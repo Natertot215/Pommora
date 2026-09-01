@@ -18,7 +18,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 3. A reserved-name rule (`KIND_ID_KEY` ∪ `PAGE_MODELED_KEYS`, plus a leading `<`) in `invalidPropertyName`; a rename onto a key any Collection page already holds is refused before the journal is staged.
 4. Select/Status are one-element lists on disk; one shape rule for the option types (normalize to list; Select/Status keep the last valid element; Multi-Select keeps every valid one); `rewriteRaw` takes the array path for all option types and loses its `type` parameter; checkbox `false` decodes as no value.
 5. One reconcile with a property arm and `adoptions`, run by the one writer when handed a world, whole-file, with the three precedence rules; the strict Contexts world loads only when the drift pre-check fails and is skipped when its load fails on a property write; adoption is `mutateRegistry`-only; the property arm is the one standing check.
-6. The content index records all keys; `SCHEMA_VERSION` is 2; `renameCascade` filters frontmatter patches against the registry.
+6. The content index records all keys; an index-generation mismatch truncates the two index tables (never the database); `renameCascade` filters frontmatter patches against the registry.
 7. A `values:changed` push fed by the watcher and by main's own writes (operation-level, per container, with page ids); the epoch union; id-scoped override retirement with an in-flight marker; `refreshValues` deleted; `GroupFrame` subscribes.
 8. Two toggles in Settings' Properties leaf: the on-load repair sweep (default off, detection in the seed loop, deep-equal drift) and Capitalize All Metadata (Title Case each word, every property-name render site except the rename fields).
 9. Clear Exclusion strips sidecars, `<Context>` keys, and the stamps only; `preservePropertiesOnClear` and the unwrap arm are deleted.
@@ -61,7 +61,8 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 
 - Gates from `Pommora/`: `npm run typecheck && npm run test && npm run lint`, `set -o pipefail` on any pipeline, and `Found 0 warnings` read from lint's text.
 - Biome formats on write via the PostToolUse hook; an Edit failing on whitespace means re-read and retry. Shell-driven edits run `npm run format` after.
-- One tree-touching writer at a time. Never `git stash`, `checkout .`, `clean`, or `reset` — another session may be active (it currently holds uncommitted work in `SettingsWindow.tsx` and `shared/types.ts`; Phase 5 waits for that to land). Stage explicit paths only. Nathan's unattributed doc edits ride the commit at hand.
+- One tree-touching writer at a time. Never `git stash`, `checkout .`, `clean`, or `reset` — another session may be active. Stage explicit paths only. Nathan's unattributed doc edits ride the commit at hand.
+- `src/main` and `src/preload` don't hot-reload: after any main-side task the dev process restarts before anything is verified live; 12 of the 23 tasks touch main.
 - `src/shared` imports no fs, no React, and nothing from `src/main`. Main owns the filesystem. IPC returns the `Result` envelope; a `window`-kind handler self-wraps.
 - Comments: the shipped code carries at most one load-bearing why per change; never restate a value; never narrate. The plan's fences carry only path markers and contract edges — an implementor transcribes nothing else into code.
 - Commit granularity: one commit per task, message on the task heading, ticks in the same commit.
@@ -85,10 +86,10 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 **Dead Vocabulary**
 
 - `wrapKey` · `parseGovernedKey` · `isGovernedKey` · `governedKeys'` (the import path) · `GovernedLayer` → expect 0 in `src/`. Legitimate hits: none.
-- `propertyKey(` → 0. `preservePropertiesOnClear` → 0. `refreshValues` → 0. `propertyValueStands` → 0. `'prefer-new'` → 1 (`registryProperty.ts`, the during-sweep case).
+- `propertyKey(` → 0. `preservePropertiesOnClear` → 0. `refreshValues` → 0. `propertyValueStands` → 0. `'prefer-new'` → 3 (`pageFile.ts:120` the union member, `:166` the compare, `registryProperty.ts` the during-sweep case).
 - Control: `parseContextKey` → ≥ 6. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 4 opens it — from the first Phase 1 commit, the running build reads bare keys and a vault still holding `<Prop>` keys renders those values as foreign. Nothing closes it in code; **Gate 1's manual pass** closes it, and Nathan does not open NexusOS on a Phase 1+ build before then. Task 6's `SCHEMA_VERSION` bump rides Phase 1 so the index rebuilds on that same first open.
+**Hazard Window:** Task 4 opens it — from the first Phase 1 commit, the running build reads bare keys and a vault still holding `<Prop>` keys renders those values as foreign. Nothing closes it in code; **Gate 1's manual pass** closes it. **`npm run dev` reopens the last nexus by itself at launch (`index.ts:2127` → `openNexusSequence`)**, so between Task 4's commit and the pass, the dev instance is launched only against a scratch nexus — never NexusOS. Task 6's index generation rides Phase 1 so the index rebuilds on that same first open, leaving `local_state` whole.
 
 ---
 
@@ -248,7 +249,7 @@ export function optionValues(def: PropertyDefinition): string[] {
 **Verify — automated**
 
 - [ ] `npx vitest run src/main/CRUD/removeProperty` green, tests unmodified.
-- [ ] `rg -F "mergeFrontmatter(" src/main/CRUD/removeProperty.ts` → 0. Control: `rg -F "updatePageProperty(" src/main/CRUD` → 3.
+- [ ] `rg -F "mergeFrontmatter(" src/main/CRUD/removeProperty.ts` → 0. Control: `rg -F "updatePageProperty(" src/main/CRUD --glob '!*.test.*'` → 4 (the definition, `mutate.ts`, `restoreProperty.ts`, and this).
 - [ ] Full gates green.
 
 **Verify — user**
@@ -275,7 +276,7 @@ export function optionValues(def: PropertyDefinition): string[] {
 
 **Why:** One sigil, one layer. The property layer's ownership moves to the registry match (Task 5); what's left of the syntax module is three context helpers and three name helpers, each belonging beside its layer's other code.
 
-**Now** — `rg -l "@shared/governedKeys" src` → 12 (`contexts.ts`, `propertyValue.ts`, `governedSweep.ts`, `indexSeed.ts`, `restoreScrub.ts`, `exclusionScan.ts`, `registryProperty.ts`, `replaySchemaCascade.ts`, `RenameSlice.ts`, `PropertyFrame.tsx`, `propsAtRoot.ts`, `governedKeys.test.ts`):
+**Now** — `rg -l "governedKeys'" src` → 14 (the `@shared/…` importers: `governedSweep.ts`, `indexSeed.ts`, `restoreScrub.ts`, `exclusionScan.ts`, `registryProperty.ts`, `replaySchemaCascade.ts`, `Properties/schema.ts`, `RenameSlice.ts`, `PropertyFrame.tsx`, `propsAtRoot.ts`, and the relative `./governedKeys` importers `contexts.ts`, `propertyValue.ts`, `governedKeys.test.ts`, plus one more re-derived at execution):
 
 ```ts
 // src/shared/governedKeys.ts:12-16
@@ -324,8 +325,8 @@ export function invalidPropertyName(name: string): boolean
 **Verify — automated**
 
 - [ ] Red first: the context fixtures rewritten to `<…>` fail on the old sigil (`contexts.test`, `contextResolve.test` — expect ≥ 8 failures); then green.
-- [ ] `rg -F "@shared/governedKeys" src` → 0. Control: `rg -F "@shared/contexts" src` → ≥ 10.
-- [ ] `rg -F "'('" src/shared src/main` → 0. Control: `rg -F "'<'" src/shared/contexts.ts` → 1.
+- [ ] `rg -F "governedKeys'" src` → 0. Control: `rg -F "@shared/contexts" src` → ≥ 10.
+- [ ] `rg -F "['(', ')']" src` → 0. Control: `rg -F "['<', '>']" src/shared/contexts.ts` → 1.
 - [ ] Full gates green.
 
 **Verify — user**
@@ -367,7 +368,7 @@ export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<s
 
 **Verify — automated**
 
-- [ ] Red first: a `value.test.ts` case decoding `{ Status: 'Active' }` (bare key) against a `Status` def fails while `propertyKey` still wraps; then green. Fixtures across the wrapped-key test files (`rg -l "<Status>|<Stage>|<Tags>" src --glob '*.test.*'` → 30 today, re-derived at execution) rewrite to bare keys and stay green.
+- [ ] Red first: a `value.test.ts` case decoding `{ Status: 'Active' }` (bare key) against a `Status` def fails while `propertyKey` still wraps; then green. Fixtures across the wrapped-key test files (`rg -l "<Status>|<Stage>|<Tags>" src --glob '*.test.*'` → 16 today, re-derived at execution) rewrite to bare keys and stay green.
 - [ ] A new `properties.test.ts` case: `isRegisteredPropertyName('tags', names)` true only on exact case; `'Tags'` false when `'tags'` is registered.
 - [ ] `rg -F "propertyKey(" src` → 0. `rg -F "wrapKey" src` → 0. Control: `rg -F "def.name" src` → ≥ 20.
 - [ ] Full gates green.
@@ -376,11 +377,11 @@ export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<s
 
 - [ ] *(carried to Gate 1's stop)*
 
-#### Task 6: The four property-shape sites; the index records every key; `SCHEMA_VERSION` 2
+#### Task 6: The four property-shape sites; the index records every key; the index generation
 
 **Requirement:** 2, 6
 
-**Why:** Registering a property whose key already sits in the vault writes no file; an index filtered by "governed" would never see those pages and every cascade would miss them forever. Recording every key makes the index registry-independent, the rule the parse cache already follows; the gate moves to the two consumers. The version bump is what makes the first post-change open rebuild the stale wrapped-key rows.
+**Why:** Registering a property whose key already sits in the vault writes no file; an index filtered by "governed" would never see those pages and every cascade would miss them forever. Recording every key makes the index registry-independent, the rule the parse cache already follows; the gate moves to the two consumers. The stale wrapped-key rows must be rebuilt on the first post-change open — by truncating the two index tables, never by dropping `nexus.db`, which also holds page aliases and every dashboard layout (`local_state` scopes `aliases`, `blockDoc`; executed: a version mismatch removes them all).
 
 **Now**
 
@@ -406,8 +407,10 @@ const changedKeys = (raw: Raw, next: Raw): string[] =>
     const governed = parseGovernedKey(key)
     if (!governed) continue
     const standing = governed.layer === 'property' ? propertyValueStands(world.defs.get(key), raw) : contextTagStands(world.contextSpaces.get(key), raw)
-// src/main/Database/schema.ts:11
+// src/main/Database/schema.ts:8-11
+/** A mismatch drops + recreates the file. Bump when an EXISTING table's shape changes; … */
 export const SCHEMA_VERSION = 1
+// src/main/Database/open.ts:41-54 — the mismatch path: removeDbFiles(dbPath)
 ```
 
 **Becomes**
@@ -432,24 +435,28 @@ const changedKeys = (raw: Raw, next: Raw): string[] =>
     if (!def && title === null) continue
     const standing = def ? propertyValueStands(def, raw) : contextTagStands(world.contextSpaces.get(key), raw)
 // src/main/Database/schema.ts
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 1
+export const INDEX_GENERATION = 2 // a mismatch truncates page_values + indexed_files; local_state is untouched
+// src/main/Database/open.ts — after the schema check
+  if (readMeta(db, 'index_generation') !== String(INDEX_GENERATION)) { truncateIndex(db); writeMeta(db, 'index_generation', String(INDEX_GENERATION)) }
 ```
 
-The registry is read once before `renameCascade`'s loop; `restoreScrub`'s `Map.get` is the predicate. `frontmatterMentions` (`scan.ts:50`) keeps reading every string value — a foreign `[[Link]]` now reaches the mentions table, which is more correct, not less.
+The registry is read once before `renameCascade`'s loop; `restoreScrub`'s `Map.get` is the predicate. `frontmatterMentions` (`scan.ts:50`) keeps reading every string value — a foreign `[[Link]]` now reaches the mentions table, which is more correct, not less. `truncateIndex` is `DELETE FROM page_values; DELETE FROM indexed_files;` — the next seed re-reads everything once. `SCHEMA_VERSION` stays 1.
 
 **Assumed by:** Task 9 (`keyHolderFiles` on a bare name returns real holders), Task 21.
 
 **Verify — automated**
 
 - [ ] Red first (`indexSeed.test` or new): a page with `foo: bar` + `Status: [Active]` indexes **two** `page_values` rows; `queryKeyHolders('foo')` returns the page. Fails on the filtered version; then green.
-- [ ] Crossing test: register `Notes` after indexing a page holding `Notes: x` with no re-read → `keyHolderFiles(root, 'Notes', folders)` includes the page. Then, against a v1 `nexus.db` fixture, the opener recreates the file and the same query answers after the seed.
+- [ ] Crossing test: register `Notes` after indexing a page holding `Notes: x` with no re-read → `keyHolderFiles(root, 'Notes', folders)` includes the page.
+- [ ] Generation test (`open.test` or new): a db with `aliases`, `blockDoc`, and `folds` rows plus a stale `index_generation` opens with **all three rows intact** and `page_values` empty; the same db at the current generation opens with `page_values` intact. Red first — with `SCHEMA_VERSION` bumped instead, the rows-intact assertion fails.
 - [ ] `governedSweep.test` unchanged and green; `restoreScrub.test` context fixtures `<…>` green.
 - [ ] `rg -F "governedValues" src` → 0. Control: `rg -F "frontmatterValues" src` → ≥ 3.
 - [ ] Full gates green.
 
 **Verify — user**
 
-- [ ] First open after the pass: folds and tabs reset once. *(carried to Gate 1's stop)*
+- [ ] First open after the pass: aliases, dashboard layouts, folds, and tabs all still there. *(carried to Gate 1's stop)*
 
 #### Task 7: Clear Exclusion strips bookkeeping only
 
@@ -570,18 +577,19 @@ export async function keyHolderFiles(root, key, folders): Promise<string[]>
 export async function confirmedKeyHolders(root: string, key: string, folders: string[]): Promise<string[]>
 // src/main/CRUD/registryProperty.ts (editProperty, before stageRename)
     const to = typeof changes.name === 'string' ? normalizePropertyName(changes.name) : undefined
-    if (to !== undefined) {
+    const prior = (await readRegistry(root)).defs[propertyId]
+    if (to !== undefined && prior && to !== prior.name) {
       const holders = await confirmedKeyHolders(root, to, await collectionFolders(root))
       if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
     }
     const record = await stageRename(root, propertyId, changes.name)
 ```
 
-`confirmedKeyHolders` reads each candidate from `keyHolderFiles` and keeps the files whose frontmatter holds `key` — an unready index yields the whole Collection corpus as candidates, which is why the per-file read is unconditional. `KEY_REFUSAL.held = (name, n) => \`${n} page${n === 1 ? '' : 's'} already use "${name}" as a key.\``. `renameSweep`'s `prefer-new` stays, covering the one case left: a value written under the new name during the sweep. [[PropertiesPM]] Validation is rewritten here.
+`confirmedKeyHolders` reads each candidate from `keyHolderFiles` and keeps the files whose frontmatter holds `key` — an unready index yields the whole Collection corpus as candidates, which is why the per-file read is unconditional. The `to !== prior.name` gate mirrors `stageRename`'s own: a commit that normalizes back to the current name (`"Status "`) is a no-op, not a refusal against the property's own holders. `KEY_REFUSAL.held = (name, n) => \`${n} page${n === 1 ? '' : 's'} already use "${name}" as a key.\``. `renameSweep`'s `prefer-new` stays, covering the one case left: a value written under the new name during the sweep. [[PropertiesPM]] Validation is rewritten here.
 
 **Verify — automated**
 
-- [ ] Red first: rename `Status` → `foo` with a page holding `foo: bar` expected refused; fails (today it renames and drops); then green. A rename with **no** holder still succeeds and sweeps. Both halves of the guard: with the check disabled the refusal test goes red.
+- [ ] Red first: rename `Status` → `foo` with a page holding `foo: bar` expected refused; fails (today it renames and drops); then green. A rename with **no** holder still succeeds and sweeps. Renaming `Status` → `"Status "` succeeds as a no-op. Both halves of the guard: with the check disabled the refusal test goes red.
 - [ ] With no index (`sessionDb` not ready), a rename onto an **unheld** name succeeds — the corpus fallback confirms per file, not by candidacy.
 - [ ] `.nexus/property-cascade.json` is absent after a refusal (no stranded journal).
 - [ ] Full gates green.
@@ -665,7 +673,7 @@ Select/Status membership is no longer `strict`-gated — it is the read rule. `P
 
 **Verify — automated**
 
-- [ ] Red first in `propertyValue.test.ts`: `['Open','Active']` on Select → `Active`; `['Green','Blue']` against Red/Blue → `Blue`; `'Active'` scalar → `Active`; `['Wip']` unknown → null; `'zeta'` scalar on Multi-Select → `['zeta']`; `false` on checkbox → null; `encodeValue({kind:'select',value:'Active'})` → `['Active']`. Expect 7 failures, then green. Existing 22 stay green after fixture rewrite.
+- [ ] Red first in `propertyValue.test.ts`: `['Open','Active']` on Select → `Active`; `['Green','Blue']` against Red/Blue → `Blue`; `'Active'` scalar → `Active`; `['Wip']` unknown → null; `'zeta'` scalar on Multi-Select → `['zeta']`; `false` on checkbox → null; `encodeValue({kind:'select',value:'Active'})` → `['Active']`. Expect 7 failures, then green. Existing 27 stay green after fixture rewrite.
 - [ ] `filter.test`: "is empty" on a checkbox with `false` on disk → true (red first against `:333`).
 - [ ] `rg -F "kind: 'checkbox', value: raw" src` → 0. Control: `rg -F "optionList(" src/shared/propertyValue.ts` → 1 (the one call; the definition is `const optionList = (`).
 - [ ] Full gates green.
@@ -680,7 +688,7 @@ Select/Status membership is no longer `strict`-gated — it is the read rule. `P
 
 **Why:** Option rename and delete would otherwise silently skip every list-shaped Select/Status page (executed). With the list path universal the `type` argument has no reader.
 
-**Now** — `rg -F "type: PropertyType" src/main/CRUD/pageValue.ts src/main/CRUD/optionOps.ts src/main/CRUD/replaySchemaCascade.ts` → 5:
+**Now** — `rg -F "type: PropertyType" src/main/CRUD/pageValue.ts src/main/CRUD/optionOps.ts` → 8 (5 on the value-rewrite path, 3 legitimate survivors: `requireOptionType:32`, `RequireType:139`, `requireStatusType:180`):
 
 ```ts
 // src/main/CRUD/pageValue.ts:19-40
@@ -721,7 +729,7 @@ Foreign elements in the list ride through untouched, as today's array path alrea
 
 - [ ] Red first in `pageValue.test.ts`: `replacePageValue` on `Status:\n  - Active` → `Status:\n  - Live` (today returns null); `stripPageValue` on the same → key deleted. Then green. The scalar `Status: Active` case rewrites to a list — asserted.
 - [ ] `optionOps.test` 19 green after the fixtures go list-shaped.
-- [ ] `rg -F "type: PropertyType" src/main/CRUD/pageValue.ts src/main/CRUD/optionOps.ts` → 0. Control: `rg -F "requireOptionType" src/main/CRUD/optionOps.ts` → ≥ 2.
+- [ ] `rg -F "type: PropertyType" src/main/CRUD/pageValue.ts src/main/CRUD/optionOps.ts` → 3 (the three type-gate survivors named in Now; none on the rewrite path). Control: `rg -F "requireOptionType" src/main/CRUD/optionOps.ts` → ≥ 2.
 - [ ] Full gates green.
 
 **Verify — user**
@@ -774,15 +782,18 @@ export interface GovernedWorld {
 export interface ContextWorld extends GovernedWorld { registry: ContextsRegistry; spaceById: Map<string, SpaceRef> }
 export async function loadContextWorld(root: string): Promise<Result<ContextWorld>> // unchanged; defs: EMPTY
 export async function assignedDefs(root: string, collectionFolder: string | null): Promise<ReadonlyMap<string, PropertyDefinition>>
+// src/main/CRUD/assignment.ts (beside collectionFolders)
+export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> // the one Collection folder that is an ancestor; null for Agenda and sidecar roots
 ```
 
-`assignedDefs` serves from `getLiveTree()` when it holds this root (`CollectionNode.properties` is the resolved assignment) and from `readRegistry` + the Collection sidecar otherwise — the shape `restoreScrub.liveWorld` builds today, which now calls it. `spaceById` stays on `ContextWorld` because only the context write resolves Space ids.
+`assignedDefs` serves from `getLiveTree()` when it holds this root (`CollectionNode.properties` is the resolved assignment) and from `readRegistry` + the Collection sidecar otherwise — the shape `restoreScrub.liveWorld` builds today, which now calls it. `collectionFolderOf` is `(await collectionFolders(root)).find((f) => absFile.startsWith(f + sep)) ?? null` — `collectionFolders` returns only `kind === 'collection'` nodes, so exactly one is an ancestor of any page. `spaceById` stays on `ContextWorld` because only the context write resolves Space ids.
 
 **Assumed by:** Tasks 15, 16, 17, 21.
 
 **Verify — automated**
 
 - [ ] `assignedDefs` test: a Collection assigning `Status` only → map has `Status`, lacks a registered-but-unassigned `Priority`; `null` folder → empty map; tree-served and disk-served results agree (crossing test).
+- [ ] `collectionFolderOf`: a page two Sets deep resolves to its Collection; a `_space.json` path and an Agenda page resolve to null.
 - [ ] `contextWrite.test` 14 green unmodified; `restoreScrub.test` green.
 - [ ] Full gates green.
 
@@ -1024,11 +1035,12 @@ export async function loadGovernedWorld(root: string, absFile: string, raw: Reco
       return adoptions.ok ? ok({}) : adoptions
 ```
 
-`contextDriftPresent` is true when any `<X>` key whose `X` is a Context title holds a value not byte-equal to a Space title of that Context, or holds an empty list, or when the tree is null; a `<X>` naming no Context title never counts. `loadGovernedWorld` always supplies `assignedDefs`; it calls `loadContextWorld` only when drift is present, and a failed load yields `registry: null`.
+`contextDriftPresent` is true when any `<X>` key whose `X` is a Context title holds a value not byte-equal to a Space title of that Context, or holds an empty list, or when the tree is null; a `<X>` naming no Context title never counts. `loadGovernedWorld` always supplies `assignedDefs(root, await collectionFolderOf(root, absFile))`; it calls `loadContextWorld` only when drift is present, and a failed load yields `registry: null`.
 
 **Verify — automated**
 
 - [ ] `contextDriftPresent`: `{ '<Areas>': ['Work'] }` with Space "Work" → false; `['work']` → true; `[]` → true; `{ '<Notes>': ['x'] }` (no Context) → false; `tree = null` → true. Red first.
+- [ ] End to end through `mutate.setProperty` (not a hand-built world): a page in a Collection assigning `Status` holds `Status: Open` (scalar); setting `Priority` on it rewrites `Status` to `['Open']`. Red first — with `collectionFolderOf` returning null the property arm never runs and the scalar survives.
 - [ ] Both halves of the gate: a property write on a clean page performs **zero** `_space.json` reads (spy on `readJsonStrict`); on a drifted page ≥ 1 and the drift repairs. With the pre-check disabled the zero-reads test goes red.
 - [ ] Failure branch: a corrupt `_space.json` present, a property write on a page tagging that Context **succeeds** and leaves the context key untouched; a context write on the same page still refuses.
 - [ ] Full gates green.
@@ -1158,13 +1170,13 @@ Every patch site writes `{ fm, pending: true }` and flips `pending` to false whe
 ```ts
 // src/main/valuesChanged.ts (new)
 export function noteValueWrite(root: string, absFile: string, pageId?: string): void
-export function flushValueWrites(root: string, win: BrowserWindow): void
-// callers of noteValueWrite: governedWrite.ts (after the write) · optionOps.cascadePages · governedSweep.sweepGovernedRoots (page arm) · cascade.renameCascade · mutate.ts:495 (cover), :589 (icon)
+export function flushValueWrites(root: string): { rel: string; pageIds: string[] }[] // drains the ledger
+// callers of noteValueWrite: mutate.ts setProperty (:640-647) and setContext (:714-722) after their writes · optionOps.cascadePages · governedSweep.sweepGovernedRoots (page arm) · cascade.renameCascade · mutate.ts:495 (cover), :589 (icon)
 // src/main/index.ts (confirmWrite)
-  if (root !== null) { pushConfirmed(await work(root)); flushValueWrites(root, win) }
+  if (root !== null) { pushConfirmed(await work(root)); const changes = flushValueWrites(root); if (changes.length) pushToMain('values:changed', changes) }
 ```
 
-`flushValueWrites` emits one `values:changed` entry per containing Collection/Set rel, resolving page ids from the live tree when a writer had none. `watcher.settle` collects `{ rel, pageId }` from each applied `page-upsert` and pushes one grouped `values:changed` after the tree push; a `refresh` outcome pushes the batch's rels with `pageIds: []`. `refreshValues` and `onRefreshValues` are deleted from `useViewHost.ts` and the six `CardsView.tsx` sites; `useBannerMenu`'s `onDone` for the cover is dropped.
+Every caller already holds `root` — the writer itself does not, so the hook sits one frame up where the value path is confirmed, and `confirmWrite` pushes through the same module-level window `pushConfirmed` uses. `flushValueWrites` emits one entry per containing Collection/Set rel, resolving page ids from the live tree when a writer had none. `watcher.settle` collects `{ rel, pageId }` from each applied `page-upsert` and pushes one grouped `values:changed` after the tree push; a `refresh` outcome pushes the batch's rels with `pageIds: []`. `refreshValues` and `onRefreshValues` are deleted from `useViewHost.ts` and the six `CardsView.tsx` sites; `useBannerMenu`'s `onDone` for the cover is dropped.
 
 **Verify — automated**
 
@@ -1190,7 +1202,7 @@ export function flushValueWrites(root: string, win: BrowserWindow): void
 
 ### Phase 5 — Surfaces
 
-Both tasks add a `Personalization` key; they wait for the parallel session's `SettingsWindow.tsx` / `types.ts` work to be committed first.
+The Properties leaf exists but is empty (`SettingsWindow.tsx:418–423`, `sections: []`); Task 21 creates its one section, titled **Frontmatter**, and Task 22 adds its row to it.
 
 #### Task 21: The on-load repair sweep and its toggle
 
@@ -1220,8 +1232,10 @@ Both tasks add a `Personalization` key; they wait for the parallel session's `Se
   repairOnOpen?: boolean
 // src/main/readNexus.ts
     repairOnOpen: bool(p.repairOnOpen),
-// src/renderer/Settings/SettingsWindow.tsx (the Properties leaf)
-  { kind: 'toggle', key: 'repairOnOpen', label: 'Repair Properties On Open', hint: 'Canonicalize drifted property and Context values on the pages changed since the last open.' },
+// src/renderer/Settings/SettingsWindow.tsx:418-423 — the Properties leaf gains its section
+  { key: 'properties', label: 'Properties', icon: 'server', sections: [{ title: 'Frontmatter', rows: [
+    { kind: 'toggle', key: 'repairOnOpen', label: 'Repair Properties On Open', hint: 'Canonicalize drifted property and Context values on the pages changed since the last open.' },
+  ] }] }
 // src/main/indexSeed.ts
 export function driftedSinceSeed(): readonly string[]
 // src/main/repairSweep.ts (new)
@@ -1230,7 +1244,7 @@ export async function runRepairSweep(root: string): Promise<void>
   await runRepairSweep(root)
 ```
 
-In the seed loop, after `recordPage`, a page is flagged when for any key the registry names or `parseContextKey` accepts, `JSON.stringify(reconcileGovernedRoot(...).root[k]) !== JSON.stringify(raw[k])`; the list is transient, per session. `runRepairSweep` returns when `repairOnOpen` (via `readLivePersonalization`) is off or nothing is flagged; otherwise it builds one world per Collection folder (`assignedDefs` plus one strict `loadContextWorld`, a failure yielding `registry: null`), runs `sweepGovernedRoots(root, { kind: 'files', files }, rewrite, { stamp: false })` where `rewrite` returns `{ next: r.root, capture: r.adoptions }` when `r.changed.length` and null otherwise, then `applyAdoptions(root, result.captured.flat())`. Best-effort and logged, never blocking the open. [[PropertiesPM]] §Shared Mechanisms gains repair-on-write, adoption, and the sweep here.
+In the seed loop, after `recordPage`, a page is flagged when for any key the registry names or `parseContextKey` accepts, `JSON.stringify(reconcileGovernedRoot(...).root[k]) !== JSON.stringify(raw[k])`; the list is transient, per session. `runRepairSweep` returns when `repairOnOpen` (via `readLivePersonalization`, `settings.ts:67`) is off or nothing is flagged; otherwise it builds one world per Collection folder (`assignedDefs` plus one strict `loadContextWorld`, a failure yielding `registry: null`), runs `sweepGovernedRoots(root, { kind: 'files', files }, rewrite, { stamp: false })` where `rewrite` returns `{ next: r.root, capture: r.adoptions }` when `r.changed.length` and null otherwise, then `applyAdoptions(root, result.captured.flat())`. Best-effort and logged, never blocking the open. [[PropertiesPM]] §Shared Mechanisms gains repair-on-write, adoption, and the sweep here.
 
 **Assumed by:** Task 22 (the toggle-row pattern).
 
@@ -1267,7 +1281,7 @@ In the seed loop, after `recordPage`, a page is flagged when for any key the reg
   capitalizeMetadata?: boolean
 // src/main/readNexus.ts
     capitalizeMetadata: bool(p.capitalizeMetadata),
-// src/renderer/Settings/SettingsWindow.tsx (the Properties leaf)
+// src/renderer/Settings/SettingsWindow.tsx (the Frontmatter section Task 21 created)
   { kind: 'toggle', key: 'capitalizeMetadata', label: 'Capitalize All Metadata', hint: 'Present all Markdown frontmatter as capitalized; useful when working in a shared directory with specific metadata standards.' },
 // src/renderer/Properties/Assignment/columnLabel.ts
 export function displayPropertyName(name: string, capitalize: boolean): string // Title Case each word when on
