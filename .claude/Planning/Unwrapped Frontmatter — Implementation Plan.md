@@ -1368,7 +1368,14 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 ### Rulings
 
-- **Vault conversion** (Nathan, 08-31-2026 — instructions pending; the executor records them here verbatim before Gate 1 and does not run the pass without them).
+- **Vault conversion** (Nathan, 08-31-2026). The executor's throwaway script (scratchpad only) runs at Gate 1 over `~/NexusOS`, after a backup (a git commit of the vault if it is a repository, else a dated copy of `.nexus/` and every `.md` the pass touches). Then, in order:
+  1. **Wrapped property keys → bare.** `<Status>`, `<Pinned>`, `<Timeframe>` (and any other `<Prop>` found) rename in place. Where a bare twin already holds a value, **Obsidian's value always wins** and the wrapped key is dropped; an empty twin (`Status:` with nothing under it) counts as absent and the wrapped value renames in.
+  2. **Context keys re-sigil.** `(Projects)`/`(Areas)`/`(Topics)` → `<Projects>`/`<Areas>`/`<Topics>`. The bare Obsidian `Projects:`/`Areas:`/`Topics:` keys are **never touched** — except that where one holds `[[Title.slate]]` pseudo-context links, the pass **also** writes the matching Pommora Context: `<Projects>:` gets `Title` for each `[[Title.slate]]` under `Projects:`, likewise Areas and Topics. [assumed] A Space named `Title` that doesn't exist yet is created (folder + `_space.json`, as Pommora's own Space create does); the bare key and its `.slate` links stay exactly as written.
+  3. **Select/Status values as one-element lists**, matching what the app now writes.
+  4. **`.trash` bundles** get the identical treatment.
+  5. **`properties.json` re-registered** from the vault's actual keys and values: `Status` (Status type; groups/options harvested from every value in use), `Pinned` (Checkbox), `Timeframe` (Date), **`Brand`** (Select — there is no Text type; options harvested from the values in use) and **`Price`** (Number), and the **Link properties merged**: where Obsidian and Pommora use the same key name (`Links`), one Pommora Link (`url`) property under that exact name so the existing `"[[Page]]"` values are its connections. `tags` stays Obsidian's — not registered. Empty bare keys stay empty and unregistered. Assignments: each registered property is assigned to every Collection whose pages hold its key.
+  6. **`.nexus/property-cascade.json`** deleted if present; **`nexus.db` untouched** (the index generation rebuilds the index on open); every `.md` the pass rewrites keeps its foreign keys and comments byte-identical (the pass edits the YAML document in place, as `pageFile.ts` does).
+  Dry-run first: print every file and every key the pass would change, with counts against the 08-31-2026 survey (`<Status>`×6, `<Pinned>`×4, `<Timeframe>`×1, six bare `Status:` twins), then run.
 - **Phase 1 verification is Nathan's; every later phase is verified by the executor** over CDP against scratch nexuses. NexusOS is opened again only at closeout, read-only.
 - **The Metadata section title** is Nathan's call; the other single-section leaves leave theirs untitled.
 
