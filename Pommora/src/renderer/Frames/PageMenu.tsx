@@ -4,7 +4,7 @@ import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { shownDetail, useSession } from '../store'
 import { footerLockAction, lockIcon } from '@renderer/DesignSystem/Menus/menu-base.css'
 import {
-  FooterMoreButton,
+  FooterIconButton,
   MenuFooting,
   MenuItem,
   MenuScrollFrame,
@@ -77,7 +77,13 @@ export function PageMenu(): React.JSX.Element | null {
                 Lock
               </Button>
             }
-            trailing={<FooterMoreButton onClick={() => void runFooterAction()} />}
+            trailing={
+              <FooterIconButton
+                icon="ellipsis"
+                ariaLabel="More actions"
+                onClick={() => void runFooterAction()}
+              />
+            }
           />
         }
       >
