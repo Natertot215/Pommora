@@ -554,9 +554,9 @@ export interface ViewRow {
   contextValues?: Record<string, string[]>
 }
 
-/** `title`/`context`/`modified` are reserved columns; `property` is a user-defined schema
+/** `title`/`context`/`stamp` are reserved columns; `property` is a user-defined schema
  *  property. Width + the group/sort hoist are separate render concerns, not modeled here. */
-export type ColumnKind = 'title' | 'property' | 'context' | 'modified'
+export type ColumnKind = 'title' | 'property' | 'context' | 'stamp'
 
 /** The stable seam the table routes to. `id` is the property id (a reserved
  *  `_title`/`_modified_at`, a Context id, or a `prop_*`); `kind` picks the renderer. */

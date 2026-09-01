@@ -5,6 +5,7 @@ import {
   isReservedPropertyId,
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
+  STAMP_TYPE,
 } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import {
@@ -21,8 +22,9 @@ type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 /** The hidden group's display order: non-shown contexts (registry order), then every non-shown
  *  schema prop in collection order (never the view's) — explicitly hidden OR unaccounted for in
  *  property_order, which is what makes a prop or Context created after the view revealable rather
- *  than invisible — then Modified. A stale hidden id stays in the array (writes only ever filter
- *  the toggled id) but displays nowhere. Title is never here — it can't hide. */
+ *  than invisible — then the stamps under the same rule. A stale hidden id stays in the array
+ *  (writes only ever filter the toggled id) but displays nowhere. Title is never here — it can't
+ *  hide. */
 export function hiddenListIds(
   view: SavedView,
   schema: PropertyDefinition[],
@@ -35,7 +37,7 @@ export function hiddenListIds(
     ...schema
       .filter((d) => !isReservedPropertyId(d.id) && (set.has(d.id) || !shown.has(d.id)))
       .map((d) => d.id),
-    ...(set.has(RESERVED_PROPERTY_ID.modifiedAt) ? [RESERVED_PROPERTY_ID.modifiedAt] : []),
+    ...Object.keys(STAMP_TYPE).filter((id) => set.has(id) || !shown.has(id)),
   ]
 }
 

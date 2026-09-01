@@ -3,10 +3,10 @@ import type { ContextIdentity } from '@renderer/Properties/contextIdentity'
 import { useSession } from '@renderer/store'
 
 // Built-in reserved columns with fixed English labels (context titles are registry data).
-const RESERVED_LABEL: Record<string, string> = {
+export const RESERVED_LABEL: Readonly<Record<string, string>> = {
   [RESERVED_PROPERTY_ID.title]: 'Title',
-  [RESERVED_PROPERTY_ID.createdAt]: 'Created',
-  [RESERVED_PROPERTY_ID.modifiedAt]: 'Modified',
+  [RESERVED_PROPERTY_ID.createdAt]: 'Creation Time',
+  [RESERVED_PROPERTY_ID.modifiedAt]: 'Last Modified',
 }
 
 export const displayPropertyName = (name: string, capitalize: boolean): string =>

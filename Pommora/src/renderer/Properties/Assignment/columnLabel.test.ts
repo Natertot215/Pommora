@@ -13,8 +13,8 @@ const NO_CONTEXTS = new Map()
 describe('columnLabel', () => {
   it('resolves reserved built-in columns', () => {
     expect(columnLabel(RESERVED_PROPERTY_ID.title, schema, NO_CONTEXTS)).toBe('Title')
-    expect(columnLabel(RESERVED_PROPERTY_ID.createdAt, schema, NO_CONTEXTS)).toBe('Created')
-    expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema, NO_CONTEXTS)).toBe('Modified')
+    expect(columnLabel(RESERVED_PROPERTY_ID.createdAt, schema, NO_CONTEXTS)).toBe('Creation Time')
+    expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema, NO_CONTEXTS)).toBe('Last Modified')
   })
 
   it('resolves a Context column through the registry, and an unregistered one falls to its id', () => {
