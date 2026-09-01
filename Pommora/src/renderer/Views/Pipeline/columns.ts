@@ -7,17 +7,12 @@
 
 import type { ColumnKind, ResolvedColumn } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
 
 function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
-  switch (id) {
-    case RESERVED_PROPERTY_ID.title:
-      return 'title'
-    case RESERVED_PROPERTY_ID.modifiedAt:
-      return 'modified'
-    default:
-      return contextIds.includes(id) ? 'context' : 'property'
-  }
+  if (id === RESERVED_PROPERTY_ID.title) return 'title'
+  if (STAMP_TYPE[id]) return 'stamp'
+  return contextIds.includes(id) ? 'context' : 'property'
 }
 
 /** Visible property ids: propertyOrder verbatim, hidden skipped, stale ids (a dropped prop_*
@@ -35,7 +30,7 @@ function visibleOrder(
     if (hidden.has(id) || emitted.has(id)) continue
     if (
       id === RESERVED_PROPERTY_ID.title ||
-      id === RESERVED_PROPERTY_ID.modifiedAt ||
+      STAMP_TYPE[id] ||
       contextIds.includes(id) ||
       schema.some((d) => d.id === id)
     ) {

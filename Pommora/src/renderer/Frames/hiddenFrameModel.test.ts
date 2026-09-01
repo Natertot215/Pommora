@@ -5,8 +5,9 @@ import type { SavedView } from '@shared/views'
 import type { FrameRow } from './frameDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenFrameModel'
 
-const { title, modifiedAt } = RESERVED_PROPERTY_ID
+const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
+const stamps = [createdAt, modifiedAt]
 
 const def = (id: string): PropertyDefinition => ({ id, name: id, type: 'select' })
 
@@ -22,30 +23,38 @@ describe('hiddenListIds', () => {
   it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
     const schema = [def('a'), def('b'), def('c')]
     // b is shown (in property_order); a and c are hidden
-    expect(hiddenListIds(view(['b'], ['c', 'a']), schema)).toEqual(['a', 'c'])
+    expect(hiddenListIds(view(['b'], ['c', 'a']), schema)).toEqual(['a', 'c', ...stamps])
   })
 
-  it('lists non-shown contexts first (registry order), then props, trails Modified, drops stale ids', () => {
+  it('lists non-shown contexts first (registry order), then props, then the stamps, drops stale ids', () => {
     const schema = [def('a')]
     expect(
       hiddenListIds(view([], [areas, modifiedAt, 'stale', 'a']), schema, [areas, projects]),
-    ).toEqual([areas, projects, 'a', modifiedAt])
+    ).toEqual([areas, projects, 'a', createdAt, modifiedAt])
+  })
+
+  it('lists both stamps on a view that shows neither', () => {
+    expect(hiddenListIds(view([title], []), [])).toEqual([createdAt, modifiedAt])
+  })
+
+  it('omits a stamp the view shows', () => {
+    expect(hiddenListIds(view([title, modifiedAt], []), [])).toEqual([createdAt])
   })
 
   it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
-    expect(hiddenListIds(view(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB'])
+    expect(hiddenListIds(view(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB', ...stamps])
   })
 
   it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
     const schema = [def('a'), def('b')]
     // a is shown; b was added to the collection after the view existed → hidden, not lost
-    expect(hiddenListIds(view(['a'], []), schema)).toEqual(['b'])
+    expect(hiddenListIds(view(['a'], []), schema)).toEqual(['b', ...stamps])
   })
 
   it('interleaves hidden and unaccounted props in collection order', () => {
     const schema = [def('a'), def('b'), def('c')]
     // a hidden, b shown, c unaccounted → hidden zone is a then c
-    expect(hiddenListIds(view(['b'], ['a']), schema)).toEqual(['a', 'c'])
+    expect(hiddenListIds(view(['b'], ['a']), schema)).toEqual(['a', 'c', ...stamps])
   })
 })
 

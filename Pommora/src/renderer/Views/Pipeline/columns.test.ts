@@ -56,14 +56,24 @@ describe('resolveColumns — rules', () => {
     expect(cols.some((c) => c.id === 'prop_b')).toBe(false)
   })
 
-  it('renders _modified_at only when explicitly placed (def-less, kind modified)', () => {
+  it('renders _modified_at only when explicitly placed (def-less, kind stamp)', () => {
     const cols = resolveColumns(
       view({ property_order: ['_title', '_modified_at'] }),
       schema,
       CONTEXT_IDS,
     )
     expect(ids(cols)).toEqual(['_title', '_modified_at'])
-    expect(cols.find((c) => c.id === '_modified_at')?.kind).toBe('modified')
+    expect(cols.find((c) => c.id === '_modified_at')?.kind).toBe('stamp')
+  })
+
+  it('_created_at in property_order emits a stamp column', () => {
+    const cols = resolveColumns(
+      view({ property_order: ['_title', '_created_at'] }),
+      schema,
+      CONTEXT_IDS,
+    )
+    expect(ids(cols)).toEqual(['_title', '_created_at'])
+    expect(cols.find((c) => c.id === '_created_at')?.kind).toBe('stamp')
   })
 
   it('excludes a hidden property, but never hides _title (front-inserted)', () => {
@@ -104,6 +114,6 @@ describe('resolveColumns — rules', () => {
     expect(kindOf('ctx_areas')).toBe('context')
     expect(kindOf('ctxC')).toBe('context')
     expect(kindOf('prop_a')).toBe('property')
-    expect(kindOf('_modified_at')).toBe('modified')
+    expect(kindOf('_modified_at')).toBe('stamp')
   })
 })

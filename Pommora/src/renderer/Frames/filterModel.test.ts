@@ -123,7 +123,7 @@ describe('vocabulary', () => {
     ])
   })
 
-  it('targets lead Title · Location · Modified, then registry Contexts, then schema', () => {
+  it('targets lead Title · Location · the stamps, then registry Contexts, then schema', () => {
     const tree = {
       contexts: [
         { def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] },
@@ -134,7 +134,8 @@ describe('vocabulary', () => {
     expect(filterTargets(schema, tree).map((t) => t.label)).toEqual([
       'Title',
       'Location',
-      'Modified',
+      'Creation Time',
+      'Last Modified',
       'Areas',
       'Crew',
       'Sel',
@@ -163,7 +164,8 @@ describe('vocabulary', () => {
     expect(filterTargets(schema, null).map((t) => t.label)).toEqual([
       'Title',
       'Location',
-      'Modified',
+      'Creation Time',
+      'Last Modified',
       'Sel',
       'Done',
       'Tags',

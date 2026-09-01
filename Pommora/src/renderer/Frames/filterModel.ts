@@ -11,7 +11,7 @@ import type { Icon } from '@renderer/DesignSystem/Symbols'
 import { contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { declaredType } from '@renderer/Properties/value'
 import { FILTER_OPS } from '@renderer/Views/Pipeline/filter'
-import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
+import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
 
 export type Connector = 'and' | 'or'
 
@@ -209,7 +209,7 @@ export function filterTargets(
     ...(hasSets
       ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
       : []),
-    MODIFIED_TARGET,
+    ...STAMP_TARGETS,
     ...[...contextsById].map(([id, identity]) => ({
       id,
       label: identity.title,

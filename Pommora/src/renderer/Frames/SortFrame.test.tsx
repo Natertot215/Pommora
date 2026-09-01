@@ -116,11 +116,12 @@ describe('SortFrame rows', () => {
     expect(texts()).not.toContain('Sub-Sort')
   })
 
-  it('the Sort By picker lists None + Title + Modified + every sortable def, and a pick writes slot 0', async () => {
+  it('the Sort By picker lists None + Title + both stamps + every sortable def, and a pick writes slot 0', async () => {
     await mount(view())
     await openPicker('Sort By')
     expect(menuTexts()).toContain('Title')
-    expect(menuTexts()).toContain('Modified')
+    expect(menuTexts()).toContain('Creation Time')
+    expect(menuTexts()).toContain('Last Modified')
     expect(menuTexts()).toContain('Status')
     expect(menuTexts()).toContain('When')
     expect(menuTexts()).toContain('Attachment') // file ranks by its filename, so it is offered

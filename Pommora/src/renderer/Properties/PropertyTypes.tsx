@@ -1,12 +1,12 @@
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
-import { RESERVED_PROPERTY_ID } from '@shared/properties'
+import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
 import {
   asRenderableIcon,
   DEFAULT_ENTITY_ICONS,
   Icon,
   type IconName,
 } from '@renderer/DesignSystem/Symbols'
-import { displayPropertyName } from '@renderer/Properties/Assignment/columnLabel'
+import { displayPropertyName, RESERVED_LABEL } from '@renderer/Properties/Assignment/columnLabel'
 
 interface TypeMeta {
   label: string
@@ -24,8 +24,8 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   url: { label: 'Link', icon: 'link', creatable: true },
   file: { label: 'File', icon: 'file-chart-column', creatable: true },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
-  created_time: { label: 'Created', icon: 'clock-plus' },
-  last_edited_time: { label: 'Last edited', icon: 'history' },
+  created_time: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
+  last_edited_time: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'history' },
 }
 
 export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[type].label
@@ -66,11 +66,9 @@ export const TITLE_TARGET: PaneTarget = {
   label: 'Title',
   icon: TITLE_META.icon,
 }
-export const MODIFIED_TARGET: PaneTarget = {
-  id: RESERVED_PROPERTY_ID.modifiedAt,
-  label: 'Modified',
-  icon: propertyTypeIconName('last_edited_time'),
-}
+export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
+  type ? [{ id, label: propertyTypeLabel(type), icon: propertyTypeIconName(type) }] : [],
+)
 
 export const schemaTargets = (
   schema: PropertyDefinition[],

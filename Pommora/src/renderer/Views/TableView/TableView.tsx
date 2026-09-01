@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'reac
 import { UNGROUPED } from '@shared/types'
 import { patchOverride } from '../useValuesEpoch'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
-import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { type CellMenuContext, cellMenuContextFor } from '@shared/cellMenu'
@@ -433,15 +432,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // would render every Context identically — and a schema-less column (unknown type) gets none.
   const headerIcon = (id: string): React.ReactNode => {
     if (liveView.hide_column_icons ?? true) return null
-    // Created At has a reserved column but no PropertyType, so it carries no registry glyph — give it
-    // its own here (its sibling Modified At rides last_edited_time's registry icon via PropertyTypeIcon).
-    if (id === RESERVED_PROPERTY_ID.createdAt) {
-      return (
-        <span className="col-header-icon">
-          <Icon name="clock-plus" size="body" />
-        </span>
-      )
-    }
     const contextIcon = ctx?.contexts.get(id)?.icon
     if (contextIcon) {
       return (
