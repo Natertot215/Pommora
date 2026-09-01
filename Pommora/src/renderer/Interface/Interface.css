@@ -1,8 +1,5 @@
-/* Detail surface: the plain detail views (none / page / not-found) and the banner-bearing scroller
-   (InterfaceScaffold) + its placeholder/empty/error states. */
-
-/* The content view = the routed view (fills + scrolls) above the Subfield footer (pinned, collapsible).
-   position:relative anchors the hover toggle chevron. */
+/* Above the Subfield footer (pinned, collapsible); position: relative anchors the hover toggle
+   chevron. */
 .content-view {
   position: relative;
   height: 100%;
@@ -19,10 +16,8 @@
   pointer-events: none;
 }
 
-/* --- .detail (lives inside .content-pane, offset past the glass sidebar) --- */
 .detail {
   height: 100%;
-  /* Clear the floating glass sidebar (left) + inspector (right); both insets collapse with their panes. */
   padding: 38px calc(var(--inspector-clearance) + var(--content-inset)) 28px
     calc(var(--sidebar-clearance) + var(--content-inset));
   overflow-y: auto;
@@ -31,8 +26,8 @@
     padding-right var(--duration-base) var(--ease-base);
 }
 
-/* Full-bleed like the banner-bearing scaffold: no padding here, so the banner spans the pane edge-to-edge
-   and reaches the top. The body inset (and the reclaimed fold-chevron gutter) moves into .mdpm-editor. */
+/* Full-bleed like the banner-bearing scaffold, so the banner reaches the pane edges; the body inset
+   (and the reclaimed fold-chevron gutter) moves into .mdpm-editor. */
 .detail-page {
   padding: 0;
   overflow: hidden;
@@ -49,8 +44,6 @@
   pointer-events: none;
 }
 
-/* Banner-bearing views: a full-bleed scroller so the banner sits edge-to-edge behind the sidebar
-   + toolbar glass; the padding moves to an inner body. */
 .detail-scroll {
   height: 100%;
   overflow-y: auto;
@@ -62,41 +55,36 @@
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
 }
-/* A header (banner image or banner-less title) already clears the toolbar, so the body sits just
-   under it; without a header the body itself clears the toolbar. */
 .detail-scroll.has-header .detail-body {
   padding-top: 16px;
 }
 /* A table content-view (collection/set): the banner scrolls away with the rows, and the body carries
-   the views gutter (grips + group chevrons) carved from the inset — grid still lands on the content inset
-   (page-consistent) — with the heading band flush under the banner divider. . */
+   the views gutter (grips + group chevrons) carved from the inset, with the heading band flush under
+   the banner divider. The :not(:has(.blk-surface)) guard here and below scopes to the whole-page case
+   only, so a tile that embeds a table or cards view never flips its own body. */
 .detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
   padding-top: 0;
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
 }
 /* A cards content-view (collection/set): the card grid runs the tight surface inset — cards carry no
-   grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance.
-   Same whole-page scoping as the table rule: a tile that embeds a cards view never flips its body. */
+   grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance. */
 .detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.blk-surface)) {
   padding-top: 8px;
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
   padding-right: calc(var(--inspector-clearance) + var(--surface-lane));
 }
 /* A block-based surface (Homepage, contexts): tiles run the tight --surface-lane instead of the
-   content inset + detail lane — the tile handles supply the grip/chevron actions, so no reserved lane
-   is needed. Driven by kind (is-surface), so a context with no live block surface still insets tight
-   and its body stays aligned with its banner. */
+   content inset — the tile handles supply the grip/chevron actions, so no reserved lane is needed.
+   Driven by kind (is-surface), so a context with no live block surface still insets tight. */
 .detail-scroll.is-surface .detail-body {
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
   padding-right: calc(var(--inspector-clearance) + var(--surface-lane));
 }
-/* Under a banner the tiles clear it by the SAME tight tile gutter they run on the sides — uniform
-   all around, and never the container-table flush above. KNOB: the banner→first-tile clearance. */
+/* KNOB: the banner→first-tile clearance. */
 .detail-scroll.has-header.is-surface .detail-body {
   padding-top: 8px;
 }
 
-/* During an edge-drag resize, track the cursor 1:1 (no easing lag). */
 .shell.is-resizing .detail,
 .shell.is-resizing .detail-body {
   transition: none;

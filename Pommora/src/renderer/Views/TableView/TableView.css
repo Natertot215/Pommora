@@ -1,15 +1,11 @@
-/* The Collection TableView's own layer over the Tables chrome: the shell that widens to the glass
-   edges, the grid density, the hide/slide beat, the grip gutter, and the group-band rhythm. Every
-   number lives in Tables/table-tokens.css. */
+/* TableView's layer over the Tables chrome: shell width, grid density, hide/slide beat, grip
+   gutter, and group-band rhythm. Values live in Tables/table-tokens.css. */
 
 .table-view {
-  /* Width is auto (not 100%) so the negative side margins WIDEN the box out to both glass edges (the
-     sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
-     grid's content box (and so every row) stays exactly where it was.*/
+  /* Width is auto so the negative side margins widen the box to both glass edges while the grid's
+     content box (and so every row) stays exactly where it was. */
   margin-left: calc(var(--rail-inset) - var(--content-inset));
   margin-right: calc(-1 * var(--content-inset));
-  /* Re-add the content gutter the body reclaimed so the grid lands on the content inset (grips + chevrons
-     sit in the strip to its left).*/
   --table-right-inset: var(--content-inset);
   padding-left: var(--content-inset);
   padding-right: var(--table-right-inset);
@@ -19,21 +15,16 @@
   --table-right-inset: 0px;
 }
 
-/* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a
-   grid reading --cols. min-width (the summed column widths, inline) makes it scroll; width:100% lets
-   the trailing 1fr filler track eat slack. */
+/* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the
+   trailing 1fr filler track eat slack. */
 .table-grid {
   width: 100%;
-  /* Base density (--zoom) × the per-block Scale (--block-zoom, set on a SurfacePM tile; absent = 1). The
-     table scales as a unit within the tile's fixed inset. */
+  /* Base density (--zoom) × the per-tile Scale (--block-zoom, absent = 1), so the table scales as one
+     unit within the SurfacePM tile's fixed inset. */
   zoom: calc(var(--zoom) * var(--block-zoom, 1));
 }
 
-/* Hide + style-slide animation: while a column collapses (Hide) or slides out to a wider per-style min
-   (a look change), animate the track set on the disclosure token. Active ONLY during those beats (never
-   during a drag), so resize stays instant. !important beats the drag engine's inline `transition: none`
-   on the row (the row is both the grid AND the drag node); the header has no inline style, so this is
-   redundant-but-harmless there. */
+/* Scoped to the Hide / style-slide beats only, so a drag resize stays instant. */
 .table-grid.col-hiding .table-head,
 .table-grid.col-hiding .data-row,
 .table-grid.col-sliding .table-head,
@@ -42,14 +33,11 @@
   transition: grid-template-columns var(--duration-fast) var(--ease-base) !important;
 }
 
-/* Sits in the views gutter (the same strip the group chevron occupies), revealed on row hover;
-   the lifted row ghosts (MarkdownPM feel). */
 .data-cell.cell-lead {
-  position: relative; /* containing block for the grip in the views gutter */
-  overflow: visible; /* let the grip escape left into the gutter */
+  position: relative; /* containing block for the grip */
+  overflow: visible;
 }
-/* The views gutter lane — the strip left of the grid that the row grip and the band chevron both
-   float into.*/
+/* The views gutter lane the row grip and band chevron both float into. */
 .row-grip,
 .table-view .group-band-drop-outline {
   position: absolute;
@@ -74,27 +62,23 @@
   cursor: grabbing;
 }
 
-/* The shared disclosure head (outline + glyph + hover "+") over the group's rows, a full-width band off
-   the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
-   rhythm (the row), the sticky pin (the head), and the gutter chevron. */
+/* The shared disclosure head over a group's rows; chrome lives in GroupBand.css, this scopes the
+   section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
-  /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
-     lockstep with the data rows; any re-application here would square a factor. */
+  /* No zoom of its own — it already scales inside .table-grid's compound zoom; reapplying here would
+     square the factor. */
   padding-top: var(--band-gap);
 }
-/* A sub-group bucket band reads as a row, not a section — one shoulder, not two. */
 .table-view .group-band.sub-band .group-band-row {
   padding-top: var(--band-clearance);
 }
 .table-view .group-band-head {
-  /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
-     group stays legible instead of sliding off. Also the containing block for the chevron's absolute
-     float. left:0 = the grid's content start; at rest it sits in flow, only pinning once scrolled. */
+  /* Sticky-left keeps the group label and chevron in the gutter when columns scroll; left:0 is the
+     grid's content start, only pinning once scrolled. */
   position: sticky;
   left: 0;
   display: inline-flex;
 }
-/* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
 .table-view .group-band-drop-outline {
   cursor: pointer;
 }
