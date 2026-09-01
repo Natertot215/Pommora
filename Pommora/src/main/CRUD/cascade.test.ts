@@ -31,6 +31,7 @@ afterEach(async () => {
 })
 
 const bodyOf = async (p: string) => splitEnvelope(await readFile(p, 'utf8')).body
+const fmBytesOf = async (p: string) => splitEnvelope(await readFile(p, 'utf8')).frontmatter
 const fmOf = async (p: string) => splitFrontmatter(await readFile(p, 'utf8'))
 
 describe('renameCascade', () => {
@@ -43,7 +44,7 @@ describe('renameCascade', () => {
     const nested = await createPage(sub, 'Nested', { body: 'deep [[Target]]' })
     if (!a.ok || !b.ok || !c.ok || !nested.ok) throw new Error('setup failed')
 
-    const before = splitEnvelope(await readFile(a.value.path, 'utf8')).frontmatter
+    const before = await fmBytesOf(a.value.path)
     const r = await renameCascade(root, 'Target', 'New Target')
     expect(r.ok).toBe(true)
     if (!r.ok) return
@@ -54,7 +55,7 @@ describe('renameCascade', () => {
     expect(await bodyOf(nested.value.path)).toBe('deep [[New Target]]')
     expect(await bodyOf(c.value.path)).toBe('no links')
 
-    expect(splitEnvelope(await readFile(a.value.path, 'utf8')).frontmatter).toBe(before)
+    expect(await fmBytesOf(a.value.path)).toBe(before)
   })
 
   it('touches nothing when no page links the old title', async () => {
