@@ -56,6 +56,10 @@ import * as s from '../Frames/frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { normalizePropertyName } from '@shared/properties'
 
+import {
+  displayPropertyName,
+  useCapitalizeMetadata,
+} from '@renderer/Properties/Assignment/columnLabel'
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
 type WriteResult = Result<null>
@@ -84,6 +88,7 @@ function ListGroups({
   onRenameCommit: (next: string) => void
   onRenameCancel: () => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const { assignedRef, allRef, allHighlighted } = useFrameRegions()
   const enteringAssigned = useEntrance(assigned, (d) => d.id)
   const enteringAll = useEntrance(unassigned, (d) => d.id)
@@ -150,7 +155,7 @@ function ListGroups({
                       <AccessoryButton
                         icon="plus"
                         size={s.ICON.rowPlus}
-                        ariaLabel={`Assign ${d.name}`}
+                        ariaLabel={`Assign ${displayPropertyName(d.name, capitalize)}`}
                         create
                         onClick={() => onAssign(d.id)}
                       />

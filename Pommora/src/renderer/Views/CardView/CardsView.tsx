@@ -53,7 +53,7 @@ import {
   useGhostAnchor,
 } from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
-import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
+import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { groupKeyToValue } from '../TableView/reassign'
 import { ViewGroupBand } from '../ViewGroupBand'
@@ -620,6 +620,7 @@ function GhostCard({
   onLeave: () => void
   onCreate: () => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
   return (
     <CardRoot
@@ -647,7 +648,7 @@ function GhostCard({
               {props.map((c) => (
                 <div key={c.id} className="card-prop-row">
                   <span className={cx('card-prop-label', text.caption.emphasized)}>
-                    {columnLabel(c.id, ctx.schema, ctx.contexts)}
+                    {columnLabel(c.id, ctx.schema, ctx.contexts, capitalize)}
                   </span>
                 </div>
               ))}
@@ -780,6 +781,7 @@ function CardProperties({
   shown: ResolvedColumn[]
   onZoneClick: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
+  const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   if (!ctx) return null
   const compact = isCompact(view)
@@ -815,7 +817,7 @@ function CardProperties({
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
           <span className={cx('card-prop-label', text.caption.emphasized)}>
-            {columnLabel(c.id, ctx.schema, ctx.contexts)}
+            {columnLabel(c.id, ctx.schema, ctx.contexts, capitalize)}
           </span>
           {value(c)}
         </div>
@@ -1014,6 +1016,7 @@ const PageCard = memo(function PageCard({
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const gdrag = useGroupedDragItem(row.id)
   const drag = draggable ? gdrag : null
   // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it
@@ -1025,7 +1028,8 @@ const PageCard = memo(function PageCard({
   const lastSrc = useRef<string | undefined>(undefined)
 
   const textRef = useRef<HTMLDivElement>(null)
-  const addableNow = (): AddEntry[] => (ctx ? addEntriesFor(row, view, ctx, columns, tree) : [])
+  const addableNow = (): AddEntry[] =>
+    ctx ? addEntriesFor(row, view, ctx, columns, tree, capitalize) : []
   const openAdd = useCallback(
     (e: React.MouseEvent): void => {
       e.stopPropagation()

@@ -423,6 +423,12 @@ const FRAMES = roster([
             label: 'Repair Properties On Open',
             hint: 'Canonicalize drifted property and Context values on the pages changed since the last open.',
           },
+          {
+            kind: 'toggle',
+            key: 'capitalizeMetadata',
+            label: 'Capitalize All Metadata',
+            hint: 'Present all Markdown frontmatter as capitalized; useful when working in a shared directory with specific metadata standards.',
+          },
         ],
       },
     ],

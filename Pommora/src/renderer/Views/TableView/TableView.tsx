@@ -37,7 +37,7 @@ import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
+import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { clampWidth, widthFor } from '@renderer/Tables/columnWidths'
 import { alignFor } from '@renderer/Tables/columnAlign'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
@@ -105,6 +105,7 @@ function DatetimeCellPicker({
 }
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const {
     source,
     schema,
@@ -1403,7 +1404,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 <ColumnHeader
                   key={c.id}
                   id={c.id}
-                  label={columnLabel(c.id, schema, ctx.contexts)}
+                  label={columnLabel(c.id, schema, ctx.contexts, capitalize)}
                   icon={headerIcon(c.id)}
                   width={colWidth(c.id)}
                   align={colAlign(c.id)}

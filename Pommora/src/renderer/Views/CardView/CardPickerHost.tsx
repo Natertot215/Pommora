@@ -21,6 +21,7 @@ import {
   type AddEntry,
 } from '@renderer/Properties/Assignment/cardValueInput'
 
+import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 /** A value's request to open its picker — the anchor is the clicked value span. */
 export type ValuePickerRequest = {
   rowId: string
@@ -74,6 +75,7 @@ export function CardPickerHost({
   onDismissValue: () => void
   onDismissAdd: () => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   const tree = useSession((s) => s.tree)
   // The last non-null requests render through the closing frames (exit presence keeps the pane
@@ -122,7 +124,9 @@ export function CardPickerHost({
 
   const aReq = add ?? lastAdd.current
   const aRow = aReq ? rowById.get(aReq.rowId) : undefined
-  const aEntries = aRow ? addEntriesFor(aRow, view, ctx, columns, tree) : ([] as AddEntry[])
+  const aEntries = aRow
+    ? addEntriesFor(aRow, view, ctx, columns, tree, capitalize)
+    : ([] as AddEntry[])
 
   // One commit gate for every value-picker surface: an add-originated open reveals on the first
   // real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).
