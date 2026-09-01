@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import {
   FooterLockButton,
-  FooterMoreButton,
+  FooterIconButton,
   MenuFooting,
   MenuDropdown,
   MenuScrollFrame,
@@ -33,7 +33,7 @@ export function SpaceMenu(): React.JSX.Element | null {
   )
   const setHostLocked = useSession((st) => st.setHostLocked)
   const iconRef = useRef<HTMLButtonElement>(null)
-  const headerRef = useRef<HTMLDivElement>(null)
+  const colorRef = useRef<HTMLButtonElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -51,7 +51,7 @@ export function SpaceMenu(): React.JSX.Element | null {
     if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
     e.preventDefault()
     e.stopPropagation()
-    const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden, changeColor: true })
+    const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden })
     if (action === 'rename') setRenaming(true)
     else if (action === 'editIcon') setPickerOpen(true)
     else if (action === 'toggleIcon')
@@ -61,7 +61,6 @@ export function SpaceMenu(): React.JSX.Element | null {
         kind: 'space',
         hidden: !iconHidden,
       })
-    else if (action === 'changeColor') setColorOpen(true)
   }
 
   return (
@@ -90,12 +89,20 @@ export function SpaceMenu(): React.JSX.Element | null {
                     onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
                   />
                 }
-                trailing={<FooterMoreButton disabled />}
+                trailing={
+                  <FooterIconButton
+                    ref={colorRef}
+                    icon="palette"
+                    ariaLabel="Change Color"
+                    pressed={colorOpen}
+                    onClick={() => setColorOpen(true)}
+                  />
+                }
               />
             }
           >
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-            <div ref={headerRef} onContextMenu={(e) => void openHeaderMenu(e)}>
+            <div onContextMenu={(e) => void openHeaderMenu(e)}>
               <InlineEditHeader
                 value={node.name}
                 icon={entityIcon('space', node.icon, defaultIcons)}
@@ -130,7 +137,7 @@ export function SpaceMenu(): React.JSX.Element | null {
               void mutate({ op: 'setSpaceColor', spaceId: id, color: picked })
             }}
             onDismiss={() => setColorOpen(false)}
-            triggerRef={headerRef}
+            triggerRef={colorRef}
           />
         </div>
       )}

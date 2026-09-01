@@ -6,7 +6,7 @@ export {
   Menu,
   AccessoryButton,
   FooterLockButton,
-  FooterMoreButton,
+  FooterIconButton,
   MenuFooting,
   MenuScrollFrame,
 } from './menu-row'
