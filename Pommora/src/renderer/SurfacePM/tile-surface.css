@@ -6,7 +6,7 @@
 
 /* The chassis geometry (border, radius, body clip) is the shared tile-chassis; what's here is
    SurfacePM's own layer — placement, motion, and the state selectors that drive the chassis's
-   --tile-border-color. No background: blocks sit transparent on the surface. */
+   --tile-border-color. */
 .spm-tile {
   position: absolute;
   top: 0;
@@ -22,19 +22,16 @@
      body does the content clipping. */
 }
 
-/* Resizes track the pointer 1:1 — transitions gate off for the whole surface.
-   (Tile-move reflow/settle transitions are inline, driven by the shared Feel.) */
 .spm-surface.is-interacting .spm-tile {
   transition: none;
 }
 
-/* Per-block Scale: one discrete var on the tile. Markdown/page tiles read it for the font (via
-   .cm-content) + the editor glyphs (via --glyph-scale); a view tile's table reads it in its own grid
-   `zoom` (base density × --block-zoom). The handle, resize edges, gutter, and padding do NOT read it —
-   chrome + structure stay fixed. The shared ramp's steps; 1.0 needs no class (--block-zoom falls
-   back to 1). Every tile animates the factor on the standard beat: a view tile's grid `zoom` is a
-   layout property, so its table relayouts each frame OF THE TRANSITION only — a bounded one-shot,
-   not a per-frame trigger. */
+/* Markdown/page tiles read --block-zoom for the font (via .cm-content) and the editor glyphs (via
+   --glyph-scale); a view tile's table reads it in its own grid `zoom` (base density ×
+   --block-zoom). The handle, resize edges, gutter, and padding do not read it — chrome and
+   structure stay fixed. 1.0 needs no class since --block-zoom falls back to 1. Every tile animates
+   the factor on the standard beat: a view tile's grid `zoom` is a layout property, so its table
+   relayouts each frame of the transition only — a bounded one-shot, not a per-frame trigger. */
 .spm-tile.blk-zoom-150 {
   --block-zoom: 1.5;
 }
@@ -57,51 +54,46 @@
   --block-zoom: 0.5;
 }
 
-/* The lifted block — PommoraDND's overlay treatment: the block itself rides the
-   pointer, elevated on the shared lift shadow. OPAQUE: the state-hover wash
-   layers over --main-bg so underlying tiles never show through a dragged block.
-   No accent tint while dragged — the border stays the separator. */
+/* OPAQUE: the state-hover wash layers over --main-bg so underlying tiles never show through a
+   dragged block. No accent tint while dragged — the border stays the separator. */
 .spm-tile.is-lifted {
   z-index: var(--z-lifted);
   cursor: grabbing;
   box-shadow: var(--shadow-strong);
-  /* The selected tone — a notch brighter than hover, still opaque over main-bg. */
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }
 
-/* Resize highlight — the block's own border tints accent on edge hover + during
-   the resize, never while dragged. --tile-border-hot is its thickness knob
-   (defaults to the cell border; bump it for a heavier highlight). */
+/* The border tints accent on edge hover or during resize, never while dragged. --tile-border-hot
+   sets the highlight thickness (defaults to the cell border; bump it for a heavier highlight). */
 .spm-tile.is-resizing,
 .spm-tile:has(> .spm-edge:hover) {
   --tile-border-color: var(--accent-stroke-hot);
   border-width: var(--tile-border-hot, var(--tile-border));
 }
 
-/* Under every tile, and on the tile corner rather than the card one. */
 .spm-placement {
   z-index: 0;
   --drop-slot-radius: 16px;
 }
 
-/* The block drag handle — a bordered chip NOTCHED into the left border: its own
-   rounded border is the curve, its --main-bg fill erases the straight border line
-   behind it, and its border-color inherits the tile's (so the accent resize/lift
-   highlight flows through). The grip glyph (shared --grip-glyph) rides inside.
-   Hover-revealed; drag = move; click/right-click open the handle menu. */
+/* The block drag handle is a bordered chip notched into the left border: its own rounded border is
+   the curve, its --main-bg fill erases the straight border line behind it, and its border-color
+   inherits the tile's so the accent resize/lift highlight flows through. Hover-revealed; drag
+   moves it, click or right-click opens the handle menu. */
 .spm-handle {
   position: absolute;
   top: 16px;
-  /* Fixed size — the handle is tile CHROME (a sibling to the resize edges, which don't scale either),
-     so the per-block Scale never touches it: only the tile's CONTENT zooms, not its manipulation grips. */
+  /* The handle is tile CHROME (a sibling to the resize edges, which don't scale either), so the
+     per-block Scale never touches it: only the tile's CONTENT zooms, not its manipulation grips. */
   --handle-w: 12px;
-  --grip-size: 14px; /* the glyph's size — independent of the chip */
-  /* Chip center sits EXACTLY on the border's centerline (offsets resolve from the
-     padding box, so one border-width folds back out of the shift). */
+  --grip-size: 14px;
+  /* Chip center sits exactly on the border's centerline (offsets resolve from the padding box, so
+     one border-width folds back out of the shift); the border matches the tile's border width so
+     the notch reads as one line. */
   left: calc((var(--handle-w) + var(--tile-border)) / -2);
   width: var(--handle-w);
   height: 22px;
-  border: var(--tile-border) solid; /* same width as the tile border — the notch reads as one line */
+  border: var(--tile-border) solid;
   border-color: inherit;
   border-radius: 4px;
   background: var(--main-bg);
@@ -110,8 +102,6 @@
   z-index: 4;
   transition: opacity var(--duration-slow) var(--ease-base);
 }
-/* The glyph paints on its own --grip-size box, centered on the chip — sizing it
-   never touches the chip's geometry. */
 .spm-handle::before {
   content: "";
   position: absolute;
@@ -141,11 +131,9 @@
   opacity: 1;
 }
 
-/* The handle warms with intent — the wash is its own layer so it FADES on
-   duration-base instead of snapping (a swapped background can't interpolate).
-   state-hover: the handle or a resize edge is hovered, or the block is actively
-   resizing. state-selected: the handle itself is grabbed. The chip's own
-   --main-bg stays put underneath (the notch fill must remain opaque). */
+/* The wash is its own layer so it fades on duration-base instead of snapping — a swapped
+   background can't interpolate. The chip's own --main-bg stays put underneath so the notch fill
+   remains opaque. */
 .spm-handle::after {
   content: "";
   position: absolute;
@@ -168,15 +156,13 @@
   background: var(--state-selected);
   opacity: 1;
 }
-/* Dots stay crisp above the wash. */
 .spm-handle::before {
   z-index: 1;
 }
 
-/* Borderless style: the chassis hides until you reach for it — the border
-   (and the notch with it) returns on border/handle hover, while dragging or
-   resizing, and while its handle menu is open (handle-pinned) so the menu reads
-   as attached to a visible tile. */
+/* The chassis hides until you reach for it — the border (and the notch with it) returns on
+   border/handle hover, while dragging or resizing, and while its handle menu is open so the menu
+   reads as attached to a visible tile. */
 .spm-tile.is-borderless:not(.is-lifted):not(.is-resizing):not(.handle-pinned):not(
   :has(> .spm-edge:hover)
 ):not(:has(> .spm-handle:hover)) {
@@ -184,9 +170,9 @@
 }
 
 /* An embedded PAGE reads as one at a glance: an accent border (accent @ tint-secondary) while the
-   pointer is over it OR the caret is inside it — SurfacePM's location carrier is the handle menu, so
-   the border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps the
-   separator); it yields to the stronger resize accent (tint-primary) at the edges. The doubled
+   pointer is over it OR the caret is inside it — SurfacePM's location carrier is the handle menu,
+   so the border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps
+   the separator); it yields to the stronger resize accent (tint-primary) at the edges. The doubled
    .spm-tile outranks the borderless-hide rule (equal base specificity) so a borderless embed still
    shows the accent on hover, independent of source order. */
 .blk-surface:not(.is-host-locked)
@@ -200,8 +186,7 @@
   --tile-border-color: var(--accent-stroke);
 }
 
-/* Resize zones ride the block's own edges and corners (window-style), straddling
-   the border. Corners sit above edges so a corner grab wins both axes. */
+/* Corners sit above edges so a corner grab wins both axes. */
 .spm-edge {
   position: absolute;
   z-index: 2;
@@ -272,11 +257,9 @@
   cursor: nwse-resize;
 }
 
-/* A locked tile OR a locked host is a geometry lock, not a full freeze: SurfaceView gates the
-   drag + resize gestures (isTileStatic), so the edges + handle drop their grab/resize cursors and read
-   inert. The handle still opens its menu on click — every mutating row (Duplicate, Link, Style, Scale)
-   dims and goes inert; only Unlock stays live. Tile content stays editable; borderless tiles reveal on
-   hover. The lock guards position + size. */
+/* A locked tile or host is a geometry lock, not a full freeze — the edges and handle just drop
+   their grab/resize cursors; tile content stays editable and borderless tiles still reveal on
+   hover. */
 .spm-tile.is-locked .spm-edge,
 .spm-tile.is-locked .spm-handle,
 .blk-surface.is-host-locked .spm-edge,

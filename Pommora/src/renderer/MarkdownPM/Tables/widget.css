@@ -1,5 +1,5 @@
-/* Padding, not margin: CodeMirror measures the widget's box, and a margin sits outside it — every
-   table's height would run short by the gap, landing clicks below it on the wrong line. */
+/* Padding, not margin — CM measures the widget's box, and a margin sitting outside it would leave
+   the table's measured height short, misplacing clicks below it. */
 .mdpm-tbl-widget {
   padding: var(--md-box-gap) 0;
 }
@@ -12,18 +12,18 @@
   --tbl-add-size: 14px;
   --tbl-add-gap: 6px;
   --tbl-add-span: calc(var(--tbl-add-gap) + var(--tbl-add-size));
-  /* Grows with the append strip's reach so it stays inside the wrap instead of clipping. */
+  /* Grows with the append strip's reach to avoid clipping it. */
   --gutter-right: max(var(--grip-gutter), var(--tbl-add-span));
   position: relative;
-  /* Gutters keep the grips/strip hoverable (a negative-margin gutter renders past the editor's chrome
-     but can't be hovered); top reserves nothing so column grips hang into the padding instead. */
+  /* Padding, not a negative margin, keeps the grips/strip hoverable; top stays 0 so column grips
+     hang into it. */
   padding: 0 var(--gutter-right) 0 var(--grip-gutter);
 }
 
 .mdpm-tbl {
   width: 100%;
-  /* Separate, not collapsed: a collapsed border doesn't move with a transformed cell, so a dragged
-     column/row would tear from its gridlines. */
+  /* Separate, not collapsed — a collapsed border won't move with a transformed cell, tearing a
+     dragged column/row from its gridlines. */
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -39,12 +39,13 @@
   justify-content: center;
   cursor: default;
 }
-/* Grabbing cursor only during a real (left-button) drag — a right-press keeps default cursor and reaches the context menu. */
+/* Grabbing cursor only for a real left-button drag; a right-press keeps the default cursor for the
+   context menu. */
 .mdpm-tbl-dragging .mdpm-tbl-grip-zone {
   cursor: grabbing;
 }
-/* Measured off the table's own edge, not the shared --md-box-gap: that var is zoom-scaled, so a grip
-   seated on it would drift off the table at any zoom but one. */
+/* Measured off the table's edge, not --md-box-gap — that var is zoom-scaled and would drift the
+   grip off-table at any zoom but one. */
 .mdpm-tbl-grip-col {
   top: calc(-1 * (var(--grip-size) + var(--grip-rise)));
   height: var(--grip-size);
@@ -58,7 +59,6 @@
   left: 0;
   width: var(--grip-size);
 }
-/* Never squeezed — a lane narrower than the glyph would shrink it as a flex item. */
 .mdpm-tbl-grip {
   flex: none;
   color: var(--label-secondary);
@@ -70,8 +70,8 @@
   opacity: 1;
 }
 
-/* Hovering the table reveals these strips; pointer-events stays off while hidden so a row strip
-   doesn't steal clicks aimed at the content below. */
+/* Hovering the table reveals these strips; pointer-events stays off while hidden so a strip doesn't
+   steal clicks aimed at the content below. */
 .mdpm-tbl-add {
   position: absolute;
   z-index: 1;
@@ -147,8 +147,7 @@
   position: relative;
   z-index: 2;
   opacity: var(--state-ghost);
-  /* Fills the grabbed row/column so it glides as one band — an empty cell would otherwise have nothing
-     visible to move, and the column would appear to tear. */
+  /* Fills the grabbed row/column so it glides as one band instead of appearing to tear when empty. */
   background: var(--fill-tertiary);
   /* biome-ignore lint/complexity/noImportantStyles: the dragged band follows the pointer 1:1 — no cell transition may lag it. */
   transition: none !important;
@@ -170,7 +169,7 @@
   font-weight: var(--weight-emphasized);
 }
 
-/* Tbody-only so thead's fill naturally layers above this column's fill — no z-index needed. */
+/* Tbody-only so thead's fill layers above this column's fill without a z-index. */
 .mdpm-tbl tbody .mdpm-tbl-cell.mdpm-tbl-heading-col {
   background: var(--fill-quinary);
   font-weight: var(--weight-emphasized);
@@ -207,9 +206,10 @@
 .mdpm-tbl-cell-editor .cm-editor .cm-scroller {
   font: inherit;
   line-height: inherit;
-  /* A nested editor swallows the wheel by default; cells never scroll, so drop it and chain to the main scroller. */
+  /* A nested editor swallows the wheel by default; cells never scroll, so chain it to the main scroller. */
   overflow: visible;
-  /* Don't claim the --mdpm-scroll timeline name — `.mdpm-editor .cm-scroller` also matches this nested scroller, and a second declarer makes it ambiguous. */
+  /* Don't claim --mdpm-scroll here — .mdpm-editor .cm-scroller also matches this nested scroller, and
+     two declarers make it ambiguous. */
   scroll-timeline: none;
 }
 .mdpm-tbl-cell-editor .cm-editor .cm-content {
@@ -234,8 +234,8 @@
   overflow-wrap: anywhere;
   cursor: text;
 }
-/* Gives the cell's tail a line box — pre-wrap draws none after a trailing newline, so without this the
-   cell would jump taller when promoted to its editor. */
+/* Gives the cell's tail a line box — pre-wrap draws none after a trailing newline, so the cell would
+   otherwise grow taller once promoted to its editor. */
 .mdpm-tbl-cell-static::after {
   content: "\200b";
 }
