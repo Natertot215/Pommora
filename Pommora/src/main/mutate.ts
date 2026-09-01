@@ -10,6 +10,7 @@
 import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { readFile, realpath } from 'node:fs/promises'
 import { sessionRoot } from './session'
+import { noteValueWrite } from './valuesChanged'
 import { splitFrontmatter } from './readNexus'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './CRUD/page'
@@ -494,6 +495,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
             resolved.value,
             mergeFrontmatter(existing, rel ? { cover: rel } : {}, ['cover'], body),
           )
+          noteValueWrite(root, resolved.value)
           await dropReplacedAsset(root, prev, rel, deps.trashToSystem)
           return ok(rel ? { adopted: rel } : {})
         })
@@ -587,6 +589,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           const { body } = splitEnvelope(existing)
           const fields = req.icon ? { icon: req.icon } : {}
           await atomicWriteFile(resolved.value, mergeFrontmatter(existing, fields, ['icon'], body))
+          noteValueWrite(root, resolved.value)
           return ok({})
         })
       }

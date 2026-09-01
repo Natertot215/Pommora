@@ -241,6 +241,7 @@ const api = {
   onAssetsChanged: on('assets:changed'),
   // The live watcher pushed a fresh tree (external FS change) — swap it in place.
   onNexusChanged: on('nexus:changed'),
+  onValuesChanged: on('values:changed'),
   // A guest webview's window.open — the renderer's open-link adjudicator answers it.
   onWebPopup: on('web:popup'),
 }

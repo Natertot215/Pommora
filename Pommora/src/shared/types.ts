@@ -380,6 +380,11 @@ export interface PickFileOptions {
   any?: boolean
 }
 
+export type ValuesEpoch = { n: number } & (
+  | { kind: 'rename'; oldKey: string; newKey: string }
+  | { kind: 'container'; rel: string; pageIds: string[] }
+)
+
 export interface NexusTree {
   /** `name` is the root folder's basename (filename = title). `profileImage` names an image in
    *  the asset directory as a `[[Name.ext]]` wikilink — or, in a nexus the migration has not

@@ -21,6 +21,7 @@ import { serializeSchemaOp } from './schemaChain'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
+import { flushValueWrites } from '../valuesChanged'
 
 let root: string
 beforeEach(async () => {
@@ -184,6 +185,28 @@ describe('renameOption', () => {
 
   it('fails for an unknown property id', async () => {
     expect((await renameOption(root, 'prop_nope', 'A', 'B')).ok).toBe(false)
+  })
+
+  it('notes every rewritten page once per container for the values:changed push', async () => {
+    const id = await mkSelect([{ value: 'A', label: 'A' }])
+    const def = (await readRegistry(root)).defs[id]
+    for (const [folder, titles] of [
+      ['Col', ['One', 'Two']],
+      ['Col2', ['Three']],
+    ] as const) {
+      const col = await createFolderEntity(root, 'collection', folder)
+      if (!col.ok) throw new Error('folder failed')
+      await assignProperty(root, col.value.path, id)
+      for (const title of titles) {
+        const p = await createPage(col.value.path, title, { body: 'b' })
+        if (!p.ok) throw new Error('page failed')
+        await updatePageProperty(p.value.path, def, { kind: 'select', value: 'A' })
+      }
+    }
+    flushValueWrites(root)
+    expect((await renameOption(root, id, 'A', 'B')).ok).toBe(true)
+    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Col', 'Col2'])
+    expect(flushValueWrites(root)).toEqual([])
   })
 })
 

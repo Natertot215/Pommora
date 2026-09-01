@@ -82,9 +82,10 @@ describe('the watcher settle', () => {
     emit('add', 'Notes', 'B.md')
     emit('add', 'Notes', 'C.md')
     await settleAll(() => pushMock.mock.calls.length > 0)
-    expect(pushMock).toHaveBeenCalledTimes(1)
-    const pushed = pushMock.mock.calls[0][2]
-    expect(pushed).toBe(getLiveTree())
+    const channels = pushMock.mock.calls.map((c) => c[1])
+    expect(channels).toEqual(['nexus:changed', 'values:changed'])
+    expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
+    expect(pushMock.mock.calls[1][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B, ULID_C] }])
     expect(getLiveTree()?.collections[0]?.pages).toHaveLength(3)
   })
 
@@ -103,9 +104,10 @@ describe('the watcher settle', () => {
     emit('add', 'Notes', 'B.md')
     emit('change', '.nexus', 'state.json')
     await settleAll(() => pushMock.mock.calls.length > 0)
-    expect(pushMock).toHaveBeenCalledTimes(1)
-    const pushed = pushMock.mock.calls[0][2]
-    expect(pushed).toBe(getLiveTree())
+    const channels = pushMock.mock.calls.map((c) => c[1])
+    expect(channels).toEqual(['nexus:changed', 'values:changed'])
+    expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
+    expect(pushMock.mock.calls[1][2]).toEqual([{ rel: 'Notes', pageIds: [] }])
     expect(
       getLiveTree()
         ?.collections[0]?.pages.map((p) => p.title)
