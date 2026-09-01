@@ -11,23 +11,33 @@
 // that governs it without supplying it, which is the same trap one field over.
 
 import { readFile } from 'node:fs/promises'
+import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
+import type { Adoption } from '@shared/propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
+import { splitFrontmatter } from '../readNexus'
 import { nowIso } from './util'
 
-/** Write a set of governed root keys onto a page, preserving every other key and comment.
- *  A property write passes one key; a Context write passes its whole reconciled set. */
+// The caller's keys leave the root before the reconcile sees it, so an absence in `next` deletes.
 export async function setGovernedRootKeys(
   absFile: string,
   next: Record<string, unknown>,
   govern: readonly string[],
-): Promise<void> {
+  world?: GovernedWorld,
+): Promise<Adoption[]> {
   const existing = await readFile(absFile, 'utf8')
+  const raw = splitFrontmatter(existing)
+  const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
+  const { root, changed, adoptions } = world
+    ? reconcileGovernedRoot(own, world)
+    : { root: own, changed: [], adoptions: [] }
+  const repaired = Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
   const content = mergeFrontmatter(
     existing,
-    { ...next, modified_at: nowIso() },
-    [...govern, 'modified_at'],
+    { ...repaired, ...next, modified_at: nowIso() },
+    [...changed, ...govern, 'modified_at'],
     splitEnvelope(existing).body,
   )
   await atomicWriteFile(absFile, content)
+  return adoptions
 }

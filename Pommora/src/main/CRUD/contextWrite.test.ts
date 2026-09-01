@@ -117,7 +117,7 @@ describe('setPageContext', () => {
 
   it('writes the wrapped key with titles resolved from ids (H-1)', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
-    const r = await setPageContext(page(), await world(), 'ctx_projects', ['sp-pom'])
+    const r = await setPageContext(page(), root, await world(), 'ctx_projects', ['sp-pom'])
     expect(r.ok).toBe(true)
     const content = await readFile(page(), 'utf8')
     expect(content).toContain('<Projects>:')
@@ -127,7 +127,7 @@ describe('setPageContext', () => {
 
   it('clears the key entirely on an empty list (A-5)', async () => {
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
-    await setPageContext(page(), await world(), 'ctx_projects', [])
+    await setPageContext(page(), root, await world(), 'ctx_projects', [])
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect('<Projects>' in fm).toBe(false)
   })
@@ -137,7 +137,7 @@ describe('setPageContext', () => {
       page(),
       '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody',
     )
-    const r = await setPageContext(page(), await world(), 'ctxC', ['sp-cs'])
+    const r = await setPageContext(page(), root, await world(), 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['<Classes>']).toEqual(['CS 161'])
@@ -159,7 +159,7 @@ describe('setPageContext', () => {
   it('fails on an unknown space id without writing', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
     const before = await readFile(page(), 'utf8')
-    const r = await setPageContext(page(), await world(), 'ctx_projects', ['nope'])
+    const r = await setPageContext(page(), root, await world(), 'ctx_projects', ['nope'])
     expect(r.ok).toBe(false)
     expect(await readFile(page(), 'utf8')).toBe(before)
   })
@@ -174,6 +174,14 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     )
     expect(sc['<Classes>']).toEqual(['CS 161'])
     expect(sc.id).toBe('sp-pom')
+  })
+
+  it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
+    const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
+    const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', [])
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await readFile(path, 'utf8'))['<Classes>']).toEqual(['CS 161'])
   })
 })
 

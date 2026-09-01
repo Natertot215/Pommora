@@ -2,6 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { GovernedWorld } from '@shared/contextResolve'
+import type { PropertyDefinition } from '@shared/properties'
 import { setGovernedRootKeys } from './governedWrite'
 
 let dir: string
@@ -66,5 +68,65 @@ describe('setGovernedRootKeys', () => {
     expect(out).toContain('Status: Done')
     expect(out).toContain('<Areas>:')
     expect(out).not.toContain('"Status"')
+  })
+})
+
+describe('setGovernedRootKeys with a world — the three precedence rules', () => {
+  const priority: PropertyDefinition = {
+    id: 'prop_priority',
+    name: 'Priority',
+    type: 'select',
+    select_options: [{ value: 'High', label: 'High' }],
+  }
+  const status: PropertyDefinition = {
+    id: 'prop_status',
+    name: 'Status',
+    type: 'select',
+    select_options: [{ value: 'Open', label: 'Open' }],
+  }
+  const world: GovernedWorld = {
+    registry: { contexts: [{ id: 'ctx_areas', title: 'Areas' }] },
+    spacesByContext: new Map([
+      [
+        'ctx_areas',
+        [{ kind: 'space', id: 'sp', title: 'Health', path: 'x', contextId: 'ctx_areas' }],
+      ],
+    ]),
+    defs: new Map([
+      ['Priority', priority],
+      ['Status', status],
+    ]),
+  }
+
+  it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
+    await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\nPriority: High\n---\nbody\n')
+    await setGovernedRootKeys(page, {}, ['<Areas>'], world)
+    const out = await readFile(page, 'utf8')
+    expect(out).not.toContain('Areas')
+    expect(out).toContain('Priority:\n  - High')
+  })
+
+  it('a clear deletes its key while a drifted sibling is repaired', async () => {
+    await writeFile(page, '---\nid: p1\nPriority:\n  - High\nStatus: Open\n---\nbody\n')
+    await setGovernedRootKeys(page, {}, ['Priority'], world)
+    const out = await readFile(page, 'utf8')
+    expect(out).not.toContain('Priority')
+    expect(out).toContain('Status:\n  - Open')
+  })
+
+  it('reports the adoptions the reconcile found', async () => {
+    const tags: PropertyDefinition = {
+      id: 'prop_tags',
+      name: 'Tags',
+      type: 'multi_select',
+      select_options: [{ value: 'alpha', label: 'alpha' }],
+    }
+    await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')
+    const adoptions = await setGovernedRootKeys(page, { Status: ['Open'] }, ['Status'], {
+      ...world,
+      defs: new Map([['Tags', tags]]),
+    })
+    expect(adoptions).toEqual([{ propertyId: 'prop_tags', value: 'zeta' }])
+    expect(await readFile(page, 'utf8')).toContain('- zeta')
   })
 })

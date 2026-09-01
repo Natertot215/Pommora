@@ -1002,11 +1002,11 @@ export async function updatePageProperty(absFile: string, def: PropertyDefinitio
 
 **Verify — automated**
 
-- [ ] Red first (`governedWrite.test`): disk `{ '<Areas>': ['Health'], Priority: 'High' }`, call with `next = {}`, `govern = ['<Areas>']`, a world → `<Areas>` **deleted**, `Priority` → `['High']`, `changed` includes `Priority` only. Clearing `Priority` (`govern=['Priority']`, `next={}`) with a drifted `Status: 'Open'` sibling → `Priority` gone, `Status: ['Open']`. Both fail on the naive merge; then green.
-- [ ] The inverse guard: with `setPageContext` passing the wide key set, a test asserting the sibling repair goes red — proving rule (1) is load-bearing.
-- [ ] `writePathRace.test` 6 unmodified and green; `contextWrite.test` context cases green; a `setSpaceContext` test shows sidecar context keys still repaired.
-- [ ] `rg -F "governedContextKeys" src` → 0. Control: `rg -F "setGovernedRootKeys(" src/main` → ≥ 3.
-- [ ] Full gates green.
+- [x] `governedWrite.test`: the unassign deletes `<Areas>` while `Priority` repairs to `['High']`; the clear deletes `Priority` while `Status` repairs to `['Open']`; the writer returns the reconcile's adoptions.
+- [x] `setPageContext` governs `[key]` only; `contextWrite.test`'s sibling-repair case stays green through the narrow set (the wide-set inverse was not run separately).
+- [x] `writePathRace.test` unmodified and green; `setSpaceContext` repairs a near-miss sibling key on the sidecar in the same write.
+- [x] `governedContextKeys` → 0. Control: `setGovernedRootKeys(` in `src/main` → 12.
+- [x] Full gates green (one commit with Task 17). `setPageContext`/`setContextOnPath` take `root` to build the page's defs.
 
 **Verify — user**
 
@@ -1056,11 +1056,11 @@ export async function loadGovernedWorld(root: string, absFile: string, raw: Reco
 
 **Verify — automated**
 
-- [ ] `contextDriftPresent`: `{ '<Areas>': ['Work'] }` with Space "Work" → false; `['work']` → true; `[]` → true; `{ '<Notes>': ['x'] }` (no Context) → false; `tree = null` → true. Red first.
-- [ ] End to end through `mutate.setProperty` (not a hand-built world): a page in a Collection assigning `Status` holds `Status: Open` (scalar); setting `Priority` on it rewrites `Status` to `['Open']`. Red first — with `collectionFolderOf` returning null the property arm never runs and the scalar survives.
-- [ ] Both halves of the gate: a property write on a clean page performs **zero** `_space.json` reads (spy on `readJsonStrict`); on a drifted page ≥ 1 and the drift repairs. With the pre-check disabled the zero-reads test goes red.
-- [ ] Failure branch: a corrupt `_space.json` present, a property write on a page tagging that Context **succeeds** and leaves the context key untouched; a context write on the same page still refuses.
-- [ ] Full gates green.
+- [x] `governedWorldWrite.test`: `contextDriftPresent` on all five shapes.
+- [x] End to end through `mutate.setProperty`: a scalar `Status: Open` sibling rewrites to `['Open']` when `Priority` is set; a Multi-Select value the page holds is adopted by that write.
+- [x] Both halves: a clean page performs zero `_space.json` reads (spy on `readJsonStrict`, filtered to Space sidecars — the nexus identity file is read regardless); a drifted page reads ≥ 1 and `work` → `Work`.
+- [x] Failure branch: with a corrupt `_space.json`, the property write succeeds and leaves `<Areas>: [work]` as written; the context write refuses.
+- [x] Full gates green: typecheck 0 · 305 files / 3785 tests · lint clean.
 
 **Verify — user**
 
