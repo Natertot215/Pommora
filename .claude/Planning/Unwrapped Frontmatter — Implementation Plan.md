@@ -1,6 +1,6 @@
 ## Unwrapped Frontmatter — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Unwrapped Frontmatter — Decision Log]] · Execute tasks in order.
+> **Status:** ratified — in execution (08-31-2026) · Spec: [[Unwrapped Frontmatter — Decision Log]] · Execute tasks in order · Progress artifact: see Completion Criteria.
 > Citations name files and symbols at HEAD `2ee4e077`; re-derive before editing.
 
 **Goal**
@@ -55,7 +55,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 
 **Declared Stops**
 
-- **Gate 1** — the point of no return for on-disk format. Nathan runs the manual vault pass (M-1/M-2 in the log: `<Prop>` → bare with bare-twin-wins and empty-twin-absent, `(Ctx)` → `<Ctx>`, Select/Status written as lists, `.trash` swept, `properties.json` re-registered, `.nexus/property-cascade.json` cleared) **before** opening NexusOS on a Phase 1+ build, then looks at a page in Obsidian. Execution waits.
+- **Gate 1** — the point of no return for on-disk format. **The executor runs the vault pass** (M-1/M-2 in the log: `<Prop>` → bare with bare-twin-wins and empty-twin-absent, `(Ctx)` → `<Ctx>`, Select/Status written as lists, `.trash` swept, `properties.json` re-registered, `.nexus/property-cascade.json` cleared) as a throwaway script in the scratchpad, per Nathan's conversion instructions recorded under Rulings, **after a backup** (a git commit of NexusOS if it is a repository, else a dated copy of `.nexus/` and every touched `.md`). Then it opens NexusOS on the Phase 1 build and pings Nathan; he verifies Phase 1 himself (the only phase he drives). If he is unreachable for an hour, execution continues — the pass is reversible from the backup, and every later phase runs against scratch nexuses until closeout.
 
 **Global Constraints (every task inherits these):**
 
@@ -1368,6 +1368,10 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 ### Rulings
 
+- **Vault conversion** (Nathan, 08-31-2026 — instructions pending; the executor records them here verbatim before Gate 1 and does not run the pass without them).
+- **Phase 1 verification is Nathan's; every later phase is verified by the executor** over CDP against scratch nexuses. NexusOS is opened again only at closeout, read-only.
+- **The Metadata section title** is Nathan's call; the other single-section leaves leave theirs untitled.
+
 ### Open Against Later Tasks
 
 ### Deviations
@@ -1389,11 +1393,14 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 **The directive**
 
 ```
-Execute .claude/Planning/Unwrapped Frontmatter — Implementation Plan.md. Live — halts at Gate 1's declared stop.
-Live-verify: the Acceptance criterion end to end in a scratch nexus; Obsidian round-trip of a Select and a Multi-Select.
-Screenshots: Gate 1 (a page's frontmatter in Obsidian's Properties panel and the same page in Pommora); Gate 5 (the Properties leaf with both toggles).
+Execute .claude/Planning/Unwrapped Frontmatter — Implementation Plan.md end to end. Unattended overnight — stop only when a task is wrong as specified or a gate cannot go green after a real fix attempt; never for a question the plan or the decision log already answers. The one planned pause is Gate 1: run the vault pass per the Rulings entry "Vault conversion", ping Nathan, wait up to one hour for his Phase 1 verification, then continue regardless.
+Live-verify, in this order, at closeout: (1) open NexusOS, the Ideas Collection — every page's Status shows the value its frontmatter holds (the same values Obsidian shows), Contexts resolve, nothing reads foreign that the registry names; (2) then the MANUAL list below, each tried in the running app over CDP against a scratch nexus (never NexusOS), each with its expected outcome stated before the attempt and the observed outcome recorded under Closeout.
+Manual list: an external write of Status: [Open, Active] → Active shows within one settle · an external Status: [Wip] (unknown) → cell blank, key deleted on the next value edit · an external Tags: [alpha, zeta] → zeta shows uncolored, adopted into properties.json on the next value edit, then colored-default · a Checkbox written false externally → reads unchecked and "is empty" filters it · a new property created by editing a page's frontmatter as another app would (a bare key not yet registered) → foreign until registered in Pommora, then live on the first view without re-indexing · registering a property whose key already exists on pages → the values appear at once · renaming a property onto a key some page already uses → refused with the message · clearing a cell → key gone · unassigning a page's last Space → <Context> key gone · setting Priority on a page holding a drifted Status list → Status repaired to one element, foreign keys byte-identical · Repair On Open toggled on, a hand-drifted page, relaunch → canonical · Capitalize on → tags reads Tags everywhere but the rename field · a cover save → card updates without reopening · an option rename/delete on a list-shaped Select → every holder rewritten · Clear Exclusion → property values survive, <Context> keys and stamps gone, aliases and dashboard layouts intact after relaunch. Another app's UI is not driven; its writes are reproduced byte-for-byte (the serializers are identical, executed).
+Screenshots: Gate 1 (a page in Obsidian's Properties panel and in Pommora); Gate 5 (the Properties leaf's Metadata section); closeout (the Ideas Collection table).
 Pings: per phase · at the Gate 1 stop · at completion.
-Record: History arc "Unwrapped Frontmatter".
+Record: History arc "Compatible Properties".
+Docs: surgical — rewrite only the sentences Made False names and what closeout proves false; never mention Obsidian by name where "another application" or "a shared vault" reads the same; the Features docs describe Pommora's format, not another app's.
+Progress artifact: republish .claude/Planning/Compatible-Properties-Progress.html to https://claude.ai/code/artifact/fe48782e-d0e9-49d3-b3d4-8e90704b3b9a (pass it as `url`; read it first) at the start of every task, every gate, the Gate 1 stop, and closeout — edit only the JSON `data` block: `now`, each task's `state`/`sha`/`note`, each phase's `state`/`base`/`gate.output`/`gate.deviation` — so Nathan can follow while away.
 Also: after Phase 5, dispatch the sustainability judge — an agent handed the pre-Phase-0 and post-Phase-5 trees, the file list from the Reduction Ledger, and only the question "which is more sustainable, and why"; its answer is recorded verbatim under Closeout.
 Everything else is the standard below.
 ```
