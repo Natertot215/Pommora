@@ -559,7 +559,7 @@ export interface ViewRow {
 export type ColumnKind = 'title' | 'property' | 'context' | 'stamp'
 
 /** The stable seam the table routes to. `id` is the property id (a reserved
- *  `_title`/`_modified_at`, a Context id, or a `prop_*`); `kind` picks the renderer. */
+ *  `_title` or stamp id, a Context id, or a `prop_*`); `kind` picks the renderer. */
 export interface ResolvedColumn {
   id: string
   kind: ColumnKind
