@@ -4,7 +4,6 @@
 
 import { mkdir } from 'node:fs/promises'
 import { newId } from './ids'
-import { nowIso } from './CRUD/util'
 import { readJsonStrict, writeJson } from './IO/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
@@ -29,7 +28,7 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   const id = newId()
   // Stamped once, not per write: the second write below lands after the folders are seeded, and
   // re-reading the clock there would record the end of seeding as the nexus's creation moment.
-  const createdAt = nowIso()
+  const createdAt = new Date().toISOString()
   // A file that EXISTS but carries no readable id is an established nexus with a damaged
   // identity, not a new one: mint an id over it and seed nothing, or folders its owner deleted
   // would be recreated and every asset keyed to the old id orphaned.
