@@ -2,6 +2,7 @@
 // write path or a renderer actually reads.
 
 import { z } from 'zod'
+import { KIND_ID_KEY, PAGE_MODELED_KEYS } from './identity'
 
 export const propertyType = z.enum([
   'number',
@@ -150,11 +151,20 @@ export function isReservedPropertyId(id: string): boolean {
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
 export const RESERVED_NAME_PREFIX = '$'
+/** A name is also the bare key its values write under, so Pommora's own page keys and the
+ *  Context sigil are off limits. */
+const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
+  ...Object.values(KIND_ID_KEY),
+  ...PAGE_MODELED_KEYS,
+])
 
 export const KEY_REFUSAL = {
   empty: 'A name cannot be empty.',
-  reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX}.`,
+  reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
+  reserved: (name: string) => `"${name}" is a key Pommora manages.`,
   duplicate: (name: string) => `A property named "${name}" already exists.`,
+  held: (name: string, n: number) =>
+    `${n} ${n === 1 ? 'page already uses' : 'pages already use'} "${name}" as a key.`,
 } as const
 
 /** Applied once at write, so an untrimmed or denormalized name never reaches disk — which is what
@@ -163,9 +173,13 @@ export function normalizePropertyName(raw: string): string {
   return raw.trim().normalize('NFC')
 }
 
+export function isReservedKeyName(name: string): boolean {
+  return RESERVED_KEY_NAMES.has(normalizePropertyName(name))
+}
+
 export function invalidPropertyName(name: string): boolean {
   const n = normalizePropertyName(name)
-  return !n || n.startsWith(RESERVED_NAME_PREFIX)
+  return !n || n.startsWith(RESERVED_NAME_PREFIX) || n.startsWith('<') || RESERVED_KEY_NAMES.has(n)
 }
 
 /** A frontmatter key is a property's iff it is exactly a registered name — the one ownership gate. */

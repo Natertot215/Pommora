@@ -11,6 +11,7 @@ import {
 import { assignProperty } from './assignment'
 import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
+import { pathExists } from '../IO/atomicWrite'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
 import type { PropertyDefinition } from '@shared/properties'
@@ -77,6 +78,16 @@ describe('createProperty', () => {
     expect((await createProperty(root, def({ name: 'Budget ($)', type: 'number' }))).ok).toBe(true)
   })
 
+  it('refuses a name Pommora manages as a page key, on create and on rename', async () => {
+    const created = await createProperty(root, def({ name: 'created_at', type: 'datetime' }))
+    expect(created.ok).toBe(false)
+    if (!created.ok) expect(created.error.message).toContain('created_at')
+    const ok = await createProperty(root, def({ name: 'Due', type: 'datetime' }))
+    if (!ok.ok) return
+    expect((await editProperty(root, ok.value.id, { name: 'created_at' })).ok).toBe(false)
+    expect((await editProperty(root, ok.value.id, { name: '<Due>' })).ok).toBe(false)
+  })
+
   it('normalizes the stored name, so an untrimmed one can never reach a key', async () => {
     const r = await createProperty(root, def({ name: '  Spaced  ', type: 'number' }))
     expect(r.ok).toBe(true)
@@ -116,6 +127,26 @@ describe('editProperty', () => {
     if (!c.ok) return
     expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('New')
+  })
+
+  it('refuses a rename onto a key a Collection page already holds, and stages no journal', async () => {
+    const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col')
+    if (!c.ok || !col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const p = await createPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) return
+    await writeFile(p.value.path, `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
+
+    const refused = await editProperty(root, c.value.id, { name: 'foo' })
+    expect(refused.ok).toBe(false)
+    if (!refused.ok) expect(refused.error.message).toBe('1 page already uses "foo" as a key.')
+    expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
+    expect((await readRegistry(root)).defs[c.value.id].name).toBe('Status')
+
+    expect((await editProperty(root, c.value.id, { name: 'Status ' })).ok).toBe(true)
+    expect((await editProperty(root, c.value.id, { name: 'Phase' })).ok).toBe(true)
+    expect(await readFile(p.value.path, 'utf8')).toContain('foo: bar')
   })
 
   it('refuses renaming onto a taken title, the same as creating one', async () => {
