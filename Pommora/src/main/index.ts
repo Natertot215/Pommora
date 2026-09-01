@@ -76,7 +76,7 @@ import { sanitizeExclusions } from './exclusionInput'
 import { clearConfirmCopy, clearExclusionData } from './exclusionScan'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
-import { flushValueWrites } from './valuesChanged'
+import { flushValueWrites, noteValueWrite } from './valuesChanged'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -181,8 +181,8 @@ import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
   coerceScale,
-  coerceViewScale,
-  viewScaleZoom,
+  coerceInterfaceScale,
+  interfaceScaleZoom,
 } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
@@ -277,7 +277,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   const p = root ? await readLivePersonalization(root) : null
   setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
   if (!win.isDestroyed())
-    setHostZoom(win.webContents, viewScaleZoom(coerceViewScale(p?.defaultViewScale)))
+    setHostZoom(win.webContents, interfaceScaleZoom(coerceInterfaceScale(p?.interfaceScale)))
 }
 
 function createWindow(): void {
@@ -1101,8 +1101,11 @@ serveBridge(
         const resolved = await resolveUnderRoot(root, relPath)
         if (!resolved.ok) return resolved
         const r = await updatePageBody(resolved.value, body)
-        if (r.ok) await indexWrittenPage(root, resolved.value)
-        return r.ok ? ok(null) : r
+        if (!r.ok) return r
+        await indexWrittenPage(root, resolved.value)
+        noteValueWrite(root, resolved.value)
+        pushValueChanges(root)
+        return ok(null)
       },
     },
 
@@ -1200,6 +1203,22 @@ serveBridge(
         const r = await reorderViews(folder, k, orderedIds)
         if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok(null) : r
+      },
+    },
+    // Delete keeps the native confirm (deliberate) — the in-app menus ask main first.
+    'views:confirmDelete': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null): Promise<boolean> => {
+        if (!win) return false
+        const { response } = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Delete', 'Cancel'],
+          defaultId: 0,
+          cancelId: 1,
+          message: 'Delete this view?',
+          detail: 'Its configuration is removed from the container; pages are untouched.',
+        })
+        return response === 0
       },
     },
     'views:delete': {
@@ -1566,8 +1585,8 @@ serveBridge(
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
         if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
-        if (key === 'defaultViewScale' && mainWindow && !mainWindow.isDestroyed())
-          setHostZoom(mainWindow.webContents, viewScaleZoom(coerceViewScale(value)))
+        if (key === 'interfaceScale' && mainWindow && !mainWindow.isDestroyed())
+          setHostZoom(mainWindow.webContents, interfaceScaleZoom(coerceInterfaceScale(value)))
         // No renderer confirm exists for this channel (the slice patches optimistically), yet
         // it writes a field the walk reads — the push set's membership predicate.
         await confirmSettingsWrite()

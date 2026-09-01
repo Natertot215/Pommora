@@ -143,7 +143,7 @@ export interface Personalization {
   ribbonOrder?: string[]
   /** The window zoom the nexus opens at (and ⌘0 resets to). Absent = 1.0; ⌘ +/− nudge live from
    *  it. Applied main-side (webContents zoom). */
-  defaultViewScale?: number
+  interfaceScale?: number
   /** Whole seconds (1–30). Absent = None: only the short pointer-travel grace. */
   hoverPreviewLinger?: number
   /** Absent = the artifact goes to the OS trash and the OS owns the last undo; true erases it
@@ -204,23 +204,23 @@ export const EMBED_SCALE_DEFAULT = 0.9
 export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
 export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)
 
-/** `personalization.defaultViewScale`, stated as the multiplier a user reads: 1.0 is the
+/** `personalization.interfaceScale`, stated as the multiplier a user reads: 1.0 is the
  *  interface at its own intended size. */
-export const VIEW_SCALE_DEFAULT = 1
-export const VIEW_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
-export const VIEW_SCALE_MIN = VIEW_SCALE_STEPS[0]
-export const VIEW_SCALE_MAX = VIEW_SCALE_STEPS[VIEW_SCALE_STEPS.length - 1]
-export function coerceViewScale(v: unknown): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return VIEW_SCALE_DEFAULT
-  return Math.min(VIEW_SCALE_MAX, Math.max(VIEW_SCALE_MIN, v))
+export const INTERFACE_SCALE_DEFAULT = 1
+export const INTERFACE_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
+export const INTERFACE_SCALE_MIN = INTERFACE_SCALE_STEPS[0]
+export const INTERFACE_SCALE_MAX = INTERFACE_SCALE_STEPS[INTERFACE_SCALE_STEPS.length - 1]
+export function coerceInterfaceScale(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return INTERFACE_SCALE_DEFAULT
+  return Math.min(INTERFACE_SCALE_MAX, Math.max(INTERFACE_SCALE_MIN, v))
 }
 
 /** What the interface's own 1.0 is worth as a host zoom factor. The chrome is drawn a step below
- *  the browser's scale, so every site that sets zoom passes through `viewScaleZoom` rather than
+ *  the browser's scale, so every site that sets zoom passes through `interfaceScaleZoom` rather than
  *  the stated multiplier directly. */
-export const VIEW_SCALE_BASE = 0.9
+export const INTERFACE_SCALE_BASE = 0.9
 
-export const viewScaleZoom = (scale: number): number => scale * VIEW_SCALE_BASE
+export const interfaceScaleZoom = (scale: number): number => scale * INTERFACE_SCALE_BASE
 
 /** `personalization.hoverPreviewLinger`. Whole seconds; a hand-typed value clamps in, and zero
  *  or junk reads as None (the key's absence). */

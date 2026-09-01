@@ -117,6 +117,7 @@ export function ViewFrame({
     }
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
+    if (!(await window.nexus.views.confirmDelete())) return
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
     if (!res.ok) return void window.nexus.showError(res.error.message)
   }

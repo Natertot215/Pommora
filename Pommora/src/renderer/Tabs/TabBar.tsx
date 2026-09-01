@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
 import { duration, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -389,7 +389,7 @@ function UnpinnedTab({
         ) : (
           <EntityIcon item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
         )}
-        <OverScroll className={cx('tab-label', slideClass)}>{title}</OverScroll>
+        <span className={cx(overScrollEllipsis, 'tab-label', slideClass)}>{title}</span>
       </Fragment>
       <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
     </div>

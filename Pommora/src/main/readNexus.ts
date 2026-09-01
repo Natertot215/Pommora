@@ -37,7 +37,7 @@ import {
   WEB_ZOOM_DEFAULT,
   coerceHoverLinger,
   coerceScale,
-  coerceViewScale,
+  coerceInterfaceScale,
   EDITOR_SCALE_DEFAULT,
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
@@ -139,7 +139,7 @@ export function readPersonalization(raw: unknown): Personalization {
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
-    defaultViewScale: coerceViewScale(p.defaultViewScale),
+    interfaceScale: coerceInterfaceScale(p.interfaceScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
     permanentDelete: bool(p.permanentDelete),
     dateFormat: DATE_FORMATS.find((f) => f === p.dateFormat),

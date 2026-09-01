@@ -122,7 +122,9 @@ export function VisibilityList({
   const contextIds = contextIdsOf(tree)
   const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
   const hiddenIds = hiddenListIds(view, schema, contextIds)
-  const hiddenSet = new Set(view.hidden_properties)
+  // The hidden list's own membership, not hidden_properties: a prop absent from property_order
+  // (a title-only mint, or one created after the view) is hidden by absence and reads as such.
+  const hiddenSet = new Set(hiddenIds)
   const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
