@@ -28,6 +28,7 @@ import {
 } from './Editor/embedWidget'
 import { embeddable } from './Editor/embedRanges'
 import { customCaret } from './Editor/caret'
+import { customSelection } from './Editor/selection'
 import { codeHighlight, codeLanguages } from './Editor/codeHighlight'
 import { registerScrollHeal } from '../SurfacePM/TileCache'
 import { calloutAtomic } from './Editor/calloutAtomic'
@@ -305,6 +306,7 @@ export function MarkdownEditor({
       gripMenu,
       // Drawn caret (rounded bar in text, I-beam on empty lines, smooth fade) — native caret hidden in CSS.
       customCaret,
+      customSelection,
       // The hidden `> [!type] ` callout head is atomic — caret can't enter it, so the tag can't be corrupted.
       calloutAtomic,
       // Reject any delete that would erode a callout body line's `>` prefix in place (drop it out of the box).

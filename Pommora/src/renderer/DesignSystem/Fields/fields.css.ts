@@ -127,8 +127,9 @@ export const editable = style({
 
 /** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
  *  and a focus ring in the system accent — which is chrome around a field that is meant to read as
- *  the text it replaced. Stripped to nothing, it inherits the surface's metrics and leaves the
- *  selection to the native highlight. `font` is stated because an <input> never inherits it. */
+ *  the text it replaced. Stripped to nothing, it inherits the surface's metrics. The transparent
+ *  background is load-bearing: nativeCaret.ts seats the drawn selection pill behind the field's own
+ *  text, and a fill here would hide it. `font` is stated because an <input> never inherits it. */
 export const base = style({
   border: 'none',
   outline: 'none',

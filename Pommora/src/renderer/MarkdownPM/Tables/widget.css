@@ -182,7 +182,8 @@
 }
 /* Specificity: outweighs the thead and heading-column fills. */
 .mdpm-tbl-wrap .mdpm-tbl .mdpm-tbl-cell.mdpm-tbl-selected {
-  background: var(--accent-fill);
+  background: var(--text-selection);
+  border-radius: var(--text-selection-radius);
 }
 
 .mdpm-tbl-align-center {
