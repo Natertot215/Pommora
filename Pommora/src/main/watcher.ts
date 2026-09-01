@@ -48,12 +48,9 @@ export function isNavPath(root: string, path: string): boolean {
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
-// Ignore only what ISN'T user-meaningful tree content: the SQLite databases (which thrash via
-// WAL on every operational write), the .trash, and OS/editor dotfile cruft.
-// Crucially we DO watch .nexus/ — Contexts (.nexus/contexts/) and settings/state (accent,
-// labels, ordering) live there, so external edits to them must auto-refresh. Checks only
-// the path BELOW the root, so a dot-segment in the root's own absolute path (e.g. a nexus
-// under ~/.something) can't blank the whole watch.
+// We DO watch .nexus/ — Contexts and settings/state live there, so external edits to them
+// must auto-refresh. Checks only the path BELOW the root, so a dot-segment in the root's own
+// absolute path (e.g. a nexus under ~/.something) can't blank the whole watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   // User-excluded folders never reach the tree, so their churn must not cost a reconcile
   // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
