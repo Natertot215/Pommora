@@ -210,12 +210,10 @@ code {
   font-weight: 600;
 }
 
-/* GlassPane supplies the frost (blur / border / shadow); all layout
-   (size / position / radius / padding) lives here. */
+/* GlassPane supplies the frost (blur, border, shadow); this file owns layout only. */
 .sc-shell {
   --sc-inset: 12px;
   --sc-sidebar-width: 248px;
-  /* content clears the fixed glass sidebar: inset + width + gap */
   --sc-content-gutter: calc(var(--sc-inset) + var(--sc-sidebar-width) + 28px);
   position: relative;
   min-height: 100vh;
@@ -310,7 +308,6 @@ code {
   padding: 4px 8px;
 }
 
-/* Selectable nav row — the same language as the app sidebar's .row. */
 .sc-row {
   display: flex;
   align-items: center;
@@ -354,7 +351,6 @@ code {
   padding-left: 0;
 }
 
-/* Lab leaves (Interactions / Glass Lab) bring their own full-width layout instead. */
 .ds-leaf {
   max-width: 1080px;
   margin: 0 auto;
