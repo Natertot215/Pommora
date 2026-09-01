@@ -110,16 +110,19 @@ export function renameOption(options: Option[], oldValue: string, title: string)
   return options.map((o) => (o.value === oldValue ? { ...o, value: title, label: title } : o))
 }
 
+/** One transform applied to the option with `value`, the rest passed through. */
+function mapOption(options: Option[], value: string, fn: (o: Option) => Option): Option[] {
+  return options.map((o) => (o.value === value ? fn(o) : o))
+}
+
 export function recolorOption(
   options: Option[],
   value: string,
   color: string | undefined,
 ): Option[] {
-  return options.map((o) => {
-    if (o.value !== value) return o
-    const { color: _drop, ...rest } = o
-    return color ? { ...rest, color } : rest
-  })
+  return mapOption(options, value, ({ color: _drop, ...rest }) =>
+    color ? { ...rest, color } : rest,
+  )
 }
 
 /** undefined removes the field → the chip falls back to the type default, single tag for select and
@@ -129,11 +132,7 @@ export function setOptionIcon(
   value: string,
   icon: string | undefined,
 ): Option[] {
-  return options.map((o) => {
-    if (o.value !== value) return o
-    const { icon: _drop, ...rest } = o
-    return icon ? { ...rest, icon } : rest
-  })
+  return mapOption(options, value, ({ icon: _drop, ...rest }) => (icon ? { ...rest, icon } : rest))
 }
 
 /** Filled is the default, so it clears the key rather than being written. */
@@ -142,11 +141,9 @@ export function setOptionAppearance(
   value: string,
   appearance: OptionAppearance,
 ): Option[] {
-  return options.map((o) => {
-    if (o.value !== value) return o
-    const { appearance: _drop, ...rest } = o
-    return appearance === 'clear' ? { ...rest, appearance } : rest
-  })
+  return mapOption(options, value, ({ appearance: _drop, ...rest }) =>
+    appearance === 'clear' ? { ...rest, appearance } : rest,
+  )
 }
 
 /** One flat-option transform applied to the status option with `value`, whichever group holds it. */

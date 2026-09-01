@@ -254,7 +254,9 @@ export function PickerMenu({
   useEffect(() => {
     if (!selfManaged || !onDismiss || open !== true || closing) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
+      // A field that handled its own Escape marks the press — the same stand-down contract
+      // useDismiss honors, so abandoning a rename never takes the pane holding it.
+      if (e.key !== 'Escape' || e.defaultPrevented) return
       e.preventDefault()
       onDismiss()
     }

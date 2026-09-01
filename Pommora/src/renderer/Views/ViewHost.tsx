@@ -19,7 +19,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   const isCards = view.type === 'cards'
   // The view's own scale is a main-pane read: an embedded tile states its own size, so in a tile
   // scope the factor stays 1 and never compounds with the embed zoom.
-  const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale ?? 1, 1)
+  const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale, 1)
   const upward = useRef<ViewHostApi['seam']>({
     foldOverrides: { current: identity },
     bandBucket: { current: (key) => key },
