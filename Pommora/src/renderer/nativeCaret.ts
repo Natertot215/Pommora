@@ -75,6 +75,10 @@ let styledH = 0
 let host: HTMLDivElement | null = null
 let hostParent: HTMLElement | null = null
 let hostIsolation = ''
+// The active field's cumulative CSS zoom (a view tile scales its table with `zoom`). Client rects
+// read in screen px; the mirror's text and the host's children lay out in local px — the two
+// spaces differ by exactly this factor.
+let zoom = 1
 
 function ensureNodes(): void {
   if (!bar) {
@@ -117,8 +121,10 @@ function seatMirror(el: Field): { m: HTMLDivElement; box: DOMRect } {
   const m = mirror as HTMLDivElement
   if (styledEl !== el) syncMirror(el)
   const box = el.getBoundingClientRect()
-  m.style.left = `${box.left}px`
-  m.style.top = `${box.top}px`
+  // Zoomed to the field's scale so its glyphs measure in screen px; its own offsets scale with it.
+  m.style.zoom = String(zoom)
+  m.style.left = `${box.left / zoom}px`
+  m.style.top = `${box.top / zoom}px`
   return { m, box }
 }
 
@@ -134,16 +140,17 @@ function fieldCaret(el: Field): CaretRect | null {
   m.appendChild(span)
   const sr = span.getBoundingClientRect()
   m.textContent = ''
-  const x = sr.left - el.scrollLeft
-  const y = sr.top - el.scrollTop
+  const x = sr.left - el.scrollLeft * zoom
+  const y = sr.top - el.scrollTop * zoom
+  const h = styledH * zoom
   // No box (detached / display:none).
   if (box.width === 0 && box.height === 0) return null
   // Scrolled out of view. Horizontally the caret is a point, so a point test holds. Vertically it's
   // a bar that can overhang the field's border box at rest — a line-height tighter than the font's
   // own content area gives the line box negative half-leading — so the bar need only intersect.
   if (x < box.left - 1 || x > box.right + 1) return null
-  if (y + styledH <= box.top || y >= box.bottom) return null
-  return { x, y, h: styledH }
+  if (y + h <= box.top || y >= box.bottom) return null
+  return { x, y, h }
 }
 
 function mergeRows(rects: DOMRect[], h: number): PillRect[] {
@@ -170,9 +177,9 @@ function fieldSelection(el: Field): PillRect[] {
   m.append(span, el.value.slice(to))
   const rects = [...span.getClientRects()]
   m.textContent = ''
-  return mergeRows(rects, styledH).flatMap((p) => {
-    const left = p.x - el.scrollLeft
-    const y = p.y - el.scrollTop
+  return mergeRows(rects, styledH * zoom).flatMap((p) => {
+    const left = p.x - el.scrollLeft * zoom
+    const y = p.y - el.scrollTop * zoom
     const x = Math.max(left, box.left)
     const w = Math.min(left + p.w, box.right) - x
     const clipped = w <= 0 || y + p.h <= box.top || y >= box.bottom
@@ -185,7 +192,7 @@ function editableSelection(el: HTMLElement): PillRect[] {
   if (!sel?.rangeCount || sel.isCollapsed) return []
   const r = sel.getRangeAt(0)
   if (!el.contains(r.commonAncestorContainer)) return []
-  return mergeRows([...r.getClientRects()], lineHeight(getComputedStyle(el)))
+  return mergeRows([...r.getClientRects()], lineHeight(getComputedStyle(el)) * zoom)
 }
 
 function editableCaret(el: HTMLElement): CaretRect | null {
@@ -195,7 +202,7 @@ function editableCaret(el: HTMLElement): CaretRect | null {
   r.collapse(true)
   const rect = r.getClientRects()[0] ?? r.getBoundingClientRect()
   if (!rect || (rect.height === 0 && rect.width === 0 && rect.left === 0)) return null // empty line — skip, don't mutate the DOM
-  return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
+  return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el)) * zoom || rect.height }
 }
 
 // A field row is no stacking context of its own, so a negative z-index would sink past its background too.
@@ -238,10 +245,10 @@ function drawPills(rects: PillRect[]): void {
   rects.forEach((r, i) => {
     const el = h.children[i] as HTMLDivElement
     el.className = `mdpm-sel ${corner(i, rects.length)}`.trim()
-    el.style.left = `${r.x - base.left}px`
-    el.style.top = `${r.y - base.top}px`
-    el.style.width = `${r.w}px`
-    el.style.height = `${r.h}px`
+    el.style.left = `${(r.x - base.left) / zoom}px`
+    el.style.top = `${(r.y - base.top) / zoom}px`
+    el.style.width = `${r.w / zoom}px`
+    el.style.height = `${r.h / zoom}px`
   })
 }
 
@@ -266,6 +273,7 @@ function reposition(): void {
     releaseHost()
     return
   }
+  zoom = active.currentCSSZoom
   drawPills(selectionPills(active))
   const c = caretRect(active)
   if (!c) {
