@@ -1,7 +1,7 @@
 ## Stamp Retirement — Implementation Plan
 
 > **Status:** written, pending review (09-01-2026) · Spec: the 09-01-2026 session's confirmed direction (recorded under Rulings) · Execute tasks in order.
-> Citations name files and symbols at HEAD `53b5d903`; re-derive before editing.
+> Citations name files and symbols at HEAD `27080e45`; re-derive before editing. Line numbers are the weakest part of every citation here — a parallel session's comment sweep is shifting them under the plan as it's read, so trust the symbol names and the greps, and treat every `:NN` as an approximate landmark.
 
 **Goal**
 
@@ -38,16 +38,16 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 - `fs.rename` does not change mtime → renames and moves stop bumping Modified; Nathan accepted this (Task 5).
 - `mergeFrontmatter` re-emits the YAML document on every governed write → a body save that governs no key passes the frontmatter bytes through untouched instead of re-serializing them (Task 5).
 - `page:updateBody` calls neither `noteValueWrite` nor `pushValueChanges` (`index.ts:1097–1110`) → once Modified is the mtime, a body save must note and push or the open view's column lags until the next unrelated write (Task 2).
-- `hidden_properties` is minted as the schema ids (`views.ts:337–338`) and `hiddenListIds` lists `_modified_at` only when already hidden → today no UI path reveals Modified on a new view; the hidden list must offer both stamps whenever they aren't shown (Task 4).
+- `mintNewView` (`shared/views.ts:327–337`) seeds `property_order: [_title]` and `hidden_properties` as the schema ids, and `hiddenListIds` lists `_modified_at` only when already hidden → a stamp is in neither array on a new view, so no UI path reveals Modified; the hidden list must offer both stamps whenever they aren't shown (Task 4).
 - The NexusOS working tree is dirty (543 entries at grounding) → the closeout backup is a dated copy of the touched files, not a stash (Closeout).
 
 **Inherited Reasoning:** Nathan raised and settled: Clear Metadata reduces to ids + Contexts (09-01-2026); the typed carrier over a tuple; group-by-stamp not built ("if it already exists, just make sure it rides the change" — it doesn't: `GROUPABLE_PANE` admits schema definitions only, so nothing rides); rename/move not bumping Modified; the body-save push as "a shared writer across different purposes"; the `{ id: pageId }` fallback fixed alongside; the one-time vault normalization at closeout. The sibling plan's Sequenced After row "A `Last Edited Time` column can lag on an in-app body edit" is Task 2 here.
 
 **Grounding** *(re-open these; don't cite them)*
 
-- `src/shared/identity.ts:20–23` · `schemas.ts:32–36, 61–68` · `properties.ts:8–19, 136–157` · `propertyValue.ts:14, 58–60, 126–128` · `types.ts:594–616` · `bridge.ts:146` · `cellMenu.ts:92` · `columnStyles.ts:74` · `columnMenu.ts:90`.
-- `src/main/walkCache.ts:38–62` · `readNexus.ts:321, 372–398` · `CRUD/loadValues.ts` · `CRUD/page.ts` · `CRUD/governedWrite.ts` · `CRUD/pageValue.ts:36–75` · `CRUD/governedSweep.ts:61–66, 140–148` · `CRUD/contextCascade.ts:82` · `CRUD/deleteProperty.ts:91–94, 125–130` · `CRUD/replaySchemaCascade.ts:65` · `CRUD/removeProperty.ts:96` · `CRUD/views.ts:40, 61, 79` · `CRUD/containerConfig.ts:44` · `CRUD/contextWrite.ts:210, 303` · `CRUD/util.ts:60–62` · `IO/pageFile.ts:78–112` · `index.ts:472–490, 1097–1110` · `adopt.ts:68–75` · `ids.ts` · `exclusionScan.ts:22, 61–75`.
-- `src/renderer/Properties/value.ts:26–125` · `Properties/PropertyTypes.tsx:1–75` · `Properties/Assignment/columnLabel.ts` · `Views/Pipeline/{columns,sort,filter,group}.ts` · `Views/{useViewHost,useValuesEpoch,useViewCreation,contextCellWrite}.ts` · `Views/TableView/TableView.tsx:441–451, 1161–1169` · `Frames/{GroupFrame,SortFrame,HiddenFrame}.tsx` · `Frames/{filterModel,hiddenFrameModel}.ts` · `Tables/columnWidths.ts:18–75`.
+- `src/shared/identity.ts:20–23` · `schemas.ts:31–36, 61–68` · `properties.ts:7–18, 130–151` · `propertyValue.ts:14, 57–60, 126–129` · `types.ts:594–616` · `bridge.ts:146` · `cellMenu.ts:86–99` · `columnStyles.ts:62–80` · `columnMenu.ts:76–90` · `views.ts:327–337`.
+- `src/main/walkCache.ts:38–62` · `readNexus.ts:321, 372–398` · `CRUD/loadValues.ts` · `CRUD/page.ts` · `CRUD/governedWrite.ts:30–46` · `CRUD/pageValue.ts:33–72` · `CRUD/governedSweep.ts:44–48, 112–124` · `CRUD/contextCascade.ts:74` · `CRUD/deleteProperty.ts:88–95, 120–130` · `CRUD/replaySchemaCascade.ts:60–68` · `CRUD/removeProperty.ts:87–98` · `CRUD/views.ts:40, 61, 79` · `CRUD/containerConfig.ts:44` · `CRUD/contextWrite.ts:210, 303` · `CRUD/util.ts:46–49` · `IO/pageFile.ts:78–112` · `identity.ts:32` · `index.ts:469–486, 1093–1106, 1237–1245` · `adopt.ts:56–65` · `ids.ts` · `exclusionScan.ts:8, 22, 60–75`.
+- `src/renderer/Properties/value.ts:21–112` · `Properties/PropertyTypes.tsx:1–75` · `Properties/Assignment/columnLabel.ts` · `Views/Pipeline/{columns,sort,filter,group}.ts` · `Views/{useViewHost,useValuesEpoch,useViewCreation,contextCellWrite}.ts` · `Views/TableView/TableView.tsx:433–450, 1155–1167` · `Frames/{GroupFrame,SortFrame,HiddenFrame}.tsx` · `Frames/{filterModel,hiddenFrameModel}.ts` · `Tables/columnWidths.ts:15–72`.
 - `node_modules/ulidx/dist/ulid.d.ts` — `decodeTime(id)`, `ulid(seedTime?)`, `monotonicFactory()`.
 - `.claude/Guidelines/Development-Environment.md` — gates, pipefail, lint-warnings-in-text, no whole-tree git ops, main/preload don't HMR.
 - NexusOS census at grounding: 49 `.md` with `created_at:`, 88 with `modified_at:`, 29 `.json` sidecars with `modified_at`, 292 `.md` in all; excluded folders Agenda, TaskNotes, Atlas, slates, file-assets.
@@ -61,7 +61,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 - Gates from `Pommora/`: `npm run typecheck && npm run test && npm run lint`, `set -o pipefail` on any pipeline, and `Found 0 warnings` read from lint's text.
 - Biome formats on write via the PostToolUse hook; an Edit failing on whitespace means re-read and retry. Shell-driven edits run `npm run format` after.
 - One tree-touching writer at a time. A parallel session is executing the Comment Reduction plan on this tree: never `git stash`, `checkout .`, `clean`, or `reset`; stage explicit paths only; attribute a surprise failure to its dirty set before your own; commit each task as soon as its gate is green.
-- `src/main` and `src/preload` don't hot-reload: after any main-side task the dev process restarts before anything is verified live. Tasks 1, 2, 5, 6, 7, 8 touch main.
+- `src/main` and `src/preload` don't hot-reload: after any main-side task the dev process restarts before anything is verified live. Tasks 1, 2, 5, 6, 8 touch main.
 - `src/shared` imports no fs, no React, and nothing from `src/main`. Main owns the filesystem.
 - Comments: at most one load-bearing why per change; never restate a value; never narrate. The plan's fences carry only path markers and contract edges.
 - Commit granularity: one commit per task, message on the task heading, ticks in the same commit. No line-count reporting (Nathan, 09-01-2026).
@@ -74,13 +74,13 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 | [[PropertiesPM]] Type Catalog :37 · Identity :42 · §Page keys :114–121 | "Last Edited Time — derived from `modified_at`" · `_id` in the reserved-id list · "Every Page carries … `created_at`, and `modified_at`" · "sorting and filtering fall back to `created_at`" · the frontmatter example's two stamp lines | two stamp types from mtime and the ULID; `_id` gone; no stamp keys | 3, 5 |
 | [[ViewTypesPM]] :85 | "Sort By (None, Title, Modified, and the sortable properties)" | Creation Time and Last Modified both sort | 4 |
 | [[PagesPM]] :17, :19 | "five keys Pommora governs … `created_at`, `modified_at`" · "`modified_at` is stamped on a property value change, a text change, a move, and a rename" | three governed keys; Modified is the mtime, so a value write or body save moves it, a rename or move does not, and a schema sweep that rewrites a page does | 5 |
-| [[ArchitecturePM]] :93 · :116 | "each page's identity key, `created_at` and `modified_at` stamps, and `<Context>` keys" · the reserved-name list (still true — the names stay refused) | Clear strips ids and Context keys only | 7 |
+| [[ArchitecturePM]] :93 · :116 | "each page's identity key, `created_at` and `modified_at` stamps, and `<Context>` keys" · the reserved-name list (still true — the names stay refused) | Clear strips ids and Context keys only | 5 |
 | [[ArchitecturePM]] §Data layer | (no statement of the sweep's effect on Modified) | a governed sweep that rewrites a page moves its Modified time, because Modified is the file's mtime | 5 |
 
 **Dead Vocabulary**
 
 - `created_at` · `modified_at` → expect 0 in `src/` outside `properties.ts`'s reserved-name set (2 legitimate hits) and `RESERVED_PROPERTY_ID` (`_created_at`, `_modified_at` are ids, not keys). `PAGE_STAMP_KEYS` → 0. `modifiedStampString` → 0. `lastEditedTime` → 0. `MODIFIED_TARGET` → 0. `stamp:` in `src/main/CRUD` → 0. `'modified'` as a ColumnKind → 0. `RESERVED_PROPERTY_ID.id` → 0.
-- Control: `last_edited_time` → ≥ 17 in `src/` outside tests (it survives as a type); `nowIso` → ≥ 1 (`main/identity.ts` nexus.json `createdAt`). Zero on a control means the sweep never ran.
+- Control: `last_edited_time` → ≥ 12 in `src/` outside tests (16 at grounding; Task 0 strips three comment mentions, and Task 3 adds `created_time` arms rather than more of these); `nowIso` → ≥ 1 (`main/identity.ts:32`, nexus.json's `createdAt` — its only surviving caller once Tasks 5 and 6 land). Zero on a control means the sweep never ran.
 
 **Hazard Window:** Task 1 opens it — from that commit the running build reads Modified from mtime while the vault still holds stamp keys as inert foreign frontmatter (harmless: a foreign key is preserved and shown nowhere). Task 5 closes the writers. The closeout pass removes the keys; until then a page written by the app keeps whatever stamp it had, frozen.
 
@@ -129,7 +129,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 
 **Why:** The two stamps need one road from main to every row, and the batch a container already loads is that road — it is keyed by the same id the tree assigns and refetched by the same epoch. Carrying them beside the frontmatter, typed, means no arm of the renderer ever asks the frontmatter for a stamp again. Unblocks Tasks 3 and 4.
 
-**Now** — `rg -n "Record<string, PageFrontmatter>" src --glob '!*.test.*'` → 11 (`bridge.ts:146`, `loadValues.ts:19`, `useViewHost.ts:68`, `useValuesEpoch.ts:56`, `useViewCreation.ts:37,39`, `group.ts:91,110`, `GroupFrame.tsx:785`, `TableView.tsx` ×1, `preload/index.ts:86`); `rg -n "\{ id: pageId \}" src` → 2 (`TableView.tsx:1165`, `useViewCreation.ts:94`):
+**Now** — `rg -n "Record<string, PageFrontmatter>" src --glob '!*.test.*'` → 11 (`bridge.ts:146`, `main/index.ts:1239`, `loadValues.ts:18,28`, `useViewHost.ts:68`, `useValuesEpoch.ts:54`, `useViewCreation.ts:37,39`, `group.ts:90,107`, `GroupFrame.tsx:785`) — `preload/index.ts:86` and `TableView.tsx` derive the shape and hold no annotation; `rg -n "\{ id: pageId \}" src` → 2 (`TableView.tsx:1161`, `useViewCreation.ts:94`):
 
 ```ts
 // src/main/walkCache.ts:38
@@ -146,13 +146,17 @@ export interface PageRecord {
   node: PageNode
   fm: Json
 }
+// :395 — inside readPageRecord's `cachedParse(absFile, async () => { … })`
     retainContextKeys(node, fm)
     return { node, fm }
 
-// src/main/CRUD/loadValues.ts:16
+// src/main/CRUD/loadValues.ts:15
 export async function loadValues(rootPath: string, containerRelPath: string): Promise<Record<string, PageFrontmatter>> {
     const parsed = pageFrontmatter.safeParse({ ...rec.fm, [PAGE_ID_KEY]: rec.node.id })
     if (parsed.success) out[rec.node.id] = parsed.data
+
+// src/main/index.ts:1237 — the handler annotates the reply shape a second time
+    'view:loadValues': { kind: 'raw', fn: async (containerPath: unknown): Promise<Record<string, PageFrontmatter>> => { … } }
 
 // src/shared/bridge.ts:146
   'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageFrontmatter> }
@@ -174,7 +178,7 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
     ...
     frontmatter: values[page.id] ?? { [PAGE_ID_KEY]: page.id },
 
-// src/renderer/Views/useViewHost.ts:169
+// src/renderer/Views/useViewHost.ts:168
   const effectiveValues = useMemo(
     () => valueOverride
         ? { ...values, ...Object.fromEntries(Object.entries(valueOverride).map(([id, e]) => [id, e.fm])) }
@@ -198,8 +202,17 @@ export interface FileStat {
   size: number
 }
 // A failed stat hands `null` through, uncached, so the parser's own error semantics decide.
-export async function cachedParse<T>(absPath: string, parse: (stat: FileStat | null) => Promise<T>): Promise<T>
-// readNexus.ts:321 (the JSON caller) ignores the argument: `cachedParse(abs, () => …)` still typechecks.
+export async function cachedParse<T>(absPath: string, parse: (stat: FileStat | null) => Promise<T>): Promise<T> {
+  let s: FileStat
+  try {
+    s = await stat(absPath)
+  } catch {
+    return parse(null)   // the catch's bare `parse()` no longer typechecks — the argument is required
+  }
+  … (the cache hit, the miss, and the null-value rule, all unchanged; the miss calls `parse(s)`)
+}
+// readNexus.ts:321 (the JSON caller) ignores the argument: `cachedParse(abs, () => …)` still typechecks —
+// a function of fewer parameters is assignable.
 
 // src/main/readNexus.ts
 export interface PageRecord {
@@ -253,6 +266,10 @@ export async function loadValues(rootPath: string, containerRelPath: string): Pr
 // src/shared/bridge.ts
   'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageValues> }
 
+// src/main/index.ts:1229–1231 — the handler's own annotation follows, and its header line stops
+// saying "pageId → frontmatter".
+      fn: async (containerPath: unknown): Promise<Record<string, PageValues>> => {
+
 // src/renderer/Views/Pipeline/group.ts
 function toRow(page: PageNode, parentSetId: string | undefined, values: Record<string, PageValues>): ViewRow {
   const v = values[page.id]
@@ -296,7 +313,8 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 - [ ] Red first: `loadValues.test.ts` gains "carries the file's mtime and the id's time as ISO strings" (a page whose PageID is a known ULID, `utimes` set to a fixed instant → `modifiedAt` equals it; `createdAt` equals `decodeTime`) and "an adopted page has `createdAt: null`" — both fail on the old map shape.
 - [ ] `group.test.ts` (or the pipeline test that covers `toRow`): a values entry with stamps → the row carries them; an absent entry → neither key present.
 - [ ] Fix test (Req 10): `patchBandValue` on a page absent from the batch produces a frontmatter keyed `PageID`, not `id` — red before, green after.
-- [ ] `rg -n "Record<string, PageFrontmatter>" src --glob '!*.test.*'` → 0 outside `useValuesEpoch.ts`'s `OverrideEntry` line; `rg -n "\{ id: pageId \}" src` → 0. Control: `rg -c "PageValues" src` ≥ 8.
+- [ ] Inverted in the same commit: every test building the batch by hand — `group.test.ts` (5 sites) and `resolveView.test.ts` (8 sites) both declare `Record<string, PageFrontmatter>` literals and hand them to `flattenContainer`; each becomes a `PageValues` entry. `rg -n "Record<string, PageFrontmatter>" src` → 0 including tests.
+- [ ] `rg -n "\{ id: pageId \}" src` → 0. Control: `rg -c "PageValues" src` ≥ 8.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
 **Verify — user**
@@ -309,10 +327,10 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 
 **Why:** Modified is now the mtime, and a body save moves it. Every other frontmatter writer already hands its file to `noteValueWrite` and lets `confirmWrite` push; the body handler is the one writer that doesn't, so an open view showing Last Modified would sit stale after a text edit. One shared push path, no second mechanism.
 
-**Now** — `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 5:
+**Now** — `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 10 (its definition in `valuesChanged.ts:16` plus nine callers):
 
 ```ts
-// src/main/index.ts:1097
+// src/main/index.ts:1093
     'page:updateBody': {
       kind: 'envelope',
       fn: async (relPath: unknown, body: unknown) => {
@@ -339,7 +357,7 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 **Verify — automated**
 
 - [ ] Red first: the `index.ts` handler test (or `valuesChanged.test.ts`'s handler-level case) asserts a body save yields one `values:changed` push naming the page's container and id — fails before the change.
-- [ ] `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 6. Control: `pushValueChanges` ≥ 2.
+- [ ] `rg -n "noteValueWrite\(" src/main --glob '!*.test.*'` → 11. Control: `pushValueChanges` ≥ 3 (`index.ts:394, 470, 484` at grounding; this adds a fourth).
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
 **Verify — user**
@@ -364,17 +382,17 @@ function toRow(page: PageNode, parentSetId: string | undefined, values: Record<s
 
 **Why:** With both stamps on the row, the pipeline's special cases have nothing left to special-case: `_modified_at` resolved through a fallback because the key could be missing; the `lastEditedTime` kind existed to throw on a persist that can no longer be attempted; the `_id` sort ordered by a ULID string that Creation Time now orders by meaning. Declaring `created_time` beside `last_edited_time` lets every type-dispatched switch treat the two stamps as one date shape.
 
-**Now** — `rg -c "last_edited_time" src --glob '!*.test.*'` → 17 across 12 files; `modifiedStampString` → 5; `lastEditedTime` → 4; `RESERVED_PROPERTY_ID.id\b` → 1:
+**Now** — `rg -c "last_edited_time" src --glob '!*.test.*'` → 16 lines across 13 files at grounding (three are comments Task 0 strips first — re-record the baseline after Phase 0); `modifiedStampString` → 5; `lastEditedTime` → 4; `RESERVED_PROPERTY_ID.id\b` → 1 (`sort.ts:119`):
 
 ```ts
-// src/shared/properties.ts:8
+// src/shared/properties.ts:7
 export const propertyType = z.enum(['number', 'checkbox', 'datetime', 'select', 'multi_select', 'status', 'url', 'context', 'last_edited_time', 'file'])
-// :136
+// :130
 export const RESERVED_PROPERTY_ID = { id: '_id', title: '_title', createdAt: '_created_at', modifiedAt: '_modified_at', location: '_location' } as const
 
 // src/shared/propertyValue.ts:14
   | { kind: 'lastEditedTime' } // virtual — never persisted (encode throws)
-// :58
+// :57
     case 'datetime':
     case 'last_edited_time':
       return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL
@@ -382,19 +400,19 @@ export const RESERVED_PROPERTY_ID = { id: '_id', title: '_title', createdAt: '_c
     case 'lastEditedTime':
       throw new Error('PropertyValue.lastEditedTime is virtual and must not be persisted; …')
 
-// src/renderer/Properties/value.ts:30
+// src/renderer/Properties/value.ts:21
 export function declaredType(propertyId, schema, contextIds = []): PropertyType | 'title' | undefined {
   switch (propertyId) {
     case RESERVED_PROPERTY_ID.title: return 'title'
     case RESERVED_PROPERTY_ID.modifiedAt: return 'last_edited_time'
     default: …
-// :60
+// :50
   if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
-// :100
+// :87 — inside computeFieldValue, not resolveFieldValue
   if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) {
     return typeof fm.modified_at === 'string' && fm.modified_at ? { kind: 'datetime', value: fm.modified_at } : { kind: 'null' }
   }
-// :118
+// :105
 export function modifiedStampString(row: ViewRow): string | null { … modified_at || created_at || null }
 
 // src/renderer/Views/Pipeline/sort.ts:105
@@ -417,11 +435,21 @@ function modifiedStamp(row: ViewRow): number { … }
     case 'last_edited_time':
       return evaluateDate(v, op, expected)
 
-// src/shared/cellMenu.ts:92 · src/shared/columnStyles.ts:74 · src/shared/columnMenu.ts:90 · src/renderer/Frames/filterModel.ts:182 · src/renderer/Tables/columnWidths.ts:27–28
-    case 'last_edited_time':          // each a date-shaped arm; columnWidths keys `created` by id instead
+// src/shared/columnStyles.ts:73–75 · src/shared/columnMenu.ts:89–90 · src/renderer/Frames/filterModel.ts:176–178
+    case 'datetime':
+    case 'last_edited_time':          // three date-shaped arms; `created_time` joins each
+
+// src/shared/cellMenu.ts:90–99 — NOT a date-shaped arm. A stamp sits with checkbox/number
+// (style-only, NO `clearable`); the datetime arm above it carries `clearable: filled`, so putting
+// a stamp there would offer Clear on a cell that has nothing to clear.
+  if (type === 'status' || type === 'datetime')
+    return { kind: 'style-only', type, current: style, clearable: filled }
+  if (type === 'checkbox' || type === 'number' || type === 'last_edited_time') {
+
+// src/renderer/Tables/columnWidths.ts:27–28 — keyed by type, plus `created` keyed by id instead
   last_edited_time: { min: 90, default: 120, max: 250 },
   created: { min: 90, default: 120, max: 250 },
-// columnWidths.ts:51, :67
+// columnWidths.ts:51 (widthFor), :67 (minWidthFor)
   if (columnId === RESERVED_PROPERTY_ID.createdAt) return WIDTHS.created
   if (columnId === RESERVED_PROPERTY_ID.createdAt) return base
 ```
@@ -432,8 +460,10 @@ function modifiedStamp(row: ViewRow): number { … }
 // src/shared/properties.ts
 export const propertyType = z.enum(['number', 'checkbox', 'datetime', 'select', 'multi_select', 'status', 'url', 'context', 'created_time', 'last_edited_time', 'file'])
 export const RESERVED_PROPERTY_ID = { title: '_title', createdAt: '_created_at', modifiedAt: '_modified_at', location: '_location' } as const
-/** The type each stamp column declares — the one place an id becomes a stamp type. */
-export const STAMP_TYPE: Readonly<Record<string, PropertyType>> = {
+/** The type each stamp column declares — the one place an id becomes a stamp type. Partial so a
+ *  lookup on any other id types as `undefined` and the truthiness guard at each reader means
+ *  something. */
+export const STAMP_TYPE: Readonly<Partial<Record<string, PropertyType>>> = {
   [RESERVED_PROPERTY_ID.createdAt]: 'created_time',
   [RESERVED_PROPERTY_ID.modifiedAt]: 'last_edited_time',
 }
@@ -459,13 +489,18 @@ export function resolveFieldValue(row, propertyId, schema): PropertyValue {
   if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
   if (propertyId === RESERVED_PROPERTY_ID.createdAt) return stampValue(row.createdAt)
   if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) return stampValue(row.modifiedAt)
-  … (the context rider and the memo, unchanged)
+  … (the context rider, the def lookup, and the memo's cacheKey, unchanged)
+  // computeFieldValue is INLINED: with the `_modified_at` branch gone it is a two-line wrapper over
+  // decodeValue with one caller, and its `propertyId` parameter goes unread — which trips
+  // `lint/correctness/noUnusedFunctionParameters` (verified against this repo's Biome config), so
+  // the gate forces the question either way.
+  if (!v) {
+    v = def ? decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name]) : { kind: 'null' }
+    m.set(cacheKey, v)
+  }
+  return v
 }
-function computeFieldValue(fm, propertyId, def): PropertyValue {
-  if (!def) return { kind: 'null' }
-  return decodeValue(def, (fm as Record<string, unknown>)[def.name])
-}
-// modifiedStampString: deleted.
+// computeFieldValue, modifiedStampString: deleted.
 
 // src/renderer/Views/Pipeline/sort.ts — `modifiedStamp` and the `_id`/`_modified_at` cases deleted; the title case stays:
   switch (c.property_id) {
@@ -485,7 +520,11 @@ function computeFieldValue(fm, propertyId, def): PropertyValue {
     case 'last_edited_time':
       return evaluateDate(v, op, expected)
 
-// src/shared/cellMenu.ts · columnStyles.ts · columnMenu.ts · src/renderer/Frames/filterModel.ts — `case 'created_time':` joins each `last_edited_time` arm.
+// src/shared/columnStyles.ts · columnMenu.ts · src/renderer/Frames/filterModel.ts — `case 'created_time':`
+//   joins each `last_edited_time` arm.
+// src/shared/cellMenu.ts — `created_time` joins the checkbox/number/`last_edited_time` predicate, NOT
+//   the datetime one: a stamp is style-only and never clearable.
+  if (type === 'checkbox' || type === 'number' || type === 'created_time' || type === 'last_edited_time') {
 // src/renderer/Tables/columnWidths.ts — WIDTHS keyed by type only; both `createdAt` special cases deleted:
   created_time: { min: 90, default: 120, max: 250 },
   last_edited_time: { min: 90, default: 120, max: 250 },
@@ -498,7 +537,8 @@ function computeFieldValue(fm, propertyId, def): PropertyValue {
 - [ ] Red first: `sort.test.ts` "sorts `_created_at` by the row's createdAt" and "sorts `_modified_at` by the row's modifiedAt, absent last ascending"; `filter.test.ts` the same pair through `evaluateDate`; `value.test.ts` "`_created_at` resolves from the row, not the frontmatter" — all fail before.
 - [ ] Inverted in the same commit: every sort/filter test asserting the created fallback; `propertyValue.test.ts`'s encode-throws case (deleted); `columnWidths.test.ts`'s `created` key.
 - [ ] Crossing: one test resolves the same row through `resolveFieldValue('_modified_at')`, `buildCriterion`, and the filter — three readers, one value.
-- [ ] `rg -c "modifiedStampString" src` → 0; `lastEditedTime` → 0; `RESERVED_PROPERTY_ID.id\b` → 0; `WIDTHS.created\b` → 0. Control: `rg -c "created_time" src --glob '!*.test.*'` ≥ 9.
+- [ ] `rg -c "modifiedStampString" src` → 0; `lastEditedTime` → 0; `RESERVED_PROPERTY_ID.id\b` → 0; `WIDTHS.created\b` → 0; `computeFieldValue` → 0. Control: `rg -c "created_time" src --glob '!*.test.*'` ≥ 9.
+- [ ] Regression guard for the cellMenu split: a `_created_at` cell resolves to a `style-only` menu with no `clearable` — the same kind `_modified_at` gets, never the `datetime` arm's.
 - [ ] Doc: PropertiesPM :37 (two rows: Creation Time from the ULID, Last Modified from the mtime; neither persisted), :42 (`_id` removed from the reserved list). Req 11.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
@@ -512,7 +552,7 @@ function computeFieldValue(fm, propertyId, def): PropertyValue {
 
 **Why:** A stamp the pipeline can sort is useless if no surface offers it. Today a new view's hidden list never lists Modified and the column resolver refuses `_created_at`; the header label, the pane label, and the type label are three literals. After this, revealing either stamp is a Hidden-frame toggle, and "Creation Time" / "Last Modified" is written once.
 
-**Now** — `rg -n "MODIFIED_TARGET" src` → 5; `rg -n "'modified'" src --glob '!*.test.*'` → 2:
+**Now** — `rg -n "MODIFIED_TARGET" src` → 5 (`PropertyTypes.tsx:68`, `SortFrame.tsx:12,96`, `filterModel.ts:14,213`); `rg -n "'modified'" src --glob '!*.test.*'` → 2 (`types.ts:609`, `columns.ts:18`):
 
 ```ts
 // src/shared/types.ts:609
@@ -529,13 +569,17 @@ function columnKind(id, contextIds): ColumnKind {
 // :37
     if (id === RESERVED_PROPERTY_ID.title || id === RESERVED_PROPERTY_ID.modifiedAt || contextIds.includes(id) || schema.some((d) => d.id === id)) {
 
-// src/renderer/Frames/hiddenFrameModel.ts:39
+// src/renderer/Frames/hiddenFrameModel.ts:38
     ...(set.has(RESERVED_PROPERTY_ID.modifiedAt) ? [RESERVED_PROPERTY_ID.modifiedAt] : []),
 
-// src/renderer/Frames/HiddenFrame.tsx:21
+// src/renderer/Frames/HiddenFrame.tsx:21 — rowIcon; a schema def answers FIRST and stays untouched
+function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
+  const def = schema.find((d) => d.id === id)
+  if (def) return <Icon name={propertyIcon(def)} size={s.ICON.doc} />
   if (id === RESERVED_PROPERTY_ID.title) return <PropertyTypeIcon type="title" size={s.ICON.doc} />
   if (id === RESERVED_PROPERTY_ID.modifiedAt) return <PropertyTypeIcon type="last_edited_time" size={s.ICON.doc} />
   return <PropertyTypeIcon type="context" size={s.ICON.doc} />
+}
 
 // src/renderer/Properties/Assignment/columnLabel.ts:6
 const RESERVED_LABEL: Record<string, string> = {
@@ -551,10 +595,10 @@ export const MODIFIED_TARGET: PaneTarget = { id: RESERVED_PROPERTY_ID.modifiedAt
 
 // src/renderer/Frames/SortFrame.tsx:58
   if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) return VALUE_DIRECTIONS
-// :96 · src/renderer/Frames/filterModel.ts:218
+// :96 · src/renderer/Frames/filterModel.ts:213
     MODIFIED_TARGET,
 
-// src/renderer/Views/TableView/TableView.tsx:445
+// src/renderer/Views/TableView/TableView.tsx:437
     if (id === RESERVED_PROPERTY_ID.createdAt) {
       return (<span className="col-header-icon"><Icon name="clock-plus" size="body" /></span>)
     }
@@ -566,22 +610,21 @@ export const MODIFIED_TARGET: PaneTarget = { id: RESERVED_PROPERTY_ID.modifiedAt
 // src/shared/types.ts
 export type ColumnKind = 'title' | 'property' | 'context' | 'stamp'
 
-// src/renderer/Views/Pipeline/columns.ts
+// src/renderer/Views/Pipeline/columns.ts — one idiom for "is this a stamp id" everywhere: the lookup
 function columnKind(id, contextIds): ColumnKind {
   if (id === RESERVED_PROPERTY_ID.title) return 'title'
-  if (id in STAMP_TYPE) return 'stamp'
+  if (STAMP_TYPE[id]) return 'stamp'
   return contextIds.includes(id) ? 'context' : 'property'
 }
-    if (id === RESERVED_PROPERTY_ID.title || id in STAMP_TYPE || contextIds.includes(id) || schema.some((d) => d.id === id)) {
+    if (id === RESERVED_PROPERTY_ID.title || STAMP_TYPE[id] || contextIds.includes(id) || schema.some((d) => d.id === id)) {
 
 // src/renderer/Frames/hiddenFrameModel.ts — the stamps follow the schema-property rule: listed unless shown
     ...Object.keys(STAMP_TYPE).filter((id) => set.has(id) || !shown.has(id)),
 
-// src/renderer/Frames/HiddenFrame.tsx
+// src/renderer/Frames/HiddenFrame.tsx — rowIcon's def check and context tail unchanged
   if (id === RESERVED_PROPERTY_ID.title) return <PropertyTypeIcon type="title" size={s.ICON.doc} />
   const stamp = STAMP_TYPE[id]
   if (stamp) return <PropertyTypeIcon type={stamp} size={s.ICON.doc} />
-  return <PropertyTypeIcon type="context" size={s.ICON.doc} />
 
 // src/renderer/Properties/Assignment/columnLabel.ts — the one source for the three reserved labels
 export const RESERVED_LABEL: Readonly<Record<string, string>> = {
@@ -601,9 +644,9 @@ export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).map(([id, 
 // MODIFIED_TARGET: deleted.
 
 // src/renderer/Frames/SortFrame.tsx
-  if (propertyId in STAMP_TYPE) return VALUE_DIRECTIONS
+  if (STAMP_TYPE[propertyId]) return VALUE_DIRECTIONS
     ...STAMP_TARGETS,
-// src/renderer/Frames/filterModel.ts:218
+// src/renderer/Frames/filterModel.ts:213
     ...STAMP_TARGETS,
 
 // src/renderer/Views/TableView/TableView.tsx — the `createdAt` glyph block deleted; `_created_at` reaches the
@@ -614,7 +657,7 @@ export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).map(([id, 
 
 - [ ] Red first: `hiddenFrameModel.test.ts` "lists both stamps on a view that shows neither" and "omits a stamp the view shows"; `columns.test.ts` "`_created_at` in property_order emits a `stamp` column" — fail before.
 - [ ] Inverted: `columns.test.ts`'s kind `'modified'`; `columnLabel.test.ts`'s 'Created'/'Modified'; any SortFrame/filterModel test naming `MODIFIED_TARGET`.
-- [ ] `rg -c "MODIFIED_TARGET" src` → 0; `rg -c "'modified'" src` → 0; `rg -F "clock-plus" src/renderer/Views` → 0. Control: `rg -c "STAMP_TYPE" src` ≥ 8; `rg -c "STAMP_TARGETS" src` = 3.
+- [ ] `rg -c "MODIFIED_TARGET" src` → 0; `rg -c "'modified'" src` → 0; `rg -F "clock-plus" src/renderer/Views` → 0 (it moves to `PROPERTY_TYPES.created_time.icon`). Control: `rg -c "STAMP_TYPE" src` ≥ 8; `STAMP_TARGETS` in 3 files (`PropertyTypes.tsx` defines, `SortFrame.tsx` and `filterModel.ts` import and spread).
 - [ ] `rg -F "'Last Modified'" src` → 1; `rg -F "'Creation Time'" src` → 1 (columnLabel.ts only).
 - [ ] Doc: ViewTypesPM :85 Sort By lists Creation Time and Last Modified. Req 11.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
@@ -636,13 +679,15 @@ export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).map(([id, 
 
 ### Phase 3 — Retire the writers
 
-#### Task 5: No page writer stamps
+#### Task 5: No page writer stamps; Clear strips ids and Context keys only
 
-**Requirement:** 6
+**Requirement:** 6, 8
 
 **Why:** With nothing reading the keys, every writer that set them is maintaining a fact the file system already holds. Removing them also removes a whole class of judgment — whether a rename, a Context unlink, or a property delete "counts as an edit" — that each writer answered on its own. A body save that governs no key can also stop re-serializing frontmatter it doesn't touch.
 
-**Now** — `rg -c "modified_at" src/main --glob '!*.test.*'` → 25; `rg -c "created_at" src/main --glob '!*.test.*'` → 3; `stamp:` in `src/main/CRUD` → 5:
+Clear Exclusion rides in the same commit rather than its own: `exclusionScan.ts:8` imports `PAGE_STAMP_KEYS`, so the constant cannot be deleted without its one remaining consumer in the same change — splitting them would leave a commit that doesn't typecheck. With the stamps gone, Clear has two things left to strip from a page — its kind id and its `<Context>` keys — and the copy says exactly that.
+
+**Now** — `rg -c "modified_at" src/main --glob '!*.test.*'` → 25; `rg -c "created_at" src/main --glob '!*.test.*'` → 3; `stamp:` in `src/main/CRUD` → 3 (`replaySchemaCascade.ts`, `deleteProperty.ts`, `contextCascade.ts` — the literal does not match `stamp?: boolean` or `opts.stamp` in `governedSweep.ts`); `PAGE_STAMP_KEYS` → 4 lines (`identity.ts` ×2 — its definition and the `PAGE_MODELED_KEYS` spread — and `exclusionScan.ts` ×2 — the import and `BOOKKEEPING_KEYS`):
 
 ```ts
 // src/shared/identity.ts:22
@@ -650,14 +695,20 @@ export const PAGE_STAMP_KEYS = ['created_at', 'modified_at'] as const
 export const PAGE_MODELED_KEYS = [PAGE_ID_KEY, 'icon', ...PAGE_STAMP_KEYS, 'cover'] as const
 // src/shared/schemas.ts:61
 export const pageFrontmatter = z.looseObject({ [PAGE_ID_KEY]: z.string(), icon: z.string().optional(), created_at: z.string().optional(), modified_at: z.string().optional(), cover: z.string().optional() })
-// src/shared/properties.ts:154
+// src/shared/properties.ts:148
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([...Object.values(KIND_ID_KEY), ...PAGE_MODELED_KEYS])
 
-// src/main/CRUD/page.ts:35
+// src/main/exclusionScan.ts:8, :22 — PAGE_STAMP_KEYS' one consumer outside identity.ts
+import { KIND_ID_KEY, PAGE_STAMP_KEYS } from '@shared/identity'
+const BOOKKEEPING_KEYS: readonly string[] = [...Object.values(KIND_ID_KEY), ...PAGE_STAMP_KEYS]
+// :73
+    detail: 'Pommora’s container files are removed and each page’s identity key, timestamps, and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
+
+// src/main/CRUD/page.ts:33
   const id = newId()
   const now = nowIso()
   const modeled: Record<string, unknown> = { [PAGE_ID_KEY]: id, created_at: now, modified_at: now }
-// :62
+// :60 — relocatePage
   await serializeOnFile(absFile, async () => {
     recordWrite(absFile)
     recordWrite(target)
@@ -666,32 +717,32 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([...Object.values(KIND_I
     const content = mergeFrontmatter(existing, { modified_at: nowIso() }, ['modified_at'], splitEnvelope(existing).body)
     await atomicWriteFile(target, content)
   })
-// :98
+// :91 — updatePageBody
     await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
 
 // src/main/CRUD/governedWrite.ts:37
   const content = mergeFrontmatter(existing, { ...survivingChanges(reconciled), ...next, modified_at: nowIso() }, [...changed, ...govern, 'modified_at'], splitEnvelope(existing).body)
 
-// src/main/CRUD/pageValue.ts:40
+// src/main/CRUD/pageValue.ts:39
     nextValue === null ? { modified_at: nowIso() } : { [key]: nextValue, modified_at: nowIso() },
     [key, 'modified_at'],
-// :67
+// :67 — stripPageMember
   return mergeFrontmatter(content, { modified_at: nowIso() }, [key, 'modified_at'], splitEnvelope(content).body)
 
-// src/main/CRUD/governedSweep.ts:61
+// src/main/CRUD/governedSweep.ts:46
 export interface SweepOptions { stamp?: boolean; rewriteText?: RewriteText }
-// :143
+// :118
       if (opts.stamp) modeled.modified_at = nowIso()
       const merged = opts.stamp ? [...keys, 'modified_at'] : keys
-// callers: contextCascade.ts:82 `const STAMP_ON_CLEAR = { stamp: true }` · deleteProperty.ts:93 `{ stamp: true }` · replaySchemaCascade.ts:65 `{ stamp: true }`
+// callers: contextCascade.ts `const STAMP_ON_CLEAR = { stamp: true }` · deleteProperty.ts `{ stamp: true }` · replaySchemaCascade.ts `{ stamp: true }`
 
 // src/main/IO/pageFile.ts:84
   if (frontmatter === '' && modeledKeys.length === 0) return body
-// :106
+// :106 — the escape a body-only write takes today; every other key set throws
   if (modeledKeys.some((k) => k !== 'modified_at')) { throw new Error('This page’s frontmatter has a syntax error…') }
   return assembleEnvelope(frontmatter, body)
 
-// src/main/CRUD/util.ts:60
+// src/main/CRUD/util.ts:46
 /** The ISO-8601 timestamp written to governance fields (`created_at` / `modified_at`). */
 export function nowIso(): string {
 ```
@@ -705,6 +756,10 @@ export const PAGE_MODELED_KEYS = [PAGE_ID_KEY, 'icon', 'cover'] as const
 export const pageFrontmatter = z.looseObject({ [PAGE_ID_KEY]: z.string(), icon: z.string().optional(), cover: z.string().optional() })
 // src/shared/properties.ts — the two names stay refused: a user property under either would collide with the vault's own history
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([...Object.values(KIND_ID_KEY), ...PAGE_MODELED_KEYS, 'created_at', 'modified_at'])
+
+// src/main/exclusionScan.ts — the import narrows to KIND_ID_KEY alone
+const BOOKKEEPING_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
+    detail: 'Pommora’s container files are removed and each page’s identity key and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
 
 // src/main/CRUD/page.ts
   const id = newId()
@@ -731,12 +786,20 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([...Object.values(KIND_I
       await atomicWriteFile(file, mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body))
 // contextCascade.ts — STAMP_ON_CLEAR deleted, its call site passes no options · deleteProperty.ts / replaySchemaCascade.ts — the `{ stamp: true }` argument gone
 
-// src/main/IO/pageFile.ts — a key-less write never parses the frontmatter
+// src/main/IO/pageFile.ts — a key-less write never parses the frontmatter, and the escape clause the
+// `modified_at` exemption stood for is now unconditional: any key set that reaches an unmergeable
+// document throws.
   const { frontmatter } = splitEnvelope(existingContent)
   if (modeledKeys.length === 0) return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
   const doc = parseDocument(frontmatter)
   if (mergeable(doc)) { … }
   throw new Error('This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.')
+// The zero-key path is reached by TWO callers, not one. `updatePageBody` is the new arrival;
+// `cascade.ts:49` already reaches it whenever a connection rename rewrites only the body
+// (`keys.length === 0 && newBody !== body`), which today re-serializes the frontmatter it never
+// touched. Both stop reformatting — the intended outcome; `cascade.test.ts` is the assertion to
+// re-read. `restoreScrub.ts:77` and `governedSweep.ts:122` each guard on a non-empty key list and
+// never reach it.
 
 // src/main/CRUD/util.ts
 /** The ISO-8601 instant nexus.json records at creation. */
@@ -745,15 +808,16 @@ export function nowIso(): string {
 
 **Verify — automated**
 
-- [ ] Inverted in the same commit: `page.test.ts` (`:59` key set is `[PageID]`; `:98`/`:154` become "leaves the frontmatter bytes untouched" — byte-equal before and after a rename and a move; `:136`); `governedWrite.test.ts`, `pageValue`/`mutate.test.ts`, `contextCascade.test.ts`, `replaySchemaCascade.test.ts`, `cascade.test.ts`, `pageFile.test.ts` — every `modified_at` assertion becomes its absence; `registryProperty.test.ts` keeps refusing `created_at` and `modified_at` as names (unchanged, re-run).
+- [ ] Inverted in the same commit: `page.test.ts` (`:59` key set is `[PageID]`; `:98`/`:154` become "leaves the frontmatter bytes untouched" — byte-equal before and after a rename and a move; `:136`); `governedWrite.test.ts`, `pageValue`/`mutate.test.ts`, `contextCascade.test.ts`, `replaySchemaCascade.test.ts`, `cascade.test.ts`, `pageFile.test.ts` — every `modified_at` assertion becomes its absence; `exclusionScan.test.ts`'s stamp-strip case becomes "a legacy `modified_at` key survives Clear as foreign frontmatter" and its copy assertion follows the new detail; `registryProperty.test.ts` keeps refusing `created_at` and `modified_at` as names (unchanged, re-run).
 - [ ] New: `pageFile.test.ts` "a body-only write on a syntax-broken frontmatter passes it through byte-for-byte" (the old `some(k !== 'modified_at')` escape, now the zero-key path) and "a body-only write re-serializes nothing" (a flow-style list `[a, b]` survives unspaced).
-- [ ] Degenerate: `createPage` with a body and no icon writes exactly `PageID` + the body.
-- [ ] `rg -c "modified_at" src/main --glob '!*.test.*'` → 0 outside the sidecar writers Task 6 owns (list them in the tick); `created_at` → 0; `PAGE_STAMP_KEYS` → 0; `stamp:` in `src/main/CRUD` → 0. Control: `nowIso` ≥ 1.
-- [ ] Docs: PagesPM :17, :19; PropertiesPM :114–121 (the example loses both lines; the paragraph states the two sources and that a schema edit rewriting a page moves its Modified time); ArchitecturePM §Data layer gains the sweep-moves-mtime sentence. Req 11.
+- [ ] Degenerate: `createPage` with a body and no icon writes exactly `PageID` + the body (`PAGE_MODELED_KEYS` still governs `icon` and `cover`, and deleting an absent key is a no-op).
+- [ ] `rg -c "modified_at" src/main --glob '!*.test.*'` → 0 outside the sidecar writers Task 6 owns (list them in the tick); `created_at` → 0; `PAGE_STAMP_KEYS` → 0; `stamp:` in `src/main/CRUD` → 0; `rg -F "timestamps" src/main/exclusionScan.ts` → 0. Controls: `nowIso` ≥ 1; `KIND_ID_KEY` in `exclusionScan.ts` ≥ 1.
+- [ ] Docs: PagesPM :17, :19; PropertiesPM :114–121 (the example loses both lines; the paragraph states the two sources and that a schema edit rewriting a page moves its Modified time); ArchitecturePM :93 and §Data layer (the latter gains the sweep-moves-mtime sentence); ConfigurationPM wherever it quotes the Clear detail (`rg -F "timestamps" .claude/Features` → 0 after). Req 11.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
 **Verify — user**
 
+- [ ] The Clear confirm dialog reads "identity key and Context keys."
 - [ ] *(carried — Completion Criteria: a rename leaves Last Modified where it was; a body edit moves it)*
 
 #### Task 6: No sidecar writer stamps
@@ -762,22 +826,24 @@ export function nowIso(): string {
 
 **Why:** The sidecar twin had no reader at all; each writer spread `modified_at: nowIso()` into a JSON object nothing consulted. Dropping the field from `baseSidecar` lets the schema enumerate the writers.
 
-**Now** — `rg -n "modified_at" src/main/CRUD/{views,containerConfig,contextWrite,deleteProperty,removeProperty}.ts` → 7:
+**Now** — `rg -n "modified_at" src/main/CRUD/{views,containerConfig,contextWrite,deleteProperty,removeProperty}.ts` → 8:
 
 ```ts
-// src/shared/schemas.ts:32
+// src/shared/schemas.ts:31
 export const baseSidecar = z.looseObject({ id: z.string(), icon: z.string().optional(), modified_at: z.string().optional() })
-// src/main/CRUD/views.ts:40, :61, :79
+// src/main/CRUD/views.ts:40, :61, :79 — three distinct spreads, not one repeated
     await writeSidecar(folder, kind, { ...sidecar, views, modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, views: reordered, modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, views: next, modified_at: nowIso() })
 // src/main/CRUD/containerConfig.ts:44
     await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch), modified_at: nowIso() })
 // src/main/CRUD/contextWrite.ts:210
     return { ...root, modified_at: nowIso() }
 // :303
     const next: Raw = { ...cur, modified_at: nowIso() }
-// src/main/CRUD/deleteProperty.ts:125
+// src/main/CRUD/deleteProperty.ts:123–128
     const next: Record<string, unknown> = { ...sidecar, properties: assigned.filter((id) => id !== propertyId), modified_at: nowIso() }
-// src/main/CRUD/removeProperty.ts:96
+// src/main/CRUD/removeProperty.ts:90
   const next: Record<string, unknown> = { ...cur, modified_at: nowIso() }
 ```
 
@@ -787,7 +853,7 @@ export const baseSidecar = z.looseObject({ id: z.string(), icon: z.string().opti
 // src/shared/schemas.ts
 export const baseSidecar = z.looseObject({ id: z.string(), icon: z.string().optional() })
 // each writer above spreads without the stamp:
-    await writeSidecar(folder, kind, { ...sidecar, views })
+    await writeSidecar(folder, kind, { ...sidecar, views })          // and `views: reordered`, `views: next`
     await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch) })
     return root
     const next: Raw = { ...cur }
@@ -799,46 +865,12 @@ export const baseSidecar = z.looseObject({ id: z.string(), icon: z.string().opti
 **Verify — automated**
 
 - [ ] Inverted: every sidecar test asserting `modified_at` (views, containerConfig, contextWrite, deleteProperty, removeProperty suites) asserts the key's absence; a write over a sidecar that still holds a legacy `modified_at` leaves it in place (loose object, foreign key).
-- [ ] `rg -c "modified_at" src --glob '!*.test.*'` → 1 (`properties.ts` reserved names) + `exclusionScan.ts` until Task 7. Control: `writeSidecar` ≥ 6.
+- [ ] `rg -c "modified_at" src --glob '!*.test.*'` → 1 — `properties.ts`'s reserved-name set, the last standing mention in `src/`. Control: `writeSidecar` ≥ 6.
 - [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
 
 **Verify — user**
 
 - [ ] *(none)*
-
-#### Task 7: Clear Exclusion strips ids and Context keys only
-
-**Requirement:** 8
-
-**Why:** With no stamps written, Clear has two things left to remove from a page: its kind id and its `<Context>` keys. The copy says exactly that.
-
-**Now**
-
-```ts
-// src/main/exclusionScan.ts:22
-const BOOKKEEPING_KEYS: readonly string[] = [...Object.values(KIND_ID_KEY), ...PAGE_STAMP_KEYS]
-// :68
-    detail: 'Pommora’s container files are removed and each page’s identity key, timestamps, and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
-```
-
-**Becomes**
-
-```ts
-// src/main/exclusionScan.ts
-const BOOKKEEPING_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
-    detail: 'Pommora’s container files are removed and each page’s identity key and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
-```
-
-**Verify — automated**
-
-- [ ] Inverted: `exclusionScan.test.ts`'s stamp-strip case becomes "a legacy `modified_at` key survives Clear as foreign frontmatter"; the copy assertion follows the new detail.
-- [ ] `rg -c "modified_at" src --glob '!*.test.*'` → 1; `rg -F "timestamps" src/main/exclusionScan.ts` → 0. Control: `KIND_ID_KEY` in the file ≥ 1.
-- [ ] Doc: ArchitecturePM :93; ConfigurationPM wherever it quotes the Clear detail (`rg -F "timestamps" .claude/Features` → 0 after). Req 11.
-- [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
-
-**Verify — user**
-
-- [ ] The Clear confirm dialog reads "identity key and Context keys."
 
 #### Task 8: Adoption seeds the ULID from the file's age
 
@@ -853,7 +885,7 @@ const BOOKKEEPING_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
 const nextUlid = monotonicFactory()
 export function newId(): string { return nextUlid() }
 
-// src/main/adopt.ts:68
+// src/main/adopt.ts:56
 async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const content = await readFile(absFile, 'utf8')
   if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
@@ -881,8 +913,9 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
   const key = KIND_ID_KEY[kind]
   const { body } = splitEnvelope(content)
-  const st = await stat(absFile)
-  const id = idAt(Math.min(st.birthtimeMs || st.mtimeMs, st.mtimeMs))
+  // A filesystem with no birthtime reports 0, and mtime is then the honest floor.
+  const { birthtimeMs, mtimeMs } = await stat(absFile)
+  const id = idAt(birthtimeMs > 0 ? Math.min(birthtimeMs, mtimeMs) : mtimeMs)
   await atomicWriteFile(absFile, mergeFrontmatter(content, { [key]: id }, [key], body))
   return true
 }
@@ -919,7 +952,7 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 - [ ] **Phase 0** — Task 0
 - [ ] **Phase 1** — Tasks 1–2 · Gate 1
 - [ ] **Phase 2** — Tasks 3–4 · Gate 2
-- [ ] **Phase 3** — Tasks 5–8 · Gate 3
+- [ ] **Phase 3** — Tasks 5, 6, 8 · Gate 3
 - [ ] **Closeout** — vault pass · docs · History
 
 ### Rulings
@@ -932,6 +965,7 @@ Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests 
 - **Labels** (executor's reading, unratified): "Creation Time" / "Last Modified" — two strings in `columnLabel.ts` if Nathan wants otherwise.
 - **`{ id: pageId }` fallback** (Nathan, 09-01-2026): fixed alongside.
 - **Clear Metadata** (Nathan, 09-01-2026): reduces to ids + Context keys.
+- **Clear rides Task 5** (simplifier, 09-01-2026): `exclusionScan.ts` is `PAGE_STAMP_KEYS`' one consumer outside `identity.ts`, so a separate task would land a commit that doesn't typecheck. Task 8 keeps its number — Forced By, Rulings, and Sequenced After all cite it.
 - **`_id` sort** (executor, 09-01-2026): deleted with its constant — its one consumer was the sort case Creation Time supersedes; a saved view naming `_id` resolves to no criterion, which is the same treatment any stale id gets.
 - **Task 0 by subagent** (Nathan, 09-01-2026): comments first, single-handed, so old prose never reads as instruction.
 - **Vault pass** (Nathan, 09-01-2026): one-time, manual, whole vault including excluded folders, when the plan is done.
