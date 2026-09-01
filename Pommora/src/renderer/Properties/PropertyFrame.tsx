@@ -55,11 +55,11 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from '../Frames/frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { normalizePropertyName } from '@shared/properties'
-
 import {
   displayPropertyName,
   useCapitalizeMetadata,
 } from '@renderer/Properties/Assignment/columnLabel'
+
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
 type WriteResult = Result<null>
@@ -184,6 +184,7 @@ export function PropertyFrame({
   onBack: () => void
   source: CollectionNode | SetNode
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   const saveView = useSaveView(source)
   const { view: activeView } = useActiveView(source, schema)
@@ -342,7 +343,10 @@ export function PropertyFrame({
     ...unassigned.map((d) => ({ id: d.id, group: 'all' as const })),
   ]
   const nameFor = (id: string): string =>
-    props.find((d) => d.id === id)?.name ?? unassigned.find((d) => d.id === id)?.name ?? ''
+    displayPropertyName(
+      props.find((d) => d.id === id)?.name ?? unassigned.find((d) => d.id === id)?.name ?? '',
+      capitalize,
+    )
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await window.nexus.propertyMenu({ kind: 'editor', name: def.name })

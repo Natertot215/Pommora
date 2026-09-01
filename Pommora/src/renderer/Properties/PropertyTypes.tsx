@@ -6,8 +6,8 @@ import {
   Icon,
   type IconName,
 } from '@renderer/DesignSystem/Symbols'
-
 import { displayPropertyName } from '@renderer/Properties/Assignment/columnLabel'
+
 interface TypeMeta {
   label: string
   icon?: IconName

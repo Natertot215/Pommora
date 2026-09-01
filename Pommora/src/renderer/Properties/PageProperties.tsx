@@ -25,11 +25,11 @@ import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
-
 import {
   displayPropertyName,
   useCapitalizeMetadata,
 } from '@renderer/Properties/Assignment/columnLabel'
+
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
 export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.Element {
