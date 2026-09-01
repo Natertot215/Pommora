@@ -21,8 +21,8 @@ import { adoptedId, newId } from '../ids'
 import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { isMarkdownFile } from '../IO/walk'
-import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
+import { setGovernedRootKeys } from './governedWrite'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { createFolderEntity } from './folderEntity'
 import { nowIso, invalidContextTitle } from './util'
@@ -129,8 +129,6 @@ function governedContextKeys(raw: Raw, next: Raw, targetKey: string): string[] {
   return [...keys]
 }
 
-/** setContext on a `.md` page — the parenthesized key merges through the governed rewrite
- *  (foreign frontmatter + body untouched), under the page's own file lock. */
 export async function setPageContext(
   absFile: string,
   world: ContextWorld,
@@ -150,15 +148,9 @@ export async function setPageContext(
     const applied = applyTarget(world, raw, contextId, titles.value)
     if (!applied.ok) return applied
     const keys = governedContextKeys(raw, applied.value.root, applied.value.key)
-    const modeled: Raw = { modified_at: nowIso() }
-    for (const k of keys) if (k in applied.value.root) modeled[k] = applied.value.root[k]
-    const content = mergeFrontmatter(
-      existing,
-      modeled,
-      [...keys, 'modified_at'],
-      splitEnvelope(existing).body,
-    )
-    await atomicWriteFile(absFile, content)
+    const next: Raw = {}
+    for (const k of keys) if (k in applied.value.root) next[k] = applied.value.root[k]
+    await setGovernedRootKeys(absFile, next, keys)
     return ok(null)
   })
 }
