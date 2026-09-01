@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-  readDefaultViewScale,
+  readInterfaceScale,
   readWatchScope,
   readPermanentDelete,
   updateSettings,
@@ -71,30 +71,30 @@ describe('writeExcludedFolders', () => {
   })
 })
 
-describe('readDefaultViewScale', () => {
+describe('readInterfaceScale', () => {
   it('defaults to 1.0 when the file or the key is absent', async () => {
-    expect(await readDefaultViewScale(root)).toBe(1)
+    expect(await readInterfaceScale(root)).toBe(1)
     await write({ personalization: {} })
-    expect(await readDefaultViewScale(root)).toBe(1)
+    expect(await readInterfaceScale(root)).toBe(1)
   })
 
   it('returns a valid in-range scale', async () => {
-    await write({ personalization: { defaultViewScale: 1.25 } })
-    expect(await readDefaultViewScale(root)).toBe(1.25)
+    await write({ personalization: { interfaceScale: 1.25 } })
+    expect(await readInterfaceScale(root)).toBe(1.25)
   })
 
   it('clamps out-of-range values so a typo cannot brick the window', async () => {
-    await write({ personalization: { defaultViewScale: 125 } })
-    expect(await readDefaultViewScale(root)).toBe(1.5)
-    await write({ personalization: { defaultViewScale: 0.1 } })
-    expect(await readDefaultViewScale(root)).toBe(0.5)
+    await write({ personalization: { interfaceScale: 125 } })
+    expect(await readInterfaceScale(root)).toBe(1.5)
+    await write({ personalization: { interfaceScale: 0.1 } })
+    expect(await readInterfaceScale(root)).toBe(0.5)
   })
 
   it('falls back to 1.0 on a non-numeric or malformed value', async () => {
-    await write({ personalization: { defaultViewScale: 'big' } })
-    expect(await readDefaultViewScale(root)).toBe(1)
+    await write({ personalization: { interfaceScale: 'big' } })
+    expect(await readInterfaceScale(root)).toBe(1)
     await write({ personalization: 'nope' })
-    expect(await readDefaultViewScale(root)).toBe(1)
+    expect(await readInterfaceScale(root)).toBe(1)
   })
 })
 
@@ -135,14 +135,14 @@ describe('the live-tree fast path', () => {
   it('serves the tree main already holds, without opening the file', async () => {
     await writeFile(nexusConfig(root, NEXUS_CONFIG_FILES.identity), JSON.stringify({ id: 'nx1' }))
     await write({
-      personalization: { permanentDelete: true, defaultViewScale: 1.5 },
+      personalization: { permanentDelete: true, interfaceScale: 1.5 },
       excluded_folders: ['Archive'],
     })
     await refreshTree(root)
     // The file is gone; every answer below can only come from the tree.
     await rm(path(), { force: true })
     expect(await readPermanentDelete(root)).toBe(true)
-    expect(await readDefaultViewScale(root)).toBe(1.5)
+    expect(await readInterfaceScale(root)).toBe(1.5)
     expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
   })
 

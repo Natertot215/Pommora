@@ -135,6 +135,7 @@ export interface Asks {
     args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
     reply: Result<null>
   }
+  'views:confirmDelete': { args: []; reply: boolean }
   'container:configure': {
     args: [
       containerPath: string,

@@ -111,8 +111,11 @@ export interface SavedView {
   /** View-level (the ungrouped_placement hoist). The property config's own copy survives only
    *  for decode parity. Absent = off. */
   hide_empty_groups?: boolean
-  /** Cards-view card scale — the Scale step's factor (0.5–1.5). Absent = 1. */
+  /** Cards-view card size — the Size step's factor (0.5–1.5). Absent = 1. */
   card_size?: number
+  /** The whole view's own scale (0.5–1.5) — content and group bands, never the heading, and
+   *  never an embedded tile (a tile states its own size). Absent = 1. */
+  view_scale?: number
   /** Cards-view card image source: the page banner (`cover`), the captured thumbnail
    *  (`preview`), or imageless compact cards (`none`). Absent = cover. */
   card_banner?: CardBanner
@@ -260,6 +263,7 @@ export const savedView = z.looseObject({
   hidden_groups: z.array(z.string()).optional(),
   hide_empty_groups: z.boolean().optional(),
   card_size: z.number().optional().catch(undefined),
+  view_scale: z.number().optional().catch(undefined),
   card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
   hide_location: z.boolean().optional(),
   wrap_titles: z.boolean().optional(),

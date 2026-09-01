@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
 import { SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
 import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/DesignSystem/Symbols'
@@ -203,7 +203,7 @@ function PreviewTabItem({
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
       {/* The map tab is icon-only — the label is its tooltip. */}
-      {!isMap && <OverScroll className="tab-label">{label}</OverScroll>}
+      {!isMap && <span className={cx(overScrollEllipsis, 'tab-label')}>{label}</span>}
       {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
         <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />

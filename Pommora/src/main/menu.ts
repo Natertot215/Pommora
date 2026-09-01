@@ -5,9 +5,9 @@ import { readAppConfig, updateAppConfig } from './appConfig'
 import { push } from './ipc'
 import { dropLiveTree } from './liveTree'
 import { pruneRecents, sessionRoot } from './session'
-import { readDefaultViewScale } from './settings'
+import { readInterfaceScale } from './settings'
 import { setHostZoom, stepHostZoom } from './webGuests'
-import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
+import { INTERFACE_SCALE_DEFAULT, interfaceScaleZoom } from '@shared/types'
 
 type AdoptFn = (path: string) => Promise<void>
 
@@ -126,16 +126,16 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           click: () => send('toggle-sidebar'),
         },
         { type: 'separator' },
-        // ⌘0 resets to the nexus's default view scale (personalization.defaultViewScale), not a
+        // ⌘0 resets to the nexus's interface scale (personalization.interfaceScale), not a
         // hardcoded 1.0 — read fresh so a settings.json edit takes effect without a relaunch.
         {
           label: 'Actual Size',
           accelerator: 'CmdOrCtrl+0',
           click: async () => {
             const root = sessionRoot()
-            const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
+            const scale = root ? await readInterfaceScale(root) : INTERFACE_SCALE_DEFAULT
             const w = menuTarget(win)
-            if (w) setHostZoom(w.webContents, viewScaleZoom(scale))
+            if (w) setHostZoom(w.webContents, interfaceScaleZoom(scale))
           },
         },
         // De-roled: the native zoom roles act on whatever WebContents holds focus — a focused

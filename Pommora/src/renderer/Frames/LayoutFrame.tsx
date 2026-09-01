@@ -1,13 +1,7 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import {
-  type CardBanner,
-  DEFAULT_VIEW_ID,
-  isCompact,
-  type SavedView,
-  type ViewType,
-} from '@shared/views'
+import { type CardBanner, isCompact, type SavedView, type ViewType } from '@shared/views'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
   MenuIndex,
@@ -16,10 +10,8 @@ import {
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
-  AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
 import { useSession } from '../store'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
@@ -33,6 +25,7 @@ import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { iconForTypeSwitch } from './viewIcon'
+import { ViewItemMenu } from './ViewItemMenu'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as vs from './layoutFrame.css'
 
@@ -101,11 +94,6 @@ export function LayoutFrame({
 }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const [frame, setFrame] = useState<Frame | null>(null)
-  const [itemMenuOpen, setItemMenuOpen] = useState(false)
-  const itemMenuRef = useRef<HTMLButtonElement>(null)
-  const views = source.views ?? []
-  const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
-
   const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const rename = (name: string): void => {
@@ -117,23 +105,6 @@ export function LayoutFrame({
     write(icon ? { type, icon } : { type })
   }
   const toggleFormat = (): void => write({ format: isCompact(view) ? 'standard' : 'compact' })
-
-  const duplicateView = async (): Promise<void> => {
-    const res = await window.nexus.views.save(source.path, source.kind, {
-      ...view,
-      id: DEFAULT_VIEW_ID,
-    })
-    if (res.ok) {
-      const ids = views.map((v) => v.id).filter((id) => id !== res.value.id)
-      const at = ids.indexOf(view.id)
-      ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
-      await window.nexus.views.reorder(source.path, source.kind, ids)
-    }
-  }
-  const deleteView = async (): Promise<void> => {
-    await window.nexus.views.delete(source.path, source.kind, view.id)
-    onClose()
-  }
 
   const cardsFooting =
     view.type === 'cards' ? (
@@ -184,7 +155,7 @@ export function LayoutFrame({
               min={SCALE_MIN}
               max={SCALE_MAX}
               step={0.05}
-              ariaLabel="Scale"
+              ariaLabel="Size"
               onInput={(v) => scrubCardScale(v, view.id)}
               onCommit={(v) => write({ card_size: v })}
               format={(v) => `${v.toFixed(2)}x`}
@@ -192,7 +163,7 @@ export function LayoutFrame({
             />
           }
         >
-          <span className={footingLabel}>Scale</span>
+          <span className={footingLabel}>Size</span>
         </MenuItem>
       </MenuFooting>
     ) : null
@@ -271,45 +242,7 @@ export function LayoutFrame({
       <MenuTopRow
         label="Views"
         onBack={onBack}
-        trailing={
-          <>
-            <AccessoryButton
-              ref={itemMenuRef}
-              icon="ellipsis-vertical"
-              size="body"
-              box={20}
-              ariaLabel="View menu"
-              onClick={() => setItemMenuOpen(true)}
-            />
-            <PickerMenu
-              solid
-              open={itemMenuOpen}
-              onDismiss={() => setItemMenuOpen(false)}
-              triggerRef={itemMenuRef}
-            >
-              <MenuItem
-                leading={<Icon name="copy" size="body" />}
-                onClick={() => {
-                  setItemMenuOpen(false)
-                  void duplicateView()
-                }}
-              >
-                Duplicate
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                disabled={!canDelete}
-                leading={<Icon name="trash" size="body" />}
-                onClick={() => {
-                  setItemMenuOpen(false)
-                  void deleteView()
-                }}
-              >
-                Delete
-              </MenuItem>
-            </PickerMenu>
-          </>
-        }
+        trailing={<ViewItemMenu source={source} view={view} onDeleted={onClose} />}
       />
     ) : (
       <MenuTopRow label="Settings" current="Layout" onBack={onBack} />

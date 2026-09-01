@@ -43,6 +43,7 @@ const api = {
     save: ask('views:save'),
     reorder: ask('views:reorder'),
     delete: ask('views:delete'),
+    confirmDelete: ask('views:confirmDelete'),
   },
   container: { configure: ask('container:configure') },
   viewButtonMenu: ask('view-button-menu'),
