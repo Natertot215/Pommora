@@ -2,7 +2,7 @@
  {
   "id": 1,
   "name": "Editor — the twelve densest",
-  "budgetSource": 54730,
+  "budgetSource": 71907,
   "files": [
    "src/renderer/MarkdownPM/Editor/PasteLink.ts",
    "src/renderer/MarkdownPM/Editor/blockModel.ts",
@@ -21,7 +21,7 @@
  {
   "id": 2,
   "name": "Editor — the remaining fifty-eight",
-  "budgetSource": 56764,
+  "budgetSource": 80933,
   "files": [
    "src/renderer/MarkdownPM/Editor/EditorGesture.ts",
    "src/renderer/MarkdownPM/Editor/ListRenumber.test.ts",
@@ -86,7 +86,7 @@
  {
   "id": 3,
   "name": "Shared — the contract core",
-  "budgetSource": 52448,
+  "budgetSource": 56404,
   "files": [
    "src/shared/PasteAsMenu.ts",
    "src/shared/connMenu.ts",
@@ -100,7 +100,7 @@
  {
   "id": 4,
   "name": "Shared — the remaining seventy-six",
-  "budgetSource": 49763,
+  "budgetSource": 79057,
   "files": [
    "src/shared/PasteAsMenu.test.ts",
    "src/shared/PasteLink.test.ts",
@@ -183,7 +183,7 @@
  {
   "id": 5,
   "name": "Main root — the sixteen densest",
-  "budgetSource": 44846,
+  "budgetSource": 66776,
   "files": [
    "src/main/adopt.ts",
    "src/main/appConfig.ts",
@@ -206,7 +206,7 @@
  {
   "id": 6,
   "name": "Main root — the remaining ninety",
-  "budgetSource": 42353,
+  "budgetSource": 93887,
   "files": [
    "src/main/admission.test.ts",
    "src/main/adopt.test.ts",
@@ -303,7 +303,7 @@
  {
   "id": 7,
   "name": "Main CRUD",
-  "budgetSource": 49986,
+  "budgetSource": 60748,
   "files": [
    "src/main/CRUD/aliasAcceptance.test.ts",
    "src/main/CRUD/assignment.test.ts",
@@ -368,7 +368,7 @@
  {
   "id": 8,
   "name": "MarkdownPM root and Tables",
-  "budgetSource": 55568,
+  "budgetSource": 77396,
   "files": [
    "src/renderer/MarkdownPM/AutocompletePane.tsx",
    "src/renderer/MarkdownPM/PageHeader.tsx",
@@ -426,7 +426,7 @@
  {
   "id": 9,
   "name": "Design System — Interactions, Tokens, Fields",
-  "budgetSource": 55976,
+  "budgetSource": 69526,
   "files": [
    "src/renderer/DesignSystem/Fields/EditableInput.tsx",
    "src/renderer/DesignSystem/Fields/InputField.test.tsx",
@@ -492,7 +492,7 @@
  {
   "id": 10,
   "name": "Views",
-  "budgetSource": 51675,
+  "budgetSource": 78001,
   "files": [
    "src/renderer/Views/BandDnd.test.tsx",
    "src/renderer/Views/BandDnd.tsx",
@@ -552,7 +552,7 @@
  {
   "id": 11,
   "name": "Store, Frames, Interface",
-  "budgetSource": 52960,
+  "budgetSource": 54984,
   "files": [
    "src/renderer/Frames/CardsOptions.tsx",
    "src/renderer/Frames/FilterFrame.test.tsx",
@@ -627,7 +627,7 @@
  {
   "id": 12,
   "name": "SurfacePM and Properties",
-  "budgetSource": 52715,
+  "budgetSource": 67894,
   "files": [
    "src/renderer/Properties/Assignment/Cell.test.tsx",
    "src/renderer/Properties/Assignment/Cell.tsx",
@@ -724,7 +724,7 @@
  {
   "id": 13,
   "name": "Main IO and the MarkdownPM leaves",
-  "budgetSource": 54467,
+  "budgetSource": 85864,
   "files": [
    "src/main/Connections/rewrite.test.ts",
    "src/main/Connections/rewrite.ts",
@@ -784,7 +784,7 @@
  {
   "id": 14,
   "name": "Design System remainder and the renderer leaves",
-  "budgetSource": 92242,
+  "budgetSource": 123742,
   "files": [
    "src/renderer/Actions/Commands.test.ts",
    "src/renderer/Actions/Commands.ts",
