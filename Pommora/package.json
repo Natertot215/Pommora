@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Pommora — React + TypeScript + Electron rebuild (Phase 1: window + glass sidebar scaffold)",
   "main": "./out/main/index.js",
-  "author": "Nathan Taichman",
+  "author": "Naterot",
   "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",

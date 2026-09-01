@@ -18,7 +18,7 @@ const stamped = (): Promise<void> =>
     'Archive/stamped.md',
     page(
       '01NNNNNNNNNNNNNNNNNNNNNNNN',
-      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Nathan\n<Status>: open',
+      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Username\n<Status>: open',
     ),
   )
 
@@ -29,7 +29,7 @@ const expectStampsStripped = async (): Promise<string> => {
   expect(text).not.toContain('PageID')
   expect(text).toContain('icon: star')
   expect(text).toContain('cover: img.png')
-  expect(text).toContain('Author: Nathan')
+  expect(text).toContain('Author: Username')
   return text
 }
 

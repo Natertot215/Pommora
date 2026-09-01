@@ -265,13 +265,13 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\nauthor: Nathan\n<Priority>: hi\n---\nthe body\n`,
+      `---\nPageID: ${PAGE_A}\nauthor: Username\n<Priority>: hi\n---\nthe body\n`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
     })
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
-    expect(raw).toContain('author: Nathan')
+    expect(raw).toContain('author: Username')
     expect(raw).toContain('the body')
     expect(raw).not.toContain('<Priority>')
   })

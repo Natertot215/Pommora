@@ -30,10 +30,10 @@ describe('renameSweep', () => {
   })
 
   it('keeps the key’s position and the comment attached to it', async () => {
-    await seed('id: p1\n# which stage this is at\n<Status>: Old\nauthor: Nathan\n')
+    await seed('id: p1\n# which stage this is at\n<Status>: Old\nauthor: Username\n')
     await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toBe(
-      '---\nid: p1\n# which stage this is at\n<Stage>: Old\nauthor: Nathan\n---\nbody\n',
+      '---\nid: p1\n# which stage this is at\n<Stage>: Old\nauthor: Username\n---\nbody\n',
     )
   })
 
