@@ -124,7 +124,7 @@ export async function restoreCachedValues(
   }
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
-  // refuses the write — stays cached. Only a landed write resolves true.
+  // refuses the write — stays cached.
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
