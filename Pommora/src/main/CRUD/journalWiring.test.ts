@@ -144,7 +144,7 @@ describe('the option-op writers', () => {
     )
     await writeFile(
       abs('Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nTags: Draft\n---\nbody\n',
+      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nTags:\n  - Draft\n---\nbody\n',
     )
     observed = []
   }
@@ -157,7 +157,7 @@ describe('the option-op writers', () => {
     expect(writes.length).toBeGreaterThan(0)
     expect(writes.every((w) => w.journaled)).toBe(true)
     expect(await readSchemaJournal(root)).toBeNull()
-    expect(await readFile(abs('Col', 'C.md'), 'utf8')).toContain('Tags: Queued')
+    expect(await readFile(abs('Col', 'C.md'), 'utf8')).toContain('- Queued')
   })
 
   it('a refused option-rename clears with no page touched', async () => {

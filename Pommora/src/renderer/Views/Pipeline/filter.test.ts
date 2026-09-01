@@ -7,15 +7,30 @@ import { applyFilter, FILTER_OPS } from './filter'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_st', name: 'Stage', type: 'status' },
+  {
+    id: 'prop_st',
+    name: 'Stage',
+    type: 'status',
+    status_groups: [
+      {
+        id: 'g',
+        label: 'G',
+        color: 'blue',
+        options: [
+          { value: 'Done', label: 'Done', group_id: 'g' },
+          { value: 'Open', label: 'Open', group_id: 'g' },
+        ],
+      },
+    ],
+  },
   {
     id: 'prop_sel',
     name: 'Sel',
     type: 'select',
-    select_options: [
-      { value: 'a', label: 'A' },
-      { value: 'b', label: 'B' },
-    ],
+    select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((v) => ({
+      value: v,
+      label: v,
+    })),
   },
   { id: 'prop_num', name: 'Num', type: 'number' },
   { id: 'prop_url', name: 'Link', type: 'url' },
@@ -250,7 +265,7 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['c'])
   })
 
-  it('checkbox supports is / is_empty; is_not_empty is a no-op pass', () => {
+  it('checkbox supports is / is_empty; false on disk is empty; is_not_empty is a no-op pass', () => {
     const rows = [
       row('t', { props: { prop_done: true } }),
       row('f', { props: { prop_done: false } }),
@@ -261,7 +276,7 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['t'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is_empty' }] }),
-    ).toEqual(['n'])
+    ).toEqual(['f', 'n'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is_not_empty' }] }),
     ).toEqual(['t', 'f', 'n'])

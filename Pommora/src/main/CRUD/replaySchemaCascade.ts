@@ -75,7 +75,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
       const key = def.name
       const skipped = await cascadePages(root, key, (content) =>
-        replacePageValue(content, key, journal.from, journal.to, def.type),
+        replacePageValue(content, key, journal.from, journal.to),
       )
       return skipped > 0
     }
@@ -86,7 +86,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       if (!def || !optionValues(def).includes(journal.value)) return false
       const key = def.name
       const skipped = await cascadePages(root, key, (content) =>
-        stripPageValue(content, key, journal.value, def.type),
+        stripPageValue(content, key, journal.value),
       )
       if (skipped > 0) return true
       await dropOptionFromDef(root, journal.id, journal.value)

@@ -29,6 +29,18 @@ function fileEntry(v: unknown): string | null {
 
 const NULL: PropertyValue = { kind: 'null' }
 
+/** The three option types share one on-disk shape — a list — and a scalar is read as a list of one. */
+const optionList = (raw: unknown): string[] =>
+  (Array.isArray(raw) ? raw : [raw]).filter((x): x is string => typeof x === 'string' && x !== '')
+
+/** The one address for "an externally written option list sets a Select or Status value": the
+ *  newest valid element wins, and an invalid trailing element yields to the nearest valid one
+ *  before it. */
+export const resolveSingleOption = (
+  written: readonly string[],
+  known: readonly string[],
+): string | undefined => written.filter((v) => known.includes(v)).at(-1)
+
 export function decodeValue(
   def: PropertyDefinition,
   raw: unknown,
@@ -43,7 +55,7 @@ export function decodeValue(
     case 'number':
       return typeof raw === 'number' ? { kind: 'number', value: raw } : NULL
     case 'checkbox':
-      return typeof raw === 'boolean' ? { kind: 'checkbox', value: raw } : NULL
+      return raw === true ? { kind: 'checkbox', value: true } : NULL
     case 'url':
       return typeof raw === 'string' ? str({ kind: 'url', value: raw }) : NULL
     case 'datetime':
@@ -52,15 +64,16 @@ export function decodeValue(
     case 'last_edited_time':
       return typeof raw === 'string' ? str({ kind: 'datetime', value: raw }) : NULL
     case 'select':
-    case 'status': {
-      if (typeof raw !== 'string') return NULL
-      if (strict && !optionValues(def).includes(raw)) return NULL
-      return str({ kind: 'select', value: raw })
-    }
+    case 'status':
     case 'multi_select': {
-      if (!Array.isArray(raw) || !raw.every((x): x is string => typeof x === 'string')) return NULL
-      const kept = strict ? raw.filter((v) => optionValues(def).includes(v)) : raw
-      return strict && kept.length === 0 ? NULL : { kind: 'multiSelect', value: kept }
+      const known = optionValues(def)
+      const xs = optionList(raw)
+      if (def.type === 'multi_select') {
+        const kept = strict ? xs.filter((v) => known.includes(v)) : xs
+        return kept.length === 0 ? NULL : { kind: 'multiSelect', value: kept }
+      }
+      const value = resolveSingleOption(xs, known)
+      return value === undefined ? NULL : { kind: 'select', value }
     }
     // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a
     // merged case would discard every attachment through the restore path.
@@ -83,9 +96,10 @@ export function decodeValue(
 
 export function encodeValue(value: PropertyValue): unknown {
   switch (value.kind) {
+    case 'select':
+      return [value.value]
     case 'number':
     case 'checkbox':
-    case 'select':
     case 'url':
     case 'datetime':
     case 'multiSelect':

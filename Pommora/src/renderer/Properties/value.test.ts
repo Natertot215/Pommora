@@ -6,9 +6,29 @@ import { declaredType, fileName, resolveFieldValue } from './value'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_sel', name: 'Sel', type: 'select' },
-  { id: 'prop_s', name: 'S', type: 'select' },
+  {
+    id: 'prop_status',
+    name: 'Status',
+    type: 'status',
+    status_groups: [
+      {
+        id: 'g',
+        label: 'G',
+        color: 'blue',
+        options: [{ value: 'in_progress', label: 'In Progress', group_id: 'g' }],
+      },
+    ],
+  },
+  { id: 'prop_sel', name: 'Sel', type: 'select', select_options: [{ value: 'opt_a', label: 'A' }] },
+  {
+    id: 'prop_s',
+    name: 'S',
+    type: 'select',
+    select_options: [
+      { value: 'open', label: 'Open' },
+      { value: 'done', label: 'Done' },
+    ],
+  },
   { id: 'prop_when', name: 'When', type: 'datetime' },
   { id: 'prop_num', name: 'Num', type: 'number' },
 ]
@@ -142,7 +162,15 @@ describe('resolveFieldValue memoization', () => {
 describe('resolveFieldValue — the declared type is obeyed, never inferred from the value', () => {
   const typedSchema: PropertyDefinition[] = [
     { id: 'prop_link', name: 'Link', type: 'url' },
-    { id: 'prop_tag', name: 'Tag', type: 'select' },
+    {
+      id: 'prop_tag',
+      name: 'Tag',
+      type: 'select',
+      select_options: [
+        { value: 'opt_a', label: 'A' },
+        { value: '[URGENT](tel:911)', label: 'Urgent' },
+      ],
+    },
   ]
   const rowOf = (properties: Record<string, unknown>): ViewRow => ({
     id: 'r',

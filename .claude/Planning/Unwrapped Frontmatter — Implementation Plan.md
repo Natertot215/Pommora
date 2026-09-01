@@ -689,10 +689,10 @@ Select/Status membership is no longer `strict`-gated — it is the read rule. `P
 
 **Verify — automated**
 
-- [ ] Red first in `propertyValue.test.ts`, the single-value cases run **twice — once against a Select definition, once against a Status definition** (Rulings): `['Open','Active']` → `Active`; `['Green','Blue']` against Red/Blue → `Blue`; `['Active','Wip']` (invalid trailing) → `Active`; `'Active'` scalar → `Active`; `['Wip']` unknown → null; plus `'zeta'` scalar on Multi-Select → `['zeta']`; `false` on checkbox → null; `encodeValue({kind:'select',value:'Active'})` → `['Active']`. Then green. Existing 27 stay green after fixture rewrite. `resolveSingleOption` is exported and named in the tests so the rule's address is the test's subject.
-- [ ] `filter.test`: "is empty" on a checkbox with `false` on disk → true (red first against `:333`).
-- [ ] `rg -F "kind: 'checkbox', value: raw" src` → 0. Control: `rg -F "optionList(" src/shared/propertyValue.ts` → 1 (the one call; the definition is `const optionList = (`).
-- [ ] Full gates green.
+- [x] `propertyValue.test.ts`: one describe runs the same four cases against a Select and a Status definition (newest registered wins; an unregistered trailing option yields; a scalar is a list of one; an unregistered option is no value), plus `resolveSingleOption` on the plan's own examples, `'zeta'` scalar on Multi-Select → `['zeta']`, `false` → null, `encodeValue` select → `['Active']`. Red observed as the 30 failures across 12 suites before the fixtures moved. Fixtures whose Select/Status definitions carried no options (renderer `value`, `filter`, `cardValueInput`) now register the options their rows use — an unregistered option reads as no value, so those fixtures had leaned on the old lenient read.
+- [x] `filter.test`: checkbox `false` on disk answers "is empty".
+- [x] `rg -F "kind: 'checkbox', value: raw" src` → 0. Control: `optionList(` in `propertyValue.ts` → 1.
+- [x] typecheck 0 · 303 files / 3758 tests · lint clean.
 
 **Verify — user**
 
@@ -743,10 +743,10 @@ Foreign elements in the list ride through untouched, as today's array path alrea
 
 **Verify — automated**
 
-- [ ] Red first in `pageValue.test.ts`: `replacePageValue` on `Status:\n  - Active` → `Status:\n  - Live` (today returns null); `stripPageValue` on the same → key deleted. Then green. The scalar `Status: Active` case rewrites to a list — asserted.
-- [ ] `optionOps.test` 19 green after the fixtures go list-shaped.
-- [ ] `rg -F "type: PropertyType" src/main/CRUD/pageValue.ts src/main/CRUD/optionOps.ts` → 3 (the three type-gate survivors named in Now; none on the rewrite path). Control: `rg -F "requireOptionType" src/main/CRUD/optionOps.ts` → ≥ 2.
-- [ ] Full gates green.
+- [x] `pageValue.test.ts`: a list-shaped Status is renamed and stripped in place; a scalar written from outside rewrites to a list of one. Red observed as `optionOps.test`'s two cascade failures once `encodeValue` wrote lists (the old scalar compare skipped every page), which is why Tasks 10 and 11 land as one commit.
+- [x] `optionOps.test` 19 green; `journalWiring.test`'s multi-select fixture went list-shaped.
+- [x] `type: PropertyType` in `pageValue.ts` + `optionOps.ts` → 3 (the type gates). Control: `requireOptionType` → 5.
+- [x] Full gates green (Task 10's line).
 
 **Verify — user**
 

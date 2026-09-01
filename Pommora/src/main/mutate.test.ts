@@ -102,7 +102,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await read('Notes/Daily/Seeded.md'))
-    expect(fm.Stage).toBe('doing')
+    expect(fm.Stage).toEqual(['doing'])
     expect(Object.keys(fm).some((k) => k.includes('gone'))).toBe(false)
 
     const blank = await handleMutate(
@@ -1017,7 +1017,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
     expect(splitFrontmatter(md)[PAGE_ID_KEY]).toBe(B_ID)
-    expect(splitFrontmatter(md).Stage).toBe('done')
+    expect(splitFrontmatter(md).Stage).toEqual(['done'])
   })
 
   it('stamps modified_at — a property VALUE change is an edit', async () => {
