@@ -147,9 +147,10 @@ export async function setPageContext(
     const raw = splitFrontmatter(existing)
     const applied = applyTarget(world, raw, contextId, titles.value)
     if (!applied.ok) return applied
-    const keys = governedContextKeys(raw, applied.value.root, applied.value.key)
+    const { root, key } = applied.value
+    const keys = governedContextKeys(raw, root, key)
     const next: Raw = {}
-    for (const k of keys) if (k in applied.value.root) next[k] = applied.value.root[k]
+    for (const k of keys) if (k in root) next[k] = root[k]
     await setGovernedRootKeys(absFile, next, keys)
     return ok(null)
   })
