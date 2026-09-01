@@ -5,15 +5,15 @@
 
 **Goal**
 
-Cut the app's TypeScript comment mass by at least 30% of its character count, leaving a codebase whose remaining comments each carry something the code cannot say for itself. StudioMD already sets the law — comments are kept to their absolute minimum and reserved for *why*s that cannot be inferred — and 766,493 characters across 7,160 comments is what accumulated in spite of it. This is the pass that collects the debt.
+Cut the app's TypeScript comment mass by 35–50% of its character count, leaving a codebase whose remaining comments each carry something the code cannot say for itself. StudioMD already sets the law — comments are kept to their absolute minimum and reserved for *why*s that cannot be inferred — and 766,493 characters across 7,160 comments is what accumulated in spite of it. This is the pass that collects the debt.
 
-The shape is fourteen sequential units, each a single comment-killer agent handed an explicit file list, a character budget, and the deletion law below. Units are sized by comment mass rather than by directory, because a literal per-directory run is 48 dispatches where 34 of them are under 5,000 characters. The two directories too large for one unit — `MarkdownPM/Editor` at 111,494 and `main/` root at 87,199 — split by file, and the thirty small leaves merge into three sweep units. Agents run one at a time on one working tree; comment edits are file-disjoint by directory but the recorded failure mode is a fanned-out comment-killer working off a stale base, and serial dispatch is what forecloses it.
+The shape is fourteen units dispatched at once, each a single comment-killer agent handed an explicit file list, a character budget, and the deletion law below. Units are sized by comment mass rather than by directory, because a literal per-directory run is 48 dispatches where 34 of them are under 5,000 characters. The two directories too large for one unit — `MarkdownPM/Editor` at 111,494 and `main/` root at 87,199 — split by file, and the thirty small leaves merge into three sweep units. Agents run concurrently on one working tree, which is safe here only because of what the units are: every one of the 926 files belongs to exactly one unit, so no two agents ever open the same file. What made concurrency dangerous before was a comment-killer spawning sub-agents and staging directories; both are foreclosed by taking every git and gate operation away from the agents entirely. They edit files. Nothing else.
 
 This is not a code change. The token-stream check in the ledger is what makes that a proven property rather than an intention: a file whose non-trivia token stream moves fails the gate, and whitespace never enters the hash, so Biome reformatting cannot mask a real edit. Nothing in scope alters behavior, signatures, or tests' assertions. CSS is out of scope — its pass already ran.
 
 **Requirements**
 
-1. Total TypeScript comment characters fall from 766,493 to **536,545 or fewer** — a cut of at least 229,948 characters, 30% of the baseline.
+1. Total TypeScript comment characters fall from 766,493 into the band **383,246–498,220** — a cut of 268,273 to 383,247 characters, 35–50% of the baseline. Below 35% the pass is unfinished; above 50% it is presumed to have eaten something in the preserve list and is audited before it lands.
 2. Every one of the 926 tracked files ends the run with a token stream identical to its baseline hash.
 3. The three gates — `npm run typecheck`, `npm run test`, `npm run lint` — pass at every unit boundary.
 4. `biome-ignore` (79 occurrences) and `KNOB` (83 occurrences) survive at their exact baseline counts.
@@ -22,7 +22,7 @@ This is not a code change. The token-stream check in the ledger is what makes th
 
 **Acceptance — the whole thing working**
 
-`node .claude/scripts/comment-ledger.mjs --verify` reports a reduction of 30.0% or greater, prints `token streams identical — comments only`, and exits 0; the three gates pass on the same tree; and `biome-ignore` and `KNOB` grep at 79 and 83.
+`node .claude/scripts/comment-ledger.mjs --verify` reports a reduction between 35.0% and 50.0%, prints `token streams identical — comments only`, and exits 0; the three gates pass on the same tree; and `biome-ignore` and `KNOB` grep at 79 and 83.
 
 **Forced By**
 
@@ -57,7 +57,7 @@ This is not a code change. The token-stream check in the ledger is what makes th
 **Global Constraints (every unit inherits these):**
 
 - Gates run from `Pommora/`, exit codes read directly. `set -o pipefail` on anything piped — `vitest | tail` exits with tail's status and has masked a red suite.
-- One tree-touching writer at a time. No parallel implementer agents, no sub-agents, no worktrees.
+- Agents never run git, never run a gate, never commit, and never spawn a sub-agent or a worktree. Every one of those belongs to the dispatching session, after the fan-in.
 - `git add` names explicit paths. Never `-A`, never a directory.
 - Out of scope everywhere: `.css.ts` and `.css` files · any change to code, types, signatures, test assertions, or JSX structure · any new file · any comment addition that is not a shortening of one already there.
 
@@ -140,42 +140,44 @@ node .claude/scripts/comment-ledger.mjs --verify <N>
 
 ### The Units
 
-| # | Unit | Files | Chars | Floor |
-| --- | --- | --- | --- | --- |
-| 1 | Editor — the twelve densest | 12 | 54,730 | 16,419 |
-| 2 | Editor — the remaining fifty-eight | 58 | 56,764 | 17,030 |
-| 3 | Shared — the contract core | 7 | 52,448 | 15,735 |
-| 4 | Shared — the remaining seventy-six | 76 | 49,763 | 14,929 |
-| 5 | Main root — the sixteen densest | 16 | 44,846 | 13,454 |
-| 6 | Main root — the remaining ninety | 90 | 42,353 | 12,706 |
-| 7 | Main CRUD | 58 | 49,986 | 14,996 |
-| 8 | MarkdownPM root and Tables | 51 | 55,568 | 16,671 |
-| 9 | Design System — Interactions, Tokens, Fields | 59 | 55,976 | 16,793 |
-| 10 | Views | 53 | 51,675 | 15,503 |
-| 11 | Store, Frames, Interface | 68 | 52,960 | 15,888 |
-| 12 | SurfacePM and Properties | 90 | 52,715 | 15,815 |
-| 13 | Main IO and the MarkdownPM leaves | 53 | 54,467 | 16,341 |
-| 14 | Design System remainder and the renderer leaves | 235 | 92,242 | 27,673 |
-| | **Total** | **926** | **766,493** | **229,948** |
+| # | Unit | Files | Chars | 35% | 50% |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Editor — the twelve densest | 12 | 54,730 | 19,156 | 27,365 |
+| 2 | Editor — the remaining fifty-eight | 58 | 56,764 | 19,868 | 28,382 |
+| 3 | Shared — the contract core | 7 | 52,448 | 18,357 | 26,224 |
+| 4 | Shared — the remaining seventy-six | 76 | 49,763 | 17,418 | 24,882 |
+| 5 | Main root — the sixteen densest | 16 | 44,846 | 15,697 | 22,423 |
+| 6 | Main root — the remaining ninety | 90 | 42,353 | 14,824 | 21,177 |
+| 7 | Main CRUD | 58 | 49,986 | 17,496 | 24,993 |
+| 8 | MarkdownPM root and Tables | 51 | 55,568 | 19,449 | 27,784 |
+| 9 | Design System — Interactions, Tokens, Fields | 59 | 55,976 | 19,592 | 27,988 |
+| 10 | Views | 53 | 51,675 | 18,087 | 25,838 |
+| 11 | Store, Frames, Interface | 68 | 52,960 | 18,536 | 26,480 |
+| 12 | SurfacePM and Properties | 90 | 52,715 | 18,451 | 26,358 |
+| 13 | Main IO and the MarkdownPM leaves | 53 | 54,467 | 19,064 | 27,234 |
+| 14 | Design System remainder and the renderer leaves | 235 | 92,242 | 32,285 | 46,121 |
+| | **Total** | **926** | **766,493** | **268,273** | **383,247** |
 
-The floor is a per-unit expectation, not the contract. The contract is the global 30%. A unit that lands short states why in the Log and its shortfall is carried onto the running total; a unit that overshoots relieves the ones after it. The running cut after each unit is `--verify` with no unit argument.
+The band is a per-unit expectation, not the contract. The contract is the global 35–50%. A unit landing under 35% states why in the Log; a unit landing over 50% is read before it is kept, because at that depth the likeliest explanation is a preserved comment that went anyway. Because the units run at once, no unit can be relieved by another's overshoot — each is briefed to its own band and the fan-in reconciles the total.
 
-**Order.** Units 1–7 are the dense, prose-heavy core and run first: they hold 351,000 characters, so a systematic problem with the Deletion Law surfaces early and cheaply. Unit 14 runs last because its 235 files are the leaves, where a stripped comment costs least if the law needs adjusting.
+**Order.** None — all fourteen dispatch together. The cost of that choice is that a systematic problem with the Deletion Law surfaces in all fourteen at once rather than in the first unit alone; the containment is that the ledger names every affected file and each unit is one revert.
 
 ---
 
-### Gate — after every unit
+### The Fan-In
 
-- [ ] The unit's **Verify — automated** list ticked, each against a result just watched.
-- [ ] The running whole-tree total recorded in Progress.
-- [ ] Any comment the agent preserved on category 4 or 5 that a re-read finds inferable is cut before the commit.
-- [ ] Commit made, explicit paths, hash written into Progress.
+Comments are not code, so the three gates are not a per-unit ceremony — they run once, at the end, over everything. Two checks do run per unit, because each takes seconds and each catches the one thing a comment pass can genuinely break:
 
-### Gate — after units 7 and 14
+- [ ] `node .claude/scripts/comment-ledger.mjs --verify <N>` — the unit's cut, and the token-stream hash that proves nothing but comments moved.
+- [ ] `grep -ro 'biome-ignore' --include='*.ts' --include='*.tsx' src | wc -l` → 79, and `KNOB` → 83, both whole-tree. A `biome-ignore` is a comment that is also code; its removal is the one deletion the ledger cannot see.
 
-- [ ] `code-simplifier` dispatched against the range, scoped to the units' paths, briefed that this is a comments-only pass and that any code change it proposes is out of scope and belongs in a finding rather than an edit.
-- [ ] `build-breaking-agent` dispatched against the same range, asked the one question that matters: which surviving comment is now the only thing preventing a wrong conclusion, and which deleted one was?
-- [ ] Every finding fixed, or carrying an explicit ruling in the Log.
+Then, once:
+
+- [ ] `npm run typecheck` · `npm run test` · `npm run lint` from `Pommora/`, exit codes read directly.
+- [ ] `git worktree list` → one entry.
+- [ ] `--verify` whole-tree: reduction inside 35–50%, `token streams identical — comments only`, exit 0.
+- [ ] Any unit over 50% read before it is kept.
+- [ ] `code-simplifier` and `build-breaking-agent` over the full range, briefed that this is comments-only and that a proposed code change is a finding rather than an edit.
 
 ---
 
