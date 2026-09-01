@@ -158,7 +158,7 @@ Every addition names what it removes; additions removing nothing are Nathan's ex
 - Reserved-name rule; exact-case matching; any-casing names.
 - Select/Status as one-element lists; one shape rule (normalize to list; last valid for single, all valid for multi); Select/Status unknown → deleted on repair, Multi-Select unknown → adopted; checkbox `false` → absent.
 - One reconcile with a property arm and `adoptions`, inside one writer with its three precedence rules; whole-file on every governed page write; the strict Contexts world loaded only when the drift pre-check fails, and skipped if it fails to load on a property write; adoption via `mutateRegistry` only; the reconcile as the one standing check.
-- The content index records all keys; `SCHEMA_VERSION` 2; `renameCascade` filters against the registry; a rename onto a held key is refused.
+- The content index records all keys; an index generation truncates the two index tables on mismatch (never the database); `renameCascade` filters against the registry; a rename onto a held key is refused.
 - A values-changed push fed by watcher and app writes; the epoch union; id-scoped override retirement with an in-flight marker; `refreshValues` deleted; `GroupFrame` subscribes.
 - The on-load repair sweep behind a default-off toggle; the Capitalize toggle.
 - Clear Exclusion strips bookkeeping only; "Keep Values" gone.

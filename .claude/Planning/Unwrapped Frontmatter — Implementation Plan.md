@@ -89,7 +89,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 - `propertyKey(` → 0. `preservePropertiesOnClear` → 0. `refreshValues` → 0. `propertyValueStands` → 0. `'prefer-new'` with `--glob '!*.test.*'` → 3 (`pageFile.ts:120` the union member, `:166` the compare, `registryProperty.ts` the during-sweep case).
 - Control: `parseContextKey` → ≥ 6. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 4 opens it — from the first Phase 1 commit, the running build reads bare keys and a vault still holding `<Prop>` keys renders those values as foreign. Nothing closes it in code; **Gate 1's manual pass** closes it. **`npm run dev` reopens the last nexus by itself at launch** (`session.ts:42–48` `resolveRestorePath` reads `config.lastNexusPath`, which every open writes at `index.ts:484`; `TEST_NEXUS_PATH` never steers the app). So the ordering step, **before Task 4's first commit:** open a scratch nexus in the running app once, so the restore points there for every Phase 1 restart — 17 tasks touch main and each restarts the dev process. Task 6's index generation rides Phase 1 so the index rebuilds on that same first open, leaving `local_state` whole.
+**Hazard Window:** Task 4 opens it — from the first Phase 1 commit, the running build reads bare keys and a vault still holding `<Prop>` keys renders those values as foreign. Nothing closes it in code; **Gate 1's manual pass** closes it. **`npm run dev` reopens the last nexus by itself at launch** (`session.ts:42–48` `resolveRestorePath` reads `config.lastNexusPath` from `pommora.json` under `userData`, written by the user-adopt path `adoptNexusInner` at `index.ts:477–490`; `TEST_NEXUS_PATH` never steers the app). So the ordering step, **before Task 4's first commit:** open a scratch nexus through the picker in the running app once, so the restore points there for every Phase 1 restart — 17 tasks touch main and each restarts the dev process. Task 4's Verify carries the box. Task 6's index generation rides Phase 1 so the index rebuilds on that same first open, leaving `local_state` whole.
 
 ---
 
@@ -107,7 +107,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 // Targets — every file a later task's Now fence names:
 // src/shared/{governedKeys,contexts,propertyValue,properties,contextResolve,schemas,bridge,types}.ts
 // src/main/CRUD/{governedWrite,contextWrite,page,pageValue,optionOps,registryProperty,keyHolders,governedSweep,restoreScrub,standing,restoreProperty,removeProperty,replaySchemaCascade,cascade,schemaChain}.ts
-// src/main/{indexSeed,exclusionScan,readNexus,watcher,watchPatch,mutate,index}.ts · src/main/IO/{propertiesRegistry,pageFile,fileLock,writeEcho}.ts · src/main/Database/{contentIndex,schema}.ts · src/main/Connections/{rewrite,scan}.ts · src/main/Properties/schema.ts
+// src/main/{indexSeed,exclusionScan,readNexus,watcher,watchPatch,mutate,index,session,liveTree,adopt,settings}.ts · src/main/CRUD/assignment.ts · src/main/IO/{propertiesRegistry,pageFile,fileLock,writeEcho}.ts · src/main/Database/{contentIndex,schema,open}.ts · src/main/Connections/{rewrite,scan}.ts · src/main/Properties/schema.ts
 // src/renderer/Store/RenameSlice.ts · Views/{useValuesEpoch,useViewHost}.ts · Views/CardView/CardsView.tsx · Views/TableView/TableView.tsx · Frames/GroupFrame.tsx · Properties/{value,PageProperties,PropertyFrame}.tsx|ts · Properties/Assignment/{columnLabel,Cell,usePropertyRows}.ts|tsx · Windows/WindowInspector.tsx · Testing/propsAtRoot.ts · src/preload/index.ts
 ```
 
@@ -331,7 +331,8 @@ export function invalidPropertyName(name: string): boolean
 
 **Verify — user**
 
-- [ ] *(carried to Gate 1's stop)*
+- [ ] **Before this task's commit:** the running dev app has a scratch nexus open (picked through the picker, so `pommora.json`'s `lastNexusPath` points at it), not NexusOS.
+- [ ] *(the rest carried to Gate 1's stop)*
 
 #### Task 5: Ownership is the registry name; `propertyKey(def)` is `def.name`
 
@@ -440,12 +441,16 @@ export const INDEX_GENERATION = 2 // a mismatch truncates page_values + indexed_
 export function readMeta(db: Database, key: string): string | null // readSchemaVersion generalized; stampSchemaVersion → writeMeta
 export function writeMeta(db: Database, key: string, value: string): void
 export function truncateIndex(db: Database): void // DELETE FROM page_values; DELETE FROM indexed_files
-// src/main/Database/open.ts — in the version-MATCH branch, on `existing`, before its return at :51
+// src/main/Database/open.ts — version-MATCH branch, on `existing`, after applySchema and before its return at :51
   if (readMeta(existing, 'index_generation') !== String(INDEX_GENERATION)) {
-    try { truncateIndex(existing) } catch {} // a pre-index db has no tables yet; applySchema creates them next
+    truncateIndex(existing)
     writeMeta(existing, 'index_generation', String(INDEX_GENERATION))
   }
+// fresh-create branch, beside stampSchemaVersion(db) at :60
+  writeMeta(db, 'index_generation', String(INDEX_GENERATION))
 ```
+
+Both exits stamp the generation: a brand-new nexus's second open must not truncate the index it just seeded. `applySchema` has already created the tables on the matched handle when the check runs, so no guard is needed around the truncate.
 
 The registry is read once before `renameCascade`'s loop; `restoreScrub`'s `Map.get` is the predicate. `frontmatterMentions` (`scan.ts:50`) keeps reading every string value — a foreign `[[Link]]` now reaches the mentions table, which is more correct, not less. Truncating `indexed_files` leaves `readIndexedStats()` empty, so the next seed re-reads every file once; `readyDb` is set only after the seed, so queries answer null (corpus fallback) throughout. `SCHEMA_VERSION` stays 1.
 
@@ -455,7 +460,7 @@ The registry is read once before `renameCascade`'s loop; `restoreScrub`'s `Map.g
 
 - [ ] Red first (`indexSeed.test` or new): a page with `foo: bar` + `Status: [Active]` indexes **two** `page_values` rows; `queryKeyHolders('foo')` returns the page. Fails on the filtered version; then green.
 - [ ] Crossing test: register `Notes` after indexing a page holding `Notes: x` with no re-read → `keyHolderFiles(root, 'Notes', folders)` includes the page.
-- [ ] Generation test (`open.test` or new): a db with `aliases`, `blockDoc`, and `folds` rows plus a stale `index_generation` opens with **all three rows intact** and `page_values` empty; the same db at the current generation opens with `page_values` intact; a db with no index tables yet opens without throwing. Red first — with `SCHEMA_VERSION` bumped instead, the rows-intact assertion fails; with the check on the fresh-create handle, the `page_values` empty assertion fails.
+- [ ] Generation test (`open.test` or new): a db with `aliases`, `blockDoc`, and `folds` rows plus a stale `index_generation` opens with **all three rows intact** and `page_values` empty; the same db at the current generation opens with `page_values` intact; **a freshly created db, seeded, then reopened keeps its `page_values`**. Red first — with `SCHEMA_VERSION` bumped instead, the rows-intact assertion fails; with the fresh-create stamp missing, the reopen assertion fails.
 - [ ] `governedSweep.test` unchanged and green; `restoreScrub.test` context fixtures `<…>` green.
 - [ ] `rg -F "governedValues" src` → 0. Control: `rg -F "frontmatterValues" src` → ≥ 3.
 - [ ] Full gates green.
@@ -1178,16 +1183,23 @@ Every patch site writes `{ fm, pending: true }` and flips `pending` to false whe
 export function noteValueWrite(root: string, absFile: string, pageId?: string): void
 export function flushValueWrites(root: string): { rel: string; pageIds: string[] }[] // drains the ledger
 // callers of noteValueWrite: governedWrite.setGovernedRootKeys after its write, via sessionRoot() (the funnel — covers setProperty, setContext, restoreProperty, restoreCachedValues) · optionOps.cascadePages · governedSweep.sweepGovernedRoots (page arm) · cascade.renameCascade · mutate.ts:495 (cover), :589 (icon) · repairSweep.runRepairSweep (Task 21)
-// src/main/index.ts:511-516 (pushConfirmed) — inside its existing setImmediate, after the tree send
+// src/main/index.ts:523-526 (confirmWrite)
+async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): Promise<void> {
+  const root = sessionRoot()
+  if (root === null) return
+  pushConfirmed(await work(root))
+  setImmediate(() => {
     const changes = flushValueWrites(root)
     if (changes.length && mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'values:changed', changes)
+  })
+}
 ```
 
-`sessionRoot()` is importable from `src/main/CRUD` (`journalSlot.ts:9` already does), so the hook sits at the one writer every value edit crosses rather than on an enumerated caller list. The push rides `pushConfirmed`'s one-macrotask deferral and lands **after** `nexus:changed` — the invoke's own reply always reaches the renderer first, so a cell's optimistic override is never retired before its write is acknowledged. `flushValueWrites` emits one entry per containing Collection/Set rel, resolving page ids from the live tree when a writer had none. `watcher.settle` collects `{ rel, pageId }` from each applied `page-upsert` and pushes one grouped `values:changed` after the tree push; a `refresh` outcome pushes the batch's rels with `pageIds: []`. `refreshValues` and `onRefreshValues` are deleted from `useViewHost.ts` and the six `CardsView.tsx` sites; `useBannerMenu`'s `onDone` for the cover is dropped.
+`sessionRoot()` is importable from `src/main/CRUD` (`journalSlot.ts:9` already does), so the hook sits at the one writer every value edit crosses rather than on an enumerated caller list. The flush is **not** inside `pushConfirmed`: that function returns at once when the tree didn't move (`index.ts:512`), and a value write never moves the tree (`mutatePatch.ts:52` → `'no-change'`) — the hottest op would never push. Its own `setImmediate` is FIFO behind `pushConfirmed`'s, so when a `nexus:changed` exists it lands first, and the invoke's own reply always beats both — a cell's optimistic override is never retired before its write is acknowledged. `root` is the one the write used, so a nexus switch in the window can't strand the ledger. `flushValueWrites` emits one entry per containing Collection/Set rel, resolving page ids from the live tree when a writer had none. `watcher.settle` collects `{ rel, pageId }` from each applied `page-upsert` and pushes one grouped `values:changed` after the tree push; a `refresh` outcome pushes the batch's rels with `pageIds: []`. `refreshValues` and `onRefreshValues` are deleted from `useViewHost.ts` and the six `CardsView.tsx` sites; `useBannerMenu`'s `onDone` for the cover is dropped.
 
 **Verify — automated**
 
-- [ ] Red first: a `setProperty` mutate pushes one `values:changed` with the page's container rel and id, **after** `nexus:changed` in send order; an option rename over 3 pages in 2 containers pushes **one** message with 2 entries; re-assigning a property with a Remove-cache (`assignInner` → `restoreCachedValues`) pushes for every restored page (spy on `push`). Then green.
+- [ ] Red first: a `setProperty` mutate (which sends no `nexus:changed`) pushes exactly one `values:changed` with the page's container rel and id; a `setContext` mutate sends `nexus:changed` then `values:changed`, in that order; an option rename over 3 pages in 2 containers pushes **one** message with 2 entries; re-assigning a property with a Remove-cache (`assignInner` → `restoreCachedValues`) pushes for every restored page (spy on `push`). Then green.
 - [ ] Watcher leg: an external page edit pushes `{ rel, pageIds: [id] }`; a batch containing a folder create pushes `pageIds: []`.
 - [ ] `rg -F "refreshValues" src` → 0. `rg -F "onRefreshValues" src` → 0. Control: `rg -F "onValuesChanged" src` → 2.
 - [ ] Full gates green.
@@ -1200,7 +1212,7 @@ export function flushValueWrites(root: string): { rel: string; pageIds: string[]
 
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Push-frequency audit: `rg -F "'values:changed'" src/main` → 2 (settle, `pushConfirmed`); `noteValueWrite(` never appears inside `indexWrittenPage` or `atomicWriteFile`.
+- [ ] Push-frequency audit: `rg -F "'values:changed'" src/main` → 3 (settle, `confirmWrite`, `runRepairSweep`); `noteValueWrite(` never appears inside `indexWrittenPage` or `atomicWriteFile`.
 - [ ] Simplification and review against `<base>..HEAD` scoped to `src/shared/{bridge,types}.ts`, `src/preload`, `src/main/{watcher,watchPatch,index,valuesChanged}.ts`, `src/main/CRUD/governedWrite.ts`, `src/renderer/{App.tsx,Store,Views,Frames}`.
 - [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
 - [ ] Progress hashes filled in. Not a declared stop.
@@ -1331,7 +1343,7 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 - [ ] **Phase 1** — Keying · base `<commit>`
   - [ ] Task 4 — sigil to Contexts; `governedKeys.ts` dissolves
   - [ ] Task 5 — registry name is the gate; `propertyKey` → `def.name`
-  - [ ] Task 6 — four shape sites; index records every key; `SCHEMA_VERSION` 2
+  - [ ] Task 6 — four shape sites; index records every key; the index generation
   - [ ] Task 7 — Clear strips bookkeeping only
   - [ ] Task 8 — reserved-name rule
   - [ ] Task 9 — rename onto a held key refused
