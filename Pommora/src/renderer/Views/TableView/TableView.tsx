@@ -456,15 +456,19 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       )
     }
     const def = schema.find((d) => d.id === id)
+    if (def) {
+      return (
+        <span className="col-header-icon">
+          <Icon name={propertyIcon(def)} size="body" />
+        </span>
+      )
+    }
+    // A def-less id can still be a reserved column, whose registry type only declaredType supplies.
     const t = declaredType(id, schema)
     if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        {def ? (
-          <Icon name={propertyIcon(def)} size="body" />
-        ) : (
-          <PropertyTypeIcon type={t} size="body" />
-        )}
+        <PropertyTypeIcon type={t} size="body" />
       </span>
     )
   }

@@ -31,7 +31,6 @@ export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[
 export const propertyTypeIconName = (type: PropertyType): IconName | undefined =>
   PROPERTY_TYPES[type].icon
 
-/** A definition's glyph: its own icon when one is set, else its type's. */
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
 
@@ -41,7 +40,7 @@ export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).f
 
 // Title isn't a user PropertyType (it's the reserved heading column), but it needs the same glyph
 // vocabulary — its icon lives here so every surface renders it from one source.
-export const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify' }
+const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify' }
 
 export function PropertyTypeIcon({
   type,

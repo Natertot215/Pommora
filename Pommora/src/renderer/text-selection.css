@@ -53,18 +53,21 @@
 }
 
 /* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection
-   layer, and the fields nativeCaret.ts paints (it skips read-only and disabled ones). A surface
-   outside that set keeps its native selection rather than losing one. */
+   layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any
+   editor. A surface outside that set keeps its native selection rather than losing one. */
 :root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content::selection,
 :root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content ::selection,
-:root:not(.native-highlight) input:not([type]):not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) input[type="text"]:not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) input[type="search"]:not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) input[type="url"]:not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) input[type="tel"]:not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) textarea:not([readonly]):not([disabled])::selection,
-:root:not(.native-highlight) [contenteditable="true"]::selection,
-:root:not(.native-highlight) [contenteditable="true"] ::selection {
+:root:not(.native-highlight)
+  :is(
+    input:not([type]),
+    input[type="text"],
+    input[type="search"],
+    input[type="url"],
+    input[type="tel"],
+    textarea
+  ):not([readonly]):not([disabled])::selection,
+:root:not(.native-highlight) [contenteditable="true"]:not(.cm-editor *)::selection,
+:root:not(.native-highlight) [contenteditable="true"]:not(.cm-editor *) ::selection {
   background: transparent;
 }
 
