@@ -6,8 +6,6 @@ import { getLiveTree } from './liveTree'
 import { relPosix } from './paths'
 import type { NexusTree, ValueChange } from '@shared/types'
 
-/** The container a page rel belongs to — its parent path, or '' at the root. The two value-push
- *  legs (this ledger and the watcher's batch) key on it, so both read it the same way. */
 export const containerOf = (rel: string): string =>
   rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : ''
 
