@@ -1447,6 +1447,8 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 - Thread the resolved root from `handleMutate` into `confirmWrite` so a confirm never re-reads `sessionRoot()` after the write (Gate 4 review).
 
+- A `Last Edited Time` column can lag on an in-app body edit: `page:updateBody` stamps `modified_at`, arms the watcher's echo suppression, and notes no value write, so a sibling view showing that column reads stale until its next push or a remount. Pre-existing — the handler is byte-identical to `a4037b94^` and `refreshValues` never covered body edits — and out of the arc's scope; wiring a push in trades a deliberate per-body-edit perf avoidance (a container-wide `loadValues` refetch on every debounced commit) for a cosmetic lag, so it rides the same decision as the table live-refresh Debt entry in [[ContextPM]] (review pass, 09-01-2026).
+
 - Text property type (log Prospects) — `decodeValue` stays type-dispatched so a `text` arm slots in.
 - Echo-window fix — external writes landing inside 2000ms of an app write are still dropped.
 - Full context unwrap; `types.json` cohabitation (Sapphire); page aliases in `aliases:`.
@@ -1499,6 +1501,17 @@ Screenshots: `gate5-metadata.png` (the Properties leaf's Metadata section, both 
 > Strongest counterpoint: AFTER's `reconcileGovernedRoot` is a genuine one-fact-one-place win. BEFORE answers "does this value still stand / repair" in three places (`standing.ts`, `reconcileContextKeys`, `restoreScrub`'s own loop), which is exactly the drift the rubric penalizes, and AFTER folds them into one function every write, restore, and repair path calls. Dropping the type parameter from `pageValue`'s rewrites and consolidating `propertyIcon` are also real simplifications. If AFTER had stopped there, it would win.
 
 The judge answered BEFORE, not AFTER; the criterion is not met and is recorded as such. The verdict weighs the spec's own choices (bare keys are the decision log's K-1, the live push and the two toggles are Nathan's asks) against the code they cost; what it names as code smells is acted on where it is one: `decodeValue`'s `strict` option had no production caller and is removed in the whole-range pass.
+
+### Review Pass — 09-01-2026
+
+A second simplification → comment → review → attack pass over the whole arc after it closed and pushed, plus two calls from Nathan.
+
+- **Scope** (executor). The pass reviews the arc's logic files. The CSS the range carries (the renderer-rework sweep) and `MarkdownPM/Tables/CellEditor.tsx` (the table-selection fix, `6e5942ac`) are interleaved work that shares the linear range, each reviewed in its own pass; they are out of scope here.
+- **Simplification.** One dedup: `valuesChanged.ts` and `watcher.ts` each derived a page's container from its rel; one `containerOf` helper replaces the two, dropping a latent root-level disagreement (`dirname`'s `'.'` vs the slice's `''`; no page sits at the root) — `b6de9893`. The comment pass found nothing (the arc's own passes had swept it).
+- **Review** (correctness). One finding, verified pre-existing and ruled to Sequenced After: `page:updateBody` lags a `Last Edited Time` column on an in-app body edit. Two sub-threshold signals left as-is: `setContext` skips `indexWrittenPage` (the value push still fires; the index stat self-heals at the next seed, no live consumer reads `page_values` by a Context key) and the sweep's per-file `live()` gate can strand one index row on a mid-open nexus switch (pruned at that nexus's next seed).
+- **Attack.** One reachable Medium, fixed — `bad2708b`. The Gate-5 fix stopped the sweep deleting a value that reconciles to blank, but a mixed list — a Context naming one live Space beside one that resolves to none (`<Projects>: [Alpha, Zeta]`), a Select holding a registered value beside an unregistered one (`Status: [Open, Blocked]`) — still reconciled to the shorter list and was written, dropping the unresolvable member with no user gesture, against the sweep's own "never removes a value" guarantee (Context has no adoption to catch it, as Multi-Select does). Member loss always shortens the list, so the sweep now lands a key only when its reconciled value is no shorter (a scalar wrapped, a title respelled) and leaves a shortened one as written; `repairSweep.test` gains the mixed Select and mixed Context cases, red-first confirmed.
+- **`Open` is a registered Status option the vault pass dropped** (Nathan, 09-01-2026 — supersedes "`Open` stays outside until he says otherwise"). The pre-conversion backup's registry holds `Open` (value `open`, label "Open", grey) in the `upcoming` group, beside Revisit/Awaiting; the conversion script's six-value narrowing dropped it (as it had `Awaiting`, since re-added). The 8 NexusOS pages holding `Status: Open` are not drift — they hold a value the migration orphaned. Restored to the registry at closeout, matched to what the pages hold, then verified stored and reading live.
+- **Gates at close:** typecheck 0 · 308 files / 3820 tests · Biome clean. Dead Vocabulary control unchanged.
 
 ---
 
