@@ -1216,12 +1216,12 @@ async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): 
 
 #### Gate 4 — live values
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Push-frequency audit: `rg -F "'values:changed'" src/main` → 3 (settle, `confirmWrite`, `runRepairSweep`); `noteValueWrite(` never appears inside `indexWrittenPage` or `atomicWriteFile`.
-- [ ] Simplification and review against `<base>..HEAD` scoped to `src/shared/{bridge,types}.ts`, `src/preload`, `src/main/{watcher,watchPatch,index,valuesChanged}.ts`, `src/main/CRUD/governedWrite.ts`, `src/renderer/{App.tsx,Store,Views,Frames}`.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Progress hashes filled in. Not a declared stop.
+- [x] Gate commands green, exit codes read directly. *(typecheck 0 · 307 files / 3806 tests · Biome clean)*
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] Push-frequency audit: `rg -F "'values:changed'" src/main` → 2 (settle, `confirmWrite`; `runRepairSweep` is Task 21's); `noteValueWrite(` never appears inside `indexWrittenPage` or `atomicWriteFile`.
+- [x] Simplification and review against `<base>..HEAD` scoped to `src/shared/{bridge,types}.ts`, `src/preload`, `src/main/{watcher,watchPatch,index,valuesChanged}.ts`, `src/main/CRUD/governedWrite.ts`, `src/renderer/{App.tsx,Store,Views,Frames}`. *(simplifier 9 edits + 3 bugs, review 1, attack 3 — all fixed)*
+- [x] Every concern fixed, or carrying an explicit user ruling in the Log.
+- [x] Progress hashes filled in. Not a declared stop.
 
 ---
 
@@ -1366,10 +1366,11 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 15 — `reconcileGovernedRoot` · `29833211`
   - [x] Task 16 — the writer takes a world; precedence rules · `f4baf0d3`
   - [x] Task 17 — drift pre-check; `loadGovernedWorld` · `f4baf0d3`
-- [ ] **Phase 4** — Live values
-  - [x] Task 18 — `values:changed` push; epoch union
-  - [x] Task 19 — in-flight overrides; id-scoped retire
-  - [x] Task 20 — both legs; `refreshValues` deleted
+- [x] **Phase 4** — Live values · base `d101c1c7`
+  - [x] Task 18 — `values:changed` push; epoch union · `36f803f7`
+  - [x] Task 19 — in-flight overrides; id-scoped retire · `36f803f7`
+  - [x] Task 20 — both legs; `refreshValues` deleted · `36f803f7`
+  - [x] Gate 4 — simplification `224bbbaa`; review + attack fixes `9dad7341`
 - [ ] **Phase 5** — Surfaces
   - [ ] Task 21 — on-load repair sweep + toggle
   - [ ] Task 22 — Capitalize All Metadata + toggle
@@ -1402,10 +1403,15 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 - **The vault pass as run** (executor, 09-01-2026 03:47Z; script in the session scratchpad, never committed). Backup: a dated copy at `~/NexusOS-backup-2026-09-01T03-47-22-946Z/` of `.nexus/*` and every rewritten file — not a git commit, since the vault repository held 508 uncommitted entries of Nathan's own. 79 files rewritten, post-check clean (translation equality on every key, bodies byte-identical): 19 wrapped property keys (`<Status>`×13 incl. `.trash`, `<Pinned>`×5, `<Timeframe>`×1), 12 of them dropped because a bare twin held a value; one `(Areas)` re-sigiled (in `.trash`); one `closed` → `Closed`; 67 `.slate` Project links copied into `<Projects>` (the bare key kept, Nathan's move-vs-copy answer pending). Status values in use after the pass: Active 13 · Paused 5 · Complete 4 · Archived 3 · Revisit 2 · Closed 2 — and **Open ×13, Awaiting ×14 outside the six**, left as written; they read as no value until mapped. `.slate` titles naming no Space, left alone: Topics/Aphelion ×8, Projects/Chronos ×2, Topics/Claude ×2, Areas/Studio ×1. Registry: Status's options are the six (Revisit / Active, Paused / Complete, Closed, Archived — group by phase), `Link` renamed `Links`, `Brand` (Select, no options in use) added, `Price` already present; assignments added on Assets (Links, Price, Brand) and Context (Status, Links). No `<Attachments>` frontmatter existed (the survey's hit was inside a fenced example in a doc page). No `(Context)` keys existed outside `.trash`.
 
+- **A push for a Task or Event carries no page id** (executor, 09-01-2026). `pageIdIndex` walks Collections only, so a cover or icon write on an Agenda file pushes `{ rel: 'Tasks', pageIds: [] }`. No values view mounts on `/Tasks` or `/Events` and no override is ever seeded for them, so the empty-ids arm (retire only the settled) is the right degradation and no view refetches for it; when Agenda grows a values surface the index widens to the Agenda nodes.
+
+- **`confirmWrite` re-reads the session root** (Gate 4 review, 09-01-2026). The mutate handler resolves `sessionRoot()` inside `handleMutate` and the confirmer resolves it again; a nexus switch between the two confirms the mutation's tree patch against the new root. That race predates this arc (it is `confirmMutation`'s, not the push's) and threading one root through every confirm caller is outside its scope — left as-is and noted under Sequenced After. What the arc owns is fixed: the write ledger holds one root at a time, so a write noted under the old root never orphans, and the deferred flush stands down when the root moved.
+
 ### Open Against Later Tasks
 
 ### Deviations
 
+- **Gate 4's findings, all fixed in `224bbbaa` / `9dad7341`.** A band drop whose group property is off the schema skipped its write; a multi-container push looped `set()` and React batched it down to its last entry (the epoch now carries every change); the deferred flush never re-checked the root; an override's settle was keyed by page id alone, so an older write's reply settled a newer override (an entry now holds its own write promise and settles only on identity); `GroupFrame` passed an inline no-op setter into the hook's deps — every render refetched (the setter is optional); the watcher built the page-id index before knowing a batch held a page edit.
 - **Tasks 18, 19, 20 land as one commit.** The epoch union, the in-flight marker, and the write leg have no standing intermediate form: `useViewHost`'s override state changes shape in Task 19, and the moment `refreshValues` goes (Task 20) the writers must note their pages or an app-side edit stops reaching sibling views. Red-first was observed as one batch (3 failures: two watcher push counts, one override shape). The push's ordering inside `confirmWrite` (`nexus:changed` first, then one `values:changed`) is read, not unit-tested — `index.ts` imports Electron; the writer-level ledger (`valuesChanged.test`, `optionOps.test`) and the watcher leg (`watcher.test`) are.
 - **A restore drops a value the destination's definition can't hold — whoever wrote it.** `restoreScrub` keys its defs by bare name, so a returning page's `Status: [Awaiting]` (outside the six), or a `Priority: High` under a re-created number `Priority`, is deleted on restore while an unassigned key rides through. This is V-3 on the restore path (a governed write), and its permissive twin is the entry below; both are now stated in `restoreScrub.ts`'s header. The 27 NexusOS pages holding Open/Awaiting stand in front of it until Nathan maps those values.
 - **Gate 1's display check waits for Task 10.** NexusOS on the Phase 1 build: `loadValues('Ideas')` agrees with the files for all 26 pages (Status and `<Projects>` alike), the registry shows the nine names, and Ideas assigns Pinned/Status/Tags/Timeframe. But the Status *cells* are blank — the vault's Status values are one-element lists (Obsidian's shape, now the spec's) and `decodeValue` still reads a Select/Status scalar until Task 10, so every row lands in the no-value band. Before the pass those pages read the same way (their bare `Status:` lists were foreign), so nothing regressed; the check "every Status shows the value its frontmatter holds" is re-run after Task 10, at Gate 2. Ideas' saved Table view also carries Nathan's own filter (`modified_at is 2026-08-19`) and its Cards view collapses every band, so the closeout look uses the group bands and cell chips read over CDP, not a bare screenshot. The active view was switched to Cards for the read and restored.
@@ -1416,6 +1422,8 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 ### Lessons
 
 ### Sequenced After
+
+- Thread the resolved root from `handleMutate` into `confirmWrite` so a confirm never re-reads `sessionRoot()` after the write (Gate 4 review).
 
 - Text property type (log Prospects) — `decodeValue` stays type-dispatched so a `text` arm slots in.
 - Echo-window fix — external writes landing inside 2000ms of an app write are still dropped.

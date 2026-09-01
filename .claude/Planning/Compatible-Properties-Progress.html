@@ -157,7 +157,7 @@
 
 <script id="data" type="application/json">{
   "head": "a4037b94",
-  "now": { "state": "running", "text": "Gate 3 closed: review 1 finding, attack 3 — all fixed (scalar Context/File values read as a list of one; a bare <Areas>: deletes; a stray NUL byte gone). Phase 4 opens — the values:changed push.", "when": "2026-09-01 · Task 18" },
+  "now": { "state": "running", "text": "Gate 4 closed: simplifier 9 edits + 3 bugs, review 1, attack 3 — all fixed (an override settles only on its own write; GroupFrame no longer refetches every render; the ledger holds one root). 307 files / 3806 tests green. Phase 5 opens — the repair sweep and the two Metadata toggles.", "when": "2026-09-01 · Task 21" },
   "phases": [
     { "name": "Phase 0 · One writer", "state": "done", "base": "a4037b94", "tasks": [
       { "n": "Task 0", "name": "Comments stripped to why-only on every target file", "state": "done", "note": "26 of 60 files needed cuts; −228 comment lines; agent fan-out stopped and finished single-handed; a parallel session is live in the tree" },
@@ -186,13 +186,13 @@
       { "n": "Task 16", "name": "The writer takes a world; the three precedence rules", "state": "done", "note": "setGovernedRootKeys(absFile, next, govern, world?) → Adoption[]; setPageContext governs one key" },
       { "n": "Task 17", "name": "The drift pre-check; loadGovernedWorld", "state": "done", "note": "a clean page pays zero Space reads; a failed strict load skips the context arm, never the edit" }
     ], "gate": { "output": "typecheck exit 0\nTest Files  305 passed (305)\nTests  3787 passed (3787)\nbiome: Checked 983 files. No fixes applied.\nsimplifier: 5 edits · code review: 1 finding (fixed) · attack: 3 findings (fixed), 18 kills · lock audit clean", "deviation": "Tasks landed as three pairs (12+13, 14+15, 16+17). standing.ts deleted outright (no caller left). reconcilePropertyValue returns { value, adoptions }. A restore now repairs near-miss Space titles and keeps an unregistered Context's key as foreign; Multi-Select options come back adopted. R-7 is page-first in practice; R-2's 'lossless' holds for every normalized shape (Log)." } },
-    { "name": "Phase 4 · Live values", "state": "running", "base": "HEAD after Gate 3", "tasks": [
-      { "n": "Task 18", "name": "The values:changed push and the epoch union", "state": "running" },
-      { "n": "Task 19", "name": "In-flight overrides; retirement by id", "state": "pending" },
-      { "n": "Task 20", "name": "Both legs push; refreshValues is deleted", "state": "pending" }
-    ], "gate": { "output": "", "deviation": "" } },
-    { "name": "Phase 5 · Surfaces", "state": "pending", "tasks": [
-      { "n": "Task 21", "name": "The on-load repair sweep and its toggle", "state": "pending" },
+    { "name": "Phase 4 · Live values", "state": "done", "base": "d101c1c7", "tasks": [
+      { "n": "Task 18", "name": "The values:changed push and the epoch union", "state": "done", "note": "one commit with 19+20; valuesChanged.ts groups by container, ids from the live tree; GroupFrame subscribes with a no-op override setter" },
+      { "n": "Task 19", "name": "In-flight overrides; retirement by id", "state": "done", "note": "Overrides = Record<id, { fm, pending }>; patchOverride settles on the write's promise; retireSettled drops named ids, or only the settled on an id-less push" },
+      { "n": "Task 20", "name": "Both legs push; refreshValues is deleted", "state": "done", "note": "every writer notes its page; confirmWrite flushes once per operation after nexus:changed; refreshValues/onRefreshValues → 0" }
+    ], "gate": { "output": "typecheck exit 0\nTest Files  307 passed (307)\nTests  3806 passed (3806)\nbiome: Checked 986 files. No fixes applied.\nrefreshValues/onRefreshValues → 0 · onValuesChanged → 2 · 'values:changed' in src/main → 2\nsimplifier: 9 edits + 3 bugs · code review: 1 finding · attack: 3 findings, 12 kills — all fixed", "deviation": "Tasks 18–20 one commit (no standing intermediate form). Fixes: band drop off-schema still writes; one epoch per push carrying every container; flush re-checks the root and the ledger holds one root; an override settles only on its own write; GroupFrame's inline no-op setter (a refetch every render) gone; the id index builds only for a batch with a page edit. Pre-existing: confirmWrite re-reads sessionRoot() — Sequenced After." } },
+    { "name": "Phase 5 · Surfaces", "state": "running", "base": "9dad7341", "tasks": [
+      { "n": "Task 21", "name": "The on-load repair sweep and its toggle", "state": "running" },
       { "n": "Task 22", "name": "Capitalize All Metadata and its toggle", "state": "pending" },
       { "n": "Closeout", "name": "Ideas Collection check · the manual list · sustainability judge · docs · History", "state": "pending" }
     ], "gate": { "output": "", "deviation": "" } }
