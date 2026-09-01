@@ -9,7 +9,7 @@ Property values live in Markdown frontmatter under bare Obsidian-style keys (`St
 
 The shape: the registry name match becomes the sole ownership gate (the sigil's only architectural job was answering "ours?" without a registry in hand); the two governed-page writers collapse to one, and that writer runs the one reconcile — `reconcileContextKeys` generalized with a property arm and an `adoptions` output — over the whole file on every governed page write, loading the strict Contexts world only when an exact-match pre-check finds drift; the content index records every frontmatter key so a newly registered name finds its holders on the first query. Alternatives weighed and rejected are in the log's Considered & Rejected: case-folding key translation, a translation layer over wrapped keys, repair-on-load by default, written-key-only repair, adoption on the schema chain, a strict round-trip as the repair. Settled by Nathan across 08-31-2026; the phase order (writer unification first, as a behavior-preserving refactor) settled by the explorer's lock and byte-identity evidence.
 
-Bounded by: no migration code ships — Nathan sweeps his vault by hand at the Phase 1 stop; Contexts change nothing but the sigil; no Text property type; Agenda pages get no property repair; net reduction is required in concepts and tests, not a set line count.
+Bounded by: no migration code exists in the app — the executor converts the vault once with a throwaway scratchpad script at Gate 1; Contexts change nothing but the sigil; no Text property type; Agenda pages get no property repair; net reduction is required in concepts and tests, not a set line count.
 
 **Requirements**
 
@@ -55,7 +55,7 @@ Bounded by: no migration code ships — Nathan sweeps his vault by hand at the P
 
 **Declared Stops**
 
-- **Gate 1** — the point of no return for on-disk format. **The executor runs the vault pass** (M-1/M-2 in the log: `<Prop>` → bare with bare-twin-wins and empty-twin-absent, `(Ctx)` → `<Ctx>`, Select/Status written as lists, `.trash` swept, `properties.json` re-registered, `.nexus/property-cascade.json` cleared) as a throwaway script in the scratchpad, per Nathan's conversion instructions recorded under Rulings, **after a backup** (a git commit of NexusOS if it is a repository, else a dated copy of `.nexus/` and every touched `.md`). Then it opens NexusOS on the Phase 1 build and pings Nathan; he verifies Phase 1 himself (the only phase he drives). If he is unreachable for an hour, execution continues — the pass is reversible from the backup, and every later phase runs against scratch nexuses until closeout.
+- **Gate 1** — the point of no return for on-disk format. **The executor runs the vault pass** (M-1/M-2 in the log: `<Prop>` → bare with bare-twin-wins and empty-twin-absent, `(Ctx)` → `<Ctx>`, Select/Status written as lists, `.trash` swept, `properties.json` re-registered, `.nexus/property-cascade.json` cleared) as a throwaway script in the scratchpad, per Nathan's conversion instructions recorded under Rulings, **after a backup** (a git commit of NexusOS if it is a repository, else a dated copy of `.nexus/` and every touched `.md`). Then it opens NexusOS on the Phase 1 build, runs the automated Gate 1 checks (Rulings), pings Nathan, and continues — the pass is reversible from the backup, and every later phase runs against scratch nexuses until closeout.
 
 **Global Constraints (every task inherits these):**
 
@@ -258,13 +258,13 @@ export function optionValues(def: PropertyDefinition): string[] {
 
 #### Gate 0 — one writer, behavior unmoved
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] `git diff <base>..HEAD --stat -- '*.test.*'` is empty — the phase's own proof.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to the Task 0 target list and `src/main/CRUD/{contextWrite,optionOps,removeProperty}.ts`; reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Progress hashes filled in.
-- [ ] Not a declared stop — Phase 1 opens.
+- [x] typecheck 0 · Vitest 304 / 3749 · `biome check .` clean, no warnings line.
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] `git diff b1c0bdc8..6d720e31 --stat -- '*.test.*'` is empty (the phase's own range; `a4037b94..` also carries the parallel session's fixture scrub `345a82ab`).
+- [x] Simplifier (two edits: a destructure in `setPageContext`, one comment line), code review (clean), attack review (0 findings, 8 kills; byte-parity probes over set, unassign-delete, and restore, `oldWrote === true` asserted).
+- [x] The one concern — the simplifier's TOCTOU — carries a ruling (Log).
+- [x] Progress hashes filled in.
+- [x] Not a declared stop — Phase 1 opens.
 
 ---
 
@@ -621,7 +621,7 @@ export async function confirmedKeyHolders(root: string, key: string, folders: st
 - [ ] **Declared stop.** The executor runs the vault pass (Rulings, "Vault conversion") after the backup, then the automated Gate 1 checks (Rulings, "Gate 1 is automated"):
   - [ ] The pass's post-check: every rewritten file's frontmatter equals its pre-pass frontmatter under the translation; other keys and bodies byte-identical; counts match the survey.
   - [ ] NexusOS on this build: the Ideas Collection's `loadValues` agrees with the files' frontmatter page by page; nothing the registry names reads foreign.
-  - [ ] Nathan pinged; execution continues after his look or after one hour.
+  - [ ] Nathan pinged; execution continues at once (Rulings — he is unavailable for the run).
 
 ---
 
@@ -1343,11 +1343,11 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests · Biome clean, no warnings line.
 
-- [ ] **Phase 0** — One writer · base `<commit>`
-  - [ ] Task 0 — comments stripped to why-only on every target file · `<commit>`
-  - [ ] Task 1 — `setPageContext` delegates · `<commit>`
-  - [ ] Task 2 — one `optionValues` · `<commit>`
-  - [ ] Task 3 — `restoreCachedValues` via `updatePageProperty` · `<commit>`
+- [x] **Phase 0** — One writer · base `a4037b94`
+  - [x] Task 0 — comments stripped to why-only on every target file · `b1c0bdc8`
+  - [x] Task 1 — `setPageContext` delegates · `c15e21ad`
+  - [x] Task 2 — one `optionValues` · `3a73ffb4`
+  - [x] Task 3 — `restoreCachedValues` via `updatePageProperty` · `6d720e31`
 - [ ] **Phase 1** — Keying · base `<commit>`
   - [ ] Task 4 — sigil to Contexts; `governedKeys.ts` dissolves
   - [ ] Task 5 — registry name is the gate; `propertyKey` → `def.name`
@@ -1384,13 +1384,14 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   5. **`properties.json` re-registered** from the vault's actual keys and values: `Status` (Status type; its options exactly Active · Paused · Archived · Revisit · Complete · Closed, in that order — a vault value outside the six is listed by the dry-run, never invented), `Pinned` (Checkbox), `Timeframe` (Date), **`Brand`** (Select — there is no Text type; options harvested from the values in use) and **`Price`** (Number), and the **Link properties merged**: where Obsidian and Pommora use the same key name (`Links`), one Pommora Link (`url`) property under that exact name so the existing `"[[Page]]"` values are its connections. `tags` stays Obsidian's — not registered. Empty bare keys stay empty and unregistered. Assignments: each registered property is assigned to every Collection whose pages hold its key.
   6. **`.nexus/property-cascade.json`** deleted if present; **`nexus.db` untouched** (the index generation rebuilds the index on open); every `.md` the pass rewrites keeps its foreign keys and comments byte-identical (the pass edits the YAML document in place, as `pageFile.ts` does).
   Dry-run first: print every file and every key the pass would change, with counts against the 08-31-2026 survey (`<Status>`×6, `<Pinned>`×4, `<Timeframe>`×1, six bare `Status:` twins), then run.
-- **Phase 1 verification is Nathan's; every later phase is verified by the executor** over CDP against scratch nexuses. NexusOS is opened again only at closeout, read-only.
+- **Every phase is verified by the executor** over CDP — Phase 1 against NexusOS on the converted vault (the automated Gate 1 checks), every later phase against scratch nexuses. NexusOS is opened again only at closeout, read-only. **No migration code exists in the app**: the vault conversion is a throwaway script in the session scratchpad, run once by hand by the executor, and nothing of it is committed.
 - **The Metadata section title** is Nathan's call; the other single-section leaves leave theirs untitled.
-- **Nathan drives only Gate 1** (Nathan, 08-31-2026, at launch). Every other user-facing behavior is covered by an interaction checklist the executor writes before closeout — the directive's manual list widened to every interaction the change touches (each action and its inverse, each toggle on and off, each external-write shape, each restore path) — and runs over CDP against a scratch nexus, expected-vs-observed recorded under Closeout.
+- **Nathan is unavailable for the whole run** (Nathan, 09-01-2026 — supersedes "Nathan drives Gate 1"). Gate 1 is not a wait: the executor runs the vault pass, the automated Gate 1 checks, pings, and continues at once. Every user-facing behavior is covered by an interaction checklist the executor writes before closeout — the directive's manual list widened to every interaction the change touches (each action and its inverse, each toggle on and off, each external-write shape, each restore path) — and runs over CDP against a scratch nexus, expected-vs-observed recorded under Closeout.
 - **The run ends with a push.** The final commit closes the plan; the closing report is the summary plus an honest account, and `main` is pushed to `origin` afterward. Nothing is left in the working tree — doc edits that don't belong to a task's commit get their own commit before the push.
 - **Gate 1 is automated** (Nathan, 09-01-2026). Nathan's two boxes are replaced by checks the executor runs: (a) the vault pass's own post-check — for every rewritten `.md`, the parsed frontmatter after equals the frontmatter before under the translation (wrapped property → bare, twin-wins; `(C)` → `<C>`; Select/Status wrapped as one-element lists) and every other key and the body are byte-identical, with counts printed against the survey; (b) NexusOS opened on the Phase 1 build over CDP, the Ideas Collection's `loadValues` compared page by page against the files' frontmatter — every Status equal, no registered key reading foreign. Obsidian's own panel isn't driven. The Settings row Task 7 removes needs no verification beyond `rg` → 0.
 - **Status translates exactly** (Nathan, 09-01-2026): the registered Status property's options are, in order, Active · Paused · Archived · Revisit · Complete · Closed; every vault value maps onto one of those six or the dry-run lists it.
 - **The single-value resolution is tested per type** (Nathan, 09-01-2026): Task 10's red-first cases run once against a Select definition and once against a Status definition, not through one shared "single" fixture; and the lines that resolve an externally written option list to the property's value are isolated in one named function in `propertyValue.ts`, so the rule has one address.
+- **Gate 0, the re-read window** (executor, 08-31-2026). `setPageContext` now reads once under its lock and `setGovernedRootKeys` reads again; a page deleted in the microtask between them throws `ENOENT` into the mutate envelope where the old path wrote its stale first read back — resurrecting the deleted page. The window sits inside the held file lock and the new outcome is the better one; no code added. From `restoreCachedValues` the same throw is absorbed by `reconcile`'s catch and the entry stays cached, exactly as before (probe-verified).
 - **Closeout's manual list is at least fifteen actions**, each stated as expected behavior before the attempt and watched over CDP, observed behavior recorded beside it.
 
 ### Open Against Later Tasks
@@ -1416,7 +1417,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 **The directive**
 
 ```
-Execute .claude/Planning/Unwrapped Frontmatter — Implementation Plan.md end to end. Unattended overnight — stop only when a task is wrong as specified or a gate cannot go green after a real fix attempt; never for a question the plan or the decision log already answers. The one planned pause is Gate 1: run the vault pass per the Rulings entry "Vault conversion", ping Nathan, wait up to one hour for his Phase 1 verification, then continue regardless.
+Execute .claude/Planning/Unwrapped Frontmatter — Implementation Plan.md end to end. Unattended overnight — stop only when a task is wrong as specified or a gate cannot go green after a real fix attempt; never for a question the plan or the decision log already answers. There is no planned pause: at Gate 1 run the vault pass per the Rulings entry "Vault conversion", run the automated Gate 1 checks, ping Nathan, and continue — he is unavailable for the run, and no migration code exists in the app.
 Live-verify, in this order, at closeout: (1) open NexusOS, the Ideas Collection — every page's Status shows the value its frontmatter holds (the same values Obsidian shows), Contexts resolve, nothing reads foreign that the registry names; (2) then the MANUAL list below, each tried in the running app over CDP against a scratch nexus (never NexusOS), each with its expected outcome stated before the attempt and the observed outcome recorded under Closeout.
 Manual list: an external write of Status: [Open, Active] → Active shows within one settle · an external Status: [Wip] (unknown) → cell blank, key deleted on the next value edit · an external Tags: [alpha, zeta] → zeta shows uncolored, adopted into properties.json on the next value edit, then colored-default · a Checkbox written false externally → reads unchecked and "is empty" filters it · a new property created by editing a page's frontmatter as another app would (a bare key not yet registered) → foreign until registered in Pommora, then live on the first view without re-indexing · registering a property whose key already exists on pages → the values appear at once · renaming a property onto a key some page already uses → refused with the message · clearing a cell → key gone · unassigning a page's last Space → <Context> key gone · setting Priority on a page holding a drifted Status list → Status repaired to one element, foreign keys byte-identical · Repair On Open toggled on, a hand-drifted page, relaunch → canonical · Capitalize on → tags reads Tags everywhere but the rename field · a cover save → card updates without reopening · an option rename/delete on a list-shaped Select → every holder rewritten · Clear Exclusion → property values survive, <Context> keys and stamps gone, aliases and dashboard layouts intact after relaunch. Another app's UI is not driven; its writes are reproduced byte-for-byte (the serializers are identical, executed).
 Screenshots: Gate 1 (a page in Obsidian's Properties panel and in Pommora); Gate 5 (the Properties leaf's Metadata section); closeout (the Ideas Collection table).
@@ -1452,9 +1453,9 @@ Everything else is the standard below.
 - [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
 - [ ] Attack review after the claim is verified; every finding fixed or carrying a defensible ruling.
 
-**The user's own pass**
+**The live pass** (the executor's, over CDP — Nathan is unavailable for the run)
 
-- [ ] Gate 1: the vault pass done; Pommora and Obsidian each show a page's properties correctly.
+- [ ] Gate 1: the vault pass done; NexusOS's Ideas Collection agrees with its files page by page.
 - [ ] Clearing a cell removes its key; unassigning a page's last Space removes `<Context>`; setting Priority on a page with a drifted `Status` list repairs it to one element.
 - [ ] An Obsidian edit to an open Collection's page appears in the table within a second, on a row you had edited that session as well as one you hadn't.
 - [ ] A cover save still updates the card.
