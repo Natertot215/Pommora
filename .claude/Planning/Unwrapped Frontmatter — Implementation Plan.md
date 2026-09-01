@@ -1419,6 +1419,8 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Deviations
 
+- **A restore never adopts — the final attack's finding.** Gate 3 had the Remove cache, the trash bundle, and the delete record come back with their Multi-Select options adopted; a frozen copy outlives the option cascade, so a deleted or renamed option returned through any restore, the definition ending up with both spellings. `reconcilePropertyValue(def, raw, adopt)` and `reconcileGovernedRoot(root, world, adopt)` take the one flag: a write adopts, a restore keeps only the options the definition still offers (the pre-arc `strict` rule, now the second argument rather than a second function). The three restore sites pass `false`; their tests state it.
+- **A cold index never sweeps.** `rereadSinceSeed()` is empty when the seed found no prior rows — the first open of a database re-reads the whole corpus, which is not drift; without this, a second machine's first open (its `nexus.db` is device-local, the toggle travels in `settings.json`) would repair and adopt across the entire nexus, the retroactive form the Ruling defers to Repair Now.
 - **Two writers outside the push, found by the full-range review.** `removeProperty`'s strip loop and the restore's move into a Collection wrote page frontmatter without `noteValueWrite`, so an open view kept the stripped or unrestored values until it remounted; both note their page now (`removeProperty.test` asserts the flush). The restore notes the *destination* path — the scrub itself runs in the trash, where no view is mounted.
 - **The Text-type prospect sits in [[PropertiesPM]] §Pending, not ContextsPM.** A free-text property type is a Properties concern; the log's `ContextPM` pointer read as a slip.
 - **Task 21's seed flags what it re-read, not what drifted.** The plan had the seed run `reconcileGovernedRoot` per re-read page to build `driftedSinceSeed()`; that would have the seed load a world per Collection on every open. As built, `rereadSinceSeed()` is the seed's own re-read list (already known — the stat gate decides it) and `runRepairSweep` runs the one reconcile over those files, writing only where `changed` is non-empty. Same outcome, one reconcile, no world in the seed. The sweep resolves each page's world through the live tree the open just walked; a test nexus needs `.nexus/nexus.json` (sidecar mode) and a post-write walk to see its assignments — raw-mode nexuses have no schema to repair.
@@ -1439,6 +1441,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Sequenced After
 
+- `mergeFrontmatter` re-spaces a foreign flow-style list (`[alpha, zeta]` → `[ alpha, zeta ]`) on the first app write, stable after — `doc.toString()` re-emits the document; pre-existing and cosmetic, but the arc's premise is byte-level coexistence (final attack).
 - A "Repair Now" action in the Metadata section: the sweep's reconcile over the whole corpus on demand, the retroactive half of Repair Properties On Open (Gate 5 attack).
 - `mergeFrontmatter` emits `---\n{}\n---` when every key of an unstamped file's map is deleted; no writer reaches it today (every in-app write stamps `modified_at`, the sweep never deletes) — drop the fence when the map empties (Gate 5 attack).
 

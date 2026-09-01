@@ -198,7 +198,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect(root2[selDef.name]).toEqual(['2024-01-01'])
   })
 
-  it('a Multi-Select restore keeps an option the definition lost, and adopts it back', async () => {
+  it('a Multi-Select restore keeps only the options the definition still offers — a deleted option never returns', async () => {
     const tags = await createProperty(root, {
       id: '',
       name: 'Tags',
@@ -216,9 +216,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await removeProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)
     const fm = readFrontmatterFields(await readFile(p.value.path, 'utf8'))
-    expect(fm.Tags).toEqual(['alpha', 'zeta'])
+    expect(fm.Tags).toEqual(['alpha'])
     const def = (await readRegistry(root)).defs[tags.value.id]
-    expect(def.select_options?.map((o) => o.value)).toEqual(['alpha', 'zeta'])
+    expect(def.select_options?.map((o) => o.value)).toEqual(['alpha'])
   })
 
   it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {

@@ -175,7 +175,7 @@ describe('restoring a deleted property', () => {
     expect(await listBundles(root)).toHaveLength(0)
   })
 
-  it('a Multi-Select value keeps an option the definition lost, and adopts it back', async () => {
+  it('a Multi-Select value comes back holding only the options the definition still offers', async () => {
     const c = await createProperty(root, {
       id: '',
       name: 'Tags',
@@ -193,10 +193,7 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha', 'zeta'])
-    expect((await liveDef(c.value.id)).select_options?.map((o) => o.value)).toEqual([
-      'alpha',
-      'zeta',
-    ])
+    expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha'])
+    expect((await liveDef(c.value.id)).select_options?.map((o) => o.value)).toEqual(['alpha'])
   })
 })

@@ -58,6 +58,7 @@ beforeEach(async () => {
   page = p.value.path
   openSessionDb(root)
   await refreshAfterWrite(root)
+  await seedContentIndex(root)
 })
 afterEach(async () => {
   closeSessionDb()
@@ -124,6 +125,16 @@ describe('runRepairSweep', () => {
       'alpha',
       'zeta',
     ])
+  })
+
+  it('a cold index — the first open of a database — sweeps nothing', async () => {
+    closeSessionDb()
+    await rm(join(root, '.nexus', 'nexus.db'), { force: true })
+    await frontmatter('Status: Open')
+    openSessionDb(root)
+    await seedContentIndex(root)
+    await runRepairSweep(root)
+    expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
   it('a page the seed did not re-read is not touched', async () => {
