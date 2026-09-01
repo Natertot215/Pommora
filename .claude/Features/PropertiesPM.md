@@ -27,22 +27,22 @@ The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-
 
 | Type | On-Disk Value | Notes |
 | --- | --- | --- |
-| **Number** | `<Count>: 42` | Bare number |
-| **Checkbox** | `<Done>: true` | Bare boolean |
-| **Date** | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read |
-| **Select** | `<Stage>: Active` | Bare string; one colored chip |
+| **Number** | `Count: 42` | Bare number |
+| **Checkbox** | `Done: true` | `true`, or the key absent |
+| **Date** | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone) | A bare date-only value folds into Date on read |
+| **Select** | `Stage:` over a one-element block sequence | A list holding one option; one colored chip. A list holding several reads as its last registered option |
 | **Multi-select** | `Tags:` over a block sequence | Bare array; tag-style multi-pick |
-| **Status** | `<Status>: Complete` | Bare label — the option's own value; grouped by workflow phase |
-| **Link** | `<Link>: https://…` or `<Link>: [[Page]]` | A string — an address with a scheme, or a connection naming a page |
-| **Context** | `(Context):` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition |
+| **Status** | `Status:` over a one-element block sequence | The option's own value, in a list of one; grouped by workflow phase. Resolves like Select |
+| **Link** | `Link: https://…` or `Link: "[[Page]]"` | A string — an address with a scheme, or a connection naming a page |
+| **Context** | `<Context>:` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition |
 | **Last Edited Time** | *(derived from `modified_at`)* | Virtual — never persisted |
-| **File** | `<Attachments>:` over a block sequence of `[[Basename.ext]]` | Array of wikilinks naming files by basename; files copy into the Nexus |
+| **File** | `Attachments:` over a block sequence of `[[Basename.ext]]` | Array of wikilinks naming files by basename; files copy into the Nexus |
 
 ### Identity & Values
 
 Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_id`, `_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, bare and exactly as spelled — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write; a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `cover`, `created_at`, `modified_at`) or one starting with `<` is refused. A rename cascades the key across every page holding it; a rename onto a taken name, or onto a key any Collection page already holds, is refused — the second naming how many pages hold it.
 
-A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. 
+A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; number `0` is a real value and stays, while a checkbox is either `true` or absent — a `false` written by another application reads as no value. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. 
 
 Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
 
@@ -84,7 +84,7 @@ A single ISO value: a date-only string folds into Date on read, and a with-time 
 
 #### II. Select & Multi-Select
 
-Select stores a bare string and renders one colored tag chip; Multi-Select stores a bare array and renders several. Both draw from a shared option list, seeded with one starter option at creation. The option editor is an inline list under a Style toggle: a per-list `+`, a hover palette to recolor, drag to reorder, and a right-click **Rename · Edit Icon · Remove · Clear** menu. The **Compact** style renders each chip icon-only — the option's own icon, or the single- or double-tag default.
+Select stores a one-element list and renders one colored tag chip; Multi-Select stores a list and renders several. The three option types read one shape — a list, with a bare scalar read as a list of one: Select and Status keep the last element that names a registered option (an unregistered one reads as no value), Multi-Select keeps every element. Both draw from a shared option list, seeded with one starter option at creation. The option editor is an inline list under a Style toggle: a per-list `+`, a hover palette to recolor, drag to reorder, and a right-click **Rename · Edit Icon · Remove · Clear** menu. The **Compact** style renders each chip icon-only — the option's own icon, or the single- or double-tag default.
 
 #### II. Link
 
@@ -146,10 +146,6 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 **Labels.** A value renders as a label — a chip whose shape names the property's kind: a pill for Status, a tag for the other options. The label vocabulary is the design system's.[^10]
 
 ---
-
-#### Known Issues
-
-- **A stray bare-string Multi-Select value drops out of grouping and filtering.** The read-side coercion handles the single-string types only. Nothing in the app writes that shape, so it arrives only by hand-editing the frontmatter.
 
 #### Pending
 
