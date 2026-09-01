@@ -2,8 +2,6 @@
    CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
 
 :root {
-  /* --caret-width : bar thickness | --caret-color : fill (drawn bar + native caret-color)
-     --caret-gap   : full blink cycle (raise = slower) | --caret-dim : opacity at the dip (1 = no blink) */
   --caret-width: 2px;
   --caret-color: var(--label-primary);
   --caret-gap: 1.3s;
@@ -15,8 +13,7 @@
     text;
 }
 
-/* The hover cursor: our I-beam wherever text is edited — every CM surface plus native text fields. CM content
-   uses the full `.cm-editor .cm-scroller .cm-content` path to out-specify CM's baseTheme, same as caret-color. */
+/* The full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme, same as caret-color below. */
 .cm-editor .cm-scroller .cm-content,
 input:not([type]),
 input[type="text"],
@@ -28,8 +25,7 @@ textarea,
   cursor: var(--caret-cursor);
 }
 
-/* Native fields: hide the browser caret — nativeCaret.ts paints the drawn bar over them (same visual as the
-   CM caret, just a JS position source). Scoped to the text types the overlay handles; others keep theirs. */
+/* Native fields hide the browser caret so nativeCaret.ts can paint the drawn bar over them at a JS-tracked position. */
 input:not([type]),
 input[type="text"],
 input[type="search"],
@@ -40,7 +36,6 @@ textarea,
   caret-color: transparent;
 }
 
-/* CodeMirror surfaces: hide the native caret so the drawn one (customCaret layer) stands alone. */
 .cm-editor .cm-scroller .cm-content {
   caret-color: transparent;
 }
@@ -49,9 +44,7 @@ textarea,
   animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
 }
 
-/* Equal halves: solid for the first half, off for the second, a quick fade at each transition — on and
-   off last the same. Two identical keyframes so caret.ts can swap names to restart the cycle on caret
-   move (no reflow). */
+/* Two identical keyframes so caret.ts can swap names to restart the blink cycle on caret move, without a reflow. */
 @keyframes mdpm-blink {
   0%,
   42% {
@@ -79,7 +72,7 @@ textarea,
   }
 }
 
-/* RectangleMarker sizes the stem (height = line box, width via CSS); we center it on the text position. */
+/* Height comes from RectangleMarker's line-box sizing; only width and centering are set here. */
 .mdpm-caret {
   display: none;
   width: var(--caret-width);
@@ -91,8 +84,6 @@ textarea,
   display: block;
 }
 
-/* The drawn caret over native fields (nativeCaret.ts) — the same bar + knobs as the CM caret, positioned by
-   JS over the focused <input>/<textarea>/contenteditable. Tops the stack so it shows above menus/popovers. */
 .mdpm-caret-overlay {
   position: fixed;
   width: var(--caret-width);
