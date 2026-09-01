@@ -108,11 +108,11 @@ describe('renameContextOp', () => {
 describe('a renamed Context key keeps its place on every page carrying it', () => {
   it('rewrites the key where it sits, with the comment attached to it', async () => {
     const before =
-      '---\ntitle: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft\nauthor: Nathan\n---\nbody'
+      '---\ntitle: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft\nauthor: Username\n---\nbody'
     await writeFile(other(), before)
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     expect(await readFile(other(), 'utf8')).toBe(
-      '---\ntitle: Alpha\n# which clients this is for\n(Ventures):\n  - Pommora\nstatus: draft\nauthor: Nathan\n---\nbody',
+      '---\ntitle: Alpha\n# which clients this is for\n(Ventures):\n  - Pommora\nstatus: draft\nauthor: Username\n---\nbody',
     )
   })
 

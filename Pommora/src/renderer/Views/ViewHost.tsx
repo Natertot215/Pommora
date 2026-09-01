@@ -23,7 +23,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   }).current
   const host = useViewHost(source, isCards, upward)
   // Cards' set cards render independently of the pipeline, so a cards view with Sets present
-  // always mounts — Set Cards on paints them, off stays a blank pane (Nathan's call).
+  // always mounts — Set Cards on paints them, off stays a blank pane.
   const setChrome = isCards && (source.sets?.length ?? 0) > 0
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>
