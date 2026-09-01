@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from '@shared/properties'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
+import type { SavedView } from '@shared/views'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import {
   type AddEntry,
+  addEntriesFor,
   orderAddableEntries,
   parseEditorValue,
   shownColumnsFor,
@@ -70,5 +72,20 @@ describe('shownColumnsFor', () => {
     expect(
       shownColumnsFor(row({ [sel.name]: 'Done' }), columns, ctx, true).map((c) => c.id),
     ).toEqual(['sel', 'chk'])
+  })
+})
+
+describe('addEntriesFor', () => {
+  const ctx = { schema: [], contexts: new Map() } as unknown as ResolveContext
+  const view = { property_order: ['_title'], hidden_properties: [] } as unknown as SavedView
+  const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
+
+  it('a stamp entry carries its stamp type and only ever reveals, even while blank', () => {
+    const { createdAt, modifiedAt } = RESERVED_PROPERTY_ID
+    const entries = addEntriesFor(row, view, ctx, [{ id: '_title', kind: 'title' }])
+    expect(entries.map((e) => [e.id, e.type, e.revealOnly])).toEqual([
+      [createdAt, 'created_time', true],
+      [modifiedAt, 'last_edited_time', true],
+    ])
   })
 })

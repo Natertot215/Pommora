@@ -11,7 +11,7 @@ import {
 } from './properties'
 
 describe('propertyType', () => {
-  it('accepts the 10 on-disk type strings', () => {
+  it('accepts the 11 on-disk type strings', () => {
     for (const t of [
       'number',
       'checkbox',
@@ -21,6 +21,7 @@ describe('propertyType', () => {
       'status',
       'url',
       'context',
+      'created_time',
       'last_edited_time',
       'file',
     ]) {
