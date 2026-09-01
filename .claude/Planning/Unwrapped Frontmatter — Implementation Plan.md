@@ -174,9 +174,9 @@ export async function setGovernedRootKeys(
 
 **Verify — automated**
 
-- [ ] `npx vitest run src/main/CRUD/contextWrite src/main/CRUD/governedWrite src/main/CRUD/writePathRace` → 14 + 6 + 6 pass, **no test file modified** (`git diff --stat -- '*.test.ts'` empty).
-- [ ] Full gates green.
-- [ ] `rg -F "mergeFrontmatter(" src/main/CRUD/contextWrite.ts` → 0. Control: `rg -F "mergeFrontmatter(" src/main/CRUD/governedWrite.ts` → 1.
+- [x] `npx vitest run src/main/CRUD/contextWrite src/main/CRUD/governedWrite src/main/CRUD/writePathRace` → 26 pass (14 + 6 + 6), no test file modified.
+- [x] typecheck 0 · full Vitest green · Biome clean on the file.
+- [x] `rg -F "mergeFrontmatter(" src/main/CRUD/contextWrite.ts` → 0. Control on `governedWrite.ts` → 1.
 
 **Verify — user**
 
