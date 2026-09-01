@@ -722,7 +722,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             id: rows[index].id,
             value: currents[index],
           }))
-          pushValueUndo(() => {
+          const dispose = pushValueUndo(() => {
             const liveCol = columnsRef.current.find((c) => c.id === col.id)
             if (!liveCol) return
             for (const { id, value } of prev) {
@@ -730,6 +730,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               if (row) cellApiRef.current.commitValue(row, liveCol, value)
             }
           })
+          undoDisposers.current.push(dispose)
           for (const { index, next } of commits) commitValue(rows[index], col, next)
         }}
         onDismiss={() => {
@@ -967,6 +968,28 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     cellSweep.begin(row.id, col.id, e)
     return true
   }
+  // A swept set can degrade under the open picker (a filter drops a picked row, an external
+  // delete) — below two live rows the picker can't render, so it closes and the highlight clears
+  // rather than stranding. Undo entries die with their container: a revert must never write
+  // pages no surface is showing.
+  const massDegraded =
+    mass !== null &&
+    massOpen &&
+    (columns.every((c) => c.id !== mass.colId) ||
+      mass.rowIds.filter((id) => rowById.has(id)).length < 2)
+  useEffect(() => {
+    if (!massDegraded) return
+    setMassOpen(false)
+    cellSweep.clear()
+  })
+  const undoDisposers = useRef<Array<() => void>>([])
+  useEffect(
+    () => () => {
+      for (const dispose of undoDisposers.current) dispose()
+      undoDisposers.current = []
+    },
+    [source.path],
+  )
   const columnsRef = useRef(columns)
   columnsRef.current = columns
   const rowByIdRef = useRef(rowById)
