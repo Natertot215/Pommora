@@ -9,7 +9,7 @@ import {
   type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
-import { reconcileContextKeys, type GovernedWorld } from '@shared/contextResolve'
+import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
 import type { PropertyDefinition } from '@shared/properties'
@@ -134,7 +134,7 @@ function applyTarget(
 ): Result<{ root: Raw; key: string }> {
   const def = defById(world, contextId)
   if (!def) return fail('not-found', 'Unknown Context.')
-  const { root } = reconcileContextKeys(raw, world.registry, world.spacesByContext)
+  const { root } = reconcileGovernedRoot(raw, world)
   const key = contextKey(def.title)
   if (titles.length) root[key] = titles
   else delete root[key]

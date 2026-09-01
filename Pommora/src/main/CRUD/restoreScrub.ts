@@ -7,16 +7,17 @@
 // and the danger is not the dormant key itself — it is that a later property or Context taking
 // that name inherits values the page never legitimately held.
 //
-// So the returning content is reconciled against the CURRENT world before it lands: a Context key
-// survives only if what it names still exists, a key the destination's schema assigns is asked to
-// stand the way the destination asks it, and every other key rides through untouched.
+// So the returning content is reconciled against the CURRENT world before it lands, by the one
+// reconcile every governed write runs: a registered Context's key is repaired against the Spaces it
+// still holds, a key the destination's schema assigns is re-read as its definition reads it, and
+// every other key — a Context or property the registry no longer names included — rides through.
 
-import { contextKey, normalizeContextValue, parseContextKey } from '@shared/contexts'
 import type { PropertyDefinition } from '@shared/properties'
-import { encodeValue } from '@shared/propertyValue'
+import type { Adoption } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
-import { contextTagStands, propertyValueStands } from './standing'
 import { assignedDefs } from './contextWrite'
+import { applyAdoptions } from './optionOps'
+import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
@@ -25,78 +26,31 @@ import { splitFrontmatter } from '../readNexus'
 import { SPACE_SIDECAR } from '../paths'
 import { sweepAdmits } from './util'
 
-/** What governs each key at the destination — the only thing the caller can answer, and all
- *  the standing check needs. A key absent from either map is governed by nothing. */
-interface LiveWorld {
-  /** Property key → the definition the destination Collection carries under that name. */
-  defs: ReadonlyMap<string, PropertyDefinition>
-  /** Context key → that Context's live Space titles, coerced for matching. */
-  contextSpaces: Map<string, Set<string>>
-}
+const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
 async function liveWorld(
   root: string,
   tree: NexusTree,
   destCollectionFolder: string | null,
-): Promise<LiveWorld> {
-  const defs = await assignedDefs(root, destCollectionFolder)
-  const contextSpaces = new Map(
-    tree.contexts.map((g) => [
-      contextKey(g.def.title),
-      new Set(g.spaces.map((s) => normalizeContextValue(s.title))),
-    ]),
-  )
-  return { defs, contextSpaces }
-}
-
-/** The frontmatter this page should return with, or null when nothing changes. Every decision
- *  is the standing check's; this only spends the answer. */
-function reconciled(content: string, world: LiveWorld): string | null {
-  const fields = splitFrontmatter(content)
-  const drop: string[] = []
-  const rewrite: Record<string, unknown> = {}
-  for (const [key, raw] of Object.entries(fields)) {
-    const def = world.defs.get(key)
-    if (!def && parseContextKey(key) === null) continue
-    const standing = def
-      ? propertyValueStands(def, raw)
-      : contextTagStands(world.contextSpaces.get(key), raw)
-    if (!standing.stands) {
-      drop.push(key)
-      continue
-    }
-    // A survivor is rewritten only when it actually narrowed — a multi-value kind that lost one
-    // of its options comes back holding the rest.
-    const next = standing.layer === 'property' ? encodeValue(standing.value) : standing.titles
-    if (JSON.stringify(next) !== JSON.stringify(raw)) rewrite[key] = next
+): Promise<GovernedWorld> {
+  return {
+    registry: { contexts: tree.contexts.map((g) => g.def) },
+    spacesByContext: new Map(tree.contexts.map((g) => [g.def.id, g.spaces])),
+    defs: await assignedDefs(root, destCollectionFolder),
   }
-  const touched = [...drop, ...Object.keys(rewrite)]
-  if (!touched.length) return null
-  return mergeFrontmatter(content, rewrite, touched, splitEnvelope(content).body)
 }
 
-/** A Space sidecar's context keys, judged exactly as a page's are. Only the context layer is
- *  asked: no schema governs a Space, so a property-shaped key here is foreign data that rides
- *  through untouched, as every other key on the sidecar does. */
+/** A Space sidecar's context keys, judged exactly as a page's are; no schema governs a Space, so
+ *  every other key rides through. */
 function reconciledSidecar(
   raw: Record<string, unknown>,
-  world: LiveWorld,
+  world: GovernedWorld,
   inTransitKey: string | undefined,
 ): Record<string, unknown> | null {
-  const next = { ...raw }
-  let changed = false
-  for (const [key, value] of Object.entries(raw)) {
-    if (key === inTransitKey || parseContextKey(key) === null) continue
-    const standing = contextTagStands(world.contextSpaces.get(key), value)
-    if (!standing.stands) {
-      delete next[key]
-      changed = true
-    } else if (JSON.stringify(standing.titles) !== JSON.stringify(value)) {
-      next[key] = standing.titles
-      changed = true
-    }
-  }
-  return changed ? next : null
+  const { [inTransitKey ?? '']: held, ...rest } = raw
+  const r = reconcileGovernedRoot(rest, { ...world, defs: NO_DEFS })
+  if (!r.changed.length) return null
+  return inTransitKey && inTransitKey in raw ? { ...r.root, [inTransitKey]: held } : r.root
 }
 
 /**
@@ -119,13 +73,22 @@ export async function scrubReturning(
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
+  const adoptions: Adoption[] = []
   for (const file of pages) {
     // Under the page lock, and admission-gated exactly as every other nexus-wide sweep is: an
     // Unknown file is left byte-identical here too.
-    await rewritePageSerialized(file, (content) =>
-      sweepAdmits(content) ? reconciled(content, world) : null,
-    ).catch(() => false)
+    await rewritePageSerialized(file, (content) => {
+      if (!sweepAdmits(content)) return null
+      const r = reconcileGovernedRoot(splitFrontmatter(content), world)
+      adoptions.push(...r.adoptions)
+      if (!r.changed.length) return null
+      const set = Object.fromEntries(
+        r.changed.filter((k) => k in r.root).map((k) => [k, r.root[k]]),
+      )
+      return mergeFrontmatter(content, set, r.changed, splitEnvelope(content).body)
+    }).catch(() => false)
   }
+  await applyAdoptions(root, adoptions)
   // A Space sidecar is a context root too — the sweeps have always treated it as one, so the
   // reconcile reaches it on the way back for the same reason.
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
