@@ -12,7 +12,6 @@
   --tbl-add-size: 14px;
   --tbl-add-gap: 6px;
   --tbl-add-span: calc(var(--tbl-add-gap) + var(--tbl-add-size));
-  /* Grows with the append strip's reach to avoid clipping it. */
   --gutter-right: max(var(--grip-gutter), var(--tbl-add-span));
   position: relative;
   /* Padding, not a negative margin, keeps the grips/strip hoverable; top stays 0 so column grips
@@ -70,8 +69,6 @@
   opacity: 1;
 }
 
-/* Hovering the table reveals these strips; pointer-events stays off while hidden so a strip doesn't
-   steal clicks aimed at the content below. */
 .mdpm-tbl-add {
   position: absolute;
   z-index: 1;
@@ -100,7 +97,8 @@
   opacity: 0;
   pointer-events: none;
 }
-/* Bridges the approach gap so crossing it doesn't drop the wrap's hover before the strip is reached. */
+/* Bridges the approach gap so crossing it doesn't drop the wrap's hover before the strip is
+   reached. */
 .mdpm-tbl-add::before {
   content: "";
   position: absolute;
@@ -134,7 +132,6 @@
   z-index: 4;
   cursor: ew-resize;
 }
-/* Hold the resize cursor for the whole table while a drag is live, even if the pointer leaves the strip. */
 .mdpm-tbl-resizing {
   cursor: ew-resize;
 }
@@ -147,7 +144,8 @@
   position: relative;
   z-index: 2;
   opacity: var(--state-ghost);
-  /* Fills the grabbed row/column so it glides as one band instead of appearing to tear when empty. */
+  /* Fills the grabbed row/column so it glides as one band instead of appearing to tear when
+     empty. */
   background: var(--fill-tertiary);
   /* biome-ignore lint/complexity/noImportantStyles: the dragged band follows the pointer 1:1 — no cell transition may lag it. */
   transition: none !important;
@@ -206,10 +204,10 @@
 .mdpm-tbl-cell-editor .cm-editor .cm-scroller {
   font: inherit;
   line-height: inherit;
-  /* A nested editor swallows the wheel by default; cells never scroll, so chain it to the main scroller. */
+  /* A nested editor swallows the wheel by default and cells never scroll, so this chains to the
+     main scroller; scroll-timeline stays disclaimed since .mdpm-editor .cm-scroller also matches
+     here, and two declarers would make it ambiguous. */
   overflow: visible;
-  /* Don't claim --mdpm-scroll here — .mdpm-editor .cm-scroller also matches this nested scroller, and
-     two declarers make it ambiguous. */
   scroll-timeline: none;
 }
 .mdpm-tbl-cell-editor .cm-editor .cm-content {
@@ -221,7 +219,8 @@
   padding: 0;
 }
 
-/* Mirrors the nested editor's content box so promoting a cell to an editor on click doesn't shift its text. */
+/* Mirrors the nested editor's content box so promoting a cell to an editor on click doesn't shift
+   its text. */
 .mdpm-tbl-cell-static {
   box-sizing: border-box;
   height: 100%;
@@ -234,8 +233,8 @@
   overflow-wrap: anywhere;
   cursor: text;
 }
-/* Gives the cell's tail a line box — pre-wrap draws none after a trailing newline, so the cell would
-   otherwise grow taller once promoted to its editor. */
+/* Gives the cell's tail a line box — pre-wrap draws none after a trailing newline, so the cell
+   would otherwise grow taller once promoted to its editor. */
 .mdpm-tbl-cell-static::after {
   content: "\200b";
 }
