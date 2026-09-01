@@ -6,7 +6,8 @@ import { writePageFile, mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
-import { encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
+import { type Adoption, encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
+import type { GovernedWorld } from '@shared/contextResolve'
 import { PAGE_MODELED_KEYS } from '@shared/identity'
 import { ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName, nowIso } from './util'
@@ -132,10 +133,12 @@ export async function updatePageProperty(
   absFile: string,
   def: PropertyDefinition,
   value: PropertyValue | null,
-): Promise<Result<null>> {
+  world?: GovernedWorld,
+): Promise<Result<Adoption[]>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
   const key = def.name
   const clear = value === null || isBlankValue(value)
-  await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key])
-  return ok(null)
+  return ok(
+    await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key], world),
+  )
 }

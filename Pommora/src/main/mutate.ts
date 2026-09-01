@@ -10,6 +10,7 @@
 import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { readFile, realpath } from 'node:fs/promises'
 import { sessionRoot } from './session'
+import { splitFrontmatter } from './readNexus'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './CRUD/page'
 import { setChildOrder, setStateOrder } from './CRUD/reorder'
@@ -20,6 +21,7 @@ import {
   loadContextWorld,
   setContextOnPath,
   setSpaceColor,
+  loadGovernedWorld,
 } from './CRUD/contextWrite'
 import {
   renameContextOp,
@@ -40,6 +42,7 @@ import {
 } from './provenance'
 import { setSpaceOrder } from './CRUD/reorder'
 import { renameCascade } from './CRUD/cascade'
+import { applyAdoptions } from './CRUD/optionOps'
 import { rewriteBlockConnections } from './blocks'
 import {
   mintBundle,
@@ -634,14 +637,22 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the
       // lock can send the write to a key the sweep has already passed.
-      return serializeOnFile(resolved.value, async () => {
+      const adoptions = await serializeOnFile(resolved.value, async () => {
         const def = (await readRegistry(root)).defs[req.propertyId]
         if (!def) return fail('not-found', 'Property not found.')
-        const r = await updatePageProperty(resolved.value, def, req.value)
+        const world = await loadGovernedWorld(
+          root,
+          resolved.value,
+          splitFrontmatter(await readFile(resolved.value, 'utf8')),
+        )
+        const r = await updatePageProperty(resolved.value, def, req.value, world)
         if (!r.ok) return r
         await indexWrittenPage(root, resolved.value)
-        return ok({})
+        return r
       })
+      if (!adoptions.ok) return adoptions
+      await applyAdoptions(root, adoptions.value)
+      return ok({})
     }
 
     case 'movePage': {
@@ -714,7 +725,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
       const world = await loadContextWorld(root)
       if (!world.ok) return world
-      const r = await setContextOnPath(resolved.value, world.value, req.contextId, req.spaceIds)
+      const r = await setContextOnPath(
+        root,
+        resolved.value,
+        world.value,
+        req.contextId,
+        req.spaceIds,
+      )
       return r.ok ? ok({}) : r
     }
 

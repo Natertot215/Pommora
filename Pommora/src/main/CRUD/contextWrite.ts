@@ -1,11 +1,11 @@
 // Ids arrive from the renderer; titles serialize here, through the live registry — never earlier.
 
-import { readFile, mkdir, readdir } from 'node:fs/promises'
+import { mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   contextKey,
-  isGovernedContextKey,
   normalizeContextValue,
+  parseContextKey,
   type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
@@ -16,9 +16,11 @@ import type { PropertyDefinition } from '@shared/properties'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { writeKey } from '../Database/localState'
 import { getLiveTree } from '../liveTree'
+import { collectionFolderOf } from './assignment'
+import { applyAdoptions } from './optionOps'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { readSidecar } from '../sidecarIO'
-import type { SpaceNode } from '@shared/types'
+import type { NexusTree, SpaceNode } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
@@ -26,7 +28,6 @@ import { adoptedId, newId } from '../ids'
 import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { isMarkdownFile } from '../IO/walk'
-import { splitFrontmatter } from '../readNexus'
 import { setGovernedRootKeys } from './governedWrite'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { createFolderEntity } from './folderEntity'
@@ -124,60 +125,67 @@ function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]>
   return ok(titles)
 }
 
-/** The reconciled root with the target key applied over it (set on values, removed on
- *  empty — no empties ever). */
 function applyTarget(
   world: ContextWorld,
-  raw: Raw,
   contextId: string,
   titles: string[],
-): Result<{ root: Raw; key: string }> {
+): Result<{ key: string; value: string[] | undefined }> {
   const def = defById(world, contextId)
   if (!def) return fail('not-found', 'Unknown Context.')
-  const { root } = reconcileGovernedRoot(raw, world)
-  const key = contextKey(def.title)
-  if (titles.length) root[key] = titles
-  else delete root[key]
-  return ok({ root, key })
-}
-
-/** Every context-shaped key across the original + next roots — the governed-key set a
- *  page merge needs so repaired keys rewrite and dropped keys delete. */
-function governedContextKeys(raw: Raw, next: Raw, targetKey: string): string[] {
-  const keys = new Set<string>([targetKey])
-  for (const source of [raw, next]) {
-    for (const k of Object.keys(source)) {
-      if (isGovernedContextKey(k)) keys.add(k)
-    }
-  }
-  return [...keys]
+  return ok({ key: contextKey(def.title), value: titles.length ? titles : undefined })
 }
 
 export async function setPageContext(
   absFile: string,
+  root: string,
   world: ContextWorld,
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
   const titles = targetTitles(world, spaceIds)
   if (!titles.ok) return titles
-  return serializeOnFile(absFile, async () => {
-    let existing: string
-    try {
-      existing = await readFile(absFile, 'utf8')
-    } catch {
-      return fail('not-found', 'Page not found.')
-    }
-    const raw = splitFrontmatter(existing)
-    const applied = applyTarget(world, raw, contextId, titles.value)
-    if (!applied.ok) return applied
-    const { root, key } = applied.value
-    const keys = governedContextKeys(raw, root, key)
-    const next: Raw = {}
-    for (const k of keys) if (k in root) next[k] = root[k]
-    await setGovernedRootKeys(absFile, next, keys)
-    return ok(null)
+  const applied = applyTarget(world, contextId, titles.value)
+  if (!applied.ok) return applied
+  const { key, value } = applied.value
+  const adoptions = await serializeOnFile(absFile, async () => {
+    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
+    const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
+    return ok(
+      await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], { ...world, defs }),
+    )
   })
+  if (!adoptions.ok) return adoptions
+  await applyAdoptions(root, adoptions.value)
+  return ok(null)
+}
+
+export function contextDriftPresent(raw: Raw, tree: NexusTree | null): boolean {
+  if (!tree) return true
+  const spaces = new Map(
+    tree.contexts.map((g) => [g.def.title, new Set(g.spaces.map((s) => s.title))]),
+  )
+  for (const [key, value] of Object.entries(raw)) {
+    const title = parseContextKey(key)
+    if (title === null) continue
+    const titles = spaces.get(title)
+    if (!titles) continue
+    if (!Array.isArray(value) || value.length === 0) return true
+    if (!value.every((v) => typeof v === 'string' && titles.has(v))) return true
+  }
+  return false
+}
+
+// The strict Contexts world costs a read per Space; a failed load skips the context arm, never the edit.
+export async function loadGovernedWorld(
+  root: string,
+  absFile: string,
+  raw: Raw,
+): Promise<GovernedWorld> {
+  const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
+  const skipped: GovernedWorld = { registry: null, spacesByContext: new Map(), defs }
+  if (!contextDriftPresent(raw, getLiveTree())) return skipped
+  const world = await loadContextWorld(root)
+  return world.ok ? { ...world.value, defs } : skipped
 }
 
 /** setContext on a Space's own `_space.json` (cross-Context allowed) — strict RMW,
@@ -192,21 +200,26 @@ export async function setSpaceContext(
   if (!ref) return fail('not-found', 'Unknown Space.')
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
+  const applied = applyTarget(world, contextId, titles.value)
+  if (!applied.ok) return applied
+  const { key, value } = applied.value
   const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (raw) => {
-    const applied = applyTarget(world, raw, contextId, titles.value)
-    if (!applied.ok) throw new Error(applied.error.message)
-    return { ...applied.value.root, modified_at: nowIso() }
+    const { root } = reconcileGovernedRoot(raw, world)
+    if (value) root[key] = value
+    else delete root[key]
+    return { ...root, modified_at: nowIso() }
   }).catch(() => fail('operation-failed', 'Context write failed.'))
   return written.ok ? ok(null) : written
 }
 
 export async function setContextOnPath(
+  root: string,
   abs: string,
   world: ContextWorld,
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
-  if (isMarkdownFile(abs)) return setPageContext(abs, world, contextId, spaceIds)
+  if (isMarkdownFile(abs)) return setPageContext(abs, root, world, contextId, spaceIds)
   const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
   if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
   return fail('invalid-path', 'Not a context-taggable entity.')
