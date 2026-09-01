@@ -1,6 +1,6 @@
-/* The page-window toolbar's center region: the single-tab breadcrumb title and the multi-tab strip
-   it morphs into. Shared by every window that hosts preview tabs, so it lives with its component
-   rather than in any one window's shell; motion classes come from Tabs/tabStrip.css. */
+/* The page-window toolbar's center region — the single-tab breadcrumb title and the multi-tab strip
+   it morphs into. Shared by every window that hosts preview tabs, so it lives with its own
+   component rather than in any window's shell; motion classes come from Tabs/tabStrip.css. */
 
 .page-window-title {
   min-width: 0;
@@ -34,10 +34,9 @@
   align-self: stretch;
   display: flex;
   align-items: center;
-  /* Stop at an open side pane's leading edge — otherwise the tabs run under it and the glyphs
-     land on top of a label. NO transition: the squeeze is derived from --io, which is already
-     interpolating, so transitioning the padding would retarget every frame and the strip would
-     chase the pane instead of moving with it. */
+  /* Stop at an open side pane's leading edge — otherwise the tabs run under it. NO transition: the
+     squeeze derives from --io, which is already interpolating, so transitioning the padding would
+     retarget every frame and chase the pane instead of tracking it directly. */
   padding-right: var(--window-title-squeeze, 0px);
 }
 .page-window-tabscroll {
