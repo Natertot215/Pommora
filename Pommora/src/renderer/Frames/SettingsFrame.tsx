@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { OpenIn } from '@shared/types'
+import { coerceScale, type OpenIn, SCALE_STEPS } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
@@ -7,6 +7,7 @@ import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet } from '../Interface/Scope'
 import { pickView } from '@renderer/Views/Pipeline/pickView'
+import { saveViewAdopting } from '@renderer/Views/viewMint'
 import { PropertyFrame } from '../Properties/PropertyFrame'
 import { HiddenFrame } from './HiddenFrame'
 import { GroupFrame } from './GroupFrame'
@@ -18,12 +19,15 @@ import {
   AccessoryButton,
   MenuFooting,
   MenuIndex,
+  MenuItem,
   MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
   MenuCaption,
   MenuTopRow,
 } from '@renderer/DesignSystem/Menus'
+import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { PickerControl, percentChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
@@ -112,6 +116,17 @@ export function SettingsFrame(): React.JSX.Element | null {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
   }
 
+  const viewScale = coerceScale(view.view_scale ?? 1, 1)
+  const setViewScale = (f: number): void => {
+    const next = coerceScale(f, 1)
+    void saveViewAdopting(node, { ...view, view_scale: next === 1 ? undefined : next })
+  }
+  const scaleChoices = (
+    SCALE_STEPS.some((f) => f === viewScale)
+      ? SCALE_STEPS
+      : [...SCALE_STEPS, viewScale].sort((a, b) => a - b)
+  ).map(percentChoice)
+
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (
     <>
@@ -174,6 +189,38 @@ export function SettingsFrame(): React.JSX.Element | null {
       />
     </>
   )
+
+  const footing = (
+    <MenuFooting>
+      <MenuItem
+        leading={
+          <span className={footingSymbol}>
+            <Icon name="scaling" size="control" />
+          </span>
+        }
+        trailing={
+          <PickerControl
+            solid
+            ariaLabel="View Scale"
+            value={String(viewScale)}
+            options={scaleChoices}
+            onPick={(v) => setViewScale(Number(v))}
+            typeable={{
+              text: String(Math.round(viewScale * 100)),
+              suffix: '%',
+              onCommit: (written) => {
+                const percent = Number.parseFloat(written.replace('%', '').trim())
+                if (Number.isFinite(percent)) setViewScale(percent / 100)
+              },
+            }}
+          />
+        }
+      >
+        <span className={footingLabel}>Scale</span>
+      </MenuItem>
+    </MenuFooting>
+  )
+  const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>
 
   const scopedRoot = scope && schemaCollection && (
     <MenuScrollFrame
@@ -262,7 +309,7 @@ export function SettingsFrame(): React.JSX.Element | null {
     <>
       <FrameSlide
         open={pane !== 'root' && !frozen(pane)}
-        root={scopedRoot || root}
+        root={scopedRoot || plainRoot}
         detail={detail}
         minWidth={225}
         minHeight={245}

@@ -15,7 +15,7 @@ import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { percentChoice, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
@@ -28,8 +28,8 @@ import {
   EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   SCALE_STEPS,
-  VIEW_SCALE_DEFAULT,
-  VIEW_SCALE_STEPS,
+  INTERFACE_SCALE_DEFAULT,
+  INTERFACE_SCALE_STEPS,
   WEB_ZOOM_DEFAULT,
   type ColorSetting,
   type Personalization,
@@ -225,11 +225,11 @@ const FRAMES = roster([
           },
           {
             kind: 'zoom',
-            key: 'defaultViewScale',
+            key: 'interfaceScale',
             label: 'Interface Scale',
             hint: 'The scaling factor applied to the entire interface; additional scaling preferences compound this value.',
-            fallback: VIEW_SCALE_DEFAULT,
-            steps: VIEW_SCALE_STEPS,
+            fallback: INTERFACE_SCALE_DEFAULT,
+            steps: INTERFACE_SCALE_STEPS,
           },
           {
             kind: 'zoom',
@@ -737,11 +737,6 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   )
 }
 
-const zoomPercent = (f: number): string => `${Math.round(f * 100)}%`
-const zoomChoice = (f: number): PickerChoice<string> => ({
-  value: String(f),
-  label: zoomPercent(f),
-})
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
@@ -750,7 +745,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
     setPersonalization(row.key, factor === row.fallback ? undefined : factor)
   const choices = (
     steps.some((f) => f === stored) ? steps : [...steps, stored].sort((a, b) => a - b)
-  ).map(zoomChoice)
+  ).map(percentChoice)
   return (
     <MenuRowView
       row={settingsRow(row, {

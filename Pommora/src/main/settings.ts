@@ -3,7 +3,7 @@
 // the foreign keys it doesn't own.
 
 import {
-  coerceViewScale,
+  coerceInterfaceScale,
   type NavViewMode,
   type NavViewModes,
   type Personalization,
@@ -71,8 +71,8 @@ export const readWatchScope = async (root: string): Promise<WatchScope> =>
 
 /** The nexus's default window zoom — the factor the window opens at and ⌘0 resets to, clamped
  *  to a usable range; absent/malformed → 1.0. */
-export async function readDefaultViewScale(root: string): Promise<number> {
-  return coerceViewScale((await readLivePersonalization(root)).defaultViewScale)
+export async function readInterfaceScale(root: string): Promise<number> {
+  return coerceInterfaceScale((await readLivePersonalization(root)).interfaceScale)
 }
 
 /** Whether emptying the trash erases outright rather than handing the artifact to the operating

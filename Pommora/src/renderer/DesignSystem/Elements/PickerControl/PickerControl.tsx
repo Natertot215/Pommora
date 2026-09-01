@@ -15,6 +15,12 @@ export type PickerChoice<T extends string> = {
 export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
+/** A scale factor as the percent choice every zoom/scale picker offers. */
+export const percentChoice = (f: number): PickerChoice<string> => ({
+  value: String(f),
+  label: `${Math.round(f * 100)}%`,
+})
+
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
  *  a menu; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
 export function PickerControl<T extends string>({
