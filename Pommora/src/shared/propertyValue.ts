@@ -81,11 +81,10 @@ export function decodeValue(
     // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a
     // merged case would discard every attachment through the restore path.
     case 'file': {
-      if (!Array.isArray(raw)) return NULL
       // A dangling `- ` under an attachment key is YAML null; an entry nothing can spell is
       // dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
-      for (const x of raw) {
+      for (const x of Array.isArray(raw) ? raw : [raw]) {
         const entry = fileEntry(x)
         if (entry !== null && entry !== '') entries.push(entry)
       }

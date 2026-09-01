@@ -1068,12 +1068,12 @@ export async function loadGovernedWorld(root: string, absFile: string, raw: Reco
 
 #### Gate 3 — repair
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Simplification and review against `<base>..HEAD` scoped to `src/shared/{contextResolve,propertyValue}.ts`, `src/main/CRUD/{governedWrite,contextWrite,page,optionOps,standing,restoreScrub,restoreProperty,removeProperty}.ts`, `src/main/mutate.ts`.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Lock audit: `rg -n "serializeSchemaOp\(" src/main/CRUD` unchanged in count from Gate 2; `applyAdoptions` has no caller inside a `serializeSchemaOp` callback that also holds a page lock (read the three restore callers).
-- [ ] Progress hashes filled in. Not a declared stop.
+- [x] typecheck 0 · Vitest 305 / 3787 · lint clean.
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] Simplifier (`NO_DEFS` and `survivingChanges` get one home in `contextResolve.ts`; `defById` inlined; `reconciledSidecar` plainer), code review (one finding), attack review (three findings, 18 kills) — all fixed: a scalar `<Context>` value and a scalar File value read as a list of one (the same normalization the option types got), a bare `<Areas>:` deletes instead of flagging drift forever, the drift check's tree is root-pinned, and a literal NUL byte in `applyAdoptions`' dedupe key (which had made git read `optionOps.ts` as binary) is the ` ` escape.
+- [x] Every concern fixed or ruled (Log).
+- [x] Lock audit: `serializeSchemaOp(` in `CRUD/` unchanged; every `applyAdoptions` caller runs outside a page lock (`mutate.setProperty` after `serializeOnFile` resolves; `restoreProperty` after its per-page locks; `restoreCachedValues` and `scrubReturning` off the chain), and `mutateRegistry`'s callback is synchronous so it can never enter the chain.
+- [x] Progress hashes filled in. Not a declared stop.
 
 ---
 
@@ -1359,13 +1359,13 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - [x] **Phase 2** — Values · base `2e804767`
   - [x] Task 10 — `decodeValue` coerces; `encodeValue` lists · `2a3e9c35`
   - [x] Task 11 — `rewriteRaw` array path; `type` retires · `2a3e9c35`
-- [ ] **Phase 3** — Repair
-  - [ ] Task 12 — `GovernedWorld`; `assignedDefs`
-  - [ ] Task 13 — `addOptionToDef` / `applyAdoptions`
-  - [ ] Task 14 — `reconcilePropertyValue` is the standing check
-  - [ ] Task 15 — `reconcileGovernedRoot`
-  - [ ] Task 16 — the writer takes a world; precedence rules
-  - [ ] Task 17 — drift pre-check; `loadGovernedWorld`
+- [x] **Phase 3** — Repair · base `e541ba65`
+  - [x] Task 12 — `GovernedWorld`; `assignedDefs` · `9fb7a8f4`
+  - [x] Task 13 — `addOptionToDef` / `applyAdoptions` · `9fb7a8f4`
+  - [x] Task 14 — `reconcilePropertyValue` is the standing check · `29833211`
+  - [x] Task 15 — `reconcileGovernedRoot` · `29833211`
+  - [x] Task 16 — the writer takes a world; precedence rules · `f4baf0d3`
+  - [x] Task 17 — drift pre-check; `loadGovernedWorld` · `f4baf0d3`
 - [ ] **Phase 4** — Live values
   - [ ] Task 18 — `values:changed` push; epoch union
   - [ ] Task 19 — in-flight overrides; id-scoped retire
@@ -1394,6 +1394,8 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - **Gate 0, the re-read window** (executor, 08-31-2026). `setPageContext` now reads once under its lock and `setGovernedRootKeys` reads again; a page deleted in the microtask between them throws `ENOENT` into the mutate envelope where the old path wrote its stale first read back — resurrecting the deleted page. The window sits inside the held file lock and the new outcome is the better one; no code added. From `restoreCachedValues` the same throw is absorbed by `reconcile`'s catch and the entry stays cached, exactly as before (probe-verified).
 - **Gate 1, the simplifier's flags** (executor, 09-01-2026). `createProperty` has no held-key gate by design — registering a name pages already hold adopts their values without a write (R-9); only a rename rewrites pages, so only a rename can destroy. `confirmedKeyHolders` reads the whole scope once per rename while the index is cold (the first launch after the generation bump) — K-7's own "unconditional per-file read", on a rare gesture. `isGovernedContextKey` is a prefix test (the write set) and `parseContextKey` demands the full shape (the strips); a half-open `<foo` is reserved by `invalidPropertyName` and claimed by neither strip. `renameCascade` now routes its filter through `isRegisteredPropertyName`, the one address the log names.
 - **Gate 2, the attack's two observations** (executor, 09-01-2026). Removing an option from a page holding `[Open, Active]` reveals `Open` — V-2's last-valid rule applied to the shorter list; stated in [[PropertiesPM]]'s Select paragraph rather than changed. The option cascades reach every Collection, assigned or not (K-6's corpus-wide claim), while V-5 says an unassigned value is never rewritten — the cascade rewrites only the value it was asked to rename or remove, which is what a corpus-wide rename means; left as is.
+- **Gate 3, the simplifier's flags** (executor, 09-01-2026). A registered Context holding zero Spaces scrubs its tags off a page on that page's next governed write — the reconcile has always dropped a value naming no Space, and R-2 makes a property write run it whole-file; a Context with no Spaces has no valid value to keep. `mutate.setProperty` reads the page once for the drift pre-check and the writer reads it again inside the same lock — the plan's own fence; a cell edit, not a hot path. Three world builders remain by design: `loadContextWorld` (strict, for a context write), `loadGovernedWorld` (drift-gated, for a property write), and `restoreScrub`'s tree-derived world (its header says why). `restoreScrub` reports a page's adoptions whether or not its own write lands — the adopted value was read from disk, so registry and disk agree either way.
+- **Gate 3, two sentences in the log the code corrects** (executor, 09-01-2026). R-7's "registry-first" is page-first in every writer: the page lands, then the adoption — a crash between them leaves exactly the disk state adoption exists to repair. R-2's "lossless by rule" holds for every shape the reconcile normalizes; a value whose shape its type refuses outright (a quoted number under a Number key, a non-string under a Link key) reads as no value and is deleted on the file's next governed write, which is V-3's rule applied to shape.
 - **`Awaiting` is a Status option** (Nathan, 09-01-2026, mid-run): it existed in his original definition and the vault pass's six had dropped it. Added back to the `upcoming` group in `properties.json`; the 14 `Awaiting` pages read live from the next open. `Open` ×13 stays outside until he says otherwise.
 - **The parallel session's commit and revert carried this arc's doc edits** (`2d454d99` → `1984a71b`): Nathan's auto-stage hook swept the uncommitted Task 10 rewrites to [[PropertiesPM]] into that session's commit, and its revert erased them. Re-applied at Gate 2 and committed there.
 - **Closeout's manual list is at least fifteen actions**, each stated as expected behavior before the attempt and watched over CDP, observed behavior recorded beside it.

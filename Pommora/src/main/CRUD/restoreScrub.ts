@@ -12,12 +12,16 @@
 // still holds, a key the destination's schema assigns is re-read as its definition reads it, and
 // every other key — a Context or property the registry no longer names included — rides through.
 
-import type { PropertyDefinition } from '@shared/properties'
 import type { Adoption } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
 import { assignedDefs } from './contextWrite'
 import { applyAdoptions } from './optionOps'
-import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
+import {
+  NO_DEFS,
+  reconcileGovernedRoot,
+  survivingChanges,
+  type GovernedWorld,
+} from '@shared/contextResolve'
 import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
@@ -25,8 +29,6 @@ import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../IO/wal
 import { splitFrontmatter } from '../readNexus'
 import { SPACE_SIDECAR } from '../paths'
 import { sweepAdmits } from './util'
-
-const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
 async function liveWorld(
   root: string,
@@ -47,10 +49,13 @@ function reconciledSidecar(
   world: GovernedWorld,
   inTransitKey: string | undefined,
 ): Record<string, unknown> | null {
-  const { [inTransitKey ?? '']: held, ...rest } = raw
+  const held =
+    inTransitKey !== undefined && inTransitKey in raw ? { [inTransitKey]: raw[inTransitKey] } : null
+  const rest = held
+    ? Object.fromEntries(Object.entries(raw).filter(([k]) => k !== inTransitKey))
+    : raw
   const r = reconcileGovernedRoot(rest, { ...world, defs: NO_DEFS })
-  if (!r.changed.length) return null
-  return inTransitKey && inTransitKey in raw ? { ...r.root, [inTransitKey]: held } : r.root
+  return r.changed.length ? { ...r.root, ...held } : null
 }
 
 /**
@@ -82,10 +87,7 @@ export async function scrubReturning(
       const r = reconcileGovernedRoot(splitFrontmatter(content), world)
       adoptions.push(...r.adoptions)
       if (!r.changed.length) return null
-      const set = Object.fromEntries(
-        r.changed.filter((k) => k in r.root).map((k) => [k, r.root[k]]),
-      )
-      return mergeFrontmatter(content, set, r.changed, splitEnvelope(content).body)
+      return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
     }).catch(() => false)
   }
   await applyAdoptions(root, adoptions)

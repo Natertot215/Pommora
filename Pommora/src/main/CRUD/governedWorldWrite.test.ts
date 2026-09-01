@@ -93,6 +93,7 @@ describe('contextDriftPresent', () => {
     expect(contextDriftPresent({ '<Areas>': [] }, tree())).toBe(true)
     expect(contextDriftPresent({ '<Notes>': ['x'] }, tree())).toBe(false)
     expect(contextDriftPresent({ '<Areas>': ['Work'] }, null)).toBe(true)
+    expect(contextDriftPresent({ '<Areas>': 'Work' }, tree())).toBe(true)
   })
 })
 
