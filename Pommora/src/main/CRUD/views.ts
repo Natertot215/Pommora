@@ -6,7 +6,6 @@ import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from '@shared/views'
 import { ok, fail, type Result } from '@shared/result'
 import { newId } from '../ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
-import { nowIso } from './util'
 
 type ViewContainerKind = 'collection' | 'set'
 
@@ -33,7 +32,7 @@ export function saveView(
     const idx = views.findIndex((v) => v.id === id)
     if (idx >= 0) views[idx] = finalView
     else views.push(finalView)
-    await writeSidecar(folder, kind, { ...sidecar, views, modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, views })
     return ok({ id })
   })
 }
@@ -54,7 +53,7 @@ export function reorderViews(
       ...orderedIds.map((id) => byId.get(id)).filter((v): v is SavedView => v !== undefined),
       ...views.filter((v) => !named.has(v.id)),
     ]
-    await writeSidecar(folder, kind, { ...sidecar, views: reordered, modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, views: reordered })
     return ok(null)
   })
 }
@@ -72,7 +71,7 @@ export function deleteView(
     if (views.length <= 1) return fail('operation-failed', 'Cannot delete the last view.')
     const next = views.filter((v) => v.id !== viewId)
     if (next.length === views.length) return fail('not-found', 'View not found.')
-    await writeSidecar(folder, kind, { ...sidecar, views: next, modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, views: next })
     return ok(null)
   })
 }

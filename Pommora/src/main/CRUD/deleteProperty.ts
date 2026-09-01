@@ -19,7 +19,6 @@ import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject } from '@shared/propertyValue'
-import { nowIso } from './util'
 import { fail, type Result } from '@shared/result'
 
 /** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by
@@ -118,7 +117,6 @@ export function unassignAndPurge(folder: string, propertyId: string): Promise<vo
     const next: Record<string, unknown> = {
       ...sidecar,
       properties: assigned.filter((id) => id !== propertyId),
-      modified_at: nowIso(),
     }
     // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
     // and assign only copies keys that are present.

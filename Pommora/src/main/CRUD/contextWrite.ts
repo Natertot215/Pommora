@@ -30,7 +30,7 @@ import { isMarkdownFile } from '../IO/walk'
 import { setGovernedRootKeys } from './governedWrite'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { createFolderEntity } from './folderEntity'
-import { nowIso, invalidContextTitle } from './util'
+import { invalidContextTitle } from './util'
 
 type Raw = Record<string, unknown>
 
@@ -202,7 +202,7 @@ export async function setSpaceContext(
     const { root } = reconcileGovernedRoot(raw, world)
     if (value) root[key] = value
     else delete root[key]
-    return { ...root, modified_at: nowIso() }
+    return root
   }).catch(() => fail('operation-failed', 'Context write failed.'))
   return written.ok ? ok(null) : written
 }
@@ -293,7 +293,7 @@ export async function setSpaceColor(
   const ref = world.value.spaceById.get(spaceId)
   if (!ref) return fail('not-found', 'Unknown Space.')
   const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (cur) => {
-    const next: Raw = { ...cur, modified_at: nowIso() }
+    const next: Raw = { ...cur }
     if (color === undefined) delete next.color
     else next.color = color
     return next

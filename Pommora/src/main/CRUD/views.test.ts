@@ -90,6 +90,20 @@ describe('view persistence CRUD', () => {
     if (!last.ok) expect(last.error.code).toBe('operation-failed')
   })
 
+  it('writes no modified_at through save, reorder, or delete', async () => {
+    await writeCollectionSidecar({ views: [view({ id: 'a' })] })
+    await saveView(folder, 'collection', view({ id: 'b' }))
+    await reorderViews(folder, 'collection', ['b', 'a'])
+    await deleteView(folder, 'collection', 'a')
+    expect('modified_at' in (await readRaw('_pagecollection.json'))).toBe(false)
+  })
+
+  it('leaves a legacy modified_at in place as a foreign key', async () => {
+    await writeCollectionSidecar({ views: [], modified_at: '2020-01-01T00:00:00.000Z' })
+    await saveView(folder, 'collection', view({ id: 'a' }))
+    expect((await readRaw('_pagecollection.json')).modified_at).toBe('2020-01-01T00:00:00.000Z')
+  })
+
   it('writes Set views into the _pageset.json sidecar', async () => {
     await writeFile(join(folder, '_pageset.json'), JSON.stringify({ id: 'set', views: [] }))
     const r = await saveView(folder, 'set', view({ id: 'view_s', name: 'SetTable' }))

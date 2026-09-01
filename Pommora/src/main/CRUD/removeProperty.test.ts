@@ -85,6 +85,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(await pageValue(pageB)).toBeUndefined()
     const sc = await sidecar()
     expect((sc?.properties as string[] | undefined) ?? []).not.toContain(propId)
+    expect('modified_at' in (sc ?? {})).toBe(false)
     const block = await cacheBlock()
     // The block is the values map and nothing else — no timestamp field rides along.
     expect(Object.keys(block ?? {})).toEqual(['values'])

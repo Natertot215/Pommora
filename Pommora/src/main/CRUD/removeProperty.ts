@@ -19,7 +19,7 @@ import { isBlankValue, isPlainObject, reconcilePropertyValue } from '@shared/pro
 import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
-import { nowIso, sweepAdmits } from './util'
+import { sweepAdmits } from './util'
 import { ok, type Result } from '@shared/result'
 
 export function removeProperty(
@@ -87,7 +87,7 @@ function patchCacheBlock(
   const cache = { ...(isPlainObject(cur.property_cache) ? cur.property_cache : {}) }
   if (blockValue) cache[propertyId] = blockValue
   else delete cache[propertyId]
-  const next: Record<string, unknown> = { ...cur, modified_at: nowIso() }
+  const next: Record<string, unknown> = { ...cur }
   if (Object.keys(cache).length) next.property_cache = cache
   else delete next.property_cache
   return next
