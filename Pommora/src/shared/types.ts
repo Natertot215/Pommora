@@ -117,6 +117,8 @@ export interface Personalization {
    *  strike is drawn, never written, so the file stays the plain `- [x]` it was. Absent = off. */
   muteCheckedItems?: boolean
   hideChevrons?: boolean
+  /** Canonicalize drifted property and Context values on the pages re-read at open. */
+  repairOnOpen?: boolean
   outlinerLines?: boolean
   /** Line numbers on codeblock content lines (rendered chrome, never editable text). */
   codeblockLineCount?: boolean

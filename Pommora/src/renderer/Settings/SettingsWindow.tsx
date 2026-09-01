@@ -413,7 +413,19 @@ const FRAMES = roster([
     key: 'properties',
     label: 'Properties',
     icon: 'server',
-    sections: [],
+    sections: [
+      {
+        title: 'Metadata',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'repairOnOpen',
+            label: 'Repair Properties On Open',
+            hint: 'Canonicalize drifted property and Context values on the pages changed since the last open.',
+          },
+        ],
+      },
+    ],
   },
   {
     key: 'pages',
