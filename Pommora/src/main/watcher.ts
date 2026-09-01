@@ -86,7 +86,7 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   if (sessionRoot() !== root) return // session switched during the settings read
   watcher = chokidar.watch(root, {
     ignored: ignoredUnder(root, scope),
-    ignoreInitial: true, // existing files aren't "changes"
+    ignoreInitial: true,
     persistent: true,
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
     atomic: true, // coalesce the mv-_tmp atomic writes our writers use

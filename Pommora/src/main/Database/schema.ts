@@ -5,9 +5,6 @@
 
 import type { Db } from './driver'
 
-/** A mismatch drops + recreates the file. Bump when an EXISTING table's shape changes; additive
- *  tables and indexes ride `IF NOT EXISTS` and reach existing files through the opener's
- *  re-apply, keeping every row already there. */
 export const SCHEMA_VERSION = 1
 
 const DDL = `

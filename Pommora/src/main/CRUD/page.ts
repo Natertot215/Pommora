@@ -1,8 +1,3 @@
-// Page (.md) CRUD. Pages live as files inside container folders (Type/Collection/Set).
-// filename = title (rename = file rename). Every write goes through the foreign-
-// preserving page engine; partial updates govern only the keys they name, so they
-// never disturb other frontmatter.
-
 import { join, dirname, basename } from 'node:path'
 import { rename, readFile } from 'node:fs/promises'
 import { PAGE_ID_KEY } from '@shared/identity'

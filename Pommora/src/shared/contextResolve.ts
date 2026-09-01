@@ -1,33 +1,23 @@
-// Pure context-link resolution + reconcile over an entity's raw root keys — the one
-// read/repair seam every consumer shares (walk assembly, governed writes, migration).
-// No fs, no React; the registry and space lists arrive as arguments.
-
 import type { ContextsRegistry } from './contexts'
 import { normalizeContextValue, parseContextKey } from './contexts'
 import type { SpaceNode } from './types'
 
-/** contextId → the member's resolved Space ids. */
 export type ResolvedLinks = Map<string, string[]>
 
-/** Registry title → its ContextDef id. Keys must match EXACTLY (the coercion classes
- *  apply to values only) — a case-drifted key is foreign data, never a link. */
+/** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted
+ *  key is foreign data, never a link. */
 function idsByExactTitle(registry: ContextsRegistry): Map<string, string> {
   const m = new Map<string, string>()
   for (const c of registry.contexts) m.set(c.title, c.id)
   return m
 }
 
-/** Space title (coerced) → the SpaceNode, per Context. */
 function spacesByTitle(spaces: SpaceNode[] | undefined): Map<string, SpaceNode> {
   const m = new Map<string, SpaceNode>()
   for (const s of spaces ?? []) m.set(normalizeContextValue(s.title), s)
   return m
 }
 
-/** Resolve an entity root's parenthesized keys to registered links only: the key must
- *  exact-match a registry Context title (after the wrap is stripped) and each value a Space
- *  title in that Context through the shared value coercion. Anything else never
- *  registers (inert-on-read). */
 export function resolveContextKeys(
   root: Record<string, unknown>,
   registry: ContextsRegistry,
@@ -51,10 +41,8 @@ export function resolveContextKeys(
   return links
 }
 
-/** Per-value repair for a root about to be rewritten anyway: a coercion-only near-miss
- *  (case/whitespace/NFC/scalar) repairs to the canonical Space title, a genuinely unknown
- *  value drops, and a key left empty drops with it (no empties). Unknown parenthesized keys
- *  and non-context keys pass through verbatim — this never guesses. */
+/** A coercion-only near-miss (case/whitespace/NFC/scalar) repairs to the canonical Space
+ *  title; a genuinely unknown value drops, and an emptied key drops with it (no empties). */
 export function reconcileContextKeys(
   root: Record<string, unknown>,
   registry: ContextsRegistry,

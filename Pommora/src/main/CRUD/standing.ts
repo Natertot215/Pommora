@@ -1,14 +1,3 @@
-// Does this still stand? The ONE answer, for every path that puts a governed value back.
-//
-// A record and a trashed file are both frozen pictures of a world that has moved on, and both
-// are replayed by restore — the artifact path carries keys inside a returning file, the property
-// path writes values out of a record. Asking the question twice is how they end up disagreeing:
-// the same value returning by two routes must not survive one and be dropped by the other.
-//
-// The caller resolves WHAT governs the key here — a definition, a Context's live Spaces, or
-// nothing — because only the caller knows the destination. This answers what becomes of the
-// value given that.
-
 import { normalizeContextValue } from '@shared/contexts'
 import type { PropertyDefinition } from '@shared/properties'
 import { decodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'

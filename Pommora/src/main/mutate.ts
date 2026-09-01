@@ -425,16 +425,14 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileSubtitle': {
-      // Read-merge-write settings.json (≤30 chars), preserving every foreign key.
       const subtitle = req.subtitle.slice(0, 30)
       await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: subtitle }))
       return ok({})
     }
 
     case 'setProfileImage': {
-      // The nexus photo is a picked file adopted into the asset directory, named by wikilink in
-      // settings.profile_image — setBanner's navview arm with a different field. Its circle framing
-      // is a separate crop on the adopted image.
+      // Mirrors setBanner's navview arm with a different field; the circle framing is a
+      // separate crop on the adopted image.
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = await assetFileToDelete(root, existing?.profile_image)
@@ -448,8 +446,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileIcon': {
-      // Glyph identity fallback → `settings.profile_icon` (read-merge-write, other keys preserved);
-      // null clears it. No asset write — it's a symbol name, not an image.
+      // No asset write — it's a symbol name, not an image.
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_icon', req.icon))
       return ok({})
     }
