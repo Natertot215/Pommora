@@ -43,7 +43,6 @@ The behavioral half — correctness, performance, and the structural moves insid
 Findings where the correct answer isn't established in the codebase — design and product decisions, not cleanup. Each is cheap once it's decided.
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
-- [ ] **A failed `loadValues` paints "No pages here"**, since the view host decides loading and empty but has no error state; a third root state at the seat, once the refused-write silence ruling is revisited.
 - [ ] **Two retention budgets act on the same guests and neither knows it.** Parked page surfaces cap at 2 tabs, hidden web guests at 5, and parking routes every tile inside a parked surface through the hidden-guest path — two parked tabs holding four web tiles each already exceeds the guest cap, so the LRU tears down the live sessions parking exists to preserve. One budget with tiers, or the numbers chosen together.
 
 #### II. Next-Feature Candidates
