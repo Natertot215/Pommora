@@ -18,7 +18,7 @@ import {
   type PropertyType,
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
-import { decodeValue, type PropertyValue, propertyKey } from '@shared/propertyValue'
+import { decodeValue, type PropertyValue } from '@shared/propertyValue'
 import { parseConnectionText } from '@shared/connections'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
@@ -101,7 +101,7 @@ function computeFieldValue(
       : { kind: 'null' }
   }
   if (!def) return { kind: 'null' }
-  return decodeValue(def, (fm as Record<string, unknown>)[propertyKey(def)])
+  return decodeValue(def, (fm as Record<string, unknown>)[def.name])
 }
 
 /** The filename a file reference names — the wikilink's own title, or the raw text where it isn't

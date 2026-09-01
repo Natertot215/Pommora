@@ -34,7 +34,7 @@ const assigns = async (folder: string, id: string): Promise<boolean> => {
 }
 
 const valueOn = async (absPage: string, name: string): Promise<unknown> =>
-  readFrontmatterFields(await readFile(absPage, 'utf8'))[`<${name}>`]
+  readFrontmatterFields(await readFile(absPage, 'utf8'))[name]
 
 /** Create Priority, assign it to both collections, and return its id. */
 async function seedPriority(): Promise<string> {

@@ -1,4 +1,3 @@
-import { wrapKey } from '@shared/governedKeys'
 import type { PropertyDefinition } from '@shared/properties'
 
 export const propsAtRoot = (
@@ -8,6 +7,6 @@ export const propsAtRoot = (
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
+      return [d ? d.name : id, v]
     }),
   )

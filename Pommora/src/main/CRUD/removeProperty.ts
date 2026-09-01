@@ -16,7 +16,7 @@ import { folderCorpus, indexWrittenPage } from '../indexSeed'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { isPlainObject, propertyKey } from '@shared/propertyValue'
+import { isPlainObject } from '@shared/propertyValue'
 import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
@@ -43,7 +43,7 @@ async function removeInner(
   // A property's values live under its own name, so the strip needs the registry's key.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
-  const key = propertyKey(def)
+  const key = def.name
 
   const files = await folderCorpus(root, collectionFolder)
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is

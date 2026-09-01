@@ -87,7 +87,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n(Projects):\n  - Pommora\n---\nbody`,
+    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
   )
   await openSession(root)
 })
@@ -98,7 +98,7 @@ afterEach(async () => {
 })
 
 const tagOf = async (): Promise<unknown> =>
-  splitFrontmatter(await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8'))['(Projects)']
+  splitFrontmatter(await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8'))['<Projects>']
 
 describe('the record is written before the destruction it describes', () => {
   it('a content delete records before the artifact moves', async () => {
@@ -149,7 +149,7 @@ describe('one unparseable page never fails the sweep around it', () => {
   // A hand-written tab indent and an unresolvable alias are the two ways frontmatter refuses a
   // field write. Either one used to abort the fan-out mid-destruction.
   const BROKEN = {
-    'Tabbed.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVX\n(Projects):\n\t- Pommora\n---\nb',
+    'Tabbed.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVX\n<Projects>:\n\t- Pommora\n---\nb',
     'Aliased.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVY\nsomething: *word\n---\nb',
   }
 

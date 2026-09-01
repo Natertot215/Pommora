@@ -134,7 +134,7 @@ describe('the nexus-wide write sweeps', () => {
 
     // Both files carry the same context key; only one of them is admissible.
     const tagged = (key: string, id: string): string =>
-      `---\n${key}: ${id}\n(Projects):\n  - Pommora\n---\nbody\n`
+      `---\n${key}: ${id}\n<Projects>:\n  - Pommora\n---\nbody\n`
     await writeFile(join(root, 'Notes', 'Contradicting.md'), tagged(KIND_ID_KEY.task, ULID))
     await writeFile(
       join(root, 'Notes', 'Member.md'),
@@ -145,7 +145,7 @@ describe('the nexus-wide write sweeps', () => {
     const r = await handleMutate({ op: 'renameContext', contextId, newName: 'Ventures' }, deps)
     expect(r.ok).toBe(true)
     // The member's key is rewritten — proof the sweep ran at all.
-    expect(await bytes('Member.md')).toContain('(Ventures):')
+    expect(await bytes('Member.md')).toContain('<Ventures>:')
     // The Unknown file is byte-identical, still carrying the old key.
     expect(await bytes('Contradicting.md')).toBe(before)
   })

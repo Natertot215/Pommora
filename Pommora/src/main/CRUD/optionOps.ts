@@ -24,7 +24,6 @@ import {
   type PropertyType,
   type StatusGroup,
 } from '@shared/properties'
-import { propertyKey } from '@shared/propertyValue'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only — rejected up front
@@ -141,7 +140,7 @@ async function resolveForCascade(
   if (!def) return fail('not-found', 'Property not found.')
   const typeCheck = requireType(def.type)
   if (!typeCheck.ok) return typeCheck
-  return ok({ type: def.type, key: propertyKey(def) })
+  return ok({ type: def.type, key: def.name })
 }
 
 /** Strip `value` from every page holding the target's key — the shared tail of clear and remove
@@ -215,7 +214,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         if (!check.ok) return { result: check }
         return {
           next: { ...registry, defs: { ...registry.defs, [propertyId]: edited.next } },
-          result: ok({ type: def.type, key: propertyKey(def) }),
+          result: ok({ type: def.type, key: def.name }),
         }
       })
       if (!edit.ok) {

@@ -2,7 +2,7 @@ import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValu
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import type { PropertyDefinition } from '@shared/properties'
-import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
+import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/DesignSystem/Symbols'
@@ -73,7 +73,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     contextRows,
   } = usePropertyRows(page, fm, setFm)
   const isShown = (def: PropertyDefinition): boolean =>
-    revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[propertyKey(def)] !== undefined
+    revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[def.name] !== undefined
   const groups: [string, Field[]][] = [
     ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map((t) => ({ ...t, def: null }))],
     [

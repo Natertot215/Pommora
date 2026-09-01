@@ -394,13 +394,6 @@ const FRAMES = roster([
             label: 'Clear Exclusion Cache',
             hint: 'Remove existing app data that may have been written onto previously indexed folders.',
           },
-          {
-            kind: 'toggle',
-            key: 'preservePropertiesOnClear',
-            defaultOn: true,
-            label: 'Preserve Properties On Clear',
-            hint: 'Clearing keeps the values a page holds, writing them as ordinary frontmatter instead of removing them.',
-          },
         ],
       },
       {

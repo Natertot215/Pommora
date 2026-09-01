@@ -20,7 +20,7 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR1\n(Areas):\n  - Work\n<Status>: in_progress\n---\n\nbody\n',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR1\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
     )
     await writeFile(
       join(root, 'Col', 'SetA', 'p2.md'),
@@ -29,9 +29,9 @@ describe('loadValues', () => {
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual([P1, P2])
-    expect(values[P1]['(Areas)']).toEqual(['Work'])
+    expect(values[P1]['<Areas>']).toEqual(['Work'])
     // Wrapped keys ride the loose frontmatter unmodeled — the batch read needs no schema at all.
-    expect((values[P1] as Record<string, unknown>)['<Status>']).toBe('in_progress')
+    expect((values[P1] as Record<string, unknown>).Status).toBe('in_progress')
     expect((values[P2] as Record<string, unknown>)['<Count>']).toBe(7)
   })
 
@@ -42,7 +42,7 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'noid.md'),
-      '---\ntitle: x\n(Areas):\n  - Work\n<Status>: in_progress\n---\n\nbody\n',
+      '---\ntitle: x\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
     )
 
     const values = await loadValues(root, 'Col')
@@ -50,8 +50,8 @@ describe('loadValues', () => {
     expect(keys).toHaveLength(1)
     expect(keys[0]).toMatch(/^adopted-/)
     const row = values[keys[0]] as Record<string, unknown>
-    expect(row['(Areas)']).toEqual(['Work'])
-    expect(row['<Status>']).toBe('in_progress')
+    expect(row['<Areas>']).toEqual(['Work'])
+    expect(row.Status).toBe('in_progress')
   })
 
   it('returns an empty map for an absent container', async () => {

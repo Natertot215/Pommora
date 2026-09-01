@@ -14,7 +14,6 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { parseGovernedKey } from '@shared/governedKeys'
 import { atomicWriteFile, readJsonObject, writeJson } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { indexWrittenPage, nexusCorpus } from '../indexSeed'
@@ -69,7 +68,7 @@ export interface SweepOptions {
 
 const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
-    (k) => parseGovernedKey(k) !== null && JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
+    (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
 
 async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {

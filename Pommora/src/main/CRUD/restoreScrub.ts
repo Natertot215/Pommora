@@ -11,10 +11,9 @@
 // key survives only if what it names still exists, and whether a value stands is asked the way
 // the destination asks it.
 
-import { contextKey, normalizeContextValue } from '@shared/contexts'
-import { parseGovernedKey } from '@shared/governedKeys'
+import { contextKey, normalizeContextValue, parseContextKey } from '@shared/contexts'
 import type { PropertyDefinition } from '@shared/properties'
-import { encodeValue, propertyKey } from '@shared/propertyValue'
+import { encodeValue } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
 import { contextTagStands, propertyValueStands } from './standing'
 import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
@@ -50,7 +49,7 @@ async function liveWorld(
   const defs = new Map<string, PropertyDefinition>()
   for (const id of assigned) {
     const def = registry[id]
-    if (def) defs.set(propertyKey(def), def)
+    if (def) defs.set(def.name, def)
   }
   const contextSpaces = new Map(
     tree.contexts.map((g) => [
@@ -68,12 +67,11 @@ function reconciled(content: string, world: LiveWorld): string | null {
   const drop: string[] = []
   const rewrite: Record<string, unknown> = {}
   for (const [key, raw] of Object.entries(fields)) {
-    const governed = parseGovernedKey(key)
-    if (!governed) continue
-    const standing =
-      governed.layer === 'property'
-        ? propertyValueStands(world.defs.get(key), raw)
-        : contextTagStands(world.contextSpaces.get(key), raw)
+    const def = world.defs.get(key)
+    if (!def && parseContextKey(key) === null) continue
+    const standing = def
+      ? propertyValueStands(def, raw)
+      : contextTagStands(world.contextSpaces.get(key), raw)
     if (!standing.stands) {
       drop.push(key)
       continue
@@ -99,7 +97,7 @@ function reconciledSidecar(
   const next = { ...raw }
   let changed = false
   for (const [key, value] of Object.entries(raw)) {
-    if (key === inTransitKey || parseGovernedKey(key)?.layer !== 'context') continue
+    if (key === inTransitKey || parseContextKey(key) === null) continue
     const standing = contextTagStands(world.contextSpaces.get(key), value)
     if (!standing.stands) {
       delete next[key]

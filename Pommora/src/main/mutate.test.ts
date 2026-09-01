@@ -36,7 +36,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'col' }))
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\n(Areas):\n  - Work\n---\n\nSee [[Beta]] for more.',
+    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\n<Areas>:\n  - Work\n---\n\nSee [[Beta]] for more.',
   )
   await writeFile(
     join(root, 'Notes', 'Daily', 'Beta.md'),
@@ -102,7 +102,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await read('Notes/Daily/Seeded.md'))
-    expect(fm['<Stage>']).toBe('doing')
+    expect(fm.Stage).toBe('doing')
     expect(Object.keys(fm).some((k) => k.includes('gone'))).toBe(false)
 
     const blank = await handleMutate(
@@ -115,7 +115,7 @@ describe('handleMutate — create', () => {
       nexusDeps,
     )
     expect(blank.ok).toBe(true)
-    expect('<Stage>' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
+    expect('Stage' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
   })
 
   it('createPage order substitutes NEW_PAGE_SLOT with the minted id and persists page_order', async () => {
@@ -1017,7 +1017,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
     expect(splitFrontmatter(md)[PAGE_ID_KEY]).toBe(B_ID)
-    expect(splitFrontmatter(md)['<Stage>']).toBe('done')
+    expect(splitFrontmatter(md).Stage).toBe('done')
   })
 
   it('stamps modified_at — a property VALUE change is an edit', async () => {
@@ -1050,7 +1050,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Stage>']).toBeUndefined()
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).Stage).toBeUndefined()
   })
 
   it('an emptied value clears the key on disk — the file never holds a [] placeholder', async () => {
@@ -1074,8 +1074,8 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     )
     expect(r.ok).toBe(true)
     const md = await read('Notes/Daily/Beta.md')
-    expect(splitFrontmatter(md)['<Tags>']).toBeUndefined()
-    expect(md).not.toContain('<Tags>')
+    expect(splitFrontmatter(md).Tags).toBeUndefined()
+    expect(md).not.toContain('Tags')
   })
 
   it('never throws on a missing page — returns ok:false', async () => {
@@ -1294,16 +1294,14 @@ describe('a file value never destroys what it stops naming', () => {
   it('replacing a reference leaves the file it named on disk', async () => {
     expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
     expect((await setFiles('Notes/Daily/Beta.md', ['[[New.pdf]]'])).ok).toBe(true)
-    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toEqual([
-      '[[New.pdf]]',
-    ])
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).Attachments).toEqual(['[[New.pdf]]'])
     expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 
   it('clearing the last reference leaves the file, and takes the key', async () => {
     expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
     expect((await setFiles('Notes/Daily/Beta.md', [])).ok).toBe(true)
-    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toBeUndefined()
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).Attachments).toBeUndefined()
     expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 
@@ -1311,9 +1309,7 @@ describe('a file value never destroys what it stops naming', () => {
     expect((await setFiles('Notes/Daily/Alpha.md', ['[[Old.pdf]]'])).ok).toBe(true)
     expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
     expect((await setFiles('Notes/Daily/Alpha.md', ['[[New.pdf]]'])).ok).toBe(true)
-    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toEqual([
-      '[[Old.pdf]]',
-    ])
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).Attachments).toEqual(['[[Old.pdf]]'])
     expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 })
@@ -1359,7 +1355,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
     expect(first).toEqual({ ok: true, value: '[[Spec.pdf]]' })
     expect(await pathExists(join(root, 'file-assets', 'Reports', 'Spec.pdf'))).toBe(true)
     expect((await setFiles(['[[Spec.pdf]]'])).ok).toBe(true)
-    expect(await read('Notes/Daily/Beta.md')).toContain('<Attachments>:\n  - "[[Spec.pdf]]"')
+    expect(await read('Notes/Daily/Beta.md')).toContain('Attachments:\n  - "[[Spec.pdf]]"')
 
     const second = await adoptFile(root, await pick('Notes.txt', 'note-bytes'), {
       allow: 'any',
@@ -1368,7 +1364,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
     expect(second).toEqual({ ok: true, value: '[[Notes.txt]]' })
     expect((await setFiles(['[[Spec.pdf]]', '[[Notes.txt]]'])).ok).toBe(true)
     expect(await read('Notes/Daily/Beta.md')).toContain(
-      '<Attachments>:\n  - "[[Spec.pdf]]"\n  - "[[Notes.txt]]"',
+      'Attachments:\n  - "[[Spec.pdf]]"\n  - "[[Notes.txt]]"',
     )
 
     const replacement = await adoptFile(root, await pick('Final.pdf', 'final-bytes'), {
@@ -1378,14 +1374,14 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
     expect(replacement).toEqual({ ok: true, value: '[[Final.pdf]]' })
     expect((await setFiles(['[[Final.pdf]]', '[[Notes.txt]]'])).ok).toBe(true)
     expect(await read('Notes/Daily/Beta.md')).toContain(
-      '<Attachments>:\n  - "[[Final.pdf]]"\n  - "[[Notes.txt]]"',
+      'Attachments:\n  - "[[Final.pdf]]"\n  - "[[Notes.txt]]"',
     )
     expect(await pathExists(join(root, 'file-assets', 'Reports', 'Spec.pdf'))).toBe(true)
 
     expect((await setFiles(['[[Final.pdf]]'])).ok).toBe(true)
-    expect(await read('Notes/Daily/Beta.md')).toContain('<Attachments>:\n  - "[[Final.pdf]]"')
+    expect(await read('Notes/Daily/Beta.md')).toContain('Attachments:\n  - "[[Final.pdf]]"')
     expect((await setFiles([])).ok).toBe(true)
-    expect(await read('Notes/Daily/Beta.md')).not.toContain('<Attachments>')
+    expect(await read('Notes/Daily/Beta.md')).not.toContain('Attachments')
     for (const name of ['Spec.pdf', 'Notes.txt', 'Final.pdf'])
       expect(await pathExists(join(root, 'file-assets', 'Reports', name))).toBe(true)
   })

@@ -54,7 +54,7 @@ import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './Property
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from '../Frames/frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
-import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
+import { normalizePropertyName } from '@shared/properties'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
@@ -253,8 +253,7 @@ export function PropertyFrame({
     const before = registry.find((d) => d.id === id)?.name
     const after = normalizePropertyName(name)
     if (await commit(await window.nexus.schema.rename(collectionPath, id, name)))
-      if (before !== undefined && before !== after)
-        bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))
+      if (before !== undefined && before !== after) bumpValuesEpoch(before, after)
   }
   const remove = async (id: string): Promise<void> => {
     if (await commit(await window.nexus.schema.delete(collectionPath, id))) backToList()

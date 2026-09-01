@@ -1,9 +1,13 @@
 // Pure validation over a PropertyDefinition[] — the typed gate a definition passes before it
 // enters the registry. No I/O.
 
-import { hasSelectOptions, isReservedPropertyId, type PropertyDefinition } from '@shared/properties'
+import {
+  hasSelectOptions,
+  isReservedPropertyId,
+  KEY_REFUSAL,
+  type PropertyDefinition,
+} from '@shared/properties'
 import { fail, ok, type Result } from '@shared/result'
-import { KEY_REFUSAL } from '@shared/governedKeys'
 
 /** A property name in the context of a schema: unique case-insensitively, excluding the def
  *  identified by `excludeId` (for rename). Empty and reserved-prefix names are refused before

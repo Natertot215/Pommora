@@ -44,8 +44,8 @@ describe('invalidName', () => {
 // Two disjoint ways frontmatter refuses a field write, and a sweep must survive both: one page
 // nobody can parse is skipped, never allowed to fail the fan-out around it.
 const ALIAS = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
-const TAB = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n\t- Pommora\n---\nbody'
-const HEALTHY = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n  - Pommora\n---\nbody'
+const TAB = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
+const HEALTHY = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n---\nbody'
 
 describe('sweepAdmits — the field-write gate', () => {
   it('an unresolvable alias reads as empty rather than throwing', () => {

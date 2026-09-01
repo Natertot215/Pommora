@@ -17,7 +17,9 @@ import { rewriteConnections, rewriteFrontmatterConnections } from '../Connection
 import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
 import { queryMentions } from '../Database/contentIndex'
-import { governedValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
+import { frontmatterValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
+import { readRegistry } from '../IO/propertiesRegistry'
+import { propertyNames } from '@shared/properties'
 
 /** Rewrite every reference to `oldTitle` — the body's own links, and any frontmatter Link property
  *  naming the page — to name `newTitle`, atomically. `modified_at` is preserved untouched either
@@ -32,12 +34,16 @@ export async function renameCascade(
   const oldKey = normalizeTitle(oldTitle)
   const touched: string[] = []
   const rels = queryMentions(oldKey) ?? (await nexusCorpus(nexusRoot))
+  const names = propertyNames(Object.values((await readRegistry(nexusRoot)).defs))
   for (const rel of rels) {
     const file = join(nexusRoot, rel)
     const wrote = await rewritePageSerialized(file, (content) => {
       if (!sweepAdmitsBody(content)) return null // connections live only on files the tree admits
       const { body } = splitEnvelope(content)
-      const patch = rewriteFrontmatterConnections(governedValues(content), oldKey, newTitle)
+      const values = Object.fromEntries(
+        Object.entries(frontmatterValues(content)).filter(([k]) => names.has(k)),
+      )
+      const patch = rewriteFrontmatterConnections(values, oldKey, newTitle)
       const keys = Object.keys(patch)
       const newBody = mentionsTitle(body, oldKey)
         ? rewriteConnections(body, oldTitle, newTitle)

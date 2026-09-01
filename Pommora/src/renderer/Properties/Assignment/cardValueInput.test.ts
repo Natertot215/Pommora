@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
-import { propertyKey } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import {
@@ -64,7 +63,7 @@ describe('shownColumnsFor', () => {
   it('Compact drops blank values except checkbox and keeps filled ones', () => {
     expect(shownColumnsFor(row({}), columns, ctx, true).map((c) => c.id)).toEqual(['chk'])
     expect(
-      shownColumnsFor(row({ [propertyKey(sel)]: 'Done' }), columns, ctx, true).map((c) => c.id),
+      shownColumnsFor(row({ [sel.name]: 'Done' }), columns, ctx, true).map((c) => c.id),
     ).toEqual(['sel', 'chk'])
   })
 })

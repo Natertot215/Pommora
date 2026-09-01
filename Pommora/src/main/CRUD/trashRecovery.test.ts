@@ -78,7 +78,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Journal', 'Daily', 'Alpha.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Status>: live\n---\nbody\n',
+    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\nStatus: live\n---\nbody\n',
   )
   await mkdir(join(root, 'Plain'), { recursive: true })
   await writeFile(join(root, 'Plain', '_pagecollection.json'), JSON.stringify({ id: 'col-plain' }))
@@ -211,7 +211,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(await pathExists(join(contextsDir(root), 'Areas', 'Pommora', '_space.json'))).toBe(true)
   })
 
-  it('a relocation drops what the destination cannot hold, and keeps what it can', async () => {
+  it('a relocation keeps the page whole — its values ride along as frontmatter', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     await del('Journal/Daily', 'set')
     const row = await find('Alpha')
@@ -228,7 +228,7 @@ describe('end to end — deleted, listed, restored', () => {
       ).ok,
     ).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Alpha.md'), 'utf8')
-    expect(landed.includes('<Status>')).toBe(false)
+    expect(landed.includes('Status')).toBe(true)
     expect(landed.includes('PageID:')).toBe(true)
     expect(landed.includes('body')).toBe(true)
   })

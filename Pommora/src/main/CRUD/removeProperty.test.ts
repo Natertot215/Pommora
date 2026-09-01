@@ -9,10 +9,10 @@ import { createProperty, editProperty } from './registryProperty'
 import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
 import { readSidecar } from '../sidecarIO'
+import { readRegistry } from '../IO/propertiesRegistry'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
-import { wrapKey } from '@shared/governedKeys'
 
 let root: string
 let folder: string
@@ -64,9 +64,7 @@ afterEach(async () => {
 
 /** The value a page holds for the property under test, read at its own key. */
 const pageValue = async (path: string): Promise<unknown> =>
-  (readFrontmatterFields(await readFile(path, 'utf8')) as Record<string, unknown>)[
-    wrapKey('property', liveDef.name)
-  ]
+  (readFrontmatterFields(await readFile(path, 'utf8')) as Record<string, unknown>)[liveDef.name]
 const sidecar = async (): Promise<Record<string, unknown> | null> =>
   (await readSidecar(folder, 'collection', pageCollectionSidecar)) as Record<string, unknown> | null
 const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
@@ -186,7 +184,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, id)
     const c = await createPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
-    const selDef = { ...sel.value, id } as PropertyDefinition
+    const selDef = (await readRegistry(root)).defs[id]
     await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
@@ -194,12 +192,12 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       string,
       unknown
     >
-    expect(root2[wrapKey('property', selDef.name)]).toBe('2024-01-01')
+    expect(root2[selDef.name]).toBe('2024-01-01')
   })
 
   it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {
     const orphan = join(folder, 'Orphan.md')
-    await writeFile(orphan, `---\n${wrapKey('property', liveDef.name)}: active\n---\n\nbody\n`)
+    await writeFile(orphan, `---\n${liveDef.name}: active\n---\n\nbody\n`)
     await removeProperty(root, folder, propId)
     expect(await pageValue(orphan)).toBeUndefined()
   })

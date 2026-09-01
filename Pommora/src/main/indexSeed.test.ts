@@ -22,7 +22,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(
     abs('Notes', 'A.md'),
-    `---\nPageID: ${ULID_A}\n<Status>: Open\n---\n\nlinks [[Target]]\n`,
+    `---\nPageID: ${ULID_A}\nStatus: Open\n---\n\nlinks [[Target]]\n`,
   )
   await mkdir(abs('Loose'), { recursive: true })
   await writeFile(abs('Loose', 'Note.md'), 'an un-adopted note linking [[Target]]\n')
@@ -43,7 +43,7 @@ describe('seedContentIndex', () => {
     const stats = readIndexedStats()
     for (const rel of corpus) expect(stats?.has(rel)).toBe(true)
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
-    expect(queryKeyHolders('<Status>')).toEqual(['Notes/A.md'])
+    expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     // The excluded note is unread and unrepresented — no rows, no stat gate entry.
     expect(stats?.has('Hidden/Secret.md')).toBe(false)
   })

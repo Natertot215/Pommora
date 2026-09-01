@@ -10,7 +10,7 @@ import {
 
 describe('contextKey / parseContextKey', () => {
   it('wraps a title in its layer sigil', () => {
-    expect(contextKey('Projects')).toBe('(Projects)')
+    expect(contextKey('Projects')).toBe('<Projects>')
   })
 
   it('round-trips through parseContextKey', () => {
@@ -18,7 +18,7 @@ describe('contextKey / parseContextKey', () => {
   })
 
   it('round-trips a title carrying the closing glyph — the strip is positional', () => {
-    expect(parseContextKey(contextKey('Q3 (Draft)'))).toBe('Q3 (Draft)')
+    expect(parseContextKey(contextKey('Q3 <Draft>'))).toBe('Q3 <Draft>')
   })
 
   it('rejects unwrapped and empty keys', () => {
@@ -27,8 +27,10 @@ describe('contextKey / parseContextKey', () => {
     expect(parseContextKey('()')).toBeNull()
   })
 
-  it('refuses the property layer, so a same-named Context and property never collide', () => {
-    expect(parseContextKey('<Projects>')).toBeNull()
+  it('refuses an unwrapped or empty key, so a same-named Context and property never collide', () => {
+    expect(parseContextKey('Projects')).toBeNull()
+    expect(parseContextKey('(Projects)')).toBeNull()
+    expect(parseContextKey('<>')).toBeNull()
   })
 })
 

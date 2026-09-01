@@ -56,7 +56,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await refreshTree(root)
     await writeFile(
       abs('Notes', 'B.md'),
-      `---\nPageID: ${ULID_B}\nicon: book\n(Areas):\n  - Home\n---\n\nbeta\n`,
+      `---\nPageID: ${ULID_B}\nicon: book\n<Areas>:\n  - Home\n---\n\nbeta\n`,
     )
     await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\nicon: star\n---\n\nalpha\n`)
     await writeFile(abs('Loose', 'second.md'), 'more\n')

@@ -9,12 +9,7 @@ import {
 } from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
-import {
-  wrapKey,
-  normalizePropertyName,
-  invalidPropertyName,
-  KEY_REFUSAL,
-} from '@shared/governedKeys'
+import { normalizePropertyName, invalidPropertyName, KEY_REFUSAL } from '@shared/properties'
 import { cascadePages } from './optionOps'
 import {
   clearSchemaJournal,
@@ -83,12 +78,10 @@ const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
  *  position and its comment. A page holding neither key is left untouched. Returns the holders
  *  it could not read, so a journaled caller holds its record while any remain. */
 export function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
-  const oldKey = wrapKey('property', oldName)
-  const newKey = wrapKey('property', newName)
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
   // both holds the old one too, so the holder set covers every fold the collision arm can meet.
-  return cascadePages(root, oldKey, (content) =>
-    renameFrontmatterKey(content, oldKey, newKey, NEW_KEY_IS_FRESHER),
+  return cascadePages(root, oldName, (content) =>
+    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER),
   )
 }
 

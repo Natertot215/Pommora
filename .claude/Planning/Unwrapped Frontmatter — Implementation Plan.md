@@ -324,15 +324,15 @@ export function invalidPropertyName(name: string): boolean
 
 **Verify — automated**
 
-- [ ] Red first: the context fixtures rewritten to `<…>` fail on the old sigil (`contexts.test`, `contextResolve.test` — expect ≥ 8 failures); then green.
-- [ ] `rg -F "governedKeys'" src` → 0. Control: `rg -F "@shared/contexts" src` → ≥ 10.
-- [ ] `rg -F "['(', ')']" src` → 0. Control: `rg -F "['<', '>']" src/shared/contexts.ts` → 1.
-- [ ] Full gates green.
+- [x] Red observed as the 19 failures across 9 suites after the code and fixture rewrite landed together (Deviations); then green.
+- [x] `rg -F "governedKeys'" src` → 0. Control: `@shared/contexts` importers → 12.
+- [x] `rg -F "['(', ')']" src` → 0. Control: `['<', '>']` in `contexts.ts` → 1.
+- [x] typecheck 0 · 303 files / 3738 tests · Biome clean over the 62 touched files.
 
 **Verify — user**
 
-- [ ] **Before this task's commit:** the running dev app has a scratch nexus open (picked through the picker, so `pommora.json`'s `lastNexusPath` points at it), not NexusOS.
-- [ ] *(the rest carried to Gate 1's stop)*
+- [x] **Before this task's commit:** the dev process was restarted with `pommora.json`'s `lastNexusPath` set to `~/PommoraScratch` (the picker is a native dialog; the config write is the same effect) and the app seeded the scratch nexus.
+- [ ] *(the rest carried to Gate 1)*
 
 #### Task 5: Ownership is the registry name; `propertyKey(def)` is `def.name`
 
@@ -369,10 +369,10 @@ export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<s
 
 **Verify — automated**
 
-- [ ] Red first: a `value.test.ts` case decoding `{ Status: 'Active' }` (bare key) against a `Status` def fails while `propertyKey` still wraps; then green. Fixtures across the wrapped-key test files (`rg -l "<Status>|<Stage>|<Tags>" src --glob '*.test.*'` → 16 today, re-derived at execution) rewrite to bare keys and stay green.
-- [ ] A new `properties.test.ts` case: `isRegisteredPropertyName('tags', names)` true only on exact case; `'Tags'` false when `'tags'` is registered.
-- [ ] `rg -F "propertyKey(" src` → 0. `rg -F "wrapKey" src` → 0. Control: `rg -F "def.name" src` → ≥ 20.
-- [ ] Full gates green.
+- [x] `value.test.ts`'s whole fixture set now decodes bare keys (`propsAtRoot` maps to `d.name`); the 17 wrapped-fixture files rewrote to bare keys and are green. Two tests had passed by accident under the wrap — `removeProperty.test`'s select-restore built its def from `createProperty`'s `{ id }` alone (so the key was `<undefined>`); it now reads the live def.
+- [x] `properties.test.ts`: `isRegisteredPropertyName('tags', names)` true; `'Tags'` and `'<tags>'` false.
+- [x] `rg -F "propertyKey(" src` → 0. `rg -F "wrapKey" src` → 0. Control: `def.name` → 24.
+- [x] Full gates green (Task 4's line).
 
 **Verify — user**
 
@@ -514,9 +514,9 @@ The one detail string: *Pommora’s container files are removed and each page’
 
 **Verify — automated**
 
-- [ ] `exclusionScan.test`: the preserve-mode cases are deleted (the mode is gone); one case asserts `Status: [Active]` and `foo: bar` survive Clear while `PageID`, both stamps, and `<Areas>` go. Red first with the old arm present.
-- [ ] `rg -F "preservePropertiesOnClear" src` → 0. Control: `rg -F "permanentDelete" src` → ≥ 3.
-- [ ] Full gates green.
+- [x] `exclusionScan.test`: the two preserve modes collapse to one describe; `Status: open`, `Status: Doing`, and `Tag: x` survive Clear while `PageID`, both stamps, `<Projects>`, and `<Areas>` go; an unterminated `<Status: broken` key is left as found (the strip keys on `parseContextKey`, not the prefix). Red first: 3 failures against the old arm.
+- [x] `rg -F "preservePropertiesOnClear" src` → 0. Control: `permanentDelete` → 20.
+- [x] Full gates green (landed in the Tasks 4+5 commit — Deviations).
 
 **Verify — user**
 
@@ -1398,6 +1398,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Deviations
 
+- **Tasks 4, 5, 7 and Task 6's four shape sites land as one commit.** Deleting the sigil leaves the four property-shape sites (`indexSeed.governedValues`, `governedSweep.changedKeys`, `restoreScrub`'s layer dispatch, `exclusionScan.clearRewrite`) and `cascade.renameCascade` with no intermediate form — a bare key has no shape to test — so their Task 6/7 forms ride the Tasks 4+5 commit; Task 6's index generation and Task 7's docs follow as their own commits. Red-first was observed as one batch (19 failures) rather than per task. Two behavior changes the fixtures surfaced, both the spec's own: a returning trashed page keeps a value whose property was deleted or unassigned meanwhile (the key is now indistinguishable from the user's own frontmatter — `restoreScrub.test`, `provenance.test`, `trashRecovery.test` rewritten to say so), and `renameCascade` rewrites Link connections only under registered names (`cascade.test` now registers its two properties). `removeProperty.test`'s select-restore had passed by accident (a nameless def wrapped to `<undefined>`); it now reads the live def.
 - **Task 0, the sweep's shape.** The comment-killer agent fanned out to three sub-agents on its own; all three were stopped and the sweep finished single-handed. A parallel session was live in the same tree throughout (its commit `345a82ab` removed both `(Nathan's call)` markers, so that control reads 0 from here on, and it holds uncommitted CSS edits that ride no commit of this arc). Task 0's "only comment lines moved" grep flags two lines whose trailing same-line comment was removed (`watcher.ts` `ignoreInitial`, `propertyValue.ts`'s `select` union member); the code on those lines is unchanged. `npm run lint` as a whole is red on the other session's unformatted `window-base.css`; Biome over the 26 files this task touched is clean.
 
 ### Lessons

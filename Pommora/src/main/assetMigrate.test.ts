@@ -130,13 +130,13 @@ describe('migrateAssets', () => {
     await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\ncover: .nexus/assets/p/banner-cccccc33.png\n(Areas):\n  - Work\n---\n\nthe body',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\ncover: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
     )
     await migrateAssets(root)
     const after = await read('Notes/Alpha.md')
     expect(after).toMatch(/cover: ["']\[\[Alpha Banner\.png\]\]["']/)
     expect(after).toContain('the body')
-    expect(after).toContain('(Areas):')
+    expect(after).toContain('<Areas>:')
   })
 
   it('re-keys a moved file’s crop to its new path', async () => {

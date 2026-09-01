@@ -6,7 +6,7 @@ import { writePageFile, mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
-import { encodeValue, isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
+import { encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { PAGE_MODELED_KEYS } from '@shared/schemas'
 import { ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName, nowIso } from './util'
@@ -42,7 +42,7 @@ export async function createPage(
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
     if (isBlankValue(value)) continue
-    const key = propertyKey(def)
+    const key = def.name
     modeled[key] = encodeValue(value)
     keys.push(key)
   }
@@ -134,7 +134,7 @@ export async function updatePageProperty(
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  const key = propertyKey(def)
+  const key = def.name
   const clear = value === null || isBlankValue(value)
   await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key])
   return ok(null)

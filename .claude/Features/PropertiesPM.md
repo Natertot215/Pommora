@@ -31,7 +31,7 @@ The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-
 | **Checkbox** | `<Done>: true` | Bare boolean |
 | **Date** | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read |
 | **Select** | `<Stage>: Active` | Bare string; one colored chip |
-| **Multi-select** | `<Tags>:` over a block sequence | Bare array; tag-style multi-pick |
+| **Multi-select** | `Tags:` over a block sequence | Bare array; tag-style multi-pick |
 | **Status** | `<Status>: Complete` | Bare label — the option's own value; grouped by workflow phase |
 | **Link** | `<Link>: https://…` or `<Link>: [[Page]]` | A string — an address with a scheme, or a connection naming a page |
 | **Context** | `(Context):` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition |
@@ -40,16 +40,16 @@ The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-
 
 ### Identity & Values
 
-Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_id`, `_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, wrapped as `<Name>` — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write. A rename cascades the key across every page holding it; a rename onto a taken name is refused.
+Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_id`, `_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, bare and exactly as spelled — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write; a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `cover`, `created_at`, `modified_at`) or one starting with `<` is refused. A rename cascades the key across every page holding it; a rename onto a taken name is refused.
 
-A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **An unmatched wrapped key persists inert** — a key naming no registry entry is preserved by value and read by nothing. 
+A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. 
 
 Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
 
 ```yaml
-(Projects):
+<Projects>:
   - Pommora
-<Tags>:
+Tags:
   - Claude
   - Docs
 Areas:
@@ -108,7 +108,7 @@ The property-wide **Directory** is the folder its files land in, stored relative
 
 #### II. Context
 
-Context links are the relation layer. They store as parenthesized title keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.[^6]
+Context links are the relation layer. They store as `<Title>` keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.[^6]
 
 ### Auto-Managed Properties
 
