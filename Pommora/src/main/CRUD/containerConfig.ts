@@ -5,7 +5,6 @@ import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import type { OpenIn, ViewButton } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
-import { nowIso } from './util'
 
 type ContainerKind = 'collection' | 'set'
 
@@ -38,7 +37,7 @@ export async function setContainerConfig(
   return withSidecarLock(folder, kind, async () => {
     const sidecar = await readCfgSidecar(folder, kind)
     if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
-    await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch), modified_at: nowIso() })
+    await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch) })
     return ok(null)
   })
 }
