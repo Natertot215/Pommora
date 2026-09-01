@@ -5,19 +5,14 @@ import {
   defaultStatusSeed,
   defaultSelectSeed,
   hasSelectOptions,
+  invalidPropertyName,
+  isReservedKeyName,
+  KEY_REFUSAL,
+  normalizePropertyName,
   type PropertyDefinition,
 } from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
-import {
-  normalizePropertyName,
-  invalidPropertyName,
-  isReservedKeyName,
-  KEY_REFUSAL,
-} from '@shared/properties'
-
-const nameRefusal = (name: string): string =>
-  isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
 import { cascadePages } from './optionOps'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders } from './keyHolders'
@@ -28,6 +23,9 @@ import {
   type SchemaJournal,
 } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
+
+const nameRefusal = (name: string): string =>
+  isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
 
 // Seed defaults for a def that has NONE (the field is undefined — a fresh create, or a type-change
 // into select/status). An EMPTY array is a deliberate state (the user deleted every option), never

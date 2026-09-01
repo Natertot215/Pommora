@@ -7,9 +7,12 @@
 // and the danger is not the dormant key itself — it is that a later property or Context taking
 // that name inherits values the page never legitimately held.
 //
-// So the returning content is reconciled against the CURRENT world before it lands: a governed
-// key survives only if what it names still exists, and whether a value stands is asked the way
-// the destination asks it.
+// So the returning content is reconciled against the CURRENT world before it lands: a Context key
+// survives only if what it names still exists, and a key the destination's schema assigns is
+// asked to stand the way the destination asks it — a value its definition can't hold (an option
+// the property no longer offers, a shape its type refuses) is dropped, whoever wrote it. Every
+// other key rides through untouched: under bare names a key the schema doesn't assign is
+// indistinguishable from the user's own frontmatter.
 
 import { contextKey, normalizeContextValue, parseContextKey } from '@shared/contexts'
 import type { PropertyDefinition } from '@shared/properties'

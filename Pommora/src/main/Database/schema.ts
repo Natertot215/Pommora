@@ -1,7 +1,7 @@
 // Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file
-// and starts clean rather than migrating in place. That costs a user their folds and tab set once,
-// exactly as a corrupt sidecar always has; the content-index tables reseed from the corpus at
-// open, so a drop costs them nothing at all.
+// and starts clean rather than migrating in place. That costs a user every device-local row at
+// once: folds, tabs, page aliases, dashboard layouts. The content index has its own generation
+// below so a change to what it records never reaches for that lever.
 
 import type { Db } from './driver'
 

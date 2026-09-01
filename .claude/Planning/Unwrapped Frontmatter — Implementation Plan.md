@@ -610,17 +610,17 @@ export async function confirmedKeyHolders(root: string, key: string, folders: st
 
 #### Gate 1 — bare keys · **Declared Stop**
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] `rg -F "wrapKey" src` → 0; `rg -F "governedKeys" src` → 0. Control `rg -F "parseContextKey" src` → ≥ 6.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/shared`, `src/main`, `src/renderer/{Store,Properties,Testing}`; reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
-- [ ] Made False rows for Tasks 4, 5, 7, 9 landed in their commits.
-- [ ] Progress hashes filled in.
-- [ ] **Declared stop.** The executor runs the vault pass (Rulings, "Vault conversion") after the backup, then the automated Gate 1 checks (Rulings, "Gate 1 is automated"):
-  - [ ] The pass's post-check: every rewritten file's frontmatter equals its pre-pass frontmatter under the translation; other keys and bodies byte-identical; counts match the survey.
-  - [ ] NexusOS on this build: the Ideas Collection's `loadValues` agrees with the files' frontmatter page by page; nothing the registry names reads foreign.
-  - [ ] Nathan pinged; execution continues at once (Rulings — he is unavailable for the run).
+- [x] typecheck 0 · Vitest 303 / 3746 · `biome check .` clean, no warnings line.
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] `wrapKey` → 0; `governedKeys` → 0. Control `parseContextKey` → 22.
+- [x] Simplifier (one import merge; `renameCascade` now goes through `isRegisteredPropertyName`), code review (clean), attack review (3 findings, 14 kills): the rename refusal now reads the corpus instead of the index (an echo-window-stale row could hide a holder and let `prefer-new` delete a value); `restoreScrub`'s header states the destructive half (Deviations); two stale comments (`schema.ts`'s drop cost, `contentIndex.ts`'s "property-wrapped") rewritten. The attack's Unknown — a pre-existing registry name now reserved — checked against the vault's nine names: none.
+- [x] Every concern fixed or ruled (Log).
+- [x] Made False rows for Tasks 4, 5, 7, 9 landed in their commits.
+- [x] Progress hashes filled in.
+- [x] **Declared stop.** The executor runs the vault pass (Rulings, "Vault conversion") after the backup, then the automated Gate 1 checks (Rulings, "Gate 1 is automated"):
+  - [x] The pass's post-check: every rewritten file's frontmatter equals its pre-pass frontmatter under the translation; bodies byte-identical; counts match the survey plus `.trash` (Rulings, "The vault pass as run").
+  - [x] NexusOS on this build: `loadValues('Ideas')` agrees with the 26 files page by page; the registry's nine names load; the display half waits for Task 10 (Deviations) and re-runs at Gate 2.
+  - [x] Nathan pinged; execution continues.
 
 ---
 
@@ -1347,14 +1347,14 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 1 — `setPageContext` delegates · `c15e21ad`
   - [x] Task 2 — one `optionValues` · `3a73ffb4`
   - [x] Task 3 — `restoreCachedValues` via `updatePageProperty` · `6d720e31`
-- [ ] **Phase 1** — Keying · base `<commit>`
-  - [ ] Task 4 — sigil to Contexts; `governedKeys.ts` dissolves
-  - [ ] Task 5 — registry name is the gate; `propertyKey` → `def.name`
-  - [ ] Task 6 — four shape sites; index records every key; the index generation
-  - [ ] Task 7 — Clear strips bookkeeping only
-  - [ ] Task 8 — reserved-name rule
-  - [ ] Task 9 — rename onto a held key refused
-  - [ ] **Declared stop — vault pass, Nathan's look**
+- [x] **Phase 1** — Keying · base `03d3cab2`
+  - [x] Task 4 — sigil to Contexts; `governedKeys.ts` dissolves · `28566c08`
+  - [x] Task 5 — registry name is the gate; `propertyKey` → `def.name` · `28566c08`
+  - [x] Task 6 — four shape sites (`28566c08`); index records every key; the index generation · `5f561b06`
+  - [x] Task 7 — Clear strips bookkeeping only · `28566c08`
+  - [x] Task 8 — reserved-name rule · `9c3c3585`
+  - [x] Task 9 — rename onto a held key refused · `9c3c3585`
+  - [x] **Declared stop — vault pass run 09-01-2026 03:47Z; automated checks; Nathan pinged**
 - [ ] **Phase 2** — Values
   - [ ] Task 10 — `decodeValue` coerces; `encodeValue` lists
   - [ ] Task 11 — `rewriteRaw` array path; `type` retires
@@ -1391,12 +1391,17 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 - **Status translates exactly** (Nathan, 09-01-2026): the registered Status property's options are, in order, Active · Paused · Archived · Revisit · Complete · Closed; every vault value maps onto one of those six or the dry-run lists it.
 - **The single-value resolution is tested per type** (Nathan, 09-01-2026): Task 10's red-first cases run once against a Select definition and once against a Status definition, not through one shared "single" fixture; and the lines that resolve an externally written option list to the property's value are isolated in one named function in `propertyValue.ts`, so the rule has one address.
 - **Gate 0, the re-read window** (executor, 08-31-2026). `setPageContext` now reads once under its lock and `setGovernedRootKeys` reads again; a page deleted in the microtask between them throws `ENOENT` into the mutate envelope where the old path wrote its stale first read back — resurrecting the deleted page. The window sits inside the held file lock and the new outcome is the better one; no code added. From `restoreCachedValues` the same throw is absorbed by `reconcile`'s catch and the entry stays cached, exactly as before (probe-verified).
+- **Gate 1, the simplifier's flags** (executor, 09-01-2026). `createProperty` has no held-key gate by design — registering a name pages already hold adopts their values without a write (R-9); only a rename rewrites pages, so only a rename can destroy. `confirmedKeyHolders` reads the whole scope once per rename while the index is cold (the first launch after the generation bump) — K-7's own "unconditional per-file read", on a rare gesture. `isGovernedContextKey` is a prefix test (the write set) and `parseContextKey` demands the full shape (the strips); a half-open `<foo` is reserved by `invalidPropertyName` and claimed by neither strip. `renameCascade` now routes its filter through `isRegisteredPropertyName`, the one address the log names.
 - **Closeout's manual list is at least fifteen actions**, each stated as expected behavior before the attempt and watched over CDP, observed behavior recorded beside it.
+
+- **The vault pass as run** (executor, 09-01-2026 03:47Z; script in the session scratchpad, never committed). Backup: a dated copy at `~/NexusOS-backup-2026-09-01T03-47-22-946Z/` of `.nexus/*` and every rewritten file — not a git commit, since the vault repository held 508 uncommitted entries of Nathan's own. 79 files rewritten, post-check clean (translation equality on every key, bodies byte-identical): 19 wrapped property keys (`<Status>`×13 incl. `.trash`, `<Pinned>`×5, `<Timeframe>`×1), 12 of them dropped because a bare twin held a value; one `(Areas)` re-sigiled (in `.trash`); one `closed` → `Closed`; 67 `.slate` Project links copied into `<Projects>` (the bare key kept, Nathan's move-vs-copy answer pending). Status values in use after the pass: Active 13 · Paused 5 · Complete 4 · Archived 3 · Revisit 2 · Closed 2 — and **Open ×13, Awaiting ×14 outside the six**, left as written; they read as no value until mapped. `.slate` titles naming no Space, left alone: Topics/Aphelion ×8, Projects/Chronos ×2, Topics/Claude ×2, Areas/Studio ×1. Registry: Status's options are the six (Revisit / Active, Paused / Complete, Closed, Archived — group by phase), `Link` renamed `Links`, `Brand` (Select, no options in use) added, `Price` already present; assignments added on Assets (Links, Price, Brand) and Context (Status, Links). No `<Attachments>` frontmatter existed (the survey's hit was inside a fenced example in a doc page). No `(Context)` keys existed outside `.trash`.
 
 ### Open Against Later Tasks
 
 ### Deviations
 
+- **A restore drops a value the destination's definition can't hold — whoever wrote it.** `restoreScrub` keys its defs by bare name, so a returning page's `Status: [Awaiting]` (outside the six), or a `Priority: High` under a re-created number `Priority`, is deleted on restore while an unassigned key rides through. This is V-3 on the restore path (a governed write), and its permissive twin is the entry below; both are now stated in `restoreScrub.ts`'s header. The 27 NexusOS pages holding Open/Awaiting stand in front of it until Nathan maps those values.
+- **Gate 1's display check waits for Task 10.** NexusOS on the Phase 1 build: `loadValues('Ideas')` agrees with the files for all 26 pages (Status and `<Projects>` alike), the registry shows the nine names, and Ideas assigns Pinned/Status/Tags/Timeframe. But the Status *cells* are blank — the vault's Status values are one-element lists (Obsidian's shape, now the spec's) and `decodeValue` still reads a Select/Status scalar until Task 10, so every row lands in the no-value band. Before the pass those pages read the same way (their bare `Status:` lists were foreign), so nothing regressed; the check "every Status shows the value its frontmatter holds" is re-run after Task 10, at Gate 2. Ideas' saved Table view also carries Nathan's own filter (`modified_at is 2026-08-19`) and its Cards view collapses every band, so the closeout look uses the group bands and cell chips read over CDP, not a bare screenshot. The active view was switched to Cards for the read and restored.
 - **Tasks 8 and 9 land as one commit** — Task 9's edits to `properties.ts` and `registryProperty.ts` were made before Task 8's commit was cut; the two are one rule family (what a name may be) and the split would have been cosmetic.
 - **Tasks 4, 5, 7 and Task 6's four shape sites land as one commit.** Deleting the sigil leaves the four property-shape sites (`indexSeed.governedValues`, `governedSweep.changedKeys`, `restoreScrub`'s layer dispatch, `exclusionScan.clearRewrite`) and `cascade.renameCascade` with no intermediate form — a bare key has no shape to test — so their Task 6/7 forms ride the Tasks 4+5 commit; Task 6's index generation and Task 7's docs follow as their own commits. Red-first was observed as one batch (19 failures) rather than per task. Two behavior changes the fixtures surfaced, both the spec's own: a returning trashed page keeps a value whose property was deleted or unassigned meanwhile (the key is now indistinguishable from the user's own frontmatter — `restoreScrub.test`, `provenance.test`, `trashRecovery.test` rewritten to say so), and `renameCascade` rewrites Link connections only under registered names (`cascade.test` now registers its two properties). `removeProperty.test`'s select-restore had passed by accident (a nameless def wrapped to `<undefined>`); it now reads the live def.
 - **Task 0, the sweep's shape.** The comment-killer agent fanned out to three sub-agents on its own; all three were stopped and the sweep finished single-handed. A parallel session was live in the same tree throughout (its commit `345a82ab` removed both `(Nathan's call)` markers, so that control reads 0 from here on, and it holds uncommitted CSS edits that ride no commit of this arc). Task 0's "only comment lines moved" grep flags two lines whose trailing same-line comment was removed (`watcher.ts` `ignoreInitial`, `propertyValue.ts`'s `select` union member); the code on those lines is unchanged. `npm run lint` as a whole is red on the other session's unformatted `window-base.css`; Biome over the 26 files this task touched is clean.
