@@ -158,11 +158,12 @@ function valueChangesOf(
 ): ValueChange[] {
   const held = getLiveTree()
   if (!held) return []
-  const byPath = pageIdIndex(tree)
+  let byPath: Map<string, string> | null = null
   const byContainer = new Map<string, Set<string>>()
   for (const ev of events) {
     const c = classifyEvent(held, root, ev, scope)
     if (c.kind !== 'page-upsert') continue
+    byPath ??= pageIdIndex(tree)
     const container = c.rel.includes('/') ? c.rel.slice(0, c.rel.lastIndexOf('/')) : ''
     const ids = byContainer.get(container) ?? new Set<string>()
     byContainer.set(container, ids)

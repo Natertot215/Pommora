@@ -7,17 +7,18 @@ import { getLiveTree } from './liveTree'
 import { relPosix } from './paths'
 import type { NexusTree, ValueChange } from '@shared/types'
 
-const ledger = new Map<string, Map<string, Set<string>>>()
+// One root at a time: a note under another root is a session that moved, and the old root's
+// unflushed writes have no window left to reach.
+let ledger: { root: string; byRel: Map<string, Set<string>> } | null = null
 
 export function noteValueWrite(root: string | null, absFile: string): void {
   if (root === null) return
   const rel = relPosix(root, absFile)
   if (!rel || rel.startsWith('..')) return
-  const byRel = ledger.get(root) ?? new Map<string, Set<string>>()
-  ledger.set(root, byRel)
+  if (ledger?.root !== root) ledger = { root, byRel: new Map() }
   const container = dirname(rel)
-  const files = byRel.get(container) ?? new Set<string>()
-  byRel.set(container, files)
+  const files = ledger.byRel.get(container) ?? new Set<string>()
+  ledger.byRel.set(container, files)
   files.add(rel)
 }
 
@@ -33,14 +34,11 @@ export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
   return byPath
 }
 
-export const pageIdOf = (tree: NexusTree | null, rel: string): string | null =>
-  pageIdIndex(tree).get(rel) ?? null
-
 /** Drain one root's ledger into the push payload — one entry per container. */
 export function flushValueWrites(root: string): ValueChange[] {
-  const byRel = ledger.get(root)
-  ledger.delete(root)
-  if (!byRel) return []
+  if (ledger?.root !== root) return []
+  const { byRel } = ledger
+  ledger = null
   const tree = getLiveTree()
   const byPath = pageIdIndex(tree?.nexus.rootPath === root ? tree : null)
   return [...byRel].map(([rel, files]) => ({
