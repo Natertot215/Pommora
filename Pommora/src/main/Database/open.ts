@@ -4,7 +4,14 @@
 import { rmSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { openDb, type Db } from './driver'
-import { applySchema, readSchemaVersion, stampSchemaVersion, SCHEMA_VERSION } from './schema'
+import {
+  applySchema,
+  INDEX_GENERATION,
+  readMeta,
+  SCHEMA_VERSION,
+  truncateIndex,
+  writeMeta,
+} from './schema'
 import { nexusDir } from '../paths'
 
 export const DB_FILENAME = 'nexus.db'
@@ -38,13 +45,17 @@ export function openNexusDb(nexusRoot: string): Db | null {
       )
       return null
     }
-    if (readSchemaVersion(existing) === SCHEMA_VERSION) {
+    if (readMeta(existing, 'schema_version') === String(SCHEMA_VERSION)) {
       // Additive DDL must reach databases that have already been opened — the idempotent
       // re-apply is how a pre-index file gains the index tables without a version bump. A throw
       // (read-only media, a lock) costs only the new tables: the session keeps its folds and
       // tabs, and the index queries answer null so their callers scan.
       try {
         applySchema(existing)
+        if (readMeta(existing, 'index_generation') !== String(INDEX_GENERATION)) {
+          truncateIndex(existing)
+          writeMeta(existing, 'index_generation', String(INDEX_GENERATION))
+        }
       } catch (e) {
         console.error(`nexus.db: schema re-apply failed — the content index is unavailable:`, e)
       }
@@ -57,6 +68,7 @@ export function openNexusDb(nexusRoot: string): Db | null {
   const db = openDb(dbPath)
   if (!db) return null
   applySchema(db)
-  stampSchemaVersion(db)
+  writeMeta(db, 'schema_version', String(SCHEMA_VERSION))
+  writeMeta(db, 'index_generation', String(INDEX_GENERATION))
   return db
 }
