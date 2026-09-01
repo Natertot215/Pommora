@@ -97,6 +97,35 @@ describe('runRepairSweep', () => {
     expect((await stat(page)).mtimeMs).toBe(before)
   })
 
+  it('a sweep whose session database moved writes nothing', async () => {
+    await frontmatter('Status: Open')
+    await seedContentIndex(root)
+    closeSessionDb()
+    await runRepairSweep(root)
+    expect(await readFile(page, 'utf8')).toContain('Status: Open')
+  })
+
+  it('never removes a value — an option outside the definition stays as written', async () => {
+    await frontmatter('Status: Blocked\nTags: alpha')
+    await seedContentIndex(root)
+    await runRepairSweep(root)
+    const out = await readFile(page, 'utf8')
+    expect(out).toContain('Status: Blocked')
+    expect(out).toContain('Tags:\n  - alpha')
+  })
+
+  it('adopts an unknown option on a page that needed no rewrite', async () => {
+    await frontmatter('Tags:\n  - alpha\n  - zeta')
+    const before = (await stat(page)).mtimeMs
+    await seedContentIndex(root)
+    await runRepairSweep(root)
+    expect((await stat(page)).mtimeMs).toBe(before)
+    expect((await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.value)).toEqual([
+      'alpha',
+      'zeta',
+    ])
+  })
+
   it('a page the seed did not re-read is not touched', async () => {
     await frontmatter('Status:\n  - Open')
     await seedContentIndex(root)

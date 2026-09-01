@@ -430,8 +430,8 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
     // belongs to an op still on the schema chain, which the replay would only queue behind.
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
-    await runRepairSweep(root)
-    pushValueChanges(root)
+    // Off the open's critical path: a large drifted corpus repairs behind the window, not before it.
+    void runRepairSweep(root).then(() => pushValueChanges(root))
     // A reference still naming `.nexus/assets` under a CONFIGURED directory is one the user has
     // already asked to move. The gate is one readdir of a folder that ends empty, so the ordinary
     // open pays a listing and nothing else — and a pass that moved something re-walks, or the
