@@ -3,7 +3,7 @@ import { reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolv
 import type { PropertyDefinition } from '@shared/properties'
 import { errText } from '@shared/result'
 import { collectionFolderOf } from './CRUD/assignment'
-import { assignedDefs, loadContextWorld } from './CRUD/contextWrite'
+import { assignedDefs, loadContextWorld, NO_CONTEXT_WORLD } from './CRUD/contextWrite'
 import { sweepGovernedRoots } from './CRUD/governedSweep'
 import { applyAdoptions } from './CRUD/optionOps'
 import { rereadSinceSeed } from './indexSeed'
@@ -16,7 +16,7 @@ export async function runRepairSweep(root: string): Promise<void> {
   if (!files.length || (await readLivePersonalization(root)).repairOnOpen !== true) return
   try {
     const context = await loadContextWorld(root)
-    const base = context.ok ? context.value : { registry: null, spacesByContext: new Map() }
+    const base = context.ok ? context.value : NO_CONTEXT_WORLD
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
     for (const rel of files) {

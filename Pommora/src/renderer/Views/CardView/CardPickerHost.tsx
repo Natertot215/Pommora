@@ -20,8 +20,8 @@ import {
   addEntriesFor,
   type AddEntry,
 } from '@renderer/Properties/Assignment/cardValueInput'
-
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
+
 /** A value's request to open its picker — the anchor is the clicked value span. */
 export type ValuePickerRequest = {
   rowId: string

@@ -11,8 +11,8 @@ import { CustomList, PropertyPreview, optionsOf } from './GroupFrame'
 import { bucketOrder } from '@renderer/Views/Pipeline/group'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
 import * as gp from './groupFrame.css'
-
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
+
 type Direction = SortCriterion['direction']
 
 /** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer

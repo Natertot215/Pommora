@@ -19,11 +19,11 @@ import {
   orderAddableEntries,
   parseEditorValue,
 } from '@renderer/Properties/Assignment/cardValueInput'
-
 import {
   displayPropertyName,
   useCapitalizeMetadata,
 } from '@renderer/Properties/Assignment/columnLabel'
+
 function ValuePane({
   def,
   current,

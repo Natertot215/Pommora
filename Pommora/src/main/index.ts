@@ -429,11 +429,9 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     // Post-seed on purpose (warm index, warm tree — nothing it heals is read during open the
     // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
     // belongs to an op still on the schema chain, which the replay would only queue behind.
-    await replaySchemaCascade(root)
+    if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     await runRepairSweep(root)
-    const repaired = flushValueWrites(root)
-    if (repaired.length && mainWindow && !mainWindow.isDestroyed())
-      push(mainWindow, 'values:changed', repaired)
+    pushValueChanges(root)
     // A reference still naming `.nexus/assets` under a CONFIGURED directory is one the user has
     // already asked to move. The gate is one readdir of a folder that ends empty, so the ordinary
     // open pays a listing and nothing else — and a pass that moved something re-walks, or the
@@ -525,6 +523,13 @@ function pushConfirmed(tree: NexusTree | null): void {
   })
 }
 
+/** Drain the value writes made under `root` and push them to the renderer. */
+function pushValueChanges(root: string): void {
+  const changes = flushValueWrites(root)
+  if (changes.length && mainWindow && !mainWindow.isDestroyed())
+    push(mainWindow, 'values:changed', changes)
+}
+
 /** Run one channel's confirmer against the session root and push what it moved. */
 async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): Promise<void> {
   const root = sessionRoot()
@@ -534,9 +539,7 @@ async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): 
   // and a value write never moves the tree.
   setImmediate(() => {
     if (sessionRoot() !== root) return
-    const changes = flushValueWrites(root)
-    if (changes.length && mainWindow && !mainWindow.isDestroyed())
-      push(mainWindow, 'values:changed', changes)
+    pushValueChanges(root)
   })
 }
 

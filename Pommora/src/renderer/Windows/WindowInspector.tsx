@@ -25,11 +25,11 @@ import { fetchPageDetail, readPageDetail } from '../Store/TabState'
 import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/usePropertyRows'
 import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { useSession, type PreviewTarget } from '../store'
-
 import {
   displayPropertyName,
   useCapitalizeMetadata,
 } from '@renderer/Properties/Assignment/columnLabel'
+
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
 // re-paths the open tab on rename.

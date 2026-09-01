@@ -68,6 +68,12 @@ export async function assignedDefs(
   )
 }
 
+/** The context arm stood down — a strict registry read that failed leaves property repair alone. */
+export const NO_CONTEXT_WORLD: Omit<GovernedWorld, 'defs'> = {
+  registry: null,
+  spacesByContext: new Map(),
+}
+
 export async function loadContextWorld(root: string): Promise<Result<ContextWorld>> {
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
@@ -175,7 +181,7 @@ export async function loadGovernedWorld(
   raw: Raw,
 ): Promise<GovernedWorld> {
   const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
-  const skipped: GovernedWorld = { registry: null, spacesByContext: new Map(), defs }
+  const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
   const held = getLiveTree()
   if (!contextDriftPresent(raw, held?.nexus.rootPath === root ? held : null)) return skipped
   const world = await loadContextWorld(root)

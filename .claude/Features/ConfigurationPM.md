@@ -105,7 +105,12 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 #### Properties
 
-Seated and empty.
+**Metadata**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Repair Properties On Open | `repairOnOpen` | Canonicalizes drifted property and Context values on the pages changed since the last open.[^9] | On · **Off** |
+| Capitalize All Metadata | `capitalizeMetadata` | Presents every property name Title Cased; the stored key and the rename fields are untouched. | On · **Off** |
 
 #### Pages & Editor
 
@@ -205,3 +210,4 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 [^6]: [[ViewTypesPM]]
 [^7]: [[PagesPM]]
 [^8]: [[ArchitecturePM]] §Folder Exclusion
+[^9]: [[PropertiesPM]] §Shared Mechanisms
