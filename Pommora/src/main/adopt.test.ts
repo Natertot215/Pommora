@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { PAGE_ID_KEY } from '@shared/identity'
-import { mkdtemp, rm, mkdir, writeFile, readFile, utimes } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { stampAdopted } from './adopt'
@@ -70,6 +70,14 @@ describe('stampAdopted', () => {
     await stampAdopted(root)
     const id = readFrontmatterFields(await readFile(file, 'utf8'))[PAGE_ID_KEY] as string
     expect(Math.floor(idTime(id)! / 1000)).toBe(Math.floor(past.getTime() / 1000))
+  })
+
+  it("stamping leaves the file's mtime where it was", async () => {
+    const file = join(root, 'Notes', 'Note1.md')
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(file, past, past)
+    await stampAdopted(root)
+    expect(Math.floor((await stat(file)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
   it('is idempotent — a second run stamps nothing and leaves ids unchanged', async () => {
