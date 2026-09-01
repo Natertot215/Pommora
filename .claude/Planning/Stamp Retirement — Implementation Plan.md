@@ -977,9 +977,9 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 
 Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests · Biome 988 files, 0 warnings. Controls: `KNOB` → 144; `(Nathan` → 0 in `src/` (no control there — `KNOB` alone carries Task 0's check). Task 0 targets: 47 files, 10 052 non-comment lines (per-file table in the closeout report's baseline column).
 
-- [ ] **Phase 0** — Task 0
-- [ ] **Phase 1** — Tasks 1–2 · Gate 1
-- [ ] **Phase 2** — Tasks 3–4 · Gate 2
+- [x] **Phase 0** — Task 0 · `9966332c`
+- [x] **Phase 1** — Tasks 1–2 · Gate 1 · `5770a1d9` `ba0ea590` `ca7958d5`
+- [x] **Phase 2** — Tasks 3–4 · Gate 2 · `7b1a42ab` `c465820f` `9b4ad05c`
 - [ ] **Phase 3** — Tasks 5, 6, 8 · Gate 3
 - [ ] **Closeout** — vault pass · docs · History
 
