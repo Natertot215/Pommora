@@ -19,6 +19,23 @@ export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
   return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
 }
 
+/** One transform applied to the option with `value`, the rest passed through. */
+function mapOption(options: Option[], value: string, fn: (o: Option) => Option): Option[] {
+  return options.map((o) => (o.value === value ? fn(o) : o))
+}
+
+/** One flat-option transform applied to the status option with `value`, whichever group holds it. */
+function mapStatusOption(
+  groups: StatusGroup[],
+  value: string,
+  fn: (o: StatusOption) => StatusOption,
+): StatusGroup[] {
+  return groups.map((g) => ({
+    ...g,
+    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
+  }))
+}
+
 export function addOption(
   options: Option[],
   title: string,
@@ -54,14 +71,9 @@ export function recolorStatusOption(
   value: string,
   color: string | undefined,
 ): StatusGroup[] {
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.map((o) => {
-      if (o.value !== value) return o
-      const { color: _drop, ...rest } = o
-      return color ? { ...rest, color } : rest
-    }),
-  }))
+  return mapStatusOption(groups, value, ({ color: _drop, ...rest }) =>
+    color ? { ...rest, color } : rest,
+  )
 }
 
 /** By its OLD value. The page cascade (main-process) rewrites the stored label on every assigning page. */
@@ -70,12 +82,7 @@ export function renameStatusOption(
   oldValue: string,
   newTitle: string,
 ): StatusGroup[] {
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.map((o) =>
-      o.value === oldValue ? { ...o, value: newTitle, label: newTitle } : o,
-    ),
-  }))
+  return mapStatusOption(groups, oldValue, (o) => ({ ...o, value: newTitle, label: newTitle }))
 }
 
 /** Rename a group's display label (by group id); its calendar-locked id + its options are untouched. */
@@ -107,12 +114,7 @@ export function moveStatusOption(
 }
 
 export function renameOption(options: Option[], oldValue: string, title: string): Option[] {
-  return options.map((o) => (o.value === oldValue ? { ...o, value: title, label: title } : o))
-}
-
-/** One transform applied to the option with `value`, the rest passed through. */
-function mapOption(options: Option[], value: string, fn: (o: Option) => Option): Option[] {
-  return options.map((o) => (o.value === value ? fn(o) : o))
+  return mapOption(options, oldValue, (o) => ({ ...o, value: title, label: title }))
 }
 
 export function recolorOption(
@@ -144,18 +146,6 @@ export function setOptionAppearance(
   return mapOption(options, value, ({ appearance: _drop, ...rest }) =>
     appearance === 'clear' ? { ...rest, appearance } : rest,
   )
-}
-
-/** One flat-option transform applied to the status option with `value`, whichever group holds it. */
-function mapStatusOption(
-  groups: StatusGroup[],
-  value: string,
-  fn: (o: StatusOption) => StatusOption,
-): StatusGroup[] {
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
-  }))
 }
 
 /** undefined removes the field → the chip falls back to its group's glyph. */
