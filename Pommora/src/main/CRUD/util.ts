@@ -42,7 +42,3 @@ export function sweepAdmitsBody(content: string): boolean {
 export function sweepAdmits(content: string): boolean {
   return sweepAdmitsBody(content) && frontmatterWritable(content)
 }
-
-export function nowIso(): string {
-  return new Date().toISOString()
-}
