@@ -103,8 +103,7 @@ textarea,
 .titlebar {
   position: absolute;
   top: 0;
-  /* Start past the sidebar so it never overlays it — the sidebar is its own drag region.
-     (Overlaying stole the hover from the collapse button as the cursor approached it.) */
+  /* Starts past the sidebar (its own drag region) — overlaying it stole hover from the collapse button. */
   left: calc(var(--app-inset) + var(--sidebar-width) + var(--app-inset));
   right: 0;
   height: var(--toolbar-h);
@@ -160,7 +159,6 @@ textarea,
   color: var(--label-primary);
 }
 
-/* Title-area lift over a cover — one variable, text and icons owned on their own line. */
 .title-shadow {
   text-shadow: var(--shadow-base);
 }

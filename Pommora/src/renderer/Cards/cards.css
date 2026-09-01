@@ -1,5 +1,7 @@
 :root {
-  /* KNOB — the shared column-width floor. Bigger = fewer, larger columns that grow further before a new one snaps them back; smaller = more, tighter columns. `-base` is the unscaled value, so a  scaling host (CardView's Scale factor) rebuilds --card-min from it without restating the number. */
+  /* KNOB — the shared column-width floor: bigger means fewer, larger columns that grow further
+     before snapping back; smaller means more, tighter ones. `-base` is the unscaled value; a
+     scaling host (CardView's Scale factor) rebuilds --card-min from it. */
   --card-min-base: 180px;
   --card-min: var(--card-min-base);
   --card-gap-h: 10px; /* KNOB — inter-card spacing */
@@ -159,7 +161,6 @@
   padding-top: var(--card-trail-gap);
   border-top: var(--width-150) solid var(--border-base);
 }
-/* No path, no seam — the row still reserves its height so the thumbs above it stay level. */
 .card-trail:empty {
   border-top-color: transparent;
 }

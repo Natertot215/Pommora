@@ -9,9 +9,9 @@
   --text-selection-pad: 1.5px;
 }
 
-/* Width and height arrive inline as the CONTENT box, so the horizontal bleed is padding plus a matching
-   negative margin — the pill grows outward and stays centered on the glyphs. Vertical stays untouched:
-   padding would break the caret-height match and re-open the seams a multi-line ribbon closes. */
+/* Width/height arrive inline as the CONTENT box, so horizontal bleed is padding plus a matching negative
+   margin — the pill grows outward, centered on the glyphs. Vertical stays untouched: padding there would
+   break the caret-height match and reopen the seams a multi-line ribbon closes. */
 .mdpm-sel {
   position: absolute;
   box-sizing: content-box;
@@ -31,7 +31,7 @@
   border-radius: 0 0 var(--text-selection-radius) var(--text-selection-radius);
 }
 
-/* The editor keeps its selection painted when focus leaves; a field's pills simply don't exist unfocused. */
+/* Unfocused editors keep their selection painted; a field's pills instead don't exist until focus. */
 .mdpm-selLayer .mdpm-sel {
   background: var(--text-selection-idle);
 }
@@ -39,9 +39,9 @@
   background: var(--text-selection);
 }
 
-/* A zero-box anchor inside the field's own parent: its rect reports where local (0,0) landed, so pills are
-   placed by delta and never care which ancestor positions them. The negative seat lands above the parent's
-   background only because nativeCaret.ts isolates that parent. */
+/* A zero-box anchor in the field's parent reports where local (0,0) landed, so pills place by delta and
+   never care which ancestor positions them. The negative seat clears the parent's background only because
+   nativeCaret.ts isolates that parent. */
 .mdpm-sel-host {
   position: absolute;
   left: 0;
@@ -52,7 +52,7 @@
   pointer-events: none;
 }
 
-/* Scoped to the surfaces that have a drawn paint — the same roster Carets.css hides the native caret over.
+/* Scoped to the surfaces with a drawn paint — the same roster Carets.css hides the native caret over.
    Anywhere unenumerated keeps a native selection rather than losing one. */
 :root:not(.native-highlight) .cm-editor .cm-scroller .cm-content::selection,
 :root:not(.native-highlight) .cm-editor .cm-scroller .cm-content ::selection,
