@@ -15,7 +15,7 @@ import type { Db } from './driver'
 export interface PageIndexEntry {
   /** Normalized titles the page's body names, per the cascade's own mention rules. */
   mentions: string[]
-  /** Property-wrapped frontmatter keys → their raw decoded values. */
+  /** Every frontmatter key → its raw decoded value. */
   values: Record<string, unknown>
 }
 
