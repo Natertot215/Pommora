@@ -138,7 +138,6 @@ import type { FileConfig, LinkConfig, NumberConfig, StatusGroup } from '@shared/
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
 import { LINK_DISPLAYS, NUMBER_FAMILIES, propertyDefinition } from '@shared/properties'
-import type { PageFrontmatter } from '@shared/schemas'
 import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
@@ -177,7 +176,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { AssetMap, PickFileOptions, ViewButton } from '@shared/types'
+import type { AssetMap, PageValues, PickFileOptions, ViewButton } from '@shared/types'
 import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
@@ -1231,10 +1230,10 @@ serveBridge(
       },
     },
 
-    // Batch frontmatter read for a container's view pipeline (pageId → frontmatter), lazy on open.
+    // Batch value read for a container's view pipeline, lazy on open.
     'view:loadValues': {
       kind: 'raw',
-      fn: async (containerPath: unknown): Promise<Record<string, PageFrontmatter>> => {
+      fn: async (containerPath: unknown): Promise<Record<string, PageValues>> => {
         const root = sessionRoot()
         if (root === null || typeof containerPath !== 'string') return {}
         const resolved = await resolveUnderRoot(root, containerPath)
