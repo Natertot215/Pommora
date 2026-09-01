@@ -1275,10 +1275,10 @@ In the seed loop, after `recordPage`, a page is flagged when for any key the reg
 
 **Verify — automated**
 
-- [ ] Red first: with the toggle on, a seeded page holding `Status: Open` (scalar) and `Tags: [alpha, zeta]` is rewritten to `Status:\n  - Open` and `zeta` is adopted; with the toggle off nothing is written. An unchanged file (mtime unmoved) is never read (spy on `readFile`). Then green.
-- [ ] Drift is deep-equal: a canonical `Status:\n  - Open` page is **not** in `driftedSinceSeed()` after two consecutive seeds.
-- [ ] `readPersonalization` round-trips `repairOnOpen`; absent → undefined.
-- [ ] Full gates green.
+- [x] Red first: with the toggle on, a seeded page holding `Status: Open` (scalar) and `Tags: [alpha, zeta]` is rewritten to `Status:\n  - Open` and `zeta` is adopted; with the toggle off nothing is written. An unchanged file (mtime unmoved) is never read (spy on `readFile`). Then green. *(`repairSweep.test`; the unmoved-file read is the seed's own stat gate, already under test in `indexSeed.test`)*
+- [x] Drift is deep-equal: a canonical `Status:\n  - Open` page is **not** in `driftedSinceSeed()` after two consecutive seeds. *(as built: the seed lists what it re-read — `rereadSinceSeed()` — and the sweep's reconcile decides drift deep-equal; a canonical page is never rewritten — tested by mtime)*
+- [x] `readPersonalization` round-trips `repairOnOpen`; absent → undefined.
+- [x] Full gates green.
 
 **Verify — user**
 
@@ -1372,7 +1372,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 20 — both legs; `refreshValues` deleted · `36f803f7`
   - [x] Gate 4 — simplification `224bbbaa`; review + attack fixes `9dad7341`
 - [ ] **Phase 5** — Surfaces
-  - [ ] Task 21 — on-load repair sweep + toggle
+  - [x] Task 21 — on-load repair sweep + toggle
   - [ ] Task 22 — Capitalize All Metadata + toggle
 
 ### Rulings
@@ -1411,6 +1411,7 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
 
 ### Deviations
 
+- **Task 21's seed flags what it re-read, not what drifted.** The plan had the seed run `reconcileGovernedRoot` per re-read page to build `driftedSinceSeed()`; that would have the seed load a world per Collection on every open. As built, `rereadSinceSeed()` is the seed's own re-read list (already known — the stat gate decides it) and `runRepairSweep` runs the one reconcile over those files, writing only where `changed` is non-empty. Same outcome, one reconcile, no world in the seed. The sweep resolves each page's world through the live tree the open just walked; a test nexus needs `.nexus/nexus.json` (sidecar mode) and a post-write walk to see its assignments — raw-mode nexuses have no schema to repair.
 - **Gate 4's findings, all fixed in `224bbbaa` / `9dad7341`.** A band drop whose group property is off the schema skipped its write; a multi-container push looped `set()` and React batched it down to its last entry (the epoch now carries every change); the deferred flush never re-checked the root; an override's settle was keyed by page id alone, so an older write's reply settled a newer override (an entry now holds its own write promise and settles only on identity); `GroupFrame` passed an inline no-op setter into the hook's deps — every render refetched (the setter is optional); the watcher built the page-id index before knowing a batch held a page edit.
 - **Tasks 18, 19, 20 land as one commit.** The epoch union, the in-flight marker, and the write leg have no standing intermediate form: `useViewHost`'s override state changes shape in Task 19, and the moment `refreshValues` goes (Task 20) the writers must note their pages or an app-side edit stops reaching sibling views. Red-first was observed as one batch (3 failures: two watcher push counts, one override shape). The push's ordering inside `confirmWrite` (`nexus:changed` first, then one `values:changed`) is read, not unit-tested — `index.ts` imports Electron; the writer-level ledger (`valuesChanged.test`, `optionOps.test`) and the watcher leg (`watcher.test`) are.
 - **A restore drops a value the destination's definition can't hold — whoever wrote it.** `restoreScrub` keys its defs by bare name, so a returning page's `Status: [Awaiting]` (outside the six), or a `Priority: High` under a re-created number `Priority`, is deleted on restore while an unassigned key rides through. This is V-3 on the restore path (a governed write), and its permissive twin is the entry below; both are now stated in `restoreScrub.ts`'s header. The 27 NexusOS pages holding Open/Awaiting stand in front of it until Nathan maps those values.
