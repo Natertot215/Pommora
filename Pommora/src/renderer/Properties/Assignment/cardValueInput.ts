@@ -89,7 +89,7 @@ export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedCo
   kind: contextIdsOf(tree).includes(id) ? 'context' : 'property',
 })
 
-/** One row of the card add-property menu. `def` is null for a reserved Context or Modified id,
+/** One row of the card add-property menu. `def` is null for a reserved Context or stamp id,
  *  which carries no schema entry. */
 export type AddEntry = {
   id: string
