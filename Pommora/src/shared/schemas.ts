@@ -32,7 +32,6 @@ export const cropsFile = z.looseObject({
 export const baseSidecar = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
-  modified_at: z.string().optional(),
 })
 
 // `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection

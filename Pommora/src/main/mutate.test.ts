@@ -299,7 +299,6 @@ describe('handleMutate — move + guards', () => {
       JSON.stringify({
         id: 'col',
         outside_field: 0,
-        modified_at: '2026-05-24T22:00:44Z',
         views: [{ id: 'v1', type: 'table' }],
       }),
     )

@@ -174,6 +174,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     )
     expect(sc['<Classes>']).toEqual(['CS 161'])
     expect(sc.id).toBe('sp-pom')
+    expect('modified_at' in sc).toBe(false)
   })
 
   it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
@@ -204,6 +205,7 @@ describe('setSpaceColor', () => {
   it('writes a ramp cell through verbatim', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'blue-6')).ok).toBe(true)
     expect((await sidecar()).color).toBe('blue-6')
+    expect('modified_at' in (await sidecar())).toBe(false)
   })
 
   // Its negative half: removing the guard makes these pass, which is what makes them worth having.

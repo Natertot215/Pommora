@@ -84,6 +84,7 @@ describe('deleteProperty', () => {
     for (const folder of [notes, tasks]) {
       const sc = await readSidecar(folder, 'collection', pageCollectionSidecar)
       expect(((sc?.properties as string[]) ?? []).includes(id)).toBe(false)
+      expect('modified_at' in (sc ?? {})).toBe(false)
     }
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')

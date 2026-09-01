@@ -64,6 +64,7 @@ describe('concurrent sidecar writers', () => {
     expect(sidecar?.view_button).toBe('labeled')
     // The sidecar's own identity is never a casualty of a merge that lost its base.
     expect(typeof sidecar?.id).toBe('string')
+    expect('modified_at' in (sidecar ?? {})).toBe(false)
   })
 
   it('a later view save still sees the order an earlier one persisted', async () => {
