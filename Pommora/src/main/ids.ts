@@ -4,7 +4,7 @@
 // a real id exists. Both the read engine and the write path import from here.
 
 import { createHash } from 'node:crypto'
-import { decodeTime, monotonicFactory } from 'ulidx'
+import { decodeTime, monotonicFactory, ulid } from 'ulidx'
 import { isUlidShaped } from '@shared/identity'
 
 const nextUlid = monotonicFactory()
@@ -12,6 +12,15 @@ const nextUlid = monotonicFactory()
 /** Mint a fresh ULID. Monotonic within the process so same-ms creates stay ordered. */
 export function newId(): string {
   return nextUlid()
+}
+
+/** A ULID whose time part is `atMs` — for an entity whose birth predates the mint. Not monotonic:
+ *  the factory clamps a past seed to its last mint, which would erase the age. The seed is floored
+ *  and clamped at zero because `stat` reports sub-millisecond floats on APFS (and a negative for a
+ *  pre-epoch file) and the encoder throws on both — a throw here is swallowed per file by adopt's
+ *  `.catch(() => false)`, so adoption would silently stamp nothing. */
+export function idAt(atMs: number): string {
+  return ulid(Math.max(0, Math.floor(atMs)))
 }
 
 /** The instant a ULID encodes; null for an adopted (path-derived) id or one the decoder refuses —

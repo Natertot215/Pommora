@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { decodeTime } from 'ulidx'
-import { newId, isUlid, adoptedId, mintPropertyId, idTime } from './ids'
+import { newId, isUlid, adoptedId, mintPropertyId, idTime, idAt } from './ids'
 
 describe('newId / isUlid', () => {
   it('mints valid, unique ULIDs', () => {
@@ -35,6 +35,18 @@ describe('idTime', () => {
 
   it('returns null for an adopted id', () => {
     expect(idTime(adoptedId('a/b.md'))).toBeNull()
+  })
+})
+
+describe('idAt', () => {
+  it('round-trips through idTime', () => {
+    const at = Date.parse('2019-03-04T05:06:07.089Z')
+    expect(idTime(idAt(at))).toBe(at)
+  })
+
+  it('accepts a fractional seed and a negative one', () => {
+    expect(idTime(idAt(1788295304609.0347))).toBe(1788295304609)
+    expect(idTime(idAt(-5))).toBe(0)
   })
 })
 

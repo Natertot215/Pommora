@@ -1,11 +1,11 @@
 // Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
 // Idempotent. Folder position decides kind: a root child is a Collection, anything nested a Set.
 
-import { readFile, rename } from 'node:fs/promises'
+import { readFile, rename, stat } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { isContentFile, listEntries } from './IO/walk'
 import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
-import { newId } from './ids'
+import { idAt, newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './IO/atomicWrite'
 import { readSidecar, writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './IO/pageFile'
@@ -60,7 +60,10 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
   const key = KIND_ID_KEY[kind]
   const { body } = splitEnvelope(content)
-  await atomicWriteFile(absFile, mergeFrontmatter(content, { [key]: newId() }, [key], body))
+  // A filesystem with no birthtime reports 0, and mtime is then the honest floor.
+  const { birthtimeMs, mtimeMs } = await stat(absFile)
+  const id = idAt(birthtimeMs > 0 ? Math.min(birthtimeMs, mtimeMs) : mtimeMs)
+  await atomicWriteFile(absFile, mergeFrontmatter(content, { [key]: id }, [key], body))
   return true
 }
 
