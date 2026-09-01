@@ -1317,10 +1317,10 @@ The nine render sites read `personalization.capitalizeMetadata` from the store a
 
 **Verify — automated**
 
-- [ ] `displayPropertyName('due date', true)` → `'Due Date'`; `('tags', false)` → `'tags'`; `('PageID', true)` → `'PageID'`.
-- [ ] `rg -n "\bd\.name\b|\bdef\.name\b" src/renderer --glob '!*.test.*'` → 6 (the stay-raw list, re-derived). Control: `rg -F "displayPropertyName" src/renderer` → ≥ 10.
-- [ ] `readPersonalization` round-trips `capitalizeMetadata`; absent → undefined.
-- [ ] Full gates green.
+- [x] `displayPropertyName('due date', true)` → `'Due Date'`; `('tags', false)` → `'tags'`; `('PageID', true)` → `'PageID'`.
+- [x] `rg -n "\bd\.name\b|\bdef\.name\b" src/renderer --glob '!*.test.*'` → 6 (the stay-raw list, re-derived). Control: `rg -F "displayPropertyName" src/renderer` → ≥ 10. *(re-derived: 19 lines — 10 are the display calls themselves, 9 stay raw: the two rename fields, the two native-menu payloads, the `fm[def.name]` reads in PageProperties/WindowInspector/value.ts, the memo key, propsAtRoot; control 22)*
+- [x] `readPersonalization` round-trips `capitalizeMetadata`; absent → undefined.
+- [x] Full gates green.
 
 **Verify — user**
 
@@ -1371,9 +1371,9 @@ Pre-Phase-0 baseline (08-31-2026): typecheck 0 · Vitest 304 files / 3749 tests 
   - [x] Task 19 — in-flight overrides; id-scoped retire · `36f803f7`
   - [x] Task 20 — both legs; `refreshValues` deleted · `36f803f7`
   - [x] Gate 4 — simplification `224bbbaa`; review + attack fixes `9dad7341`
-- [ ] **Phase 5** — Surfaces
-  - [x] Task 21 — on-load repair sweep + toggle
-  - [ ] Task 22 — Capitalize All Metadata + toggle
+- [ ] **Phase 5** — Surfaces · base `9dad7341`
+  - [x] Task 21 — on-load repair sweep + toggle · `7557bc97`
+  - [x] Task 22 — Capitalize All Metadata + toggle
 
 ### Rulings
 

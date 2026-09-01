@@ -50,6 +50,7 @@ export function addEntriesFor(
   ctx: ResolveContext,
   columns: ResolvedColumn[],
   tree: NexusTree | null = null,
+  capitalize = false,
 ): AddEntry[] {
   const contextIds = contextIdsOf(tree)
   const shownIds = new Set(shownColumnsFor(row, columns, ctx, isCompact(view)).map((c) => c.id))
@@ -71,7 +72,13 @@ export function addEntriesFor(
       const revealOnly = contextShaped
         ? !blank
         : !def || !ADDABLE_TYPES.has(type) || type === 'checkbox' || !blank
-      return { id, name: columnLabel(id, ctx.schema, contextsByIdOf(tree)), type, def, revealOnly }
+      return {
+        id,
+        name: columnLabel(id, ctx.schema, contextsByIdOf(tree), capitalize),
+        type,
+        def,
+        revealOnly,
+      }
     })
 }
 

@@ -204,6 +204,7 @@ export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
   hasSets = true,
+  capitalize = false,
 ): FilterTarget[] {
   const contextsById = contextsByIdOf(tree)
   const contextIds = [...contextsById.keys()]
@@ -220,6 +221,6 @@ export function filterTargets(
       label: identity.title,
       icon: identity.icon,
     })),
-    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
+    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0, capitalize),
   ]
 }

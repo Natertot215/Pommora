@@ -51,6 +51,10 @@ import { hiddenRow, optionRow } from './frames.css'
 import * as gp from './groupFrame.css'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 
+import {
+  displayPropertyName,
+  useCapitalizeMetadata,
+} from '@renderer/Properties/Assignment/columnLabel'
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
 const STRUCTURAL_ORDER: PickerChoice<StructuralOrderMode>[] = [
@@ -106,6 +110,7 @@ export function GroupFrame({
   subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
@@ -163,7 +168,7 @@ export function GroupFrame({
     { value: 'location', label: 'Location', icon: 'folder' as const },
     ...groupable.map((d) => ({
       value: d.id,
-      label: d.name,
+      label: displayPropertyName(d.name, capitalize),
       icon: propertyIcon(d),
     })),
   ]
@@ -825,11 +830,12 @@ function SubGroupRow({
   groupable: PropertyDefinition[]
   onSave: (sub: SubGroupConfig | undefined) => void
 }): React.JSX.Element {
+  const capitalize = useCapitalizeMetadata()
   const options: PickerChoice<string>[] = [
     { value: '_location', label: 'Location', icon: 'folder' as const },
     ...groupable.map((d) => ({
       value: d.id,
-      label: d.name,
+      label: displayPropertyName(d.name, capitalize),
       icon: propertyIcon(d),
     })),
   ]

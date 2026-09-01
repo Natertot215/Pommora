@@ -119,6 +119,8 @@ export interface Personalization {
   hideChevrons?: boolean
   /** Canonicalize drifted property and Context values on the pages re-read at open. */
   repairOnOpen?: boolean
+  /** Present every property name Title Cased; the stored key is untouched. */
+  capitalizeMetadata?: boolean
   outlinerLines?: boolean
   /** Line numbers on codeblock content lines (rendered chrome, never editable text). */
   codeblockLineCount?: boolean

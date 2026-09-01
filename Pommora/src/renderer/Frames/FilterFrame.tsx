@@ -57,6 +57,7 @@ import * as fp from './filterFrame.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 
+import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },
@@ -420,7 +421,8 @@ export function FilterFrame({
   const entering = useEntrance(rows, (_, i) => String(i))
 
   const contextIds = contextIdsOf(tree)
-  const targets = filterTargets(schema, tree, (source.sets?.length ?? 0) > 0)
+  const capitalize = useCapitalizeMetadata()
+  const targets = filterTargets(schema, tree, (source.sets?.length ?? 0) > 0, capitalize)
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
