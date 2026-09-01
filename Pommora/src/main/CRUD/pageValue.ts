@@ -14,7 +14,6 @@ const SKIP = Symbol('skip')
  *  Returns SKIP when the value doesn't hold `target`; otherwise the next value (null = delete key). */
 function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | typeof SKIP {
   const xs = Array.isArray(raw) ? raw : [raw]
-  // The same spelling rule the read applies: a YAML number or boolean names the option it spells.
   const names = (el: unknown, value: string): boolean =>
     (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
     String(el) === value

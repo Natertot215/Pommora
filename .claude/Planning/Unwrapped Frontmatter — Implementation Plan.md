@@ -809,10 +809,10 @@ export async function collectionFolderOf(root: string, absFile: string): Promise
 
 **Verify — automated**
 
-- [ ] `assignedDefs` test: a Collection assigning `Status` only → map has `Status`, lacks a registered-but-unassigned `Priority`; `null` folder → empty map; tree-served and disk-served results agree (crossing test).
-- [ ] `collectionFolderOf`: a page two Sets deep resolves to its Collection; a `_space.json` path and an Agenda page resolve to null; with the live tree held for the root, ten calls perform zero `refreshTree` walks (spy) — `collectionFolders`' disk fallback never runs on a cell edit.
-- [ ] `contextWrite.test` 14 green unmodified; `restoreScrub.test` green.
-- [ ] Full gates green.
+- [x] `governedWorld.test`: `assignedDefs` names `Status` only (not the registered `Priority`); null folder → empty; tree-served equals disk-served with zero `refreshTree` calls.
+- [x] `collectionFolderOf`: a page two Sets deep → its Collection; an Agenda page and a `_space.json` → null; ten calls with the tree held → zero walks.
+- [x] `contextWrite.test` green unmodified; `restoreScrub.test` green (`liveWorld` now calls `assignedDefs`).
+- [x] Full gates green (one commit with Task 13).
 
 **Verify — user**
 
@@ -849,10 +849,10 @@ export async function applyAdoptions(root: string, adoptions: readonly Adoption[
 
 **Verify — automated**
 
-- [ ] Red first: `addOptionToDef` on a Multi-Select adds the option once across two concurrent calls (both resolve ok; registry holds one); on a Select → fails. Then green.
-- [ ] Deadlock control: `applyAdoptions` called from inside `serializeOnFile(page)` resolves; a probe calling it from inside `serializeSchemaOp` also resolves — it never enters the chain.
-- [ ] `rg -F "serializeSchemaOp" src/main/CRUD/optionOps.ts` → 11 (unchanged). Control: `rg -F "mutateRegistry(" src/main/CRUD/optionOps.ts` → ≥ 3.
-- [ ] Full gates green.
+- [x] `optionOps.test`: two concurrent `addOptionToDef` calls register `zeta` once; a present option is a no-op; a Select refuses.
+- [x] `applyAdoptions` resolves from inside `serializeOnFile` and from inside `serializeSchemaOp`; `[]` touches nothing.
+- [x] `serializeSchemaOp` in `optionOps.ts` unchanged in count; `mutateRegistry(` ≥ 3.
+- [x] Full gates green.
 
 **Verify — user**
 

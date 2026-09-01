@@ -18,9 +18,7 @@ export async function keyHolderFiles(
   return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
 }
 
-/** Every page in scope that actually holds `key`, read from the corpus rather than the index — a
- *  row the echo window kept out of the index would otherwise hide a holder from a rename that
- *  then deletes its value. */
+// Read from the corpus, not the index: a row the echo window kept out would hide a holder.
 export async function confirmedKeyHolders(
   root: string,
   key: string,

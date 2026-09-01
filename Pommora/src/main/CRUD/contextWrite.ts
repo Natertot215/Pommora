@@ -9,10 +9,15 @@ import {
   type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
-import { reconcileContextKeys } from '@shared/contextResolve'
+import { reconcileContextKeys, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
+import type { PropertyDefinition } from '@shared/properties'
+import { pageCollectionSidecar } from '@shared/schemas'
 import { writeKey } from '../Database/localState'
+import { getLiveTree } from '../liveTree'
+import { readRegistry } from '../IO/propertiesRegistry'
+import { readSidecar } from '../sidecarIO'
 import type { SpaceNode } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { ok, fail, type Result } from '@shared/result'
@@ -40,10 +45,29 @@ interface SpaceRef {
 
 /** Everything a context write resolves through: the live registry plus every Space's
  *  id/title/folder, scanned fresh per operation (a handful of small dirs). */
-export interface ContextWorld {
+export interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
-  spacesByContext: Map<string, SpaceNode[]>
   spaceById: Map<string, SpaceRef>
+}
+
+const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
+
+export async function assignedDefs(
+  root: string,
+  collectionFolder: string | null,
+): Promise<ReadonlyMap<string, PropertyDefinition>> {
+  if (collectionFolder === null) return NO_DEFS
+  const held = getLiveTree()
+  if (held?.nexus.rootPath === root) {
+    const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
+    if (node) return new Map((node.properties ?? []).map((d) => [d.name, d]))
+  }
+  const registry = (await readRegistry(root)).defs
+  const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
+  const assigned = (sidecar?.properties as string[] | undefined) ?? []
+  return new Map(
+    assigned.flatMap((id) => (registry[id] ? [[registry[id].name, registry[id]] as const] : [])),
+  )
 }
 
 export async function loadContextWorld(root: string): Promise<Result<ContextWorld>> {
@@ -81,7 +105,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
     }
     spacesByContext.set(def.id, spaces)
   }
-  return ok({ registry: reg.value, spacesByContext, spaceById })
+  return ok({ registry: reg.value, spacesByContext, spaceById, defs: NO_DEFS })
 }
 
 function defById(world: ContextWorld, contextId: string): ContextDef | undefined {

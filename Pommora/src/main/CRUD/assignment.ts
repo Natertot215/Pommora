@@ -2,7 +2,7 @@
 // (which nexus-wide defs this Collection validates). References, not definitions: assign runs no
 // name-clash check and restores any Remove-cache; the unassign leg lives in crud/removeProperty.
 
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { getLiveTree, refreshTree } from '../liveTree'
@@ -124,6 +124,10 @@ export async function collectionFolders(root: string): Promise<string[]> {
   }
   for (const c of [...(tree.collections ?? [])]) visit(c)
   return out
+}
+
+export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {
+  return (await collectionFolders(root)).find((f) => absFile.startsWith(f + sep)) ?? null
 }
 
 export function reorderAssignment(

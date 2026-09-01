@@ -151,8 +151,6 @@ export function isReservedPropertyId(id: string): boolean {
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
 export const RESERVED_NAME_PREFIX = '$'
-/** A name is also the bare key its values write under, so Pommora's own page keys and the
- *  Context sigil are off limits. */
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
   ...Object.values(KIND_ID_KEY),
   ...PAGE_MODELED_KEYS,
@@ -182,7 +180,6 @@ export function invalidPropertyName(name: string): boolean {
   return !n || n.startsWith(RESERVED_NAME_PREFIX) || n.startsWith('<') || RESERVED_KEY_NAMES.has(n)
 }
 
-/** A frontmatter key is a property's iff it is exactly a registered name — the one ownership gate. */
 export function isRegisteredPropertyName(key: string, names: ReadonlySet<string>): boolean {
   return names.has(key)
 }

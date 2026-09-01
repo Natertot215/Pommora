@@ -6,8 +6,6 @@
 import type { Db } from './driver'
 
 export const SCHEMA_VERSION = 1
-/** The content index's own shape. A mismatch truncates page_values and indexed_files so the next
- *  seed re-reads the corpus; local_state is never touched. */
 export const INDEX_GENERATION = 2
 
 const DDL = `
