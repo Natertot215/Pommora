@@ -99,8 +99,6 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
   }
 }
 
-/** The `_modified_at` sort preset as a timestamp; absent/unparseable → -Infinity (sorts first
- *  ascending). The modified∥created stamp resolution is shared with filter via value.ts. */
 function modifiedStamp(row: ViewRow): number {
   const s = modifiedStampString(row)
   if (!s) return Number.NEGATIVE_INFINITY

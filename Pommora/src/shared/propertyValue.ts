@@ -11,7 +11,7 @@ export type PropertyValue =
   | { kind: 'context'; value: string[] }
   | { kind: 'url'; value: string }
   | { kind: 'file'; value: string[] } // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
-  | { kind: 'lastEditedTime' } // virtual — never persisted (encode throws)
+  | { kind: 'lastEditedTime' }
   | { kind: 'null' }
 
 export function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -55,8 +55,6 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'url':
       return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL
     case 'datetime':
-    // last_edited_time reads a stored stamp the same way; "virtual, never persisted" is enforced
-    // only on encode, where it throws.
     case 'last_edited_time':
       return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL
     case 'select':

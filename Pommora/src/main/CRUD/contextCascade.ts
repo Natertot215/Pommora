@@ -69,8 +69,6 @@ export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
 
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-/** Clearing a value is a content edit, so an unlink re-dates every root it strips, same as
- *  clearing a property value. A key-only rename doesn't: the relation is unchanged, only its spelling. */
 const STAMP_ON_CLEAR = { stamp: true }
 
 export async function sweepContextRoots(
