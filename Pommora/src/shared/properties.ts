@@ -13,6 +13,7 @@ export const propertyType = z.enum([
   'status',
   'url',
   'context', // a registry Context's synthesized relation; minted by the registry, not the schema editor
+  'created_time',
   'last_edited_time',
   'file',
 ])
@@ -137,7 +138,6 @@ export type NumberConfig = Pick<
 
 /** Built-in property IDs use a `_` prefix; user properties use `prop_<ulid>`. */
 export const RESERVED_PROPERTY_ID = {
-  id: '_id',
   title: '_title',
   createdAt: '_created_at',
   modifiedAt: '_modified_at',
@@ -145,6 +145,14 @@ export const RESERVED_PROPERTY_ID = {
   // dispatch, so this id deliberately resolves to no type.
   location: '_location',
 } as const
+
+/** The type each stamp column declares — the one place an id becomes a stamp type. Partial so a
+ *  lookup on any other id types as `undefined` and the truthiness guard at each reader means
+ *  something. */
+export const STAMP_TYPE: Readonly<Partial<Record<string, PropertyType>>> = {
+  [RESERVED_PROPERTY_ID.createdAt]: 'created_time',
+  [RESERVED_PROPERTY_ID.modifiedAt]: 'last_edited_time',
+}
 
 const RESERVED_SET = new Set<string>(Object.values(RESERVED_PROPERTY_ID))
 

@@ -15,7 +15,7 @@ describe('widthFor', () => {
     expect(widthFor(RESERVED_PROPERTY_ID.title, schema).default).toBe(280)
     expect(widthFor('ctx_areas', schema, ['ctx_areas']).default).toBe(140)
     expect(widthFor(RESERVED_PROPERTY_ID.modifiedAt, schema).default).toBe(120) // last_edited_time
-    expect(widthFor(RESERVED_PROPERTY_ID.createdAt, schema).default).toBe(120) // special-cased
+    expect(widthFor(RESERVED_PROPERTY_ID.createdAt, schema).default).toBe(120) // created_time
   })
 
   it('keys user properties by their schema type', () => {

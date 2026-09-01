@@ -10,29 +10,29 @@ import {
   type PropertyDefinition,
   type PropertyType,
   RESERVED_PROPERTY_ID,
+  STAMP_TYPE,
 } from '@shared/properties'
 import { decodeValue, type PropertyValue } from '@shared/propertyValue'
 import { parseConnectionText } from '@shared/connections'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
- *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
- *  'last_edited_time' (a date for both filter and sort). `contextIds` is what
- *  classifies a Context column, so a caller that omits it sees none. */
+ *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', the stamps→their
+ *  STAMP_TYPE. `contextIds` is what classifies a Context column, so a caller that omits it sees
+ *  none. */
 export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): PropertyType | 'title' | undefined {
-  switch (propertyId) {
-    case RESERVED_PROPERTY_ID.title:
-      return 'title'
-    case RESERVED_PROPERTY_ID.modifiedAt:
-      return 'last_edited_time'
-    default:
-      if (contextIds.includes(propertyId)) return 'context'
-      return schema.find((d) => d.id === propertyId)?.type
-  }
+  if (propertyId === RESERVED_PROPERTY_ID.title) return 'title'
+  const stamp = STAMP_TYPE[propertyId]
+  if (stamp) return stamp
+  if (contextIds.includes(propertyId)) return 'context'
+  return schema.find((d) => d.id === propertyId)?.type
 }
+
+const stampValue = (iso: string | undefined): PropertyValue =>
+  iso === undefined ? { kind: 'null' } : { kind: 'datetime', value: iso }
 
 /** The row's value for a column, as a PropertyValue. Absent or unreadable ⇒ `{ kind: 'null' }` —
  *  a single bad cell never poisons a view.
@@ -45,9 +45,10 @@ export function resolveFieldValue(
   propertyId: string,
   schema: PropertyDefinition[],
 ): PropertyValue {
-  // `_title` bypasses the cache — it reads `row.title`, which a rename changes without touching
-  // the frontmatter object the cache is keyed on.
+  // Title and the stamps read the row, not the frontmatter the memo is keyed on.
   if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
+  if (propertyId === RESERVED_PROPERTY_ID.createdAt) return stampValue(row.createdAt)
+  if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) return stampValue(row.modifiedAt)
   {
     const patched = (row.frontmatter as Record<string, unknown>).contextValues
     const fromPatch =
@@ -68,7 +69,9 @@ export function resolveFieldValue(
   const cacheKey = def ? `${def.name}\u0000${def.type}` : propertyId
   let v = m.get(cacheKey)
   if (!v) {
-    v = computeFieldValue(row.frontmatter, propertyId, def)
+    v = def
+      ? decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
+      : { kind: 'null' }
     m.set(cacheKey, v)
   }
   return v
@@ -80,31 +83,8 @@ export function resolveFieldValue(
 // optimistic patch), so entries self-expire; resolved values are shared and treated immutable.
 const resolvedByFm = new WeakMap<PageFrontmatter, Map<string, PropertyValue>>()
 
-function computeFieldValue(
-  fm: PageFrontmatter,
-  propertyId: string,
-  def: PropertyDefinition | undefined,
-): PropertyValue {
-  if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) {
-    return typeof fm.modified_at === 'string' && fm.modified_at
-      ? { kind: 'datetime', value: fm.modified_at }
-      : { kind: 'null' }
-  }
-  if (!def) return { kind: 'null' }
-  return decodeValue(def, (fm as Record<string, unknown>)[def.name])
-}
-
 /** The filename a file reference names — the wikilink's own title, or the raw text where it isn't
  *  one. The one extraction, so the order a column sorts in and the text a cell shows can't
  *  disagree about what a reference is called. */
 export const fileName = (reference: string): string =>
   parseConnectionText(reference)?.title ?? reference
-
-export function modifiedStampString(row: ViewRow): string | null {
-  const fm = row.frontmatter
-  return (
-    (typeof fm.modified_at === 'string' && fm.modified_at) ||
-    (typeof fm.created_at === 'string' && fm.created_at) ||
-    null
-  )
-}

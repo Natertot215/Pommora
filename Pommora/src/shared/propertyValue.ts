@@ -11,7 +11,6 @@ export type PropertyValue =
   | { kind: 'context'; value: string[] }
   | { kind: 'url'; value: string }
   | { kind: 'file'; value: string[] } // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
-  | { kind: 'lastEditedTime' }
   | { kind: 'null' }
 
 export function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -55,6 +54,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'url':
       return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL
     case 'datetime':
+    case 'created_time':
     case 'last_edited_time':
       return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL
     case 'select':
@@ -121,10 +121,6 @@ export function encodeValue(value: PropertyValue): unknown {
       return value.value
     case 'null':
       return null
-    case 'lastEditedTime':
-      throw new Error(
-        'PropertyValue.lastEditedTime is virtual and must not be persisted; derive from modified_at at read time.',
-      )
   }
 }
 

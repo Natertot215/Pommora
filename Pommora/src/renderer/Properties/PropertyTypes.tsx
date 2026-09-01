@@ -24,6 +24,7 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   url: { label: 'Link', icon: 'link', creatable: true },
   file: { label: 'File', icon: 'file-chart-column', creatable: true },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
+  created_time: { label: 'Created', icon: 'clock-plus' },
   last_edited_time: { label: 'Last edited', icon: 'history' },
 }
 
