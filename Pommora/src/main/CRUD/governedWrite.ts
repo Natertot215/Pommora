@@ -4,9 +4,6 @@
 // key set this write owns, `next` is what those keys become, and **a key in `govern` absent
 // from `next` is deleted**. `null` is not the delete sentinel — the merge sets on anything that
 // is not `undefined`, so a null would write the literal.
-//
-// It also stamps `modified_at` itself — leaving that to callers deletes the stamp on any write
-// that governs it without supplying it, the same trap one field over.
 
 import { readFile } from 'node:fs/promises'
 import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from '@shared/contextResolve'

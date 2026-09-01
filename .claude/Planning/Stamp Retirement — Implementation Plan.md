@@ -1,6 +1,6 @@
 ## Stamp Retirement — Implementation Plan
 
-> **Status:** reviewed, pending Nathan's approval (09-01-2026) · Spec: the 09-01-2026 session's confirmed direction (recorded under Rulings) · Execute tasks in order.
+> **Status:** approved by Nathan (09-01-2026), executing · Spec: the 09-01-2026 session's confirmed direction (recorded under Rulings) · Execute tasks in order.
 > Citations name files and symbols at HEAD `27080e45`; re-derive before editing. Line numbers are the weakest part of every citation here — a parallel session's comment sweep is shifting them under the plan as it's read, so trust the symbol names and the greps, and treat every `:NN` as an approximate landmark.
 
 **Goal**
@@ -975,7 +975,7 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 
 ### Progress
 
-Pre-Phase-0 baseline (recorded at execution): typecheck · Vitest files / tests · Biome.
+Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests · Biome 988 files, 0 warnings. Controls: `KNOB` → 144; `(Nathan` → 0 in `src/` (no control there — `KNOB` alone carries Task 0's check). Task 0 targets: 47 files, 10 052 non-comment lines (per-file table in the closeout report's baseline column).
 
 - [ ] **Phase 0** — Task 0
 - [ ] **Phase 1** — Tasks 1–2 · Gate 1

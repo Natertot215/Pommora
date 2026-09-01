@@ -131,7 +131,6 @@ function evaluateRule(
 ): Verdict {
   if (!FILTER_OP_SET.has(rule.op)) return NO_OP
 
-  // "Last edited" resolves to the modified∥created stamp (never a stored property) → date matrix.
   if (rule.property_id === RESERVED_PROPERTY_ID.modifiedAt) {
     const s = modifiedStampString(row)
     return evaluateDate(s ? { kind: 'datetime', value: s } : { kind: 'null' }, rule.op, rule.value)

@@ -100,9 +100,6 @@ function computeFieldValue(
 export const fileName = (reference: string): string =>
   parseConnectionText(reference)?.title ?? reference
 
-/** The `_modified_at` SORT/FILTER stamp: modified_at, falling back to created_at so a never-modified page orders by its creation time. Deliberately distinct from
- *  `resolveFieldValue('_modified_at')` (the display value, modified_at only, no fallback). Null
- *  when neither is present. */
 export function modifiedStampString(row: ViewRow): string | null {
   const fm = row.frontmatter
   return (
