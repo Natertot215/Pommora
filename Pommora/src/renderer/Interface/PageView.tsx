@@ -122,8 +122,8 @@ export function PageView({
         title={pageDetail.title}
         path={pageDetail.path}
         cover={
-          typeof pageDetail.frontmatter.cover === 'string'
-            ? pageDetail.frontmatter.cover
+          typeof pageDetail.frontmatter.banner === 'string'
+            ? pageDetail.frontmatter.banner
             : undefined
         }
         icon={entityIcon(

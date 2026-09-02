@@ -29,7 +29,7 @@ export const NEW_PAGE_SLOT = '$new-page'
 export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
 
 /** Homepage rides `.nexus/homepage.json`; navview rides `navigation.json`; page rides its
- *  frontmatter `cover`; the rest are folder sidecars. */
+ *  frontmatter `banner`; the rest are folder sidecars. */
 export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'navview' | 'page'
 
 /** Matches SidecarKind names exactly, so main passes them straight to createFolderEntity. */

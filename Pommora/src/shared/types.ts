@@ -255,8 +255,7 @@ export interface BaseNode {
 export interface PathNode extends BaseNode {
   path: string
   /** Only banner-bearing owners (Collections/Sets + contexts) populate it, surfaced from the
-   *  sidecar `banner` field (a page's future banner rides here too — distinct from the
-   *  page-level `cover`). */
+   *  sidecar `banner` field (a page's banner rides its own frontmatter `banner` key). */
   banner?: string
   /** From the sidecar `heading_icon_hidden`. Absent/false = shown. */
   headingIconHidden?: boolean

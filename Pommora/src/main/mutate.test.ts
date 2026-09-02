@@ -883,7 +883,7 @@ describe('handleMutate — setBanner', () => {
     expect(await pathExists(join(root, '.nexus/assets/Gone.png'))).toBe(false)
   })
 
-  it('sets a page banner as the `cover` frontmatter key; clearing reverts', async () => {
+  it('sets a page banner as the `banner` frontmatter key; clearing reverts', async () => {
     const assets = await withAssetDir()
     const created = await handleMutate(
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Cover' },
@@ -897,14 +897,14 @@ describe('handleMutate — setBanner', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(await read(pagePath)).toMatch(/cover: ["']\[\[Page\.png\]\]["']/)
+    expect(await read(pagePath)).toMatch(/banner: ["']\[\[Page\.png\]\]["']/)
     expect(await pathExists(join(assets, 'Page.png'))).toBe(true)
     const cleared = await handleMutate(
       { op: 'setBanner', path: pagePath, kind: 'page', source: null },
       nexusDeps,
     )
     expect(cleared.ok).toBe(true)
-    expect(await read(pagePath)).not.toMatch(/cover:/)
+    expect(await read(pagePath)).not.toMatch(/banner:/)
   })
 
   it('sets a homepage banner in .nexus/homepage.json', async () => {

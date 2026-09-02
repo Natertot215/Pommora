@@ -19,7 +19,7 @@ export interface CardMenuContext extends PageMoveContext {
   addable: Array<{ id: string; name: string }>
   /** An open page reads "Open" (focus its tab) rather than "Open New Tab". */
   alreadyOpen?: boolean
-  /** Cover mode with a cover set — the card's own Edit Image, framing the cover in the picker. */
+  /** Image mode with a banner set — the card's own Edit Image, framing the banner in the picker. */
   editableImage?: boolean
 }
 

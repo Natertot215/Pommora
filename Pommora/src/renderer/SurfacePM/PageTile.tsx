@@ -27,7 +27,7 @@ interface EmbedEntry {
 }
 
 const coverOf = (detail: PageDetail): string | undefined =>
-  typeof detail.frontmatter.cover === 'string' ? detail.frontmatter.cover : undefined
+  typeof detail.frontmatter.banner === 'string' ? detail.frontmatter.banner : undefined
 
 const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   path,

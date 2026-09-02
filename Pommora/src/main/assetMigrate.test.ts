@@ -125,16 +125,16 @@ describe('migrateAssets', () => {
     expect(await readdir(join(root, '.nexus/assets')).catch(() => [])).toEqual([])
   })
 
-  it('a page cover migrates through the frontmatter, body and foreign keys intact', async () => {
+  it('a page banner migrates through the frontmatter, body and foreign keys intact', async () => {
     await asset('p/banner-cccccc33.png', 'cover')
     await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\ncover: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\nbanner: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
     )
     await migrateAssets(root)
     const after = await read('Notes/Alpha.md')
-    expect(after).toMatch(/cover: ["']\[\[Alpha Banner\.png\]\]["']/)
+    expect(after).toMatch(/banner: ["']\[\[Alpha Banner\.png\]\]["']/)
     expect(after).toContain('the body')
     expect(after).toContain('<Areas>:')
   })

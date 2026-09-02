@@ -18,7 +18,7 @@ const legacy = (): Promise<void> =>
     'Archive/legacy.md',
     page(
       '01NNNNNNNNNNNNNNNNNNNNNNNN',
-      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\ncover: img.png\nAuthor: Username\nStatus: open',
+      'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\nbanner: img.png\nAuthor: Username\nStatus: open',
     ),
   )
 
@@ -28,7 +28,7 @@ const expectIdentityStripped = async (): Promise<string> => {
   expect(text).toContain('modified_at: 2026-02-02T00:00:00.000Z')
   expect(text).not.toContain('PageID')
   expect(text).toContain('icon: star')
-  expect(text).toContain('cover: img.png')
+  expect(text).toContain('banner: img.png')
   expect(text).toContain('Author: Username')
   return text
 }

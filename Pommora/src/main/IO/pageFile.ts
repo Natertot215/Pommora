@@ -32,7 +32,7 @@ export function splitEnvelope(content: string): PageEnvelope {
   return { frontmatter: m[1], body }
 }
 
-/** Parse the file's frontmatter into a plain object — for reading modeled fields (id, cover) before
+/** Parse the file's frontmatter into a plain object — for reading modeled fields (id, banner) before
  *  a merge. Unrecoverable YAML reads as empty, the same answer the walk's reader gives: a file
  *  nobody can parse holds no fields, and one such page must never fail the pass around it. */
 export function readFrontmatterFields(content: string): Record<string, unknown> {
