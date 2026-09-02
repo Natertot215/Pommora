@@ -640,7 +640,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 - [ ] `/closeout` over the whole range `<phase-1 base>..HEAD`: simplification, the comment pass, code review, then the full-plan build-breaker; every finding fixed or ruled.
 - [ ] Delivery Claim; neutral verifier against the decision log; then the attack.
 - [ ] Dead Vocabulary at zero against its control.
-- [ ] History entry **"PM-124 || Page File History"**; Context and Handoff current.
+- [ ] History entry **"PM-125 || Page File History"**; Context and Handoff current.
 - [ ] Final +/- line count, comments and tests excluded.
 
 ---
@@ -697,7 +697,7 @@ Execute File History — Implementation Plan. Live.
 Live-verify: the History window against the mock at Gate 4; restore landing in every open surface.
 Screenshots: none — Nathan is watching live.
 Pings: at the Gate 4 stop · at completion.
-Record: History arc "PM-124 || Page File History", via /closeout.
+Record: History arc "PM-125 || Page File History", via /closeout.
 Also: the tree is shared — stage explicit paths only; restart the dev instance for main/preload changes; confirm copy comes from Nathan.
 Everything else is the standard below.
 ```
@@ -734,7 +734,7 @@ Everything else is the standard below.
 
 - [ ] Documents made false rewritten in the falsifying commits.
 - [ ] The closing sweep at zero against its control.
-- [ ] Context and Handoff current; the History entry "PM-124 || Page File History".
+- [ ] Context and Handoff current; the History entry "PM-125 || Page File History".
 - [ ] Lessons routed; successors in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way · what the screenshots showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded.
