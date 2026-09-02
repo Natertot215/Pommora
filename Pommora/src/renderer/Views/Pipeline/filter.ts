@@ -287,33 +287,28 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
  *  Date math: the stored day IS the authored day regardless of the viewer's timezone. */
 const dayOf = (iso: string): string => iso.slice(0, 10)
 
+/** A bare-day operand orders by calendar day, the same truncation `is` uses — a page saved the
+ *  evening of the 1st is on or before the 1st. An operand carrying a time orders by instant. */
 function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
-  const d = v.kind === 'datetime' ? parseDateMs(v.value) : null
+  const raw = v.kind === 'datetime' ? v.value : null
+  const bareDay = expected != null && !expected.includes('T')
+  const d = raw === null ? null : parseDateMs(bareDay ? dayOf(raw) : raw)
+  const e = parseDateMs(expected)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return d === null
     case FILTER_OPS.isNotEmpty:
       return d !== null
-    case FILTER_OPS.is: {
-      const raw = v.kind === 'datetime' ? v.value : null
+    case FILTER_OPS.is:
       return expected == null ? true : raw !== null && dayOf(raw) === dayOf(expected)
-    }
-    case FILTER_OPS.isBefore: {
-      const e = parseDateMs(expected)
+    case FILTER_OPS.isBefore:
       return e === null ? true : d !== null && d < e
-    }
-    case FILTER_OPS.isAfter: {
-      const e = parseDateMs(expected)
+    case FILTER_OPS.isAfter:
       return e === null ? true : d !== null && d > e
-    }
-    case FILTER_OPS.onOrAfter: {
-      const e = parseDateMs(expected)
+    case FILTER_OPS.onOrAfter:
       return e === null ? true : d !== null && d >= e
-    }
-    case FILTER_OPS.onOrBefore: {
-      const e = parseDateMs(expected)
+    case FILTER_OPS.onOrBefore:
       return e === null ? true : d !== null && d <= e
-    }
     default:
       return true
   }
