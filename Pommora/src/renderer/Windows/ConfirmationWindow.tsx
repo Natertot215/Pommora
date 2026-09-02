@@ -16,6 +16,9 @@ export function ConfirmationWindow(): React.JSX.Element | null {
 
   useEffect(() => {
     if (!pending) return
+    // The panel itself takes focus, never a button: typing can't reach the page behind the scrim,
+    // and no answer sits under the Return key waiting to be pressed by accident.
+    panelRef.current?.focus()
     return markPickerOpen()
   }, [pending])
 
@@ -28,13 +31,20 @@ export function ConfirmationWindow(): React.JSX.Element | null {
         settleRef.current?.(false)
         return
       }
-      if (e.key === 'Enter' && !panelRef.current?.contains(document.activeElement)) {
+      // A focused button answers through its own activation; taking Enter here too would answer
+      // twice. The panel itself holding focus is the resting state, and does take it.
+      const onButton =
+        document.activeElement instanceof HTMLButtonElement &&
+        panelRef.current?.contains(document.activeElement) === true
+      if (e.key === 'Enter' && !onButton) {
         e.preventDefault()
         settleRef.current?.(!defaultRef.current)
       }
     }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    // Capture, so the question answers before the surface underneath consumes the key — a scrim
+    // stops pointers, and the editor behind it would otherwise take Return for a newline.
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
   }, [pending])
 
   if (!pending) return null
@@ -51,7 +61,14 @@ export function ConfirmationWindow(): React.JSX.Element | null {
         if (e.target === e.currentTarget) settle(false)
       }}
     >
-      <GlassWindow ref={panelRef} className={s.panel} role="alertdialog" aria-label={req.message}>
+      <GlassWindow
+        ref={panelRef}
+        className={s.panel}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={req.message}
+        tabIndex={-1}
+      >
         <div className={s.body}>
           <span className={s.message}>{req.message}</span>
           <span className={s.detail}>{req.detail}</span>

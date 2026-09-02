@@ -29,6 +29,7 @@ import { useSession } from '@renderer/store'
 import { tileMenuModel } from '@shared/tileMenu'
 import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
 import { askRemoveTile } from '@renderer/Windows/confirmations'
+import { notifyRemovedTile } from '@renderer/Interface/notifications'
 import { useHeld } from '@renderer/DesignSystem/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/scope'
 import { mintDefaultView } from '@shared/views'
@@ -259,7 +260,9 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   const confirmRemove = useCallback(
     (id: string) => {
       void askRemoveTile().then((ok) => {
-        if (ok) removeBlock(id)
+        if (!ok) return
+        removeBlock(id)
+        notifyRemovedTile()
       })
     },
     [removeBlock],

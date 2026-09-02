@@ -38,7 +38,7 @@ export function ViewItemMenu({
     if (!(await askDeleteView())) return
     const res = await window.nexus.views.delete(source.path, source.kind, view.id)
     if (!res.ok) return void notifyError(res.error.message)
-    notifyDeleted(view.name, () => restoreView(source.path, source.kind, view))
+    notifyDeleted(view.name, () => restoreView(source.path, source.kind, view, views))
     onDeleted?.()
   }
 
