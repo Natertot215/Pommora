@@ -100,7 +100,7 @@ function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at
   if (!alias.trim()) return
   const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
   // Only a page that exists can be said to have worn the words. A phantom or an ambiguous title
-  // names no single page, and the memory is keyed by PageID.
+  // names no single page, and the memory is keyed by page id.
   if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
 }
 

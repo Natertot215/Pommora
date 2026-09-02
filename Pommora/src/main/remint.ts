@@ -4,13 +4,13 @@
 
 import { join } from 'node:path'
 import { blockHostKey } from '@shared/blocks'
-import { KIND_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { isPlainObject } from '@shared/propertyValue'
 import type { EntityRecord, RecordKind } from '@shared/record'
 import { errText } from '@shared/result'
 import { remintConfigIds } from './blocks'
 import { readKey, writeKey } from './Database/localState'
-import { newId } from './ids'
+import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from './IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, readFrontmatterFields } from './IO/pageFile'
 import { readPreviewsState, writePreviewsState } from './IO/previewState'
@@ -63,7 +63,7 @@ export async function runRemintPass(
   const { remint } = adjudicate(projection.duplicates, prior, unreadablePaths)
   const done: RemintedEntity[] = []
   for (const target of remint) {
-    const fresh = newId()
+    const fresh = target.kind === 'page' ? newContentId('page') : newId()
     const viewIds = await writeFreshId(root, target, fresh)
     if (!viewIds) continue
     copyDeviceRows(target, fresh, viewIds)
@@ -97,13 +97,8 @@ async function remintPageFile(absFile: string, oldId: string, fresh: string): Pr
   return rewritePageSerialized(absFile, (content) => {
     // Read fresh inside the lock: a file that no longer carries the contested id moved under
     // us, and a blind stamp would overwrite an identity the walk never adjudicated.
-    if (readFrontmatterFields(content)[KIND_ID_KEY.page] !== oldId) return null
-    return mergeFrontmatter(
-      content,
-      { [KIND_ID_KEY.page]: fresh },
-      [KIND_ID_KEY.page],
-      splitEnvelope(content).body,
-    )
+    if (readFrontmatterFields(content)[ID_KEY] !== oldId) return null
+    return mergeFrontmatter(content, { [ID_KEY]: fresh }, [ID_KEY], splitEnvelope(content).body)
   })
 }
 

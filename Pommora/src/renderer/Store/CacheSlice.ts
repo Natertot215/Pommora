@@ -9,7 +9,7 @@ export interface CacheSlice {
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
   setActiveView: (containerId: string, viewId: string) => Promise<void>
-  /** The aliases each page has been given, keyed PageID so they survive a rename. Its own slice
+  /** The aliases each page has been given, keyed by page id so they survive a rename. Its own slice
    *  rather than a tree-keyed derivation, since authoring or forgetting one pushes no tree. */
   pageAliases: Record<string, string[]>
   rememberAlias: (pageId: string, alias: string) => void

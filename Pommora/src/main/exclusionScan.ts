@@ -5,7 +5,7 @@
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseContextKey } from '@shared/contexts'
-import { KIND_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { ok, type Result } from '@shared/result'
 import type { ClearReport } from '@shared/types'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
@@ -19,7 +19,7 @@ const AGENDA_CONFIGS: readonly string[] = [
   SIDECAR_FILENAME.taskConfig,
   SIDECAR_FILENAME.eventConfig,
 ]
-const BOOKKEEPING_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
+const BOOKKEEPING_KEYS: readonly string[] = [ID_KEY]
 
 export async function excludedArtifacts(
   root: string,
