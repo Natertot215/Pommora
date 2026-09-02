@@ -147,6 +147,48 @@ describe('PickerMenu focus contract', () => {
     expect(defaultPrevented).toBe(false)
   })
 
+  it('peels only the topmost pane on Escape, then the one beneath it', async () => {
+    const dismissed: string[] = []
+    function Nested({ inner }: { inner: boolean }): React.JSX.Element {
+      const outerRef = useRef<HTMLButtonElement>(null)
+      const innerRef = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={outerRef} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open onDismiss={() => dismissed.push('outer')} triggerRef={outerRef}>
+            <button ref={innerRef} type="button" data-id="first">
+              First
+            </button>
+          </PickerMenu>
+          {/* A stacked pane hung off the first as a SIBLING — the OptionEditPopup arrangement,
+              where the outer's keydown listener registers first. */}
+          <PickerMenu open={inner} onDismiss={() => dismissed.push('inner')} triggerRef={innerRef}>
+            <button type="button" data-id="nested">
+              Nested
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    const pressEscape = async (): Promise<void> => {
+      await act(async () => {
+        document.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+        )
+      })
+    }
+    await render(<Nested inner />)
+    await pressEscape()
+    expect(dismissed).toEqual(['inner'])
+
+    // The inner pane stays mounted through its Bloom-out; the outer must not be swallowed by it.
+    await render(<Nested inner={false} />)
+    await pressEscape()
+    expect(dismissed).toEqual(['inner', 'outer'])
+  })
+
   it('yields to a child that focuses itself', async () => {
     function SelfFocusing(): React.JSX.Element {
       const input = useRef<HTMLInputElement>(null)

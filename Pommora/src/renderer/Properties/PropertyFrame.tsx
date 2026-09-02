@@ -29,15 +29,11 @@ import {
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
+  FootingItem,
   MenuSeparator,
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
-import {
-  footingLabel,
-  footingSymbol,
-  titleInput,
-  actionRow,
-} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { titleInput, actionRow } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { Reveal, duration, useEntrance } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
@@ -398,12 +394,9 @@ export function PropertyFrame({
     const styleFooting =
       hasSelectOptions(def.type) || def.type === 'status' ? (
         <MenuFooting>
-          <MenuItem
-            leading={
-              <span className={footingSymbol}>
-                <Icon name="palette" size="control" />
-              </span>
-            }
+          <FootingItem
+            icon="palette"
+            label="Style"
             trailing={
               <PickerControl
                 ariaLabel="Chip style"
@@ -413,9 +406,7 @@ export function PropertyFrame({
                 solid
               />
             }
-          >
-            <span className={footingLabel}>Style</span>
-          </MenuItem>
+          />
         </MenuFooting>
       ) : undefined
     return (

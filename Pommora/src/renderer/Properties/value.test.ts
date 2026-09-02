@@ -118,7 +118,14 @@ describe('resolveFieldValue', () => {
   })
 
   it('returns null for a stamp the row does not carry', () => {
-    const bare: ViewRow = { id: 'x', title: 'X', path: 'x.md', frontmatter: { [PAGE_ID_KEY]: 'x' } }
+    const bare: ViewRow = {
+      id: 'x',
+      title: 'X',
+      path: 'x.md',
+      frontmatter: { [PAGE_ID_KEY]: 'x' },
+      createdAt: null,
+      modifiedAt: null,
+    }
     expect(rfv(bare, '_created_at')).toEqual({ kind: 'null' })
     expect(rfv(bare, '_modified_at')).toEqual({ kind: 'null' })
   })
@@ -135,6 +142,8 @@ describe('resolveFieldValue memoization', () => {
         ...propsAtRoot({ prop_s: 'open' }, schema),
         '<Areas>': ['a'],
       },
+      createdAt: null,
+      modifiedAt: null,
     }
     // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh
     // one. No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on
@@ -151,6 +160,8 @@ describe('resolveFieldValue memoization', () => {
       title: 'One',
       path: 'C/One.md',
       frontmatter,
+      createdAt: null,
+      modifiedAt: null,
     })
     const before = rfv(rowAt(fm1), 'prop_s')
     const after = rfv(rowAt(fm2), 'prop_s')
@@ -160,8 +171,15 @@ describe('resolveFieldValue memoization', () => {
 
   it('_title never caches — a rename with an unchanged frontmatter object shows the new title', () => {
     const fm = { [PAGE_ID_KEY]: 'p1' }
-    const a = rfv({ id: 'p1', title: 'Old', path: 'C/Old.md', frontmatter: fm }, '_title')
-    const b = rfv({ id: 'p1', title: 'New', path: 'C/New.md', frontmatter: fm }, '_title')
+    const stamps = { createdAt: null, modifiedAt: null }
+    const a = rfv(
+      { id: 'p1', title: 'Old', path: 'C/Old.md', frontmatter: fm, ...stamps },
+      '_title',
+    )
+    const b = rfv(
+      { id: 'p1', title: 'New', path: 'C/New.md', frontmatter: fm, ...stamps },
+      '_title',
+    )
     expect(a).toEqual({ kind: 'select', value: 'Old' })
     expect(b).toEqual({ kind: 'select', value: 'New' })
   })
@@ -185,6 +203,8 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
     title: 'R',
     path: 'C/r.md',
     frontmatter: { [PAGE_ID_KEY]: 'r', ...propsAtRoot(properties, typedSchema) },
+    createdAt: null,
+    modifiedAt: null,
   })
 
   it('a url column reads an aliased [alias](url) value as url — no shape ever votes', () => {

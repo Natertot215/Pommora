@@ -25,7 +25,8 @@ export async function atomicWriteFile(filePath: string, data: string): Promise<v
 export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {
   const { atime, mtime } = await stat(filePath)
   await atomicWriteFile(filePath, data)
-  await utimes(filePath, atime, mtime)
+  // A volume that refuses utimes leaves the page dated now; the write itself already landed.
+  await utimes(filePath, atime, mtime).catch(() => {})
   forgetParse(filePath)
 }
 

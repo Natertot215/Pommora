@@ -257,6 +257,10 @@ export function PickerMenu({
       // A field that handled its own Escape marks the press — the same stand-down contract
       // useDismiss honors, so abandoning a rename never takes the pane holding it.
       if (e.key !== 'Escape' || e.defaultPrevented) return
+      // One Escape peels one pane. A stacked pane may be a SIBLING of the one it hangs off (whose
+      // listener then registers first), so the DOM order of the live panes decides, not effect order.
+      const live = document.querySelectorAll('[data-picker-live]')
+      if (live.length > 0 && live[live.length - 1] !== paneRef.current) return
       e.preventDefault()
       onDismiss()
     }
@@ -368,6 +372,7 @@ export function PickerMenu({
             ref={paneRef}
             className={s.layer}
             data-picker-portal
+            data-picker-live={onDismiss && !closing ? '' : undefined}
             tabIndex={managed ? -1 : undefined}
             onPointerDown={stopPointerBubble}
             onContextMenu={stopContextBubble}

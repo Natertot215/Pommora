@@ -730,10 +730,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             value: currents[index],
           }))
           const dispose = pushValueUndo(() => {
-            const liveCol = columnsRef.current.find((c) => c.id === col.id)
+            const liveCol = cellApiRef.current.columns.find((c) => c.id === col.id)
             if (!liveCol) return
             for (const { id, value } of prev) {
-              const row = rowByIdRef.current.get(id)
+              const row = cellApiRef.current.rowById.get(id)
               if (row) cellApiRef.current.commitValue(row, liveCol, value)
             }
           })
@@ -998,10 +998,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     [source.path],
   )
-  const columnsRef = useRef(columns)
-  columnsRef.current = columns
-  const rowByIdRef = useRef(rowById)
-  rowByIdRef.current = rowById
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const titleCol = columns.find((c) => c.kind === 'title')
@@ -1012,8 +1008,19 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitValue,
     titleCol,
     startSweep,
+    columns,
+    rowById,
   })
-  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, commitValue, titleCol, startSweep }
+  cellApiRef.current = {
+    openCellMenu,
+    onCellClick,
+    cellEditor,
+    commitValue,
+    titleCol,
+    startSweep,
+    columns,
+    rowById,
+  }
   // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
   // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)

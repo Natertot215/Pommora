@@ -140,6 +140,18 @@ describe('handleMutate — create', () => {
     expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
   })
 
+  it('movePage notes the moved page under its destination for the values push', async () => {
+    await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
+    const live = sessionRoot()!
+    flushValueWrites(live)
+    const r = await handleMutate(
+      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(flushValueWrites(live).map((c) => c.rel)).toEqual(['Notes/Archive'])
+  })
+
   it('createPage notes the new page for the values push', async () => {
     const live = sessionRoot()!
     flushValueWrites(live)
