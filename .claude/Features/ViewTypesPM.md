@@ -137,7 +137,7 @@ The chassis tokens — the floor, gaps, thumb height and share, and preview zoom
 | Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` (chassis) |
 | Thumb Height | `--card-thumb-h-base` / `--card-thumb-h` | `100px` (chassis; the reflow band and its live alias) |
 | Thumb Share | `--thumb-share` | `65%` (chassis; a locked card's image share) |
-| Preview Zoom | `--preview-zoom` | `1.25` (chassis; captured previews only) |
+| Preview Zoom | `--card-preview-zoom` | `1.25` (chassis; captured previews only) |
 | Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` |
 | Scaled Thumb | `--card-thumb-h` | `calc(var(--card-thumb-h-base) * var(--card-scale, 1))` |
 | Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |

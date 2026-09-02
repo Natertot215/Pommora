@@ -59,9 +59,9 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  /* The detail lane scales off --mdpm-scale (set inline by PageTile from its single Embed Scale
+  /* The detail lane scales off --page-detail-scale (set inline by PageTile from its single Embed Scale
      setting), so the whole embed's geometry follows one variable. */
-  --rail-inset: calc(var(--rail-inset-base) * var(--mdpm-scale));
+  --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
   /* Re-homes the scroll timeline at the tile (the shell's page-wide scope stands down here) so each
@@ -80,8 +80,8 @@
 }
 
 .page-tile .mdpm-editor .cm-content {
-  padding: calc(16px * var(--mdpm-scale)) calc(14px * var(--mdpm-scale))
-    calc(16px * var(--mdpm-scale)) var(--rail-inset);
+  padding: calc(16px * var(--page-detail-scale)) calc(14px * var(--page-detail-scale))
+    calc(16px * var(--page-detail-scale)) var(--rail-inset);
 }
 /* Lets content ride under floating chrome — the host becomes the one scroller. */
 .page-tile-grows .page-tile,
@@ -124,7 +124,7 @@
    the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height
    is the whole retarget. */
 .page-tile.has-banner .mdpm-editor .cm-content {
-  padding-top: calc(var(--embed-banner-h) + 16px * var(--mdpm-scale));
+  padding-top: calc(var(--embed-banner-h) + 16px * var(--page-detail-scale));
 }
 .page-tile .mdpm-banner-img {
   -webkit-user-drag: none;
@@ -133,9 +133,9 @@
    and color, and this var exists because the embed omits .mdpm-header, which normally supplies
    it. */
 .page-tile .mdpm-banner-overlay {
-  --detail-title-size: calc(var(--text-title-large-size) * var(--mdpm-scale));
-  left: calc(16px * var(--mdpm-scale));
-  right: calc(16px * var(--mdpm-scale));
+  --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
+  left: calc(16px * var(--page-detail-scale));
+  right: calc(16px * var(--page-detail-scale));
 }
 
 /* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF

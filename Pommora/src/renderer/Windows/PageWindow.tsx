@@ -169,7 +169,7 @@ function PageWindowBody({
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
-      style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
+      style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onScan={promote}
       title={
         <WindowTabStrip

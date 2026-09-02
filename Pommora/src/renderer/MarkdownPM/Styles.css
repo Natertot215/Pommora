@@ -6,13 +6,13 @@
 
 :root {
   --editor-scale: 1;
-  --mdpm-scale: var(--editor-scale);
+  --page-detail-scale: var(--editor-scale);
   --md-box-radius: 6px;
   --md-box-gap-base: 6px; /* KNOB — the gap at 100% zoom */
 }
 
 .mdpm-shell {
-  --glyph-scale: calc(var(--mdpm-scale) * var(--block-zoom, 1));
+  --glyph-scale: calc(var(--page-detail-scale) * var(--block-zoom, 1));
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
   position: relative;

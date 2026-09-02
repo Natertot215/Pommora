@@ -103,9 +103,9 @@ The root of everything: one size factor for structure, one derived factor for gl
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
-| Editor Size Factor | `--mdpm-scale` | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
+| Page Detail Factor | `--page-detail-scale` | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
 | Per-Block Zoom | `@property --block-zoom` | `<number>`, inherits, initial `1` |
-| Glyph Scale | `--glyph-scale` | `calc(var(--mdpm-scale) * var(--block-zoom, 1))` · `.mdpm-shell` |
+| Glyph Scale | `--glyph-scale` | `calc(var(--page-detail-scale) * var(--block-zoom, 1))` · `.mdpm-shell` |
 | Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell` |
 
 #### II. Header, Banner & Title

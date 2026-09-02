@@ -20,10 +20,10 @@
 }
 
 /* Align the footer content with the embed's text column — its left/right insets scale off the same
-   --mdpm-scale the embed uses, so the crumbs sit under the body like the detail footer. */
+   --page-detail-scale the embed uses, so the crumbs sit under the body like the detail footer. */
 .page-window .window-footer .subfield {
-  padding-left: calc(20px * var(--mdpm-scale));
-  padding-right: calc(14px * var(--mdpm-scale));
+  padding-left: calc(20px * var(--page-detail-scale));
+  padding-right: calc(14px * var(--page-detail-scale));
 }
 
 /* The front-matter inspector rows are properties only — no title/banner rows. */
