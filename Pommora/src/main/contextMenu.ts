@@ -1,7 +1,8 @@
 // Per-kind native context menu for a sidebar entity. The renderer captures the right-click and
 // hands main a ContextTarget; main pops a native Menu whose items run main-side (handleMutate /
-// a native confirm / Finder), then signals the renderer to refetch on change. Rename is
-// intentionally absent here — it needs an inline rename in the renderer.
+// Finder), then signals the renderer to refetch on change. Rename and Delete are intentionally
+// absent from that main-side set — one needs an inline rename in the renderer, the other the
+// renderer's confirmation.
 
 import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
@@ -81,20 +82,6 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
-  const confirmDelete = async (): Promise<void> => {
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'warning',
-      buttons: ['Delete', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-      message: `Delete “${target.title}”?`,
-      detail:
-        deps.trashMode === 'system'
-          ? 'It will be moved to the system Trash.'
-          : 'It will be moved to the nexus’s .trash folder (recoverable).',
-    })
-    if (response === 0) await run({ op: 'delete', path: target.path, kind: target.kind })
-  }
   // target.path is renderer-supplied, so it resolves through the root guard — an unguarded join
   // would let `..` reveal a file outside the nexus.
   const reveal = async (): Promise<void> => {
@@ -138,7 +125,7 @@ export async function showContextMenu(
       case 'title:reveal':
         return reveal()
       case 'title:delete':
-        return confirmDelete()
+        return push(win, 'confirm-delete', target)
     }
   }
 
@@ -187,7 +174,7 @@ export async function showContextMenu(
     click: () => push(win, 'begin-rename', { path: target.path, host: target.host }),
   })
 
-  items.push({ label: 'Delete', click: () => void confirmDelete() })
+  items.push({ label: 'Delete', click: () => push(win, 'confirm-delete', target) })
   items.push({ type: 'separator' })
   if (target.host === 'sidebar' && (target.kind === 'collection' || target.kind === 'set')) {
     items.push({

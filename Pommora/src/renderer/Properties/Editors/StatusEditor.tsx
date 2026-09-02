@@ -12,6 +12,7 @@ import {
   fallbackTitle,
 } from '@shared/optionModel'
 import type { StatusGroup } from '@shared/properties'
+import { askClearOption, askRemoveOption } from '@renderer/Windows/confirmations'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   GhostOptionChip,
@@ -82,8 +83,11 @@ export function StatusEditor({
   const openMenu = async (value: string, name: string): Promise<void> => {
     const action = await window.nexus.optionMenu({ name })
     if (action === 'option:rename') setRenaming(value)
-    else if (action === 'option:remove') onRemoveOption(value)
-    else if (action === 'option:clear') onClearOption(value)
+    else if (action === 'option:remove') {
+      if (await askRemoveOption(name)) onRemoveOption(value)
+    } else if (action === 'option:clear') {
+      if (await askClearOption(name)) onClearOption(value)
+    }
   }
   const pickColor = (value: string, color: string | undefined): void => {
     onSetGroups(recolorStatusOption(groups, value, color))

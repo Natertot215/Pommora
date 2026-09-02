@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { shownDetail, useSession } from '../store'
+import { confirmDelete } from '@renderer/Windows/confirmations'
 import { footerLockAction, lockIcon } from '@renderer/DesignSystem/Menus/menu-base.css'
 import {
   FooterIconButton,
@@ -38,7 +39,7 @@ export function PageMenu(): React.JSX.Element | null {
       await window.nexus.writeClipboard(pageLinkText(pageDetail.title))
     else if (action === 'title:reveal') await window.nexus.revealPath(pageDetail.path)
     else if (action === 'title:delete')
-      await mutate({ op: 'delete', path: pageDetail.path, kind: 'page' })
+      await confirmDelete({ path: pageDetail.path, kind: 'page', title: pageDetail.title })
   }
   const ownIcon =
     typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined

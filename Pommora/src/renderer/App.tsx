@@ -17,6 +17,8 @@ import { PageWindow } from './Windows/PageWindow'
 import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from './Settings/SettingsWindow'
 import { IterationWindow } from './Utilities/iteration-window'
+import { ConfirmationWindow } from './Windows/ConfirmationWindow'
+import { confirmDelete } from './Windows/confirmations'
 import { ConnectionPane } from './Links/ConnectionPane'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
@@ -118,6 +120,8 @@ export function App(): React.JSX.Element {
       })
     })
   }, [select])
+
+  useEffect(() => window.nexus.onConfirmDelete((target) => void confirmDelete(target)), [])
 
   const openPreview = useSession((s) => s.openPreview)
   useEffect(() => {
@@ -287,6 +291,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <WebWindow />}
       {status === 'ready' && <SettingsWindow />}
       {status === 'ready' && <IterationWindow />}
+      <ConfirmationWindow />
       {status === 'ready' && <ConnectionPane />}
       {status === 'ready' && inspectorOpen && (
         <div

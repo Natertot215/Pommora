@@ -8,6 +8,7 @@ import { overlay } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
+import { askEmptyTrash } from '@renderer/Windows/confirmations'
 import { type DateFormat, defaultStyleFor } from '@shared/columnStyles'
 import type { MutateRequest } from '@shared/mutate'
 import type { CollectionNode } from '@shared/types'
@@ -144,7 +145,7 @@ export function TrashFrame(): React.JSX.Element {
   }
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
-    if (!(await window.nexus.confirmEmptyTrash(targets.length))) return
+    if (!(await askEmptyTrash(targets.length))) return
     const { done, refused } = await many(
       targets,
       (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
@@ -201,8 +202,7 @@ export function TrashFrame(): React.JSX.Element {
         await one({ op: 'restore', bundlePath: row.bundlePath, destination: action.destination })
         break
       case 'delete':
-        if (await window.nexus.confirmEmptyTrash(1))
-          await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
+        if (await askEmptyTrash(1)) await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
         break
       case 'restoreAll':
         await restoreBatch(targets)

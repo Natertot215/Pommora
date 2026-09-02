@@ -1,4 +1,5 @@
 import type { NavViewMode, SelectionState } from '@shared/types'
+import type { ConfirmRequest } from '@renderer/Windows/confirmations'
 import type { Slice } from './sessionState'
 
 export interface ChromeSlice {
@@ -30,6 +31,8 @@ export interface ChromeSlice {
   iterationOpen: boolean
   closeIteration: () => void
   toggleIteration: () => void
+  pendingConfirm: { req: ConfirmRequest; settle: (confirmed: boolean) => void } | null
+  askConfirm: (req: ConfirmRequest) => Promise<boolean>
   /** The per-nexus furniture back to its defaults, so a nexus without the setting can't inherit
    *  the previous one's. */
   resetChrome: () => void
@@ -133,6 +136,22 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
     closeIteration: () => set({ iterationOpen: false }),
     toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
 
-    resetChrome: () => set(PER_NEXUS),
+    pendingConfirm: null,
+    askConfirm: (req) =>
+      new Promise((resolve) => {
+        get().pendingConfirm?.settle(false)
+        // Identity-guarded: a question that was already displaced must not take down the one
+        // standing in its place.
+        const settle = (confirmed: boolean): void => {
+          set((s) => (s.pendingConfirm?.settle === settle ? { pendingConfirm: null } : {}))
+          resolve(confirmed)
+        }
+        set({ pendingConfirm: { req, settle } })
+      }),
+
+    resetChrome: () => {
+      get().pendingConfirm?.settle(false)
+      set({ ...PER_NEXUS, pendingConfirm: null })
+    },
   }
 }

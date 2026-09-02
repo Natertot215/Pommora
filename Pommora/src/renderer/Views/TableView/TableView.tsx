@@ -4,6 +4,7 @@ import { patchOverride } from '../useValuesEpoch'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
+import { confirmDelete } from '@renderer/Windows/confirmations'
 import { type CellMenuContext, cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
 import type { ColumnAlign, SavedView } from '@shared/views'
@@ -876,7 +877,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       setIconPickerOpen(true)
     } else if (action === 'title:newabove') void newPageAdjacent(row, 'above')
     else if (action === 'title:newbelow') void newPageAdjacent(row, 'below')
-    else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
+    else if (action === 'title:delete')
+      void confirmDelete({ path: row.path, kind: 'page', title: row.title })
     else if (action === 'title:rename' || action === 'cell:edit')
       setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
     else if (action === 'cell:rename') {

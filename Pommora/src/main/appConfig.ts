@@ -3,12 +3,7 @@
 
 import { join } from 'node:path'
 import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
-
-/** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
- *  macOS system Trash. Device-level since system Trash isn't portable nexus data. */
-export type TrashMode = 'nexus' | 'system'
-
-export const DEFAULT_TRASH_MODE: TrashMode = 'nexus'
+import { DEFAULT_TRASH_MODE, type TrashMode } from '@shared/types'
 
 export interface AppConfig {
   lastNexusPath?: string
@@ -17,6 +12,9 @@ export interface AppConfig {
 }
 
 const FILE = 'pommora.json'
+
+/** The one place the unset field resolves to its default. */
+export const trashModeOf = (config: AppConfig): TrashMode => config.trashMode ?? DEFAULT_TRASH_MODE
 
 export function appConfigPath(userDataDir: string): string {
   return join(userDataDir, FILE)

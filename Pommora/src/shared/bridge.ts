@@ -21,6 +21,7 @@ import type {
   PageValues,
   StoredTabSet,
   ThumbRect,
+  TrashMode,
   TrashRow,
   ValueChange,
   ViewButton,
@@ -89,8 +90,10 @@ export interface Asks {
   // The whole list crosses at once, so add/remove is one write with no half-applied ordering.
   'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
   'exclusions:choose': { args: []; reply: Result<string | null> }
-  // `null` is a cancelled dialog or an empty exclusion list; a report is a pass that ran.
+  // `null` is an empty exclusion list; a report is a pass that ran.
   'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
+  // The confirmation names how many folders are about to be swept, counted at the moment of asking.
+  'exclusions:count': { args: []; reply: Result<number> }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
@@ -135,7 +138,6 @@ export interface Asks {
     args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
     reply: Result<null>
   }
-  'views:confirmDelete': { args: []; reply: boolean }
   'container:configure': {
     args: [
       containerPath: string,
@@ -232,7 +234,6 @@ export interface Asks {
     args: [host: BlockHostRef, tileId: string]
     reply: Result<{ id: string }>
   }
-  'blocks:confirmRemove': { args: []; reply: boolean }
 
   // Settings / personalization / theme
   'subfield:get': { args: []; reply: SubfieldConfig | null }
@@ -268,8 +269,10 @@ export interface Asks {
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   'trash:menu': { args: [ctx: TrashMenuContext]; reply: TrashMenuAction | null }
   'trash:columnMenu': { args: [ctx: TrashColumnContext]; reply: TrashColumnAction | null }
-  // Main owns the switch that decides what Delete means; the renderer supplies only the count.
-  'trash:confirmEmpty': { args: [count: number]; reply: boolean }
+  // What a delete confirmation states about where the artifact goes. Read at the moment of asking
+  // rather than from the renderer's cache, so the sentence can't promise the system trash while
+  // main erases outright.
+  'delete:facts': { args: []; reply: { trashMode: TrashMode; permanentDelete: boolean } }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'trash:report': { args: [message: string, detail: string]; reply: void }
 
@@ -363,6 +366,8 @@ export interface Pushes {
   // The icon picker anchors to the row the gesture happened on, which only the renderer can find.
   'begin-icon': { path: string; host?: RenameHost }
   'open-in-new-tab': ContextTarget
+  // Delete asks in the renderer, so the native menu hands the target back rather than acting.
+  'confirm-delete': ContextTarget
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
   'assets:changed': AssetMap
