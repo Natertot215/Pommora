@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-01-2026              | PM-123 | Stamp Retirement                                     |
 | 08-31-2026 → 09-01      | PM-122 | Compatible Properties                                |
 | 08-31-2026              | PM-121 | Custom Text-Selection.                               |
 | 08-31-2026              | PM-120 | The Single ViewHost                                  |
@@ -126,6 +127,16 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-123 || Stamp Retirement
+**DATE:** 09-01-2026
+
+Pages and sidecars carry no `created_at` or `modified_at`: Last Modified is the file's modification time, and Creation Time is the instant encoded in the page's `PageID` ULID. `loadValues` returns `PageValues = { frontmatter, createdAt, modifiedAt }` per page, `ViewRow` carries both stamps, and `created_time` joined `last_edited_time` as a property type so both columns resolve through the generic date branches of sort, filter, styles, menus, and widths; the modified∥created fallback, the `_id` sort, and the `lastEditedTime` value kind were deleted, and both columns reveal from the Hidden frame under `RESERVED_LABEL`'s "Creation Time" / "Last Modified". Every page and sidecar writer stopped stamping, `baseSidecar` dropped its twin, Clear Exclusion strips only the kind id and `<Context>` keys, and adoption seeds a page's ULID from `min(birthtime, mtime)` through `idAt`.
+
+**Modification time as a fact:** `rewritePreservingTimes` in `IO/atomicWrite.ts` became the one writer for a rewrite the user did not make — sweeps, migrations, adoption — restoring the file's `utimes` and dropping the walk cache's entry; `setGovernedRootKeys` skips a byte-identical write; a value push re-reads only the pages it names through `loadValues`' page-id list, over the `Result` envelope. The vault pass stripped the keys from 133 pages and 37 sidecars under `~/NexusOS` with timestamps restored, and re-minted the 40 PageIDs whose adoption instant had displaced a real creation date, substituting the ids through the sidecar orderings, `navigation.json`, and `nexus.db`.
+
+- **Commits:** `9966332c^..7eaf39bf`
+- **Diff:** Net +38 | +499 / −461
 
 #### PM-122 || Compatible Properties
 **DATE:** 08-31-2026 → 09-01
@@ -974,7 +985,7 @@ The URL and Link property landed front to back across 76 files. Value resolution
 #### PM-033 || Mobile Future-Proofing For A Capacitor Port
 **DATE:** 07-04-2026
 
-The desktop build was pre-paved for an eventual Capacitor iOS port with no change to desktop behavior: safe-area insets, `dvh` sizing, and a `dist-app` ignore, landed against a ratified spec that seeded `.claude/Mobile/`.
+The desktop build was pre-paved for an eventual Capacitor iOS port with no change to desktop behavior: safe-area insets, `dvh` sizing, and a `dist-app` ignore, landed against a ratified companion-app spec.
 
 - **Commits:** `02bb4e11^..880f7b57`
 - **Diff:** Net +46 | +54 / −8

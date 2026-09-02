@@ -1,17 +1,5 @@
 ## PommoraDND
 
-```
-PommoraDND
-├── The Seam
-├── Core Principles
-├── Displacement
-├── Insertion Line
-├── Autoscroll
-├── Constraints & Accessibility
-├── Known Issues
-└── Pending
-```
-
 Pommora's in-house drag-and-drop engine, owning the interaction layer the way MarkdownPM owns the editor. It has no drag dependency; it is scoped to a known reality — Chromium-only, React-only, a known set of surfaces — and adds what a general library leaves out: pointer capture, hysteresis, and a frame-accurate commit. Every draggable surface goes through it rather than reaching for a library of its own, which is what lets a drag feel the same wherever it starts.
 
 ### The Seam
@@ -41,7 +29,7 @@ The first of the engine's two drop treatments: neighbors reflow to open the gap 
 
 ### Insertion Line
 
-The second treatment, for where the drop point has to be exact — the sidebar tree, a view's group bands, the editor's blocks. Nothing displaces: an Apple-style line marks the drop, the picked-up row stays muted in place, and a ghost follows the cursor through a portal. One frame owns the lifecycle (`Interactions/insertionDrag.tsx`): point tracking, the frozen geometry snapshot and its invalidations — any scroll, a mid-drag list change, a sprung-open disclosure — autoscroll, the line and ghost chrome, and the announcements, over the pointer-gesture skeleton. Each surface passes only its drop model: how to measure, how a point becomes a slot (null declines — a noop drop draws no line and commits nothing), what a slot commits, and its wording; the models stay pure and unit-tested, handing the caller one classified commit, a reorder or a reparent. In the sidebar that commit lands optimistically wherever a pure tree transform can express it;[^1] in the view bands it resolves through one shared patch held until the write returns, with a Set band's whole region reading as one nest-into target and a flat surface turning nesting off.[^2] The editor's block drag keeps its own lifecycle while wearing the same chrome.[^3]
+The second treatment, for where the drop point has to be exact — the sidebar tree, a view's group bands, the editor's blocks. Nothing displaces: an Apple-style line marks the drop, the picked-up row stays muted in place, and a ghost follows the cursor through a portal. One frame owns the lifecycle (`Interactions/insertionDrag.tsx`): point tracking, the frozen geometry snapshot and its invalidations — any scroll, a mid-drag list change, a sprung-open disclosure — autoscroll, the line and ghost chrome, and the announcements, over the pointer-gesture skeleton. Each surface passes only its drop model: how to measure, how a point becomes a slot (null declines — a noop drop draws no line and commits nothing), what a slot commits, and its wording; the models stay pure and unit-tested, handing the caller one classified commit, a reorder or a reparent. In the sidebar that commit lands optimistically wherever a pure tree transform can express it; in the view bands it resolves through one shared patch held until the write returns, with a Set band's whole region reading as one nest-into target and a flat surface turning nesting off. The editor's block drag keeps its own lifecycle while wearing the same chrome.
 
 ### Autoscroll
 
@@ -75,7 +63,3 @@ The tunables are custom properties declared at `:root`, overridable on any ances
 
 - **The CalendarPicker's range drag** stays on its own lifecycle; it belongs to the scrub family rather than the drag one.
 - **Mobile readiness** — the sensor and collision layers keep it viable (draggables opt out of native panning, `pointercancel` tears a gesture down, collision math never bakes in hit-target sizes); a touch pass adds a press-delay alongside the travel-distance activation.
-
-[^1]: [[InterfacePM]] §The Sidebar
-[^2]: [[ViewTypesPM]] §Group
-[^3]: [[MarkdownPM]] §Block Structure

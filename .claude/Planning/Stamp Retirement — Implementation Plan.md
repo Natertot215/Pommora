@@ -67,7 +67,7 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 - `src/shared` imports no fs, no React, and nothing from `src/main`. Main owns the filesystem.
 - Comments: at most one load-bearing why per change; never restate a value; never narrate. The plan's fences carry only path markers and contract edges.
 - Commit granularity: one commit per task, message on the task heading, ticks in the same commit. No per-task line-count reporting; the closeout reports Task 0's target files baseline → finish, comments and tests excluded (Nathan, 09-01-2026).
-- Out of scope everywhere: Sapphire; `.claude/Mobile`; PageID or path-identity retirement; the content index; grouping by a stamp; any new frontmatter key.
+- Out of scope everywhere: Sapphire; PageID or path-identity retirement; the content index; grouping by a stamp; any new frontmatter key.
 
 **Made False**
 
@@ -981,7 +981,7 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 - [x] **Phase 1** — Tasks 1–2 · Gate 1 · `5770a1d9` `ba0ea590` `ca7958d5`
 - [x] **Phase 2** — Tasks 3–4 · Gate 2 · `7b1a42ab` `c465820f` `9b4ad05c`
 - [x] **Phase 3** — Tasks 5, 6, 8 · Gate 3 · `4722f3a7` `1132360d` `81caae42` · `92bf3e73` `7c7d3c81` `da7fce8c` `bf3a6e7b` `84b79d8c` `6ecd6d37` `581678af` `bf070dfc` `b443c5a5` `1c2dcae7`
-- [ ] **Closeout** — vault pass · docs · History
+- [x] **Closeout** — rulings `750dcad5` `a5be9a13` `7eaf39bf` · vault pass 09-01-2026 · docs · History PM-123
 
 ### Rulings
 
@@ -1004,6 +1004,7 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 - **A push refreshes only the pages it names** (Nathan, 09-01-2026): `loadValues` takes an optional page-id list resolved through the live tree; `useValuesEpoch` merges a named refetch into the values it holds and re-reads the container whole only when a batch degraded to naming none. The rename epoch stays whole.
 - **`view:loadValues` is an envelope** (executor, 09-01-2026): `raw` with no `.catch` would blank a container on a throw; `fetchValues` unwraps it and a failed read keeps the values already held.
 - **`setGovernedRootKeys` skips a byte-identical write** (executor, 09-01-2026; unruled — Nathan did not answer Decision 2): one compare before the write, so a no-op edit neither rewrites the inode nor moves Last Modified. Vetoable.
+- **Re-mint the adopted ids from their dates** (Nathan, 09-01-2026, "just manually change them in the db after the sweep"): the information-loss check found 40 pages whose PageID encoded the adoption instant while `created_at` held the real date; after the strip, each took a fresh ULID seeded at that date, and the old id was substituted in its page, the sidecar orderings, `navigation.json`, and every `nexus.db` row, the db vacuumed after.
 
 ### Review Pass — 09-01-2026
 
@@ -1021,6 +1022,7 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 
 - The `nowIso` control reads 0: the Phase 3 simplification pass (`92bf3e73`) inlined its one caller to `new Date().toISOString()` at `identity.ts:31`, which still mints nexus.json's `createdAt`. `last_edited_time` reads 11 against a ≥ 12 floor: the `STAMP_TYPE` map replaced three per-site mentions with one.
 - Two Gate 3 commits (`b69dc164`, `6ecd6d37`) carry a parallel session's staged files — the commit hook's ledger amend picks up whatever the index holds. Left in history; the peer's work is intact.
+- The census read 133 pages / 37 sidecars against the predicted 49 / 88 / 29: the grounding grep counted one key per file and missed folders the exclusion list names; the plan's own sequence held (skip list 0, bodies byte-equal, mtimes held to the millisecond). The information-loss check read 40 against a predicted 0 — adoption before Task 8 minted the id at the adoption instant, and `created_at` still held the real date; ruled and re-minted (Rulings). The backup's mtimes are second-precision (macOS's bundled rsync), so the invariant compared at `stat -f %m`. Decisions 3 and 4 landed as one commit — they share the same bridge, handler, and hook hunks.
 
 ### Lessons
 
@@ -1028,7 +1030,6 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 
 - `mergeFrontmatter` emits `---\n{}\n---` when Clear empties a page's map (a page holding only its id and Context keys); pre-existing, unchanged by this arc — drop the fence when the map empties.
 - The content index's `values` rows still record legacy stamp keys until each file's (mtime, size) moves; harmless, self-healing.
-- An adopted page's Creation Time is its adoption instant for every page adopted *before* Task 8; re-minting those ids is identity surgery (`page_order`, nexus.db rows) and is not this arc's.
 
 ### Closeout
 
@@ -1048,17 +1049,17 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task (neutral verifier).
+- [x] Every numbered requirement traces to a landed task (neutral verifier).
 - [ ] The Acceptance criterion observed running, clause by clause, in a scratch nexus over CDP.
-- [ ] Dead Vocabulary at zero, controls non-zero.
-- [ ] Every Made False row landed in its task's commit.
+- [x] Dead Vocabulary at zero, controls non-zero.
+- [x] Every Made False row landed in its task's commit.
 
 **The passes**
 
-- [ ] Each phase's own simplification pass, then the whole range: simplification → comment pass → attack review; every finding fixed or carrying a defensible ruling.
+- [x] Each phase's own simplification pass, then the whole range: simplification → comment pass → attack review; every finding fixed or carrying a defensible ruling.
 
 **Nathan's own pass**
 
 - [ ] The two labels.
 - [ ] The Hidden frame on a real NexusOS Collection: reveal both, sort by each, filter by each.
-- [ ] The vault pass's per-item go, and the backup's location.
+- [x] The vault pass's per-item go, and the backup's location (`~/NexusOS-stamp-backup-09-01-2026/`).

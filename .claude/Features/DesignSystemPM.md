@@ -1,38 +1,5 @@
 ## Design System
 
-```
-Design System
-├── Token Atlas
-│   ├── Primitives
-│   ├── Surfaces
-│   ├── Labels
-│   ├── States
-│   ├── Fills
-│   ├── Tints
-│   ├── Borders
-│   ├── Shadows
-│   ├── Fades
-│   ├── Spectrum
-│   ├── Ramp
-│   ├── Geometry
-│   └── Typography
-├── Glass
-├── Labels & Chips
-├── Elements
-├── Components
-│   ├── Controls
-│   ├── Pickers
-│   ├── Fields
-│   └── Side Pane
-├── Menus
-├── Interactions
-├── Animation
-├── Symbols
-├── Util
-├── Known Issues
-└── Pending
-```
-
 The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
 - **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Util/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
@@ -385,7 +352,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Title | Location | What it is |
 | ------------------- | ----------------------- | ---------------------------------------------------------- |
 | Tile chassis | `SurfacePM/block-tile-base.css` | The resizable tile frame SurfacePM's tiles and MarkdownPM's embeds share. |
-| WindowBase | app: `Windows/window-base.tsx` · `window-base.css` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
+| WindowBase | app: `Windows/window-base.tsx` · `window-base.css` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. |
 | Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
 | Tabs | app: `Tabs/` | [[NavigationPM]] |
 | Cards | app: `Cards/` — `Card.tsx` · `cards.css` | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` gives the cover `--thumb-share` of the height and the title the rest, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`; `CardPlaceholder` when there is none) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
@@ -428,7 +395,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 ### Symbols
 
-`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.[^2]
+`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.
 
 ### Util
 
@@ -445,6 +412,3 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 - **Light/dark theming** — the system is dark-only.
 - **An inactive label tone** — the empty-state text color between secondary and tertiary; interim consumers read tertiary. (The `--state-inactive` opacity above is a different thing.)
 - **Type** — no tracking scale, no Markdown element mapping, no multi-line clamp.
-
-[^1]: [[InterfacePM]] §Floating Windows
-[^2]: [[SymbolsPM]]

@@ -1,13 +1,5 @@
 ## NexusRecord
 
-```
-NexusRecord
-├── Provenance
-├── Baseline
-├── Known Issues
-└── Pending
-```
-
 Pommora answers *where is this now*; the record answers *where was this then*. It has two halves: **Provenance**, a JSON written into every deletion bundle in `.trash` that says where a departed entity belonged and what it carried, and **Baseline**, a per-machine projection of what the last open saw, kept in `nexus.db`. Both join on ids — a rename rots a name, an id survives it — with titles riding along as labels. The code is `src/main/provenance.ts` for the bundle and restore, `src/shared/record.ts` for the baseline's tuple and diff, and `src/main/remint.ts` for duplicate ids.
 
 ### Provenance
@@ -20,7 +12,7 @@ Every delete to the Nexus's own trash produces a bundle: a folder in `.trash`, u
 
 **Restore.** The resolver takes a record and the current tree and returns a placement — directory, final name, and for a Space or Context the final title — or a typed refusal: parent gone, parent can't hold this kind, parent unaddressable, id already live. A live id outranks every other answer. Final titles are the resolver's rather than the recorded ones, since a freed title may have been re-minted while the original sat in trash, so a collision disambiguates for every kind. A returning artifact is reconciled against the world it comes back to: a governed key survives only if what it names still exists, values come back exactly as the file spelled them with a multi-value key narrowing to its survivors, and foreign frontmatter and the body never move. A Context re-enters the registry before its folder moves, so a refused move rolls the entry back; membership re-applies by id against the as-restored folder names. A property restores by rebuilding — the definition re-enters the registry, each Collection gets it back, and each value is written home where it still validates — and refuses outright if another property has since taken its name.
 
-**The Trash Frame.** The record's reading half is the Trash frame of the Settings window, listing every bundle `.trash` holds, one row per deleted entity across the five artifact-bearing kinds.[^1] Main shapes each row — kind and title from the artifact, the deletion time from the bundle's stamp, a breadcrumb resolved live from the recorded parent id, and whether that parent still resolves — since `.trash` is outside the watcher and the list is fetched when the leaf opens and after each action. A row's right-click restores it or gives it up: **Restore** returns the entity to the tree, or, where its recorded home no longer resolves, opens into the live places that kind may land; **Delete** hands the artifact to the operating system's trash, or erases it when **Permanently Delete Files** is on, and removes the spent bundle. Checked rows act together, and a batch names what it couldn't resolve.
+**The Trash Frame.** The record's reading half is the Trash frame of the Settings window, listing every bundle `.trash` holds, one row per deleted entity across the five artifact-bearing kinds. Main shapes each row — kind and title from the artifact, the deletion time from the bundle's stamp, a breadcrumb resolved live from the recorded parent id, and whether that parent still resolves — since `.trash` is outside the watcher and the list is fetched when the leaf opens and after each action. A row's right-click restores it or gives it up: **Restore** returns the entity to the tree, or, where its recorded home no longer resolves, opens into the live places that kind may land; **Delete** hands the artifact to the operating system's trash, or erases it when **Permanently Delete Files** is on, and removes the spent bundle. Checked rows act together, and a batch names what it couldn't resolve.
 
 ### Baseline
 
@@ -41,5 +33,3 @@ The baseline is also what settles a duplicated id. At the next open, the path th
 - **Crash-safe moves and link renames** — the write→act→settle shape applied to the move cascade and the `[[link]]` rename cascade, which today are per-file with a revert.
 - **Change capture** — property and frontmatter changes as event payloads; the record shape widens additively.
 - **Git as opt-in content history** — complementary to the record; Pommora never auto-commits.
-
-[^1]: [[ConfigurationPM]] §Trash

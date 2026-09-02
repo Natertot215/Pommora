@@ -1,29 +1,6 @@
 ## Architecture
 
-```
-Architecture
-├── The Shape of the App
-├── The Nexus Layout
-│   ├── II. Classification
-│   ├── II. The Agenda Singletons
-│   ├── II. Folder Exclusion
-│   └── II. The Asset Directory
-├── The Data Layer
-│   ├── II. The Read + State Layer
-│   ├── II. Mutations
-│   ├── II. The Atomic-Write Contract
-│   ├── II. The Device-Local Database
-│   ├── II. The File Watcher
-│   ├── II. Adoption
-│   └── II. Persistence
-├── The Process Boundary
-├── The Renderer
-├── What the Data Layer Leaves to the OS
-├── Known Issues
-└── Pending
-```
-
-The whole-app architecture guide: how the two processes divide the work, how data moves between them, and how each renderer domain sits on the same few seams. Per-domain depth lives in each domain's own document; this one is the map and the overview of how each part works in the codebase, and the home of the cross-cutting rules no single feature owns. The PRD carries the product-level storage model.[^1]
+The whole-app architecture guide: how the two processes divide the work, how data moves between them, and how each renderer domain sits on the same few seams. Per-domain depth lives in each domain's own document; this one is the map and the overview of how each part works in the codebase, and the home of the cross-cutting rules no single feature owns. The PRD carries the product-level storage model.
 
 ### The Shape of the App
 
@@ -80,7 +57,7 @@ Every sidecar's field shape is canonical in `src/shared/schemas.ts`; every on-di
 
 #### II. Classification
 
-Folder kind is decided by one resolver, `src/main/folderKind.ts`. At the Nexus root the sidecar filename discriminates — `_pagecollection.json`, `_taskconfig.json`, `_eventconfig.json` — so a folder is a Collection because it carries the Collection sidecar regardless of its name, and folders rename freely. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is a Set, at any depth, storing views in its sidecar wherever it sits while only a depth-1 Set is offered them.[^2] Collections and the two Agenda singletons live as siblings at the root with no wrapper folder. `.nexus/` and `.trash/` are hidden from the sidebar and from other tools by the dotfile convention, matching `.obsidian/`.
+Folder kind is decided by one resolver, `src/main/folderKind.ts`. At the Nexus root the sidecar filename discriminates — `_pagecollection.json`, `_taskconfig.json`, `_eventconfig.json` — so a folder is a Collection because it carries the Collection sidecar regardless of its name, and folders rename freely. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is a Set, at any depth, storing views in its sidecar wherever it sits while only a depth-1 Set is offered them. Collections and the two Agenda singletons live as siblings at the root with no wrapper folder. `.nexus/` and `.trash/` are hidden from the sidebar and from other tools by the dotfile convention, matching `.obsidian/`.
 
 #### II. The Agenda Singletons
 
@@ -94,7 +71,7 @@ Agenda items carry no content model yet: no fields, no create path, no read surf
 
 #### II. The Asset Directory
 
-One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`.[^3] The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves `[[File.png]]` against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event. Assets are served to the renderer over the read-only `nexus-asset://` scheme.
+One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`. The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves `[[File.png]]` against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event. Assets are served to the renderer over the read-only `nexus-asset://` scheme.
 
 ### The Data Layer
 
@@ -106,7 +83,7 @@ Renderer lookups derive from `treeIndex`: one record per entity (kind, id, title
 
 #### II. Mutations
 
-Every change funnels through one dispatcher, `mutate` in `src/main/mutate.ts`: it resolves and checks paths, refuses reserved targets, and routes each operation to its implementation. Cascade policy is stated beside it once — a page rename reverts if its link rewrite fails; a Context delete unlinks its Spaces before the folder moves to the trash.[^4] The write path never runs inside a read, and every write channel confirms itself: after a successful write, main applies the matching change to its live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved.
+Every change funnels through one dispatcher, `mutate` in `src/main/mutate.ts`: it resolves and checks paths, refuses reserved targets, and routes each operation to its implementation. Cascade policy is stated beside it once — a page rename reverts if its link rewrite fails; a Context delete unlinks its Spaces before the folder moves to the trash. The write path never runs inside a read, and every write channel confirms itself: after a successful write, main applies the matching change to its live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved.
 
 Several rules hold across every entity and are stated here rather than per feature:
 
@@ -114,8 +91,8 @@ Several rules hold across every entity and are stated here rather than per featu
 - **No empties.** An emptied value deletes its key — a property, a Context tag, a color, a banner — never writing a placeholder.
 - **Foreign data survives.** Every rewrite of a page or sidecar edits the modeled keys in place and preserves every foreign key and YAML comment by value.
 - **Governed keys.** A frontmatter key is a property's when it exactly matches a registered property name (`isRegisteredPropertyName`, `src/shared/properties.ts`), and a Context's when it is a registered title wrapped as `<Title>` (`src/shared/contexts.ts`); every other key is foreign and preserved by value. A property may not take a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `cover`, `created_at`, `modified_at`) or one starting with `<`.
-- **Sweeps and journals.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open only the files the content index names as candidates, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Multi-file schema and Context operations serialize on one chain and write a crash journal first — intent to disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied.[^5]
-- **Connections.** One mention scanner covers the three link syntaxes, code-masked, and one rewriter applies a rename.[^6]
+- **Sweeps and journals.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open only the files the content index names as candidates, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Multi-file schema and Context operations serialize on one chain and write a crash journal first — intent to disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied.
+- **Connections.** One mention scanner covers the three link syntaxes, code-masked, and one rewriter applies a rename.
 
 #### II. The Atomic-Write Contract
 
@@ -205,15 +182,15 @@ Deliberately never kept: the window opens at one size every launch, and floating
 
 **The Store.** One Zustand store, `useSession`, is the renderer's shared room: the tree, the shown selection, the tabs and their histories, every open page, the nav layer, the floating windows, and personalization live together, so features react to each other without private channels. It is composed from seven slice files under `src/renderer/Store/` — `NexusSlice` (the tree, the mutation gateway, opening and closing), `NavigationSlice` (tabs, pages, selection, history, pins, recents, favorites — one slice because `select`, the pin gestures, and the restore each write across all of it), `PreviewSlice` (the page and nav windows, the browser), `ChromeSlice` (pane widths, the footer, the settings window), `ConfigSlice` (personalization, device preferences, footnote answers), `RenameSlice` (the naming fences), and `CacheSlice` (the id-keyed maps) — with `store.ts` composing them and holding the React hooks. The store is per-window working state: main owns the data, and the store caches what main last confirmed.
 
-**Tabs, Warmth, and Navigation.** Tabs are a pure, tested model — unpinned tabs are the persisted row, pinned tabs derive live from their pin references through one writer, and each tab owns its history stack. Every page open in any tab has a slot in the store, keyed by page id — its detail and its live editing body — so a parked surface reads its own page and the shown one reads the selection's; `selection` is what the pane shows, and during a cold page open it lags the active tab's target until the fetch lands or the deadline passes, which is the pause-on-change. Warmth lives outside React as per-tab history snapshots plus a path-keyed detail slot with a single shared fetch, captured when a surface unmounts, so revisiting a page resumes instead of reloading, and the most recent page tabs keep their whole surface mounted off screen. Recents, pins, and favorites are bare references resolved against the live tree at render time, which is what makes them rename-proof.[^7]
+**Tabs, Warmth, and Navigation.** Tabs are a pure, tested model — unpinned tabs are the persisted row, pinned tabs derive live from their pin references through one writer, and each tab owns its history stack. Every page open in any tab has a slot in the store, keyed by page id — its detail and its live editing body — so a parked surface reads its own page and the shown one reads the selection's; `selection` is what the pane shows, and during a cold page open it lags the active tab's target until the fetch lands or the deadline passes, which is the pause-on-change. Warmth lives outside React as per-tab history snapshots plus a path-keyed detail slot with a single shared fetch, captured when a surface unmounts, so revisiting a page resumes instead of reloading, and the most recent page tabs keep their whole surface mounted off screen. Recents, pins, and favorites are bare references resolved against the live tree at render time, which is what makes them rename-proof.
 
-**The View Pipeline.** A Collection renders through one pure pipeline — columns, filter, group, sort — that takes its view, rows, and schema as inputs and knows nothing about where they came from, so a full page and an embedded tile run the same code. Table and Cards are the two shipped renderers over it, sharing the band chrome, creation engine, and ordering machinery. Value edits are optimistic: the renderer patches a local override immediately, the mutation confirms through main, and the confirmed tree agrees with what was drawn.[^8]
+**The View Pipeline.** A Collection renders through one pure pipeline — columns, filter, group, sort — that takes its view, rows, and schema as inputs and knows nothing about where they came from, so a full page and an embedded tile run the same code. Table and Cards are the two shipped renderers over it, sharing the band chrome, creation engine, and ordering machinery. Value edits are optimistic: the renderer patches a local override immediately, the mutation confirms through main, and the confirmed tree agrees with what was drawn.
 
-**The Editor.** MarkdownPM is a CodeMirror 6 editor whose central law is a single cached document model: everything the editor knows about a document's structure derives once per version, every feature reads the same answers, and line chrome, widgets, and the spans a caret must skip are emitted from one intent stream. Tables and embeds render as live widgets over canonical Markdown source, with transaction guards refusing or repairing edits that would corrupt a construct.[^9]
+**The Editor.** MarkdownPM is a CodeMirror 6 editor whose central law is a single cached document model: everything the editor knows about a document's structure derives once per version, every feature reads the same answers, and line chrome, widgets, and the spans a caret must skip are emitted from one intent stream. Tables and embeds render as live widgets over canonical Markdown source, with transaction guards refusing or repairing edits that would corrupt a construct.
 
-**Embeds and Floating Windows.** One `PageTile` renders a real page inside any foreign surface — the Page Window, the NavWindow, the hover pane, dashboard tiles, and the editor's `![[Title]]` widget are the same component — and an edit made anywhere routes through the page's own save path. Floating windows share one chassis, `WindowBase`, mounted by the Page Window, the NavWindow, the Web Window, and Settings; the hover pane rides the lighter PickerMenu chassis instead. Live websites are webview guests governed by one main-side owner and one renderer adjudicator deciding where every external link opens.[^10]
+**Embeds and Floating Windows.** One `PageTile` renders a real page inside any foreign surface — the Page Window, the NavWindow, the hover pane, dashboard tiles, and the editor's `![[Title]]` widget are the same component — and an edit made anywhere routes through the page's own save path. Floating windows share one chassis, `WindowBase`, mounted by the Page Window, the NavWindow, the Web Window, and Settings; the hover pane rides the lighter PickerMenu chassis instead. Live websites are webview guests governed by one main-side owner and one renderer adjudicator deciding where every external link opens.
 
-**The Design System.** Every color, size, weight, and duration is a token defined once in TypeScript and republished as CSS variables, so stylesheets and components read one source. Glass is one frost recipe in three semantic tiers; floating panes share one anchored shell; menu rows share one primitive. PommoraDND is the in-house drag engine, and the deployed showcase renders the system from the same sources.[^11]
+**The Design System.** Every color, size, weight, and duration is a token defined once in TypeScript and republished as CSS variables, so stylesheets and components read one source. Glass is one frost recipe in three semantic tiers; floating panes share one anchored shell; menu rows share one primitive. PommoraDND is the in-house drag engine, and the deployed showcase renders the system from the same sources.
 
 ### What the Data Layer Leaves to the OS
 
@@ -230,15 +207,3 @@ Deliberately never kept: the window opens at one size every launch, and floating
 
 - **Index consumers** — Linked-From, backlinks, ContextView membership, and full-text search each ride the content index as their own arcs; the FTS table is the one piece of schema still unwritten.
 - **Agenda** — the item format, the field vocabulary, ordering, and every surface, under the four decisions in §The Agenda Singletons.
-
-[^1]: [[PommoraPRD]] §Storage Philosophy
-[^2]: [[CollectionsPM]] §Page Sets
-[^3]: [[ConfigurationPM]] §Files & Links
-[^4]: [[ContextsPM]] §Writes · [[NexusRecordPM]]
-[^5]: [[PropertiesPM]] §Shared Mechanisms
-[^6]: [[ConnectionsPM]] §The Rename Cascade
-[^7]: [[NavigationPM]]
-[^8]: [[ViewTypesPM]]
-[^9]: [[MarkdownPM]]
-[^10]: [[SurfacePM]] §The Embed Framework · [[InterfacePM]] §Floating Windows · [[WebviewPM]]
-[^11]: [[DesignSystemPM]] · [[PommoraDND]]
