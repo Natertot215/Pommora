@@ -8,6 +8,13 @@ export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | nul
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
+/** A failed batch read keeps the values already held — a blank container reads as data loss. */
+export const fetchValues = (
+  path: string,
+  pageIds?: string[],
+): Promise<Record<string, PageValues> | null> =>
+  window.nexus.loadValues(path, pageIds).then((r) => (r.ok ? r.value : null))
+
 export const patchOverride = (
   set: SetOverrides,
   pageId: string,
@@ -49,10 +56,11 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
 }
 
 /** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a
- *  container push refetches the named container and retires the overrides the push settles —
- *  only once the refetch lands, since a row retired ahead of it paints its identity-only
- *  fallback for the round trip. A superseded refetch still retires: a settled override left
- *  standing would mask the disk until the next push. */
+ *  container push re-reads only the pages it names, merging them in, and retires the overrides
+ *  the push settles — only once the refetch lands, since a row retired ahead of it paints its
+ *  identity-only fallback for the round trip. A push that names none (a batch that degraded to a
+ *  walk) re-reads the container whole. A superseded whole refetch still retires: a settled
+ *  override left standing would mask the disk until the next push. */
 export function useValuesEpoch(
   path: string,
   setValues: Dispatch<SetStateAction<Record<string, PageValues>>>,
@@ -62,18 +70,22 @@ export function useValuesEpoch(
   useEffect(() => {
     if (!valuesEpoch) return
     let retire: ((prev: Overrides | null) => Overrides | null) | null = null
+    let only: string[] | undefined
     if (valuesEpoch.kind === 'container') {
       const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
       if (!mine.length) return
       const ids = mine.flatMap((c) => c.pageIds)
       retire = (prev) => retireSettled(prev, ids)
+      if (mine.every((c) => c.pageIds.length > 0)) only = ids
     } else {
       const { oldKey, newKey } = valuesEpoch
       setValueOverride?.((prev) => rekeyOverrides(prev, oldKey, newKey))
     }
     let canceled = false
-    void window.nexus.loadValues(path).then((v) => {
-      if (!canceled) setValues(v)
+    void fetchValues(path, only).then((v) => {
+      if (!v) return
+      if (only) setValues((prev) => ({ ...prev, ...v }))
+      else if (!canceled) setValues(v)
       if (retire) setValueOverride?.(retire)
     })
     return () => {

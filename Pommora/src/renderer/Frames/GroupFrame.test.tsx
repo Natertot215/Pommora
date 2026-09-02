@@ -93,7 +93,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = {
     views: { save: saveSpy },
     activeViews: { set: vi.fn(async () => {}) },
-    loadValues: vi.fn(async () => ({})),
+    loadValues: vi.fn(async () => ({ ok: true, value: {} })),
   }
   useSession.setState({ load: vi.fn(async () => {}) as never })
 })

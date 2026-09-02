@@ -8,7 +8,7 @@ import { useSession } from '../../store'
 import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
 import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
-import { pageValues } from '@renderer/Testing/pageValues'
+import { valuesReply } from '@renderer/Testing/pageValues'
 import { PAGE_ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -93,7 +93,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
     ],
   }) as unknown as CollectionNode
 
-const VALUES = pageValues({
+const VALUES = valuesReply({
   p1: {
     [PAGE_ID_KEY]: 'p1',
     ...propsAtRoot(
@@ -267,7 +267,7 @@ describe('checkbox cell gestures', () => {
   it('unchecking a checked box strips the property — no stored false', async () => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
       async () =>
-        pageValues({
+        valuesReply({
           p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
           p2: { [PAGE_ID_KEY]: 'p2' },
         })
@@ -560,7 +560,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   const mountChips = async (): Promise<void> => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
-      pageValues({
+      valuesReply({
         p1: {
           [PAGE_ID_KEY]: 'p1',
           '<Areas>': ['area_work', 'area_life'],
@@ -608,7 +608,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
-      pageValues({
+      valuesReply({
         p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
       })
     await mountTable(chipSource())
@@ -641,7 +641,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   it('a Compact status look carries NO × — Clear lives in its menu', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
-      pageValues({
+      valuesReply({
         p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
       })
     const styled = chipSource()
@@ -660,7 +660,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const twoFiles = (): CollectionNode => {
     const s = sourceWith()
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
-      pageValues({
+      valuesReply({
         p1: {
           [PAGE_ID_KEY]: 'p1',
           ...propsAtRoot({ prop_files: ['[[a.pdf]]', '[[b.pdf]]'] }, allDefs),

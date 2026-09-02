@@ -28,7 +28,7 @@ import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { declaredType } from '@renderer/Properties/value'
-import { useValuesEpoch } from '@renderer/Views/useValuesEpoch'
+import { fetchValues, useValuesEpoch } from '@renderer/Views/useValuesEpoch'
 import {
   bucketKey,
   bucketOrder,
@@ -785,8 +785,8 @@ function DateBucketList({
   const [values, setValues] = useState<Record<string, PageValues>>({})
   useEffect(() => {
     let canceled = false
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!canceled) setValues(v)
+    void fetchValues(source.path).then((v) => {
+      if (v && !canceled) setValues(v)
     })
     return () => {
       canceled = true
