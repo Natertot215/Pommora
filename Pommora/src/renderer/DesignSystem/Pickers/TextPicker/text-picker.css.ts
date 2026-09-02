@@ -48,6 +48,9 @@ export const leading = style({
   flex: '0 0 auto',
   display: 'inline-flex',
   color: c.label.secondary,
+  fontSize: font.scale.control.size,
+  fontWeight: font.weight.semibold,
+  lineHeight: font.scale.control.line,
 })
 
 /** The "/ N" out-of hint pinned to the field's right — never scrolling. */

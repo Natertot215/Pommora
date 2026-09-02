@@ -24,7 +24,6 @@ import {
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { adoptPathInto, pickFileInto } from '@renderer/Properties/Assignment/filePick'
 import { numberFormatGlyph } from '@renderer/Properties/PropertyTypes'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PathField } from '@renderer/DesignSystem/Fields'
 
 /** A value's request to open its picker — the anchor is the clicked value span. */
@@ -195,7 +194,7 @@ export function CardPickerHost({
         onDismiss={onDismissValue}
         triggerRef={valueAnchorRef}
         value={vCurrent.kind === 'number' ? String(vCurrent.value) : ''}
-        leading={<Icon name={numberFormatGlyph(vDef)} size="body" />}
+        leading={numberFormatGlyph(vDef)}
         onCommit={(raw) => {
           const nv = parseEditorValue('number', raw)
           if (nv != null) commitPicked(nv)
