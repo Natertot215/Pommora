@@ -203,4 +203,9 @@ describe('mergeFrontmatter — a body-only write re-serializes nothing', () => {
     const out = mergeFrontmatter('---\ntags: [a,b]\n---\nold', {}, [], 'new')
     expect(out).toBe('---\ntags: [a,b]\n---\nnew')
   })
+
+  it('folds CRLF frontmatter onto the LF fences it is assembled with', () => {
+    const out = mergeFrontmatter('---\r\ntags: [a,b]\r\nStatus: x\r\n---\r\nold', {}, [], 'new')
+    expect(out).toBe('---\ntags: [a,b]\nStatus: x\n---\nnew')
+  })
 })
