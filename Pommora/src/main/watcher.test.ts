@@ -33,9 +33,9 @@ const pushMock = vi.mocked(push)
 const rootMock = vi.mocked(sessionRoot)
 const win = { isDestroyed: () => false } as BrowserWindow
 
-const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
-const ULID_B = '01BX5ZZKBKACTAV9WEVGEMMVRZ'
-const ULID_C = '01CX5ZZKBKACTAV9WEVGEMMVRC'
+const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
+const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
@@ -59,7 +59,7 @@ beforeEach(async () => {
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'), { recursive: true })
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
-  await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\n---\n\nalpha\n`)
+  await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await mkdir(abs('Loose'), { recursive: true })
   rootMock.mockReturnValue(root)
   pushMock.mockClear()
@@ -77,8 +77,8 @@ afterEach(async () => {
 describe('the watcher settle', () => {
   it('accumulates a batch into one patched push', async () => {
     await startWatcher(root, win)
-    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
-    await writeFile(abs('Notes', 'C.md'), `---\nPageID: ${ULID_C}\n---\n\ngamma\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
     emit('add', 'Notes', 'B.md')
     emit('add', 'Notes', 'C.md')
     await settleAll(() => pushMock.mock.calls.length > 0)
@@ -99,7 +99,7 @@ describe('the watcher settle', () => {
 
   it('a mixed batch lands as one walk, pushed once', async () => {
     await startWatcher(root, win)
-    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ collection_order: ['c1'] }))
     emit('add', 'Notes', 'B.md')
     emit('change', '.nexus', 'state.json')

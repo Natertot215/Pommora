@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { KIND_ID_KEY } from '@shared/identity'
+import { ID_KEY, kindOf } from '@shared/identity'
 import { readNexus } from './readNexus'
 import { stampAdopted } from './adopt'
 import { agendaContext, resolveFolderKind } from './folderKind'
@@ -23,17 +23,15 @@ import {
   SIDECAR_FILENAME,
 } from './paths'
 
-const ULID = '01KVGMT8BFG350FZZXAMG1QDRC'
-const OTHER = '01KVGMT8BFG350FZZXAMG1QDRD'
+const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
 const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
 /** A file whose key contradicts the Collection it sits in, or whose value can't be an identity. */
 const UNKNOWN_FILES: Record<string, string> = {
-  'Contradicting.md': `---\n${KIND_ID_KEY.task}: ${ULID}\n---\n\nlinks to [[Target]]\n`,
-  'Malformed.md': `---\n${KIND_ID_KEY.page}: not a ulid\n---\n\nlinks to [[Target]]\n`,
-  'Dual.md': `---\n${KIND_ID_KEY.page}: ${ULID}\n${KIND_ID_KEY.task}: ${OTHER}\n---\n\nlinks to [[Target]]\n`,
+  'Contradicting.md': `---\n${ID_KEY}: ${TASK_ULID}\n---\n\nlinks to [[Target]]\n`,
+  'Malformed.md': `---\n${ID_KEY}: not a ulid\n---\n\nlinks to [[Target]]\n`,
 }
 
 beforeEach(async () => {
@@ -41,14 +39,14 @@ beforeEach(async () => {
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(
     nexusConfig(root, NEXUS_CONFIG_FILES.identity),
-    JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDNX', createdAt: '2026' }),
+    JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDNX', createdAt: '2026' }),
   )
   await writeFile(nexusConfig(root, NEXUS_CONFIG_FILES.settings), '{}')
   await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(
     join(root, 'Notes', SIDECAR_FILENAME.collection),
-    JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDC1' }),
+    JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDC1' }),
   )
   for (const [name, body] of Object.entries(UNKNOWN_FILES)) {
     await writeFile(join(root, 'Notes', name), body)
@@ -56,7 +54,7 @@ beforeEach(async () => {
   // A well-formed member and an identity-less page, as the controls.
   await writeFile(
     join(root, 'Notes', 'Member.md'),
-    `---\n${KIND_ID_KEY.page}: 01KVGMT8BFG350FZZXAMG1QDM1\n---\n\nlinks to [[Target]]\n`,
+    `---\n${ID_KEY}: 01KVGMT8BFP350FZZXAMG1QDM1\n---\n\nlinks to [[Target]]\n`,
   )
   await writeFile(join(root, 'Notes', 'Adoptable.md'), 'no frontmatter, links to [[Target]]\n')
 })
@@ -73,7 +71,7 @@ const bytes = (name: string): Promise<string> => readFile(join(root, 'Notes', na
 
 describe('the Unknown matrix, on disk', () => {
   it('keeps every Unknown file out of the walked tree, and admits the two that belong', async () => {
-    // Contradicting, malformed and dual all vanish; a member and an id-less page both surface.
+    // Contradicting and malformed both vanish; a member and an id-less page both surface.
     expect(await titles()).toEqual(['Adoptable', 'Member'])
   })
 
@@ -86,14 +84,14 @@ describe('the Unknown matrix, on disk', () => {
   it('adopts the id-less page in the same pass that refuses the Unknown ones', async () => {
     await stampAdopted(root)
     // The control proves the pass ran at all — otherwise "untouched" is vacuously true.
-    expect(await bytes('Adoptable.md')).toContain(`${KIND_ID_KEY.page}:`)
+    expect(await bytes('Adoptable.md')).toContain(`${ID_KEY}:`)
   })
 
   it('never stamps a SECOND key onto a file that already contradicts its folder', async () => {
     await stampAdopted(root)
     const after = await bytes('Contradicting.md')
-    expect(after).not.toContain(`${KIND_ID_KEY.page}:`)
-    expect(after).toContain(`${KIND_ID_KEY.task}: ${ULID}`)
+    expect(after).toContain(`${ID_KEY}: ${TASK_ULID}`)
+    expect(after.match(new RegExp(`^${ID_KEY}:`, 'gm'))).toHaveLength(1)
   })
 })
 
@@ -116,7 +114,7 @@ describe('the nexus-wide write sweeps', () => {
   it('sweeps an upper-case .MD page on the same terms as any other member', async () => {
     await writeFile(
       join(root, 'Notes', 'Upper.MD'),
-      `---\n${KIND_ID_KEY.page}: 01KVGMT8BFG350FZZXAMG1QDV1\n---\n\nlinks to [[Target]]\n`,
+      `---\n${ID_KEY}: 01KVGMT8BFP350FZZXAMG1QDV1\n---\n\nlinks to [[Target]]\n`,
     )
     expect(await titles()).toContain('Upper')
 
@@ -135,11 +133,8 @@ describe('the nexus-wide write sweeps', () => {
     // Both files carry the same context key; only one of them is admissible.
     const tagged = (key: string, id: string): string =>
       `---\n${key}: ${id}\n<Projects>:\n  - Pommora\n---\nbody\n`
-    await writeFile(join(root, 'Notes', 'Contradicting.md'), tagged(KIND_ID_KEY.task, ULID))
-    await writeFile(
-      join(root, 'Notes', 'Member.md'),
-      tagged(KIND_ID_KEY.page, '01KVGMT8BFG350FZZXAMG1QDM1'),
-    )
+    await writeFile(join(root, 'Notes', 'Contradicting.md'), tagged(ID_KEY, TASK_ULID))
+    await writeFile(join(root, 'Notes', 'Member.md'), tagged(ID_KEY, '01KVGMT8BFP350FZZXAMG1QDM1'))
     const before = await bytes('Contradicting.md')
 
     const r = await handleMutate({ op: 'renameContext', contextId, newName: 'Ventures' }, deps)
@@ -163,7 +158,7 @@ describe('the move backstop', () => {
     if (r.ok) return
     expect(r.error.code).toBe('invalid-path')
     // The refusal is a no-op, not a half-move.
-    expect(await bytes('Member.md')).toContain(KIND_ID_KEY.page)
+    expect(await bytes('Member.md')).toContain(ID_KEY)
   })
 
   // The nexus root holds no content of its own. `depth` is caller-supplied, so without an explicit
@@ -183,11 +178,11 @@ describe('the move backstop', () => {
   // and still not a place a page may land. The backstop refuses every agenda destination the same
   // way, registered or not, which is what lets the cheap check here stay equivalent to the full one.
   it('refuses a page moved into a registered agenda singleton', async () => {
-    const TASKS = '01KVGMT8BFG350FZZXAMG1QDT1'
+    const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
     await writeFile(
       nexusConfig(root, NEXUS_CONFIG_FILES.identity),
       JSON.stringify({
-        id: '01KVGMT8BFG350FZZXAMG1QDNX',
+        id: '01KVGMT8BFP350FZZXAMG1QDNX',
         createdAt: '2026',
         agenda_singletons: { tasks: TASKS },
       }),
@@ -205,7 +200,7 @@ describe('the move backstop', () => {
     // The MESSAGE, not just the code: resolveUnderRoot refuses with `invalid-path` as well, so a
     // code-only assertion passes for a destination that never reached the backstop at all.
     expect(r.error.message).toBe('Pages live in Collections and Sets.')
-    expect(await bytes('Member.md')).toContain(KIND_ID_KEY.page)
+    expect(await bytes('Member.md')).toContain(ID_KEY)
   })
 
   it('still allows a move into a real Set', async () => {
@@ -213,7 +208,7 @@ describe('the move backstop', () => {
     await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
     await writeFile(
       join(root, 'Notes', 'Daily', SIDECAR_FILENAME.set),
-      JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDS1' }),
+      JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDS1' }),
     )
     const r = await handleMutate(
       { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Notes/Daily' },
@@ -224,13 +219,13 @@ describe('the move backstop', () => {
 })
 
 describe('agenda singleton adoption', () => {
-  const TASKS = '01KVGMT8BFG350FZZXAMG1QDT1'
+  const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
 
   const withRegisteredTasks = async (): Promise<void> => {
     await writeFile(
       nexusConfig(root, NEXUS_CONFIG_FILES.identity),
       JSON.stringify({
-        id: '01KVGMT8BFG350FZZXAMG1QDNX',
+        id: '01KVGMT8BFP350FZZXAMG1QDNX',
         createdAt: '2026',
         agenda_singletons: { tasks: TASKS },
       }),
@@ -245,8 +240,7 @@ describe('agenda singleton adoption', () => {
     await withRegisteredTasks()
     await stampAdopted(root)
     const task = await readFile(join(root, 'Tasks', 'Buy milk.md'), 'utf8')
-    expect(task).toContain(`${KIND_ID_KEY.task}:`)
-    expect(task).not.toContain(`${KIND_ID_KEY.page}:`)
+    expect(kindOf(task.match(new RegExp(`^${ID_KEY}: (\\S+)`, 'm'))![1])).toBe('task')
   })
 
   it('is flat — it neither container-stamps itself nor reaches anything below it', async () => {
@@ -339,7 +333,7 @@ describe('agenda singleton adoption', () => {
   // A folder that crossed depth outside the app carries the wrong sidecar. Its identity is
   // renamed, not replaced — a second sidecar would leave one folder with two competing ids.
   it('migrates a stale container sidecar rather than minting a second id', async () => {
-    const SET_ID = '01KVGMT8BFG350FZZXAMG1QDS9'
+    const SET_ID = '01KVGMT8BFP350FZZXAMG1QDS9'
     await mkdir(join(root, 'Stray'), { recursive: true })
     await writeFile(
       join(root, 'Stray', SIDECAR_FILENAME.set),

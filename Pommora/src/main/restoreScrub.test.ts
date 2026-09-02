@@ -13,8 +13,8 @@ import { listBundles } from './provenance'
 import { splitFrontmatter } from './readNexus'
 import { closeSession, openSession } from './session'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDVA'
-const PROP = 'prop_01KVGMT8BFG350FZZXAMG1QDVZ'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
+const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -76,7 +76,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\nPriority: hi\n---\nbody`,
+    `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\nPriority: hi\n---\nbody`,
   )
   await openSession(root)
 })
@@ -127,7 +127,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('prunes only the dead Space from a tag whose Context survives', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
     )
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
@@ -143,7 +143,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('repairs a near-miss Space title to the canonical spelling on the way back', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
@@ -157,7 +157,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - 2024\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - 2024\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['2024'])
@@ -171,7 +171,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - Sapphire\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - Sapphire\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
@@ -182,7 +182,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Journal.md'),
-      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\nPriority: lo\n---\nb`,
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\nPriority: lo\n---\nb`,
     )
     await cycle('Notes/Daily', 'set', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
@@ -234,7 +234,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\nTags:\n  - a\n  - b\n---\nbody`,
+      `---\nID: ${PAGE_A}\nTags:\n  - a\n  - b\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(
@@ -262,7 +262,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nPageID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - Pommora\nPriority: hi\n---\nthe body\n`,
+      `---\nID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - Pommora\nPriority: hi\n---\nthe body\n`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
@@ -363,7 +363,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     await mkdir(join(root, 'Notes', 'Inbox'), { recursive: true })
     await writeFile(
       join(root, 'Notes', 'Inbox', 'Idea.md'),
-      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVC\n---\nbody`,
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody`,
     )
     const d = await handleMutate(
       { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' },
@@ -383,7 +383,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     await writeFile(join(root, 'Notes', 'Broken', '_pageset.json'), '{corrupt')
     await writeFile(
       join(root, 'Notes', 'Broken', 'Idea.md'),
-      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVD\n---\nbody`,
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`,
     )
     await handleMutate({ op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' }, nexusDeps)
     const [listed] = await listBundles(root)

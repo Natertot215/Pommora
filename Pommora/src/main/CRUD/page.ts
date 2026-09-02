@@ -1,7 +1,7 @@
 import { join, dirname, basename } from 'node:path'
 import { rename } from 'node:fs/promises'
-import { PAGE_ID_KEY } from '@shared/identity'
-import { newId } from '../ids'
+import { ID_KEY } from '@shared/identity'
+import { newContentId } from '../ids'
 import { writePageFile } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
@@ -29,8 +29,8 @@ export async function createPage(
   if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const file = join(parentDir, name + MD)
   if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
-  const id = newId()
-  const modeled: Record<string, unknown> = { [PAGE_ID_KEY]: id }
+  const id = newContentId('page')
+  const modeled: Record<string, unknown> = { [ID_KEY]: id }
   if (opts.icon) modeled.icon = opts.icon
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {

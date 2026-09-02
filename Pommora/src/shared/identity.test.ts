@@ -1,49 +1,61 @@
 import { describe, it, expect } from 'vitest'
-import { admitContentFile, contentId, KIND_ID_KEY, PAGE_ID_KEY } from './identity'
+import { admitContentFile, contentId, ID_KEY, kindOf, markId } from './identity'
 
-const ULID = '01KVGMT8BFG350FZZXAMG1QDRC'
+const PAGE = '01KVGMT8BFP350FZZXAMG1QDRC'
+const TASK = '01KVGMT8BFT350FZZXAMG1QDRC'
+const EVENT = '01KVGMT8BFE350FZZXAMG1QDRC'
+const UNMARKED = '01KVGMT8BF9350FZZXAMG1QDRC'
 
-describe('contentId', () => {
-  it('reads the id under any kind key — the caller already knows the kind', () => {
-    expect(contentId({ [KIND_ID_KEY.page]: ULID })).toBe(ULID)
-    expect(contentId({ [KIND_ID_KEY.task]: ULID })).toBe(ULID)
-    expect(contentId({ [KIND_ID_KEY.event]: ULID })).toBe(ULID)
+describe('the kind mark', () => {
+  it('replaces the first random character, leaving the encoded time intact', () => {
+    expect(markId(UNMARKED, 'page')).toBe(PAGE)
+    expect(markId(UNMARKED, 'task')).toBe(TASK)
+    expect(markId(UNMARKED, 'event')).toBe(EVENT)
+    expect(markId(UNMARKED, 'page').slice(0, 10)).toBe(UNMARKED.slice(0, 10))
   })
 
-  it('is undefined when no kind key is present — the adoptable case, not an error', () => {
+  it('reads the kind back off a marked id', () => {
+    expect(kindOf(PAGE)).toBe('page')
+    expect(kindOf(TASK)).toBe('task')
+    expect(kindOf(EVENT)).toBe('event')
+  })
+
+  it('is null for an id carrying no mark — a hand-authored value or a non-content id', () => {
+    expect(kindOf(UNMARKED)).toBeNull()
+    expect(kindOf('research-bizops')).toBeNull()
+    expect(kindOf('')).toBeNull()
+  })
+})
+
+describe('contentId', () => {
+  it('reads the id under the one key, whatever kind it marks', () => {
+    expect(contentId({ [ID_KEY]: PAGE })).toBe(PAGE)
+    expect(contentId({ [ID_KEY]: TASK })).toBe(TASK)
+    expect(contentId({ [ID_KEY]: EVENT })).toBe(EVENT)
+  })
+
+  it('is undefined when the key is absent — the adoptable case, not an error', () => {
     expect(contentId({})).toBeUndefined()
     expect(contentId({ icon: 'star' })).toBeUndefined()
   })
 
-  it('is undefined when a file carries two kind keys — no arm guesses which', () => {
-    expect(contentId({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: ULID })).toBeUndefined()
-  })
-
   it('is undefined for a non-string or empty value — YAML admits numbers, maps and lists', () => {
-    expect(contentId({ [PAGE_ID_KEY]: 3 })).toBeUndefined()
-    expect(contentId({ [PAGE_ID_KEY]: null })).toBeUndefined()
-    expect(contentId({ [PAGE_ID_KEY]: { nested: true } })).toBeUndefined()
-    expect(contentId({ [PAGE_ID_KEY]: ['a'] })).toBeUndefined()
-    expect(contentId({ [PAGE_ID_KEY]: '' })).toBeUndefined()
+    expect(contentId({ [ID_KEY]: 3 })).toBeUndefined()
+    expect(contentId({ [ID_KEY]: null })).toBeUndefined()
+    expect(contentId({ [ID_KEY]: { nested: true } })).toBeUndefined()
+    expect(contentId({ [ID_KEY]: ['a'] })).toBeUndefined()
+    expect(contentId({ [ID_KEY]: '' })).toBeUndefined()
   })
 
-  // Deliberately lenient: shape is the admission predicate's job. Keeping this loose is what lets
-  // the asset-key guard stay the thing that decides whether an id may name a folder.
   it('returns a hand-authored id verbatim — it does not police shape', () => {
-    expect(contentId({ [PAGE_ID_KEY]: 'research-bizops' })).toBe('research-bizops')
+    expect(contentId({ [ID_KEY]: 'research-bizops' })).toBe('research-bizops')
   })
 })
 
 describe('admitContentFile', () => {
-  it('admits a well-formed key matching the folder-declared kind', () => {
-    expect(admitContentFile({ [KIND_ID_KEY.page]: ULID }, 'page')).toEqual({
-      state: 'member',
-      id: ULID,
-    })
-    expect(admitContentFile({ [KIND_ID_KEY.task]: ULID }, 'task')).toEqual({
-      state: 'member',
-      id: ULID,
-    })
+  it('admits an id whose mark matches the folder-declared kind', () => {
+    expect(admitContentFile({ [ID_KEY]: PAGE }, 'page')).toEqual({ state: 'member', id: PAGE })
+    expect(admitContentFile({ [ID_KEY]: TASK }, 'task')).toEqual({ state: 'member', id: TASK })
   })
 
   it('reports a missing key as adoptable, never as a violation', () => {
@@ -53,61 +65,46 @@ describe('admitContentFile', () => {
     })
   })
 
-  // The whole reason the predicate reads all three keys: a TaskID in a Collection must read
-  // INVISIBLE, not adoptable. Treating it as missing would stamp a second key onto it.
-  it('rejects a key contradicting the folder as unknown, not missing', () => {
-    expect(admitContentFile({ [KIND_ID_KEY.task]: ULID }, 'page')).toEqual({
+  it('rejects a mark contradicting the folder as unknown, not missing', () => {
+    expect(admitContentFile({ [ID_KEY]: TASK }, 'page')).toEqual({
       state: 'unknown',
       reason: 'contradicting',
     })
-    expect(admitContentFile({ [KIND_ID_KEY.page]: ULID }, 'event')).toEqual({
+    expect(admitContentFile({ [ID_KEY]: PAGE }, 'event')).toEqual({
       state: 'unknown',
       reason: 'contradicting',
     })
   })
 
-  // An emptied key is an ABSENT key: clearing a property in an outside editor writes `PageID:`
-  // with nothing after it, and everywhere else in Pommora an emptied value deletes its key.
+  it('rejects an unmarked ULID — a kind it cannot read is not a kind it may assume', () => {
+    expect(admitContentFile({ [ID_KEY]: UNMARKED }, 'page')).toEqual({
+      state: 'unknown',
+      reason: 'contradicting',
+    })
+  })
+
   it('treats an emptied key as missing, not malformed — the file stays adoptable', () => {
     for (const empty of [null, '', undefined]) {
-      expect(admitContentFile({ [KIND_ID_KEY.page]: empty }, 'page')).toEqual({ state: 'missing' })
+      expect(admitContentFile({ [ID_KEY]: empty }, 'page')).toEqual({ state: 'missing' })
     }
-    // And an emptied key alongside a real one is not "dual" — there is only one key.
-    expect(
-      admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: null }, 'page'),
-    ).toEqual({ state: 'member', id: ULID })
   })
 
   it('rejects a value that cannot be an identity — hand-authored keys are a supported input', () => {
     for (const bad of ['hello world', 'research-bizops', 3, { a: 1 }, ['x']]) {
-      expect(admitContentFile({ [KIND_ID_KEY.page]: bad }, 'page')).toEqual({
+      expect(admitContentFile({ [ID_KEY]: bad }, 'page')).toEqual({
         state: 'unknown',
         reason: 'malformed',
       })
     }
   })
 
-  it('rejects two kind keys outright, ahead of any shape or agreement check', () => {
-    expect(
-      admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: ULID }, 'page'),
-    ).toEqual({ state: 'unknown', reason: 'dual' })
-    // Dual wins even when one of the two is itself garbage — the file is ambiguous either way.
-    expect(
-      admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.event]: 'junk' }, 'page'),
-    ).toEqual({ state: 'unknown', reason: 'dual' })
-  })
-
-  it('treats the keys as exact — a case variant is not the key', () => {
-    expect(admitContentFile({ pageid: ULID }, 'page')).toEqual({ state: 'missing' })
-    expect(admitContentFile({ PAGEID: ULID }, 'page')).toEqual({ state: 'missing' })
-  })
-
-  // No synonym read: a legacy `id:` page is adoptable, exactly like a page that never had one.
-  it('does not recognize the legacy bare key', () => {
-    expect(admitContentFile({ id: ULID }, 'page')).toEqual({ state: 'missing' })
+  it('treats the key as exact — a case variant is not the key', () => {
+    expect(admitContentFile({ id: PAGE }, 'page')).toEqual({ state: 'missing' })
+    expect(admitContentFile({ Id: PAGE }, 'page')).toEqual({ state: 'missing' })
+    expect(admitContentFile({ PageID: PAGE }, 'page')).toEqual({ state: 'missing' })
   })
 
   it('ignores an unrelated ULID-shaped value under a foreign key', () => {
-    expect(admitContentFile({ someOtherId: ULID }, 'page')).toEqual({ state: 'missing' })
+    expect(admitContentFile({ someOtherId: PAGE }, 'page')).toEqual({ state: 'missing' })
   })
 })

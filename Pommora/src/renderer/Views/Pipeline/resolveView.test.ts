@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import fixture from '@shared/__fixtures__/collection-with-status.json'
 import registry from '@shared/__fixtures__/registry.json'
 import type { CollectionNode, PageNode } from '@shared/types'
@@ -87,10 +87,10 @@ describe('resolveView — full pipeline over the fixture', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const values = pageValues({
-      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
-      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
-      p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, schema) },
-      p4: { [PAGE_ID_KEY]: 'p4' },
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
+      p3: { [ID_KEY]: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, schema) },
+      p4: { [ID_KEY]: 'p4' },
     })
     const { rows, setTree } = flattenContainer(
       collection([page('p1'), page('p2'), page('p3'), page('p4')]),
@@ -158,8 +158,8 @@ describe('resolveView — full pipeline over the fixture', () => {
       sort: [{ property_id: '_title', direction: 'descending' }],
     }
     const values = pageValues({
-      a: { [PAGE_ID_KEY]: 'a', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
-      b: { [PAGE_ID_KEY]: 'b', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      a: { [ID_KEY]: 'a', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      b: { [ID_KEY]: 'b', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
     })
     const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values)
     const { groups } = resolveView({ rows, setTree, view, schema })
@@ -243,7 +243,7 @@ describe('resolveView — group_order', () => {
     const { rows, setTree } = flattenContainer(
       collection([page('p1')]),
       pageValues({
-        p1: { [PAGE_ID_KEY]: 'p1' },
+        p1: { [ID_KEY]: 'p1' },
       }),
     )
     expect(() => resolveView({ rows, setTree, view, schema })).not.toThrow()
@@ -277,9 +277,9 @@ describe('resolveView — group_order', () => {
       },
     ]
     const values = pageValues({
-      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'todo' }, schema) },
-      p2: { [PAGE_ID_KEY]: 'p2' },
-      root1: { [PAGE_ID_KEY]: 'root1' },
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'todo' }, schema) },
+      p2: { [ID_KEY]: 'p2' },
+      root1: { [ID_KEY]: 'root1' },
     })
     const base: SavedView = {
       id: 'v',
@@ -477,8 +477,8 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       ...patch,
     })
   const selValues = pageValues({
-    p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
-    p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+    p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
+    p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
   })
   const selInput = () => {
     const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), selValues)
@@ -573,9 +573,9 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       pages: [],
     }
     const values = pageValues({
-      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
-      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
-      p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
+      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+      p3: { [ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
     })
     const { rows, setTree } = flattenContainer(twoSets, values)
     const { groups } = resolveView({
@@ -596,8 +596,8 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   it('a hidden date bucket drops by its bucket key', () => {
     const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
     const values = pageValues({
-      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
-      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
+      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
     })
     const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values)
     const { groups } = resolveView({

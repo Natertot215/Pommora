@@ -7,8 +7,8 @@ import { loadValues } from './loadValues'
 import { readNexus } from '../readNexus'
 import { dropLiveTree, seedLiveTree } from '../liveTree'
 
-const P1 = '01KVGMT8BFG350FZZXAMG1QDR1'
-const P2 = '01KVGMT8BFG350FZZXAMG1QDR2'
+const P1 = '01KVGMT8BFP350FZZXAMG1QDR1'
+const P2 = '01KVGMT8BFP350FZZXAMG1QDR2'
 
 let root: string
 beforeEach(async () => {
@@ -23,11 +23,11 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR1\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDR1\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
     )
     await writeFile(
       join(root, 'Col', 'SetA', 'p2.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR2\n<Count>: 7\n---\n\nbody\n',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDR2\n<Count>: 7\n---\n\nbody\n',
     )
 
     const values = await loadValues(root, 'Col')
@@ -47,7 +47,7 @@ describe('loadValues', () => {
     try {
       await mkdir(join(root, 'Col'), { recursive: true })
       const file = join(root, 'Col', 'p1.md')
-      await writeFile(file, `---\nPageID: ${P1}\n---\n\nbody\n`)
+      await writeFile(file, `---\nID: ${P1}\n---\n\nbody\n`)
       const modified = new Date('2026-09-02T00:30:00.000Z')
       await utimes(file, modified, modified)
 
@@ -60,11 +60,11 @@ describe('loadValues', () => {
     }
   })
 
-  it('one undecodable PageID leaves the rest of the batch intact', async () => {
+  it('one undecodable ID leaves the rest of the batch intact', async () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     const bad = `8${P1.slice(1)}`
-    await writeFile(join(root, 'Col', 'p1.md'), `---\nPageID: ${P1}\n---\n\nbody\n`)
-    await writeFile(join(root, 'Col', 'bad.md'), `---\nPageID: ${bad}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'bad.md'), `---\nID: ${bad}\n---\n\nbody\n`)
 
     const values = await loadValues(root, 'Col')
     expect(values[bad].createdAt).toBeNull()
@@ -97,7 +97,7 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      `---\nPageID: ${P1}\nbanner:\nStatus: Active\n---\n\nbody\n`,
+      `---\nID: ${P1}\nbanner:\nStatus: Active\n---\n\nbody\n`,
     )
 
     const values = await loadValues(root, 'Col')
@@ -111,13 +111,13 @@ describe('loadValues', () => {
   // the whole container on every pause.
   it('reads only the named pages, resolved through the live tree', async () => {
     await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
-    await writeFile(join(root, 'Col', 'p1.md'), `---\nPageID: ${P1}\nStatus: a\n---\n\nbody\n`)
-    await writeFile(join(root, 'Col', 'SetA', 'p2.md'), `---\nPageID: ${P2}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\nStatus: a\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'SetA', 'p2.md'), `---\nID: ${P2}\n---\n\nbody\n`)
     seedLiveTree(await readNexus(root))
     try {
       const values = await loadValues(root, 'Col', [P2])
       expect(Object.keys(values)).toEqual([P2])
-      expect(await loadValues(root, 'Col', ['01KVGMT8BFG350FZZXAMG1QDR9'])).toEqual({})
+      expect(await loadValues(root, 'Col', ['01KVGMT8BFP350FZZXAMG1QDR9'])).toEqual({})
     } finally {
       dropLiveTree()
     }

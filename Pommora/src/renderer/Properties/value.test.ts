@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { declaredType, fileName, resolveFieldValue } from './value'
@@ -45,7 +45,7 @@ const row: ViewRow = {
   createdAt: '2026-06-01T08:00:00Z',
   modifiedAt: '2026-06-20T10:00:00Z',
   frontmatter: {
-    [PAGE_ID_KEY]: '01ROW',
+    [ID_KEY]: '01ROW',
     modified_at: '2026-06-19T10:00:00Z',
     ...propsAtRoot(
       {
@@ -122,7 +122,7 @@ describe('resolveFieldValue', () => {
       id: 'x',
       title: 'X',
       path: 'x.md',
-      frontmatter: { [PAGE_ID_KEY]: 'x' },
+      frontmatter: { [ID_KEY]: 'x' },
       createdAt: null,
       modifiedAt: null,
     }
@@ -138,7 +138,7 @@ describe('resolveFieldValue memoization', () => {
       title: 'One',
       path: 'C/One.md',
       frontmatter: {
-        [PAGE_ID_KEY]: 'p1',
+        [ID_KEY]: 'p1',
         ...propsAtRoot({ prop_s: 'open' }, schema),
         '<Areas>': ['a'],
       },
@@ -153,8 +153,8 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
-    const fm1 = { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema) }
-    const fm2 = { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'done' }, schema) }
+    const fm1 = { [ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema) }
+    const fm2 = { [ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'done' }, schema) }
     const rowAt = (frontmatter: ViewRow['frontmatter']): ViewRow => ({
       id: 'p1',
       title: 'One',
@@ -170,7 +170,7 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('_title never caches — a rename with an unchanged frontmatter object shows the new title', () => {
-    const fm = { [PAGE_ID_KEY]: 'p1' }
+    const fm = { [ID_KEY]: 'p1' }
     const stamps = { createdAt: null, modifiedAt: null }
     const a = rfv(
       { id: 'p1', title: 'Old', path: 'C/Old.md', frontmatter: fm, ...stamps },
@@ -202,7 +202,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
     id: 'r',
     title: 'R',
     path: 'C/r.md',
-    frontmatter: { [PAGE_ID_KEY]: 'r', ...propsAtRoot(properties, typedSchema) },
+    frontmatter: { [ID_KEY]: 'r', ...propsAtRoot(properties, typedSchema) },
     createdAt: null,
     modifiedAt: null,
   })

@@ -2,7 +2,7 @@
 // write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { KIND_ID_KEY, PAGE_MODELED_KEYS } from './identity'
+import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from './identity'
 
 export const propertyType = z.enum([
   'number',
@@ -162,10 +162,10 @@ export function isReservedPropertyId(id: string): boolean {
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
 export const RESERVED_NAME_PREFIX = '$'
-// The two retired stamp names stay refused: a user property under either would collide with the
-// vault's own history.
+// The retired key and stamp names stay refused: a user property under any of them would collide
+// with the vault's own history.
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
-  ...Object.values(KIND_ID_KEY),
+  ...RETIRED_ID_KEYS,
   ...PAGE_MODELED_KEYS,
   'created_at',
   'modified_at',

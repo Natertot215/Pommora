@@ -15,9 +15,9 @@ import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { corpusFiles } from './IO/walk'
 import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'
-const PG_LINKED = '01KVGMT8BFG350FZZXAMG1QDRQ'
-const PG_PLAIN = '01KVGMT8BFG350FZZXAMG1QDRR'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRP'
+const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'
+const PG_PLAIN = '01KVGMT8BFP350FZZXAMG1QDRR'
 
 describe('readCommands', () => {
   it('falls back to DEFAULT_COMMANDS when the block is absent or malformed', () => {
@@ -171,7 +171,7 @@ beforeAll(() => {
   w(join(raw, 'Collection A', 'Set A', 'Sub A', 'Deep.md'), '# deep (depth-3, proves no cap)')
   w(
     join(raw, 'Collection A', 'Set A', 'Page A.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRP\nicon: star\n---\n\nbody',
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDRP\nicon: star\n---\n\nbody',
   )
   w(join(raw, 'Collection A', 'Set A', 'Page B.md'), 'no frontmatter, just body')
   w(join(raw, 'Collection A', 'Root Page.md'), '# collection-root page')
@@ -367,9 +367,9 @@ describe('readNexus — registry-backed contexts', () => {
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
     w(
       join(reg, 'Notes', 'Linked.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n<Projects>:\n  - Pommora\n---\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRQ\n<Projects>:\n  - Pommora\n---\nbody',
     )
-    w(join(reg, 'Notes', 'Plain.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRR\n---\nbody')
+    w(join(reg, 'Notes', 'Plain.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDRR\n---\nbody')
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
 
@@ -408,7 +408,7 @@ describe('readNexus — registry-backed contexts', () => {
 })
 
 describe('readNexus — the walk names what it cannot read', () => {
-  const INSIDE = '01KVGMT8BFG350FZZXAMG1QDRT'
+  const INSIDE = '01KVGMT8BFP350FZZXAMG1QDRT'
   let root: string
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'pom-unread-'))
@@ -428,16 +428,12 @@ describe('readNexus — the walk names what it cannot read', () => {
     d(join(root, '.nexus', 'contexts', 'Areas', 'Plain')) // no _space.json -> not a Space, silent
     d(join(root, 'Notes'))
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
-    w(join(root, 'Notes', 'Entry.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRS\n---\nbody')
-    w(join(root, 'Notes', 'Alien.md'), '---\nTaskID: 01KVGMT8BFG350FZZXAMG1QDRV\n---\nbody')
-    w(
-      join(root, 'Notes', 'Dual.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRS\nTaskID: 01KVGMT8BFG350FZZXAMG1QDRV\n---\n',
-    )
-    w(join(root, 'Notes', 'Malformed.md'), '---\nPageID: not-a-ulid\n---\nbody')
+    w(join(root, 'Notes', 'Entry.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDRS\n---\nbody')
+    w(join(root, 'Notes', 'Alien.md'), '---\nID: 01KVGMT8BFT350FZZXAMG1QDRV\n---\nbody')
+    w(join(root, 'Notes', 'Malformed.md'), '---\nID: not-a-ulid\n---\nbody')
     d(join(root, 'Broken'))
     w(join(root, 'Broken', '_pagecollection.json'), '{nope')
-    w(join(root, 'Broken', 'Inside.md'), `---\nPageID: ${INSIDE}\n---\nbody`)
+    w(join(root, 'Broken', 'Inside.md'), `---\nID: ${INSIDE}\n---\nbody`)
     d(join(root, 'PlainFolder')) // un-adopted, no sidecar -> silent
   })
   afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -448,7 +444,6 @@ describe('readNexus — the walk names what it cannot read', () => {
       '.nexus/contexts/Areas/Bad',
       'Broken',
       'Notes/Alien.md',
-      'Notes/Dual.md',
       'Notes/Malformed.md',
     ])
   })

@@ -7,7 +7,7 @@ import { insertCreatedInTree } from '@shared/treePatch'
 import { stabilize } from '@shared/treeStabilize'
 import { readNexus } from './readNexus'
 
-const PAGE_ULID = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+const PAGE_ULID = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
 let root: string
 
@@ -33,7 +33,7 @@ describe('transform-built nodes carry the walk key shape', () => {
   it('a created page, set, collection, and space are stabilize-identical to their walked selves', async () => {
     const before = await readNexus(root)
 
-    await writeFile(join(root, 'Notes', 'A.md'), `---\nPageID: ${PAGE_ULID}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Notes', 'A.md'), `---\nID: ${PAGE_ULID}\n---\n\nbody\n`)
     await mkdir(join(root, 'Notes', 'Sub'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Sub', '_pageset.json'), JSON.stringify({ id: 's1' }))
     await mkdir(join(root, 'Ideas'), { recursive: true })

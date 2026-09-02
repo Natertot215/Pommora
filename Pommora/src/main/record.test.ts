@@ -303,7 +303,7 @@ describe('the record rows', () => {
 })
 
 describe('runOpenRecord — the open sequence', () => {
-  const NOTES = '01KVGMT8BFG350FZZXAMG1QDRW'
+  const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
   let root: string
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'pom-open-'))
@@ -317,7 +317,7 @@ describe('runOpenRecord — the open sequence', () => {
       join(root, 'Library', '_pagecollection.json'),
       JSON.stringify({ id: 'col-lib' }),
     )
-    await writeFile(join(root, 'Library', 'Notes.md'), `---\nPageID: ${NOTES}\n---\nbody`)
+    await writeFile(join(root, 'Library', 'Notes.md'), `---\nID: ${NOTES}\n---\nbody`)
     openSessionDb(root)
   })
   afterEach(async () => {
@@ -352,7 +352,7 @@ describe('runOpenRecord — the open sequence', () => {
   })
 
   it('with no prior evidence the eldest claimant records — the original never re-mints', async () => {
-    const body = `---\nPageID: ${NOTES}\n---\nbody`
+    const body = `---\nID: ${NOTES}\n---\nbody`
     await runOpenRecord(root)
     // Closed window: the original renamed (birth time survives) AND copied. The copy's name
     // sorts first, so a walk-order pick would crown it and re-mint the original.
@@ -372,7 +372,7 @@ describe('runOpenRecord — the open sequence', () => {
 
   it('a dropped duplicate leaves the baseline without being recorded as a removal', async () => {
     await runOpenRecord(root)
-    const body = `---\nPageID: ${NOTES}\n---\nbody`
+    const body = `---\nID: ${NOTES}\n---\nbody`
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'A.md'))
     await writeFile(join(root, 'Library', 'B.md'), body)
     await runOpenRecord(root)
@@ -391,7 +391,7 @@ describe('runOpenRecord — the open sequence', () => {
 
   it('a reminted open re-walks, so the live tree never holds a shared id', async () => {
     await runOpenRecord(root)
-    await writeFile(join(root, 'Library', 'Copy.md'), `---\nPageID: ${NOTES}\n---\nbody`)
+    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
     dropLiveTree()
     await runOpenRecord(root)
     const ids = (getLiveTree()?.collections[0]?.pages ?? []).map((p) => p.id)

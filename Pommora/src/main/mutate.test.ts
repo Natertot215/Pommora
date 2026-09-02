@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -9,9 +9,9 @@ import type { Crop } from '@shared/schemas'
 import { cropKeyFor } from '@shared/nexusPaths'
 import { assetFilePath } from './assetRoots'
 
-const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
-const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
-const G_ID = '01KVGMT8BFG350FZZXAMG1QDRG'
+const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
+const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
+const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession, sessionRoot } from './session'
 import { flushValueWrites } from './valuesChanged'
 import { splitFrontmatter, readNexus } from './readNexus'
@@ -37,11 +37,11 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'col' }))
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\n<Areas>:\n  - Work\n---\n\nSee [[Beta]] for more.',
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n<Areas>:\n  - Work\n---\n\nSee [[Beta]] for more.',
   )
   await writeFile(
     join(root, 'Notes', 'Daily', 'Beta.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRB\n---\n\nbody',
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDRB\n---\n\nbody',
   )
   await openSession(root)
 })
@@ -316,7 +316,7 @@ describe('handleMutate — move + guards', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Gamma.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRG\n---\n\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRG\n---\n\nbody',
     )
     const r = await handleMutate(
       {
@@ -369,7 +369,7 @@ describe('handleMutate — move + guards', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'SetX', 'Inner.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRN\n---\n\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRN\n---\n\nbody',
     )
     await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
@@ -495,7 +495,7 @@ describe('handleMutate — review-round hardening', () => {
     await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'oth' }))
     await writeFile(
       join(root, 'Notes', 'Other', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRZ\n---\n',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRZ\n---\n',
     )
     const clash = await handleMutate(
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Other' },
@@ -662,7 +662,7 @@ describe('handleMutate — review-round hardening', () => {
     await writeFile(join(root, 'Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 'lk' }))
     await writeFile(
       join(root, 'Notes', 'Locked', 'Linker.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRK\n---\n\nSee [[Beta]].',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n---\n\nSee [[Beta]].',
     )
     await chmod(join(root, 'Notes', 'Locked'), 0o555)
     try {
@@ -1039,7 +1039,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(r.ok).toBe(true)
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
-    expect(splitFrontmatter(md)[PAGE_ID_KEY]).toBe(B_ID)
+    expect(splitFrontmatter(md)[ID_KEY]).toBe(B_ID)
     expect(splitFrontmatter(md).Stage).toEqual(['done'])
   })
 

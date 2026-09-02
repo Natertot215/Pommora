@@ -5,7 +5,7 @@
 
 import { createHash } from 'node:crypto'
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
-import { isUlidShaped } from '@shared/identity'
+import { type ContentKind, isUlidShaped, markId } from '@shared/identity'
 
 const nextUlid = monotonicFactory()
 
@@ -21,6 +21,14 @@ export function newId(): string {
  *  `.catch(() => false)`, so adoption would silently stamp nothing. */
 export function idAt(atMs: number): string {
   return ulid(Math.max(0, Math.floor(atMs)))
+}
+
+export function newContentId(kind: ContentKind): string {
+  return markId(newId(), kind)
+}
+
+export function contentIdAt(atMs: number, kind: ContentKind): string {
+  return markId(idAt(atMs), kind)
 }
 
 /** The instant a ULID encodes; null for an adopted (path-derived) id or one the decoder refuses —

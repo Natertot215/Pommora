@@ -10,8 +10,8 @@ import {
 } from './folderKind'
 import { SIDECAR_FILENAME } from './paths'
 
-const TASKS = '01KVGMT8BFG350FZZXAMG1QDT1'
-const EVENTS = '01KVGMT8BFG350FZZXAMG1QDE1'
+const TASKS = '01KVGMT8BFP350FZZXAMG1QDT1'
+const EVENTS = '01KVGMT8BFP350FZZXAMG1QDE1'
 let root: string
 const REG = (): FolderKindContext => ({
   agenda: { tasks: TASKS, events: EVENTS },
@@ -122,17 +122,17 @@ describe('resolveFolderKind', () => {
   it('refuses to guess when a folder carries both an agenda config and a container sidecar', async () => {
     const d = await dir('Both', {
       [SIDECAR_FILENAME.taskConfig]: { id: TASKS },
-      [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFG350FZZXAMG1QDC1' },
+      [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFP350FZZXAMG1QDC1' },
     })
     expect(await resolveFolderKind(d, 'root', REG())).toBe('unknown')
   })
 
   it('classifies containers by position once no agenda config is in play', async () => {
     const c = await dir('Notes', {
-      [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFG350FZZXAMG1QDC2' },
+      [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFP350FZZXAMG1QDC2' },
     })
     const s = await dir('Notes/Daily', {
-      [SIDECAR_FILENAME.set]: { id: '01KVGMT8BFG350FZZXAMG1QDS1' },
+      [SIDECAR_FILENAME.set]: { id: '01KVGMT8BFP350FZZXAMG1QDS1' },
     })
     const bare = await dir('Notes/Bare')
     expect(await resolveFolderKind(c, 'root', REG())).toBe('collection')

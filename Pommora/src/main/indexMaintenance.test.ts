@@ -16,8 +16,8 @@ import { queryKeyHolders, queryMentions } from './Database/contentIndex'
 import { applyWatchEvents } from './watchPatch'
 import { dropLiveTree, refreshTree } from './liveTree'
 
-const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
-const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
+const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
+const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 
 let root: string
 const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -51,9 +51,9 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's1' }))
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    `---\nPageID: ${A_ID}\n---\n\nSee [[Beta]] for more.`,
+    `---\nID: ${A_ID}\n---\n\nSee [[Beta]] for more.`,
   )
-  await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nPageID: ${B_ID}\n---\n\nbody`)
+  await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\nbody`)
   await openSession(root)
   openSessionDb(root)
   await seedContentIndex(root)
@@ -148,10 +148,7 @@ describe('the watcher maintains the rows', () => {
     expect(added).toBe('patched')
     expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
     await expectMaintained()
-    await writeFile(
-      join(root, 'Notes', 'Daily', 'Beta.md'),
-      `---\nPageID: ${B_ID}\n---\n\n[[Alpha]]`,
-    )
+    await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\n[[Alpha]]`)
     expect(
       await applyWatchEvents(
         root,

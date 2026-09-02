@@ -34,7 +34,7 @@ beforeEach(async () => {
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
-    JSON.stringify({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' }),
+    JSON.stringify({ id: '01ARZ3NDEKPSV4RRFFQ69G5FAV' }),
   )
   await settings(true)
   const status = await createProperty(root, {

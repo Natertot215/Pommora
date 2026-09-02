@@ -129,8 +129,7 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
 
   it('a page whose frontmatter cannot round-trip is left byte-identical, and the rename completes around it', async () => {
     // A tab-indented sequence: admitted by identity, refused by the round-trip gate.
-    const unwritable =
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
+    const unwritable = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
     await writeFile(other(), unwritable)
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     expect(await readFile(other(), 'utf8')).toBe(unwritable)
@@ -208,26 +207,25 @@ describe('unlink cascades (D-3)', () => {
 })
 
 describe('the sweep tells the truth about what it did (G-2)', () => {
-  const PAGE_C = '01KVGMT8BFG350FZZXAMG1QDTA'
+  const PAGE_C = '01KVGMT8BFP350FZZXAMG1QDTA'
 
-  it('unlinkContextKey returns each swept root’s identity and stripped values; a dual-key root is refused, never touched', async () => {
+  it('unlinkContextKey returns each swept root’s identity and stripped values; an Unknown root is refused, never touched', async () => {
     await writeFile(
       join(root, 'Notes', 'C.md'),
-      `---\nPageID: ${PAGE_C}\n<Projects>:\n  - Pommora\n---\nbody`,
+      `---\nID: ${PAGE_C}\n<Projects>:\n  - Pommora\n---\nbody`,
     )
     await writeFile(
-      join(root, 'Notes', 'Dual.md'),
-      `---\nPageID: ${PAGE_C}\nTaskID: 01KVGMT8BFG350FZZXAMG1QDTB\n<Projects>:\n  - Pommora\n---\nbody`,
+      join(root, 'Notes', 'Alien.md'),
+      `---\nID: 01KVGMT8BFT350FZZXAMG1QDTB\n<Projects>:\n  - Pommora\n---\nbody`,
     )
     const { unlinkContextKey } = await import('./contextCascade')
     const r = await unlinkContextKey(root, 'Projects')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const { captured, refused } = r.value
-    // The dual-key page keeps its key and names itself on the refused list.
-    expect(refused).toEqual([join(root, 'Notes', 'Dual.md')])
-    expect((await fmOf(join(root, 'Notes', 'Dual.md')))['<Projects>']).toEqual(['Pommora'])
-    // Captures discriminate by id key: the PageID page, the id-less legacy page (honest,
+    expect(refused).toEqual([join(root, 'Notes', 'Alien.md')])
+    expect((await fmOf(join(root, 'Notes', 'Alien.md')))['<Projects>']).toEqual(['Pommora'])
+    // Captures discriminate by id key: the ID page, the id-less legacy page (honest,
     // unrestorable), and the Space sidecar.
     expect(captured).toContainEqual({ id: PAGE_C, kind: 'page', values: ['Pommora'] })
     expect(captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })

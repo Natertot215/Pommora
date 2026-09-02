@@ -130,7 +130,7 @@ describe('migrateAssets', () => {
     await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\nbanner: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nbanner: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
     )
     await migrateAssets(root)
     const after = await read('Notes/Alpha.md')

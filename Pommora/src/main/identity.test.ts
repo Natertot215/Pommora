@@ -115,7 +115,7 @@ describe('the agenda singleton seed', () => {
   // Existing nexuses gain their pair when Agenda is actually built — seeding one here would
   // silently recreate folders a user deliberately removed.
   it('never retro-seeds a nexus that already carries an identity', async () => {
-    await writeId({ id: '01KVGMT8BFG350FZZXAMG1QDRC' })
+    await writeId({ id: '01KVGMT8BFP350FZZXAMG1QDRC' })
     await ensureIdentity(root)
     expect(await pathExists(join(root, 'Tasks'))).toBe(false)
     expect(await pathExists(join(root, 'Events'))).toBe(false)

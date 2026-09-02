@@ -9,7 +9,7 @@ import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
 import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 import { valuesReply } from '@renderer/Testing/pageValues'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -95,7 +95,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
 
 const VALUES = valuesReply({
   p1: {
-    [PAGE_ID_KEY]: 'p1',
+    [ID_KEY]: 'p1',
     ...propsAtRoot(
       {
         prop_status: 'active',
@@ -107,7 +107,7 @@ const VALUES = valuesReply({
       allDefs,
     ),
   },
-  p2: { [PAGE_ID_KEY]: 'p2' },
+  p2: { [ID_KEY]: 'p2' },
 })
 
 // React intercepts the value property — commit through the native setter so the change event carries.
@@ -268,8 +268,8 @@ describe('checkbox cell gestures', () => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
       async () =>
         valuesReply({
-          p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
-          p2: { [PAGE_ID_KEY]: 'p2' },
+          p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
+          p2: { [ID_KEY]: 'p2' },
         })
     await mountTable(sourceWith())
     await act(async () => {
@@ -562,7 +562,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
       valuesReply({
         p1: {
-          [PAGE_ID_KEY]: 'p1',
+          [ID_KEY]: 'p1',
           '<Areas>': ['area_work', 'area_life'],
           ...propsAtRoot({ prop_status: 'active', prop_tags: ['a', 'b'] }, allDefs),
         },
@@ -609,7 +609,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
       valuesReply({
-        p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
+        p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
       })
     await mountTable(chipSource())
     const [x] = removesIn(cell(2))
@@ -642,7 +642,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   it('a Compact status look carries NO × — Clear lives in its menu', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
       valuesReply({
-        p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
+        p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
       })
     const styled = chipSource()
     ;(styled.views as Array<{ column_styles?: unknown }>)[0].column_styles = {
@@ -662,7 +662,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
       valuesReply({
         p1: {
-          [PAGE_ID_KEY]: 'p1',
+          [ID_KEY]: 'p1',
           ...propsAtRoot({ prop_files: ['[[a.pdf]]', '[[b.pdf]]'] }, allDefs),
         },
       })

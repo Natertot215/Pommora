@@ -78,7 +78,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Journal', 'Daily', 'Alpha.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\nStatus: live\n---\nbody\n',
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\nStatus: live\n---\nbody\n',
   )
   await mkdir(join(root, 'Plain'), { recursive: true })
   await writeFile(join(root, 'Plain', '_pagecollection.json'), JSON.stringify({ id: 'col-plain' }))
@@ -229,7 +229,7 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Alpha.md'), 'utf8')
     expect(landed.includes('Status')).toBe(true)
-    expect(landed.includes('PageID:')).toBe(true)
+    expect(landed.includes('ID:')).toBe(true)
     expect(landed.includes('body')).toBe(true)
   })
 
@@ -259,7 +259,7 @@ describe('end to end — deleted, listed, restored', () => {
 
     await writeFile(
       join(root, 'Journal', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n---\nb\n',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\n---\nb\n',
     )
     await del('Journal/Beta.md', 'page')
     row = await find('Beta')

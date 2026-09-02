@@ -43,10 +43,10 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   ├── [<Page>.md]                      | • A Page at the Collection root
 │   └── _pagecollection.json             | • Schema assignment, order, views, open-in
 ├── // <Events>                          | • The Events singleton — registered by its sidecar's id
-│   ├── [<Event>.md]                     | • EventID in frontmatter
+│   ├── [<Event>.md]                     | • An Event-marked ID in frontmatter
 │   └── _eventconfig.json
 └── // <Tasks>                           | • The Tasks singleton — registered by its sidecar's id; flat
-    ├── [<Task>.md]                      | • TaskID in frontmatter
+    ├── [<Task>.md]                      | • A Task-marked ID in frontmatter
     └── _taskconfig.json
 
 // <app-support>                         | • Machine-specific; never syncs
@@ -90,7 +90,7 @@ Several rules hold across every entity and are stated here rather than per featu
 - **Names.** Create under a taken name disambiguates with a numeric suffix (`createDisambiguated`); rename onto a taken name is refused; both reject a name the walk could never surface.
 - **No empties.** An emptied value deletes its key — a property, a Context tag, a color, a banner — never writing a placeholder.
 - **Foreign data survives.** Every rewrite of a page or sidecar edits the modeled keys in place and preserves every foreign key and YAML comment by value.
-- **Governed keys.** A frontmatter key is a property's when it exactly matches a registered property name (`isRegisteredPropertyName`, `src/shared/properties.ts`), and a Context's when it is a registered title wrapped as `<Title>` (`src/shared/contexts.ts`); every other key is foreign and preserved by value. A property may not take a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `banner`, `created_at`, `modified_at`) or one starting with `<`.
+- **Governed keys.** A frontmatter key is a property's when it exactly matches a registered property name (`isRegisteredPropertyName`, `src/shared/properties.ts`), and a Context's when it is a registered title wrapped as `<Title>` (`src/shared/contexts.ts`); every other key is foreign and preserved by value. A property may not take a name Pommora's own keys use (`ID`, `icon`, `banner`), a retired stamp name (`PageID`, `TaskID`, `EventID`, `created_at`, `modified_at`), or one starting with `<`.
 - **Sweeps and journals.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open only the files the content index names as candidates, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Multi-file schema and Context operations serialize on one chain and write a crash journal first — intent to disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied.
 - **Connections.** One mention scanner covers the three link syntaxes, code-masked, and one rewriter applies a rename.
 
@@ -116,7 +116,7 @@ Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the app with
 
 Opening a folder as a Nexus runs an idempotent, best-effort pass (`src/main/adopt.ts`) that stamps a real ULID into every entity still lacking one: a raw folder gets its sidecar, an externally authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. A page's adopted id encodes the file's age rather than the moment of adoption — the older of its birth time and modification time, or the modification time alone where the filesystem reports no birth time — so its Creation Time reads as the date the file was actually written, and the stamp restores the file's modification time afterward, so adoption never reads as an edit under Last Modified. Root folders holding content become Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone. Every page and Set move passes one main-side check admitting only a Collection or a Set as its destination.
 
-**Kind authority is the folder's sidecar, and the file must agree with it.** A content file stores its id under the key naming its kind — `PageID`, `TaskID`, `EventID` (`src/shared/identity.ts`) — and admission is the one place every key is checked. Its answers are: the key agrees (a member), no key at all (adoptable, stamped at open, and read throughout under a synthetic id hashed from its path until the stamp lands), or **Unknown** — a key contradicting the folder, a value that can't be an identity, or two keys at once. Unknown is invisible and untouched: absent from the tree, skipped by every nexus-wide write, left byte-identical on disk. A stray `.png` in a Collection gets the same treatment.
+**Kind authority is the folder's sidecar, and the file must agree with it.** A content file stores its id under one `ID` key, and the kind lives in the id itself: the eleventh character — the first of the ULID's random block — is `P`, `T`, or `E` (`src/shared/identity.ts`). Admission is the one place it is checked. Its answers are: the mark agrees (a member), no key at all (adoptable, stamped at open, and read throughout under a synthetic id hashed from its path until the stamp lands), or **Unknown** — a mark contradicting the folder, or a value that can't be an identity. Unknown is invisible and untouched: absent from the tree, skipped by every nexus-wide write, left byte-identical on disk. A stray `.png` in a Collection gets the same treatment.
 
 #### II. Persistence
 
