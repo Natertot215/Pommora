@@ -14,7 +14,9 @@
   --card-inset: 8px; /* KNOB — the card's single horizontal inset; the title, the trail, and the trail's divider all start here. */
   --card-pad-top: 8px; /* KNOB — clearance under the thumb divider */
   --card-pad-bottom: 6px; /* KNOB — clearance below whatever ends the card */
-  --card-trail-gap: 8px; /* KNOB — divider → trail */
+  --card-title-gap: 2px; /* KNOB — extra space between the title and the properties */
+  --card-props-trail-gap: 2px; /* KNOB — extra space between the properties and the trail */
+  --card-trail-gap: 6px; /* KNOB — divider → trail */
   /* KNOB — the trail row's reserved height. Held open even on a card with no path, so one row's thumbs never differ by whether a card sits at its collection's root. */
   --card-trail-h: 14px;
 }
@@ -149,6 +151,12 @@
   vertical-align: -2px;
   margin-right: 6px;
 }
+.card-title + .card-props {
+  margin-top: var(--card-title-gap);
+}
+.card-props:has(+ .card-trail:not(:empty)) {
+  margin-bottom: var(--card-props-trail-gap);
+}
 .card-title-icon {
   flex: 0 0 auto;
   color: var(--label-secondary);
@@ -162,7 +170,9 @@
   border-top: var(--width-150) solid var(--border-base);
 }
 .card-trail:empty {
-  border-top-color: transparent;
+  min-height: 0;
+  padding-top: 0;
+  border-top: none;
 }
 .card-loc {
   flex: 1 1 0;

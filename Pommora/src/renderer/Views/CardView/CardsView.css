@@ -2,8 +2,10 @@
   --card-min: calc(var(--card-min-base) * var(--card-scale, 1));
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
   --card-thumb-h: calc(var(--card-thumb-h-base) * var(--card-scale, 1));
+  --card-row-h: 20px; /* KNOB — a standard property-value row */
+  --card-min-rows: 1; /* KNOB — rows the body reserves before content extends the card */
   /* KNOB — the body-area's reserved floor. */
-  --card-body-min: calc(var(--card-thumb-h) * 0.54);
+  --card-body-min: calc(16px + 18px + var(--card-min-rows) * (var(--card-row-h) + 4px));
   --band-clearance: var(--card-gap-v);
   --label-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
@@ -11,9 +13,9 @@
 }
 .cards-view.is-compact {
   --card-row-h: 16px; /* KNOB — a compact property-value row */
-  --card-body-min: calc(16px + 18px + 4px + 4px + 2 * var(--card-row-h));
+  --card-min-rows: 2;
 }
-.cards-view.is-compact .card-text:has(.card-trail) {
+.cards-view.is-compact .card-text:has(.card-trail:not(:empty)) {
   --card-foot-h: calc(4px + var(--width-150) + var(--card-trail-gap) + var(--card-trail-h));
 }
 
