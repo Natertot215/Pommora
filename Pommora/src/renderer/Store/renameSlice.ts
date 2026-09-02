@@ -2,8 +2,8 @@ import { DEFAULT_NEW_NAME, type MutableKind, type RenameHost } from '@shared/mut
 import { contextDirRel } from '@shared/nexusPaths'
 import { normalizePropertyName } from '@shared/properties'
 import { orderWithSlot } from '../Views/creationOrder'
-import { findContainer, parentPathOf } from '../Interface/Scope'
-import type { Slice } from './SessionState'
+import { findContainer, parentPathOf } from '../Interface/scope'
+import type { Slice } from './sessionState'
 import type { ValueChange, ValuesEpoch } from '@shared/types'
 
 interface RenameClaim {

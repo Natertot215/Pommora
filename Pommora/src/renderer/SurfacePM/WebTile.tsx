@@ -12,7 +12,7 @@ import { webpageTileTitle } from '@shared/webpageEmbed'
 import { useDismiss } from '@renderer/DesignSystem/Interactions/useDismiss'
 import { useSession } from '../store'
 import { openWebLink } from '../Links/openWebLink'
-import { webGuestRetention } from './WebRetention'
+import { webGuestRetention } from './webRetention'
 import './block-tile-base.css'
 import '@renderer/SurfacePM/block-title.css'
 

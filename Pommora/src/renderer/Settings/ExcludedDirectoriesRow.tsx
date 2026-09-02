@@ -5,7 +5,7 @@ import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { useSession } from '../store'
-import * as x from './exclusionRows.css'
+import * as x from './exclusion-rows.css'
 
 const PANE_MIN_W = 250
 const PANE_MAX_W = 500

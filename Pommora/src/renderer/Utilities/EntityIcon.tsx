@@ -5,7 +5,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useAssetUrl, useSession } from '@renderer/store'
 import type { ResolvedNav } from '@renderer/Navigation/navResolve'
 import type { EntityIconKind } from '@shared/types'
-import './entityIcon.css'
+import './entity-icon.css'
 
 type EntityIconProps =
   | { item: ResolvedNav; kind?: undefined; icon?: undefined; size?: IconSize; className?: string }

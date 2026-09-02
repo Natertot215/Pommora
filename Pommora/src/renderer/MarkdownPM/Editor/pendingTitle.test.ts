@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { awaitTitle, pendingTitles, type PendingTitle } from './PendingTitle'
+import { awaitTitle, pendingTitles, type PendingTitle } from './pendingTitle'
 
 const URL = 'https://www.example.com/a/b'
 const LINK = `[example.com](${URL})`

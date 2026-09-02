@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { clamp } from '../Util/clamp'
-import './floatingWindow.css'
+import './floating-window.css'
 
 export interface FloatingBounds {
   minW: number

@@ -64,7 +64,7 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
 
 export const customCaret = layer({
   above: true,
-  class: 'mdpm-caretLayer',
+  class: 'mdpm-caret-layer',
   markers: caretMarkers,
   update(update, dom) {
     // Swap the keyframe name on any selection change so the fade restarts — the caret reads solid

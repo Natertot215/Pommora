@@ -27,7 +27,7 @@ import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { iconForTypeSwitch } from './viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import * as vs from './layoutFrame.css'
+import * as vs from './layout-frame.css'
 
 const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 const TYPE_GLYPH: Record<ViewType, IconName> = {

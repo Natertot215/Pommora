@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ALL_ICONS, lucideGlyph, searchIcons, toKebabIconId } from './AllSymbols'
+import { ALL_ICONS, lucideGlyph, searchIcons, toKebabIconId } from './allSymbols'
 import { icons } from './index'
 
 describe('toKebabIconId', () => {

@@ -10,7 +10,7 @@ import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl
 import { CustomList, PropertyPreview, optionsOf } from './GroupFrame'
 import { bucketOrder } from '@renderer/Views/Pipeline/group'
 import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
-import * as gp from './groupFrame.css'
+import * as gp from './group-frame.css'
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 
 type Direction = SortCriterion['direction']

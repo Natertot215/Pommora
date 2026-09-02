@@ -169,7 +169,7 @@
   opacity: var(--state-ghost);
 }
 
-/* Drop-line drag chrome (line, dot, host) is the design system's — dropChrome.css. */
+/* Drop-line drag chrome (line, dot, host) is the design system's — drop-chrome.css. */
 
 /* Hide Borders toggle — the heading row keeps its borders so it stays structured over an otherwise
    lineless body. */

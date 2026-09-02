@@ -5,8 +5,8 @@ import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/Testing/editorHarness'
-import { pendingTitles } from './PendingTitle'
-import { pasteAs } from './PasteLink'
+import { pendingTitles } from './pendingTitle'
+import { pasteAs } from './pasteLink'
 
 const URL = 'https://www.example.com/a/b'
 

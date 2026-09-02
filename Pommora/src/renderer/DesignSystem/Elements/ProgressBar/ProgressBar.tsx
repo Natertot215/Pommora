@@ -1,4 +1,4 @@
-import * as s from './progressBar.css'
+import * as s from './progress-bar.css'
 
 export function ProgressBar({ fill }: { fill: number }): React.JSX.Element {
   const pct = Math.max(0, Math.min(1, Number.isFinite(fill) ? fill : 0)) * 100

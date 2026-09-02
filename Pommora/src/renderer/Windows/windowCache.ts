@@ -2,7 +2,7 @@
 // dies with the open window — close/overtake/adopt clear it wholesale, a tab close drops its key.
 // A capture landing under an already-closed id leaves one inert entry, reaped by the next clear.
 
-export interface WindowWarmEntry {
+export interface WindowCacheEntry {
   editorState?: unknown
   /** The editor's INTERNAL scroller — always 0 in the preview (the body owns scroll there). */
   scrollTop?: number
@@ -10,26 +10,26 @@ export interface WindowWarmEntry {
   bodyScrollTop?: number
 }
 
-const cache = new Map<string, WindowWarmEntry>()
+const cache = new Map<string, WindowCacheEntry>()
 
 /** Merge a partial capture — the editor (state) and the window (body scroll) write under one key. */
-export function captureWindowWarm(tabId: string, patch: WindowWarmEntry): void {
+export function captureWindowCache(tabId: string, patch: WindowCacheEntry): void {
   cache.set(tabId, { ...cache.get(tabId), ...patch })
 }
 
-export function readWindowWarm(tabId: string): WindowWarmEntry | undefined {
+export function readWindowCache(tabId: string): WindowCacheEntry | undefined {
   return cache.get(tabId)
 }
 
-export function dropWindowWarm(tabId: string): void {
+export function dropWindowCache(tabId: string): void {
   cache.delete(tabId)
 }
 
-export function clearWindowWarm(): void {
+export function clearWindowCache(): void {
   cache.clear()
 }
 
 // Dev-only CDP probe (the store's __pommora twin) — lets a headless drive assert warm entries.
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  ;(window as unknown as { __pommoraWarm: unknown }).__pommoraWarm = cache
+  ;(window as unknown as { __pommoraCache: unknown }).__pommoraCache = cache
 }

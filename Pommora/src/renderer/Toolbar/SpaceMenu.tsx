@@ -15,9 +15,9 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '../Frames/InlineEditHeader'
-import { findSpace } from '../Interface/Scope'
+import { findSpace } from '../Interface/scope'
 import { useSession } from '../store'
-import * as s from './toolbarMenu.css'
+import * as s from './toolbar-menu.css'
 
 const PANE_MIN_W = 225
 const PANE_MIN_H = 245

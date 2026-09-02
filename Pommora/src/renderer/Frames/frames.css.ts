@@ -9,7 +9,7 @@ import {
   rowBox,
   rowDragging,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eyeToggle.css'
+import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eye-toggle.css'
 import { menuAnchor } from '@renderer/DesignSystem/Menus/menu-anchor'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { fieldRing } from '@renderer/DesignSystem/Fields/fieldRing'

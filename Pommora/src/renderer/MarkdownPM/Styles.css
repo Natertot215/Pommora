@@ -385,7 +385,7 @@
      text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
   --grip-top: 28px;
 }
-.mdpm-editor .cm-line.mdpm-embed-line .cm-widgetBuffer {
+.mdpm-editor .cm-line.mdpm-embed-line .cm-widget-buffer {
   height: 0;
 }
 

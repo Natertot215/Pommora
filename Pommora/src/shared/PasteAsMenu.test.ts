@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from './links'
-import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './PasteAsMenu'
+import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
 

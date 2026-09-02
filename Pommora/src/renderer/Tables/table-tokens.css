@@ -28,7 +28,7 @@
   --heading-segment-width: var(--width-200);
   --heading-padding-y: 8px;
 
-  /* Group sections bind to the seam law in GroupBand.css: the row rhythm is the shoulder — tune
+  /* Group sections bind to the seam law in group-band.css: the row rhythm is the shoulder — tune
      --cell-padding-y, not this. */
   --band-clearance: var(--cell-padding-y);
 

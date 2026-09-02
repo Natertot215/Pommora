@@ -31,11 +31,11 @@ import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSyste
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
 import '@renderer/SurfacePM/block-tile-base.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { DEFAULT_ZOOM, zoomStep } from '@renderer/SurfacePM/TileZoom'
+import { DEFAULT_ZOOM, zoomStep } from '@renderer/SurfacePM/tileZoom'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../Detect'
 import { claimedEmbeds } from './embedRanges'
-import { healTileScrolls, tileWarmSeam } from '@renderer/SurfacePM/TileCache'
+import { healTileScrolls, tileWarmSeam } from '@renderer/SurfacePM/tileCache'
 import type { ConnectionsApi } from '../Connections'
 
 export interface EmbedHost {

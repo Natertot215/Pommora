@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { NexusTree } from '@shared/types'
 import { TileSurface } from '@renderer/SurfacePM/TileSurface'
 import { InterfaceScaffold } from './InterfaceScaffold'
-import { findSpace } from './Scope'
+import { findSpace } from './scope'
 
 export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }): React.JSX.Element {
   // Memoized per Space — a fresh host literal each render would churn every tile memo downstream.

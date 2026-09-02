@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { NavTrail } from './NavTrail'
-import * as s from './navTrail.css'
+import * as s from './nav-trail.css'
 
 const three = [{ title: 'A', icon: 'folder' }, { title: 'B' }, { title: 'C', ghost: true }]
 

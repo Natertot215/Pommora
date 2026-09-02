@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Banner } from './Banner'
-import { isSurfaceKind, type BannerOwner } from './Scope'
+import { isSurfaceKind, type BannerOwner } from './scope'
 import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'
-import { captureWarm, readWarm } from '../Store/TabState'
+import { captureCache, readCache } from '../Store/tabState'
 
 export function InterfaceScaffold({
   owner,
@@ -23,7 +23,7 @@ export function InterfaceScaffold({
   useEffect(() => {
     const el = ref.current
     if (!el || !warmKey) return
-    const saved = readWarm(activeTabId, warmKey)?.scrollTop
+    const saved = readCache(activeTabId, warmKey)?.scrollTop
     el.scrollTop = saved ?? 0
     let last = saved ?? 0
     const onScroll = (): void => {
@@ -32,7 +32,7 @@ export function InterfaceScaffold({
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       el.removeEventListener('scroll', onScroll)
-      captureWarm(activeTabId, warmKey, { scrollTop: last })
+      captureCache(activeTabId, warmKey, { scrollTop: last })
     }
   }, [activeTabId, warmKey])
 

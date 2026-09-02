@@ -1,5 +1,5 @@
 /* The toolbar's tab-bar SKIN — layout, knobs, and chrome. Tab/segment/×/slide motion lives in
-   tabStrip.css (container-agnostic); this file's knob block overrides that layer's --tab-* defaults. */
+   tab-strip.css (container-agnostic); this file's knob block overrides that layer's --tab-* defaults. */
 
 .tab-bar {
   /* KNOBS — the whole bar tunes here. */

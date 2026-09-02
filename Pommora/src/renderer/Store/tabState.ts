@@ -4,7 +4,7 @@
 // scheduler so a returning tile always seeds on the newest body.
 import type { PageDetail } from '@shared/types'
 
-export interface WarmEntry {
+export interface CacheEntry {
   /** `EditorState.toJSON({ history: historyField })` payload — opaque here, parsed only by the seam. */
   editorState?: unknown
   scrollTop?: number
@@ -12,9 +12,9 @@ export interface WarmEntry {
 }
 
 /** Beyond this many entries deep, a Back/Forward restore goes cold. */
-const WARM_CAP_PER_TAB = 20
+const CACHE_CAP_PER_TAB = 20
 
-const cache = new Map<string, Map<string, WarmEntry>>()
+const cache = new Map<string, Map<string, CacheEntry>>()
 
 /** LRU by Map insertion order — every write re-inserts, so `.keys().next()` is always the stalest. */
 function trimToCap<V>(map: Map<string, V>, cap: number): void {
@@ -25,7 +25,7 @@ function trimToCap<V>(map: Map<string, V>, cap: number): void {
   }
 }
 
-export function captureWarm(tabId: string, navKey: string, patch: Partial<WarmEntry>): void {
+export function captureCache(tabId: string, navKey: string, patch: Partial<CacheEntry>): void {
   let tabMap = cache.get(tabId)
   if (!tabMap) {
     tabMap = new Map()
@@ -34,10 +34,10 @@ export function captureWarm(tabId: string, navKey: string, patch: Partial<WarmEn
   const merged = { ...tabMap.get(navKey), ...patch }
   tabMap.delete(navKey)
   tabMap.set(navKey, merged)
-  trimToCap(tabMap, WARM_CAP_PER_TAB)
+  trimToCap(tabMap, CACHE_CAP_PER_TAB)
 }
 
-export function readWarm(tabId: string, navKey: string): WarmEntry | undefined {
+export function readCache(tabId: string, navKey: string): CacheEntry | undefined {
   return cache.get(tabId)?.get(navKey)
 }
 
@@ -89,7 +89,7 @@ export function dropPageDetail(path: string): void {
 
 /** Drop every warm `pageDetail` captured for `path` — a warm return would resurrect the pre-write
  *  value. Editor state and scroll stay warm; only the detail refetches. */
-export function dropWarmDetail(path: string): void {
+export function dropCacheDetail(path: string): void {
   for (const tabMap of cache.values())
     for (const entry of tabMap.values())
       if (entry.pageDetail?.path === path) delete entry.pageDetail
@@ -97,15 +97,15 @@ export function dropWarmDetail(path: string): void {
   inFlight.delete(path)
 }
 
-export function dropWarmTab(tabId: string): void {
+export function dropCacheTab(tabId: string): void {
   cache.delete(tabId)
 }
 
 // A surface unmounting because of a clear captures after it — the generation lets it tell.
 let generation = 0
-export const warmGeneration = (): number => generation
+export const cacheGeneration = (): number => generation
 
-export function clearWarm(): void {
+export function clearCache(): void {
   cache.clear()
   detailByPath.clear()
   inFlight.clear()

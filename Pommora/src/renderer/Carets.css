@@ -40,7 +40,7 @@ textarea,
   caret-color: transparent;
 }
 
-.cm-focused > .cm-scroller > .mdpm-caretLayer {
+.cm-focused > .cm-scroller > .mdpm-caret-layer {
   animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
 }
 
@@ -80,7 +80,7 @@ textarea,
   background: var(--caret-color);
   border-radius: var(--radius-full);
 }
-.cm-focused > .cm-scroller > .mdpm-caretLayer .mdpm-caret {
+.cm-focused > .cm-scroller > .mdpm-caret-layer .mdpm-caret {
   display: block;
 }
 

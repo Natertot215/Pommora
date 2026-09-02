@@ -4,7 +4,7 @@ import type { LabelColorName } from '@renderer/DesignSystem/Labels'
 import { cellPaint } from '@renderer/DesignSystem/Tokens/ramp'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import type { CellKey } from '@shared/theme'
-import * as s from './colorSwatch.css'
+import * as s from './color-swatch.css'
 
 /**
  * The swatch-and-picker pair: a chip using the resolved color, and the grid it opens. Its open

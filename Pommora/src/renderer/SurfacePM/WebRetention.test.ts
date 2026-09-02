@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRetention } from './WebRetention'
+import { createRetention } from './webRetention'
 
 const id = (): symbol => Symbol()
 

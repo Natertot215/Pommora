@@ -1,5 +1,5 @@
 import type { NavViewMode, SelectionState } from '@shared/types'
-import type { Slice } from './SessionState'
+import type { Slice } from './sessionState'
 
 export interface ChromeSlice {
   sidebarVisible: boolean

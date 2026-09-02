@@ -6,7 +6,7 @@ import { embeddableTitle, pageEmbedText, pageLinkPattern } from './connections'
 import { MD_LINK, encodeLinkTarget, hasWebScheme, isValidLink, targetTitle } from './links'
 import { serializeLink } from './linkValue'
 import { pageLinkText } from './pageMenu'
-import { linkPaste, type LinkPaste } from './PasteLink'
+import { linkPaste, type LinkPaste } from './pasteLink'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from './properties'
 import { composeWebpageEmbedLine } from './webpageEmbed'
 

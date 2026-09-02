@@ -11,7 +11,7 @@ import { FileLabel } from '@renderer/DesignSystem/Labels'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { errorField, rows } from './fieldsLeaf.css'
+import { errorField, rows } from './fields-leaf.css'
 
 export function FieldsLeaf(): React.JSX.Element {
   const [search, setSearch] = useState('')

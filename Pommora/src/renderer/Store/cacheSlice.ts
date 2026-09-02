@@ -2,7 +2,7 @@ import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import type { Result } from '@shared/result'
 import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
 import { stabilize } from '@shared/treeStabilize'
-import type { Slice } from './SessionState'
+import type { Slice } from './sessionState'
 
 export interface CacheSlice {
   linkTitles: Record<string, string>

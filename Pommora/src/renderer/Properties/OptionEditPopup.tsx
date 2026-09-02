@@ -11,7 +11,7 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { optionGlyph, type OptionChipData } from './Assignment/OptionChip'
-import * as s from './optionEditPopup.css'
+import * as s from './option-edit-popup.css'
 
 const APPEARANCE_OPTIONS = [
   { value: 'filled', label: 'Filled' },

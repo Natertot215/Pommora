@@ -23,7 +23,7 @@ import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useSession } from '../store'
 import { optionRing } from '@renderer/DesignSystem/Pickers/picker-base.css'
-import * as vd from './toolbarMenu.css'
+import * as vd from './toolbar-menu.css'
 
 const PANE_SQUARE = 225
 

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { track as switchTrack } from './dualSwitch.css'
+import { track as switchTrack } from './dual-switch.css'
 
 /** The cluster — the clickable chip; the ColorPicker anchors below it. */
 export const cluster = style({

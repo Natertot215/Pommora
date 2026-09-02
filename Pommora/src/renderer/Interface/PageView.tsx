@@ -10,7 +10,7 @@ import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import { navKey } from '../Navigation/navRecents'
-import { captureWarm, readWarm, warmGeneration } from '../Store/TabState'
+import { captureCache, readCache, cacheGeneration } from '../Store/tabState'
 import { registerPageEditor } from './pageEditor'
 import { schedulePageSave } from './pageFlush'
 
@@ -36,9 +36,9 @@ export function PageView({
   live.current = { slot, tabId }
   // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors'
   // effects, so the stale generation is seen exactly by the captures a clear caused.
-  const mountedGen = useRef(warmGeneration())
+  const mountedGen = useRef(cacheGeneration())
   useEffect(() => {
-    mountedGen.current = warmGeneration()
+    mountedGen.current = cacheGeneration()
   })
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
@@ -167,13 +167,13 @@ export function PageView({
         // mounting page's mounts cold (id-keyed warmth must never revive a stale-path doc).
         warm={{
           restore: () => {
-            const entry = readWarm(tabId, warmKey)
+            const entry = readCache(tabId, warmKey)
             return entry?.pageDetail?.path === pageDetail.path ? entry : undefined
           },
           capture: (state) => {
-            if (warmGeneration() !== mountedGen.current) return
+            if (cacheGeneration() !== mountedGen.current) return
             const { slot: now, tabId: owner } = live.current
-            captureWarm(
+            captureCache(
               owner,
               warmKey,
               now?.status === 'ready'

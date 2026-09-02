@@ -30,8 +30,8 @@ import {
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { ZOOM_STEPS, zoomStep } from './TileZoom'
-import * as s from './handleMenu.css'
+import { ZOOM_STEPS, zoomStep } from './tileZoom'
+import * as s from './handle-menu.css'
 
 const GLYPH = 12
 const LOC_GLYPH = 11

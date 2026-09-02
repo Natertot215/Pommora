@@ -1,7 +1,7 @@
 import { Icon } from '../../Symbols'
 import { Button } from '../../Buttons'
 import { cx } from '../../Util/cx'
-import * as s from './eyeToggle.css'
+import * as s from './eye-toggle.css'
 
 /** The visibility eye — rest shows the current state's glyph, hover previews the toggle: a hidden
  *  subject runs the same pair in reverse. Both glyphs mount; CSS swaps them. */

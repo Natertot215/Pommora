@@ -14,8 +14,8 @@ import { aliasOnLeave } from '../Editor/linkEdit'
 import { linkRest, linkTyping } from '../Editor/linkGestures'
 import { connectionClicks } from '../Editor/connections'
 import { markdownLinkClicks } from '../Editor/links'
-import { pasteLink } from '../Editor/PasteLink'
-import { pendingTitle } from '../Editor/PendingTitle'
+import { pasteLink } from '../Editor/pasteLink'
+import { pendingTitle } from '../Editor/pendingTitle'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
