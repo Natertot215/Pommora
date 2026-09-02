@@ -33,6 +33,7 @@ export async function setGovernedRootKeys(
     [...changed, ...govern],
     splitEnvelope(existing).body,
   )
+  if (content === existing) return adoptions
   await atomicWriteFile(absFile, content)
   noteValueWrite(sessionRoot(), absFile)
   return adoptions
