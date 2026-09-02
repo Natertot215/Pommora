@@ -52,11 +52,11 @@ beforeEach(async () => {
   )
   await writeFile(
     abs('Col', 'A.md'),
-    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAA\nStage: Draft\n---\nbody\n',
+    '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAA\nStage: Draft\n---\nbody\n',
   )
   await writeFile(
     abs('Col', 'B.md'),
-    '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAB\nStage: Draft\n---\nbody\n',
+    '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAB\nStage: Draft\n---\nbody\n',
   )
   await openSession(root)
   observed = []
@@ -153,7 +153,7 @@ describe('the option-op writers', () => {
     )
     await writeFile(
       abs('Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nTags:\n  - Draft\n---\nbody\n',
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nTags:\n  - Draft\n---\nbody\n',
     )
     observed = []
   }

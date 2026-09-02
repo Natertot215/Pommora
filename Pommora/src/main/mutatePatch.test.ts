@@ -15,8 +15,8 @@ vi.mock('./readNexus', async (importOriginal) => {
 
 const walkSpy = vi.mocked(readNexus)
 
-const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
-const ULID_B = '01BX5ZZKBKACTAV9WEVGEMMVRZ'
+const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
@@ -45,7 +45,7 @@ beforeEach(async () => {
     abs('Notes', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_a'] }),
   )
-  await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\n---\n\nalpha\n`)
+  await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await refreshTree(root)
   walkSpy.mockClear()
 })
@@ -70,7 +70,7 @@ describe('confirmMutation', () => {
   })
 
   it('a delete patches by transform; a create pins its order from the parent sidecar', async () => {
-    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const created = await confirmMutation(
       root,
       { op: 'createPage', parentPath: 'Notes', name: 'B' },
@@ -112,17 +112,14 @@ describe('confirmMutation', () => {
   })
 
   it('a Space delete walks — its cascade rewrote contextValues the transform never touches', async () => {
-    await writeFile(
-      abs('Notes', 'A.md'),
-      `---\nPageID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
-    )
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`)
     dropLiveTree()
     await refreshTree(root)
     expect(getLiveTree()?.collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     walkSpy.mockClear()
     // The real delete trashes the folder and unlinks the value from every member.
     await rm(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true, force: true })
-    await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\n---\n\nalpha\n`)
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
     const pushed = await confirmMutation(
       root,
       { op: 'delete', path: '.nexus/contexts/Areas/Home', kind: 'space' },
@@ -149,10 +146,7 @@ describe('confirmMutation', () => {
   })
 
   it('setContext confirms by one page read — zero walks, contextValues patched', async () => {
-    await writeFile(
-      abs('Notes', 'A.md'),
-      `---\nPageID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
-    )
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`)
     const pushed = await confirmMutation(
       root,
       { op: 'setContext', path: 'Notes/A.md', contextId: 'ctx1', spaceIds: ['sp1'] },

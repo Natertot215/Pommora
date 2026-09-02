@@ -11,7 +11,7 @@ import { readNexus } from '../readNexus'
 import { closeSession, openSession } from '../session'
 import { trashRowOf, trashRows } from './trashRows'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDVA'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -45,7 +45,7 @@ beforeEach(async () => {
     join(root, 'Notes', 'Daily', '_pageset.json'),
     JSON.stringify({ id: 'set-daily' }),
   )
-  await writeFile(join(root, 'Notes', 'Daily', 'Alpha.md'), `---\nPageID: ${PAGE_A}\n---\nbody`)
+  await writeFile(join(root, 'Notes', 'Daily', 'Alpha.md'), `---\nID: ${PAGE_A}\n---\nbody`)
   await openSession(root)
 })
 

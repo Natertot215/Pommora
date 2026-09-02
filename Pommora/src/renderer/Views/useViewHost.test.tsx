@@ -10,7 +10,7 @@ import { useViewHost, type ViewHostApi } from './useViewHost'
 import { ViewHost } from './ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 import { pageValues } from '@renderer/Testing/pageValues'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -83,7 +83,7 @@ const deepSets = (): { a: SetNode; b: SetNode } => {
 }
 
 const VALUES = pageValues({
-  p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
 })
 
 let host: HTMLDivElement
@@ -220,7 +220,7 @@ describe('the values epoch', () => {
     act(() => useSession.getState().bumpContainerValues(changes))
 
   const P2 = pageValues({
-    p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'todo' }, [statusDef]) },
+    p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'todo' }, [statusDef]) },
   })
 
   beforeEach(() => {

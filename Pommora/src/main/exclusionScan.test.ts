@@ -11,13 +11,13 @@ const w = (p: string, c: string): Promise<void> => writeFile(join(root, p), c)
 const read = (p: string): Promise<string> => readFile(join(root, p), 'utf8')
 
 const page = (id: string, frontmatter: string): string =>
-  `---\n${frontmatter}\nPageID: ${id}\n---\n\nbody\n`
+  `---\n${frontmatter}\nID: ${id}\n---\n\nbody\n`
 
 const legacy = (): Promise<void> =>
   w(
     'Archive/legacy.md',
     page(
-      '01NNNNNNNNNNNNNNNNNNNNNNNN',
+      '01NNNNNNNNPNNNNNNNNNNNNNNN',
       'icon: star\ncreated_at: 2026-01-01T00:00:00.000Z\nmodified_at: 2026-02-02T00:00:00.000Z\nbanner: img.png\nAuthor: Username\nStatus: open',
     ),
   )
@@ -26,7 +26,7 @@ const expectIdentityStripped = async (): Promise<string> => {
   const text = await read('Archive/legacy.md')
   expect(text).toContain('created_at: 2026-01-01T00:00:00.000Z')
   expect(text).toContain('modified_at: 2026-02-02T00:00:00.000Z')
-  expect(text).not.toContain('PageID')
+  expect(text).not.toContain('ID')
   expect(text).toContain('icon: star')
   expect(text).toContain('banner: img.png')
   expect(text).toContain('Author: Username')
@@ -45,22 +45,22 @@ beforeEach(async () => {
   await w('Archive/Set/_pageset.json', '{"id":"s1"}')
   await w(
     'Archive/note.md',
-    page('01AAAAAAAAAAAAAAAAAAAAAAAA', '# note about status\nStatus: Doing'),
+    page('01AAAAAAAAPAAAAAAAAAAAAAAA', '# note about status\nStatus: Doing'),
   )
-  await w('Archive/proj.md', page('01BBBBBBBBBBBBBBBBBBBBBBBB', '<Projects>: [Alpha]'))
+  await w('Archive/proj.md', page('01BBBBBBBBPBBBBBBBBBBBBBBB', '<Projects>: [Alpha]'))
   await w(
     'Archive/collide.md',
-    page('01CCCCCCCCCCCCCCCCCCCCCCCC', 'Status: open\nStatus: [Revisit]'),
+    page('01CCCCCCCCPCCCCCCCCCCCCCCC', 'Status: open\nStatus: [Revisit]'),
   )
-  await w('Archive/both.md', page('01DDDDDDDDDDDDDDDDDDDDDDDD', 'Status: open\n<Areas>: [Home]'))
-  await w('Archive/malformed.md', page('01EEEEEEEEEEEEEEEEEEEEEEEE', '<Status: broken'))
-  await w('Archive/Set/deep.md', page('01FFFFFFFFFFFFFFFFFFFFFFFF', 'Tag: x'))
-  await w('Archive/stray.md', '---\nTaskID: 01GGGGGGGGGGGGGGGGGGGGGGGG\n---\n\nmisplaced\n')
+  await w('Archive/both.md', page('01DDDDDDDDPDDDDDDDDDDDDDDD', 'Status: open\n<Areas>: [Home]'))
+  await w('Archive/malformed.md', page('01EEEEEEEEPEEEEEEEEEEEEEEE', '<Status: broken'))
+  await w('Archive/Set/deep.md', page('01FFFFFFFFPFFFFFFFFFFFFFFF', 'Tag: x'))
+  await w('Archive/stray.md', '---\nID: 01GGGGGGGGTGGGGGGGGGGGGGGG\n---\n\nmisplaced\n')
   await w('Archive/Tasks/_taskconfig.json', '{"id":"t1"}')
-  await w('Archive/Tasks/task.md', '---\nTaskID: 01HHHHHHHHHHHHHHHHHHHHHHHH\n---\n\nreal task\n')
+  await w('Archive/Tasks/task.md', '---\nID: 01HHHHHHHHTHHHHHHHHHHHHHHH\n---\n\nreal task\n')
   await w('Archive/node_modules/pkg/index.md', page('01IIIIIIIIIIIIIIIIIIIIIIII', 'Status: dep'))
-  await w('Archive/.git/config.md', page('01JJJJJJJJJJJJJJJJJJJJJJJJ', 'Status: git'))
-  await w('file-assets/img-note.md', page('01KKKKKKKKKKKKKKKKKKKKKKKK', 'Status: asset'))
+  await w('Archive/.git/config.md', page('01JJJJJJJJPJJJJJJJJJJJJJJJ', 'Status: git'))
+  await w('file-assets/img-note.md', page('01KKKKKKKKPKKKKKKKKKKKKKKK', 'Status: asset'))
 })
 afterEach(() => rm(root, { recursive: true, force: true }))
 
@@ -96,7 +96,7 @@ describe('excludedArtifacts', () => {
   it('matches what corpusFilesUnder would return over an agenda-free root, exclusion aside', async () => {
     await d('Plain/Sub')
     await w('Plain/a.md', page('01LLLLLLLLLLLLLLLLLLLLLLLL', ''))
-    await w('Plain/Sub/b.md', page('01MMMMMMMMMMMMMMMMMMMMMMMM', ''))
+    await w('Plain/Sub/b.md', page('01MMMMMMMMPMMMMMMMMMMMMMMM', ''))
     const { corpusFilesUnder } = await import('./IO/walk')
     const ground = (
       await corpusFilesUnder(root, join(root, 'Plain'), { excluded: [], assetDir: 'file-assets' })
@@ -118,11 +118,11 @@ describe('clearExclusionData', () => {
     const note = await read('Archive/note.md')
     expect(note).toContain('# note about status')
     expect(note).toContain('Status: Doing')
-    expect(note).not.toContain('PageID')
+    expect(note).not.toContain('ID')
 
     const proj = await read('Archive/proj.md')
     expect(proj).not.toContain('Projects')
-    expect(proj).not.toContain('PageID')
+    expect(proj).not.toContain('ID')
     const collide = await read('Archive/collide.md')
     expect(collide).toContain('Status: open')
     expect(collide).toContain('Revisit')

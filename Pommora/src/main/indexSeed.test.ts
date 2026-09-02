@@ -9,7 +9,7 @@ import { corpusFiles } from './IO/walk'
 import { sweepAdmitsBody } from './CRUD/util'
 import { seedContentIndex } from './indexSeed'
 
-const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
@@ -22,7 +22,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(
     abs('Notes', 'A.md'),
-    `---\nPageID: ${ULID_A}\nStatus: Open\n---\n\nlinks [[Target]]\n`,
+    `---\nID: ${ULID_A}\nStatus: Open\n---\n\nlinks [[Target]]\n`,
   )
   await mkdir(abs('Loose'), { recursive: true })
   await writeFile(abs('Loose', 'Note.md'), 'an un-adopted note linking [[Target]]\n')
@@ -51,11 +51,9 @@ describe('seedContentIndex', () => {
   it("an Unknown file gets no rows but is stat-recorded, matching the sweep's skip", async () => {
     await writeFile(
       abs('Notes', 'Foreign.md'),
-      '---\nTaskID: 01BX5ZZKBKACTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n',
+      '---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n',
     )
-    expect(sweepAdmitsBody(`---\nTaskID: 01BX5ZZKBKACTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n`)).toBe(
-      false,
-    )
+    expect(sweepAdmitsBody(`---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n`)).toBe(false)
     await seedContentIndex(root)
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(readIndexedStats()?.has('Notes/Foreign.md')).toBe(true)
@@ -84,12 +82,12 @@ describe('seedContentIndex', () => {
   it('records every frontmatter key, registered or not, so a name registered later finds its holders', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nPageID: ${ULID_A}\nStatus:\n  - Open\nfoo: bar\n---\n\nbody\n`,
+      `---\nID: ${ULID_A}\nStatus:\n  - Open\nfoo: bar\n---\n\nbody\n`,
     )
     await seedContentIndex(root)
     expect(queryKeyHolders('foo')).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
-    expect(queryKeyHolders('PageID')).toEqual(['Notes/A.md'])
+    expect(queryKeyHolders('ID')).toEqual(['Notes/A.md'])
   })
 
   it('with no database the seed stands down and queries stay null', async () => {

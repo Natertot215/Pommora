@@ -101,10 +101,7 @@ describe('a property write reconciles the whole file', () => {
   it('setting Priority on a page holding a scalar Status rewrites Status to a list', async () => {
     const page = await createPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup')
-    await writeFile(
-      page.value.path,
-      `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`,
-    )
+    await writeFile(page.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`)
     const r = await handleMutate(
       {
         op: 'setProperty',
@@ -126,11 +123,11 @@ describe('a property write reconciles the whole file', () => {
     if (!clean.ok || !drifted.ok) throw new Error('setup')
     await writeFile(
       clean.value.path,
-      `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAA\n<Areas>:\n  - Work\n---\nb\n`,
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAA\n<Areas>:\n  - Work\n---\nb\n`,
     )
     await writeFile(
       drifted.value.path,
-      `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAB\n<Areas>:\n  - work\n---\nb\n`,
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAB\n<Areas>:\n  - work\n---\nb\n`,
     )
     const set = (path: string) =>
       handleMutate(
@@ -158,7 +155,7 @@ describe('a property write reconciles the whole file', () => {
     if (!page.ok) throw new Error('setup')
     await writeFile(
       page.value.path,
-      `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\n<Areas>:\n  - work\n---\nb\n`,
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\n<Areas>:\n  - work\n---\nb\n`,
     )
     await writeFile(join(contextsDir(root), 'Areas', 'Work', '_space.json'), '{corrupt')
     const r = await handleMutate(
@@ -199,7 +196,7 @@ describe('a property write reconciles the whole file', () => {
     if (!page.ok) throw new Error('setup')
     await writeFile(
       page.value.path,
-      `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAD\nTags:\n  - alpha\n  - zeta\n---\nb\n`,
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAD\nTags:\n  - alpha\n  - zeta\n---\nb\n`,
     )
     await handleMutate(
       {

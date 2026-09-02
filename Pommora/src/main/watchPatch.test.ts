@@ -11,8 +11,8 @@ import { getHeldAssetMap, liveAssetMap } from './assetMap'
 import { ignoredUnder } from './watcher'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
-const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
-const ULID_B = '01BX5ZZKBKACTAV9WEVGEMMVRZ'
+const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
 
 let root: string
 
@@ -42,7 +42,7 @@ beforeEach(async () => {
   )
   await mkdir(abs('Notes'), { recursive: true })
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
-  await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\n---\n\nalpha\n`)
+  await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await mkdir(abs('Loose'), { recursive: true })
   await writeFile(abs('Loose', 'note.md'), 'links [[A]]\n')
 })
@@ -56,9 +56,9 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await refreshTree(root)
     await writeFile(
       abs('Notes', 'B.md'),
-      `---\nPageID: ${ULID_B}\nicon: book\n<Areas>:\n  - Home\n---\n\nbeta\n`,
+      `---\nID: ${ULID_B}\nicon: book\n<Areas>:\n  - Home\n---\n\nbeta\n`,
     )
-    await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\nicon: star\n---\n\nalpha\n`)
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nicon: star\n---\n\nalpha\n`)
     await writeFile(abs('Loose', 'second.md'), 'more\n')
     await writeFile(
       abs('Notes', '_pagecollection.json'),
@@ -133,18 +133,18 @@ describe('applyWatchEvents — must agree with the walk', () => {
 
   it('a file with Unknown admission never enters the tree — the walk owns that bookkeeping', async () => {
     await refreshTree(root)
-    await writeFile(abs('Notes', 'bad.md'), `---\nTaskID: ${ULID_B}\n---\n\nnope\n`)
+    await writeFile(abs('Notes', 'bad.md'), `---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\nnope\n`)
     const result = await applyWatchEvents(root, [ev('add', 'Notes', 'bad.md')], scope())
     expect(result).toBe('refresh')
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.title)).toEqual(['A'])
   })
 
   it('a page whose id moved re-derives its position instead of swapping in place', async () => {
-    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     await refreshTree(root)
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
-    const ULID_C = '01CX5ZZKBKACTAV9WEVGEMMVRC'
-    await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_C}\n---\n\nalpha\n`)
+    const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_C}\n---\n\nalpha\n`)
     expect(await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())).toBe('patched')
     const live = getLiveTree()
     expect(live?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_C])
@@ -169,7 +169,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('a mixed batch with one unclassifiable event refreshes once, patching nothing', async () => {
     await refreshTree(root)
     const before = getLiveTree()
-    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const result = await applyWatchEvents(
       root,
       [ev('add', 'Notes', 'B.md'), ev('change', '.nexus', 'contexts.json')],

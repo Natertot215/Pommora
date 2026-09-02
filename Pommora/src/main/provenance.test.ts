@@ -15,7 +15,7 @@ import {
 import { readNexus, splitFrontmatter } from './readNexus'
 import { closeSession, openSession } from './session'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDVA'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -76,7 +76,7 @@ beforeEach(async () => {
   )
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
+    `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
   )
   await openSession(root)
 })
@@ -211,8 +211,8 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
   it('a refused root marks the Space record partial — the members list is thinner than the truth', async () => {
     await writeFile(
-      join(root, 'Notes', 'Daily', 'Dual.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVC\n<Projects>:\n  - Pommora\n---\n',
+      join(root, 'Notes', 'Daily', 'Alien.md'),
+      '---\nID: 01KVGMT8BFT350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\n---\n',
     )
     await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
@@ -341,7 +341,7 @@ describe('listBundles — what the trash offers', () => {
     )
     await writeFile(
       join(root, 'Archive.deleted', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVF\n---\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVF\n---\nbody',
     )
     const r = await handleMutate(
       { op: 'delete', path: 'Archive.deleted/Beta.md', kind: 'page' },
@@ -683,7 +683,7 @@ describe('restore — the gate-four pins', () => {
     // An Unknown squatter takes the resolved target: same name, contradicting kind key.
     await writeFile(
       join(root, 'Notes', 'Daily', 'Alpha.md'),
-      '---\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVD\n---\nsquatter',
+      '---\nID: 01KVGMT8BFT350FZZXAMG1QDVD\n---\nsquatter',
     )
     const [listed] = await listBundles(root)
     const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
@@ -737,7 +737,7 @@ describe('restore — the attack folds', () => {
   it('a numeric-prefixed filename round-trips intact — the artifact keeps its real name', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', '12__Notes.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVE\n---\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVE\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/12__Notes.md', kind: 'page' }, nexusDeps)
     const [listed] = await listBundles(root)
@@ -1062,8 +1062,8 @@ describe('restore — into a chosen destination', () => {
   it('a live identity still refuses, destination or not', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
-    // The same PageID back in the tree under another name.
-    await writeFile(join(root, 'Notes', 'Twin.md'), `---\nPageID: ${PAGE_A}\n---\nbody`)
+    // The same ID back in the tree under another name.
+    await writeFile(join(root, 'Notes', 'Twin.md'), `---\nID: ${PAGE_A}\n---\nbody`)
     const r = await handleMutate(
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
       nexusDeps,
@@ -1098,7 +1098,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nStatus: live\n---\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
@@ -1112,7 +1112,7 @@ describe('restore — into a chosen destination', () => {
     // The value traveled as the page's own frontmatter; the destination's schema decides only
     // what it displays.
     expect(landed.includes('Status: live')).toBe(true)
-    expect(landed.includes('PageID:')).toBe(true)
+    expect(landed.includes('ID:')).toBe(true)
   })
 
   it('the same page restored to a Collection that DOES assign it keeps the value', async () => {
@@ -1136,7 +1136,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nStatus: live\n---\nbody',
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)

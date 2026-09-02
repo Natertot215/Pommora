@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { FilterGroup } from '@shared/views'
 import type { PropertyDefinition } from '@shared/properties'
@@ -58,7 +58,7 @@ function row(
     id,
     title: id,
     path: `${id}.md`,
-    frontmatter: { [PAGE_ID_KEY]: id, ...propsAtRoot(opts.props ?? {}, schema) },
+    frontmatter: { [ID_KEY]: id, ...propsAtRoot(opts.props ?? {}, schema) },
     createdAt: opts.createdAt ?? null,
     modifiedAt: opts.modifiedAt ?? null,
     ...(opts.areas ? { contextValues: { ctx_areas: opts.areas } } : {}),

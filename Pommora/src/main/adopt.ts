@@ -4,8 +4,8 @@
 import { readFile, rename, stat } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { isContentFile, listEntries } from './IO/walk'
-import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
-import { idAt, newId } from './ids'
+import { admitContentFile, ID_KEY, type ContentKind } from '@shared/identity'
+import { contentIdAt, newId } from './ids'
 import {
   readJsonObject,
   readJsonStrict,
@@ -63,12 +63,11 @@ async function reHomeRegistered(
 async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const content = await readFile(absFile, 'utf8')
   if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
-  const key = KIND_ID_KEY[kind]
   const { body } = splitEnvelope(content)
   // A filesystem with no birthtime reports 0, and mtime is then the honest floor.
   const { birthtimeMs, mtimeMs } = await stat(absFile)
-  const id = idAt(birthtimeMs > 0 ? Math.min(birthtimeMs, mtimeMs) : mtimeMs)
-  await rewritePreservingTimes(absFile, mergeFrontmatter(content, { [key]: id }, [key], body))
+  const id = contentIdAt(birthtimeMs > 0 ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
+  await rewritePreservingTimes(absFile, mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], body))
   return true
 }
 

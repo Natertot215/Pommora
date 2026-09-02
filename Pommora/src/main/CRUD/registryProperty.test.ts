@@ -136,7 +136,7 @@ describe('editProperty', () => {
     await assignProperty(root, col.value.path, c.value.id)
     const p = await createPage(col.value.path, 'Holder', { body: 'b' })
     if (!p.ok) return
-    await writeFile(p.value.path, `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
+    await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
 
     const refused = await editProperty(root, c.value.id, { name: 'foo' })
     expect(refused.ok).toBe(false)

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,13 +54,13 @@ describe('stampAdopted', () => {
     await stampAdopted(root)
 
     const note1 = readFrontmatterFields(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
-    expect(typeof note1[PAGE_ID_KEY] === 'string' && isUlid(note1[PAGE_ID_KEY])).toBeTruthy()
+    expect(typeof note1[ID_KEY] === 'string' && isUlid(note1[ID_KEY])).toBeTruthy()
     expect(note1.aliases).toEqual(['foo'])
 
     const day1 = readFrontmatterFields(
       await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'),
     )
-    expect(typeof day1[PAGE_ID_KEY] === 'string' && isUlid(day1[PAGE_ID_KEY])).toBeTruthy()
+    expect(typeof day1[ID_KEY] === 'string' && isUlid(day1[ID_KEY])).toBeTruthy()
   })
 
   it("an adopted page's id decodes to the file's mtime when that is older than now", async () => {
@@ -68,7 +68,7 @@ describe('stampAdopted', () => {
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(file, past, past)
     await stampAdopted(root)
-    const id = readFrontmatterFields(await readFile(file, 'utf8'))[PAGE_ID_KEY] as string
+    const id = readFrontmatterFields(await readFile(file, 'utf8'))[ID_KEY] as string
     expect(Math.floor(idTime(id)! / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 

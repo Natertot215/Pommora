@@ -4,7 +4,7 @@
 
 import { join } from 'node:path'
 import { relPosix } from '../paths'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { pageFrontmatter } from '@shared/schemas'
 import type { PageValues } from '@shared/types'
 import { idTime } from '../ids'
@@ -53,7 +53,7 @@ export async function loadValues(
   for (const rec of records) {
     if (!rec) continue
     out[rec.node.id] = {
-      frontmatter: pageFrontmatter.parse({ ...rec.fm, [PAGE_ID_KEY]: rec.node.id }),
+      frontmatter: pageFrontmatter.parse({ ...rec.fm, [ID_KEY]: rec.node.id }),
       createdAt: iso(idTime(rec.node.id)),
       modifiedAt: iso(rec.mtimeMs),
     }

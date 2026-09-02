@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -89,7 +89,7 @@ describe('deleteProperty', () => {
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')
       expect(content).not.toContain('Priority')
-      expect(content).toContain(`${PAGE_ID_KEY}:`)
+      expect(content).toContain(`${ID_KEY}:`)
     }
     const trashed = await readdir(join(root, '.trash'))
     const name = trashed.find((f) => f.includes(`property-${id}`))
@@ -100,7 +100,7 @@ describe('deleteProperty', () => {
     expect(recordedBeforeScrub).toBe(true)
     const values = (record as { values: Record<string, unknown> }).values
     for (const path of [p1.value.path, p2.value.path]) {
-      const pid = readFrontmatterFields(await readFile(path, 'utf8'))[PAGE_ID_KEY] as string
+      const pid = readFrontmatterFields(await readFile(path, 'utf8'))[ID_KEY] as string
       expect(values[pid]).toEqual(['hi'])
     }
   })

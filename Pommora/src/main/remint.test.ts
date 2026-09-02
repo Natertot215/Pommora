@@ -116,9 +116,9 @@ describe('adjudicate', () => {
 })
 
 describe('the re-mint writes', () => {
-  const PAGE = '01KVGMT8BFG350FZZXAMG1QDSA'
-  const SPACE = '01KVGMT8BFG350FZZXAMG1QDSB'
-  const SET = '01KVGMT8BFG350FZZXAMG1QDSC'
+  const PAGE = '01KVGMT8BFP350FZZXAMG1QDSA'
+  const SPACE = '01KVGMT8BFP350FZZXAMG1QDSB'
+  const SET = '01KVGMT8BFP350FZZXAMG1QDSC'
   let root: string
 
   beforeEach(async () => {
@@ -154,7 +154,7 @@ describe('the re-mint writes', () => {
     )
     await writeFile(
       join(root, 'Library', 'Notes.md'),
-      `---\nPageID: ${PAGE}\nkeep: foreign\n---\nthe body\n`,
+      `---\nID: ${PAGE}\nkeep: foreign\n---\nthe body\n`,
     )
     openSessionDb(root)
   })
@@ -333,15 +333,15 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       await mkdir(join(root2, 'Library', 'Fiction'), { recursive: true })
       await writeFile(
         join(root2, 'Library', '_pagecollection.json'),
-        JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDWA' }),
+        JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDWA' }),
       )
       await writeFile(
         join(root2, 'Library', 'Fiction', '_pageset.json'),
-        JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDWB' }),
+        JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDWB' }),
       )
       await writeFile(
         join(root2, 'Library', 'Notes.md'),
-        '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDWC\n---\nbody',
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDWC\n---\nbody',
       )
       closeSessionDb()
       openSessionDb(root2)
@@ -356,9 +356,9 @@ describe('the whole-Collection copy — the acceptance shape', () => {
         set: JSON.parse(await readFile(join(root2, 'Library', 'Fiction', '_pageset.json'), 'utf8')),
         page: await readFile(join(root2, 'Library', 'Notes.md'), 'utf8'),
       }
-      expect(original.col.id).toBe('01KVGMT8BFG350FZZXAMG1QDWA')
-      expect(original.set.id).toBe('01KVGMT8BFG350FZZXAMG1QDWB')
-      expect(original.page).toContain('01KVGMT8BFG350FZZXAMG1QDWC')
+      expect(original.col.id).toBe('01KVGMT8BFP350FZZXAMG1QDWA')
+      expect(original.set.id).toBe('01KVGMT8BFP350FZZXAMG1QDWB')
+      expect(original.page).toContain('01KVGMT8BFP350FZZXAMG1QDWC')
 
       const copy = {
         col: JSON.parse(
@@ -373,10 +373,10 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       expect(copy.col.id).not.toBe(original.col.id)
       expect(isUlidShaped(copy.set.id)).toBe(true)
       expect(copy.set.id).not.toBe(original.set.id)
-      expect(copy.page).not.toContain('01KVGMT8BFG350FZZXAMG1QDWC')
+      expect(copy.page).not.toContain('01KVGMT8BFP350FZZXAMG1QDWC')
 
       const baseline = readBaseline()!
-      expect(baseline['01KVGMT8BFG350FZZXAMG1QDWA'].path).toBe('Library')
+      expect(baseline['01KVGMT8BFP350FZZXAMG1QDWA'].path).toBe('Library')
       expect(baseline[copy.col.id].path).toBe('Library copy')
     } finally {
       closeSessionDb()

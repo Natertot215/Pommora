@@ -3,9 +3,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readPage } from './readPage'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRC'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRC'
 
 const d = (p: string): void => {
   mkdirSync(p, { recursive: true })
@@ -21,7 +21,7 @@ beforeAll(() => {
   d(join(root, 'Vault A', 'Collection A'))
   w(
     join(root, 'Vault A', 'Collection A', 'Page A.md'),
-    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRC\nicon: star\ntags:\n  - x\n  - y\n---\n# Heading\n\nbody text\n',
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\nicon: star\ntags:\n  - x\n  - y\n---\n# Heading\n\nbody text\n',
   )
   w(join(root, 'Vault A', 'Collection A', 'Plain.md'), '# just markdown\n\nno frontmatter')
   w(join(root, 'Vault A', 'Collection A', 'Empty.md'), '')
@@ -38,7 +38,7 @@ describe('readPage', () => {
     expect(p.id).toBe(PAGE_A)
     expect(p.title).toBe('Page A')
     expect(p.path).toBe('Vault A/Collection A/Page A.md')
-    expect(p.frontmatter).toEqual({ [PAGE_ID_KEY]: PAGE_A, icon: 'star', tags: ['x', 'y'] })
+    expect(p.frontmatter).toEqual({ [ID_KEY]: PAGE_A, icon: 'star', tags: ['x', 'y'] })
     expect(p.body).toBe('# Heading\n\nbody text\n')
   })
 

@@ -2,7 +2,7 @@
 // a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
-import { PAGE_ID_KEY } from './identity'
+import { ID_KEY } from './identity'
 import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
@@ -58,7 +58,7 @@ export const pageSetSidecar = baseSidecar.extend({
 })
 
 export const pageFrontmatter = z.looseObject({
-  [PAGE_ID_KEY]: z.string(),
+  [ID_KEY]: z.string(),
   icon: z.string().optional().catch(undefined),
   banner: z.string().optional().catch(undefined),
 })

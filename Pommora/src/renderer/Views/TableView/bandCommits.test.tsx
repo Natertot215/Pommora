@@ -20,7 +20,7 @@ import { useSession } from '../../store'
 import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 import { valuesReply } from '@renderer/Testing/pageValues'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -127,8 +127,8 @@ const propertySource = (): CollectionNode =>
   }) as unknown as CollectionNode
 
 const VALUES = valuesReply({
-  p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
-  p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+  p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
 })
 
 let host: HTMLDivElement
@@ -358,9 +358,9 @@ const subGroupSource = (view?: Partial<SavedView>): CollectionNode =>
   }) as unknown as CollectionNode
 
 const SUB_VALUES = valuesReply({
-  pA1: { [PAGE_ID_KEY]: 'pA1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
-  pA2: { [PAGE_ID_KEY]: 'pA2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
-  pB: { [PAGE_ID_KEY]: 'pB', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+  pA1: { [ID_KEY]: 'pA1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+  pA2: { [ID_KEY]: 'pA2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+  pB: { [ID_KEY]: 'pB', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
 })
 
 describe('sub-group bucket band drag', () => {

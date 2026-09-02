@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PAGE_ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -38,9 +38,9 @@ describe('createPage', () => {
     expect(r.value.path.endsWith('My Page.md')).toBe(true)
     const content = await readFile(r.value.path, 'utf8')
     const fm = splitFrontmatter(content)
-    expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
-    expect(Object.keys(fm)).toEqual([PAGE_ID_KEY])
-    expect(content).toBe(`---\n${PAGE_ID_KEY}: ${r.value.id}\n---\nHello`)
+    expect(isUlid(fm[ID_KEY] as string)).toBe(true)
+    expect(Object.keys(fm)).toEqual([ID_KEY])
+    expect(content).toBe(`---\n${ID_KEY}: ${r.value.id}\n---\nHello`)
   })
 
   it('rejects duplicate + unsafe names', async () => {
@@ -62,7 +62,7 @@ describe('createPage', () => {
     const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
     expect(fm.status).toEqual(['doing'])
     expect('empty' in fm).toBe(false)
-    expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
+    expect(isUlid(fm[ID_KEY] as string)).toBe(true)
   })
 })
 
@@ -75,7 +75,7 @@ describe('renamePage', () => {
     if (!r.ok) return
     expect(r.value.path.endsWith('New.md')).toBe(true)
     await expect(stat(c.value.path)).rejects.toThrow()
-    expect(splitFrontmatter(await readFile(r.value.path, 'utf8'))[PAGE_ID_KEY]).toBe(c.value.id)
+    expect(splitFrontmatter(await readFile(r.value.path, 'utf8'))[ID_KEY]).toBe(c.value.id)
   })
 
   it('leaves the file bytes untouched — a rename is not an edit', async () => {
@@ -111,7 +111,7 @@ describe('updatePageBody', () => {
     const content = await readFile(c.value.path, 'utf8')
     expect(splitEnvelope(content).body).toBe('two')
     const fm = splitFrontmatter(content)
-    expect(fm[PAGE_ID_KEY]).toBe(c.value.id)
+    expect(fm[ID_KEY]).toBe(c.value.id)
     expect(fm.plugin_key).toBe('keep')
     expect('modified_at' in fm).toBe(false)
   })
@@ -167,7 +167,7 @@ describe('updatePageProperty', () => {
     })
     expect(await at('status')).toEqual(['todo'])
     expect(await at('tags')).toEqual(['a', 'b'])
-    expect(splitFrontmatter(await readFile(f, 'utf8'))[PAGE_ID_KEY]).toBe(c.value.id)
+    expect(splitFrontmatter(await readFile(f, 'utf8'))[ID_KEY]).toBe(c.value.id)
 
     await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
     expect(await at('status')).toEqual(['done'])

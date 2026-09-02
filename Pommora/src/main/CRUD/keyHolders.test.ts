@@ -24,7 +24,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 const page = (n: string, fm: string): Promise<void> =>
   writeFile(
     abs('Notes', `${n}.md`),
-    `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`,
+    `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`,
   )
 
 /** 30 pages in the governing Collection, 2 holding the key; one un-adopted note also holds it
@@ -97,7 +97,7 @@ describe('the property cascades open only the holders', () => {
   it('a nexus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
     await mkdir(abs('Vault'), { recursive: true })
-    const excludedPage = `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
+    const excludedPage = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
     await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
     const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
       if (!('<Areas>' in raw)) return null

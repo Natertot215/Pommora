@@ -13,7 +13,7 @@ import { listBundles } from './provenance'
 import { splitFrontmatter } from './readNexus'
 import { closeSession, openSession } from './session'
 
-const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDVA'
+const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -87,7 +87,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
-    `---\nPageID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
+    `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
   )
   await openSession(root)
 })
@@ -149,8 +149,8 @@ describe('one unparseable page never fails the sweep around it', () => {
   // A hand-written tab indent and an unresolvable alias are the two ways frontmatter refuses a
   // field write. Either one used to abort the fan-out mid-destruction.
   const BROKEN = {
-    'Tabbed.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVX\n<Projects>:\n\t- Pommora\n---\nb',
-    'Aliased.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVY\nsomething: *word\n---\nb',
+    'Tabbed.md': '---\nID: 01KVGMT8BFP350FZZXAMG1QDVX\n<Projects>:\n\t- Pommora\n---\nb',
+    'Aliased.md': '---\nID: 01KVGMT8BFP350FZZXAMG1QDVY\nsomething: *word\n---\nb',
   }
 
   for (const [name, content] of Object.entries(BROKEN)) {

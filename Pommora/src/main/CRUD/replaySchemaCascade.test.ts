@@ -31,7 +31,7 @@ afterEach(async () => {
   for (const r of roots.splice(0)) await rm(r, { recursive: true, force: true })
 })
 
-const PAGE_IDS = ['01ARZ3NDEKTSV4RRFFQ69G5FAA', '01ARZ3NDEKTSV4RRFFQ69G5FAB']
+const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
 
 /** A nexus with one Collection assigning `prop_s` (select Stage: Draft/Done) over two holder pages. */
 async function seedNexus(): Promise<string> {
@@ -54,14 +54,8 @@ async function seedNexus(): Promise<string> {
     join(root, 'Col', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),
   )
-  await writeFile(
-    join(root, 'Col', 'A.md'),
-    `---\nPageID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`,
-  )
-  await writeFile(
-    join(root, 'Col', 'B.md'),
-    `---\nPageID: ${PAGE_IDS[1]}\nStage: Draft\n---\nbody\n`,
-  )
+  await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
+  await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nStage: Draft\n---\nbody\n`)
   return root
 }
 
@@ -159,7 +153,7 @@ describe('delete replay', () => {
       assignments: ['c1'],
     })
     await writeSchemaJournal(crashed, { op: 'delete', id: 'prop_s', name: 'Stage' })
-    await writeFile(join(crashed, 'Col', 'A.md'), `---\nPageID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    await writeFile(join(crashed, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
     expect(await page(crashed, 'A')).toBe(wantA)
@@ -260,7 +254,7 @@ describe('option replay', () => {
     // Pages-first order: the crash lands after A's strip, before the registry drop.
     const crashed = await seedNexus()
     await writeSchemaJournal(crashed, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
-    await writeFile(join(crashed, 'Col', 'A.md'), `---\nPageID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    await writeFile(join(crashed, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
     expect(await page(crashed, 'A')).toBe(wantA)
@@ -275,10 +269,7 @@ describe('option replay', () => {
     const root = await seedNexus()
     await openSession(root)
     expect((await removeOption(root, 'prop_s', 'Draft')).ok).toBe(true)
-    await writeFile(
-      join(root, 'Col', 'A.md'),
-      `---\nPageID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`,
-    )
+    await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
     await replaySchemaCascade(root)
     expect(await page(root, 'A')).toContain('Stage: Draft')
@@ -313,7 +304,7 @@ describe('the index seam', () => {
     // C landed after the seed with no index row — the queried holder set cannot name it.
     await writeFile(
       join(root, 'Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
     )
     await renameCrashState(root)
     await replaySchemaCascade(root)
@@ -327,7 +318,7 @@ describe('the index seam', () => {
     const root = await seedNexus()
     await writeFile(
       join(root, 'Col', 'C.md'),
-      '---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
     )
     await renameCrashState(root)
     await openSession(root)

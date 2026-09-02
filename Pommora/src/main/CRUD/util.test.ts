@@ -36,9 +36,9 @@ describe('invalidName', () => {
   })
 })
 
-const ALIAS = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
-const TAB = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
-const HEALTHY = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n---\nbody'
+const ALIAS = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
+const TAB = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
+const HEALTHY = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n---\nbody'
 
 describe('sweepAdmits — the field-write gate', () => {
   it('an unresolvable alias reads as empty rather than throwing', () => {
