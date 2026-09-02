@@ -41,7 +41,7 @@
   display: inline-flex;
   vertical-align: middle;
   transform: translateY(-1px);
-  margin-right: 6px;
+  margin-right: var(--cell-icon-gap);
   color: var(--label-secondary);
 }
 .col-header {
