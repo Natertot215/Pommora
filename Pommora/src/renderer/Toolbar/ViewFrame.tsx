@@ -3,6 +3,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
 import { askDeleteView } from '@renderer/Windows/confirmations'
+import { notifyDeleted, notifyError, restoreView } from '@renderer/Interface/notifications'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
@@ -120,7 +121,8 @@ export function ViewFrame({
   const deleteRow = async (v: SavedView): Promise<void> => {
     if (!(await askDeleteView())) return
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
-    if (!res.ok) return void window.nexus.showError(res.error.message)
+    if (!res.ok) return void notifyError(res.error.message)
+    notifyDeleted(v.name, () => restoreView(node.path, node.kind, v))
   }
 
   const list = (

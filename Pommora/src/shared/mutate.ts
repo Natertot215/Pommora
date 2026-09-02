@@ -15,6 +15,10 @@ export interface MutateOutcome {
   /** A re-pick's Save-hold waits for the seat's value to reach it; a dedup (adopted === the
    *  value already set) releases at once. */
   adopted?: string
+  /** Where a delete's artifact landed, nexus-relative — the reference `restore` takes, and so the
+   *  whole of what Undo needs. Absent in system-trash mode, where the artifact leaves the nexus
+   *  and nothing can bring it back. */
+  trashed?: { bundlePath: string }
 }
 export type MutateReply = Result<MutateOutcome>
 

@@ -18,6 +18,7 @@ import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from './Settings/SettingsWindow'
 import { IterationWindow } from './Utilities/iteration-window'
 import { ConfirmationWindow } from './Windows/ConfirmationWindow'
+import { NotificationLabel } from './Interface/NotificationLabel'
 import { confirmDelete } from './Windows/confirmations'
 import { ConnectionPane } from './Links/ConnectionPane'
 import { contextTargetToSelect } from './Tabs/tabsModel'
@@ -292,6 +293,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <SettingsWindow />}
       {status === 'ready' && <IterationWindow />}
       <ConfirmationWindow />
+      <NotificationLabel />
       {status === 'ready' && <ConnectionPane />}
       {status === 'ready' && inspectorOpen && (
         <div
