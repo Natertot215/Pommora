@@ -59,7 +59,7 @@ export const pageSetSidecar = baseSidecar.extend({
 
 export const pageFrontmatter = z.looseObject({
   [PAGE_ID_KEY]: z.string(),
-  icon: z.string().optional(),
-  cover: z.string().optional(),
+  icon: z.string().optional().catch(undefined),
+  cover: z.string().optional().catch(undefined),
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>

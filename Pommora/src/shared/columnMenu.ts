@@ -18,15 +18,13 @@ export type ColumnMenuAction =
   | `align:${ColumnAlign}`
   | `style:${string}:${string}`
 
-/** Menu context — the current alignment (for the checked radio) + which items apply. The Title column is
- *  the primary column: neither alignable, hideable, nor styleable, so it pops an empty (⇒ dismissed) menu. */
+/** Menu context — the current alignment (for the checked radio) + which items apply. */
 export interface ColumnMenuContext {
   align: ColumnAlign
   alignable: boolean
   hideable: boolean
-  /** Whether column header icons currently show (view-wide `hide_column_icons` inverted) — drives the
-   *  Icon ⇄ Hide Icon toggle label. Undefined on the Title column's empty menu. */
-  iconsShown?: boolean
+  /** Whether column header icons currently show (view-wide `hide_column_icons` inverted). */
+  iconsShown: boolean
   style?: StyleMenuContext
 }
 

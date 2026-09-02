@@ -89,6 +89,22 @@ describe('loadValues', () => {
     expect(values[keys[0]].createdAt).toBeNull()
   })
 
+  // An editor that clears a field leaves `cover:` with a null value; the page still has an id,
+  // still has properties, and still has a mtime — none of which a blank cover may take away.
+  it('keeps a page whose icon or cover is null in the batch, values intact', async () => {
+    await mkdir(join(root, 'Col'), { recursive: true })
+    await writeFile(
+      join(root, 'Col', 'p1.md'),
+      `---\nPageID: ${P1}\ncover:\nStatus: Active\n---\n\nbody\n`,
+    )
+
+    const values = await loadValues(root, 'Col')
+    expect(values[P1]).toBeDefined()
+    expect(values[P1].modifiedAt).not.toBeNull()
+    expect(values[P1].createdAt).not.toBeNull()
+    expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('Active')
+  })
+
   it('returns an empty map for an absent container', async () => {
     expect(await loadValues(root, 'Nope')).toEqual({})
   })
