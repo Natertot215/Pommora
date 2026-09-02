@@ -10,7 +10,7 @@
   --card-thumb-h-base: 100px;
   --card-thumb-h: var(--card-thumb-h-base);
   --thumb-share: 65%; /* KNOB — a locked card's image share of its height; it yields whatever the text below needs */
-  --preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
+  --card-preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
   --card-inset: 8px; /* KNOB — the card's single horizontal inset; the title, the trail, and the trail's divider all start here. */
   --card-pad-top: 8px; /* KNOB — clearance under the thumb divider */
   --card-pad-bottom: 6px; /* KNOB — clearance below whatever ends the card */
@@ -85,7 +85,7 @@
   -webkit-user-drag: none;
 }
 .card-thumb.is-capture img {
-  transform: scale(var(--preview-zoom));
+  transform: scale(var(--card-preview-zoom));
   transform-origin: top left;
 }
 

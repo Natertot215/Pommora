@@ -117,7 +117,7 @@ export function PageTile({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
       className={`page-tile${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
-      style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
+      style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return
         if ((e.target as HTMLElement).closest?.('.mdpm-banner')) return

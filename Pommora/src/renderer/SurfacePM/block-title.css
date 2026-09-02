@@ -3,7 +3,7 @@
 .page-tile-crumbs,
 .web-tile-title {
   position: absolute;
-  top: calc(8px * var(--mdpm-scale));
+  top: calc(8px * var(--page-detail-scale));
   left: 50%;
   transform: translateX(-50%);
   max-width: 70%;
