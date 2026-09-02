@@ -11,7 +11,16 @@ import { idTime } from '../ids'
 import { readPageRecord } from '../readNexus'
 import { folderCorpus } from '../indexSeed'
 
-const iso = (ms: number | null): string | null => (ms === null ? null : new Date(ms).toISOString())
+const pad = (n: number): string => String(n).padStart(2, '0')
+
+// Local-clock form, the same shape the date picker writes — a stamp is filtered by calendar-day
+// truncation and rendered through the local clock, and only one convention keeps those on one day.
+function iso(ms: number | null): string | null {
+  if (ms === null) return null
+  const d = new Date(ms)
+  const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 
 export async function loadValues(
   rootPath: string,

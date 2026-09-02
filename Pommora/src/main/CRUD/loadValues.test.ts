@@ -36,16 +36,26 @@ describe('loadValues', () => {
     expect((values[P2].frontmatter as Record<string, unknown>)['<Count>']).toBe(7)
   })
 
-  it("carries the file's mtime and the id's time as ISO strings", async () => {
-    await mkdir(join(root, 'Col'), { recursive: true })
-    const file = join(root, 'Col', 'p1.md')
-    await writeFile(file, `---\nPageID: ${P1}\n---\n\nbody\n`)
-    const modified = new Date('2024-03-04T05:06:07.000Z')
-    await utimes(file, modified, modified)
+  // Local-clock form, the shape the date picker writes: a filter's calendar-day truncation and
+  // the cell's rendering must land on the same day, which a UTC `Z` string breaks every evening
+  // west of Greenwich.
+  it("carries the file's mtime and the id's time in the machine's local clock", async () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      await mkdir(join(root, 'Col'), { recursive: true })
+      const file = join(root, 'Col', 'p1.md')
+      await writeFile(file, `---\nPageID: ${P1}\n---\n\nbody\n`)
+      const modified = new Date('2026-09-02T00:30:00.000Z')
+      await utimes(file, modified, modified)
 
-    const values = await loadValues(root, 'Col')
-    expect(values[P1].modifiedAt).toBe(modified.toISOString())
-    expect(values[P1].createdAt).toBe(new Date(decodeTime(P1)).toISOString())
+      const values = await loadValues(root, 'Col')
+      expect(values[P1].modifiedAt).toBe('2026-09-01T20:30:00')
+      expect(values[P1].createdAt).toBe('2026-06-19T15:13:08')
+    } finally {
+      if (tz === undefined) delete process.env.TZ
+      else process.env.TZ = tz
+    }
   })
 
   it('one undecodable PageID leaves the rest of the batch intact', async () => {
@@ -56,7 +66,7 @@ describe('loadValues', () => {
 
     const values = await loadValues(root, 'Col')
     expect(values[bad].createdAt).toBeNull()
-    expect(values[P1].createdAt).toBe(new Date(decodeTime(P1)).toISOString())
+    expect(Date.parse(values[P1].createdAt!)).toBe(Math.floor(decodeTime(P1) / 1000) * 1000)
   })
 
   // An identity-less page must reach the value batch whole, not just as a key — a row that lands
