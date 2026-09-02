@@ -85,7 +85,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-123 || Stamp Retirement
 **DATE:** 09-01-2026
 
-`created_at` and `modified_at` left every page and sidecar; Last Modified is the file's mtime and Creation Time the `PageID` ULID's instant, carried to every view as `PageValues` from `loadValues`. A `created_time` type sits beside `last_edited_time`, both stamps reveal from the Hidden frame, and every stamping writer is gone. A rewrite the user did not make restores the file's time, `setGovernedRootKeys` skips an identical write, and a push refreshes only its named pages over the `Result` envelope; the vault pass re-minted 40 adopted PageIDs from their real creation dates.
+`created_at` and `modified_at` left every page and sidecar; Last Modified is the file's mtime and Creation Time the `PageID` ULID's instant, carried to every view as `PageValues` from `loadValues`. A `created_time` type sits beside `last_edited_time`, both stamps reveal from the Hidden frame, and every stamping writer is gone. A rewrite the user did not make restores the file's time, `setGovernedRootKeys` skips an identical write, and a push refreshes only its named pages over the `Result` envelope; the vault pass re-minted 40 adopted PageIDs from their real creation dates. A post-plan review closed four gaps the scoped push exposed — a move now notes its page, a straddled parse never caches, a scoped read settles only what it resolved — and folded five simplifications.
 
 #### PM-122 || Compatible Properties
 **DATE:** 08-31-2026 → 09-01

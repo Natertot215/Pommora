@@ -133,10 +133,10 @@
 
 Pages and sidecars carry no `created_at` or `modified_at`: Last Modified is the file's modification time, and Creation Time is the instant encoded in the page's `PageID` ULID. `loadValues` returns `PageValues = { frontmatter, createdAt, modifiedAt }` per page, `ViewRow` carries both stamps, and `created_time` joined `last_edited_time` as a property type so both columns resolve through the generic date branches of sort, filter, styles, menus, and widths; the modified∥created fallback, the `_id` sort, and the `lastEditedTime` value kind were deleted, and both columns reveal from the Hidden frame under `RESERVED_LABEL`'s "Creation Time" / "Last Modified". Every page and sidecar writer stopped stamping, `baseSidecar` dropped its twin, Clear Exclusion strips only the kind id and `<Context>` keys, and adoption seeds a page's ULID from `min(birthtime, mtime)` through `idAt`.
 
-**Modification time as a fact:** `rewritePreservingTimes` in `IO/atomicWrite.ts` became the one writer for a rewrite the user did not make — sweeps, migrations, adoption — restoring the file's `utimes` and dropping the walk cache's entry; `setGovernedRootKeys` skips a byte-identical write; a value push re-reads only the pages it names through `loadValues`' page-id list, over the `Result` envelope. 
+**Modification time as a fact:** `rewritePreservingTimes` in `IO/atomicWrite.ts` became the one writer for a rewrite the user did not make — sweeps, migrations, adoption — restoring the file's `utimes` and dropping the walk cache's entry; `setGovernedRootKeys` skips a byte-identical write; a value push re-reads only the pages it names through `loadValues`' page-id list, over the `Result` envelope, merging into the container it was read for and settling only the overrides it resolved; a page move notes its destination the way a creation does, and the walk cache refuses an entry whose parse straddled a forget. Alongside: `useContainerValues` owns a container's value batch for both its readers, `FootingItem` is the one menu footing row, the option-model setters share one field mapper, the picker base peels one pane per Escape, and `ViewRow` carries its stamps as `string | null`. 
 
-- **Commits:** `9966332c^..7eaf39bf`
-- **Diff:** Net +38 | +499 / −461
+- **Commits:** `9966332c^..08bbc0f5`
+- **Diff:** Net +39 | +670 / −631
 
 #### PM-122 || Compatible Properties
 **DATE:** 08-31-2026 → 09-01

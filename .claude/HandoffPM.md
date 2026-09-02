@@ -14,6 +14,8 @@
 
 **The vault pass ran with Nathan present and one ruling mid-pass.** The census read 133 pages and 37 sidecars against the plan's predicted 49 / 88 / 29 (the grounding grep counted one key per file), with a skip list of 0. The information-loss check, predicted 0, found 40 pages whose PageID encoded the 06-19 or 07-31 adoption instant while `created_at` held the real date; Nathan ruled "just manually change them in the db after the sweep", so after the strip each of the 40 took a fresh ULID seeded at its `created_at`, and the old id was substituted through its page, six sidecar `page_order` arrays, `navigation.json`, and 91 `nexus.db` rows, the db vacuumed after. Invariants held: 0 stamp keys, `PageID` control at 214, bodies byte-equal to the backup, mtimes held to the millisecond (the backup's are second-precision, macOS rsync). Backup at `~/NexusOS-stamp-backup-09-01-2026/`, 170 files plus the db and the six referencing files.
 
+**The post-plan review ran as four agents — two on simplification, two on correctness — and its findings landed as `08bbc0f5`.** Narrowing the push to named pages exposed a pre-existing gap: a page moved into an open view never noted a value write, and the whole re-read that had been healing it was gone; a move now notes its destination like a creation. A parse that straddled a `forgetParse` could cache the retired bytes under an unchanged (mtime, size), so the cache refuses an entry whose parse spanned a forget. The scoped merge ignored a container swap and retired overrides for pages the read never resolved; both are guarded, each with a red test first. A denied `utimes` no longer aborts a sweep. Five simplifications folded alongside.
+
 **Verified, as distinct from assumed.** A neutral verifier found Requirements 1–11 MET with no contradictions. Twenty-four data-level checks ran over CDP in `~/PommoraScratch`: a created page's stamps, a wikilink added and removed (Last Modified moves, the `mentions` row appears and clears), a rename (neither moves), a value write (moves), a property rename over the holder (kept), a file dated 03-15-2025 adopted with that date. The visual clauses — the revealed columns, the sort reorder without reopening, a stamp cell opening no editor, the filter — are Nathan's own pass and were not driven. The target-file report reads 47 files, 10 067 → 10 223 non-comment non-test lines, one counter at both ends.
 
 #### Completion Criteria
@@ -23,12 +25,13 @@
 - [x] The vault pass complete with its invariants, the re-mint included, and the backup named.
 - [x] The neutral verifier, the data-level acceptance run, and the target-file report recorded in the plan.
 - [x] History PM-123, Context, the guideline lines, and the plan's closing records committed.
+- [x] The post-plan review's findings fixed red-green and recorded (`08bbc0f5`).
 - [ ] Nathan's own pass: the two labels; the Hidden frame on a real NexusOS Collection — reveal both, sort by each, filter by each.
 
 #### Next Session
 
 - Nathan's own pass (above); a veto on Decision 2 is one revert of `a5be9a13`.
-- The post-plan review: `.claude/Planning/Stamp Retirement — Post-Plan Review Prompt.md` — five lenses, two agents per lens, reconciliation before the write-up.
+- Two narrow windows the review left open, recorded in the plan's Deviations: a whole read in flight at mount landing over a newer scoped merge; a mid-session file body-edited before adoption seeding its id from the edit's inode.
 - From the retired Compatible Properties handoff, still open: the Properties frame's rename field under Capitalize, a cover save updating a card visually, Clear Exclusion's aliases and dashboard layouts surviving.
 - Sequenced After in the plan: the `---\n{}\n---` fence when Clear empties a page's map; the content index's legacy stamp rows self-healing on the next mtime move.
 
@@ -44,6 +47,7 @@
 - The preserving writer: `Pommora/src/main/IO/atomicWrite.ts` `rewritePreservingTimes`; the cache drop it needs: `walkCache.ts` `forgetParse`.
 - The scoped push: `Pommora/src/main/CRUD/loadValues.ts` (`corpus`), `Pommora/src/renderer/Views/useValuesEpoch.ts` (`fetchValues`, the partial merge).
 - The vault-pass scripts, throwaway: session scratchpad `stamp-migrate.mjs`, `remint-map.mjs`, `remint.mjs`, `remint-map.json` (the 40 old→new ids), `acceptance.mjs`, `loc-report.mjs`.
+- The review agents' briefs are one paragraph — scope, report-only, cite file:symbol — two on simplification and two on correctness.
 - The progress ledger artifact, retired at label `closeout`: https://claude.ai/code/artifact/03ff9f82-0887-430f-8636-57f67ba0805a.
 
 #### Working Notes
@@ -58,7 +62,6 @@
 **FILES ADDED**
 
 - Pommora/src/renderer/Testing/pageValues.ts
-- .claude/Planning/Stamp Retirement — Post-Plan Review Prompt.md
 
 **FILES MODIFIED**
 
@@ -81,7 +84,7 @@
 - `4722f3a7` — Task 5 · `1132360d` Task 6 · `81caae42` Task 8
 - `92bf3e73` `7c7d3c81` `da7fce8c` `bf3a6e7b` — Gate 3 passes · `84b79d8c` `6ecd6d37` `581678af` `bf070dfc` `b443c5a5` `1c2dcae7` attack fixes · `162c5677` Declared Stop
 - `750dcad5` — Decision 1 · `a5be9a13` Decision 2 · `7eaf39bf` Decisions 3 and 4
-- `ab3e0a1c` — the plan closed (History, Context, and the guideline lines rode Nathan's `168e90d2`)
+- `ab3e0a1c` — the plan closed (History, Context, and the guideline lines rode Nathan's `168e90d2`) · `d3dd98d9` Handoff · `08bbc0f5` the post-plan review's fixes and folds
 
 #### Handoff Guidelines
 
