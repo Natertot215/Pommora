@@ -13,12 +13,7 @@ import {
   syntheticContextDef,
 } from '@renderer/Properties/Assignment/PropertyPicker'
 import type { ContextOption } from '@renderer/Properties/contextOptions'
-import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
-import {
-  type AddEntry,
-  orderAddableEntries,
-  parseEditorValue,
-} from '@renderer/Properties/Assignment/cardValueInput'
+import { type AddEntry, orderAddableEntries } from '@renderer/Properties/Assignment/cardValueInput'
 import {
   displayPropertyName,
   useCapitalizeMetadata,
@@ -48,25 +43,6 @@ function ValuePane({
       className={topRowFlat}
     />
   )
-  if (def.type === 'number') {
-    return (
-      <>
-        {header}
-        <PropertyEditor
-          initial=""
-          numeric
-          onCommit={(raw) => {
-            // Empty input in the ADD flow means "never mind" — committing null would still fire the
-            // reveal and surface a blank property the user never asked for. Skip both, just close.
-            const parsed = parseEditorValue(def.type, raw)
-            if (parsed !== undefined && parsed !== null) onCommit(parsed)
-            onDone()
-          }}
-          onCancel={onBack}
-        />
-      </>
-    )
-  }
   const { options, selected, pick } = pickSemantics(
     def,
     current,
@@ -146,7 +122,13 @@ export function CardAddPicker({
                     if (e.revealOnly) {
                       onReveal(e)
                       dismiss()
-                    } else if (e.type === 'datetime' || e.type === 'url') onPickDependent(e)
+                    } else if (
+                      e.type === 'datetime' ||
+                      e.type === 'url' ||
+                      e.type === 'number' ||
+                      e.type === 'file'
+                    )
+                      onPickDependent(e)
                     else setPicked(e)
                   }}
                 >

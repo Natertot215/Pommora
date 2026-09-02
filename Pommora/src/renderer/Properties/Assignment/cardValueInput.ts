@@ -20,6 +20,7 @@ export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
   'datetime',
   'number',
   'url',
+  'file',
   'checkbox',
 ])
 

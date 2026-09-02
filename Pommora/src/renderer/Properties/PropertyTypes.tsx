@@ -36,6 +36,22 @@ export const propertyTypeIconName = (type: PropertyType): IconName | undefined =
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
 
+const CURRENCY_GLYPH: Record<string, string> = {
+  USD: 'dollar-sign',
+  AUD: 'dollar-sign',
+  CAD: 'dollar-sign',
+  EUR: 'euro',
+  GBP: 'pound-sterling',
+  JPY: 'japanese-yen',
+}
+
+export const numberFormatGlyph = (def: PropertyDefinition): string =>
+  def.number_family === 'percent'
+    ? 'percent'
+    : def.number_family === 'currency'
+      ? (CURRENCY_GLYPH[def.number_currency ?? 'USD'] ?? 'dollar-sign')
+      : 'hash'
+
 export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
   (t) => PROPERTY_TYPES[t].creatable,
 )

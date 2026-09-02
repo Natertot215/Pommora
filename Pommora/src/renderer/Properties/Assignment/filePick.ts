@@ -48,14 +48,43 @@ export async function runFilePick(
   const dir = (named && folderOf(named)) || propertyFolder(def)
   const picked = await window.nexus.pickFile({ any: true, ...(dir ? { dir } : {}) })
   if (picked === null) return undefined
-  // The reference is written only after the bytes land — a failed adoption leaves the value alone.
-  const adopted = await window.nexus.adoptFile(picked, def.file_directory)
+  return adoptInto(def, files, chip, picked)
+}
+
+async function adoptInto(
+  def: PropertyDefinition,
+  files: string[],
+  chip: number | null,
+  source: string,
+): Promise<PropertyValue | undefined> {
+  const adopted = await window.nexus.adoptFile(source, def.file_directory)
   if (!adopted.ok) return undefined
   const next =
     chip === null
       ? [...files, adopted.value]
       : files.map((f, i) => (i === chip ? adopted.value : f))
   return { kind: 'file', value: next }
+}
+
+export function adoptPathInto(
+  def: PropertyDefinition,
+  current: PropertyValue,
+  path: string,
+  commit: (next: PropertyValue | null) => void,
+): void {
+  commitIfDefined(adoptInto(def, filesOf(current), null, path), commit)
+}
+
+/** Await a pick/adopt and write only a defined answer — `undefined` is "nothing happened", which a
+ *  bare `!= null` would mistake for a clear. Stated once so no call site decides for itself what a
+ *  cancelled dialog means. */
+function commitIfDefined(
+  result: Promise<PropertyValue | null | undefined>,
+  commit: (next: PropertyValue | null) => void,
+): void {
+  void result.then((next) => {
+    if (next !== undefined) commit(next)
+  })
 }
 
 /** Where this property's files live, nexus-relative — which is the only domain `pickFile` reads.
@@ -72,18 +101,14 @@ function folderOf(reference: string): string {
   return resolved.kind === 'asset' ? parentOf(resolved.rel) : ''
 }
 
-/** The pick as every surface actually spends it: run it, and write only a defined answer —
- *  `undefined` is "nothing happened", which a bare `!= null` would mistake for a clear. Stated
- *  once so no call site decides for itself what a cancelled dialog means. */
+/** The pick as every surface actually spends it: run it, and write only a defined answer. */
 export function pickFileInto(
   def: PropertyDefinition,
   current: PropertyValue,
   chip: number | null,
   commit: (next: PropertyValue | null) => void,
 ): void {
-  void runFilePick(def, current, chip).then((next) => {
-    if (next !== undefined) commit(next)
-  })
+  commitIfDefined(runFilePick(def, current, chip), commit)
 }
 
 /** The value menu's three file actions, and whether it took one — the shape `runPageSendAction`
