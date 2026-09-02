@@ -6,23 +6,23 @@ Pommora's property system. A **property** is a typed field defined once in the n
 
 The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-disk value is bare and natively typed, legible to any YAML tool.
 
-| Type | On-Disk Value | Notes |
-| --- | --- | --- |
-| **Number** | `Count: 42` | Bare number |
-| **Checkbox** | `Done: true` | `true`, or the key absent |
-| **Date** | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone) | A bare date-only value folds into Date on read |
-| **Select** | `Stage:` over a one-element block sequence | A list holding one option; one colored chip. A list holding several reads as its last registered option |
-| **Multi-select** | `Tags:` over a block sequence | Bare array; tag-style multi-pick |
-| **Status** | `Status:` over a one-element block sequence | The option's own value, in a list of one; grouped by workflow phase. Resolves like Select |
-| **Link** | `Link: https://…` or `Link: "[[Page]]"` | A string — an address with a scheme, or a connection naming a page |
-| **Context** | `<Context>:` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition |
-| **Creation Time** | *(derived from the `PageID` ULID's timestamp)* | Virtual — never persisted; a date for sort, filter, and display |
-| **Last Modified** | *(derived from the file's modification time)* | Virtual — never persisted; a date for sort, filter, and display |
-| **File** | `Attachments:` over a block sequence of `[[Basename.ext]]` | Array of wikilinks naming files by basename; files copy into the Nexus |
+| Type              | On-Disk Value                                                          | Notes                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Number**        | `Count: 42`                                                            | Bare number                                                                                             |
+| **Checkbox**      | `Done: true`                                                           | `true`, or the key absent                                                                               |
+| **Date**          | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone) | A bare date-only value folds into Date on read                                                          |
+| **Select**        | `Stage:` over a one-element block sequence                             | A list holding one option; one colored chip. A list holding several reads as its last registered option |
+| **Multi-select**  | `Tags:` over a block sequence                                          | Bare array; tag-style multi-pick                                                                        |
+| **Status**        | `Status:` over a one-element block sequence                            | The option's own value, in a list of one; grouped by workflow phase. Resolves like Select               |
+| **Link**          | `Link: https://…` or `Link: "[[Page]]"`                                | A string — an address with a scheme, or a connection naming a page                                      |
+| **Context**       | `<Context>:` at the root, over a block sequence of bare Space titles   | One column per registry Context, synthesized at runtime — never a schema definition                     |
+| **Creation Time** | *(derived from the `PageID` ULID's timestamp)*                         | Virtual — never persisted; a date for sort, filter, and display                                         |
+| **Last Modified** | *(derived from the file's modification time)*                          | Virtual — never persisted; a date for sort, filter, and display                                         |
+| **File**          | `Attachments:` over a block sequence of `[[Basename.ext]]`             | Array of wikilinks naming files by basename; files copy into the Nexus                                  |
 
 ### Identity & Values
 
-Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, bare and exactly as spelled — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write; a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `cover`), a retired stamp name (`created_at`, `modified_at`), or one starting with `<` is refused. A rename cascades the key across every page holding it; a rename onto a taken name, or onto a key any Collection page already holds, is refused — the second naming how many pages hold it.
+Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, bare and exactly as spelled — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write; a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `banner`), a retired stamp name (`created_at`, `modified_at`), or one starting with `<` is refused. A rename cascades the key across every page holding it; a rename onto a taken name, or onto a key any Collection page already holds, is refused — the second naming how many pages hold it.
 
 A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; number `0` is a real value and stays, while a checkbox is either `true` or absent — a `false` written by another application reads as no value. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. A name is shown as written unless **Capitalize All Metadata** is on, which Title Cases every property name where it is displayed — the rename fields and the on-disk key are untouched. Another application may hold a key's casing to its own rule — `tags`, `aliases`, and `cssclasses` are rewritten lowercase on any touch by the editor most shared vaults are read in — so a property wanting one of those names is created lowercase and read capitalized through the toggle.
 
@@ -94,11 +94,11 @@ Context links are the relation layer. They store as `<Title>` keys at the entity
 
 ### Auto-Managed Properties
 
-Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), maintained by Pommora and not user-creatable, and may carry `cover:`, which assigns its banner. **Creation Time** and **Last Modified** are never written: the first is the instant the `PageID` ULID encodes, the second is the file's modification time as the filesystem reports it. A write the user makes to the page moves Last Modified — a value edit or a text edit — while a rename, a move, and a schema edit that rewrites the page for a reason of its own leave it where it was.
+Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), maintained by Pommora and not user-creatable, and may carry `banner:`, which assigns its banner. **Creation Time** and **Last Modified** are never written: the first is the instant the `PageID` ULID encodes, the second is the file's modification time as the filesystem reports it. A write the user makes to the page moves Last Modified — a value edit or a text edit — while a rename, a move, and a schema edit that rewrites the page for a reason of its own leave it where it was.
 
 ```yaml
 PageID:
-cover:
+banner:
 ```
 
 ### Shared Mechanisms
