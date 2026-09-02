@@ -530,8 +530,9 @@ export interface PageDetail {
   body: string
 }
 
-/** One page's batch entry for the view pipeline. Both stamps are ISO 8601; `createdAt` is null
- *  under an adopted id, `modifiedAt` null when the file could not be stat'd. */
+/** One page's batch entry for the view pipeline. Both stamps are local-clock ISO 8601, the shape
+ *  a date property holds; `createdAt` is null under an adopted id, `modifiedAt` null when the file
+ *  could not be stat'd. */
 export interface PageValues {
   frontmatter: PageFrontmatter
   createdAt: string | null
