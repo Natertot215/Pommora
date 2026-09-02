@@ -1,5 +1,6 @@
 import type { MutableKind } from '@shared/mutate'
 import { useSession } from '@renderer/store'
+import { notifyDeleted } from '@renderer/Interface/notifications'
 
 export interface ConfirmRequest {
   message: string
@@ -41,8 +42,21 @@ export const confirmDelete = async (target: {
     })
     if (!yes) return
   }
-  await useSession.getState().mutate({ op: 'delete', path: target.path, kind: target.kind })
+  let bundlePath: string | undefined
+  const ok = await useSession
+    .getState()
+    .mutate({ op: 'delete', path: target.path, kind: target.kind }, undefined, undefined, (t) => {
+      bundlePath = t?.bundlePath
+    })
+  // A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and
+  // there is nothing to name.
+  if (!ok) return
+  const bundle = bundlePath
+  notifyDeleted(target.title, bundle ? () => void undoTrashed(bundle) : undefined)
 }
+
+const undoTrashed = (bundlePath: string): Promise<boolean> =>
+  useSession.getState().mutate({ op: 'restore', bundlePath })
 
 export const askRemoveTile = (): Promise<boolean> =>
   waived()

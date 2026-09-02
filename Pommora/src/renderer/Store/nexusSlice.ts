@@ -31,6 +31,7 @@ export interface NexusSlice {
     req: MutateRequest,
     onCreated?: (created: { id: string; path: string }) => void | Promise<void>,
     onAdopted?: (adopted: string | undefined) => void,
+    onTrashed?: (trashed: { bundlePath: string } | undefined) => void,
   ) => Promise<boolean>
 }
 
@@ -176,7 +177,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     choose: () => openVia(() => window.nexus.choose()),
     openDropped: (file) => openVia(() => window.nexus.openDropped(file)),
 
-    mutate: async (req, onCreated, onAdopted) => {
+    mutate: async (req, onCreated, onAdopted, onTrashed) => {
       const res = await window.nexus.mutate(req)
       if (!res.ok) {
         await window.nexus.showError(res.error.message)
@@ -255,6 +256,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
       onAdopted?.(res.value.adopted)
+      onTrashed?.(res.value.trashed)
       return true
     },
   }
