@@ -1,5 +1,6 @@
 import type { NavViewMode, SelectionState } from '@shared/types'
 import type { ConfirmRequest } from '@renderer/Windows/confirmations'
+import type { Notification } from '@renderer/Interface/notifications'
 import type { Slice } from './sessionState'
 
 export interface ChromeSlice {
@@ -9,8 +10,6 @@ export interface ChromeSlice {
   toggleRibbon: () => void
   sidebarWidth: number
   setSidebarWidth: (w: number) => void
-  /** Called once on resize-release, never per pointermove — a synchronous localStorage write per
-   *  move is the drag-stutter source. */
   persistPaneWidths: () => void
   inspectorWidth: number
   setInspectorWidth: (w: number) => void
@@ -26,15 +25,14 @@ export interface ChromeSlice {
   openSettings: () => void
   closeSettings: () => void
   toggleSettings: () => void
-  /** The iteration window — a blank floating surface for previewing a component in isolation,
-   *  summoned by its chord (App.tsx). */
   iterationOpen: boolean
   closeIteration: () => void
   toggleIteration: () => void
   pendingConfirm: { req: ConfirmRequest; settle: (confirmed: boolean) => void } | null
   askConfirm: (req: ConfirmRequest) => Promise<boolean>
-  /** The per-nexus furniture back to its defaults, so a nexus without the setting can't inherit
-   *  the previous one's. */
+  notification: (Notification & { id: number }) | null
+  notify: (n: Notification) => void
+  dismissNotification: (id: number) => void
   resetChrome: () => void
 }
 
@@ -74,6 +72,8 @@ const PER_NEXUS = {
   navWindowMode: 'list',
   navViewMode: 'list',
 } satisfies Partial<ChromeSlice>
+
+let notificationSeq = 0
 
 export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
   const persistSubfield = (): void => {
@@ -149,9 +149,14 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
         set({ pendingConfirm: { req, settle } })
       }),
 
+    notification: null,
+    notify: (n) => set({ notification: { ...n, id: ++notificationSeq } }),
+    dismissNotification: (id) =>
+      set((s) => (s.notification?.id === id ? { notification: null } : {})),
+
     resetChrome: () => {
       get().pendingConfirm?.settle(false)
-      set({ ...PER_NEXUS, pendingConfirm: null })
+      set({ ...PER_NEXUS, pendingConfirm: null, notification: null })
     },
   }
 }

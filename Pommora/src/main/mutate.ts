@@ -408,7 +408,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await deps.trashToSystem(abs)
       }
       deindexPath(root, abs)
-      return ok({})
+      return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
     }
 
     case 'restore': {
