@@ -31,8 +31,8 @@ export function declaredType(
   return schema.find((d) => d.id === propertyId)?.type
 }
 
-const stampValue = (iso: string | undefined): PropertyValue =>
-  iso === undefined ? { kind: 'null' } : { kind: 'datetime', value: iso }
+const stampValue = (iso: string | null): PropertyValue =>
+  iso === null ? { kind: 'null' } : { kind: 'datetime', value: iso }
 
 /** The row's value for a column, as a PropertyValue. Absent or unreadable ⇒ `{ kind: 'null' }` —
  *  a single bad cell never poisons a view.

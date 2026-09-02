@@ -8,6 +8,7 @@ export {
   FooterLockButton,
   FooterIconButton,
   MenuFooting,
+  FootingItem,
   MenuScrollFrame,
 } from './menu-row'
 export { MenuIndex, MenuRowView, type MenuRow, type MenuSection, type Trailing } from './menu-index'

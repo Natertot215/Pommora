@@ -24,6 +24,13 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   files.add(rel)
 }
 
+/** The live tree's path→id map when it holds `root`; empty otherwise, so a stale tree never
+ *  names ids for another nexus. */
+export function liveIdIndex(root: string): Map<string, string> {
+  const tree = getLiveTree()
+  return pageIdIndex(tree?.nexus.rootPath === root ? tree : null)
+}
+
 export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
   const byPath = new Map<string, string>()
   const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
@@ -41,8 +48,7 @@ export function flushValueWrites(root: string): ValueChange[] {
   if (ledger?.root !== root) return []
   const { byRel } = ledger
   ledger = null
-  const tree = getLiveTree()
-  const byPath = pageIdIndex(tree?.nexus.rootPath === root ? tree : null)
+  const byPath = liveIdIndex(root)
   return [...byRel].map(([rel, files]) => ({
     rel,
     pageIds: [...files].flatMap((f) => {

@@ -12,16 +12,12 @@ import {
   DisclosureRow,
   MenuFooting,
   MenuCaption,
-  MenuItem,
+  FootingItem,
   MenuScrollFrame,
   MenuTopRow,
   useDisclosureSet,
 } from '@renderer/DesignSystem/Menus'
-import {
-  accessoryButton,
-  footingLabel,
-  footingSymbol,
-} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { accessoryButton } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT, treePane } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
@@ -742,16 +738,7 @@ export function FilterFrame({
       {decoded.kind === 'locked' ? (
         <>
           <MenuCaption>Hand-authored filter — edited outside the pane.</MenuCaption>
-          <MenuItem
-            leading={
-              <span className={footingSymbol}>
-                <Icon name="rotate-ccw" size="control" />
-              </span>
-            }
-            onClick={() => save('all', [])}
-          >
-            <span className={footingLabel}>Reset Filter</span>
-          </MenuItem>
+          <FootingItem icon="rotate-ccw" label="Reset Filter" onClick={() => save('all', [])} />
         </>
       ) : (
         <div className={fp.ruleList}>

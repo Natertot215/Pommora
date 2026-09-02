@@ -19,6 +19,7 @@ type Entry = FileStat & { verifiedAt: number; gen: number; value: unknown }
 
 let cacheRoot: string | null = null
 let gen = 0
+let forgets = 0
 const entries = new Map<string, Entry>()
 
 /** Open a walk over `root`: bumps the generation stamp and drops the cache on a root switch. */
@@ -39,6 +40,7 @@ export function endWalk(): void {
  *  where the cache last saw them. */
 export function forgetParse(absPath: string): void {
   entries.delete(absPath)
+  forgets++
 }
 
 /** Parse-through cache: stat `absPath`, serve the cached value while (mtime, size) hold
@@ -48,6 +50,7 @@ export async function cachedParse<T>(
   absPath: string,
   parse: (stat: FileStat | null) => Promise<T>,
 ): Promise<T> {
+  const forgetsAtStart = forgets
   let s: FileStat
   try {
     s = await stat(absPath)
@@ -66,8 +69,9 @@ export async function cachedParse<T>(
   }
   const value = await parse(s)
   // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy
-  // (mtime, size) would serve the failure until the file next changes. Re-read each pass.
-  if (value !== null)
+  // (mtime, size) would serve the failure until the file next changes. Re-read each pass. A parse
+  // that straddled a forget may hold the bytes the forget retired, under the same (mtime, size).
+  if (value !== null && forgets === forgetsAtStart)
     entries.set(absPath, { mtimeMs: s.mtimeMs, size: s.size, verifiedAt: Date.now(), gen, value })
   return value
 }

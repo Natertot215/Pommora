@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { PageValues } from '@shared/types'
 import { useSession } from '../store'
@@ -61,12 +61,16 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
  *  identity-only fallback for the round trip. A push that names none (a batch that degraded to a
  *  walk) re-reads the container whole. A superseded whole refetch still retires: a settled
  *  override left standing would mask the disk until the next push. */
-export function useValuesEpoch(
+function useValuesEpoch(
   path: string,
   setValues: Dispatch<SetStateAction<Record<string, PageValues>>>,
   setValueOverride?: SetOverrides,
 ): void {
   const valuesEpoch = useSession((st) => st.valuesEpoch)
+  // A scoped read superseded by a newer push on the same path still lands (its pages are not the
+  // newer read's); one superseded by a container swap must not — its pages belong to the old map.
+  const live = useRef(path)
+  live.current = path
   useEffect(() => {
     if (!valuesEpoch) return
     let retire: ((prev: Overrides | null) => Overrides | null) | null = null
@@ -84,12 +88,37 @@ export function useValuesEpoch(
     let canceled = false
     void fetchValues(path, only).then((v) => {
       if (!v) return
-      if (only) setValues((prev) => ({ ...prev, ...v }))
-      else if (!canceled) setValues(v)
+      if (only) {
+        if (live.current === path) setValues((prev) => ({ ...prev, ...v }))
+        // Only a page the read resolved is settled; one it could not still holds its override.
+        const landed = Object.keys(v)
+        retire = landed.length ? (prev) => retireSettled(prev, landed) : null
+      } else if (!canceled) setValues(v)
       if (retire) setValueOverride?.(retire)
     })
     return () => {
       canceled = true
     }
   }, [valuesEpoch, path, setValues, setValueOverride])
+}
+
+/** The canonical values for the opened container supersede any optimistic patches still
+ *  standing, and `canceled` keeps a fast container swap from landing the old path's read. */
+export function useContainerValues(
+  path: string,
+  setValueOverride?: SetOverrides,
+): Record<string, PageValues> {
+  const [values, setValues] = useState<Record<string, PageValues>>({})
+  useEffect(() => {
+    let canceled = false
+    setValueOverride?.(null)
+    void fetchValues(path).then((v) => {
+      if (v && !canceled) setValues(v)
+    })
+    return () => {
+      canceled = true
+    }
+  }, [path, setValueOverride])
+  useValuesEpoch(path, setValues, setValueOverride)
+  return values
 }

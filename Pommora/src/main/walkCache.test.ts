@@ -52,6 +52,25 @@ describe('walkCache', () => {
     expect(await walk(file, parse)).toBe('parsed-2')
   })
 
+  it('a parse that straddles a forget is not cached', async () => {
+    const file = join(root, 'a.md')
+    writeFileSync(file, 'one')
+    cool(file)
+    let parses = 0
+    let release: () => void = () => {}
+    const parse = async (): Promise<string> => {
+      parses++
+      if (parses === 1) await new Promise<void>((r) => (release = r))
+      return `parsed-${parses}`
+    }
+    const first = walk(file, parse)
+    await new Promise((r) => setTimeout(r, 5))
+    forgetParse(file)
+    release()
+    expect(await first).toBe('parsed-1')
+    expect(await walk(file, parse)).toBe('parsed-2')
+  })
+
   it('re-parses a hot file (mtime inside the racy window) every walk', async () => {
     const file = join(root, 'hot.md')
     writeFileSync(file, 'fresh')

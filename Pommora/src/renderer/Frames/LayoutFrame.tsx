@@ -5,11 +5,11 @@ import { type CardBanner, isCompact, type SavedView, type ViewType } from '@shar
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
   MenuIndex,
-  MenuItem,
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
+  FootingItem,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
@@ -109,12 +109,9 @@ export function LayoutFrame({
   const cardsFooting =
     view.type === 'cards' ? (
       <MenuFooting>
-        <MenuItem
-          leading={
-            <span className={footingSymbol}>
-              <Icon name="palette" size="control" />
-            </span>
-          }
+        <FootingItem
+          icon="palette"
+          label="Style"
           value={isCompact(view) ? 'Compact' : 'Standard'}
           trailing={
             <span className={footingSymbol}>
@@ -122,15 +119,10 @@ export function LayoutFrame({
             </span>
           }
           onClick={toggleFormat}
-        >
-          <span className={footingLabel}>Style</span>
-        </MenuItem>
-        <MenuItem
-          leading={
-            <span className={footingSymbol}>
-              <Icon name="image" size="control" />
-            </span>
-          }
+        />
+        <FootingItem
+          icon="image"
+          label="Banner"
           trailing={
             <PickerControl
               ariaLabel="Card Banner"
@@ -140,15 +132,10 @@ export function LayoutFrame({
               solid
             />
           }
-        >
-          <span className={footingLabel}>Banner</span>
-        </MenuItem>
-        <MenuItem
-          leading={
-            <span className={footingSymbol}>
-              <Icon name="scaling" size="control" />
-            </span>
-          }
+        />
+        <FootingItem
+          icon="scaling"
+          label="Size"
           trailing={
             <Slider
               value={view.card_size ?? 1}
@@ -162,9 +149,7 @@ export function LayoutFrame({
               readoutClassName={footingLabel}
             />
           }
-        >
-          <span className={footingLabel}>Size</span>
-        </MenuItem>
+        />
       </MenuFooting>
     ) : null
 

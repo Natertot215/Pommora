@@ -19,14 +19,13 @@ import {
   AccessoryButton,
   MenuFooting,
   MenuIndex,
-  MenuItem,
+  FootingItem,
   MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
   MenuCaption,
   MenuTopRow,
 } from '@renderer/DesignSystem/Menus'
-import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
 import {
   factorChoice,
   PickerControl,
@@ -192,12 +191,9 @@ export function SettingsFrame(): React.JSX.Element | null {
 
   const footing = (
     <MenuFooting>
-      <MenuItem
-        leading={
-          <span className={footingSymbol}>
-            <Icon name="scaling" size="control" />
-          </span>
-        }
+      <FootingItem
+        icon="scaling"
+        label="Scale"
         trailing={
           <PickerControl
             solid
@@ -215,9 +211,7 @@ export function SettingsFrame(): React.JSX.Element | null {
             }}
           />
         }
-      >
-        <span className={footingLabel}>Scale</span>
-      </MenuItem>
+      />
     </MenuFooting>
   )
   const plainRoot = <MenuScrollFrame footer={footing}>{root}</MenuScrollFrame>

@@ -245,6 +245,34 @@ describe('the values epoch', () => {
     expect(api?.values.p1).toEqual(VALUES.p1)
   })
 
+  it('a scoped read that lands after a container swap never merges into the new container', async () => {
+    await mount(collection())
+    let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
+    nexus().loadValues = vi.fn((_path: string, ids?: string[]) =>
+      ids
+        ? new Promise((r) => {
+            land = r
+          })
+        : Promise.resolve({ ok: true, value: {} }),
+    )
+    bump([{ rel: 'Col', pageIds: ['p2'] }])
+    await act(async () => {})
+    await mount({ ...collection(), id: 'col2', title: 'Other', path: 'Other' })
+    await act(async () => {
+      land({ ok: true, value: P2 })
+    })
+    expect(api?.values).toEqual({})
+  })
+
+  it('a scoped read that resolves no page retires no override', async () => {
+    await mount(collection())
+    nexus().loadValues = vi.fn(async () => ({ ok: true, value: {} }))
+    act(() => api?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
+    bump([{ rel: 'Col', pageIds: ['p1'] }])
+    await act(async () => {})
+    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
+  })
+
   it('a failed read keeps the values already held', async () => {
     await mount(collection())
     nexus().loadValues = vi.fn(async () => ({ ok: false, error: { code: 'operation-failed' } }))
@@ -255,16 +283,14 @@ describe('the values epoch', () => {
 
   it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
     await mount(collection())
-    let land: (v: { ok: true; value: typeof VALUES }) => void = () => {}
-    nexus().loadValues = vi.fn(
-      () => new Promise<{ ok: true; value: typeof VALUES }>((r) => (land = r)),
-    )
+    let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
+    nexus().loadValues = vi.fn(() => new Promise<{ ok: true; value: typeof P2 }>((r) => (land = r)))
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
     expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
-    await act(async () => land({ ok: true, value: VALUES }))
-    expect(api?.effectiveValues.p2).toEqual(VALUES.p2)
+    await act(async () => land({ ok: true, value: P2 }))
+    expect(api?.effectiveValues.p2).toEqual(P2.p2)
   })
 
   it('a push naming no ids retires the settled override and keeps the pending one', async () => {
@@ -283,7 +309,7 @@ describe('the values epoch', () => {
 
   it('one push over several containers reaches the mounted one', async () => {
     await mount(collection())
-    nexus().loadValues.mockClear()
+    nexus().loadValues = vi.fn(async () => ({ ok: true, value: P2 }))
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([
       { rel: 'Other', pageIds: ['p9'] },
@@ -291,7 +317,7 @@ describe('the values epoch', () => {
     ])
     await act(async () => {})
     expect(nexus().loadValues).toHaveBeenCalledTimes(1)
-    expect(api?.effectiveValues.p2).toBeUndefined()
+    expect(api?.effectiveValues.p2).toEqual(P2.p2)
   })
 
   it('a sibling container push neither refetches nor retires', async () => {

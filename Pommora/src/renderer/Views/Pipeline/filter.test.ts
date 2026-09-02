@@ -59,8 +59,8 @@ function row(
     title: id,
     path: `${id}.md`,
     frontmatter: { [PAGE_ID_KEY]: id, ...propsAtRoot(opts.props ?? {}, schema) },
-    ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
-    ...(opts.modifiedAt ? { modifiedAt: opts.modifiedAt } : {}),
+    createdAt: opts.createdAt ?? null,
+    modifiedAt: opts.modifiedAt ?? null,
     ...(opts.areas ? { contextValues: { ctx_areas: opts.areas } } : {}),
   }
 }

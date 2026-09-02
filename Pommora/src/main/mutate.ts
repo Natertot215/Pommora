@@ -674,6 +674,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // the renderer showing the page where it no longer is. Order falls back to title instead.
       if (req.order) await setChildOrder(dst.value, 'page_order', req.order)
       await moveIndexPaths(root, src.value, r.value.path)
+      noteValueWrite(root, r.value.path)
       return ok({})
     }
 
@@ -690,6 +691,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // Best-effort for the same reason as movePage — the folder has already moved.
       await setChildOrder(dst.value, 'set_order', req.order)
       await moveIndexPaths(root, src.value, r.value.path)
+      // A folder resolves to no page id, so the destination re-reads whole and sweeps every
+      // page the set carried in.
+      noteValueWrite(root, r.value.path)
       return ok({})
     }
 

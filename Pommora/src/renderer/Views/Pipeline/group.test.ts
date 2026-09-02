@@ -228,7 +228,7 @@ describe('flattenContainer + structural grouping', () => {
 })
 
 describe('toRow stamps', () => {
-  it("carries the batch entry's stamps and omits them when the entry lacks them", () => {
+  it("carries the batch entry's stamps and nulls them when the entry lacks them", () => {
     const { rows } = flattenContainer(collection([], [page('p1'), page('p2'), page('p3')]), {
       p1: {
         frontmatter: { [PAGE_ID_KEY]: 'p1' },
@@ -242,8 +242,8 @@ describe('toRow stamps', () => {
       modifiedAt: '2024-06-07T08:09:10.000Z',
     })
     for (const row of rows.slice(1)) {
-      expect('createdAt' in row).toBe(false)
-      expect('modifiedAt' in row).toBe(false)
+      expect(row.createdAt).toBeNull()
+      expect(row.modifiedAt).toBeNull()
     }
   })
 

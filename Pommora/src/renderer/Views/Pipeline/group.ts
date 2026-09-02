@@ -110,8 +110,8 @@ function toRow(
     path: page.path,
     ...(parentSetId !== undefined ? { parentSetId } : {}),
     frontmatter: frontmatterOf(values, page.id),
-    ...(v?.createdAt != null ? { createdAt: v.createdAt } : {}),
-    ...(v?.modifiedAt != null ? { modifiedAt: v.modifiedAt } : {}),
+    createdAt: v?.createdAt ?? null,
+    modifiedAt: v?.modifiedAt ?? null,
     ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
   }
 }
