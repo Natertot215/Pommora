@@ -19,7 +19,7 @@ export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
   return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
 }
 
-function mapOption(options: Option[], value: string, fn: (o: Option) => Option): Option[] {
+function mapOption<T extends { value: string }>(options: T[], value: string, fn: (o: T) => T): T[] {
   return options.map((o) => (o.value === value ? fn(o) : o))
 }
 
@@ -28,10 +28,18 @@ function mapStatusOption(
   value: string,
   fn: (o: StatusOption) => StatusOption,
 ): StatusGroup[] {
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
-  }))
+  return groups.map((g) => ({ ...g, options: mapOption(g.options, value, fn) }))
+}
+
+/** A falsy value drops the key entirely rather than writing it — the chip then falls back to
+ *  whatever its group or its type defaults to. */
+function withField<T extends { value: string }, K extends keyof T>(
+  o: T,
+  key: K,
+  v: T[K] | undefined,
+): T {
+  const { [key]: _drop, ...rest } = o
+  return (v ? { ...rest, [key]: v } : rest) as T
 }
 
 export function addOption(
@@ -69,9 +77,7 @@ export function recolorStatusOption(
   value: string,
   color: string | undefined,
 ): StatusGroup[] {
-  return mapStatusOption(groups, value, ({ color: _drop, ...rest }) =>
-    color ? { ...rest, color } : rest,
-  )
+  return mapStatusOption(groups, value, (o) => withField(o, 'color', color))
 }
 
 /** By its OLD value. The page cascade (main-process) rewrites the stored label on every assigning page. */
@@ -120,9 +126,7 @@ export function recolorOption(
   value: string,
   color: string | undefined,
 ): Option[] {
-  return mapOption(options, value, ({ color: _drop, ...rest }) =>
-    color ? { ...rest, color } : rest,
-  )
+  return mapOption(options, value, (o) => withField(o, 'color', color))
 }
 
 /** undefined removes the field → the chip falls back to the type default, single tag for select and
@@ -132,7 +136,7 @@ export function setOptionIcon(
   value: string,
   icon: string | undefined,
 ): Option[] {
-  return mapOption(options, value, ({ icon: _drop, ...rest }) => (icon ? { ...rest, icon } : rest))
+  return mapOption(options, value, (o) => withField(o, 'icon', icon))
 }
 
 /** Filled is the default, so it clears the key rather than being written. */
@@ -141,8 +145,8 @@ export function setOptionAppearance(
   value: string,
   appearance: OptionAppearance,
 ): Option[] {
-  return mapOption(options, value, ({ appearance: _drop, ...rest }) =>
-    appearance === 'clear' ? { ...rest, appearance } : rest,
+  return mapOption(options, value, (o) =>
+    withField(o, 'appearance', appearance === 'clear' ? appearance : undefined),
   )
 }
 
@@ -152,9 +156,7 @@ export function setStatusOptionIcon(
   value: string,
   icon: string | undefined,
 ): StatusGroup[] {
-  return mapStatusOption(groups, value, ({ icon: _drop, ...rest }) =>
-    icon ? { ...rest, icon } : rest,
-  )
+  return mapStatusOption(groups, value, (o) => withField(o, 'icon', icon))
 }
 
 export function setStatusOptionAppearance(
@@ -162,8 +164,8 @@ export function setStatusOptionAppearance(
   value: string,
   appearance: OptionAppearance,
 ): StatusGroup[] {
-  return mapStatusOption(groups, value, ({ appearance: _drop, ...rest }) =>
-    appearance === 'clear' ? { ...rest, appearance } : rest,
+  return mapStatusOption(groups, value, (o) =>
+    withField(o, 'appearance', appearance === 'clear' ? appearance : undefined),
   )
 }
 

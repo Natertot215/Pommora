@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CollectionNode, PageValues, SetNode } from '@shared/types'
+import { useEffect, useMemo, useRef } from 'react'
+import type { CollectionNode, SetNode } from '@shared/types'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type {
   DateGranularity,
@@ -12,7 +12,7 @@ import type {
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import {
   DisclosureRow,
-  MenuItem,
+  FootingItem,
   MenuRowView,
   type MenuRow,
   MenuSeparator,
@@ -28,7 +28,7 @@ import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { declaredType } from '@renderer/Properties/value'
-import { fetchValues, useValuesEpoch } from '@renderer/Views/useValuesEpoch'
+import { useContainerValues } from '@renderer/Views/useValuesEpoch'
 import {
   bucketKey,
   bucketOrder,
@@ -185,12 +185,9 @@ export function GroupFrame({
 
   const footings = (
     <MenuFooting>
-      <MenuItem
-        leading={
-          <span className={footingSymbol}>
-            <Icon name="eye-off" size="control" />
-          </span>
-        }
+      <FootingItem
+        icon="eye-off"
+        label="Hide Empty Groups"
         trailing={
           <DualSwitch
             checked={hideEmpty}
@@ -198,9 +195,7 @@ export function GroupFrame({
             ariaLabel="Hide Empty Groups"
           />
         }
-      >
-        <span className={footingLabel}>Hide Empty Groups</span>
-      </MenuItem>
+      />
       <MenuRowView
         row={{
           kind: 'item',
@@ -782,17 +777,7 @@ function DateBucketList({
   def: PropertyDefinition | undefined
   schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
-  const [values, setValues] = useState<Record<string, PageValues>>({})
-  useEffect(() => {
-    let canceled = false
-    void fetchValues(source.path).then((v) => {
-      if (v && !canceled) setValues(v)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [source.path])
-  useValuesEpoch(source.path, setValues)
+  const values = useContainerValues(source.path)
 
   const granularity = group.date_granularity ?? 'month'
   const present = new Set<string>()

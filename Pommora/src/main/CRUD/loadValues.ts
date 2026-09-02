@@ -10,8 +10,7 @@ import type { PageValues } from '@shared/types'
 import { idTime } from '../ids'
 import { readPageRecord } from '../readNexus'
 import { folderCorpus } from '../indexSeed'
-import { getLiveTree } from '../liveTree'
-import { pageIdIndex } from '../valuesChanged'
+import { liveIdIndex } from '../valuesChanged'
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
@@ -32,11 +31,9 @@ async function corpus(
   pageIds?: readonly string[],
 ): Promise<string[]> {
   if (!pageIds) return folderCorpus(rootPath, join(rootPath, containerRelPath))
-  const tree = getLiveTree()
   const wanted = new Set(pageIds)
   const files: string[] = []
-  for (const [rel, id] of pageIdIndex(tree?.nexus.rootPath === rootPath ? tree : null))
-    if (wanted.has(id)) files.push(join(rootPath, rel))
+  for (const [rel, id] of liveIdIndex(rootPath)) if (wanted.has(id)) files.push(join(rootPath, rel))
   return files
 }
 

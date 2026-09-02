@@ -109,6 +109,8 @@ export function usePropertyRows(
             icon: fm.icon,
             path: page.path,
             frontmatter: fm,
+            createdAt: null,
+            modifiedAt: null,
             contextValues,
           }
         : null,

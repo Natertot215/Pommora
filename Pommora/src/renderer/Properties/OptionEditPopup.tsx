@@ -47,22 +47,15 @@ export function OptionEditPopup({
   const [iconOpen, setIconOpen] = useState(false)
   useEffect(() => {
     if (!iconOpen) return
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      setIconOpen(false)
-    }
+    // Escape is picker-base's (it peels the topmost pane). This catches a press landing on the
+    // popup's own body, which the IconPicker's backdrop sits UNDER and so never sees.
     const onDown = (e: PointerEvent): void => {
       const portals = document.querySelectorAll('[data-picker-portal]')
       const pane = portals[portals.length - 1]
       if (pane && !pane.contains(e.target as Node)) setIconOpen(false)
     }
-    document.addEventListener('keydown', onKey, true)
     document.addEventListener('pointerdown', onDown, true)
-    return () => {
-      document.removeEventListener('keydown', onKey, true)
-      document.removeEventListener('pointerdown', onDown, true)
-    }
+    return () => document.removeEventListener('pointerdown', onDown, true)
   }, [iconOpen])
   return (
     <>

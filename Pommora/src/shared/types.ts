@@ -548,8 +548,8 @@ export interface ViewRow {
   path: string
   parentSetId?: string
   frontmatter: PageFrontmatter
-  createdAt?: string
-  modifiedAt?: string
+  createdAt: string | null
+  modifiedAt: string | null
   /** The tree node's resolved context links (contextId → Space ids); the optimistic write
    *  layer overrides per commit. */
   contextValues?: Record<string, string[]>

@@ -32,7 +32,7 @@ import { flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { fetchValues, type Overrides, patchOverride, useValuesEpoch } from './useValuesEpoch'
+import { type Overrides, patchOverride, useContainerValues } from './useValuesEpoch'
 import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
 import { useViewCreation } from './useViewCreation'
@@ -72,25 +72,10 @@ export function useViewHost(
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
 
-  const [values, setValues] = useState<Record<string, PageValues>>({})
-  // A refresh in flight when the container swaps must not land the old path's values.
-  const pathRef = useRef(source.path)
-  pathRef.current = source.path
   // Optimistic property patches keyed by page id: the loaded values never re-read on a write, so
   // a changed row re-groups only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
-  // Lazy value load on container open; `canceled` guards a fast container swap.
-  useEffect(() => {
-    let canceled = false
-    setValueOverride(null) // canonical values for the new container supersede any optimistic patches
-    void fetchValues(source.path).then((v) => {
-      if (v && !canceled) setValues(v)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [source.path])
-  useValuesEpoch(source.path, setValues, setValueOverride)
+  const values = useContainerValues(source.path, setValueOverride)
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
