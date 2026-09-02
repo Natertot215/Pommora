@@ -356,20 +356,20 @@ describe('applyFilter — per-type matrix', () => {
   // `is` does: a page saved the evening of the 1st is on or before the 1st, not after the 2nd.
   it('a bare-day Before/After keeps a same-day stamp, in the local form the batch mints', () => {
     const evening = row('evening', { modifiedAt: '2026-09-01T21:00:00' })
-    const before = (value: string) =>
+    const onOrBefore = (value: string) =>
       ids([evening], {
         match: 'all',
         rules: [{ property_id: '_modified_at', op: 'on_or_before', value }],
       })
-    const after = (value: string) =>
+    const onOrAfter = (value: string) =>
       ids([evening], {
         match: 'all',
         rules: [{ property_id: '_modified_at', op: 'on_or_after', value }],
       })
-    expect(before('2026-09-01')).toEqual(['evening'])
-    expect(before('2026-08-31')).toEqual([])
-    expect(after('2026-09-01')).toEqual(['evening'])
-    expect(after('2026-09-02')).toEqual([])
+    expect(onOrBefore('2026-09-01')).toEqual(['evening'])
+    expect(onOrBefore('2026-08-31')).toEqual([])
+    expect(onOrAfter('2026-09-01')).toEqual(['evening'])
+    expect(onOrAfter('2026-09-02')).toEqual([])
     expect(
       ids([evening], {
         match: 'all',
