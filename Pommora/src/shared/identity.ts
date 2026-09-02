@@ -16,7 +16,7 @@ export const PAGE_ID_KEY = KIND_ID_KEY.page
 
 /** The modeled top-level page keys a FULL page rewrite governs (set if present, else delete).
  *  Partial updates pass a narrower key set so they touch nothing else. */
-export const PAGE_MODELED_KEYS = [PAGE_ID_KEY, 'icon', 'cover'] as const
+export const PAGE_MODELED_KEYS = [PAGE_ID_KEY, 'icon', 'banner'] as const
 
 const ALL_KIND_KEYS = Object.values(KIND_ID_KEY)
 

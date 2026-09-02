@@ -18,7 +18,7 @@ export type ViewFormat = (typeof VIEW_FORMATS)[number]
 export const isCompact = (view: { format?: ViewFormat }): boolean =>
   (view.format ?? 'standard') === 'compact'
 
-const CARD_BANNERS = ['cover', 'preview', 'none'] as const
+const CARD_BANNERS = ['image', 'preview', 'none'] as const
 export type CardBanner = (typeof CARD_BANNERS)[number]
 
 export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
@@ -116,8 +116,8 @@ export interface SavedView {
   /** The whole view's own scale (0.5–1.5) — content and group bands, never the heading, and
    *  never an embedded tile (a tile states its own size). Absent = 1. */
   view_scale?: number
-  /** Cards-view card image source: the page banner (`cover`), the captured thumbnail
-   *  (`preview`), or imageless compact cards (`none`). Absent = cover. */
+  /** Cards-view card image source: the page banner (`image`), the captured thumbnail
+   *  (`preview`), or imageless compact cards (`none`). Absent = image. */
   card_banner?: CardBanner
   hide_location?: boolean
   /** Cards view: off = single-line overflow-scroll. */
