@@ -44,6 +44,12 @@ export const suffixInput = style([
   },
 ])
 
+export const leading = style({
+  flex: '0 0 auto',
+  display: 'inline-flex',
+  color: c.label.secondary,
+})
+
 /** The "/ N" out-of hint pinned to the field's right — never scrolling. */
 export const trailing = style({
   flex: '0 0 auto',

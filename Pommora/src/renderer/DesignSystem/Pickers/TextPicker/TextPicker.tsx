@@ -14,6 +14,7 @@ export function TextPicker({
   onCommit,
   accent,
   maxLength,
+  leading,
   trailing,
 }: {
   open: boolean
@@ -23,16 +24,17 @@ export function TextPicker({
   onCommit: (next: string) => void
   accent?: string
   maxLength?: number
+  leading?: React.ReactNode
   trailing?: React.ReactNode
 }): React.JSX.Element | null {
-  const hasTrailing = trailing !== undefined
+  const hasAffix = leading !== undefined || trailing !== undefined
   const field = (
     <EditableInput
       value={value}
-      className={hasTrailing ? s.suffixInput : s.input}
+      className={hasAffix ? s.suffixInput : s.input}
       // The bare variant wears the shared field chrome — fill and ring — so it truncates rather
-      // than letting the eclipse dissolve its own box. The suffix variant carries no chrome.
-      boxed={!hasTrailing}
+      // than letting the eclipse dissolve its own box. The affixed variant carries no chrome.
+      boxed={!hasAffix}
       maxLength={maxLength}
       caretAtEnd
       onCommit={onCommit}
@@ -49,10 +51,11 @@ export function TextPicker({
       contentClassName={s.content}
       style={accent ? ({ '--accent': accent } as CSSProperties) : undefined}
     >
-      {hasTrailing ? (
+      {hasAffix ? (
         <div className={s.suffixField}>
+          {leading !== undefined && <span className={s.leading}>{leading}</span>}
           {field}
-          <span className={s.trailing}>{trailing}</span>
+          {trailing !== undefined && <span className={s.trailing}>{trailing}</span>}
         </div>
       ) : (
         field
