@@ -37,20 +37,22 @@ export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
 
 const CURRENCY_GLYPH: Record<string, string> = {
-  USD: 'dollar-sign',
-  AUD: 'dollar-sign',
-  CAD: 'dollar-sign',
-  EUR: 'euro',
-  GBP: 'pound-sterling',
-  JPY: 'japanese-yen',
+  USD: '$',
+  AUD: '$',
+  CAD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
 }
 
+/** The literal format sign a number field carries — `%`, the currency's symbol, or a plain `#` —
+ *  rendered as typography, not a Symbol. */
 export const numberFormatGlyph = (def: PropertyDefinition): string =>
   def.number_family === 'percent'
-    ? 'percent'
+    ? '%'
     : def.number_family === 'currency'
-      ? (CURRENCY_GLYPH[def.number_currency ?? 'USD'] ?? 'dollar-sign')
-      : 'hash'
+      ? (CURRENCY_GLYPH[def.number_currency ?? 'USD'] ?? '$')
+      : '#'
 
 export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
   (t) => PROPERTY_TYPES[t].creatable,
