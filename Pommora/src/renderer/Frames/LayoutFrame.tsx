@@ -44,7 +44,7 @@ const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
 
 const BANNERS: PickerChoice<CardBanner>[] = [
-  { value: 'cover', label: 'Cover' },
+  { value: 'image', label: 'Image' },
   { value: 'preview', label: 'Preview' },
   { value: 'none', label: 'None' },
 ]
@@ -126,7 +126,7 @@ export function LayoutFrame({
           trailing={
             <PickerControl
               ariaLabel="Card Banner"
-              value={view.card_banner ?? 'cover'}
+              value={view.card_banner ?? 'image'}
               options={BANNERS}
               onPick={(v) => write({ card_banner: v })}
               solid

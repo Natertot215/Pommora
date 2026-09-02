@@ -1782,8 +1782,8 @@ serveBridge(
       },
     },
 
-    // The noun follows the surface's vocabulary (Banner by default; the cards' Cover-mode
-    // thumb passes "Cover"). Add resolves 'change' (both routes open the image picker).
+    // The noun follows the surface's vocabulary (Banner by default). Add resolves 'change'
+    // (both routes open the image picker).
     'nexus:bannerMenu': {
       kind: 'menu',
       fn: async (

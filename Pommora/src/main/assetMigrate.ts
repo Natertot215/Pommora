@@ -110,11 +110,11 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     refs.push({
       store: rel,
       owner: `${basenameNoMd(basename(rel))} Banner`,
-      read: async () => readFrontmatterFields(await readFile(file, 'utf8').catch(() => '')).cover,
+      read: async () => readFrontmatterFields(await readFile(file, 'utf8').catch(() => '')).banner,
       write: (link) =>
         rewritePageSerialized(file, (content) => {
           const { body } = splitEnvelope(content)
-          return mergeFrontmatter(content, { cover: link }, ['cover'], body)
+          return mergeFrontmatter(content, { banner: link }, ['banner'], body)
         }),
     })
   }

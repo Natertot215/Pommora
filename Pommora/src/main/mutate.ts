@@ -444,7 +444,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const adopted = req.source ? await adoptImageSource(root, req.source) : ok(null)
       if (!adopted.ok) return adopted
       // Set the field first, then delete a replaced file — a failed write never leaves
-      // profile_image pointing at a deleted file (mirrors the banner/cover ordering).
+      // profile_image pointing at a deleted file (mirrors the banner ordering).
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', adopted.value))
       await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
       return ok(adopted.value ? { adopted: adopted.value } : {})
@@ -470,12 +470,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // must not land in the asset directory for a banner the write is about to refuse.
       const adopt = async (): Promise<Result<string | null>> =>
         req.source ? adoptImageSource(root, req.source) : ok(null)
-      // A page's banner is the `cover` key in its `.md` frontmatter, not a JSON sidecar.
+      // A page's banner is the `banner` key in its `.md` frontmatter, not a JSON sidecar.
       // Foreign frontmatter + body survive.
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
-        // Under the page's file lock — a banner (cover) write and a property cascade both rewrite
+        // Under the page's file lock — a banner write and a property cascade both rewrite
         // this page's frontmatter, so they must serialize rather than clobber from a stale read.
         return serializeOnFile(resolved.value, async () => {
           let existing: string
@@ -486,15 +486,15 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           }
           const { body } = splitEnvelope(existing)
           const fields = readFrontmatterFields(existing)
-          const prev = await assetFileToDelete(root, fields.cover)
+          const prev = await assetFileToDelete(root, fields.banner)
           const adopted = await adopt()
           if (!adopted.ok) return adopted
           const rel = adopted.value
           // Set the field first; only THEN delete a replaced file, so a failed write never
-          // leaves `cover` pointing at a deleted file.
+          // leaves `banner` pointing at a deleted file.
           await atomicWriteFile(
             resolved.value,
-            mergeFrontmatter(existing, rel ? { cover: rel } : {}, ['cover'], body),
+            mergeFrontmatter(existing, rel ? { banner: rel } : {}, ['banner'], body),
           )
           noteValueWrite(root, resolved.value)
           await dropReplacedAsset(root, prev, rel, deps.trashToSystem)

@@ -148,7 +148,7 @@ A page's own configuration splits by where it lives: identity and appearance in 
 | Setting | Where | Description | Set from |
 | --- | --- | --- | --- |
 | Icon | `icon` in frontmatter | The page's glyph, shown beside its title where the header is opted in. | The header's or a row's Edit Icon |
-| Cover | `cover` in frontmatter, its crop in `.nexus/crops.json` | The banner image and how it is framed. | The header's banner menu |
+| Banner | `banner` in frontmatter, its crop in `.nexus/crops.json` | The banner image and how it is framed. | The header's banner menu |
 | Header icon | `nexus.db` | Whether the header draws the glyph. | The header's Hide Icon / Show Icon |
 | Footnotes | `nexus.db` | Whether the citations section shows, overriding Show Footnotes By Default. | The Subfield's Show / Hide Footnotes |
 | Heading folds | `nexus.db` | Which headings are collapsed. | The fold chevrons |

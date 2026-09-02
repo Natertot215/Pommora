@@ -91,13 +91,13 @@ describe('loadValues', () => {
     expect(values[keys[0]].createdAt).toBeNull()
   })
 
-  // An editor that clears a field leaves `cover:` with a null value; the page still has an id,
-  // still has properties, and still has a mtime — none of which a blank cover may take away.
-  it('keeps a page whose icon or cover is null in the batch, values intact', async () => {
+  // An editor that clears a field leaves `banner:` with a null value; the page still has an id,
+  // still has properties, and still has a mtime — none of which a blank banner may take away.
+  it('keeps a page whose icon or banner is null in the batch, values intact', async () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      `---\nPageID: ${P1}\ncover:\nStatus: Active\n---\n\nbody\n`,
+      `---\nPageID: ${P1}\nbanner:\nStatus: Active\n---\n\nbody\n`,
     )
 
     const values = await loadValues(root, 'Col')

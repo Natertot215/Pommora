@@ -87,7 +87,7 @@ const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
 
 const coverOf = (row: ViewRow): string | undefined =>
-  typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
+  typeof row.frontmatter.banner === 'string' ? row.frontmatter.banner : undefined
 
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
@@ -157,7 +157,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const flatMode = view.group?.kind === 'flat'
 
-  const banner: CardBanner = view.card_banner ?? 'cover'
+  const banner: CardBanner = view.card_banner ?? 'image'
   const baseSets = source.sets ?? []
   const sets = useMemo(
     () => (setOrderOverride ? byOrder(baseSets, setOrderOverride) : baseSets),
@@ -909,7 +909,7 @@ const CardFace = memo(function CardFace({
           capture={banner === 'preview'}
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
-          {banner === 'cover' ? (
+          {banner === 'image' ? (
             <AssetImage value={cover} fallback={ph} />
           ) : src ? (
             <img src={src} alt="" onError={onImgError} />
@@ -1059,7 +1059,7 @@ const PageCard = memo(function PageCard({
       window.nexus.cardMenu({
         addable: menuAddable,
         alreadyOpen,
-        editableImage: banner === 'cover' && !!cover,
+        editableImage: banner === 'image' && !!cover,
         ...pageMoveContext(tree, row.path),
       }),
     )
@@ -1095,7 +1095,7 @@ const PageCard = memo(function PageCard({
   } = useBannerMenu(row.path, 'page', {
     value: cover,
     frame: thumbRef,
-    noun: banner === 'cover' ? 'Cover' : 'Banner',
+    noun: 'Banner',
     autoEdit: true,
   })
   const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined
