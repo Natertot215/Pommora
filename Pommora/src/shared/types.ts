@@ -149,6 +149,9 @@ export interface Personalization {
   /** Absent = the artifact goes to the OS trash and the OS owns the last undo; true erases it
    *  from the machine outright. */
   permanentDelete?: boolean
+  /** Absent = on. Off skips the confirmation for a page, a tile, and a folder that carries no
+   *  schema of its own; a Collection, a Set, a view and a property always ask. */
+  confirmDeletion?: boolean
   /** The live fallback every date renders through unless its column overrides it. Absent = `full`. */
   dateFormat?: DateFormat
   /** Absent = twelve-hour. */
@@ -585,3 +588,9 @@ export interface ResolvedGroup {
 /** Stored on disk in `collapsed_groups`, so it round-trips across builds — the single source the
  *  pipeline and the render code both match group keys against. */
 export const UNGROUPED = '_ungrouped'
+
+/** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
+ *  macOS system Trash. Device-level since system Trash isn't portable nexus data. */
+export type TrashMode = 'nexus' | 'system'
+
+export const DEFAULT_TRASH_MODE: TrashMode = 'nexus'

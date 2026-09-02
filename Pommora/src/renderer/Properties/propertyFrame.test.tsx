@@ -280,14 +280,34 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(del).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
-  it('⋮ Delete (main-confirmed) runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
+  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:destroy')
     await openEditor()
     expect(host.textContent).not.toContain('Delete Property') // no footer Delete row — only the editor's ⋮ menu offers it
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })
+    const pending = useSession.getState().pendingConfirm
+    expect(pending?.req.message).toBe('Delete “Status” everywhere?')
+    expect(destroySpy).not.toHaveBeenCalled()
+    await act(async () => {
+      pending!.settle(true)
+    })
     expect(destroySpy).toHaveBeenCalledWith('prop_status')
+    expect(useSession.getState().pendingConfirm).toBeNull()
+  })
+
+  it('⋮ Delete cancelled leaves the property alone', async () => {
+    propertyMenuSpy.mockResolvedValueOnce('property:destroy')
+    await openEditor()
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
+    })
+    await act(async () => {
+      useSession.getState().pendingConfirm!.settle(false)
+    })
+    expect(destroySpy).not.toHaveBeenCalled()
+    expect(useSession.getState().pendingConfirm).toBeNull()
   })
 
   it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename (A-10)', async () => {

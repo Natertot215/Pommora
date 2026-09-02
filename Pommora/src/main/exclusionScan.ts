@@ -65,15 +65,6 @@ const clearRewrite: RewriteText = (content) => {
   return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
 }
 
-export function clearConfirmCopy(folderCount: number): { message: string; detail: string } {
-  const folders = folderCount === 1 ? 'the excluded folder' : `${folderCount} excluded folders`
-  return {
-    message: `Clear Pommora’s data from ${folders}?`,
-    detail:
-      'Pommora’s container files are removed and each page’s identity key and Context keys are dropped; every other key a page holds stays. This cannot be undone.',
-  }
-}
-
 export async function clearExclusionData(
   root: string,
   excluded: string[],

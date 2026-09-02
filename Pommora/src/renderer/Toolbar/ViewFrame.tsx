@@ -2,6 +2,7 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
+import { askDeleteView } from '@renderer/Windows/confirmations'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
@@ -117,7 +118,7 @@ export function ViewFrame({
     }
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
-    if (!(await window.nexus.views.confirmDelete())) return
+    if (!(await askDeleteView())) return
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
     if (!res.ok) return void window.nexus.showError(res.error.message)
   }

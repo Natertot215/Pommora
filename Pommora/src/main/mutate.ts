@@ -77,7 +77,7 @@ import { NEW_PAGE_SLOT, type MutateReply, type MutateRequest } from '@shared/mut
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { NO_NEXUS } from './ipc'
-import type { TrashMode } from './appConfig'
+import type { TrashMode } from '@shared/types'
 import { readRegistry } from './IO/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { HTTP_URL, NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'

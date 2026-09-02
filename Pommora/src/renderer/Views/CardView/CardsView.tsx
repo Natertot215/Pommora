@@ -13,6 +13,7 @@ import { UNGROUPED } from '@shared/types'
 import type { PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
+import { confirmDelete } from '@renderer/Windows/confirmations'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import {
@@ -1070,7 +1071,8 @@ const PageCard = memo(function PageCard({
     else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')
     else if (action === 'title:icon') setIconOpen(true)
     else if (action === 'title:newbelow') onNewBelow(row)
-    else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
+    else if (action === 'title:delete')
+      void confirmDelete({ path: row.path, kind: 'page', title: row.title })
     else if (action.startsWith('add:')) {
       const entry = addable.find((e) => e.id === action.slice(4))
       if (!entry) return

@@ -51,6 +51,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from '../Frames/frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { normalizePropertyName } from '@shared/properties'
+import { askDestroyProperty } from '@renderer/Windows/confirmations'
 import {
   displayPropertyName,
   useCapitalizeMetadata,
@@ -349,6 +350,7 @@ export function PropertyFrame({
     if (action === 'property:remove') await remove(def.id)
     else if (
       action === 'property:destroy' &&
+      (await askDestroyProperty(def.name)) &&
       (await commit(await window.nexus.property.delete(def.id)))
     )
       backToList()

@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { DEFAULT_VIEW_ID, type SavedView } from '@shared/views'
+import { askDeleteView } from '@renderer/Windows/confirmations'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 
-/** The view's own "…" — Duplicate, and a Delete that asks main for the native confirm first. */
+/** The view's own "…" — Duplicate, and a Delete that asks first. */
 export function ViewItemMenu({
   source,
   view,
@@ -33,7 +34,7 @@ export function ViewItemMenu({
     }
   }
   const deleteView = async (): Promise<void> => {
-    if (!(await window.nexus.views.confirmDelete())) return
+    if (!(await askDeleteView())) return
     const res = await window.nexus.views.delete(source.path, source.kind, view.id)
     if (!res.ok) return void window.nexus.showError(res.error.message)
     onDeleted?.()
