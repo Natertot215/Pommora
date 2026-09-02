@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -26,6 +26,14 @@ describe('setGovernedRootKeys', () => {
     expect(out).toContain('# keep me')
     expect(out).toContain('foo: bar')
     expect(out).toContain('body')
+  })
+
+  it('a write that changes no byte leaves the file, and its modification time, alone', async () => {
+    await writeFile(page, '---\nid: p1\nStatus: Done\n---\nbody\n')
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(page, past, past)
+    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    expect(Math.floor((await stat(page)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
   it('leaves the other layer alone — a property write never touches a Context key', async () => {
