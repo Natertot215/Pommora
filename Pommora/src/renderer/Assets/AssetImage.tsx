@@ -7,7 +7,7 @@ import { resolveAssetUrl, resolveAssetValue } from '@renderer/Assets/assetUrl'
 import { useSession } from '@renderer/store'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useImageAspect } from './imageAspect'
-import { fill } from './assetImage.css'
+import { fill } from './asset-image.css'
 
 export function cropFor(
   value: string | null | undefined,

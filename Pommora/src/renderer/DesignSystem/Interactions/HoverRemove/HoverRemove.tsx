@@ -1,7 +1,7 @@
 import { Icon } from '../../Symbols'
 import { cx } from '../../Util/cx'
 import { overScrollHost, overScrollUnmasked } from '../OverScroll'
-import * as s from './hoverRemove.css'
+import * as s from './hover-remove.css'
 
 /** What the element holding a `HoverRemove` wears — it seats the × and, for `reveal="host"`, is
  *  what reveals it. Carries the over-scroll host: a wrapped label can't arm its own scroll. */

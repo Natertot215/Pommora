@@ -10,13 +10,13 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { pageBody, shownPage, useSession } from '../store'
-import { viewSettingsScope } from '../Interface/ViewSettingsScope'
+import { viewSettingsScope } from '../Interface/viewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../Interface/pageEditor'
 import { headingOutline } from '../MarkdownPM/Editor/folding'
 import { outlineTree, type OutlineNode } from './outlineTree'
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
-import * as s from './toolbarMenu.css'
-import * as o from './outlineMenu.css'
+import * as s from './toolbar-menu.css'
+import * as o from './outline-menu.css'
 
 type Disclosure = ReturnType<typeof useDisclosureSet>
 

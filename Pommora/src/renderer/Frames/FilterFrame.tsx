@@ -5,7 +5,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { SegmentRun } from '@renderer/DesignSystem/Fields/SegmentRun'
-import * as sr from '@renderer/DesignSystem/Fields/segmentRun.css'
+import * as sr from '@renderer/DesignSystem/Fields/segment-run.css'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
@@ -49,7 +49,7 @@ import {
   filterTargets,
   operatorsFor,
 } from './filterModel'
-import * as fp from './filterFrame.css'
+import * as fp from './filter-frame.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'

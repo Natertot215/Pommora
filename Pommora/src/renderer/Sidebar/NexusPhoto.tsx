@@ -6,7 +6,7 @@ import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePic
 import { useNexusIcon } from '@renderer/Utilities/useNexusIcon'
 import { useAssetUrl } from '../store'
 import { AssetImage } from '@renderer/Assets/AssetImage'
-import * as s from './nexusHeader.css'
+import * as s from './nexus-header.css'
 
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
  *  on the homepage banner title, not here either. */

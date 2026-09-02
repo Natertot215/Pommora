@@ -47,7 +47,7 @@ import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl
 import { propertyIcon } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
-import * as gp from './groupFrame.css'
+import * as gp from './group-frame.css'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 import {
   displayPropertyName,

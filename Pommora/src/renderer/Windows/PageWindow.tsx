@@ -19,7 +19,7 @@ import { WindowActions } from './WindowActions'
 import { WindowInspector } from './WindowInspector'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
-import './pageWindow.css'
+import './page-window.css'
 
 const DRAG_SURFACES =
   '.page-window-body, .page-window-tabwrap, .page-window-tabscroll, .page-window-tabstrip'

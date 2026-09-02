@@ -17,8 +17,8 @@ import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cycle } from './tabsModel'
-import './tabStrip.css'
-import './tabBar.css'
+import './tab-strip.css'
+import './tab-bar.css'
 
 const BASE_MS = ms(duration.base)
 /** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole

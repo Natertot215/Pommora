@@ -22,7 +22,7 @@ import {
 } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
+import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/linkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
   DEFAULT_TIME_FORMAT,
@@ -47,7 +47,7 @@ import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearExclusionsRow } from './ClearExclusionsRow'
-import './settingsWindow.css'
+import './settings-window.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a frame carrying a
 // surface has to fit in: a title, a breadcrumb and the date lane, side by side. Exported so the

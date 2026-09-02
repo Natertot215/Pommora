@@ -1,11 +1,11 @@
 import type { StateCreator } from 'zustand'
-import type { CacheSlice } from './CacheSlice'
-import type { ChromeSlice } from './ChromeSlice'
-import type { ConfigSlice } from './ConfigSlice'
-import type { NavigationSlice } from './NavigationSlice'
-import type { NexusSlice } from './NexusSlice'
-import type { PreviewSlice } from './PreviewSlice'
-import type { RenameSlice } from './RenameSlice'
+import type { CacheSlice } from './cacheSlice'
+import type { ChromeSlice } from './chromeSlice'
+import type { ConfigSlice } from './configSlice'
+import type { NavigationSlice } from './navigationSlice'
+import type { NexusSlice } from './nexusSlice'
+import type { PreviewSlice } from './previewSlice'
+import type { RenameSlice } from './renameSlice'
 
 /** The renderer's one shared room: every slice sees the whole state, so features react to each
  *  other without private channels. A slice owns its fields and their writers; what it needs of

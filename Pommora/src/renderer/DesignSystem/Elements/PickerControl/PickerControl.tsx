@@ -4,7 +4,7 @@ import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
 import { PickerMenu, PickerOption } from '../../Pickers/picker-base'
 import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
-import * as s from './pickerControl.css'
+import * as s from './picker-control.css'
 
 export type PickerChoice<T extends string> = {
   value: T

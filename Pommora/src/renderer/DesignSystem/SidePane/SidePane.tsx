@@ -2,7 +2,7 @@ import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } fro
 import { GlassPane } from '@renderer/DesignSystem/Glass'
 import { clamp } from '@renderer/DesignSystem/Util/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import './sidePane.css'
+import './side-pane.css'
 
 // Hosts own positioning (in-flow vs overlay), the width CSS var their layout math reads
 // (mirrored via onWidthChange), and any slide (--io).

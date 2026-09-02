@@ -2,7 +2,7 @@ import type { SelectionState } from '@shared/types'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { containerCreators } from '@shared/mutate'
 import { type PageTarget, useSession } from '../../store'
-import { findCollection } from '../Scope'
+import { findCollection } from '../scope'
 import { pageStats } from './subfieldStats'
 
 /** New item ids slot in here, and in the per-view default order below. */

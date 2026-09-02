@@ -11,8 +11,8 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import type { PreviewTab } from './windowTabs'
-import '../Tabs/tabStrip.css'
-import './windowTabStrip.css'
+import '../Tabs/tab-strip.css'
+import './window-tab-strip.css'
 
 const BASE_MS = ms(duration.base)
 /** The toolbar strip's EXIT_MS twin. */

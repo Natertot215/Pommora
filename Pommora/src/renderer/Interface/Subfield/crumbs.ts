@@ -3,7 +3,7 @@ import { titleFromPath } from '@shared/connections'
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import type { SelectTarget } from '../../store'
 import { ancestryOf, type TrailNode } from '../../treeIndex'
-import { findSpace } from '../Scope'
+import { findSpace } from '../scope'
 
 /** The kinds that sit on a spine — every other selection has no breadcrumb path at all. */
 type SpineTarget = Extract<SelectTarget, { kind: 'collection' | 'set' | 'page' }>

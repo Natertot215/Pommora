@@ -16,9 +16,9 @@ import {
   type PreviewTab,
   reorderTabIn,
 } from '../Windows/windowTabs'
-import { clearWindowWarm, dropWindowWarm } from '../Windows/windowWarm'
+import { clearWindowCache, dropWindowCache } from '../Windows/windowCache'
 import { stashWindowMorph } from '../Windows/windowMorph'
-import type { SessionState, Slice } from './SessionState'
+import type { SessionState, Slice } from './sessionState'
 
 export type PreviewTarget = { id: string; path: string }
 
@@ -165,7 +165,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
         tabs,
         activeTabId: (activeTab ?? tabs[0]).id,
       }
-      clearWindowWarm()
+      clearWindowCache()
       // previewExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
       set({ preview, navOpen: false, previewExit: 'dismiss' })
       mirrorPreviews()
@@ -185,7 +185,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
         tabs: [sentinel, ...pages],
         activeTabId: sentinel.id,
       }
-      clearWindowWarm()
+      clearWindowCache()
       set({ preview, previewExit: morphing ? 'morph' : 'dismiss' })
       mirrorPreviews()
     },
@@ -224,13 +224,13 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
       const next = closeTabIn(cur, id)
       if (next === cur) return
       if (next === null) {
-        clearWindowWarm()
+        clearWindowCache()
         set({ previewExit: exit ?? 'dismiss' })
-      } else dropWindowWarm(id)
+      } else dropWindowCache(id)
       commitPreview(next)
     },
     closePreview: (reason) => {
-      clearWindowWarm()
+      clearWindowCache()
       set({ preview: null, previewExit: reason ?? 'dismiss' })
       mirrorPreviews()
     },
@@ -240,7 +240,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
       get().openNavPreview()
     },
     closeNav: () => {
-      clearWindowWarm()
+      clearWindowCache()
       set({ navOpen: false, preview: null })
       mirrorPreviews()
     },
@@ -274,7 +274,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
           else if (r.kind === 'page' && r.path !== t.target.path) repath.set(t.id, r.path)
         }
         if (deadIds.length > 0 || repath.size > 0) {
-          for (const id of deadIds) dropWindowWarm(id)
+          for (const id of deadIds) dropWindowCache(id)
           let next: PreviewState | null = cur
           for (const id of deadIds) next = next && closeTabIn(next, id)
           if (next && repath.size > 0)
@@ -303,7 +303,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
 
     resetPreview: () => {
       set(PER_NEXUS)
-      clearWindowWarm()
+      clearWindowCache()
     },
   }
 }

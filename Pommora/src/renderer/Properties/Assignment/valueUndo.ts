@@ -1,4 +1,4 @@
-import { matchesCommand } from '@renderer/Actions/Commands'
+import { matchesCommand } from '@renderer/Actions/commands'
 
 const stack: Array<() => void> = []
 let installed = false

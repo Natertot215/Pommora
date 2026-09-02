@@ -1,6 +1,6 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { linkMarkdown } from '@shared/PasteLink'
+import { linkMarkdown } from '@shared/pasteLink'
 import { useSession } from '../../store'
 
 // Page Title writes the Short Link first and swaps the label in when the fetch lands, since a

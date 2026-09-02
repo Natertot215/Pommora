@@ -2,10 +2,10 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import { MenuDropdown } from '@renderer/DesignSystem/Menus'
 import { iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
-import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Interface/Scope'
+import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Interface/scope'
 import { useActiveView } from '@renderer/Views/useActiveView'
 import { ViewFrame } from './ViewFrame'
-import * as s from './toolbarMenu.css'
+import * as s from './toolbar-menu.css'
 
 /** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
 export function ViewMenu(): React.JSX.Element | null {

@@ -1,7 +1,7 @@
 import type { CSSProperties, RefObject } from 'react'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
 import { PickerMenu } from '../picker-base'
-import * as s from './textPicker.css'
+import * as s from './text-picker.css'
 
 /** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or
  *  blur commit the trimmed text; Escape cancels. `accent` scopes the pane's `--accent` so the

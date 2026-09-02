@@ -1,16 +1,16 @@
 import { EditorView } from '@codemirror/view'
-import { decidePaste, pastedUrl, type LinkPaste } from '@shared/PasteLink'
-import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMenu'
+import { decidePaste, pastedUrl, type LinkPaste } from '@shared/pasteLink'
+import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/pasteAsMenu'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { isInsideCode } from '@shared/markdownCode'
 import { linkDestinationAt } from '@shared/webpageEmbed'
-import { matchesCommand } from '@renderer/Actions/Commands'
+import { matchesCommand } from '@renderer/Actions/commands'
 import { useSession } from '../../store'
 import { docString } from './docCache'
 import { insertCitation } from './citationActions'
 import { citationText } from './citationEdits'
 import { embedSeatAt } from './embedInsert'
-import { awaitTitle } from './PendingTitle'
+import { awaitTitle } from './pendingTitle'
 
 // Turns a pasted address into a markdown link per the nexus's format setting, with a chord for the
 // reverse. Mounted in both the page-body and table-cell editors, each its own EditorView.

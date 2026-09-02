@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Zone, useDropSlot, useZoneItem } from './engine'
-import './dropChrome.css'
+import './drop-chrome.css'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
 import type { DragItem, DragNotify, Modifier } from './shared'
 import { moveItem } from '../Util/moveItem'

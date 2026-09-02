@@ -2,7 +2,7 @@ import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { MenuRowView, type MenuRow } from '@renderer/DesignSystem/Menus'
-import * as s from './dateTimeEditor.css'
+import * as s from './date-time-editor.css'
 
 const DATE_OPTIONS: { value: DateFormat; label: string }[] = [
   { value: 'monthDayYear', label: 'MM/DD/YYYY' },

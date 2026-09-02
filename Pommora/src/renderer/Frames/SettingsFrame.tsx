@@ -5,7 +5,7 @@ import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/Nav
 import { ancestryOf } from '../treeIndex'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
-import { findCollection, findSet, findCollectionForSet } from '../Interface/Scope'
+import { findCollection, findSet, findCollectionForSet } from '../Interface/scope'
 import { pickView } from '@renderer/Views/Pipeline/pickView'
 import { saveViewAdopting } from '@renderer/Views/viewMint'
 import { PropertyFrame } from '../Properties/PropertyFrame'

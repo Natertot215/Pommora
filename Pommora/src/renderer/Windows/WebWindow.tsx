@@ -12,7 +12,7 @@ import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
-import './webWindow.css'
+import './web-window.css'
 
 const BOUNDS: FloatingBounds = { minW: 480, minH: 360, defW: 1000, defH: 700 }
 

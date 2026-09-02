@@ -2,8 +2,8 @@
 // the newest edit from ANY host owns the file's single pending write rather than hosts racing private
 // debounces to last-writer-wins. Built on the shared body-writer machinery.
 
-import { createBodyWriter } from '../SurfacePM/PageTileWrite'
-import { writeThroughBody } from '../Store/TabState'
+import { createBodyWriter } from '../SurfacePM/pageTileWrite'
+import { writeThroughBody } from '../Store/tabState'
 
 const pageWriter = createBodyWriter()
 

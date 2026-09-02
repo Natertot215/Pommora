@@ -68,7 +68,7 @@
   cursor: grabbing;
 }
 
-/* The shared disclosure head over a group's rows; chrome lives in GroupBand.css, this scopes the
+/* The shared disclosure head over a group's rows; chrome lives in group-band.css, this scopes the
    section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
   /* No zoom of its own — it already scales inside .table-grid's compound zoom; reapplying here would

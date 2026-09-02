@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { segment as navTrailSegment } from '@renderer/DesignSystem/Elements/NavTrail/navTrail.css'
+import { segment as navTrailSegment } from '@renderer/DesignSystem/Elements/NavTrail/nav-trail.css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 

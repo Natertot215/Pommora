@@ -1,5 +1,5 @@
 import { MenuSurface } from '@renderer/DesignSystem/Menus'
-import { anchorRight } from './toolbarMenu.css'
+import { anchorRight } from './toolbar-menu.css'
 
 // A blank placeholder at a fixed ceiling — content pulled back until the design lands.
 export function NavMenu({

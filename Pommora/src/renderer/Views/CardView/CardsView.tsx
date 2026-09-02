@@ -41,7 +41,7 @@ import { useBannerMenu } from '@renderer/Interface/useBannerMenu'
 import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { navKey } from '@renderer/Navigation/navRecents'
-import { findCollectionForSet } from '@renderer/Interface/Scope'
+import { findCollectionForSet } from '@renderer/Interface/scope'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import type { ViewHostApi } from '../useViewHost'
 import { subtreeIds } from '../Pipeline/group'
@@ -81,7 +81,7 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableTitle } from '@renderer/Actions/RenamableTitle'
 import { titleInput } from '@renderer/DesignSystem/Menus'
 import { isOpenInTabs } from '../../Tabs/tabsModel'
-import './CardsView.css'
+import './cards-view.css'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`

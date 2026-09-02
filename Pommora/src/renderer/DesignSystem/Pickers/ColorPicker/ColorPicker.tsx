@@ -9,7 +9,7 @@ import {
   type CellKey,
 } from '@renderer/DesignSystem/Tokens/ramp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import * as s from './colorPicker.css'
+import * as s from './color-picker.css'
 
 /**
  * The 8×8 ramp grid — one row per family, dark → light, every spectrum solid on an exact cell.

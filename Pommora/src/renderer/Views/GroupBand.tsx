@@ -16,7 +16,7 @@ import { findOption, groupLabel } from '@renderer/Properties/Assignment/cellReso
 import { CheckboxGlyph } from '@renderer/Properties/Assignment/checkboxLook'
 import { formatBucketLabel } from '@renderer/Properties/Assignment/formatValue'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import './GroupBand.css'
+import './group-band.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'

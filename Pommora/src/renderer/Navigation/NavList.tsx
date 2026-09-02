@@ -13,7 +13,7 @@ import { reconcileIndexOf } from '../treeIndex'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
-import './navList.css'
+import './nav-list.css'
 import { pinLabel } from '@shared/toggleLabels'
 
 export function NavRowMenu({

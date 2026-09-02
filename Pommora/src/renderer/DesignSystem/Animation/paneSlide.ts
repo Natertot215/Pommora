@@ -1,4 +1,4 @@
-import { paneInflow, paneOverlay } from './PaneSlide.css'
+import { paneInflow, paneOverlay } from './pane-slide.css'
 
 export function paneSlide({
   side,
