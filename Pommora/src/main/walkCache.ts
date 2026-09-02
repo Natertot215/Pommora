@@ -35,6 +35,12 @@ export function endWalk(): void {
   for (const [key, e] of entries) if (e.gen < gen) entries.delete(key)
 }
 
+/** Drop one entry: a rewrite that restored the file's modification time leaves (mtime, size)
+ *  where the cache last saw them. */
+export function forgetParse(absPath: string): void {
+  entries.delete(absPath)
+}
+
 /** Parse-through cache: stat `absPath`, serve the cached value while (mtime, size) hold
  *  and the racy window has passed, else run `parse` with that stat and remember it. A failed
  *  stat hands `null` through uncached so the parser's own error semantics decide. */

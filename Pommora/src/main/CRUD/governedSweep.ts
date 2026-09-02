@@ -4,7 +4,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { atomicWriteFile, readJsonObject, writeJson } from '../IO/atomicWrite'
+import { readJsonObject, rewritePreservingTimes, writeJson } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { noteValueWrite } from '../valuesChanged'
 import { indexWrittenPage, nexusCorpus } from '../indexSeed'
@@ -71,7 +71,7 @@ const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
 
 /** A page merges key-wise — only the governed keys that changed, so foreign frontmatter and the
  *  body never move — unless the caller states its decision as text, which then owns the file
- *  whole. A sidecar is always written whole. */
+ *  whole. Either way the page keeps its modification time. A sidecar is always written whole. */
 export async function sweepGovernedRoots<C>(
   root: string,
   scope: SweepScope,
@@ -97,7 +97,7 @@ export async function sweepGovernedRoots<C>(
       if (opts.rewriteText) {
         const next = opts.rewriteText(content, file)
         if (next === null) return
-        await atomicWriteFile(file, next)
+        await rewritePreservingTimes(file, next)
         noteValueWrite(root, file)
         await indexWrittenPage(root, file)
         out.touched.push(file)
@@ -110,7 +110,7 @@ export async function sweepGovernedRoots<C>(
       if (!keys.length) return
       const modeled: Raw = {}
       for (const k of keys) if (k in decided.next) modeled[k] = decided.next[k]
-      await atomicWriteFile(
+      await rewritePreservingTimes(
         file,
         mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body),
       )

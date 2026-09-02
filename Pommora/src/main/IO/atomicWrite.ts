@@ -4,10 +4,11 @@
 // the SAME volume only — temps are siblings of the target, so a nexus stays intact.
 
 import writeFileAtomic from 'write-file-atomic'
-import { readFile, rename, mkdir, stat } from 'node:fs/promises'
+import { readFile, rename, mkdir, stat, utimes } from 'node:fs/promises'
 import { join, basename, dirname, relative, isAbsolute } from 'node:path'
 import { isPlainObject } from '@shared/propertyValue'
 import { fail, ok, type Result } from '@shared/result'
+import { forgetParse } from '../walkCache'
 import { recordWrite } from './writeEcho'
 import { serializeOnFile } from './fileLock'
 import { TRASH_DIR } from '@shared/nexusPaths'
@@ -17,6 +18,15 @@ import { TRASH_DIR } from '@shared/nexusPaths'
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath)
   await writeFileAtomic(filePath, data, { encoding: 'utf8' })
+}
+
+/** Rewrite a file the user did not edit — a sweep, a migration, adoption — keeping its
+ *  modification time: mtime is Last Modified, and the rename would otherwise stamp it with now. */
+export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {
+  const { atime, mtime } = await stat(filePath)
+  await atomicWriteFile(filePath, data)
+  await utimes(filePath, atime, mtime)
+  forgetParse(filePath)
 }
 
 /** Atomically write raw bytes to `filePath` (binary siblings of the UTF-8 writer). */
@@ -88,7 +98,8 @@ export function rmwJsonStrict(
 /** Rewrite ONE page under its file lock, reading FRESH inside the lock so a concurrent
  *  cell-write is never clobbered by a stale pre-read. `rewrite` maps current content → next
  *  content, or null to leave the page untouched. An unreadable file is skipped. Returns
- *  whether the page was written. */
+ *  whether the page was written. The page keeps its modification time — a rewrite is never the
+ *  user's edit of that page. */
 export function rewritePageSerialized(
   file: string,
   rewrite: (content: string) => string | null,
@@ -102,7 +113,7 @@ export function rewritePageSerialized(
     }
     const next = rewrite(content)
     if (next === null) return false
-    await atomicWriteFile(file, next)
+    await rewritePreservingTimes(file, next)
     return true
   })
 }
