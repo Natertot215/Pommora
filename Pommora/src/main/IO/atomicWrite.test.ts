@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile, stat } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, basename } from 'node:path'
 import {
   atomicWriteFile,
+  rewritePageSerialized,
   writeJson,
   rmwJsonStrict,
   stableStringify,
@@ -27,6 +28,19 @@ describe('atomicWriteFile', () => {
     expect(await readFile(p, 'utf8')).toBe('first')
     await atomicWriteFile(p, 'second')
     expect(await readFile(p, 'utf8')).toBe('second')
+  })
+})
+
+describe('rewritePageSerialized', () => {
+  // A rewrite is a write the user did not make to that page, and mtime is Last Modified.
+  it("keeps the file's modification time — a same-size rewrite included", async () => {
+    const file = join(dir, 'p.md')
+    await writeFile(file, '---\nStatus: Old\n---\nbody\n')
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(file, past, past)
+    expect(await rewritePageSerialized(file, (c) => c.replace('Old', 'New'))).toBe(true)
+    expect(await readFile(file, 'utf8')).toContain('Status: New')
+    expect(Math.floor((await stat(file)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 })
 

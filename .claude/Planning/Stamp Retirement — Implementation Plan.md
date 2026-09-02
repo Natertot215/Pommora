@@ -72,12 +72,12 @@ Bounded by: no new frontmatter key; a rename or move no longer changes Modified 
 **Made False**
 
 | Doc | The specific claim | What makes it false | Task |
-| --- | --- | --- | --- |
+| ------------------------- | ---------------------------- | ---------------------- | ------------------------- |
 | [[PropertiesPM]] Type Catalog :37 · Identity :42 · §Page keys :114–121 | "Last Edited Time — derived from `modified_at`" · `_id` in the reserved-id list · "Every Page carries … `created_at`, and `modified_at`" · "sorting and filtering fall back to `created_at`" · the frontmatter example's two stamp lines | two stamp types from mtime and the ULID; `_id` gone; no stamp keys | 3, 5 |
 | [[ViewTypesPM]] :85 | "Sort By (None, Title, Modified, and the sortable properties)" | Creation Time and Last Modified both sort | 4 |
-| [[PagesPM]] :17, :19 | "five keys Pommora governs … `created_at`, `modified_at`" · "`modified_at` is stamped on a property value change, a text change, a move, and a rename" | three governed keys; Modified is the mtime, so a value write or body save moves it, a rename or move does not, and a schema sweep that rewrites a page does | 5 |
+| [[PagesPM]] :17, :19 | "five keys Pommora governs … `created_at`, `modified_at`" · "`modified_at` is stamped on a property value change, a text change, a move, and a rename" | three governed keys; Modified is the mtime, so a value write or body save moves it, a rename or move does not, and a schema sweep that rewrites a page restores it | 5 |
 | [[ArchitecturePM]] :93 · :116 | "each page's identity key, `created_at` and `modified_at` stamps, and `<Context>` keys" · the reserved-name list (still true — the names stay refused) | Clear strips ids and Context keys only | 5 |
-| [[ArchitecturePM]] §Data layer | (no statement of the sweep's effect on Modified) | a governed sweep that rewrites a page moves its Modified time, because Modified is the file's mtime | 5 |
+| [[ArchitecturePM]] §Data layer | (no statement of the sweep's effect on Modified) | a governed sweep that rewrites a page restores its Modified time — the sweep is not the user's edit | 5 |
 
 **Dead Vocabulary**
 
@@ -1000,6 +1000,10 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 - **`idTime` is total, `isUlidShaped` stays loose** (attack review, 09-01-2026): a hand-edited PageID reads as "no instant" and blanks one cell; tightening the shape check to ulidx's `^[0-7]` would flip the file to Unknown and hide it — strictly worse.
 - **`createPage` notes its write** (attack review, 09-01-2026): rides Task 2 as the same one-line shape; the alternative — a membership-change refetch in the renderer — is a second mechanism for what `noteValueWrite` already does.
 - **The closeout script restores timestamps** (attack review, 09-01-2026): non-negotiable once mtime is the fact; a pass that stamped 88 pages with the closeout date would falsify the column the arc builds.
+- **Rewrites the user did not make keep the file's time** (Nathan, 09-01-2026, replacing the earlier position that a schema rewrite is a modification): `rewritePreservingTimes` (`atomicWrite.ts`) is the one writer for a sweep, a migration, and adoption — stat, write, `utimes`, and drop the walk cache's entry so a same-size rewrite is never served stale. `rewritePageSerialized` and both page writes in `sweepGovernedRoots` take it; `adopt.ts` folds its own stat/`utimes` pair into it. A user's own write — `setGovernedRootKeys`, `writePageFile`, the body save — still takes now.
+- **A push refreshes only the pages it names** (Nathan, 09-01-2026): `loadValues` takes an optional page-id list resolved through the live tree; `useValuesEpoch` merges a named refetch into the values it holds and re-reads the container whole only when a batch degraded to naming none. The rename epoch stays whole.
+- **`view:loadValues` is an envelope** (executor, 09-01-2026): `raw` with no `.catch` would blank a container on a throw; `fetchValues` unwraps it and a failed read keeps the values already held.
+- **`setGovernedRootKeys` skips a byte-identical write** (executor, 09-01-2026; unruled — Nathan did not answer Decision 2): one compare before the write, so a no-op edit neither rewrites the inode nor moves Last Modified. Vetoable.
 
 ### Review Pass — 09-01-2026
 
@@ -1008,8 +1012,8 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 
 ### Gate 3 Attack — 09-01-2026
 
-- Round 1, whole arc: three findings. UTC `Z` stamps against a local-day filter and cell (High, `84b79d8c`); a `null` icon or cover failing the batch schema and blanking every cell of that row (Medium, `6ecd6d37`); the body-only passthrough emitting LF fences over CRLF frontmatter (Low, `581678af`). One High not fixed because fixing it changes a Ruling — the rename cascades (`registryProperty.ts`, `contextCascade.ts`, `cascade.ts`) rewrite every holder through `atomicWriteFile`, so a property, Space, or page-title rename moves Last Modified on pages whose content did not change; Nathan's call (plan L78 and PagesPM hold the position that a schema rewrite moves it; the alternative is `adopt.ts`'s stat/`utimes` pair hoisted into the sweep writers). Thirteen attacks killed.
-- Round 2, the three fixes: two pre-existing findings inside the fixes' claimed scope. A bare-day `Before`/`After` operand parsed to midnight, so any timed value later that day fell outside `Before` and inside the next day's `After` (Medium, every timed date property, `bf070dfc`); the CRLF fold reached one of three envelope assemblers (Low, moved into `assembleEnvelope`, `b443c5a5`). `setGovernedRootKeys` writing without a compare stands as pre-existing. Eleven attacks killed; a third round was not spent — round 2 found nothing the arc introduced.
+- Round 1, whole arc: three findings. UTC `Z` stamps against a local-day filter and cell (High, `84b79d8c`); a `null` icon or cover failing the batch schema and blanking every cell of that row (Medium, `6ecd6d37`); the body-only passthrough emitting LF fences over CRLF frontmatter (Low, `581678af`). One High held for Nathan — the rename cascades (`registryProperty.ts`, `contextCascade.ts`, `cascade.ts`) rewrote every holder through `atomicWriteFile`, so a property, Space, or page-title rename moved Last Modified on pages whose content did not change; ruled and fixed after the Declared Stop (Rulings, `rewritePreservingTimes`). Thirteen attacks killed.
+- Round 2, the three fixes: two pre-existing findings inside the fixes' claimed scope. A bare-day `Before`/`After` operand parsed to midnight, so any timed value later that day fell outside `Before` and inside the next day's `After` (Medium, every timed date property, `bf070dfc`); the CRLF fold reached one of three envelope assemblers (Low, moved into `assembleEnvelope`, `b443c5a5`). `setGovernedRootKeys` writing without a compare was fixed after the Declared Stop (Rulings). Eleven attacks killed; a third round was not spent — round 2 found nothing the arc introduced.
 
 ### Open Against Later Tasks
 
