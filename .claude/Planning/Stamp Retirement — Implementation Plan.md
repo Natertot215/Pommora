@@ -963,13 +963,13 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 
 #### Gate 3 — no writer, no key
 
-- [ ] typecheck 0 · Vitest green · lint `Found 0 warnings`.
-- [ ] Every task's **Verify — automated** ticked against a result just watched.
-- [ ] Dead Vocabulary sweep, every line, controls non-zero.
-- [ ] `code-simplifier` over the Phase 3 diff alone, dual-briefed; findings fixed or ruled — the phase earns its own pass before the arc is judged whole.
-- [ ] Then over the whole arc's diff (`<pre-Phase-0 baseline>..HEAD`), in this order: `code-simplifier` (dual-briefed) → `comment-killer-agent` (single-handed) → `build-breaking-agent` (≤ 3 rounds). Every finding verified against the code, fixed or carrying a ruling; a fix re-runs the gates and lands as its own commit.
-- [ ] Commits landed per task, explicit paths only.
-- [ ] **Declared Stop** — the closeout vault pass needs Nathan.
+- [x] typecheck 0 · Vitest 309 files / 3855 tests · Biome 997 files, no diagnostics — at `1c2dcae7`.
+- [x] Every task's **Verify — automated** ticked against a result just watched.
+- [x] Dead Vocabulary sweep, every line, controls non-zero — every dead token 0; bare `created_at`/`modified_at` only at `properties.ts:170-171`; `last_edited_time` 11, `nowIso` 0 (see Deviations).
+- [x] `code-simplifier` over the Phase 3 diff alone, dual-briefed; findings fixed or ruled — the phase earns its own pass before the arc is judged whole. `92bf3e73`
+- [x] Then over the whole arc's diff (`<pre-Phase-0 baseline>..HEAD`), in this order: `code-simplifier` (dual-briefed) → `comment-killer-agent` (single-handed) → `build-breaking-agent` (≤ 3 rounds). Every finding verified against the code, fixed or carrying a ruling; a fix re-runs the gates and lands as its own commit. `da7fce8c` `bf3a6e7b` · two attack rounds: `84b79d8c` `6ecd6d37` `581678af` `bf070dfc` `b443c5a5` `1c2dcae7`
+- [x] Commits landed per task, explicit paths only.
+- [x] **Declared Stop** — the closeout vault pass needs Nathan.
 
 ---
 
@@ -980,7 +980,7 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 - [x] **Phase 0** — Task 0 · `9966332c`
 - [x] **Phase 1** — Tasks 1–2 · Gate 1 · `5770a1d9` `ba0ea590` `ca7958d5`
 - [x] **Phase 2** — Tasks 3–4 · Gate 2 · `7b1a42ab` `c465820f` `9b4ad05c`
-- [ ] **Phase 3** — Tasks 5, 6, 8 · Gate 3
+- [x] **Phase 3** — Tasks 5, 6, 8 · Gate 3 · `4722f3a7` `1132360d` `81caae42` · `92bf3e73` `7c7d3c81` `da7fce8c` `bf3a6e7b` `84b79d8c` `6ecd6d37` `581678af` `bf070dfc` `b443c5a5` `1c2dcae7`
 - [ ] **Closeout** — vault pass · docs · History
 
 ### Rulings
@@ -1006,9 +1006,17 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 - `code-simplifier` over the plan: fifteen edits folded (Task 7 → Task 5 on the `PAGE_STAMP_KEYS` import; the cellMenu arm split; `computeFieldValue` inlined; `STAMP_TYPE` typed `Partial`; five count corrections; the `index.ts` handler annotation; `resolveView.test.ts` added). Not acted on, with reasons in the Rulings: `created_time` stays a distinct type (the cellMenu `clearable` difference is behavioral); stamps stay off `PageFrontmatter` (a loose object can't distinguish a virtual field from a foreign key); `idAt`/`idTime` both stay (the one ulidx seam).
 - `build-breaking-agent`, one round: six findings, none blocking, all verified against the code and folded — the closeout rewrite moving every mtime (Closeout 2–3); `ulid()` throwing on APFS's fractional `mtimeMs` (Task 8 `idAt`); `createPage` never noting a write (Task 2); `decodeTime` throwing on a shape-valid id and rejecting the whole batch (Task 1 `idTime`); no gate catching a missed `created_time` arm (Task 3 control raised, the site list made the check); the closeout script's missing skip rule and `serializeJson` newline (Closeout 3–4). One unknown carried to Task 4's user verify (a stamp cell opening an editor). Seventeen candidate attacks killed by execution or trace, among them the `cachedParse` staleness hypothesis, same-ms (mtime, size) collisions, the override double-flip, stamp ids leaking into `hidden_properties`, and adopted-id collisions.
 
+### Gate 3 Attack — 09-01-2026
+
+- Round 1, whole arc: three findings. UTC `Z` stamps against a local-day filter and cell (High, `84b79d8c`); a `null` icon or cover failing the batch schema and blanking every cell of that row (Medium, `6ecd6d37`); the body-only passthrough emitting LF fences over CRLF frontmatter (Low, `581678af`). One High not fixed because fixing it changes a Ruling — the rename cascades (`registryProperty.ts`, `contextCascade.ts`, `cascade.ts`) rewrite every holder through `atomicWriteFile`, so a property, Space, or page-title rename moves Last Modified on pages whose content did not change; Nathan's call (plan L78 and PagesPM hold the position that a schema rewrite moves it; the alternative is `adopt.ts`'s stat/`utimes` pair hoisted into the sweep writers). Thirteen attacks killed.
+- Round 2, the three fixes: two pre-existing findings inside the fixes' claimed scope. A bare-day `Before`/`After` operand parsed to midnight, so any timed value later that day fell outside `Before` and inside the next day's `After` (Medium, every timed date property, `bf070dfc`); the CRLF fold reached one of three envelope assemblers (Low, moved into `assembleEnvelope`, `b443c5a5`). `setGovernedRootKeys` writing without a compare stands as pre-existing. Eleven attacks killed; a third round was not spent — round 2 found nothing the arc introduced.
+
 ### Open Against Later Tasks
 
 ### Deviations
+
+- The `nowIso` control reads 0: the Phase 3 simplification pass (`92bf3e73`) inlined its one caller to `new Date().toISOString()` at `identity.ts:31`, which still mints nexus.json's `createdAt`. `last_edited_time` reads 11 against a ≥ 12 floor: the `STAMP_TYPE` map replaced three per-site mentions with one.
+- Two Gate 3 commits (`b69dc164`, `6ecd6d37`) carry a parallel session's staged files — the commit hook's ledger amend picks up whatever the index holds. Left in history; the peer's work is intact.
 
 ### Lessons
 
