@@ -105,10 +105,6 @@ Both view renderers now mount through one seat. `Views/useViewHost.ts` owns ever
 
 A card's location trail moved onto the card chassis: `CardTrail` renders its own `.card-trail` wrapper so the NavGallery and the Cards view emit one markup, and `cards.css` holds the four numbers that shape a card's text column, the trail row reserving `--card-trail-h` whether or not a card has a path so a locked card's thumb stops breaking a grid row's level. The drop preview a dragged card lands on became one `.drop-slot` in `dropChrome.css`, surfaced from the drag engine as `useDropSlot` and painted by the card chassis through `CardDropSlot` — the affordance belongs to cards, not to every zone the engine serves.
 
-#### PM-118 || The Disclosure Lock
-
-A sidebar folder can be locked so a click opens its view, or stays inert, rather than disclosing — for containers whose long child lists make an accidental expansion costly. The state rides that folder's sidecar as `disclosure_locked`, so it travels with the folder; a locked row wears a hover lock glyph and lingers as re-lockable just after an unlock, and a drag-in or a create briefly reveals only the newcomer for 2500ms without unlocking. Landing it taught `watchPatch`'s incremental node-builder to carry the new field, and standardized every lock icon in the app onto one filled/outline glyph pair.
-
 ### Guidelines
 
 - Restate rather than amend. A fixed item is deleted, and a changed fact is rewritten as currently true; a `(resolved)` tag leaves a false line standing.
