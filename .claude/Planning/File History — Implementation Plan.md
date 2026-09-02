@@ -658,6 +658,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026, Nathan: the parallel confirm work lands before phase 3 opens — the Hazard Window closes on that commit, and Tasks 5–7 re-derive against it.
 - 09-02-2026, Nathan: pages only; the store stays tracked by NexusOS's repository; trash recovery keeps history; a row click highlights, a check selects; the trash glyph replaces a foot-left Delete; numeric settings ride the existing typeable picker; View History routed in `runPageSendAction`; confirms and their copy come from Nathan at execution, on the in-app seam his parallel session is landing.
 
 ### Open Against Later Tasks
