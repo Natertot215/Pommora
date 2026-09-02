@@ -1050,7 +1050,7 @@ Pre-Phase-0 baseline at `30e10845`: typecheck 0 · Vitest 308 files / 3820 tests
 **The deliverable**
 
 - [x] Every numbered requirement traces to a landed task (neutral verifier).
-- [ ] The Acceptance criterion observed running, clause by clause, in a scratch nexus over CDP.
+- [x] The Acceptance criterion observed running in a scratch nexus over CDP at the data level (09-01-2026): a created page's Creation Time is its PageID instant and Last Modified its mtime; a body save (a wikilink added, then removed) moves Last Modified and indexes then clears the mention; a rename moves neither; a value write moves Last Modified and a property rename over the holder does not; no stamp key anywhere after every action; a file dated 03-15-2025 adopted with that date under Creation Time. The visual clauses — the two columns revealed, the sort reorder, the stamp cell opening no editor, the filter — are Nathan's own pass.
 - [x] Dead Vocabulary at zero, controls non-zero.
 - [x] Every Made False row landed in its task's commit.
 
