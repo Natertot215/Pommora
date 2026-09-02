@@ -53,7 +53,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 **Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
 
 - **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
-- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, file metadata, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 
 #### Important Information
@@ -94,7 +94,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │   ├── // main                      | • The Node main process — it alone touches the filesystem
 │   │   │   ├── // Connections           | • Link scanning, and rewriting them on rename
 │   │   │   ├── // CRUD                  | • Mutations — writes, cascades, governed keys, options
-│   │   │   ├── // Database              | • nexus.db — the driver seam, schema, device-local state
+│   │   │   ├── // Database              | • nexus.db — the driver seam, schema, device-local state, the content index
 │   │   │   ├── // IO                    | • Atomic writes, file locks, page and sidecar files, the walk
 │   │   │   ├── // Properties            | • The property registry's schema
 │   │   │   ├── index.ts                 | • Main entry — window creation and app lifecycle

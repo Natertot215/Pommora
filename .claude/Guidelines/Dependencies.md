@@ -21,7 +21,7 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 #### State · Data · Search
 
 - **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store. **Decided.**
-- **`node:sqlite`** (WAL) — synchronous SQLite behind `db//driver.ts`, holding device-local operational state. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
+- **`node:sqlite`** (WAL) — synchronous SQLite behind `db//driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
 - **zod 4** — schema = codec = type for sidecars + frontmatter. **Decided.** `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
 - **ulidx** — monotonic ULID ids. **Decided.**
 - **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
