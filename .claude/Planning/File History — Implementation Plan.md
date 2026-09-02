@@ -44,7 +44,7 @@ Bounded by: recovery is body-only by construction; pages only, filtered by the U
 
 **Environment:** Plan directory `.claude/Planning`. Spec: [[File History — Decision Log]]. Explorer: `Explore`. Code reviewer: `feature-dev:code-reviewer`. Attack reviewer: `build-breaking-agent`. Simplification: `code-simplifier`, dual-briefed to report non-simplicity bugs. Comments: `comment-killer-agent`, "no sub-agents, no worktree." Neutral verifier: general-purpose. Rules: `.claude/Guidelines/`. Gates from `Pommora/`: `npm run typecheck && npm run test && npm run lint`, exit codes read directly; lint's warnings line must read zero.
 
-**Shapes:** additive · fix (`writePageFile`; sibling sweep is its two callers) · refactor (`ClearActionRow`, the `zoom` unit) · additive on the warm seams (`useWindowWarm` gains a fence; `PageView` flushes its live-body timer) · user-visible · live data (the Declared Stop drives Nathan's Nexus over CDP, screenshots and a throwaway page only).
+**Shapes:** additive · fix (`writePageFile`; sibling sweep is its two callers) · refactor (`ClearActionRow`, the `zoom` unit) · additive on the warm seams (`useWindowWarm` gains a fence; `PageView` flushes its live-body timer) · user-visible · live data (the Declared Stop drives Nathan's Nexus over CDP on a throwaway page only; Nathan watches live, no screenshots).
 
 **Declared Stops**
 
@@ -332,7 +332,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 - [ ] Gates green. Every Verify ticked. Now counts re-run.
 - [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; every concern fixed or ruled.
-- [ ] A restarted dev instance against a scratch Nexus: rows appear in `versions.db` after typing; no `full-refresh` per save.
+- [ ] A restarted dev instance against a scratch Nexus: rows appear in `versions.db` after typing; no `full-refresh` per save. No screenshots.
 - [ ] Progress hashes filled. Phase 3 opens once the Hazard Window is closed.
 
 ---
@@ -609,7 +609,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 - [ ] Gates green. Every Verify ticked. Now counts re-run.
 - [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/renderer`, `src/shared/pageMenu.ts`, `src/main/contextMenu.ts`; every concern fixed or ruled.
-- [ ] A restarted dev instance; the acceptance sequence over CDP on a throwaway page; screenshots: sidebar menu, page Settings menu, the window with snapshots, a checked row with its glyph, both confirms, the settings section.
+- [ ] A restarted dev instance; the acceptance sequence driven on a throwaway page. No screenshots — Nathan is watching live and drives tweaks himself.
 - [ ] Progress hashes filled. **Halt.** Nathan closes: the window against the mock; both confirms; the section, a typed value, Cleared; View History in every right-click menu; History beside Properties.
 
 ---
@@ -668,6 +668,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026, Nathan: no screenshots during the plan — he is present, sees the progress, and drives tweaks.
 - 09-02-2026, Nathan: the parallel confirm work lands before phase 3 opens — the Hazard Window closes on that commit, and Tasks 5–7 re-derive against it.
 - 09-02-2026 (mine, for Nathan to overturn): the `[[link]]` right-click menu keeps its two copy rows and does not gain View History — the plan's surfaces are the page surfaces.
 - 09-02-2026, Nathan: pages only; the store stays tracked by NexusOS's repository; trash recovery keeps history; a row click highlights, a check selects; the trash glyph replaces a foot-left Delete; numeric settings ride the existing typeable picker; View History routed in `runPageSendAction`; confirms and their copy come from Nathan at execution, on the in-app seam his parallel session is landing.
@@ -694,7 +695,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 ```
 Execute File History — Implementation Plan. Live.
 Live-verify: the History window against the mock at Gate 4; restore landing in every open surface.
-Screenshots: Gate 4.
+Screenshots: none — Nathan is watching live.
 Pings: at the Gate 4 stop · at completion.
 Record: History arc "PM-124 || Page File History", via /closeout.
 Also: the tree is shared — stage explicit paths only; restart the dev instance for main/preload changes; confirm copy comes from Nathan.
