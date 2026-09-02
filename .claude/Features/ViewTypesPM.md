@@ -1,41 +1,16 @@
 ## View Types
 
-```
-View Types
-├── The Saved-View Model
-├── Creation
-├── The Pipeline
-│   ├── II. Filter
-│   ├── II. Group
-│   └── II. Sort
-├── Surfaces
-├── Table
-│   ├── II. The Grid
-│   ├── II. Columns
-│   ├── II. Rows & Cells
-│   ├── II. The Table Sheet
-│   └── II. Known Issues
-├── Cards
-│   ├── II. Properties on Cards
-│   ├── II. Grouping, Location & Set Cards
-│   ├── II. Drag & Menus
-│   ├── II. Card Tokens
-│   └── II. Prospects
-├── List · Gallery · Calendar · Timeline
-└── Pending
-```
-
-A view is a saved presentation of a Collection's or a depth-1 Set's Pages.[^1] It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view types are registered in `src/shared/views.ts` — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — of which Table and Cards have renderers; the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.[^2]
+A view is a saved presentation of a Collection's or a depth-1 Set's Pages. It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view types are registered in `src/shared/views.ts` — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — of which Table and Cards have renderers; the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.
 
 ### The Saved-View Model
 
-Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `src/shared/views.ts`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (a ramp cell worn as the view's segment stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition.[^3] Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — the view's own scale (`view_scale`, 50%–150%, applied to the main pane's content and bands but never the heading or an embedded tile), card size, collapsed and hidden bands, the cards toggles.
+Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `src/shared/views.ts`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (a ramp cell worn as the view's segment stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition. Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — the view's own scale (`view_scale`, 50%–150%, applied to the main pane's content and bands but never the heading or an embedded tile), card size, collapsed and hidden bands, the cards toggles.
 
-The **active view** is tracked per machine and kept out of the synced sidecar.[^4] The ViewMenu in the toolbar — its glyph the active view's icon — opens the ViewFrame to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. A per-container presentation setting rides the sidecar and syncs: **Show Title**.[^5] A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
+The **active view** is tracked per machine and kept out of the synced sidecar. The ViewMenu in the toolbar — its glyph the active view's icon — opens the ViewFrame to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. A per-container presentation setting rides the sidecar and syncs: **Show Title**. A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
 
 ### Creation
 
-Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real.[^6] A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
+Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real. A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
 
 Every renderer also shares the **hover ghost** (`DesignSystem/Interactions/ghostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
 
@@ -68,7 +43,7 @@ Per-group disclosure bands(`GroupBand.tsx`) are shown in both renderers: glyph, 
 
 Ungrouped pages under a property-grouped configuration use a style-specific "none" label as their heading unless the **Hide Empty Groups** option takes it; `hidden_groups` drops them outright. Ungrouped pages in location-based grouping aren't placed under a disclosure label, and are instead placed as root-level rows with their order defined via the view's `ungrouped_order` option. 
 
-Bands drag by that same glyph on the shared insertion-line gesture[^7] over a frozen snapshot of the geometry: under Custom order, a structural drop merges into the view-level `group_order`, a property drop writes `group.order` and flips its mode to manual, and a sub-group drop writes the global bucket order, while **Order = Location** sends a same-parent reorder to the filesystem instead. A cross-tree drop — nesting one Set into another, or landing under a different parent — moves the folder in every mode.
+Bands drag by that same glyph on the shared insertion-line gesture over a frozen snapshot of the geometry: under Custom order, a structural drop merges into the view-level `group_order`, a property drop writes `group.order` and flips its mode to manual, and a sub-group drop writes the global bucket order, while **Order = Location** sends a same-parent reorder to the filesystem instead. A cross-tree drop — nesting one Set into another, or landing under a different parent — moves the folder in every mode.
 
 #### II. Sort
 
@@ -104,7 +79,7 @@ Widths are per-type `{min, default, max}` from one source (`columnWidths.ts`), c
 
 #### II. Rows & Cells
 
-A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Properties/Assignment/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog.[^8] Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. Dragging down an option column's cells sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value, and ⌘Z walks the most recent value edit back. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
+A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Properties/Assignment/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog. Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. Dragging down an option column's cells sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value, and ⌘Z walks the most recent value edit back. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
 
 #### II. The Table Sheet
 
@@ -140,7 +115,7 @@ The Cards renderer (`src/renderer/Views/CardView/`) draws Pages as a resizable c
 
 #### II. Properties on Cards
 
-Cards show every visible property through the shared chip and cell renderers, and each value is interactive on the same gesture rules the table cells use — a click opens the value's picker, a checkbox toggles.[^8] Right-clicking a value opens the cell menu with a trailing **Remove** that drops the property from the view; a live link opens the link menu instead. The whole card is a drag handle, so a value's click stops before the card sees it, and only the title and the image band open the page. Pickers mount at one grid-level host so an open picker survives row churn. A two-stage **add-picker** — from empty space in the text area, the location footing, or the card menu's **Add Property ▸** — lists everything not shown on the card and reveals a property on its first committed value.
+Cards show every visible property through the shared chip and cell renderers, and each value is interactive on the same gesture rules the table cells use — a click opens the value's picker, a checkbox toggles. Right-clicking a value opens the cell menu with a trailing **Remove** that drops the property from the view; a live link opens the link menu instead. The whole card is a drag handle, so a value's click stops before the card sees it, and only the title and the image band open the page. Pickers mount at one grid-level host so an open picker survives row churn. A two-stage **add-picker** — from empty space in the text area, the location footing, or the card menu's **Add Property ▸** — lists everything not shown on the card and reveals a property on its first committed value.
 
 #### II. Grouping, Location & Set Cards
 
@@ -148,7 +123,7 @@ Cards never indent: structural grouping renders one flat band per top-level Set 
 
 #### II. Drag & Menus
 
-Cards reorder within their band by displacement,[^7] writing the per-machine manual order the pipeline reads as its lowest-priority tiebreaker; two effective sort criteria or a Location sort retire it. A card dropped across location bands moves the page into that band's Set at its landing slot. Band drag is the shared insertion-line gesture without a nest zone — every drop is a reorder, writing the view's band order, or the container's Set order under Sort By: Location. A card's right-click menu holds **Add Property ▸** over the page menu: Edit Image when a cover is set, Open, Rename, Edit Icon, New Page, Move To ▸, Copy Link, Copy Path, Delete.[^9] New Page creates after the anchor, and the hover ghost grows a skeleton card at the next flow slot with neighbors making room.
+Cards reorder within their band by displacement, writing the per-machine manual order the pipeline reads as its lowest-priority tiebreaker; two effective sort criteria or a Location sort retire it. A card dropped across location bands moves the page into that band's Set at its landing slot. Band drag is the shared insertion-line gesture without a nest zone — every drop is a reorder, writing the view's band order, or the container's Set order under Sort By: Location. A card's right-click menu holds **Add Property ▸** over the page menu: Edit Image when a cover is set, Open, Rename, Edit Icon, New Page, Move To ▸, Copy Link, Copy Path, Delete. New Page creates after the anchor, and the hover ghost grows a skeleton card at the next flow slot with neighbors making room.
 
 #### II. Card Tokens
 
@@ -188,13 +163,3 @@ Registered in the type union and present as picker tiles, with no renderer behin
 
 - **Table Flatten and Location subtitle** — the table's no-grouping mode, with a page's location as a subtitle in its title cell under its own Flatten and Hide Location toggles. Cards already carry both.
 - **The property-bucket +** — a property or ungrouped band offers no create, since a bucket can't infer a location.
-
-[^1]: [[CollectionsPM]]
-[^2]: [[SurfacePM]] §Tile Types
-[^3]: [[PropertiesPM]] §Property Types
-[^4]: [[ArchitecturePM]] §Persistence
-[^5]: [[ConfigurationPM]] §Collections
-[^6]: [[PagesPM]] §Title + Membership
-[^7]: [[PommoraDND]]
-[^8]: [[PropertiesPM]] §Shared Mechanisms
-[^9]: [[InterfacePM]] §The Sidebar

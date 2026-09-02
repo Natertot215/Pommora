@@ -1,16 +1,5 @@
 ## SurfacePM
 
-```
-SurfacePM
-├── The Block Surface
-├── Tile Types
-├── The Embed Framework
-├── Surface Interaction
-├── Storage + Host Rules
-├── Pending
-└── Prospects
-```
-
 Pommora's composable dashboard layer. Any **BlockHost** — an entity that owns a block document — renders a mosaic of draggable, resizable tiles holding real content: prose, a Page, or a view. Two hosts exist today, the Homepage and each Space. The layout engine beneath is `src/renderer/SurfacePM/`, a pure split-tree model with its own gestures; the tile bodies live alongside it in the same folder, and the engine knows nothing about what a tile holds or where the tree persists, and hosts supply both through one props seam.
 
 ### The Block Surface
@@ -31,9 +20,9 @@ A markdown tile can be converted into a page or view embed from its handle menu,
 
 ### The Embed Framework
 
-One seam renders a Page inside any foreign surface: `PageTile` in `src/renderer/SurfacePM/`, used by dashboard tiles, MarkdownPM's `![[Title]]` widget, the Page Window, the NavWindow's page tabs, and the hover pane.[^1] The embed *is* a MarkdownPM view — a read-only editor at rest carrying every editor affordance, with editability flipped in place through a reconfigured compartment rather than a remount — so an edit made in an embed is a page edit flowing through the page's own debounced save. Its header follows the page: a configured banner renders as a band with the title as static text, and a coverless page carries no header, its location named by the handle menu instead.
+One seam renders a Page inside any foreign surface: `PageTile` in `src/renderer/SurfacePM/`, used by dashboard tiles, MarkdownPM's `![[Title]]` widget, the Page Window, the NavWindow's page tabs, and the hover pane. The embed *is* a MarkdownPM view — a read-only editor at rest carrying every editor affordance, with editability flipped in place through a reconfigured compartment rather than a remount — so an edit made in an embed is a page edit flowing through the page's own debounced save. Its header follows the page: a configured banner renders as a band with the title as static text, and a coverless page carries no header, its location named by the handle menu instead.
 
-Every tile uses the **tile chassis** (`.tile-chassis` in `SurfacePM/block-tile-base.css`), the one border-and-radius definition both hosts key onto, with an accent border that brightens under the pointer or while the caret is inside a page tile. Every tile also carries the **Scale ramp** (`SCALE_STEPS` in `src/shared/types.ts`, the same eight steps every zoom control in the app offers): a discrete factor set from the handle menu's Scale row, persisted on the entry, riding one inherited variable and animating on the standard beat, compounding the nexus-wide **Embed Scale** default.[^2] A page tile scales its text and editor glyphs while the tile-edge inset, the handle, and the resize edges hold fixed; a view tile scales its grid as a unit. Resizing a tile is a viewport change, never a scale change.
+Every tile uses the **tile chassis** (`.tile-chassis` in `SurfacePM/block-tile-base.css`), the one border-and-radius definition both hosts key onto, with an accent border that brightens under the pointer or while the caret is inside a page tile. Every tile also carries the **Scale ramp** (`SCALE_STEPS` in `src/shared/types.ts`, the same eight steps every zoom control in the app offers): a discrete factor set from the handle menu's Scale row, persisted on the entry, riding one inherited variable and animating on the standard beat, compounding the nexus-wide **Embed Scale** default. A page tile scales its text and editor glyphs while the tile-edge inset, the handle, and the resize edges hold fixed; a view tile scales its grid as a unit. Resizing a tile is a viewport change, never a scale change.
 
 Two rules reach every embed. Any popup born inside a tile renders through a body-level portal, since a tile is a transformed ancestor. At rest a tile scrolls its own overflow and releases to the page at its bounds, so content that fits passes the wheel straight through; a tile holding a live edit contains its scroll.
 
@@ -45,7 +34,7 @@ Resize is window-style on the tile's edges and corners: south stretches the tile
 
 ### Storage + Host Rules
 
-The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. Markdown-block bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched.[^3]
+The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. Markdown-block bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched.
 
 ---
 
@@ -59,7 +48,3 @@ The document loads per host when the host opens, never in the tree walk, and lay
 #### Prospects
 
 - Widget tiles · per-host-kind block rules · free-placement canvas mode · auto-grow markdown tiles · layout undo history · root-level hosts · search and inbound-link opt-in for markdown blocks.
-
-[^1]: [[MarkdownPM]] §Embeds · [[InterfacePM]] §Floating Windows
-[^2]: [[ConfigurationPM]] §Interface
-[^3]: [[ArchitecturePM]] §The File Watcher

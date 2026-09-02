@@ -61,6 +61,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 - **Swift Origins:** Pommora was originally built in Swift for about a month before switching to an Electron + TypeScript + React architecture for better long-term maintainability. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — subordinate to the daily Pommora grind — it brings similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.
+- **Mobile Companion:** A mobile companion app is a near-term focus, which has already been discussed but without formal planning.
 
 ### Codebase Map
 ```
@@ -86,7 +87,6 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │   ├── [ViewTypesPM.md]             | • Saved presentations of a Collection — the pipeline and each view type
 │   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
-│   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
 ├── // Pommora                           | • The app — the codebase proper

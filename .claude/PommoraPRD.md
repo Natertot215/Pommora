@@ -20,7 +20,7 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 ### Audience and Posture
 
-- Personal-first, single-user, Mac-first for v1. iOS/iPad is long-term intent.
+- Personal-first, single-user, Mac-first for v1. A mobile companion app is a near-term focus, which has already been discussed but without formal planning.
 - Always open-source.
 - Architected so future cross-device and cloud sync stay viable, but neither is a v1 concern. Multi-user collaboration and a plugin system are out of scope indefinitely.
 
@@ -83,7 +83,7 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 **No dependency lock-in.** Every library sits behind a thin seam — the editor, YAML, IDs, SQLite, the glass material, the drag engine — so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
-The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope.[^1]
+The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope.
 
 #### Core Constraints
 
@@ -110,7 +110,7 @@ Pages support everything in standard Markdown — paragraphs, headings, bulleted
 - **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
 - **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
 
-Each Collection decides where its Pages open — the main detail pane, or the floating Page Window.[^2] The editor architecture and the page entity carry their own docs.[^3]
+Each Collection decides where its Pages open — the main detail pane, or the floating Page Window. The editor architecture and the page entity carry their own docs.
 
 #### Page Collections and Sets
 
@@ -118,13 +118,13 @@ A **Page Collection** is the operational container — a top-level folder whose 
 
 A Collection nests **Page Sets** to any depth — schema-less sub-folders that inherit the Collection's whole schema. The first level (a "Set") carries its own views and sorting and is selectable; deeper levels ("Sub-Sets") are plain organizing folders. Nesting is unbounded, with no roll-up — discovery, rendering, and navigation recurse on the real folder tree.
 
-Moving a Page **across Collections** never strips — its values ride along, the destination shows only the properties it assigns, and the rest sit inert in frontmatter until assigned there; moving **within** a Collection (between its Sets and root, at any depth) changes nothing, since the schema is shared. The schema is edited from a Collection Settings surface; per-view configuration (sort/filter/group/layout) is a separate per-view surface.[^4]
+Moving a Page **across Collections** never strips — its values ride along, the destination shows only the properties it assigns, and the rest sit inert in frontmatter until assigned there; moving **within** a Collection (between its Sets and root, at any depth) changes nothing, since the schema is shared. The schema is edited from a Collection Settings surface; per-view configuration (sort/filter/group/layout) is a separate per-view surface.
 
 #### Contexts & Spaces
 
-`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row.[^5] There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
+`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
-A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar.[^6]
+A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar.
 
 #### Agenda (Tasks + Events)
 
@@ -133,7 +133,7 @@ The calendar layer, two peer kinds, each in its own singleton folder that the ne
 - **Tasks** (`.md`, `TaskID`) — reminder-shaped.
 - **Events** (`.md`, `EventID`) — calendar-event-shaped.
 
-Their fields are an open question — what replaces the removed inherited shape is the Agenda work's to decide, the built-in **Status** among it. Both carry the same parenthesized Context keys as Pages. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores.[^7]
+Their fields are an open question — what replaces the removed inherited shape is the Agenda work's to decide, the built-in **Status** among it. Both carry the same parenthesized Context keys as Pages. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores.
 
 #### Properties
 
@@ -141,13 +141,13 @@ Property **definitions** live in one nexus-wide registry (`.nexus/properties.jso
 
 - **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
 
-There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles.[^8]
+There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles.
 
 #### Views
 
 A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
-The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups.[^9]
+The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups.
 
 #### The Local-End Translation Principle
 
@@ -157,17 +157,17 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 Connections are Content ←> Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and may also be assigned on the Markdown’s frontmatter through the link property. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
 
-In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map, and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.[^10]
+In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map, and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.
 
 #### Sidebar Navigation
 
 The sidebar surfaces curated, app-relevant navigation — not a raw filesystem view. It is a fixed **ribbon** (an icon strip pinned to the left edge, the Nexus's identity icon at its top opening the Homepage) beside a **content column** that shows one mode at a time: **Collections**, **Contexts**, or **Agenda**. There is no header row and no all-at-once stack; switching modes plays the overtake sweep. The Agenda mode holds its place with an empty state, form-independent of whatever Agenda becomes.
 
-Every entity reorders by drag-and-drop, and Pages reparent across the tree. Creation is right-click-first — a context menu offers "New X" options scoped to the cursor location.[^11]
+Every entity reorders by drag-and-drop, and Pages reparent across the tree. Creation is right-click-first — a context menu offers "New X" options scoped to the cursor location.
 
 #### Navigation History
 
-The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mounted at a time, with **Back / Forward** stepping each tab's own history. Pinned refs dock left as compact icon tabs, an auto-tracked **Recents** stream feeds the **NavView** gallery (the new-tab page) and the floating **NavWindow**, and a footer **breadcrumb** — with a dimmed forward ghost-crumb for the last-visited page — tracks location.[^12]
+The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mounted at a time, with **Back / Forward** stepping each tab's own history. Pinned refs dock left as compact icon tabs, an auto-tracked **Recents** stream feeds the **NavView** gallery (the new-tab page) and the floating **NavWindow**, and a footer **breadcrumb** — with a dimmed forward ghost-crumb for the last-visited page — tracks location.
 
 #### First-Launch Experience
 
@@ -175,7 +175,7 @@ On launch, Pommora restores the last opened Nexus or opens empty — never a lau
 
 #### Design System
 
-A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization.[^13]
+A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization.
 
 #### MacOS Integration
 
@@ -203,17 +203,3 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - One design scheme plus in-app accent customization.
 
 **Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.
-
-[^1]: [[ArchitecturePM]]
-[^2]: [[InterfacePM]] §Floating Windows
-[^3]: [[MarkdownPM]] · [[PagesPM]]
-[^4]: [[CollectionsPM]]
-[^5]: [[SurfacePM]]
-[^6]: [[ContextsPM]]
-[^7]: [[ArchitecturePM]] §The Agenda Singletons
-[^8]: [[PropertiesPM]]
-[^9]: [[ViewTypesPM]]
-[^10]: [[ConnectionsPM]]
-[^11]: [[InterfacePM]] §The Sidebar
-[^12]: [[NavigationPM]]
-[^13]: [[DesignSystemPM]] · [[InteractionPM]]

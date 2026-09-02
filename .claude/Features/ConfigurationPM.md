@@ -1,30 +1,10 @@
 ## Configuration
 
-```
-Configuration
-├── Settings
-│   ├── General
-│   ├── Interface
-│   ├── Navigation
-│   ├── Appearance
-│   ├── Files & Links
-│   ├── Properties
-│   ├── Pages & Editor
-│   ├── Automations
-│   ├── Shortcuts
-│   └── Trash
-├── Collections
-├── Pages
-├── Personalization
-├── App Configuration (Per-Device)
-└── Pending
-```
-
-Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer that never syncs: the app config beside the application, and the machine-and-Nexus preferences in the Nexus's own database.[^1] This document is the one roster of every knob; other documents name a setting by its label and point here.
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer that never syncs: the app config beside the application, and the machine-and-Nexus preferences in the Nexus's own database. This document is the one roster of every knob; other documents name a setting by its label and point here.
 
 ### Settings
 
-The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis.[^2] Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `src/shared/types.ts`), and a row at its default stores no key. Defaults are bold.
+The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `src/shared/types.ts`), and a row at its default stores no key. Defaults are bold.
 
 #### General
 
@@ -109,7 +89,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Repair Properties On Open | `repairOnOpen` | Canonicalizes drifted property and Context values on the pages changed since the last open.[^9] | On · **Off** |
+| Repair Properties On Open | `repairOnOpen` | Canonicalizes drifted property and Context values on the pages changed since the last open. | On · **Off** |
 | Capitalize All Metadata | `capitalizeMetadata` | Presents every property name Title Cased; the stored key and the rename fields are untouched. | On · **Off** |
 
 #### Pages & Editor
@@ -139,11 +119,11 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 | --- | --- | --- | --- |
 | Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
-| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves.[^3] | ⌘⇧V |
+| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves. | ⌘⇧V |
 
 #### Trash
 
-The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser,[^4] and its column heading's menu carries the two display knobs.
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the two display knobs.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
@@ -152,18 +132,18 @@ The one frame that is a surface of its own, anchored below the rail's separator.
 
 ### Collections
 
-A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the container's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.[^5]
+A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the container's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
 | Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph. | **Icon** · Labeled |
 
-The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.[^6]
+The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.
 
 ### Pages
 
-A page's own configuration splits by where it lives: identity and appearance in the file, chrome per machine.[^7]
+A page's own configuration splits by where it lives: identity and appearance in the file, chrome per machine.
 
 | Setting | Where | Description | Set from |
 | --- | --- | --- | --- |
@@ -187,7 +167,7 @@ The `personalization` object in `settings.json` holds every key the Settings win
 | `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
 | `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |
 
-Three more keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane;[^8] the profile — `profile_image`, `profile_icon`, `profile_subtitle` — written from the ribbon's identity menu; and the app-owned `subfield` and `navViewModes` blocks the Subfield and the navigation surfaces persist their own state in. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip.
+Three more keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane; the profile — `profile_image`, `profile_icon`, `profile_subtitle` — written from the ribbon's identity menu; and the app-owned `subfield` and `navViewModes` blocks the Subfield and the navigation surfaces persist their own state in. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip.
 
 ### App Configuration (Per-Device)
 
@@ -201,13 +181,3 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 - **Scopes without a renderer setter** — the per-device app config has no IPC a UI could write through. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
 - **Two names for one date form** — the Trash column's menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form.
-
-[^1]: [[ArchitecturePM]] §Persistence
-[^2]: [[InterfacePM]] §Floating Windows
-[^3]: [[MarkdownPM]] §Constructs
-[^4]: [[NexusRecordPM]] §Provenance
-[^5]: [[CollectionsPM]] §Open In
-[^6]: [[ViewTypesPM]]
-[^7]: [[PagesPM]]
-[^8]: [[ArchitecturePM]] §Folder Exclusion
-[^9]: [[PropertiesPM]] §Shared Mechanisms

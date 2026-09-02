@@ -1,22 +1,6 @@
 ## Interaction & Motion
 
-```
-Interaction & Motion
-├── Motion Tokens
-├── Named Animations
-│   ├── II. Bloom
-│   ├── II. Menu
-│   ├── II. Header Scroll-Park
-│   └── II. Floating Windows
-├── Primitives
-│   ├── II. The Caret
-│   ├── II. OverScroll
-│   └── II. Hover Remove
-├── Principles
-└── Pending
-```
-
-The named motions and the interaction primitives, built on the duration ladder and the two curves in the design system's `Animation/` folder.[^1] Drag-specific motion — the reorder feel, the insertion line, auto-scroll — belongs to PommoraDND.[^2] Motion is Pommora-native, inspired by Apple, and adopted only where it deepens the minimalism: one progress variable drives a coordinated move, one primitive serves each pattern, and the pointer drives what should feel attached to it.
+The named motions and the interaction primitives, built on the duration ladder and the two curves in the design system's `Animation/` folder. Drag-specific motion — the reorder feel, the insertion line, auto-scroll — belongs to PommoraDND. Motion is Pommora-native, inspired by Apple, and adopted only where it deepens the minimalism: one progress variable drives a coordinated move, one primitive serves each pattern, and the pointer drives what should feel attached to it.
 
 ### Motion Tokens
 
@@ -28,7 +12,7 @@ Each motion is named for what it does; the code name beside it is what a grep fi
 
 #### II. Bloom
 
-Pommora's canonical menu open, the `menu-bloom` / `menu-bloom-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `menuBloom` and `menuBloomClosing` classes. It is symmetric, so a click-off retracts the menu rather than cutting it, and the parent keeps the menu mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--menu-origin`, and a beaked surface (`GlassSurface`'s `notch`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain menu blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar menu mounts, carries this motion. A menu's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.[^3]
+Pommora's canonical menu open, the `menu-bloom` / `menu-bloom-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `menuBloom` and `menuBloomClosing` classes. It is symmetric, so a click-off retracts the menu rather than cutting it, and the parent keeps the menu mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--menu-origin`, and a beaked surface (`GlassSurface`'s `notch`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain menu blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar menu mounts, carries this motion. A menu's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.
 
 #### II. Menu
 
@@ -110,9 +94,5 @@ The hover-revealed remove ×, with the label-tail melt as an option: hovering a 
 
 #### Pending
 
-- **Spacing and radius** stay partly ad-hoc pending a Figma lift.[^1]
+- **Spacing and radius** stay partly ad-hoc pending a Figma lift.
 - **Whether the content insets derive from `--io`** or stay independent per-surface transitions is open.
-
-[^1]: [[DesignSystemPM]] §Animation
-[^2]: [[PommoraDND]]
-[^3]: [[ConfigurationPM]] §Interface

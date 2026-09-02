@@ -1,18 +1,5 @@
 ## SymbolsPM
 
-```
-SymbolsPM
-├── The Registry
-│   └── II. Sizes
-├── Assignments
-│   ├── II. View Settings Panes
-│   ├── II. Property Types
-│   ├── II. View Types
-│   └── II. File Types
-├── The Picker
-└── Known Issues
-```
-
 Pommora's standard semantic icons: the canonical glyph for each pane, property type, and recurring concept. The curated registry in `DesignSystem/Symbols/` is the primary source and the app's own vocabulary; a caller with no assigned glyph renders `square-dashed`, the placeholder, until a symbol is chosen, and an id that resolves in neither source falls back to it as well.
 
 ### The Registry
@@ -23,7 +10,7 @@ Every glyph draws at a size from one ladder: a step sets the icon's `font-size` 
 
 #### II. Sizes
 
-The ladder is the design system's icon ladder,[^1] named as the type ramp is — `titleLarge` through `subline`.
+The ladder is the design system's icon ladder, named as the type ramp is — `titleLarge` through `subline`.
 
 ### Assignments
 
@@ -76,13 +63,10 @@ A second family, keyed `file-type-<ext>` and drawn from Tabler's set (`fileTypes
 
 ### The Picker
 
-The Icon Picker a user opens to assign an entity's icon (`DesignSystem/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`AllSymbols.ts`), kebab-keyed and searchable, with a reorderable favorites strip that persists with the Nexus's personalization.[^2] A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
+The Icon Picker a user opens to assign an entity's icon (`DesignSystem/Pickers/IconPicker`) is a separate, wider surface exposing the entire Lucide set (`AllSymbols.ts`), kebab-keyed and searchable, with a reorderable favorites strip that persists with the Nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
 
 ---
 
 #### Known Issues
 
 - **Two curated keys shadow real Lucide ids.** `table` and `lock-open` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set; registry-first resolution renders Pommora's glyph instead of the one the picker cell showed.
-
-[^1]: [[DesignSystemPM]] §Geometry
-[^2]: [[ConfigurationPM]] §Personalization

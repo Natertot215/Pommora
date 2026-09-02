@@ -1,24 +1,6 @@
 ## Properties
 
-```
-Properties
-├── The Type Catalog
-├── Identity & Values
-├── Property Types
-│   ├── II. Status
-│   ├── II. Checkbox
-│   ├── II. Number
-│   ├── II. Date & Time
-│   ├── II. Select & Multi-Select
-│   ├── II. Link
-│   ├── II. File
-│   └── II. Context
-├── Auto-Managed Properties
-├── Shared Mechanisms
-└── Pending
-```
-
-Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A definition, its options included, is one shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property. Page Sets carry no schema of their own and inherit the Collection's.[^1]
+Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A definition, its options included, is one shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property. Page Sets carry no schema of their own and inherit the Collection's.
 
 ### The Type Catalog
 
@@ -42,7 +24,7 @@ The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-
 
 Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, bare and exactly as spelled — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write; a name Pommora's own keys use (`PageID`, `TaskID`, `EventID`, `icon`, `cover`, `created_at`, `modified_at`) or one starting with `<` is refused. A rename cascades the key across every page holding it; a rename onto a taken name, or onto a key any Collection page already holds, is refused — the second naming how many pages hold it.
 
-A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; number `0` is a real value and stays, while a checkbox is either `true` or absent — a `false` written by another application reads as no value. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. A name is shown as written unless **Capitalize All Metadata** is on, which Title Cases every property name where it is displayed — the rename fields and the on-disk key are untouched.[^3] Another application may hold a key's casing to its own rule — `tags`, `aliases`, and `cssclasses` are rewritten lowercase on any touch by the editor most shared vaults are read in — so a property wanting one of those names is created lowercase and read capitalized through the toggle.
+A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; number `0` is a real value and stays, while a checkbox is either `true` or absent — a `false` written by another application reads as no value. **A key the registry doesn't name is foreign** — preserved by value, read by nothing, and never rewritten; registering a property under that name makes the values it already holds live at once. A name is shown as written unless **Capitalize All Metadata** is on, which Title Cases every property name where it is displayed — the rename fields and the on-disk key are untouched. Another application may hold a key's casing to its own rule — `tags`, `aliases`, and `cssclasses` are rewritten lowercase on any touch by the editor most shared vaults are read in — so a property wanting one of those names is created lowercase and read capitalized through the toggle.
 
 Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
 
@@ -62,7 +44,7 @@ tags:
 
 ### Property Types
 
-Each type's definition-level configuration lives on the `propertyDefinition` schema; its per-view look lives on the view's `column_styles`.[^2] The editor frame for each type is a frame of the Property Frame.
+Each type's definition-level configuration lives on the `propertyDefinition` schema; its per-view look lives on the view's `column_styles`. The editor frame for each type is a frame of the Property Frame.
 
 #### II. Status
 
@@ -80,7 +62,7 @@ A bare number with a **property-wide format** and a **per-view look**. The forma
 
 #### II. Date & Time
 
-A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view that names no Date format takes the Nexus's own **Date Format**, with the clock following **Time Format**.[^3] A cell opens the CalendarPicker, a calendar grid plus a segmented time editor.
+A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view that names no Date format takes the Nexus's own **Date Format**, with the clock following **Time Format**. A cell opens the CalendarPicker, a calendar grid plus a segmented time editor.
 
 #### II. Select & Multi-Select
 
@@ -90,7 +72,7 @@ Select stores a one-element list and renders one colored tag chip; Multi-Select 
 
 A Link property renders each value as a clickable link and holds either an address or a connection. Its look is set on the property and applies everywhere, though a view's column may read its links differently: a **Format** of Full Link, Short Link, or Page Title; **Underline** on or off; and a **Color** picked from the ramp, defaulting to the app accent. A per-value alias, set through Rename and stored as `[alias](url)`, overrides the format for that one link. Page Title is the only format that reaches the network — the page's `<title>` is fetched once per address and cached per machine, showing the bare domain while it loads. Sorting and filtering read the raw address, so a column's order never moves when its look does.
 
-Pasting `[[Title]]`, or a markdown link whose target names a page, stores the value as a connection under the page's own capitalization, with any alias carried through. The cell then reads as a connection — the connection color, a click that opens the page — and the three link formats don't apply; a title no page answers to is refused at commit, as a malformed address is. Renaming a page rewrites the connections held in frontmatter alongside those in bodies.[^4] A filled link value right-clicks to the shared link menu, closing on Clear rather than the editor's Remove Link and Delete.[^4]
+Pasting `[[Title]]`, or a markdown link whose target names a page, stores the value as a connection under the page's own capitalization, with any alias carried through. The cell then reads as a connection — the connection color, a click that opens the page — and the three link formats don't apply; a title no page answers to is refused at commit, as a malformed address is. Renaming a page rewrites the connections held in frontmatter alongside those in bodies. A filled link value right-clicks to the shared link menu, closing on Clear rather than the editor's Remove Link and Delete.
 
 #### II. File
 
@@ -102,17 +84,17 @@ A File property holds an ordered list of files that live in the Nexus, each name
   - "[[Floorplan.png]]"
 ```
 
-The name is the whole reference; no path is stored. It resolves against an in-memory basename index the file watcher keeps current (`src/main/assetMap.ts`), which is what lets the asset directory be re-pointed or a file be moved within it without a value going stale. A name that answers to no file still renders, dimmed, so it can be removed. Each value renders as a **file chip** — the file type's glyph and its name — and the cell clips and scrolls when the run outgrows the column.[^5]
+The name is the whole reference; no path is stored. It resolves against an in-memory basename index the file watcher keeps current (`src/main/assetMap.ts`), which is what lets the asset directory be re-pointed or a file be moved within it without a value going stale. A name that answers to no file still renders, dimmed, so it can be removed. Each value renders as a **file chip** — the file type's glyph and its name — and the cell clips and scrolls when the run outgrows the column.
 
 The property-wide **Directory** is the folder its files land in, stored relative to the asset root so re-pointing the root carries it along; unset means the root itself. Filling a value opens the operating system's file dialog: clicking a chip replaces the file it names, clicking the value's own area adds one, and a right-click offers **Add File · Replace File · Remove File**. The file is copied into the Nexus before the reference is written, stepping a colliding name aside and skipping the copy when the bytes already match; removing a value drops the reference and leaves the bytes. Sorting reads the filename and filtering is presence only. A File column carries no per-view style.
 
 #### II. Context
 
-Context links are the relation layer. They store as `<Title>` keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.[^6]
+Context links are the relation layer. They store as `<Title>` keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.
 
 ### Auto-Managed Properties
 
-Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), maintained by Pommora and not user-creatable, and may carry `cover:`, which assigns its banner. **Creation Time** and **Last Modified** are never written: the first is the instant the `PageID` ULID encodes, the second is the file's modification time as the filesystem reports it. A write the user makes to the page moves Last Modified — a value edit or a text edit — while a rename, a move, and a schema edit that rewrites the page for a reason of its own leave it where it was.[^7]
+Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), maintained by Pommora and not user-creatable, and may carry `cover:`, which assigns its banner. **Creation Time** and **Last Modified** are never written: the first is the instant the `PageID` ULID encodes, the second is the file's modification time as the filesystem reports it. A write the user makes to the page moves Last Modified — a value edit or a text edit — while a rename, a move, and a schema edit that rewrites the page for a reason of its own leave it where it was.
 
 ```yaml
 PageID:
@@ -125,7 +107,7 @@ What holds across every type: the assign surface, the mutations and their safety
 
 **The Property Frame.** The Properties frame of the toolbar's Settings menu (`src/renderer/Properties/PropertyFrame.tsx`) is the assign surface for a Collection: the assigned properties on top, each opening its per-type editor, and an **All Properties** disclosure pinned to the bottom listing every unassigned registry definition in the nexus order, each promotable by its `+` or by dragging into the assigned group. Dragging within a group reorders it — the Collection's order above, the nexus order below — and dragging an assigned row out removes it. The frame's `+` creates: it mints into the registry, seeds per-type options, and assigns here. A definition's type is chosen at that moment and fixed for its life — a different type is a different property. Renames and option edits change the global definition for every assigner. The global Delete lives only inside a property's own editor frame, behind its ⋮ menu and a native confirm.
 
-**Schema Mutations.** The registry mutations live in `src/main/CRUD/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open.[^8]
+**Schema Mutations.** The registry mutations live in `src/main/CRUD/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open.
 
 | Mutation | Effect on Existing Values |
 | --- | --- |
@@ -134,16 +116,16 @@ What holds across every type: the assign surface, the mutations and their safety
 | Remove a property | Caches each member's value on the Collection's own sidecar (`property_cache`) and unassigns, then strips the value from every member page — cache before strip, so a failure mid-strip never loses anything. Re-assigning restores the cache. |
 | Rename a property | Commits the registry, then sweeps every page holding the old key. Never re-dates a page; assignment lists are id-keyed and unaffected. |
 | Reorder properties | Per-Collection assignment order on the sidecar; the All Properties group reorders the nexus-wide display order in the registry. |
-| Delete a property (global) | A record — the definition, the Collections that assigned it, and every value keyed by page id — lands in `.trash` before anything is destroyed, then the value is stripped everywhere, every cache block is purged, and the definition leaves the registry. Restorable.[^9] |
+| Delete a property (global) | A record — the definition, the Collections that assigned it, and every value keyed by page id — lands in `.trash` before anything is destroyed, then the value is stripped everywhere, every cache block is purged, and the definition leaves the registry. Restorable. |
 | Edit options | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its stored label on every assigning page, and removing one strips that value. |
 
 Neither Remove nor the global delete is cross-file atomic; each is a per-file fan-out whose safety net is written first and which re-runs cleanly after a partial run. Remove is the daily path; the global delete is the rare destructive one.
 
-**Repair.** Every governed write runs one reconcile over the file's root (`reconcileGovernedRoot` in `src/shared/contextResolve.ts`) before it lands: an assigned property's value is re-encoded as its definition reads it — a scalar option becomes a one-element list, a Multi-Select option the definition doesn't hold is adopted into it, a checkbox `false` or an emptied value deletes its key — and a Context key's near-miss Space title is repaired to the canonical spelling while a value naming no Space is dropped. Files that changed while the app was closed are reached by the on-open sweep behind **Repair Properties On Open**: the index seed already knows which pages it re-read, and the sweep runs the same reconcile over exactly those, behind the window rather than before it, writing only where a shape moved and pushing the containers it touched. The sweep never removes a value: a key the reconcile would delete — an option the definition doesn't offer, a Space no Context holds — stays as written for the page's own edit to settle.[^3]
+**Repair.** Every governed write runs one reconcile over the file's root (`reconcileGovernedRoot` in `src/shared/contextResolve.ts`) before it lands: an assigned property's value is re-encoded as its definition reads it — a scalar option becomes a one-element list, a Multi-Select option the definition doesn't hold is adopted into it, a checkbox `false` or an emptied value deletes its key — and a Context key's near-miss Space title is repaired to the canonical spelling while a value naming no Space is dropped. Files that changed while the app was closed are reached by the on-open sweep behind **Repair Properties On Open**: the index seed already knows which pages it re-read, and the sweep runs the same reconcile over exactly those, behind the window rather than before it, writing only where a shape moved and pushing the containers it touched. The sweep never removes a value: a key the reconcile would delete — an option the definition doesn't offer, a Space no Context holds — stays as written for the page's own edit to settle.
 
 **Validation.** A created property's name is non-empty, unique nexus-wide (compared case-folded, because the name is the on-disk key), and may not start with `$`, which is reserved for system roles; a leading `_` is allowed. Select and Multi-select option titles are unique within their property, and a zero-option Select is legal. Each member value's shape must match its definition's type.
 
-**Labels.** A value renders as a label — a chip whose shape names the property's kind: a pill for Status, a tag for the other options. The label vocabulary is the design system's.[^10]
+**Labels.** A value renders as a label — a chip whose shape names the property's kind: a pill for Status, a tag for the other options. The label vocabulary is the design system's.
 
 ---
 
@@ -153,14 +135,3 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 - **Calendar Picker** — range values, keyboard stepping on the time segments.
 - **Per-view link styling** — a Link property's look is property-level; letting a view override it is a prospect the `column_styles` seam already allows for.
 - **A Text type** — free text is the default type in other frontmatter editors and has no Pommora type; a Select stands in for it today.
-
-[^1]: [[CollectionsPM]]
-[^2]: [[ViewTypesPM]] §The Saved-View Model
-[^3]: [[ConfigurationPM]] §General
-[^4]: [[ConnectionsPM]]
-[^5]: [[SymbolsPM]] §File Types
-[^6]: [[ContextsPM]]
-[^7]: [[PagesPM]] §On-Disk Shape
-[^8]: [[ArchitecturePM]] §Mutations
-[^9]: [[NexusRecordPM]]
-[^10]: [[DesignSystemPM]] §Labels & Chips

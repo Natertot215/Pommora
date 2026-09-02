@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Compatible Properties landed 09-01-2026.** Property values sit under bare keys named as the registered property, Context keys as `<Title>:`, Select/Status as one-element lists — a page reads the same in Pommora and any other frontmatter editor — with one reconcile (`reconcileGovernedRoot`) over every governed write and `values:changed` carrying edits to open views live. A follow-on review pass restored `Open` as a Status option the conversion had dropped (the eight pages holding it resolve again) and closed a repair-sweep gap that pruned a mixed list's unresolvable member; the sustainability judge answered for the pre-arc tree, its reasoning in the plan's Closeout.
+**Stamp Retirement landed 09-01-2026.** A page's Last Modified is its file's modification time and its Creation Time the instant in its `PageID` ULID; no page or sidecar writer stamps a key, and both columns reveal, sort, and filter from the value batch a container loads. A rewrite the user did not make — a sweep, a migration, adoption — keeps the file's time through `rewritePreservingTimes`, and a value push re-reads only the pages it names. The vault was normalized in place with timestamps restored, and 40 PageIDs whose adoption instant had displaced a real creation date were re-minted from that date (backup `~/NexusOS-stamp-backup-09-01-2026/`).
 
 **The Renderer Rework is active — the exploration is reported, and execution is proceeding through directed cleanups.** [[]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). This latest pass landed the checkbox consolidation (`Controls/checkbox.css` owns `.checkbox`, out of the Labels domain), the button size scale (into `Buttons/button-base.css.ts`, `size.control` retired, segmented runs one clipped pill), a ⌘⇧T dev scratchpad (`Utilities/iteration-window`), the `Showcase` move to `renderer/Showcase`, and the doc infrastructure — CLAUDE.md's Testing Conventions, the Resources dismantling, and Guidelines collapsed to four. Each lands gated with its LOC and the map crossed off; §6 Working Rules governs the ledger.
 
@@ -81,6 +81,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
 
 ### Recent Work
+
+#### PM-123 || Stamp Retirement
+**DATE:** 09-01-2026
+
+`created_at` and `modified_at` left every page and sidecar; Last Modified is the file's mtime and Creation Time the `PageID` ULID's instant, carried to every view as `PageValues` from `loadValues`. A `created_time` type sits beside `last_edited_time`, both stamps reveal from the Hidden frame, and every stamping writer is gone. A rewrite the user did not make restores the file's time, `setGovernedRootKeys` skips an identical write, and a push refreshes only its named pages over the `Result` envelope; the vault pass re-minted 40 adopted PageIDs from their real creation dates.
 
 #### PM-122 || Compatible Properties
 **DATE:** 08-31-2026 → 09-01
