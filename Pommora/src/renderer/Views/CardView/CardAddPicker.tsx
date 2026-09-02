@@ -4,7 +4,7 @@ import type { PropertyValue } from '@shared/propertyValue'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuItem, MenuTopRow } from '@renderer/DesignSystem/Menus'
-import { topRowFlat } from './cardAddPicker.css'
+import { topRowFlat } from './card-add-picker.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { propertyIcon, propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import {

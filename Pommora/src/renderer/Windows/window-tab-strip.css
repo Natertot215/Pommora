@@ -1,6 +1,6 @@
 /* The page-window toolbar's center region — the single-tab breadcrumb title and the multi-tab strip
    it morphs into. Shared by every window that hosts preview tabs, so it lives with its own
-   component rather than in any window's shell; motion classes come from Tabs/tabStrip.css. */
+   component rather than in any window's shell; motion classes come from Tabs/tab-strip.css. */
 
 .page-window-title {
   min-width: 0;

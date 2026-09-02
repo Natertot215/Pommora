@@ -349,7 +349,7 @@ function lineIntentsInto(
   const li = pushConstruct(intents, line, ls, base, selStart)
   if (li) {
     // The item's content wears md-li-text: the line itself suppresses every wrap opportunity (the
-    // marker zone is full of them — spaces, a number's period, and the atomic cm-widgetBuffer imgs
+    // marker zone is full of them — spaces, a number's period, and the atomic cm-widget-buffer imgs
     // CM plants beside every replace) and this span alone restores wrapping, so a long unbroken word
     // fills beside the glyph and breaks mid-word instead of dropping below the marker.
     const contentFrom = ls + base + li.contentStart

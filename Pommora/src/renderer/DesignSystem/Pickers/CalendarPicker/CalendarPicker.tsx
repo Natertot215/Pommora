@@ -11,7 +11,7 @@ import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { pad } from '@renderer/DesignSystem/Util/pad'
 import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
-import * as s from './calendarPicker.css'
+import * as s from './calendar-picker.css'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 

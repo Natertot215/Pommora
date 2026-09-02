@@ -1,12 +1,12 @@
 import type { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@shared/connMenu'
 import { unescapeAlias } from '@shared/links'
-import { linkPaste } from '@shared/PasteLink'
+import { linkPaste } from '@shared/pasteLink'
 import type { LinkDisplay } from '@shared/properties'
 import { useSession } from '../../store'
 import { linkTarget, tokenize, type Token } from '../Tokens'
 import { focusRange } from './caretSeat'
-import { awaitTitle } from './PendingTitle'
+import { awaitTitle } from './pendingTitle'
 
 /** What a link's whole span becomes, and whether the label written is only standing in until a
  *  fetched title arrives. */

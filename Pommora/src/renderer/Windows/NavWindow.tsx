@@ -22,7 +22,7 @@ import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../Navigation/NavGallery'
-import './navWindow.css'
+import './nav-window.css'
 
 const RAIL = { min: 120, def: 200, max: 320 }
 

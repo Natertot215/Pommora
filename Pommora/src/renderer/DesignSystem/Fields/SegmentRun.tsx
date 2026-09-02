@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
-import * as sr from './segmentRun.css'
+import * as sr from './segment-run.css'
 import { FileLabel } from '@renderer/DesignSystem/Labels/recipes'
 
 /** The stamp a surface hit-tests to learn which entry a click landed on. Written here and by the

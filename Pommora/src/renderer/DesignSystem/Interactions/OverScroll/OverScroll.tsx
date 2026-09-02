@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cx } from '../../Util/cx'
-import './overScroll.css'
+import './over-scroll.css'
 
 /** The capped-label class run — a plain stylesheet, since a `style([])` cannot compose a mask. */
 const overScrollLabel = 'over-scroll-x over-scroll-cap'

@@ -17,8 +17,8 @@ import { formatDate } from '@renderer/Properties/Assignment/formatValue'
 import { containerTargets, contextTargets } from '@renderer/Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../store'
-import '../Navigation/navList.css'
-import './trashFrame.css'
+import '../Navigation/nav-list.css'
+import './trash-frame.css'
 
 const EMPTY_COLLECTIONS: CollectionNode[] = []
 

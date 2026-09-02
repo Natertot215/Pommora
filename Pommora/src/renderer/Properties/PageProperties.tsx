@@ -24,7 +24,7 @@ import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/u
 import { propertyIcon } from '@renderer/Properties/PropertyTypes'
 import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { shownDetail, useSession } from '../store'
-import * as s from './pageProperties.css'
+import * as s from './page-properties.css'
 import {
   displayPropertyName,
   useCapitalizeMetadata,

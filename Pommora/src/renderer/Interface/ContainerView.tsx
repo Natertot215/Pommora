@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import { InterfaceScaffold } from './InterfaceScaffold'
 import { ViewHost } from '@renderer/Views/ViewHost'
-import { containerOwner } from './Scope'
+import { containerOwner } from './scope'
 
 export function ContainerView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   return (

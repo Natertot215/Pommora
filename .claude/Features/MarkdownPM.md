@@ -80,7 +80,7 @@ The handle is also where the block's menu lives. One menu model serves every kin
 
 ### Context Menu + Shortcuts
 
-Right-click anywhere in the editor opens the operating system's own menu rather than an in-app one. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `src/main/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's enabled state reflects where you clicked. The submenu models themselves (`shared/PasteAsMenu.ts`, `shared/gripMenu.ts`, `shared/citationMenu.ts`) are shared code both processes read, so the renderer and main can't disagree about what a menu offers:
+Right-click anywhere in the editor opens the operating system's own menu rather than an in-app one. The renderer sends a snapshot of the editor state — what's selected, what construct the caret is in, whether a footnote could bind here — over IPC, and `src/main/editorMenu.ts` builds the native menu from it, so the standard edit roles, spelling, Speech, and Share all arrive native and every Pommora item's enabled state reflects where you clicked. The submenu models themselves (`shared/pasteAsMenu.ts`, `shared/gripMenu.ts`, `shared/citationMenu.ts`) are shared code both processes read, so the renderer and main can't disagree about what a menu offers:
 
 - **Insert ▸** — Blockquote, Horizontal Rule, Code Block, Callout, Table, and — anywhere a marker can bind — Footnote.
 - **Insert Link** — appears when the selection is itself an address, and points it at itself in place.

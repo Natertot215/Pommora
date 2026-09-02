@@ -8,7 +8,7 @@ import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { MenuRowView, type MenuRow, type Trailing } from '@renderer/DesignSystem/Menus'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
-import * as s from './numberEditor.css'
+import * as s from './number-editor.css'
 
 export type NumberLook = 'number' | 'bar'
 

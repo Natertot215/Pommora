@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { MenuIndex } from '@renderer/DesignSystem/Menus'
-import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
+import { LINK_FORMAT_OPTIONS } from '../linkFormat'
 import * as s from '../../Frames/frames.css'
 
 /** The chosen color themes the pane's own Switches via a scoped `--accent`. */

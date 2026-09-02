@@ -6,7 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from './blockModel'
 import { docScan, docString } from './docCache'
 import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
-import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
+import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt } from './lineDom'
 import { blockMoveChanges } from './listDragModel'
 

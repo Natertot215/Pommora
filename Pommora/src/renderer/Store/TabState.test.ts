@@ -1,50 +1,50 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageDetail } from '@shared/types'
 import {
-  captureWarm,
-  clearWarm,
+  captureCache,
+  clearCache,
   dropPageDetail,
-  dropWarmTab,
+  dropCacheTab,
   fetchPageDetail,
   readPageDetail,
-  readWarm,
-} from './TabState'
+  readCache,
+} from './tabState'
 
-beforeEach(() => clearWarm()) // module state — never leaks across tests
+beforeEach(() => clearCache()) // module state — never leaks across tests
 
 describe('warmCache', () => {
   it('round-trips a capture and merges partial writes under one key', () => {
-    captureWarm('t1', 'page:a', { scrollTop: 120 })
-    captureWarm('t1', 'page:a', { editorState: { doc: 'x' } })
-    expect(readWarm('t1', 'page:a')).toEqual({ scrollTop: 120, editorState: { doc: 'x' } })
+    captureCache('t1', 'page:a', { scrollTop: 120 })
+    captureCache('t1', 'page:a', { editorState: { doc: 'x' } })
+    expect(readCache('t1', 'page:a')).toEqual({ scrollTop: 120, editorState: { doc: 'x' } })
   })
 
   it('isolates tabs — the same entity warms independently per tab', () => {
-    captureWarm('t1', 'page:a', { scrollTop: 1 })
-    captureWarm('t2', 'page:a', { scrollTop: 2 })
-    expect(readWarm('t1', 'page:a')?.scrollTop).toBe(1)
-    expect(readWarm('t2', 'page:a')?.scrollTop).toBe(2)
+    captureCache('t1', 'page:a', { scrollTop: 1 })
+    captureCache('t2', 'page:a', { scrollTop: 2 })
+    expect(readCache('t1', 'page:a')?.scrollTop).toBe(1)
+    expect(readCache('t2', 'page:a')?.scrollTop).toBe(2)
   })
 
   it('evicts the stalest entry past the per-tab cap (I-7), sparing recently-captured ones', () => {
-    for (let i = 0; i < 21; i++) captureWarm('t1', `page:p${i}`, { scrollTop: i })
-    expect(readWarm('t1', 'page:p0')).toBeUndefined()
-    expect(readWarm('t1', 'page:p20')?.scrollTop).toBe(20)
+    for (let i = 0; i < 21; i++) captureCache('t1', `page:p${i}`, { scrollTop: i })
+    expect(readCache('t1', 'page:p0')).toBeUndefined()
+    expect(readCache('t1', 'page:p20')?.scrollTop).toBe(20)
     // Re-capturing an old key refreshes its slot, so the NEXT eviction takes the now-stalest instead.
-    captureWarm('t1', 'page:p1', { scrollTop: 99 })
-    captureWarm('t1', 'page:p21', { scrollTop: 21 })
-    expect(readWarm('t1', 'page:p1')?.scrollTop).toBe(99)
-    expect(readWarm('t1', 'page:p2')).toBeUndefined()
+    captureCache('t1', 'page:p1', { scrollTop: 99 })
+    captureCache('t1', 'page:p21', { scrollTop: 21 })
+    expect(readCache('t1', 'page:p1')?.scrollTop).toBe(99)
+    expect(readCache('t1', 'page:p2')).toBeUndefined()
   })
 
-  it('dropWarmTab clears one tab; clearWarm clears everything', () => {
-    captureWarm('t1', 'page:a', { scrollTop: 1 })
-    captureWarm('t2', 'page:b', { scrollTop: 2 })
-    dropWarmTab('t1')
-    expect(readWarm('t1', 'page:a')).toBeUndefined()
-    expect(readWarm('t2', 'page:b')?.scrollTop).toBe(2)
-    clearWarm()
-    expect(readWarm('t2', 'page:b')).toBeUndefined()
+  it('dropCacheTab clears one tab; clearCache clears everything', () => {
+    captureCache('t1', 'page:a', { scrollTop: 1 })
+    captureCache('t2', 'page:b', { scrollTop: 2 })
+    dropCacheTab('t1')
+    expect(readCache('t1', 'page:a')).toBeUndefined()
+    expect(readCache('t2', 'page:b')?.scrollTop).toBe(2)
+    clearCache()
+    expect(readCache('t2', 'page:b')).toBeUndefined()
   })
 })
 

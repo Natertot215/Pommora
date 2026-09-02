@@ -6,4 +6,4 @@ export {
   stepsWith,
   type PickerChoice,
 } from './PickerControl'
-export { value as pickerValue } from './pickerControl.css'
+export { value as pickerValue } from './picker-control.css'

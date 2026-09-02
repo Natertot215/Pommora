@@ -7,12 +7,12 @@ import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/Editor/fol
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
-import { fetchPageDetail, readPageDetail } from '../Store/TabState'
+import { fetchPageDetail, readPageDetail } from '../Store/tabState'
 import { useSession } from '../store'
 import { PageTile } from '../SurfacePM/PageTile'
 import { CARD_MIN, hoverPaneSize, seedHoverCardSize, setHoverCardSize } from './hoverPaneSize'
-import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './PanePresenter'
-import './connectionPane.css'
+import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './panePresenter'
+import './connection-pane.css'
 
 export { closeActiveHoverCard }
 

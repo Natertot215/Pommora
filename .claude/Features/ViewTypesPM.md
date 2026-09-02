@@ -85,7 +85,7 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[DesignSystemPM]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/Tables/table-tokens.css` · `Pommora/src/renderer/Tables/Table.css` · `Pommora/src/renderer/Views/TableView/TableView.css`
+**SOURCE:** `Pommora/src/renderer/Tables/table-tokens.css` · `Pommora/src/renderer/Tables/Table.css` · `Pommora/src/renderer/Views/TableView/table-view.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -129,7 +129,7 @@ Cards reorder within their band by displacement, writing the per-machine manual 
 
 The chassis tokens — the floor, gaps, thumb height and share, and preview zoom — live with the chassis in `src/Cards/cards.css` ([[DesignSystemPM]]); the renderer's own scope rescales the floors by the Size factor and adds what only the collection layer needs. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/Cards/cards.css` · `Pommora/src/renderer/Views/CardView/CardsView.css`
+**SOURCE:** `Pommora/src/renderer/Cards/cards.css` · `Pommora/src/renderer/Views/CardView/cards-view.css`
 
 | Title | Token | Value |
 | --- | --- | --- |

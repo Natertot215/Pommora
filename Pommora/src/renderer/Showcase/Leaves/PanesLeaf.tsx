@@ -6,8 +6,8 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase, WINDOW_BASE_INSPECTOR } from '@renderer/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@renderer/Settings/SettingsWindow'
-import '@renderer/Settings/settingsWindow.css'
-import './panesLeaf.css'
+import '@renderer/Settings/settings-window.css'
+import './panes-leaf.css'
 
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: 'cog' },

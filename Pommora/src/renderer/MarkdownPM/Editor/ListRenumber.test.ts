@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { listRenumberOnDelete } from './ListRenumber'
+import { listRenumberOnDelete } from './listRenumber'
 
 const del = (doc: string, from: number, to: number, userEvent = 'delete'): string =>
   EditorState.create({ doc, extensions: [listRenumberOnDelete] })

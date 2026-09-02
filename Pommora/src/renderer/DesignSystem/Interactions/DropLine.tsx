@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import './dropChrome.css'
+import './drop-chrome.css'
 
 /** The insertion line every drop-line surface renders inside its `drop-line-host`: the accent bar
  *  and the leading dot that always rides it. The classes carry the edge insets; a surface passes

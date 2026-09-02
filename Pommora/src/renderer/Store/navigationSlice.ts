@@ -38,7 +38,7 @@ import {
   sameTabs,
   tabKey,
 } from '../Tabs/tabsModel'
-import { clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './TabState'
+import { clearCache, dropPageDetail, dropCacheDetail, dropCacheTab, readCache } from './tabState'
 import {
   findCollection,
   findCollectionForSet,
@@ -46,10 +46,10 @@ import {
   findSet,
   isDepth1Set,
   parentPathOf,
-} from '../Interface/Scope'
+} from '../Interface/scope'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/viewMint'
-import type { SessionState, Slice } from './SessionState'
+import type { SessionState, Slice } from './sessionState'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
@@ -306,7 +306,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       tabs: s.tabs.filter((t) => !covered.includes(t)),
       tabMru: s.tabMru.filter((m) => !covered.some((c) => c.id === m)),
     })
-    for (const t of covered) dropWarmTab(t.id)
+    for (const t of covered) dropCacheTab(t.id)
     if (activeCovered && activeCovered.target.kind !== 'newtab') {
       const pinId = pinTabId(activeCovered.target)
       set((st) => ({ activeTabId: pinId, tabMru: pushMru(st.tabMru, pinId) }))
@@ -409,7 +409,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const s = get()
       const pinnedIds = s.pinnedTabs.map((t) => t.id)
       const res = closeTabModel(s.tabs, s.activeTabId, s.tabMru, pinnedIds, id, makeTabId())
-      dropWarmTab(id)
+      dropCacheTab(id)
       applyTabResult(res)
     },
     reorderTabs: (activeId, overId) => {
@@ -444,7 +444,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             tab.id,
           ),
         }))
-      dropWarmTab(pinId)
+      dropCacheTab(pinId)
       persistTabs()
     },
 
@@ -596,7 +596,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             set({ selection: pageSel })
             break
           }
-          const cached = readWarm(get().activeTabId, navKey(target))?.pageDetail
+          const cached = readCache(get().activeTabId, navKey(target))?.pageDetail
           if (cached && cached.path === target.path) {
             land(readySlot(pageSel, cached))
             break
@@ -694,7 +694,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         makeTabId(),
       )
       if (rec.changed) {
-        for (const t of s.tabs) if (!rec.tabs.some((n) => n.id === t.id)) dropWarmTab(t.id)
+        for (const t of s.tabs) if (!rec.tabs.some((n) => n.id === t.id)) dropCacheTab(t.id)
         applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
       }
       // reconcileTabs only re-points when an unpinned tab changed, so the keeper always runs.
@@ -739,7 +739,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'rename': {
           // The cascade rewrites bodies nexus-wide; every warm copy is suspect (editorState's
           // key survives the rename, so a warm restore would revive the pre-cascade body).
-          clearWarm()
+          clearCache()
           keepSlots(() => false)
           // A remount is the only way a healed body reaches the shown page's editor.
           const shown = get().selection
@@ -753,7 +753,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'setIcon':
           // Patch the open detail and drop any warm one, or the header re-reads the stale value.
           if (req.kind === 'page') {
-            dropWarmDetail(req.path)
+            dropCacheDetail(req.path)
             patchReadyAt(req.path, (slot) => {
               const frontmatter = { ...slot.detail.frontmatter }
               if (req.icon === null) delete frontmatter.icon
@@ -764,7 +764,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           break
         case 'setBanner':
           // The open page reloads itself post-write; the warm copies of `cover` don't.
-          if (req.kind === 'page') dropWarmDetail(req.path)
+          if (req.kind === 'page') dropCacheDetail(req.path)
           break
       }
     },
@@ -773,7 +773,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     resetNavigation: () => {
       pageFetchSeq++
       set(PER_NEXUS)
-      clearWarm()
+      clearCache()
     },
   }
 }

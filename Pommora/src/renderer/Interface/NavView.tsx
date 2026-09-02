@@ -13,7 +13,7 @@ import { NavGallery } from '../Navigation/NavGallery'
 import { NavList } from '../Navigation/NavList'
 import { AddBannerButton } from './AddBannerButton'
 import './content-banner.css'
-import './navView.css'
+import './nav-view.css'
 
 export function NavView(): React.JSX.Element {
   // resolvedRecents arrives already pin-deduped (useNavData filters against the pin set).

@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { NexusTree } from '@shared/types'
 import { previewTargetOf, useSession } from '../store'
-import { captureWindowWarm, clearWindowWarm, readWindowWarm } from './windowWarm'
+import { captureWindowCache, clearWindowCache, readWindowCache } from './windowCache'
 
 const page = (id: string) => ({ id, path: `Notes/${id}.md` })
 
@@ -29,7 +29,7 @@ const tree = {
 } as unknown as NexusTree
 
 beforeEach(() => {
-  clearWindowWarm()
+  clearWindowCache()
   useSession.setState({
     preview: null,
     navOpen: false,
@@ -226,24 +226,24 @@ describe('windowTabs — warmth (H-8)', () => {
     useSession.getState().openPreviewTab(page('y'))
     const p = useSession.getState().preview!
     const [xTab, yTab] = p.tabs
-    captureWindowWarm(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
-    captureWindowWarm(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
-    expect(readWindowWarm(xTab.id)?.scrollTop).toBe(5)
+    captureWindowCache(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
+    captureWindowCache(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
+    expect(readWindowCache(xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closePreviewTab(yTab.id)
-    expect(readWindowWarm(yTab.id)).toBeUndefined()
-    expect(readWindowWarm(xTab.id)?.scrollTop).toBe(5)
+    expect(readWindowCache(yTab.id)).toBeUndefined()
+    expect(readWindowCache(xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closePreview()
-    expect(readWindowWarm(xTab.id)).toBeUndefined()
+    expect(readWindowCache(xTab.id)).toBeUndefined()
   })
 
   it('a summon clears prior warmth — restored ids are fresh, old entries unreachable', () => {
     useSession.getState().openPreview(page('x'))
     const xTab = useSession.getState().preview!.tabs[0]
-    captureWindowWarm(xTab.id, { scrollTop: 7 })
+    captureWindowCache(xTab.id, { scrollTop: 7 })
     useSession.getState().openPreview(page('z'))
-    expect(readWindowWarm(xTab.id)).toBeUndefined()
+    expect(readWindowCache(xTab.id)).toBeUndefined()
   })
 })
 

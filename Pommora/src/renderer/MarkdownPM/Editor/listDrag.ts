@@ -6,7 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../Detect'
 import { docScan, docString } from './docCache'
 import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
-import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
+import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { focusAt } from './caretSeat'
 import { lineElementAt } from './lineDom'
 import {

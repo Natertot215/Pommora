@@ -37,7 +37,7 @@ function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[
 
 export const customSelection = layer({
   above: false,
-  class: 'mdpm-selLayer',
+  class: 'mdpm-sel-layer',
   markers: (view) =>
     view.state.selection.ranges.filter((r) => !r.empty).flatMap((r) => rangeMarkers(view, r)),
   update: (update) => update.docChanged || update.selectionSet || update.viewportChanged,

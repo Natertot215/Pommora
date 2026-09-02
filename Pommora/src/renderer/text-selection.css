@@ -32,10 +32,10 @@
 }
 
 /* Unfocused editors keep their selection painted; a field's pills instead don't exist until focus. */
-.mdpm-selLayer .mdpm-sel {
+.mdpm-sel-layer .mdpm-sel {
   background: var(--text-selection-idle);
 }
-.cm-focused > .cm-scroller > .mdpm-selLayer .mdpm-sel {
+.cm-focused > .cm-scroller > .mdpm-sel-layer .mdpm-sel {
   background: var(--text-selection);
 }
 
@@ -55,8 +55,8 @@
 /* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection
    layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any
    editor. A surface outside that set keeps its native selection rather than losing one. */
-:root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content::selection,
-:root:not(.native-highlight) .cm-editor:has(.mdpm-selLayer) .cm-scroller .cm-content ::selection,
+:root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content::selection,
+:root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content ::selection,
 :root:not(.native-highlight)
   :is(
     input:not([type]),

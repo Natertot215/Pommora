@@ -27,7 +27,7 @@ import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Inter
 import { optionRing, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { findCollection, findSet } from '@renderer/Interface/Scope'
+import { findCollection, findSet } from '@renderer/Interface/scope'
 import { resolveContainerSchema } from '@renderer/Views/Pipeline/pickView'
 import { ViewHost } from '@renderer/Views/ViewHost'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
@@ -49,8 +49,8 @@ import {
   segmentTrail,
   settingsBtn,
   settingsBtnActive,
-} from '@renderer/Interface/ActionBand.css'
-import * as s from './viewTile.css'
+} from '@renderer/Interface/action-band.css'
+import * as s from './view-tile.css'
 
 function coerceEmbeddedView(
   raw: unknown,

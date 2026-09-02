@@ -82,7 +82,7 @@ import { forwardRef } from 'react'
 import type { EntityIconKind } from '@shared/types'
 import { CardsGrid, ListRounded, LockFilled, LockOutline, ProgressCheck } from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
-import { lucideGlyph } from './AllSymbols'
+import { lucideGlyph } from './allSymbols'
 import { size as sizeTokens, type IconSize } from '../Tokens/size.css'
 
 /** Curated icon set — Lucide. This registry IS the roster: to add an icon, import it above and

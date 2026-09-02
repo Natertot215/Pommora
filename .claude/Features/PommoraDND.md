@@ -4,7 +4,7 @@ Pommora's in-house drag-and-drop engine, owning the interaction layer the way Ma
 
 ### The Seam
 
-**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/gesture.ts` · `Pommora/src/renderer/DesignSystem/Interactions/drag.tsx` · `Pommora/src/renderer/MarkdownPM/Editor/EditorGesture.ts`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/gesture.ts` · `Pommora/src/renderer/DesignSystem/Interactions/drag.tsx` · `Pommora/src/renderer/MarkdownPM/Editor/editorGesture.ts`
 
 One gesture runs at a time. A press becomes a drag only once it travels far enough to mean one, and from that moment the gesture owns the pointer until it ends; Escape, a release outside the window, or the window losing focus all abandon it cleanly, and a surface that disappears mid-drag takes its gesture with it. A release that never traveled far enough is a click instead, and only an actual release counts, so one affordance can honestly do both jobs — a list glyph in the editor ticks a checkbox when pressed and moves the item when dragged. Scrub controls — a pane's resize edge, a slider, panning a photo, dragging a window by its chrome — respond from the instant of the press with no threshold, since there is no click to protect.
 

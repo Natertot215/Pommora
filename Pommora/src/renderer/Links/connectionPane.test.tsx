@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ConnectionPane, hoverConnection } from './ConnectionPane'
-import { cachePageDetail, dropPageDetail } from '../Store/TabState'
+import { cachePageDetail, dropPageDetail } from '../Store/tabState'
 import { useSession } from '../store'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

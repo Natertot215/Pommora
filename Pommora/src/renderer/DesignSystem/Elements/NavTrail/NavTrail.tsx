@@ -3,7 +3,7 @@ import { OverScroll } from '../../Interactions/OverScroll'
 import { Icon } from '../../Symbols'
 import type { IconSize } from '../../Tokens/size.css'
 import { cx } from '../../Util/cx'
-import * as s from './navTrail.css'
+import * as s from './nav-trail.css'
 
 /** One stop on a location trail. `onSelect` makes it a button; `ghost` dims a stop past the current
  *  one — a path backed out of, still there to re-descend into. */

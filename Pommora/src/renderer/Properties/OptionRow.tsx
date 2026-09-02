@@ -11,7 +11,7 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import * as s from '../Frames/frames.css'
-import { compactTitle } from './optionRow.css'
+import { compactTitle } from './option-row.css'
 import { labelColor, shape as labelShape, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 export type OptionStyle = Extract<ColumnLook, 'standard' | 'compact'>

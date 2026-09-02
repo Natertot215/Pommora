@@ -366,7 +366,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
 | Drag engine  | `SortableZone` · `DragGroup` · `GroupZone` · `useDragItem` · `useGroupedDragItem` · `reorder` · `arraySwap` | The in-house DND. |
 | Zone engine  | `Zone` · `useZoneItem` · `reflow`                       | The layout engine beneath the sortable zone (`engine.tsx`). |
-| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `dropChrome.css` · `ghost.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
+| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
 | Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
 | Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |
@@ -374,7 +374,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Keyboard     | `keyboardNext` · `onActivateClick` · `onActivateKey` · `announce` | Arrow stepping, Enter/Space activation, live-region announcements. |
 | OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
-| Floating     | `useFloatingWindow` · `FloatingResizeCorners` · `floatingWindow.css` · `resize-strip.css` | Move and resize for any floating surface. |
+| Floating     | `useFloatingWindow` · `FloatingResizeCorners` · `floating-window.css` · `resize-strip.css` | Move and resize for any floating surface. |
 | Reveal bar   | `useRevealNear` · `reveal-bar.css`                      | A control shown as the pointer nears an edge.          |
 | Held         | `useHeld`                                               | A value that lingers through an exit.                  |
 
@@ -395,7 +395,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 ### Symbols
 
-`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.
+`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `allSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.
 
 ### Util
 

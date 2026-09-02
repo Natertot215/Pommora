@@ -17,7 +17,7 @@ import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Tokens/ac
 import { applyPersonalization } from '@renderer/DesignSystem/Tokens/personalization'
 import { reconcileIndexOf } from '../treeIndex'
 import { flushAllPageSaves } from '../Interface/pageFlush'
-import type { Slice } from './SessionState'
+import type { Slice } from './sessionState'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'

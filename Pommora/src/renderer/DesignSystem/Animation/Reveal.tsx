@@ -68,7 +68,7 @@ export function Reveal({
         }
       }}
     >
-      {/* The seam law (GroupBand.css) addresses this wrapper as `[data-reveal] > *` — its depth is
+      {/* The seam law (group-band.css) addresses this wrapper as `[data-reveal] > *` — its depth is
           a published contract, not free to change. */}
       <div style={{ overflow: settled ? 'visible' : 'hidden', minHeight: 0 }}>
         {mounted ? children : null}

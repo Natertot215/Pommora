@@ -3,7 +3,7 @@ import type { BlockHostRef } from '@shared/blocks'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
-import { createBodyWriter } from './PageTileWrite'
+import { createBodyWriter } from './pageTileWrite'
 
 // The markdown tile's body shares the page autosave's debounce machinery; a tile's id (a ULID)
 // keys its pending write. Editability reconfigures the same CM6 view in place while this tile is

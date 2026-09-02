@@ -13,12 +13,12 @@ import {
 } from './store'
 import { newTabTab } from './Tabs/tabsModel'
 import { navKey } from './Navigation/navRecents'
-import { clearWarm } from './Store/TabState'
+import { clearCache } from './Store/tabState'
 
 // Stub the narrow window.nexus surface the tab glue reaches (page fetch, recents save, tab persist,
 // the mutation gateway, the applyTree accent read) so it runs in isolation.
 beforeEach(() => {
-  clearWarm() // module state — never leaks across tests
+  clearCache() // module state — never leaks across tests
   ;(window as unknown as { nexus: unknown }).nexus = {
     openPage: vi.fn(async () => ({ ok: true, value: {} })),
     nav: { write: vi.fn(async () => ({ ok: true, value: null })) },

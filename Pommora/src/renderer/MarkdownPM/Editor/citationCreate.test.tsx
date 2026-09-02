@@ -15,7 +15,7 @@ import {
 import { citationScan, splitWithOffsets } from '../Detect'
 import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from './folding'
-import { pasteAs } from './PasteLink'
+import { pasteAs } from './pasteLink'
 
 class ResizeObserverStub {
   observe(): void {}

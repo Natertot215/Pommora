@@ -1,7 +1,7 @@
 import { GlassPane } from '@renderer/DesignSystem/Glass'
 import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import './inspectorPane.css'
+import './inspector-pane.css'
 
 /** `open` only sets aria-hidden here — the actual reserve/push happens in the shell.
  *  `.inspector-body` is where selection-aware content mounts. */

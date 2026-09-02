@@ -18,7 +18,7 @@ import {
 } from '@shared/editorMenu'
 import { HEADING_LEVELS } from '@shared/gripMenu'
 import { isValidLink } from '@shared/links'
-import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/PasteAsMenu'
+import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/pasteAsMenu'
 
 let lastState: FormatState | null = null
 export function setFormatState(s: FormatState): void {
