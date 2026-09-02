@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026, Nathan: the deleted `Stamp Retirement — Implementation Plan.md` sitting in the index is committed at phase 1's start, by explicit path.
 - 09-02-2026, Nathan: no screenshots during the plan — he is present, sees the progress, and drives tweaks.
 - 09-02-2026, Nathan: the parallel confirm work lands before phase 3 opens — it landed at `605db15e` / `c3ca16ed`; Tasks 5–7 re-derive against HEAD.
 - 09-02-2026 (mine, for Nathan to overturn): the `[[link]]` right-click menu keeps its two copy rows and does not gain View History — the plan's surfaces are the page surfaces.
