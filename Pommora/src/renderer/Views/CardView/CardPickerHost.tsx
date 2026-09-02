@@ -19,14 +19,19 @@ import {
   addColumn,
   addEntriesFor,
   type AddEntry,
+  parseEditorValue,
 } from '@renderer/Properties/Assignment/cardValueInput'
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
+import { adoptPathInto, pickFileInto } from '@renderer/Properties/Assignment/filePick'
+import { numberFormatGlyph } from '@renderer/Properties/PropertyTypes'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PathField } from '@renderer/DesignSystem/Fields'
 
 /** A value's request to open its picker — the anchor is the clicked value span. */
 export type ValuePickerRequest = {
   rowId: string
   column: ResolvedColumn
-  kind: 'picker' | 'datetime' | 'link'
+  kind: 'picker' | 'datetime' | 'link' | 'number' | 'file'
   anchor: HTMLElement
   clickX?: number
   /** An add-menu-originated open: the property reveals on the FIRST commit (never on a dismissed,
@@ -143,7 +148,14 @@ export function CardPickerHost({
     onOpenValue({
       rowId: aReq.rowId,
       column: addColumn(entry.id, tree),
-      kind: entry.type === 'datetime' ? 'datetime' : 'link',
+      kind:
+        entry.type === 'datetime'
+          ? 'datetime'
+          : entry.type === 'number'
+            ? 'number'
+            : entry.type === 'file'
+              ? 'file'
+              : 'link',
       anchor: aReq.anchor,
       revealOnCommit: true,
     })
@@ -178,6 +190,41 @@ export function CardPickerHost({
           onDismissValue()
         }}
       />
+      <TextPicker
+        open={value?.kind === 'number'}
+        onDismiss={onDismissValue}
+        triggerRef={valueAnchorRef}
+        value={vCurrent.kind === 'number' ? String(vCurrent.value) : ''}
+        leading={<Icon name={numberFormatGlyph(vDef)} size="body" />}
+        onCommit={(raw) => {
+          const nv = parseEditorValue('number', raw)
+          if (nv != null) commitPicked(nv)
+          onDismissValue()
+        }}
+      />
+      <PickerMenu
+        solid
+        open={value?.kind === 'file'}
+        onDismiss={onDismissValue}
+        triggerRef={valueAnchorRef}
+      >
+        <PathField
+          label={vDef.name}
+          value=""
+          empty="Choose a file"
+          browseLabel="Choose File"
+          onBrowse={() =>
+            pickFileInto(vDef, vCurrent, null, (nv) => {
+              commitPicked(nv)
+              onDismissValue()
+            })
+          }
+          onCommit={(raw) => {
+            if (raw.trim()) adoptPathInto(vDef, vCurrent, raw.trim(), commitPicked)
+            onDismissValue()
+          }}
+        />
+      </PickerMenu>
       <PropertyPicker
         def={vDef}
         current={vCurrent}
