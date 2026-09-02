@@ -189,7 +189,7 @@ export async function showContextMenu(
 
   items.push({ label: 'Delete', click: () => void confirmDelete() })
   items.push({ type: 'separator' })
-  if (target.kind === 'collection' || target.kind === 'set') {
+  if (target.host === 'sidebar' && (target.kind === 'collection' || target.kind === 'set')) {
     items.push({
       label: target.disclosureLocked ? 'Unlock Folder' : 'Lock Folder',
       click: () =>
