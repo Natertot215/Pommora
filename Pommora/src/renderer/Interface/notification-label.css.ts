@@ -1,56 +1,50 @@
-import { keyframes, style } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 import { text, vars } from '@renderer/DesignSystem/Tokens'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
+import { SIZE } from '@renderer/DesignSystem/Labels/label-base.css'
 
 const c = vars.color
 
 export const DWELL_MS = 3000
-export const NEAR_RADIUS = 120
-
-const slideIn = keyframes({
-  from: { transform: 'translateY(calc(-100% - var(--app-inset)))', opacity: 0 },
-  to: { transform: 'translateY(0)', opacity: 1 },
-})
-
-const drain = keyframes({ from: { transform: 'scaleX(1)' }, to: { transform: 'scaleX(0)' } })
+export const NEAR_RADIUS = 100
 
 export const host = style({
   position: 'fixed',
   top: `calc(var(--app-inset) + var(--toolbar-h) + var(--app-inset))`,
-  left: '50%',
+  right: 'var(--surface-inset)',
   zIndex: stack.top.floating,
   display: 'flex',
   flexDirection: 'column',
-  overflow: 'hidden',
+  gap: SIZE.padX,
   minWidth: 220,
   maxWidth: 420,
-  borderRadius: 'var(--app-radius)',
-  border: `var(--width-100) solid var(--system-grey)`,
-  background: c.fill.secondary,
-  transform: 'translateX(-50%)',
-  animation: `${slideIn} var(--duration-base) var(--ease-base)`,
+  padding: SIZE.roomyPadX,
+  borderRadius: SIZE.tagRadius,
+  borderStyle: 'solid',
+  borderWidth: SIZE.border,
+  borderColor: c.fill.primary,
+  background: c.fill.tertiary,
+  // The app-level `--io` inherits, so the driver is declared here — the inspector's must never
+  // reach this label.
+  vars: { '--pane-inset': 'var(--surface-inset)', '--io': '0' },
+  transition: '--io var(--duration-base) var(--ease-base)',
 })
+
+export const shown = style({ vars: { '--io': '1' } })
 
 export const error = style({ borderColor: 'var(--error)' })
-
-export const leaving = style({
-  animationName: slideIn,
-  animationDirection: 'reverse',
-  animationFillMode: 'forwards',
-})
 
 export const row = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: 'var(--surface-inset)',
-  padding: `var(--app-inset) var(--surface-inset)`,
+  gap: SIZE.roomyPadX,
 })
 
-export const message = style([text.body.standard, { color: c.label.primary }])
+export const message = style([text.callout.standard, { color: c.label.primary }])
 
 export const action = style([
-  text.callout.semibold,
+  text.footnote.semibold,
   {
     color: 'var(--accent)',
     background: 'none',
@@ -60,14 +54,3 @@ export const action = style([
     whiteSpace: 'nowrap',
   },
 ])
-
-export const track = style({ height: 2, background: c.fill.tertiary })
-
-export const fill = style({
-  height: '100%',
-  background: 'var(--accent)',
-  transformOrigin: 'left center',
-  animation: `${drain} ${DWELL_MS}ms linear forwards`,
-})
-
-export const paused = style({ animationPlayState: 'paused' })

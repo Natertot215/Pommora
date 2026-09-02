@@ -122,7 +122,7 @@ export function ViewFrame({
     if (!(await askDeleteView())) return
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
     if (!res.ok) return void notifyError(res.error.message)
-    notifyDeleted(v.name, () => restoreView(node.path, node.kind, v))
+    notifyDeleted(v.name, () => restoreView(node.path, node.kind, v, views))
   }
 
   const list = (
