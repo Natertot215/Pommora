@@ -1,6 +1,7 @@
 import type { PropertyDefinition } from '@shared/properties'
 import { defaultStyleFor } from '@shared/columnStyles'
 import { declaredType } from '@renderer/Properties/value'
+import { ICON_PX } from '@renderer/DesignSystem/Tokens/size.css'
 
 export interface ColumnWidth {
   min: number
@@ -40,6 +41,8 @@ const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   multi_select: OPTION_MIN,
 }
 
+const HEADER_ICON_BUMP = ICON_PX.body + 6
+
 /** The {min, default, max} width for a column, keyed by its declared type (unknown → a sane
  *  fallback). `contextIds` is what makes a Context column classify as such — omit it and one takes
  *  the fallback instead of the Context width. */
@@ -61,13 +64,15 @@ export function minWidthFor(
   schema: PropertyDefinition[],
   look?: string,
   contextIds: readonly string[] = [],
+  iconsShown = false,
 ): number {
+  const bump = iconsShown ? HEADER_ICON_BUMP : 0
   const base = widthFor(columnId, schema, contextIds).min
   const t = declaredType(columnId, schema, contextIds)
-  if (t === undefined) return base
+  if (t === undefined) return base + bump
   const resolved = look ?? defaultStyleFor(t).look
   const override = resolved !== undefined ? STYLE_MIN[t]?.[resolved] : undefined
-  return override ?? base
+  return (override ?? base) + bump
 }
 
 /** Clamp a (resized) width to a column's [min, max] — the min is style-aware via `minWidthFor`. */
@@ -77,7 +82,8 @@ export function clampWidth(
   schema: PropertyDefinition[],
   look?: string,
   contextIds: readonly string[] = [],
+  iconsShown = false,
 ): number {
   const { max } = widthFor(columnId, schema, contextIds)
-  return Math.max(minWidthFor(columnId, schema, look, contextIds), Math.min(max, width))
+  return Math.max(minWidthFor(columnId, schema, look, contextIds, iconsShown), Math.min(max, width))
 }

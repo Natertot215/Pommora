@@ -367,7 +367,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // Resize applies live (a separate override, so the pipeline doesn't re-run) and returns the clamped
   // width so the header tracks the real edge; commit persists the merged widths.
   const resizeColumn = (id: string, width: number): number => {
-    const clamped = clampWidth(Math.round(width), id, schema, colStyle(id).look, contextIds)
+    const clamped = clampWidth(
+      Math.round(width),
+      id,
+      schema,
+      colStyle(id).look,
+      contextIds,
+      iconsShown,
+    )
     setWidthOverride((prev) => ({ ...prev, [id]: clamped }))
     return clamped
   }
@@ -401,7 +408,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       column_widths: {
         ...liveView.column_widths,
         ...widthOverride,
-        [id]: clampWidth(width, id, schema, colStyle(id).look, contextIds),
+        [id]: clampWidth(width, id, schema, colStyle(id).look, contextIds, iconsShown),
       },
     })
   }
@@ -436,8 +443,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // A column header's glyph, gated by the per-view Column Icons toggle (`hide_column_icons`), which
   // defaults ON (icons hidden). A Context column wears the Context's OWN icon — a shared type glyph
   // would render every Context identically — and a schema-less column (unknown type) gets none.
+  const iconsShown = !(liveView.hide_column_icons ?? true)
   const headerIcon = (id: string): React.ReactNode => {
-    if (liveView.hide_column_icons ?? true) return null
+    if (!iconsShown) return null
     const contextIcon = ctx?.contexts.get(id)?.icon
     if (contextIcon) {
       return (
@@ -493,12 +501,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       align: colAlign(id),
       alignable: !isTitle,
       hideable: !isTitle,
-      iconsShown: isTitle ? undefined : !(liveView.hide_column_icons ?? true),
+      iconsShown,
       style,
     })
     if (action === 'column:hide') hideColumn(id)
-    else if (action === 'column:toggle-icons')
-      persistView({ hide_column_icons: !(liveView.hide_column_icons ?? true) })
+    else if (action === 'column:toggle-icons') persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action?.startsWith('style:')) {
@@ -893,6 +900,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       schema,
       colStyle(id).look,
       contextIds,
+      iconsShown,
     )
   const widthById = useMemo(
     () => new Map<string, number>(columns.map((c) => [c.id, resolveWidth(c.id)])),
@@ -927,8 +935,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       liveView.column_widths?.[c.id] ??
       widthFor(c.id, schema, contextIds).default
     if (
-      clampWidth(basis, c.id, schema, look, contextIds) >
-      clampWidth(basis, c.id, schema, prev, contextIds)
+      clampWidth(basis, c.id, schema, look, contextIds, iconsShown) >
+      clampWidth(basis, c.id, schema, prev, contextIds, iconsShown)
     )
       widened.push(c.id)
   })

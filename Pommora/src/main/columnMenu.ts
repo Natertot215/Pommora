@@ -8,8 +8,6 @@ import {
 import { popReturningMenu } from './returningMenu'
 import { alignSubmenu, styleSubmenu } from './styleMenu'
 
-// The table-view column header's right-click menu — Align (a radio L/C/R) + the type's own
-// submenu (per-type radios from the shared builder) + Hide; the Title column carries none.
 export function popColumnMenu(
   win: BrowserWindow,
   ctx: ColumnMenuContext,
@@ -24,17 +22,15 @@ export function popColumnMenu(
         submenu: styleSubmenu(styleRows, pick),
       })
     }
-    if (ctx.iconsShown !== undefined) {
-      items.push({
-        label: 'Icon',
-        type: 'checkbox',
-        checked: ctx.iconsShown,
-        click: pick('column:toggle-icons'),
-      })
+    items.push({
+      label: 'Icon',
+      type: 'checkbox',
+      checked: ctx.iconsShown,
+      click: pick('column:toggle-icons'),
+    })
+    if (ctx.hideable) {
+      items.push({ type: 'separator' }, { label: 'Hide', click: pick('column:hide') })
     }
-    const hasTop = ctx.alignable || styleRows.length > 0 || ctx.iconsShown !== undefined
-    if (hasTop && ctx.hideable) items.push({ type: 'separator' })
-    if (ctx.hideable) items.push({ label: 'Hide', click: pick('column:hide') })
     return items
   })
 }

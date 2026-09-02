@@ -37,10 +37,8 @@ export async function loadValues(
   const out: Record<string, PageValues> = {}
   for (const rec of records) {
     if (!rec) continue
-    const parsed = pageFrontmatter.safeParse({ ...rec.fm, [PAGE_ID_KEY]: rec.node.id })
-    if (!parsed.success) continue
     out[rec.node.id] = {
-      frontmatter: parsed.data,
+      frontmatter: pageFrontmatter.parse({ ...rec.fm, [PAGE_ID_KEY]: rec.node.id }),
       createdAt: iso(idTime(rec.node.id)),
       modifiedAt: iso(rec.mtimeMs),
     }
