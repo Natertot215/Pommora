@@ -209,3 +209,17 @@ describe('mergeFrontmatter — a body-only write re-serializes nothing', () => {
     expect(out).toBe('---\ntags: [a,b]\nStatus: x\n---\nnew')
   })
 })
+
+describe('mergeFrontmatter — every assembly path emits one line ending', () => {
+  const crlf = '---\r\ntags: [a,b]\r\nStatus: x\r\n---\r\nline1\r\nline2\r\n'
+
+  it('a field write over a CRLF page keeps its body on the same ending as its fences', () => {
+    const out = mergeFrontmatter(crlf, { Status: 'y' }, ['Status'], splitEnvelope(crlf).body)
+    expect(out).not.toContain('\r')
+    expect(out.endsWith('---\nline1\nline2\n')).toBe(true)
+  })
+
+  it('a body-only write folds a CRLF body too', () => {
+    expect(mergeFrontmatter(crlf, {}, [], splitEnvelope(crlf).body)).not.toContain('\r')
+  })
+})
