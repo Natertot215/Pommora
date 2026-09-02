@@ -1,18 +1,15 @@
 // The returning-picker menu plumbing: pop a native menu, resolve the chosen action BACK to the
-// renderer (which performs the write), and resolve null when the menu is dismissed. The single
-// home for the `let acted` / popup-callback dance every returning menu needs.
+// renderer (which performs the write, and asks first where the action needs confirming), and
+// resolve null when the menu is dismissed. The single home for the `let acted` /
+// popup-callback dance every returning menu needs.
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 
-/** `pick` resolves a click straight to its action; `pickAfter` resolves what a row must ask
- *  first (a confirm dialog) instead. Both mark the menu acted at click, before any await, so
- *  a dialog opening over the closing menu can't be read as a dismissal. */
+/** `pick` resolves a click straight to its action. The click marks the menu acted before it
+ *  resolves, so the closing menu can't also be read as a dismissal. */
 export function popReturningMenu<A>(
   win: BrowserWindow,
-  buildItems: (
-    pick: (action: A) => () => void,
-    pickAfter: (ask: () => Promise<A | null>) => () => void,
-  ) => MenuItemConstructorOptions[],
+  buildItems: (pick: (action: A) => () => void) => MenuItemConstructorOptions[],
   /** Where the menu opens, in window DIPs. Omitted pops at the cursor — wrong for a menu that
    *  should hang from a clicked control rather than the pointer. */
   at?: { x: number; y: number },
@@ -23,11 +20,7 @@ export function popReturningMenu<A>(
       acted = true
       resolve(action)
     }
-    const pickAfter = (ask: () => Promise<A | null>) => () => {
-      acted = true
-      void ask().then(resolve)
-    }
-    const template = buildItems(pick, pickAfter)
+    const template = buildItems(pick)
     // A model that gated every item away has nothing to show; popping it would leave an empty frame.
     if (template.length === 0) {
       resolve(null)

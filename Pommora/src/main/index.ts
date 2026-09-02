@@ -60,7 +60,8 @@ import {
   type BlockHostRef,
 } from '@shared/blocks'
 import { pathExists } from './IO/atomicWrite'
-import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
+import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
+import { DEFAULT_TRASH_MODE } from '@shared/types'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import {
@@ -73,7 +74,7 @@ import { assetsDir, relPosix } from './paths'
 import { rootSegs } from './exclusion'
 import { excludedFolderRefusal } from './readNexus'
 import { sanitizeExclusions } from './exclusionInput'
-import { clearConfirmCopy, clearExclusionData } from './exclusionScan'
+import { clearExclusionData } from './exclusionScan'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { flushValueWrites, noteValueWrite } from './valuesChanged'
@@ -176,7 +177,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { AssetMap, PickFileOptions, ViewButton } from '@shared/types'
+import type { AssetMap, PickFileOptions, TrashMode, ViewButton } from '@shared/types'
 import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
@@ -681,7 +682,7 @@ async function mutateDeps(): Promise<MutateDeps> {
   const config = await readAppConfig(app.getPath('userData'))
   const root = sessionRoot()
   return {
-    trashMode: config.trashMode ?? DEFAULT_TRASH_MODE,
+    trashMode: trashModeOf(config),
     trashToSystem: (p) => shell.trashItem(p),
     permanentDelete: root === null ? false : await readPermanentDelete(root),
   }
@@ -955,23 +956,15 @@ serveBridge(
     },
 
     'exclusions:clear': {
-      // A `window` handler has no envelope net, so this wraps its own throws — the destructive
-      // filesystem work must never reject across the boundary.
-      kind: 'window',
-      fn: async (win: BrowserWindow | null) => {
+      // An `envelope` handler is the net for the read; the destructive filesystem work below it
+      // still wraps its own throws, which must never reject across the boundary.
+      kind: 'envelope',
+      fn: async () => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
         try {
           const { excluded, assetDir } = await readWatchScope(root)
-          if (excluded.length === 0 || !win) return ok(null)
-          const { response } = await dialog.showMessageBox(win, {
-            type: 'warning',
-            buttons: ['Clear', 'Cancel'],
-            defaultId: 1,
-            cancelId: 1,
-            ...clearConfirmCopy(excluded.length),
-          })
-          if (response !== 0) return ok(null)
+          if (excluded.length === 0) return ok(null)
           const result = await clearExclusionData(root, excluded, assetDir)
           if (!result.ok) return result
           await seedContentIndex(root)
@@ -979,6 +972,15 @@ serveBridge(
         } catch (e) {
           return fail('operation-failed', errText(e))
         }
+      },
+    },
+
+    'exclusions:count': {
+      kind: 'envelope',
+      fn: async () => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        return ok((await readWatchScope(root)).excluded.length)
       },
     },
 
@@ -1203,22 +1205,6 @@ serveBridge(
         const r = await reorderViews(folder, k, orderedIds)
         if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok(null) : r
-      },
-    },
-    // Delete keeps the native confirm (deliberate) — the in-app menus ask main first.
-    'views:confirmDelete': {
-      kind: 'window',
-      fn: async (win: BrowserWindow | null): Promise<boolean> => {
-        if (!win) return false
-        const { response } = await dialog.showMessageBox(win, {
-          type: 'warning',
-          buttons: ['Delete', 'Cancel'],
-          defaultId: 0,
-          cancelId: 1,
-          message: 'Delete this view?',
-          detail: 'Its configuration is removed from the container; pages are untouched.',
-        })
-        return response === 0
       },
     },
     'views:delete': {
@@ -1563,23 +1549,6 @@ serveBridge(
         return id ? ok({ id }) : fail('not-found', 'No such tile.')
       },
     },
-    // Delete keeps the native confirm (deliberate) — the in-app menu asks main first.
-    'blocks:confirmRemove': {
-      kind: 'window',
-      fn: async (win: BrowserWindow | null): Promise<boolean> => {
-        if (!win) return false
-        const { response } = await dialog.showMessageBox(win, {
-          type: 'warning',
-          buttons: ['Remove', 'Cancel'],
-          defaultId: 0,
-          cancelId: 1,
-          message: 'Remove this block?',
-          detail:
-            'A markdown block’s file moves to the nexus’s .trash (recoverable); embeds only remove the tile.',
-        })
-        return response === 0
-      },
-    },
 
     'personalization:set': {
       kind: 'envelope',
@@ -1850,25 +1819,20 @@ serveBridge(
 
     'card-menu': { kind: 'menu', fn: popCardMenu },
 
-    // The ordinary delete's confirm can't be reused: it hardcodes one title and the old trash
-    // mode's destination. This one names what will actually happen, read at the moment of asking.
-    'trash:confirmEmpty': {
-      kind: 'window',
-      fn: async (win: BrowserWindow | null, count: unknown): Promise<boolean> => {
-        const root = sessionRoot()
-        if (!win || root === null || typeof count !== 'number' || count < 1) return false
-        const permanent = await readPermanentDelete(root)
-        const { response } = await dialog.showMessageBox(win, {
-          type: 'warning',
-          buttons: ['Delete', 'Cancel'],
-          defaultId: 1,
-          cancelId: 1,
-          message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
-          detail: permanent
-            ? 'It will be erased from this computer. This cannot be undone.'
-            : 'It will move to your system trash, which is where you would get it back from.',
-        })
-        return response === 0
+    // `raw` has no envelope net, so this answers with the safe reading rather than rejecting: the
+    // recoverable destination, and a delete that asks.
+    'delete:facts': {
+      kind: 'raw',
+      fn: async (): Promise<{ trashMode: TrashMode; permanentDelete: boolean }> => {
+        try {
+          const root = sessionRoot()
+          return {
+            trashMode: trashModeOf(await readAppConfig(app.getPath('userData'))),
+            permanentDelete: root === null ? false : await readPermanentDelete(root),
+          }
+        } catch {
+          return { trashMode: DEFAULT_TRASH_MODE, permanentDelete: false }
+        }
       },
     },
 

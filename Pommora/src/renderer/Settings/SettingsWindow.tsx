@@ -405,6 +405,13 @@ const FRAMES = roster([
         rows: [
           {
             kind: 'toggle',
+            key: 'confirmDeletion',
+            label: 'Confirm Before Deletion',
+            defaultOn: true,
+            hint: 'Ask before deleting a page, a block, or a folder that carries no schema. Collections, Sets, views and properties always ask.',
+          },
+          {
+            kind: 'toggle',
             key: 'permanentDelete',
             label: 'Permanently Delete Files',
             hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',

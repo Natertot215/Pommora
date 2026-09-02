@@ -9,6 +9,7 @@ import {
   type Option,
 } from '@shared/optionModel'
 import type { PropertyType } from '@shared/properties'
+import { askClearOption, askRemoveOption } from '@renderer/Windows/confirmations'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   GhostOptionChip,
@@ -91,8 +92,11 @@ export function OptionEditor({
     const action = await window.nexus.optionMenu({ name: o.label, canEditIcon: true })
     if (action === 'option:rename') setRenaming(o.value)
     else if (action === 'option:edit-icon') setIconEditing(o.value)
-    else if (action === 'option:remove') onRemoveOption(o.value)
-    else if (action === 'option:clear') onClearOption(o.value)
+    else if (action === 'option:remove') {
+      if (await askRemoveOption(o.label)) onRemoveOption(o.value)
+    } else if (action === 'option:clear') {
+      if (await askClearOption(o.label)) onClearOption(o.value)
+    }
   }
   const pickColor = (o: Option, color: string | undefined): void => {
     onSetOptions(recolorOption(options, o.value, color))

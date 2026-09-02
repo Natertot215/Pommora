@@ -76,6 +76,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
+| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a block, or a folder that carries no schema. Collections, Sets, views and properties ask regardless. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 
 **Exclusions**
