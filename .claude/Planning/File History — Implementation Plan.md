@@ -1,7 +1,7 @@
 ## File History — Implementation Plan
 
 > **Status:** written, pending review · Spec: [[File History — Decision Log]] · Execute tasks in order.
-> Citations name files and symbols at HEAD `af6f28a5`; re-derive before editing. The tree is shared with a parallel session retiring the native confirms (uncommitted at writing: `Windows/ConfirmationWindow.tsx`, `Windows/confirmations.ts`, `askConfirm` on `chromeSlice`); every Now count re-derives after that lands.
+> Citations name files and symbols at HEAD `af6f28a5`; re-derive before editing. The parallel session's confirm work landed at `605db15e` and `c3ca16ed` (`Windows/ConfirmationWindow.tsx`, `Windows/confirmations.ts`, `askConfirm` on `chromeSlice`), so Tasks 5–7's Now counts re-derive against HEAD at execution.
 
 **Goal**
 
@@ -31,13 +31,12 @@ Bounded by: recovery is body-only by construction; pages only, filtered by the U
 - `serializeOnFile` is non-reentrant and the capture must not delay the write → `updatePageBody` reads the outgoing text inside its lock and returns it; the caller offers it after the `Result` settles (Tasks 2, 4).
 - The `zoom` row already clamps a typed number into its steps through `PickerControl.typeable` → the two numeric settings ride it with a unit (Tasks 4, 7).
 - `PreviewTarget` is renderer-only; the wire carries `ContextTarget` → `open-history` pushes a `ContextTarget`, `App.tsx` adapts (Tasks 6, 9).
-- The parallel session's confirm work touches `index.ts`, `bridge.ts`, `preload`, `ClearExclusionsRow`, `PageMenu.tsx` → phase 3 waits for it (Hazard Window).
 
 **Inherited Reasoning:** The log's Considered & Rejected, and three build-breaking rounds: a plain interval gate loses an external edit inside the interval (the foreign-overwrite exception); a key bump re-seeds nothing (the epoch seed); a dropped warm cache is refilled by the outgoing editor's cleanup (refresh and fence); no version row, no encoding column, no whole-page Clear in the window.
 
 **Grounding** *(re-open these; don't cite them)*
 
-- `src/main/CRUD/page.ts:46-78` · `IO/pageFile.ts:25-33,176-191` · `IO/atomicWrite.ts` · `IO/fileLock.ts` · `Database/driver.ts:8-22` · `Database/open.ts:17,31-74` · `Database/schema.ts:41-61` · `Database/localState.ts:1-30` · `sessionDb.ts` · `index.ts:333-431,1094-1110,1584-1600,1602-1609,1883-1894` · `contextMenu.ts:106-165` · `rowMenu.ts:81` · `valuesChanged.ts:27-43` · `liveTree.ts:19-51` · `settings.ts:54-84` · `readNexus.ts:136-148` · `watcher.ts:54-81` · `watchPatch.ts:130-143,242-247` · `exclusion.ts:8-15` · `mutate.ts:125-135` · `ipc.ts:70-77`.
+- `src/main/CRUD/page.ts:46-78` · `IO/pageFile.ts:25-33,176-191` · `IO/atomicWrite.ts` · `IO/fileLock.ts` · `Database/driver.ts:8-22` · `Database/open.ts:17,31-74` · `Database/schema.ts:41-61` · `Database/localState.ts:1-30` · `sessionDb.ts` · `index.ts:333-431,1094-1110,1584-1600,1602-1609,1883-1894,1991-2007` · `contextMenu.ts:106-165` · `rowMenu.ts:81` · `valuesChanged.ts:27-43` · `liveTree.ts:19-51` · `settings.ts:54-84` · `readNexus.ts:136-148` · `watcher.ts:54-81` · `watchPatch.ts:130-143,242-247` · `exclusion.ts:8-15` · `mutate.ts:125-135` · `ipc.ts:70-77`.
 - `src/shared/bridge.ts:90-97,237-246,266-274,357-374` · `types.ts:90-180,225-232,524-530` · `pageMenu.ts` · `pageMenu.test.ts:1-40` · `tabMenu.ts` · `navRowMenu.ts` · `cellMenu.ts:128-138` · `cardMenu.ts:32-45` · `cropGeometry.ts:13` · `nexusPaths.ts:6-26` · `src/preload/index.ts:31-38,116-127,170-188`.
 - `src/renderer/Store/tabState.ts` · `SurfacePM/tileCache.ts` · `Interface/PageView.tsx:51,100-185` · `Windows/useWindowWarm.ts` · `Windows/windowCache.ts` · `SurfacePM/PageTile.tsx:40-148` · `Windows/PageWindow.tsx` · `Windows/window-base.tsx:20-75,185-201` · `Interface/pageFlush.ts` · `Store/navigationSlice.ts:234-241,355-357,599,627` · `Store/previewSlice.ts:23-59,151-172,232-236,304-307` · `Store/configSlice.ts:34-50` · `App.tsx:113-138,284-291` · `Frames/PageMenu.tsx` · `Actions/pageMenuActions.ts` · `Settings/SettingsWindow.tsx:52-165,335-415,669-689,744-787` · `Settings/ClearExclusionsRow.tsx` · `Settings/TrashFrame.tsx:60-95,178-195,261-341` · `DesignSystem/Elements/PickerControl/PickerControl.tsx:1-60` · `DesignSystem/Menus/menu-row.tsx:52-101` · `DesignSystem/Buttons/Button.tsx:9-52` · `DesignSystem/Controls/Checkbox.tsx:6-31` · `DesignSystem/Elements/Segment/segment.css.ts` · `Properties/Assignment/formatValue.ts:47,57-102` · `Links/ConnectionPane.tsx:34,288,419-429` · `shared/connMenu.ts:9,93,164` · `Links/connectionMenu.ts:63` · `MarkdownPM/index.tsx:76-137,227-232,459` · `MarkdownPM/Editor/embedWidget.tsx:259,478` · `treeIndex.ts:200,240-262`.
 - `.claude/Guidelines/Development-Environment.md`.
@@ -81,8 +80,6 @@ Bounded by: recovery is body-only by construction; pages only, filtered by the U
 
 - `ClearExclusionsRow` → 0 · `clear-exclusions` → 0 · `percentChoice` → 0 · `PAGE_CLIPBOARD_ACTIONS` → 0 · `PageClipboardAction` → 0. Legitimate hits: none.
 - Control: `ClearActionRow` → ≥ 3 · `PAGE_REACH_ACTIONS` → ≥ 2.
-
-**Hazard Window:** Opened by the parallel session's uncommitted confirm work. While open, no task edits `src/main/index.ts`, `src/shared/bridge.ts`, `src/preload/index.ts`, `src/renderer/Settings/ClearExclusionsRow.tsx`, or `src/renderer/Frames/PageMenu.tsx`; Task 5's `index.ts` edits and all of phase 3 wait. Closed when that work is committed and Tasks 5–7 are re-derived against HEAD.
 
 ---
 
@@ -300,7 +297,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 **Why:** Capture happens where the app already knows a body changed.
 
-**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 (`:1102`) · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 (`:245`) · `rg -F "await rename(root, newRoot)" src/main/index.ts` → 1 (`:1885`, before `adoptNexus(newRoot, false)`) · `openNexusSequence` (`index.ts:364-378`) · `'personalization:set'` (`:1584-1600`). Re-derive after the hazard window closes.
+**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 (`:1102`) · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 (`:245`) · `rg -F "await rename(root, newRoot)" src/main/index.ts` → 1 (`:1885`, before `adoptNexus(newRoot, false)`) · `openNexusSequence` (`index.ts:364-378`) · `'personalization:set'` (`:1584-1600`) · `app.on('before-quit'` (`:1991-2007`). Re-derive at HEAD.
 
 **Becomes**
 
@@ -312,7 +309,9 @@ export async function sweepFileHistory(root: string): Promise<void>
 // openNexusSequence: before openSession(path) when priorRoot !== null → await flushFileHistory(priorRoot); resetFileHistory()
 //                    after openSessionDb(root) when root !== priorRoot → sweepFileHistory(root)
 // root rename: before `await rename(root, newRoot)` → await flushFileHistory(root); resetFileHistory()
-// 'before-quit': the common path returns synchronously, so preventDefault once, await flushFileHistory(root), then app.quit() again behind a flag
+// 'before-quit' (index.ts:1991-2007 — two branches today: a synchronous close, and a preventDefault + latch + flushNavigation + closeSessionDb + re-quit when a nav write is in flight):
+//   one deferred branch for every quit — preventDefault, latch, await both flushes, closeSessionDb(), re-quit; the latch's early return lets the re-quit through.
+//   flushFileHistory never rejects, as flushNavigation never does — a rejection would leave ⌘Q dead on the first press
 // sweepFileHistory awaits readLivePersonalization, which reads the new root's settings.json from disk at that point
 // 'personalization:set': key === 'historyDays' → sweepFileHistory(root)
 ```
@@ -321,6 +320,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 - [ ] `watchPatch.test.ts`: a `page-upsert` arms a timer with source `external`. Red, then green.
 - [ ] A switch test: arm a page, switch roots; the old store holds the row, the new holds none.
+- [ ] The quit path: with a page armed and a nav write in flight, `before-quit` lands both flushes, closes both stores, and quits on one press; a rejected history flush still quits.
 - [ ] Full gate green. `rg -F "writeBody(" src/main` → 2 now, 3 after Task 6; control `rg -F "noteValueWrite(" src/main` → ≥ 5.
 
 **Verify — user**
@@ -333,7 +333,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 - [ ] Gates green. Every Verify ticked. Now counts re-run.
 - [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; every concern fixed or ruled.
 - [ ] A restarted dev instance against a scratch Nexus: rows appear in `versions.db` after typing; no `full-refresh` per save. No screenshots.
-- [ ] Progress hashes filled. Phase 3 opens once the Hazard Window is closed.
+- [ ] Progress hashes filled. Phase 3 opens.
 
 ---
 
@@ -508,7 +508,7 @@ export function PageHistoryWindow(): React.JSX.Element | null
 
 **Why:** The window is reachable from wherever a page is, through the shared model and the shared router.
 
-**Now** — `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 5 (`pageMenu.ts` ×3, `connMenu.ts:9,93,164` — the `[[link]]` menu, routed by `Links/connectionMenu.ts:63` with explicit cases and no default) · `rg -F "runPageSendAction(" src/renderer` → 5 · `rg -F "reveal: true" src` → 2 (`contextMenu.ts:144`, `pageMenu.ts:147`) · `pageMenu.test.ts:15-26` asserts the full-menu order · `Frames/PageMenu.tsx:58-65` one Properties `MenuItem`.
+**Now** — `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 5 (`pageMenu.ts:68,79,85`, `connMenu.ts:7,164`) · `rg -F "PageClipboardAction" src` → 5 (`pageMenu.ts:66,71,75`, `connMenu.ts:9,93` inside `ConnMenuAction` — the `[[link]]` menu, routed by `Links/connectionMenu.ts:63` with explicit cases and no default) · `rg -F "runPageSendAction(" src/renderer` → 5 · `rg -F "reveal: true" src` → 2 (`contextMenu.ts:144`, `pageMenu.ts:147`) · `pageMenu.test.ts:15-26` asserts the full-menu order · `Frames/PageMenu.tsx:58-65` one Properties `MenuItem`.
 
 **Becomes**
 
@@ -518,7 +518,8 @@ export type PageMetaAction = … | 'title:history' | …                      //
 export type PageReachAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath' | 'title:history'>
 export const PAGE_REACH_ACTIONS = ['title:copylink', 'title:copypath', 'title:history'] as const
 export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW       // PageClipboardAction / PAGE_CLIPBOARD_ACTIONS renamed away
-// connMenu.ts keeps a literal ['title:copylink', 'title:copypath'] — the link menu does not offer View History (Ruling)
+// connMenu.ts keeps a literal ['title:copylink', 'title:copypath'] and its ConnMenuAction member becomes
+// Extract<PageReachAction, 'title:copylink' | 'title:copypath'> — the link menu does not offer View History (Ruling)
 // opts.history?: boolean → { label: 'View History', action: 'title:history', separatorBefore: true } above Reveal;
 // Reveal's separatorBefore: !opts.history && !opts.clipboard && !opts.move; pageMetaMenuSubset passes history: true
 // contextMenu.ts, cellMenu.ts:132, cardMenu.ts:34 pass history: true; contextMenu's switch: case 'title:history' → push(win, 'open-history', target)
@@ -563,21 +564,26 @@ export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW       // Pag
 ```ts
 // src/renderer/Store/tabState.ts
 export function fenceWarm(entry: WarmEntry | undefined, fresh: string | undefined): WarmEntry | undefined   // fresh undefined, or an entry with no editorState (scroll only) → entry stands
+export function bumpBodyEpoch(path: string): void
 export function useBodyEpoch(path: string): number   // useSyncExternalStore
-/** A body replaced from outside the editor — restore today, the watcher later. Clears every warm
- *  detail for the path, refetches, patches the navigation slot, bumps the epoch. */
-export async function replaceBody(path: string): Promise<void>
-// dropCacheDetail(path) → fetchPageDetail(path) → setPageBody(path, detail.body) → bump the path's epoch
+// tabState imports nothing from the store — a slice imports tabState, and the cycle is the guideline's forbidden edge
 // tileCache.restore → fenceWarm(entry, readPageDetail(path)?.body)
 // PageView.restore  → fenceWarm(path-fenced entry, slot.body)
 // useWindowWarm.restore → fenceWarm(readWindowCache(id), readPageDetail(activePath)?.body); activePath joins the memo deps
 ```
 
 ```ts
+// src/renderer/Store/navigationSlice.ts — beside setPageBody
+  /** A body replaced from outside the editor — restore today, the watcher later. */
+  replaceBody: (path: string) => Promise<void>
+// dropCacheDetail(path) → fetchPageDetail(path) → setPageBody(path, detail.body) → bumpBodyEpoch(path)
+```
+
+```ts
 // src/renderer/Interface/restoreSnapshot.ts (new)
 export async function restoreSnapshot(target: PreviewTarget, ts: number): Promise<Result<null>>
 // live = pagesByIdOf(tree).get(target.id)?.path ?? target.path → flushPageSave(live)
-// → window.nexus.restoreSnapshot(id, ts) → replaceBody(r.value.path)
+// → window.nexus.restoreSnapshot(id, ts) → useSession.getState().replaceBody(r.value.path)
 ```
 
 ```tsx
@@ -592,7 +598,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 **Verify — automated**
 
-- [ ] Red first, `tabState.test.ts`: `fenceWarm` four cases (match, differ, no fresh, scroll-only entry); `replaceBody` clears every tab's warm `pageDetail` for the path and advances `useBodyEpoch`. Then green.
+- [ ] Red first, `tabState.test.ts`: `fenceWarm` four cases (match, differ, no fresh, scroll-only entry); `bumpBodyEpoch` advances `useBodyEpoch`. `navigationSlice` test: `replaceBody` clears every tab's warm `pageDetail` for the path. Then green.
 - [ ] The evicted-slot case (executed by the attack): open A, navigate to B, restore A from its sidebar row, go back — the slot seeds the restored body, not the warm entry's. Red without `dropCacheDetail`, then green.
 - [ ] `PageTile` (jsdom, `MarkdownEditor` stubbed): after `cachePageDetail({…body: 'RESTORED'})` + `bumpBodyEpoch`, the seeded body is `'RESTORED'` in the same commit as the key; the outgoing capture is fenced off.
 - [ ] `useWindowWarm`: a cached entry whose doc differs from the fresh detail is not restored.
@@ -656,7 +662,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 - [ ] **Phase 2** — Capture
   - [ ] Task 4 · `<commit>`
   - [ ] Task 5 · `<commit>`
-- [ ] **Phase 3** — The contract and the settings *(waits on the Hazard Window)*
+- [ ] **Phase 3** — The contract and the settings
   - [ ] Task 6 · `<commit>`
   - [ ] Task 7 · `<commit>`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
@@ -669,7 +675,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 ### Rulings
 
 - 09-02-2026, Nathan: no screenshots during the plan — he is present, sees the progress, and drives tweaks.
-- 09-02-2026, Nathan: the parallel confirm work lands before phase 3 opens — the Hazard Window closes on that commit, and Tasks 5–7 re-derive against it.
+- 09-02-2026, Nathan: the parallel confirm work lands before phase 3 opens — it landed at `605db15e` / `c3ca16ed`; Tasks 5–7 re-derive against HEAD.
 - 09-02-2026 (mine, for Nathan to overturn): the `[[link]]` right-click menu keeps its two copy rows and does not gain View History — the plan's surfaces are the page surfaces.
 - 09-02-2026, Nathan: pages only; the store stays tracked by NexusOS's repository; trash recovery keeps history; a row click highlights, a check selects; the trash glyph replaces a foot-left Delete; numeric settings ride the existing typeable picker; View History routed in `runPageSendAction`; confirms and their copy come from Nathan at execution, on the in-app seam his parallel session is landing.
 
@@ -681,7 +687,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Sequenced After
 
-- The watcher's `page-upsert` driving `replaceBody` — the external-edit reload.
+- The watcher's `page-upsert` driving the slice's `replaceBody` — the external-edit reload.
 - Per-snapshot titles; a diff view on `@codemirror/merge`; per-device store files; a git provider as a second store module.
 
 ### Closeout
@@ -737,4 +743,4 @@ Everything else is the standard below.
 - [ ] Context and Handoff current; the History entry "PM-125 || Page File History".
 - [ ] Lessons routed; successors in Sequenced After.
 
-**The report**, in plain English — what shipped and why it matters · what happened along the way · what the screenshots showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded.
+**The report**, in plain English — what shipped and why it matters · what happened along the way · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded.
