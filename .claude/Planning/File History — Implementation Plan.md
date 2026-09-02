@@ -1,7 +1,7 @@
 ## File History — Implementation Plan
 
 > **Status:** written, pending review · Spec: [[File History — Decision Log]] · Execute tasks in order.
-> Citations name files and symbols at HEAD `af6f28a5`; re-derive before editing. The tree is shared with a parallel session — line numbers are landmarks, symbol names and the greps are the truth.
+> Citations name files and symbols at HEAD `af6f28a5`; re-derive before editing. The tree is shared with a parallel session that is retiring the native confirms (uncommitted at writing: `Windows/ConfirmationWindow.tsx`, `Windows/confirmations.ts`, `askConfirm` on `chromeSlice`) — line numbers are landmarks, symbol names and the greps are the truth, and every Now count is re-derived after that work lands.
 
 **Goal**
 
@@ -15,10 +15,10 @@ Bounded by: recovery is body-only, by construction — the one restore path writ
 
 1. `.nexus/versions.db` opens through `openDb` with an integrity check that quarantines a damaged file by renaming it and its `-wal`/`-shm` siblings, never deleting; one table `snapshots(page_id, ts, source, blob)`, `CREATE TABLE IF NOT EXISTS` re-applied on open, no version row; the module exposes add, latest, list, read, delete, clear, sweep. The file ignores the watcher through one `.nexus`-scoped `.db*` clause in `ignoredUnder`.
 2. `writePageFile` returns the text it overwrote; a read failure other than a missing file refuses the write rather than rewriting the page from empty frontmatter.
-3. `captureIfDue(root, pageId, text, source)` holds the whole rule: the File History toggle, the interval gate on an in-memory `Map<pageId, lastTs>`, the foreign-overwrite exception on `Map<path, bodyHash>` fed by `updatePageBody` alone, dedupe by the body `splitEnvelope` returns against the latest snapshot, a 1 MB size cap, best-effort after the write returns. Per-page quiet timers armed by the writer and by the watcher's `page-upsert`, resolved to a path at fire time by inverting `pageIdIndex`, disarming an id the tree no longer holds or two paths claim; both maps and every timer clear where the store closes; a Nexus switch offers every armed page ungated first.
+3. `captureIfDue(root, pageId, text, source)` holds the whole rule: the File History toggle, the interval gate on an in-memory `Map<pageId, lastTs>`, the foreign-overwrite exception on `Map<path, bodyHash>` fed by the one body-write path, dedupe by the body `splitEnvelope` returns against the latest snapshot, a 1 MB size cap, synchronous once the text is in hand, best-effort after the write's `Result` is settled. One `writeBody(root, abs, body, source)` is the body-write path both the autosave and restore take. Per-page quiet timers armed by the writer and by the watcher's `page-upsert`, resolved to a path at fire time through one memoized `livePathOf(root, id)`, disarming an id the tree no longer holds or two paths claim; both maps and every timer clear where the store closes; a Nexus switch or rename offers every armed page ungated first. The three `Personalization` keys land with the rule, clamped on read.
 4. Retention is one age-bounded `DELETE`, run at open and from the settings write when `historyDays` shrinks.
-5. Channels `history:list`, `history:read`, `history:restore`, `history:delete`, `history:clear`, `history:menu`, `history:confirm`, and the push `open-history`; restore captures the current text ungated (source `restore`), runs the body write's own tail, and answers with the page's resolved path; every read, restore, and delete validates the snapshot against the page id and resolves the page by id.
-6. `Personalization` gains `fileHistory?: boolean`, `historyDays?: number`, `historyInterval?: number`, clamped on read; a **File History** section on Files & Links: toggle, two numeric typeable pickers on the `zoom` row kind given a unit, and a destructive Clear History whose label flips to **Cleared** for 1500 ms behind the same native confirm the exclusions clear uses; `ClearExclusionsRow` generalizes to `ClearActionRow`.
+5. Channels `history:list`, `history:read`, `history:restore`, `history:delete`, `history:clear`, `history:menu`, and the push `open-history`; restore is `writeBody` with source `restore` and answers with the page's resolved path; every read, restore, and delete validates the snapshot against the page id and resolves the page by id. **[pending Nathan's ruling]** the confirms are either the parallel session's in-app `ask(request)` seam or native dialogs behind a `history:confirm` channel.
+6. A **File History** section on Files & Links: toggle, two numeric typeable pickers on the `zoom` row kind given a unit, and a destructive Clear History whose label flips to **Cleared** for 1500 ms behind the same confirm the exclusions clear uses; `ClearExclusionsRow` generalizes to `ClearActionRow` on whatever shape the parallel session leaves it.
 7. The shared page menu gains **View History** as `opts.history`, directly above Reveal Location with its own separator, riding the send block so every consumer that reaches a page — sidebar row, tab, nav row, card, title cell — offers it, routed once in `runPageSendAction`; the page Settings menu gains a **History** row beside Properties; both open the window.
 8. `PageHistoryWindow` on `WindowBase` with the page's location trail as its title, no toolbar band, the close × alone; a read-only `MarkdownEditor` rendering the checked snapshot (Current Version when none is checked) with a two-deep ancestors chain so its embeds render inert; the list in an overlay right slot: **Current Version** first behind a divider, then **Untitled Snapshot** rows with a leading checkbox and a caption of the Nexus's date then a hairline then its time; a row click highlights only, a check selects the target; a trash glyph trails a checked snapshot row and deletes every checked row; **Restore** at the foot-right, inactive for Current Version, dimmed for a multi-check; both actions behind native confirms with the ratified copy; a right-click pops the same two actions; the list refetches after every action.
 9. Restore's renderer half: flush the page's pending save, call main, then refresh the detail slot and the navigation slot's body with the restored text at the resolved path, and re-seed every host of that path — `PageView` by re-keying its editor, `PageTile` by an effect resetting its seed — through one `bodyReplaced(path)` signal; the three warm seams share one fence comparing the cached doc against a fresh body handed in, keeping the entry when none is known.
@@ -28,24 +28,10 @@ Bounded by: recovery is body-only, by construction — the one restore path writ
 
 **Forced By**
 
-- `neverWatched` takes a bare segment and `adoptFile` shares it (`mutate.ts:135`) → the `.db*` ignore is a `segs[0] === NEXUS_DIR` clause in `ignoredUnder`, never a widening of `neverWatched`, or file properties refuse `.db` attachments (Task 3).
-- `openDb` returns `null` for a file that won't open, and `PRAGMA quick_check` throws on interior corruption → the quarantine branch runs on both a null handle with an existing file and a thrown check, inside try/catch (Task 1).
-- SQLite adopts and deletes an orphaned hot WAL on a fresh open (executed) → quarantine renames all three files under one stamp (Task 1).
-- `serializeOnFile` is non-reentrant and the capture must not delay the write → `updatePageBody` reads the outgoing text inside its lock and returns it; the handler offers it after the `Result` is settled (Tasks 2, 5).
-- `writePageFile` reads internally and returns `void`, and its catch treats every error as a new file → the return type becomes `string | null` and only `ENOENT` starts from empty (Task 2).
-- `pageIdIndex` is path→id and `findPage` is private to `watchPatch.ts` → the timer map holds no path; fire-time inversion over `liveIdIndex(root)` is the only id→path main has (Task 4).
-- Every autosave lands 400 ms apart → the interval gate reads memory, hashes only after it passes, and the SQLite read for dedupe happens at most once per interval per page (Task 4).
-- Five relocation paths move page files → nothing re-keys on relocate; an id the inverted index no longer holds disarms (Task 4).
-- The renderer's `beforeunload` flush is un-awaited → app-close capture is best-effort; the Nexus-switch offer runs after the renderer's `flushAllPageSaves`, which the adopt path already awaits (Task 5).
-- `contextMenu.ts:111` switches on a cast expression → no exhaustiveness assert is writable there; `runPageSendAction` is the one router every renderer consumer calls first (Task 8).
-- `pageMetaMenuSubset` hardcodes its opts and the tab and nav menus pass `pageSendActions(ctx)` → History rides the send block's arrays so every subset consumer gains it in one edit (Task 8).
-- `PageTile` seeds `loaded` in a `useState` initializer and `MarkdownEditor` consumes `initialBody` at mount only (`index.tsx:459`) → a key bump on the inner editor re-seeds nothing; `PageTile` needs an effect resetting `loaded`, and `PageView` needs its editor re-keyed (Task 10).
-- The outgoing editor's cleanup capture runs between the incoming subtree's render and its mount effects (executed under React 19) → restore refreshes caches with the restored text and every seam fences by doc-compare; a drop is refilled before it's read (Task 10).
-- `writeThroughBody` updates only and nothing puts the main pane's page in `detailByPath`; `DETAIL_CAP = 40` evicts → the refresh calls `cachePageDetail`, and a fence with no fresh body keeps the entry (Task 10).
-- `PickerControl` already carries `typeable` and the `zoom` row already clamps a typed number into its steps → the two numeric settings ride `zoom` with a unit; no new row kind, no type widening (Task 7).
-- `ClearExclusionsRow` treats `null` as no-op → the generalized row flips on any non-null success (Task 7).
-- No shared confirm helper exists; nine handlers inline `showMessageBox` → the two new dialogs share one small helper, and the nine are Sequenced After (Task 6).
-- `PreviewTarget` is renderer-only; the wire carries `ContextTarget` → `open-history` pushes a `ContextTarget` and `App.tsx` adapts it as `open-in-preview` does (Task 9).
+- `serializeOnFile` is non-reentrant and the capture must not delay the write → `updatePageBody` reads the outgoing text inside its lock and returns it; the caller offers it after the `Result` is settled (Tasks 2, 5, 6).
+- `PickerControl` already carries `typeable` and the `zoom` row already clamps a typed number into its steps → the two numeric settings ride `zoom` with a unit; no new row kind, no type widening (Tasks 4, 7).
+- `PreviewTarget` is renderer-only; the wire carries `ContextTarget` → `open-history` pushes a `ContextTarget` and `App.tsx` adapts it as `open-in-preview` does (Tasks 6, 9).
+- The parallel session's confirm work is uncommitted and touches `index.ts`, `bridge.ts`, `preload`, `ClearExclusionsRow`, `PageMenu.tsx`'s footer → phase 3 does not open until it lands or is reverted, and Tasks 6 and 7 re-derive against it (Hazard Window).
 
 **Inherited Reasoning:** The decision log's Considered & Rejected: git first in any form (whole-tree, no retention, path-keyed, a phone can't run it); files per snapshot (storage); a table in `nexus.db` (disposability); persisting CM6 undo history; a renderer-side timer (identity-blind); riding the Page Window (one-at-a-time, editable, tab-bound). Three build-breaking rounds settled: a plain interval gate loses an external edit landing inside the interval (hence the foreign-overwrite exception); a `bodyReplaced` key bump re-seeds nothing (hence the effect and the re-key); dropping a warm cache is refilled by the outgoing editor's cleanup (hence refresh-and-fence); a version row and an encoding column earn nothing today; `Clear History` in the window is covered by multi-check plus the glyph. Nathan: pages only for now; the store stays tracked by his repository; trash recovery must keep history; every plan step searches for the existing save, debounce, writer, watcher, and store mechanism before adding one.
 
@@ -61,7 +47,7 @@ Bounded by: recovery is body-only, by construction — the one restore path writ
 
 **Environment:** Plan directory `.claude/Planning`. Spec: [[File History — Decision Log]]. Explorer: `Explore`. Research: general-purpose. Code reviewer: `feature-dev:code-reviewer`. Attack reviewer: `build-breaking-agent`. Simplification: `code-simplifier`, dual-briefed to also report non-simplicity bugs. Comments: `comment-killer-agent`, briefed "no sub-agents, no worktree." Neutral verifier: general-purpose. Rules: `.claude/Guidelines/`. Gates from `Pommora/`: `npm run typecheck && npm run test && npm run lint`, exit codes read directly; `npm run lint` must report zero warnings in its text.
 
-**Shapes:** additive (the store, the capture, the channels, the settings, the window) · fix (`writePageFile`'s read failure; the sibling sweep is its two callers in `CRUD/page.ts`) · refactor (`ClearExclusionsRow` → `ClearActionRow`; the `zoom` row's unit; the shared warm fence — behavior preserved, proven by the existing tests) · user-visible (the window, the menu rows, the section) · live data (the Declared Stop runs against Nathan's Nexus over CDP, read-only screenshots and a throwaway page only).
+**Shapes:** additive (the store, the capture, the channels, the settings, the window) · fix (`writePageFile`'s read failure; the sibling sweep is its two callers in `CRUD/page.ts`) · refactor (`ClearExclusionsRow` → `ClearActionRow`; the `zoom` row's unit — behavior preserved, proven by the existing tests) · additive on the warm seams (`useWindowWarm` gains a fence it never had; `PageView` flushes a live-body timer it never flushed) · user-visible (the window, the menu rows, the section) · live data (the Declared Stop runs against Nathan's Nexus over CDP, read-only screenshots and a throwaway page only).
 
 **Declared Stops**
 
@@ -77,6 +63,8 @@ Bounded by: recovery is body-only, by construction — the one restore path writ
 - `src/main` and `src/preload` don't HMR — a dev instance must restart to see a new channel.
 - Before any step introduces a save, debounce, flush, timer, writer, or store mechanism, it searches for the existing one named in Grounding and reuses or extends it. A second writer or debounce for something that has one is a defect (Nathan, 09-02-2026).
 - Out of scope everywhere: `nexus.db` and its schema; `blocks.ts` and every block or tile body; Tasks and Events; the watcher-driven editor reload; git; a diff view; per-snapshot titles beyond the row label; the nine existing inline confirms.
+
+**Hazard Window:** Opened by the parallel session's uncommitted confirm work; while open, no task of this plan edits `src/main/index.ts`, `src/shared/bridge.ts`, `src/preload/index.ts`, `src/renderer/Settings/ClearExclusionsRow.tsx`, or `src/renderer/Frames/PageMenu.tsx`. Closed when that work is committed (or reverted) and Tasks 6 and 7 are re-derived against HEAD. Phases 1 and 2 touch none of those files except `index.ts` (Task 5), which therefore also waits.
 
 **Made False**
 
@@ -152,11 +140,7 @@ export function openDb(path: string): Db | null
 ```ts
 // src/main/Database/versionsDb.ts (new) + versionsDb.test.ts
 export const VERSIONS_FILENAME = 'versions.db'
-export type SnapshotSource = 'edit' | 'external' | 'restore'
-export interface SnapshotRow {
-  ts: number
-  source: SnapshotSource
-}
+// SnapshotSource and SnapshotRow are declared once, in src/shared/types.ts (the wire needs them)
 
 /** Open `.nexus/versions.db`. A file that won't open, or fails `PRAGMA quick_check`, is renamed
  *  with its -wal and -shm siblings to `versions.db.corrupt-<ISO stamp>` and a fresh one opened.
@@ -164,10 +148,9 @@ export interface SnapshotRow {
 export function openVersionsDb(nexusRoot: string): Db | null
 // DDL: CREATE TABLE IF NOT EXISTS snapshots (page_id TEXT NOT NULL, ts INTEGER NOT NULL,
 //   source TEXT NOT NULL, blob BLOB NOT NULL, PRIMARY KEY (page_id, ts))
-//   + INDEX snapshots_by_ts (ts)
 
 export function addSnapshot(db: Db, pageId: string, ts: number, source: SnapshotSource, text: string): void
-// text → zlib deflateSync → blob; a (page_id, ts) collision takes ts + 1 until free
+// text → zlib deflateSync → blob; INSERT OR REPLACE — a same-millisecond capture supersedes
 export function latestSnapshot(db: Db, pageId: string): { ts: number; text: string } | null
 export function listSnapshots(db: Db, pageId: string): SnapshotRow[]   // newest first
 export function readSnapshot(db: Db, pageId: string, ts: number): string | null   // inflated text
@@ -186,8 +169,8 @@ export function sessionVersionsDb(): Db | null
 
 **Verify — automated**
 
-- [ ] Red first, `versionsDb.test.ts` on a scratch dir: add/latest/list/read round-trip through zlib; dedupe is the caller's, so two adds with equal text are two rows; `deleteSnapshots` returns the count and leaves other pages alone; `sweepSnapshots` removes only rows older than the cutoff; a collision on `(page_id, ts)` lands at `ts + 1`; a garbage header → `openVersionsDb` returns a live handle on a fresh file and the `.corrupt-` triple exists; interior corruption past 4096 bytes → same; a file with a hot `-wal` quarantines all three names. Expect 8 failures, module not found; then green.
-- [ ] `openSessionDb` on a root with no `.nexus/versions.db` creates it; `closeSessionDb` closes both handles (the existing `sessionDb` test file gains one case).
+- [ ] Red first, `versionsDb.test.ts` on a scratch dir: add/latest/list/read round-trip through zlib; dedupe is the caller's, so two adds with equal text are two rows; `deleteSnapshots` returns the count and leaves other pages alone; `sweepSnapshots` removes only rows older than the cutoff; a same-`ts` add replaces; a garbage header → `openVersionsDb` returns a live handle on a fresh file and the `.corrupt-` triple exists; interior corruption past 4096 bytes → same; a file with a hot `-wal` quarantines all three names. Expect 8 failures, module not found; then green.
+- [ ] `openSessionDb` on a root with no `.nexus/versions.db` creates it; `closeSessionDb` closes both handles (`session.test.ts` gains one case).
 - [ ] Full gate green, exit codes read directly.
 - [ ] `rg -F "nexus.db: cannot open" src/main` → 0. Control: `rg -F "openDb(" src/main` → ≥ 2.
 
@@ -328,84 +311,103 @@ const DB_FILE = /\.db(-wal|-shm)?$/
 
 ### Phase 2 — Capture
 
-#### Task 4: `captureIfDue` and the quiet timers
+#### Task 4: `captureIfDue`, `writeBody`, and the quiet timers
 
 **Requirement:** 3, 4
 
-**Why:** The whole rule lives in one function with three callers, so "when does a snapshot happen" has one answer; retention is one statement beside it.
+**Why:** The whole rule lives in one function, and the one body-write path every save and every restore take lives beside it, so "when does a snapshot happen" and "who writes a body" each have one answer; retention is one statement beside them.
 
-**Now** — `—` (new module). The pieces it reads:
+**Now** — `—` (new module). The pieces it reads, and the keys it adds:
 
 ```ts
-// src/main/valuesChanged.ts:27-43 — path→id over the live tree; inverted here at fire time
+// src/main/valuesChanged.ts:27-43 — path→id over the live tree; flushValueWrites already rebuilds it per save
 export function liveIdIndex(root: string): Map<string, string>
-// src/main/settings.ts:63-65 — the live personalization the readers below narrow
-export const readLivePersonalization = async (root: string): Promise<Personalization>
-// src/main/IO/pageFile.ts:27 — the body the dedupe hashes
-export function splitEnvelope(content: string): PageEnvelope
-// src/shared/identity.ts — the kind mark; only 'P' captures
+// src/main/settings.ts:54-65 — liveLeaves serves the tree's personalization synchronously when a tree is installed
+// src/main/IO/pageFile.ts:27 — splitEnvelope; src/shared/identity.ts — the kind mark; only 'P' captures
+// src/shared/types.ts:151-152 — hoverPreviewLinger?: number, the numeric-key precedent
+// src/main/readNexus.ts:143 — hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger)
+// src/shared/cropGeometry.ts:13 — clamp(v, min, max)
 ```
 
-**Becomes** — one module, one exported rule, four entry points:
+**Becomes**
+
+```ts
+// src/shared/types.ts
+export type SnapshotSource = 'edit' | 'external' | 'restore'
+export interface SnapshotRow { ts: number; source: SnapshotSource }
+export const HISTORY_DAYS = { min: 7, max: 90, default: 90 } as const
+export const HISTORY_INTERVAL = { min: 5, max: 20, default: 5 } as const   // minutes
+// Personalization gains:
+  /** Absent = on. Off stops capture; the store and the History window stay readable. */
+  fileHistory?: boolean
+  /** Days a snapshot is kept, 7–90. Absent = 90. */
+  historyDays?: number
+  /** Minutes between snapshots of one page, 5–20. Absent = 5. */
+  historyInterval?: number
+// the interface's header comment reads: a new key is a field here, a readPersonalization row, and an
+// apply-map row where it has a DOM effect
+export function clampInt(v: unknown, min: number, max: number): number | undefined
+// non-finite → undefined · else clamp(Math.round(v), min, max) through cropGeometry's clamp
+```
+
+```ts
+// src/main/readNexus.ts — readPersonalization
+    fileHistory: p.fileHistory === false ? false : undefined,
+    historyDays: clampInt(p.historyDays, HISTORY_DAYS.min, HISTORY_DAYS.max),
+    historyInterval: clampInt(p.historyInterval, HISTORY_INTERVAL.min, HISTORY_INTERVAL.max),
+```
+
+```ts
+// src/main/valuesChanged.ts
+/** The one path an id holds in the live tree; null when absent or claimed twice (a Finder copy
+ *  shares its twin's ID until the next open's remint). Memoized per tree object. */
+export function livePathOf(root: string, id: string): string | null
+```
 
 ```ts
 // src/main/CRUD/fileHistory.ts (new) + fileHistory.test.ts
-export const HISTORY_DAYS = { min: 7, max: 90, default: 90 } as const
-export const HISTORY_INTERVAL = { min: 5, max: 20, default: 5 } as const   // minutes
 export const SNAPSHOT_MAX_BYTES = 1_048_576
 
-export interface FileHistoryConfig {
-  enabled: boolean
-  intervalMs: number
-  days: number
-}
-export async function readFileHistory(root: string): Promise<FileHistoryConfig>
-// fileHistory !== false → enabled; historyDays / historyInterval clamped into their ranges
-
-/** The one rule. Offered text is whole-file; the body it splits to is what dedupes. Returns
- *  whether a row landed. Never throws — a failed insert logs and answers false. */
-export function captureIfDue(
-  root: string,
-  pageId: string,
-  text: string,
-  source: SnapshotSource,
-  opts?: { ungated?: boolean },
-): Promise<boolean>
-// gate: source === 'restore' || opts.ungated || lastTs(pageId) === undefined || now - lastTs ≥ intervalMs
+/** The one rule. Offered text is whole-file; the body it splits to is what dedupes. Synchronous
+ *  once the text is in hand. Never throws — a failed insert logs and answers false. */
+export function captureIfDue(root: string, pageId: string, text: string, source: SnapshotSource): boolean
+// gate: source === 'restore' || lastTs(pageId) === undefined || now - lastTs ≥ intervalMs
 // then: enabled · kindOf(pageId) === 'page' · text.length ≤ SNAPSHOT_MAX_BYTES ·
 //       hash(splitEnvelope(text).body) ≠ hash(latestSnapshot(pageId).body) → addSnapshot
+// config read synchronously off the live tree's personalization (liveLeaves), defaults when absent
 
-/** The body writer's report: the text it overwrote and the text it wrote. Offers the outgoing
- *  text — ungated when it isn't what Pommora last wrote here — records the written body's hash,
- *  and arms the quiet timer. */
-export function noteBodyWritten(root: string, absPath: string, previous: string | null, written: string): void
+/** THE body write. Locks, reads the outgoing text, writes, re-indexes, notes and pushes the value
+ *  change, then offers the outgoing text — ungated when it is not what Pommora last wrote here
+ *  (a foreign writer landed) or when `source` is 'restore' — records the written body's hash, and
+ *  arms the quiet timer. The autosave and restore are its two callers. */
+export async function writeBody(root: string, absPath: string, body: string, source: 'edit' | 'restore'): Promise<Result<null>>
 
 /** The watcher's report of a foreign edit: arms the quiet timer with source 'external'. */
 export function noteExternalEdit(root: string, absPath: string): void
 
-/** Nexus switch and quit: offer every armed page ungated, then forget everything. */
+/** Nexus switch, rename, and quit: offer every armed page ungated, then forget everything. */
 export async function flushFileHistory(root: string): Promise<void>
 export function resetFileHistory(): void   // both maps, every timer
 
-export async function sweepFileHistory(root: string): Promise<void>
-// sweepSnapshots(db, Date.now() - days * DAY)
+export function sweepFileHistory(root: string): void   // sweepSnapshots(db, Date.now() - days * DAY)
 ```
 
 ```ts
 // module state — the gate map, the last-written map, the timers; all cleared by resetFileHistory
 const lastTs = new Map<string, number>()          // pageId → ts of the latest row, seeded lazily
-const lastWritten = new Map<string, string>()     // absPath → hash of the body updatePageBody wrote
+const lastWritten = new Map<string, string>()     // absPath → hash of the body writeBody wrote
 const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }>()   // pageId
-// a timer fires: invert liveIdIndex(root) → the id's one path (two paths, or none → disarm) →
-//   read the file (fail → nothing) → captureIfDue(root, id, text, source)
+// a timer fires: livePathOf(root, id) → null disarms → read the file (fail → nothing) →
+//   captureIfDue(root, id, text, source)
 ```
 
-**Assumed by:** Task 5 (the callers), Task 6 (restore's ungated capture).
+**Assumed by:** Task 5 (the callers), Task 6 (restore is `writeBody(…, 'restore')`), Task 7 (the section's keys).
 
 **Verify — automated**
 
-- [ ] Red first, `fileHistory.test.ts` against a scratch root with a real `versions.db` and a seeded live tree: first offer on a page captures; a second inside the interval doesn't; one after it does; identical body never adds; a text over the cap never adds; a Task id (`T` mark) never adds; `noteBodyWritten` with a `previous` whose body hash ≠ `lastWritten` captures ungated; with a matching hash and inside the interval, doesn't; a quiet timer fires once after the interval with the file's current text, and a second `noteBodyWritten` inside the interval resets it (fake timers); `flushFileHistory` captures an armed page at once and `resetFileHistory` leaves no timer; an id the tree no longer holds disarms; an id two paths claim disarms; `readFileHistory` clamps `historyDays: 200` to 90 and `historyInterval: "5"` to the default; `sweepFileHistory` removes rows older than `days`. Expect ~14 failures, module not found; then green.
-- [ ] Both halves of the gate: the "inside the interval" case is asserted red with the gate bypassed (`ungated: true` adds a row), so the guard is proven to be what refuses.
+- [ ] Red first, `fileHistory.test.ts` against a scratch root with a real `versions.db` and a seeded live tree: first offer on a page captures; a second inside the interval doesn't; one after it does; identical body never adds; a text over the cap never adds; a Task id (`T` mark) never adds; `writeBody` whose outgoing body hash ≠ `lastWritten` captures ungated; with a matching hash and inside the interval, doesn't; `writeBody(…, 'restore')` captures ungated and then writes; a quiet timer fires once after the interval with the file's current text, and a second `writeBody` inside the interval resets it (fake timers); `flushFileHistory` captures an armed page at once and `resetFileHistory` leaves no timer; an id the tree no longer holds disarms; an id two paths claim disarms (`livePathOf` → null); `fileHistory: false` captures nothing; `sweepFileHistory` removes rows older than `days`. Expect ~15 failures, module not found; then green.
+- [ ] `readNexus.test.ts`: `historyDays: 200` reads 90, `historyInterval: "5"` reads absent, `fileHistory: false` reads false and `fileHistory: 'no'` reads absent. Red, then green.
+- [ ] Both halves of the gate: the "inside the interval" case is asserted to add a row with source `'restore'`, so the gate is proven to be what refuses.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -413,13 +415,13 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 - [ ] *(none.)*
 
 
-#### Task 5: The callers — the body handler, the watcher, the open path, the switch
+#### Task 5: The callers — the body handler, the watcher, the open path, the switch and rename
 
 **Requirement:** 3, 4
 
-**Why:** Capture happens where the app already knows a body changed; nothing new observes the file system.
+**Why:** Capture happens where the app already knows a body changed; nothing new observes the file system, and the autosave handler shrinks to a call.
 
-**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 · `rg -F "closeSessionDb()" src/main` → 2 (re-derive):
+**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 · `rg -F "await rename(root, newRoot)" src/main/index.ts` → 1 (re-derive after the hazard window closes):
 
 ```ts
 // src/main/index.ts:1102-1108
@@ -439,9 +441,8 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 ```
 
 ```ts
-// src/main/index.ts:364-378 — the open sequence: openSession → prepareOpenedNexus →
-//   replayPendingRename → openSessionDb → (root changed) dropLiveTree → runOpenRecord/refreshTree
-//   → seedContentIndex → …
+// src/main/index.ts:364-378 — openNexusSequence: openSession → prepareOpenedNexus → replayPendingRename → openSessionDb → …
+// src/main/index.ts:1885-1888 — the nexus root rename: await rename(root, newRoot); … await adoptNexus(newRoot, false)
 // src/main/index.ts:1584-1600 — 'personalization:set' writes then reacts per key
 ```
 
@@ -449,13 +450,7 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 
 ```ts
 // src/main/index.ts — 'page:updateBody'
-        const r = await updatePageBody(resolved.value, body)
-        if (!r.ok) return r
-        await indexWrittenPage(root, resolved.value)
-        noteValueWrite(root, resolved.value)
-        pushValueChanges(root)
-        noteBodyWritten(root, resolved.value, r.value, body)   // after the Result is settled
-        return ok(null)
+        return writeBody(root, resolved.value, body, 'edit')
 ```
 
 ```ts
@@ -467,20 +462,19 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 ```
 
 ```ts
-// src/main/index.ts — openNexusSequence, after openSessionDb(root) when root !== priorRoot
-      void sweepFileHistory(root)
-// before openSession(path) when priorRoot !== null:
-      await flushFileHistory(priorRoot); resetFileHistory()
-// app 'before-quit' beside the existing close: await flushFileHistory(root) best-effort
-// 'personalization:set': if (key === 'historyDays') void sweepFileHistory(root)
+// src/main/index.ts
+// openNexusSequence, before openSession(path) when priorRoot !== null:  await flushFileHistory(priorRoot); resetFileHistory()
+// openNexusSequence, after openSessionDb(root) when root !== priorRoot:  sweepFileHistory(root)
+// the nexus root rename, before `await rename(root, newRoot)`:          await flushFileHistory(root); resetFileHistory()
+// app 'before-quit', beside the existing close:                          await flushFileHistory(root)   // best-effort
+// 'personalization:set':                                                  if (key === 'historyDays') sweepFileHistory(root)
 ```
 
 **Verify — automated**
 
-- [ ] Red first, `index`-level integration in `fileHistory.test.ts` (or the existing IPC harness if one covers `page:updateBody`): a `page:updateBody` on a page with no history lands one row holding the pre-edit text; a second save 400 ms later lands none; the watcher's `page-upsert` on that page arms a timer that fires with source `external`. Expect 3 failures; then green.
-- [ ] A Nexus switch test: arm a page, switch roots, the old root's store holds the row and the new root's holds none.
+- [ ] `fileHistory.test.ts` already proves the write path; this task's proof is wiring: the watcher test (`watchPatch.test.ts`) asserts a `page-upsert` arms a timer with source `external` (red, then green), and a Nexus-switch test arms a page, switches roots, and finds the old root's store holding the row and the new root's holding none.
 - [ ] Full gate green.
-- [ ] `rg -F "noteBodyWritten(" src/main` → 2 (definition + handler). Control: `rg -F "noteValueWrite(" src/main` → ≥ 5.
+- [ ] `rg -F "writeBody(" src/main` → 3 (definition, the handler, restore's handler after Task 6 — at this task, 2). Control: `rg -F "noteValueWrite(" src/main` → ≥ 5.
 
 **Verify — user**
 
@@ -493,7 +487,7 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 - [ ] Every task's **Verify — automated** list ticked.
 - [ ] Every Now count re-run against its control.
 - [ ] Every task that diverged had its dependents rewritten.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; the reports cite files inside it.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying a ruling in the Log.
 - [ ] A dev instance restarted against a scratch Nexus: type in a page, wait, `sqlite3 .nexus/versions.db 'select page_id, ts, source from snapshots'` shows rows; the main log shows no `full-refresh` walk per save.
 - [ ] Progress hashes filled in.
@@ -509,7 +503,7 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 
 **Why:** The renderer reaches snapshots only through the bridge; restore and delete are main-side acts that validate by id, and both confirms are native.
 
-**Now** — `rg -F "'trash:list'" src/shared/bridge.ts src/preload/index.ts src/main/index.ts` → 3 (the template triple) · `rg -F "showMessageBox(" src/main` → 9:
+**Now** — `rg -F "'trash:list'" src/shared/bridge.ts src/preload/index.ts src/main/index.ts` → 3 (the template triple) · `rg -F "showMessageBox(" src/main` → 9 at `af6f28a5`, 1 in the parallel session's working copy (re-derive after the hazard window closes):
 
 ```ts
 // src/shared/bridge.ts:268-269
@@ -522,15 +516,7 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
   trashMenu: ask('trash:menu'),
 // src/preload/index.ts:177
   onOpenInPreview: on('open-in-preview'),
-// src/main/index.ts:967-973 — the exclusions confirm, one of nine inline showMessageBox sites
-          const { response } = await dialog.showMessageBox(win, {
-            type: 'warning',
-            buttons: ['Clear', 'Cancel'],
-            defaultId: 1,
-            cancelId: 1,
-            ...clearConfirmCopy(excluded.length),
-          })
-          if (response !== 0) return ok(null)
+// src/main/rowMenu.ts:81 — popModelMenu<A extends string>(win, items): the one native popper for a flat model
 ```
 
 **Becomes**
@@ -542,32 +528,23 @@ export interface SnapshotRow { ts: number; source: SnapshotSource }
 ```
 
 ```ts
-// src/shared/fileHistoryMenu.ts (new) + fileHistoryMenu.test.ts
-export type FileHistoryMenuAction = { kind: 'restore' } | { kind: 'delete' }
-export interface FileHistoryMenuContext {
-  /** More than one row is checked — Delete acts on the set and Restore is withheld. */
-  batch: boolean
-}
-export function fileHistoryMenuLabels(batch: boolean): { restore: string; delete: string }
-// { restore: 'Restore', delete: batch ? 'Delete All' : 'Delete' }
+// src/shared/fileHistoryMenu.ts (new)
+export type FileHistoryMenuAction = 'restore' | 'delete'
+/** More than one row is checked — Delete acts on the set and Restore is withheld. */
+export function fileHistoryMenuItems(batch: boolean): ActionItem<FileHistoryMenuAction>[]
+// batch → [{ label: 'Delete All', action: 'delete' }]
+// else  → [{ label: 'Restore', action: 'restore' }, { label: 'Delete', action: 'delete', separatorBefore: true }]
 ```
 
 ```ts
-// src/main/fileHistoryMenu.ts (new) — on popTrashMenu's shape
-export function popFileHistoryMenu(win: BrowserWindow, ctx: FileHistoryMenuContext): Promise<FileHistoryMenuAction | null>
-// batch → Delete All only; else Restore, separator, Delete
+// src/main/index.ts — 'history:menu' is one line over the existing model popper (main/rowMenu.ts:81)
+'history:menu'     menu · popModelMenu(win, fileHistoryMenuItems(ctx.batch))
 ```
 
-```ts
-// src/main/confirm.ts (new)
-/** One native confirm: the affirmative verb is button 0, Cancel is the default and the escape. */
-export async function confirmDialog(
-  win: BrowserWindow,
-  verb: string,
-  message: string,
-  detail: string,
-): Promise<boolean>
-```
+**Confirms — pending Nathan's ruling (the parallel session is retiring native confirms):**
+
+- *In-app (recommended, if that work lands):* two entries in `src/renderer/Windows/confirmations.ts` — `restoreSnapshot: ConfirmRequest` and `deleteSnapshots(count): ConfirmRequest` with the ratified copy, plus `clearHistory: ConfirmRequest` — called through its `ask()`; `history:clear` is a plain `envelope` answering `Result<number>`; no `history:confirm`, no `confirm.ts`.
+- *Native (if that work is reverted):* `src/main/confirm.ts` with `confirmDialog(win, verb, message, detail)`, a `history:confirm` channel `{ args: [kind: 'restore' | 'delete', count: number]; reply: boolean }`, and `history:clear` as a self-wrapped `window` handler answering `Result<number | null>`.
 
 ```ts
 // src/shared/bridge.ts — Asks
@@ -577,10 +554,8 @@ export async function confirmDialog(
   // Answers the page's resolved path — the renderer's target path may be stale across a rename.
   'history:restore': { args: [pageId: string, ts: number]; reply: Result<{ path: string }> }
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
-  // `null` is a cancelled dialog; a count is a clear that ran.
-  'history:clear': { args: []; reply: Result<number | null> }
-  'history:menu': { args: [ctx: FileHistoryMenuContext]; reply: FileHistoryMenuAction | null }
-  'history:confirm': { args: [kind: 'restore' | 'delete', count: number]; reply: boolean }
+  'history:clear': { args: []; reply: Result<number> }      // shape per the confirm ruling above
+  'history:menu': { args: [ctx: { batch: boolean }]; reply: FileHistoryMenuAction | null }
 // Pushes
   'open-history': ContextTarget
 ```
@@ -593,7 +568,6 @@ export async function confirmDialog(
   deleteSnapshots: ask('history:delete'),
   clearHistory: ask('history:clear'),
   historyMenu: ask('history:menu'),
-  confirmHistory: ask('history:confirm'),
   onOpenHistory: on('open-history'),
 ```
 
@@ -601,30 +575,22 @@ export async function confirmDialog(
 // src/main/index.ts — handlers
 'history:list'     envelope · sessionVersionsDb() ?? fail('operation-failed', 'File History is unavailable.')
 'history:read'     envelope · readSnapshot(db, pageId, ts) → splitEnvelope(text).body; null → not-found
-'history:restore'  envelope · path = inverted liveIdIndex(root).get(pageId) → not-found when absent;
-                   current = readFile(abs); captureIfDue(root, pageId, current, 'restore');
-                   body = splitEnvelope(readSnapshot(...)).body; updatePageBody(abs, body);
-                   indexWrittenPage; noteValueWrite; pushValueChanges; lastWritten[abs] = hash(body);
-                   ok({ path: rel })
+'history:restore'  envelope · rel = livePathOf(root, pageId) → not-found when null;
+                   body = splitEnvelope(readSnapshot(db, pageId, ts)).body → not-found when null;
+                   r = await writeBody(root, abs, body, 'restore'); r.ok ? ok({ path: rel }) : r
 'history:delete'   envelope · ok(deleteSnapshots(db, pageId, ts))
-'history:clear'    window, self-wrapped try/catch · confirmDialog(win, 'Clear', 'Clear File History?',
-                   'Every snapshot on this device will be deleted. This cannot be undone.') → ok(clearSnapshots(db)) | ok(null)
-'history:menu'     menu · popFileHistoryMenu
-'history:confirm'  window · confirmDialog with the ratified copy:
-   restore → ('Restore', 'Restore this snapshot?', 'Restoring this snapshot will replace the current version of this file. The overwritten version will remain recoverable as a snapshot.')
-   delete, count 1 → ('Delete', 'Delete this snapshot?', 'Deleting this snapshot will permanently delete it from history. This cannot be undone.')
-   delete, count n → ('Delete', `Delete ${n} snapshots?`, 'Deleting these snapshots will permanently delete them from history. This cannot be undone.')
+'history:clear'    per the confirm ruling · ok(clearSnapshots(db))
 ```
 
-The exclusions confirm stays inline; sweeping the nine onto `confirmDialog` is Sequenced After.
+The ratified copy, wherever the confirm lives: restore — "Restore this snapshot?" / "Restoring this snapshot will replace the current version of this file. The overwritten version will remain recoverable as a snapshot." · delete, one — "Delete this snapshot?" / "Deleting this snapshot will permanently delete it from history. This cannot be undone." · delete, n — "Delete n snapshots?" / "Deleting these snapshots will permanently delete them from history. This cannot be undone." · clear — "Clear File History?" / "Every snapshot on this device will be deleted. This cannot be undone."
 
-**Assumed by:** Task 7 (`history:clear` behind the clear row), Task 8 (the push), Task 9 (list/read/menu/confirm), Task 10 (restore's answer).
+The `SnapshotRow` type and the `HISTORY_*` constants already sit in `shared/types.ts` from Task 4.
+
+**Assumed by:** Task 7 (`history:clear` behind the clear row), Task 8 (the push), Task 9 (list/read/menu and the confirms), Task 10 (restore's answer).
 
 **Verify — automated**
 
-- [ ] Red first, `fileHistoryMenu.test.ts`: labels for batch and single; the shared model has no third action. Expect 2 failures; then green.
-- [ ] Handler tests against a scratch root: `history:read` on a `ts` belonging to another page answers `not-found`; `history:restore` on a renamed page (target path stale, id live) restores and answers the new path; `history:restore` writes a `restore` row holding the pre-restore text before the body changes; `history:delete` answers the count. Red, then green.
-- [ ] `serveBridge` compiles — a declared channel without a handler is a type error, and the reverse.
+- [ ] The handler logic that isn't a one-liner is `writeBody` (Task 4, tested there) and `readSnapshot` (Task 1, tested there); this task's proof is the wiring: a scratch-root test through the preload-less `serveBridge` map asserts `history:read` on a `ts` belonging to another page answers `not-found`, and `history:restore` on a renamed page (target path stale, id live) answers the new path. Red, then green.
 - [ ] Full gate green.
 - [ ] `rg -F "'open-history'" src` → 3 (bridge, preload, contextMenu after Task 8 — at this task, 2). Control: `rg -F "'open-in-preview'" src` → 3.
 
@@ -639,85 +605,29 @@ The exclusions confirm stays inline; sweeping the nine onto `confirmDialog` is S
 
 **Why:** The three knobs Nathan named, on the roster every other setting rides, with the device-wide clear beside them.
 
-**Now** — `rg -F "hoverPreviewLinger" src/shared/types.ts src/main/readNexus.ts src/renderer/Settings/SettingsWindow.tsx` → 4 (the numeric-key trail) · `rg -F "ClearExclusionsRow" src/renderer` → 3 · `rg -F "kind: 'zoom'" src/renderer/Settings/SettingsWindow.tsx` → 3 (the row type + two rosters; re-derive):
-
-```ts
-// src/shared/types.ts:151-152
-  /** Whole seconds (1–30). Absent = None: only the short pointer-travel grace. */
-  hoverPreviewLinger?: number
-// src/main/readNexus.ts:143
-    hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
-```
+**Now** — `rg -F "ClearExclusionsRow" src/renderer` → 3 at `af6f28a5` (re-derive: the parallel session reshaped it around `ask(clearExclusions(n))`) · `rg -F "kind: 'zoom'" src/renderer/Settings/SettingsWindow.tsx` → 3:
 
 ```tsx
 // src/renderer/Settings/SettingsWindow.tsx:115-120 — the numeric typeable picker, percent-only today
-  | (RowText & {
-      kind: 'zoom'
-      key: KeyOf<number>
-      fallback: number
-      steps?: readonly number[]
-    })
-// :744-770 — ZoomRow: stepsWith(steps, stored).map(percentChoice); typeable text/suffix '%';
-//   a typed value clamps into [steps[0], steps[last]]
-// :104-106
-  | (RowText & { kind: 'clear-exclusions' })
-// :685-686
-    case 'clear-exclusions':
-      return <ClearExclusionsRow label={row.label} hint={row.hint} />
-```
-
-```tsx
-// src/renderer/Settings/ClearExclusionsRow.tsx:14-24 — the label flip, skipped on a null reply
-    void window.nexus.clearExclusions().then((r) => {
-      if (!r.ok) { void window.nexus.showError(r.error.message); return }
-      if (r.value === null) return
-      setDone(true)
-      window.setTimeout(() => setDone(false), 1500)
-    })
+  | (RowText & { kind: 'zoom'; key: KeyOf<number>; fallback: number; steps?: readonly number[] })
+// :744-770 — ZoomRow: choices = stepsWith(steps, stored).map(percentChoice); typeable text = String(Math.round(stored * 100)),
+//   suffix '%', commit clamps parseFloat(written)/100 into [steps[0], steps[last]]
+// :104-106, :685-686 — kind 'clear-exclusions' → <ClearExclusionsRow label hint />
 ```
 
 **Becomes**
 
-```ts
-// src/shared/types.ts — Personalization
-  /** Absent = on. Off stops capture; the store and the History window stay readable. */
-  fileHistory?: boolean
-  /** Days a snapshot is kept, 7–90. Absent = 90. */
-  historyDays?: number
-  /** Minutes between snapshots of one page, 5–20. Absent = 5. */
-  historyInterval?: number
-// the interface's header comment: "a new toggle is a field here, a readPersonalization row, and
-// an apply-map row where it has a DOM effect"
-```
-
-```ts
-// src/shared/types.ts — beside coerceHoverLinger
-export function clampInt(v: unknown, min: number, max: number): number | undefined
-// non-number → undefined (the default) · else Math.round clamped into [min, max]
-// src/main/readNexus.ts
-    fileHistory: p.fileHistory === false ? false : undefined,
-    historyDays: clampInt(p.historyDays, HISTORY_DAYS.min, HISTORY_DAYS.max),
-    historyInterval: clampInt(p.historyInterval, HISTORY_INTERVAL.min, HISTORY_INTERVAL.max),
-// HISTORY_DAYS / HISTORY_INTERVAL move to src/shared/types.ts so both processes read one source
-```
-
 ```tsx
-// src/renderer/Settings/SettingsWindow.tsx — the zoom row gains a unit; percent is the default
-type NumberUnit = { label: (n: number) => string; suffix: string; parse: (typed: string) => number }
-const PERCENT: NumberUnit   // the current ZoomRow behavior, verbatim
-const DAYS: NumberUnit      // label `${n} Days`, suffix 'days', parse = Number.parseInt
-const MINUTES: NumberUnit   // label `${n} Min`, suffix 'min', parse = Number.parseInt
-  | (RowText & {
-      kind: 'zoom'
-      key: KeyOf<number>
-      fallback: number
-      steps?: readonly number[]
-      unit?: NumberUnit       // absent = PERCENT
-    })
-  | (RowText & {
-      kind: 'clear'
-      action: () => Promise<Result<unknown | null>>   // null = nothing ran; the label flips otherwise
-    })
+// src/renderer/Settings/SettingsWindow.tsx — the zoom row gains a unit; percent stays the default
+/** How a numeric row shows and reads its value: the stored number times `scale` is what the
+ *  field shows and the suffix follows it. Percent: scale 100, '%'. Days: scale 1, 'days'. */
+type NumberUnit = { scale: number; suffix: string; label: (shown: number) => string }
+const PERCENT: NumberUnit = { scale: 100, suffix: '%', label: (n) => `${n}%` }
+const DAYS: NumberUnit = { scale: 1, suffix: 'days', label: (n) => `${n} Days` }
+const MINUTES: NumberUnit = { scale: 1, suffix: 'min', label: (n) => `${n} Min` }
+  | (RowText & { kind: 'zoom'; key: KeyOf<number>; fallback: number; steps?: readonly number[]; unit?: NumberUnit })
+  | (RowText & { kind: 'clear'; action: () => Promise<Result<unknown>>; confirm: ConfirmRequest })   // shape per the confirm ruling
+// ZoomRow: the unit replaces percentChoice, the '%' literal, and the /100 — one row, no percent branch
 ```
 
 ```tsx
@@ -728,31 +638,27 @@ const MINUTES: NumberUnit   // label `${n} Min`, suffix 'min', parse = Number.pa
           { kind: 'toggle', key: 'fileHistory', label: 'File History', hint: 'Keeps snapshots of every page as it is edited, on this device.', defaultOn: true },
           { kind: 'zoom', key: 'historyDays', label: 'History Timeframe', hint: 'How long a snapshot is kept before it is pruned.', fallback: HISTORY_DAYS.default, steps: [7, 14, 30, 60, 90], unit: DAYS },
           { kind: 'zoom', key: 'historyInterval', label: 'Snapshot Interval', hint: 'The least time between two snapshots of one page.', fallback: HISTORY_INTERVAL.default, steps: [5, 10, 15, 20], unit: MINUTES },
-          { kind: 'clear', label: 'Clear History', hint: 'Deletes every snapshot on this device.', action: () => window.nexus.clearHistory() },
+          { kind: 'clear', label: 'Clear History', hint: 'Deletes every snapshot on this device.', action: () => window.nexus.clearHistory(), confirm: clearHistory },
         ],
       },
-// the Exclusions section's row becomes
-          { kind: 'clear', label: 'Clear Exclusion Cache', hint: '…unchanged…', action: () => window.nexus.clearExclusions() },
+// the Exclusions section's row becomes the same kind, carrying the exclusions' action and confirm
 ```
 
 ```tsx
 // src/renderer/Settings/ClearActionRow.tsx (renamed from ClearExclusionsRow.tsx)
-export function ClearActionRow({ label, hint, action }: { label: string; hint: string; action: () => Promise<Result<unknown | null>> }): React.JSX.Element
-// same body: a destructive Button, 'Clear' → 'Cleared' for 1500 ms on a non-null ok
+export function ClearActionRow(props: RowOf<'clear'>): React.JSX.Element
+// the landed body, generalized: ask(confirm) → action() → 'Clear' → 'Cleared' for 1500 ms on ok
 ```
-
-**Assumed by:** Task 4 reads the keys through `readFileHistory` (already written against these names).
 
 **Verify — automated**
 
-- [ ] Red first, `readNexus.test.ts`: `historyDays: 200` reads 90, `historyInterval: "5"` reads absent, `fileHistory: false` reads false and `fileHistory: 'no'` reads absent. Expect 3 failures; then green.
-- [ ] `ExclusionRows.test.tsx` (or its successor) keeps the exclusions clear's behavior: null → no flip; a report → Cleared for 1500 ms.
-- [ ] Full gate green; the `RowControl` switch compiles with the new kind and without the old.
-- [ ] `rg -F "ClearExclusionsRow" src` → 0 · `rg -F "clear-exclusions" src` → 0. Control: `rg -F "ClearActionRow" src` → ≥ 3.
+- [ ] `ExclusionRows.test.tsx` (or its successor after the parallel work) keeps the exclusions clear's behavior: a declined confirm → no action, no flip; ok → Cleared for 1500 ms. Red on the rename, then green.
+- [ ] Full gate green.
+- [ ] `rg -F "ClearExclusionsRow" src` → 0 · `rg -F "clear-exclusions" src` → 0 · `rg -F "percentChoice" src` → 0. Control: `rg -F "ClearActionRow" src` → ≥ 3.
 
 **Verify — user**
 
-- [ ] *(carried to Gate 4: the section reads as the mock's fourth block of Files & Links.)*
+- [ ] *(carried to Gate 4: the section reads as the mock's fourth block of Files & Links; a typed `45` in the timeframe reads `45 Days`.)*
 
 
 #### Gate 3 — the contract holds, the knobs write
@@ -839,7 +745,7 @@ export function runPageSendAction(action: string, path: string): boolean
 // FOOTER_ACTIONS unchanged
 ```
 
-`openHistory` is Task 9's; this task lands after it in the commit order (Task 9 first, then 8), or the two commit together.
+`openHistory` is Task 9's; Task 9 commits first.
 
 **Assumed by:** Task 9 (`openHistory`, the push subscription).
 
@@ -847,7 +753,7 @@ export function runPageSendAction(action: string, path: string): boolean
 
 - [ ] Red first, `pageMenu.test.ts`: the full-menu order gains `'title:history'` between `'title:copypath'` and `'title:reveal'`; History opens its own group (`separatorBefore: true`); Reveal's separator is false when History precedes it; a subset of `['title:history']` alone drops the leading separator; `pageSendActions({})` returns the three reach actions. Expect 5 failures (the first as an inverted existing assertion); then green.
 - [ ] `cellMenu.test.ts` / `cardMenu.test.ts` / `tabMenu` / `navRowMenu` model tests: each menu carries `'title:history'`. Red, then green.
-- [ ] Full gate green — `TabMenuAction` and `NavRowMenuAction` widen through `PageSendAction`, and `runPageSendAction`'s four callers compile unchanged.
+- [ ] Full gate green.
 - [ ] `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 0 · `rg -F "PageClipboardAction" src` → 0. Control: `rg -F "PAGE_REACH_ACTIONS" src` → ≥ 2.
 
 **Verify — user**
@@ -909,13 +815,13 @@ export function PageHistoryWindow(): React.JSX.Element | null
 // menu(row): window.nexus.historyMenu({ batch: checked.size > 1 && checked.has(row.ts) }) → 'restore' → restore with shown = row.ts · 'delete' → the checked set or the row
 ```
 
-Dates: `formatDate(new Date(ts).toISOString(), dateFormat, 'none')` and `formatDate(…, dateFormat, nexusClock)`'s clock half, split the way TrashFrame formats its `when`; the hairline between them is the `segment` style from `DesignSystem/Elements/Segment`.
+Dates: `formatDate(new Date(ts).toISOString(), dateFormat, 'none')` for the date and `clockOf(date, nexusClock)` for the time — `clockOf` (`formatValue.ts:47`) becomes an export; the hairline between them is the `segment` style from `DesignSystem/Elements/Segment`. The row model — which rows show the glyph, whether Restore is enabled, what is shown — is a pure function `historyRowModel(rows, checked, shown)` in `Windows/pageHistoryModel.ts`, the way `trashFrame.test.ts` tests `filterRows`.
 
 **Assumed by:** Task 8 (`openHistory`), Task 10 (`restoreSnapshot` is the renderer half this window calls).
 
 **Verify — automated**
 
-- [ ] Red first, a `pageHistoryWindow.test.tsx` on the row model: Current Version never shows the trash glyph; a checked snapshot does; Restore is disabled for Current Version and for two checks; the shown body follows the last check and returns to Current Version when nothing is checked; a row click changes only the highlight. Expect 5 failures; then green.
+- [ ] Red first, `pageHistoryModel.test.ts`: Current Version never shows the trash glyph; a checked snapshot does; Restore is enabled only for exactly one checked snapshot; the shown target follows the last check and returns to Current Version when nothing is checked. Expect 4 failures; then green.
 - [ ] Full gate green.
 - [ ] `rg -F "id=\"page-history\"" src/renderer` → 1. Control: `rg -F "id=\"page-preview\"" src/renderer` → 1.
 
@@ -934,12 +840,12 @@ Dates: `formatDate(new Date(ts).toISOString(), dateFormat, 'none')` and `formatD
 
 ```ts
 // src/renderer/SurfacePM/tileCache.ts:13-27 — restore() compares entry.editorState.doc with readPageDetail(path)?.body; skips when fresh is undefined
+// src/renderer/Interface/PageView.tsx:51,103-104 — liveTimer debounces setPageBody 120 ms and has no cleanup: slot.body can lag the doc at unmount
 // src/renderer/Interface/PageView.tsx:118,168-175 — key={pageDetail.path}; restore() fences by path only; capture writes pageDetail with now.body
-// src/renderer/Windows/useWindowWarm.ts:20-29 — restore() has no fence
-// src/renderer/SurfacePM/PageTile.tsx:61-66 — useState initializer seeds from warm doc or readPageDetail
-// src/renderer/Store/tabState.ts:49-53 — cachePageDetail creates-or-updates; :80-83 writeThroughBody updates only
-// src/renderer/Store/navigationSlice.ts:234-241 — patchReadyAt by detail.path; :357 setPageBody
-// src/renderer/Interface/pageFlush.ts:23-26 — flushPageSave(path)
+// src/renderer/Windows/useWindowWarm.ts:20-29 — restore() has no fence; activePath is a hook argument
+// src/renderer/SurfacePM/PageTile.tsx:61-66 — useState initializer seeds from the warm doc or readPageDetail; the inner MarkdownEditor has no key
+// src/renderer/Store/tabState.ts:64-78 — fetchPageDetail caches on landing; :85 dropPageDetail
+// src/renderer/Store/navigationSlice.ts:357 — setPageBody; src/renderer/Interface/pageFlush.ts:23 — flushPageSave
 ```
 
 **Becomes**
@@ -948,16 +854,15 @@ Dates: `formatDate(new Date(ts).toISOString(), dateFormat, 'none')` and `formatD
 // src/renderer/Store/tabState.ts
 /** One fence for every warm seam: an entry whose doc no longer matches the page's fresh body is
  *  dead. With no fresh body known the entry stands — a cold-detail embed keeps its warmth. */
-export function fenceWarm<E extends { editorState?: unknown }>(entry: E | undefined, fresh: string | undefined): E | undefined
-// tileCache.restore → fenceWarm(entry, readPageDetail(path)?.body) (its delete stays)
-// PageView.restore   → fenceWarm(entry?.pageDetail?.path === path ? entry : undefined, slot.body)
-// useWindowWarm.restore → fenceWarm(readWindowCache(id), readPageDetail(activePath)?.body)
+export function fenceWarm(entry: WarmEntry | undefined, fresh: string | undefined): WarmEntry | undefined
+// WarmEntry is warmSeam.ts's restore() return type
+// tileCache.restore     → fenceWarm(entry, readPageDetail(path)?.body) (its delete stays)
+// PageView.restore      → fenceWarm(entry?.pageDetail?.path === path ? entry : undefined, slot.body)
+// useWindowWarm.restore → fenceWarm(readWindowCache(id), readPageDetail(activePath)?.body)   // activePath joins the memo deps
 
-/** A body replaced from outside the editor — restore today, the watcher later. Refreshes the
- *  detail slot and tells every host of `path` to re-seed. */
-export function replaceBody(path: string, body: string): void
-// cachePageDetail({ ...(readPageDetail(path) ?? await-free minimal), body }) — the caller passes the
-// detail it holds; then bump epoch(path) and notify
+/** A body replaced from outside the editor — restore today, the watcher later. Every host of the
+ *  path re-seeds from the detail slot in its next render. */
+export function bumpBodyEpoch(path: string): void
 export function useBodyEpoch(path: string): number   // useSyncExternalStore over a per-path counter
 ```
 
@@ -968,24 +873,33 @@ export function useBodyEpoch(path: string): number   // useSyncExternalStore ove
 export async function restoreSnapshot(target: PreviewTarget, ts: number): Promise<Result<null>>
 // await flushPageSave(target.path)
 // const r = await window.nexus.restoreSnapshot(target.id, ts); if (!r.ok) return r
-// const detail = await fetchPageDetail(r.value.path)   // dropPageDetail first so it refetches
-// useSession.getState().setPageBody(r.value.path, detail.body)
-// replaceBody(r.value.path, detail.body)
+// dropPageDetail(r.value.path); const detail = await fetchPageDetail(r.value.path)   // caches on landing
+// if (detail) useSession.getState().setPageBody(r.value.path, detail.body)
+// bumpBodyEpoch(r.value.path); return ok(null)
 ```
 
 ```tsx
-// src/renderer/Interface/PageView.tsx
-      <MarkdownEditor key={`${pageDetail.path}:${useBodyEpoch(pageDetail.path)}`} …
-// src/renderer/SurfacePM/PageTile.tsx
+// src/renderer/Interface/PageView.tsx — the epoch is read above the early returns; the live-body timer flushes on unmount
+  const bodyEpoch = useBodyEpoch(slot?.status === 'ready' ? slot.detail.path : '')
+  useEffect(() => () => { if (liveTimer.current) { clearTimeout(liveTimer.current); /* flush */ } }, [])
+      <MarkdownEditor key={`${pageDetail.path}:${bodyEpoch}`} …
+```
+
+```tsx
+// src/renderer/SurfacePM/PageTile.tsx — seed and key move together, in one render
   const epoch = useBodyEpoch(path)
-  useEffect(() => { if (epoch === 0) return; const d = readPageDetail(path); if (d) setLoaded(entryFrom(path, d)) }, [epoch, path])
+  const [seed, setSeed] = useState(() => ({ epoch, entry: initialEntry(path, warm) }))
+  if (seed.epoch !== epoch) setSeed({ epoch, entry: entryFrom(path, readPageDetail(path)) })   // adjust-during-render
+  const entry = seed.entry?.path === path ? seed.entry : null
+      <MarkdownEditor key={epoch} initialBody={body} …
 ```
 
 **Verify — automated**
 
-- [ ] Red first, `tabState.test.ts`: `fenceWarm` returns the entry when docs match, `undefined` when they differ, the entry when `fresh` is undefined; `replaceBody` bumps the path's epoch and `useBodyEpoch` observes it. Expect 4 failures; then green.
-- [ ] A React test on `PageTile` (jsdom, the real component with `MarkdownEditor` stubbed): after `replaceBody(path, 'RESTORED')`, the tile's seeded body is `'RESTORED'`; the warm entry captured by the outgoing editor is fenced off. Red, then green.
+- [ ] Red first, `tabState.test.ts`: `fenceWarm` returns the entry when docs match, `undefined` when they differ, the entry when `fresh` is undefined; `bumpBodyEpoch` advances what `useBodyEpoch` reads. Expect 4 failures; then green.
+- [ ] A React test on `PageTile` (jsdom, the real component with `MarkdownEditor` stubbed): after `cachePageDetail({…, body: 'RESTORED'})` and `bumpBodyEpoch(path)`, the tile's seeded body is `'RESTORED'` in the same commit as the key change; the warm entry captured by the outgoing editor is fenced off. Red, then green.
 - [ ] `useWindowWarm`: a cached entry whose doc differs from the fresh detail is not restored. Red, then green.
+- [ ] `PageView`: a pending live-body timer lands `setPageBody` on unmount (red without the cleanup).
 - [ ] The existing warm-seam tests (`TabState.test.ts`, `TileCache.test.ts`, `windowTabs.test.ts`) stay green unmodified.
 - [ ] Full gate green.
 - [ ] Crossing test: restore on a page open in the main pane *and* the Page Window at once — both show the restored body and a keystroke in the window saves the restored text plus the keystroke, never the pre-restore body (drive over CDP at the Declared Stop against a throwaway page).
@@ -1055,11 +969,11 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [ ] Task 2 — `writePageFile` returns and refuses · `<commit>`
   - [ ] Task 3 — the watcher ignores `.nexus/*.db*` · `<commit>`
 - [ ] **Phase 2** — Capture
-  - [ ] Task 4 — `captureIfDue` and the quiet timers · `<commit>`
-  - [ ] Task 5 — the callers · `<commit>`
+  - [ ] Task 4 — `captureIfDue`, `writeBody`, the quiet timers, the three keys · `<commit>`
+  - [ ] Task 5 — the callers, the switch, the rename · `<commit>`
 - [ ] **Phase 3** — The contract and the settings
-  - [ ] Task 6 — the history channels, the push, the row menu, the confirms · `<commit>`
-  - [ ] Task 7 — the File History settings section · `<commit>`
+  - [ ] Task 6 — the history channels, the push, the row menu · `<commit>`
+  - [ ] Task 7 — the File History settings section (UI) · `<commit>`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
   - [ ] Task 9 — `PageHistoryWindow` · `<commit>`
   - [ ] Task 8 — View History and History · `<commit>`
@@ -1069,7 +983,8 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
-- 09-02-2026, Nathan: pages only; the store stays tracked by NexusOS's repository, no `.gitignore`; trash recovery keeps history; a row click highlights only, a check selects; the trash glyph replaces a foot-left Delete; the numeric settings ride the existing typeable picker; a small shared confirm helper for the two new dialogs; View History routed in `runPageSendAction`.
+- 09-02-2026, Nathan: pages only; the store stays tracked by NexusOS's repository, no `.gitignore`; trash recovery keeps history; a row click highlights only, a check selects; the trash glyph replaces a foot-left Delete; the numeric settings ride the existing typeable picker; View History routed in `runPageSendAction`.
+- **Open:** which confirm world phase 3 executes in — the parallel session's in-app `ask()` or native dialogs — and whether that work lands before phase 3 opens (Hazard Window).
 
 ### Open Against Later Tasks
 
@@ -1080,7 +995,6 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 ### Sequenced After
 
 - The watcher's `page-upsert` driving `replaceBody` — the external-edit reload that closes the lost-update Known Issue.
-- The nine inline `showMessageBox` sites onto `confirmDialog`.
 - Per-snapshot titles (an additive column; the row label already leaves the room).
 - A diff view on `@codemirror/merge`, serving the trash compare view too.
 - Per-device store files with union reads; a git provider as a second store module.
