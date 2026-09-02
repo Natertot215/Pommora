@@ -91,7 +91,7 @@ export function mergeFrontmatter(
   // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own
   // bytes, and a broken map is passed through rather than re-serialized from what it recovered.
   if (modeledKeys.length === 0)
-    return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
+    return frontmatter === '' ? body : assembleEnvelope(frontmatter.replaceAll('\r\n', '\n'), body)
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
   if (mergeable(doc)) {
