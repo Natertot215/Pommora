@@ -10,6 +10,8 @@ import type { PageValues } from '@shared/types'
 import { idTime } from '../ids'
 import { readPageRecord } from '../readNexus'
 import { folderCorpus } from '../indexSeed'
+import { getLiveTree } from '../liveTree'
+import { pageIdIndex } from '../valuesChanged'
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
@@ -22,12 +24,28 @@ function iso(ms: number | null): string | null {
   return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
+/** The files a read covers: the container's corpus, or only the named pages, resolved through the
+ *  live tree — a push names the pages it wrote, and a refresh is scoped to them. */
+async function corpus(
+  rootPath: string,
+  containerRelPath: string,
+  pageIds?: readonly string[],
+): Promise<string[]> {
+  if (!pageIds) return folderCorpus(rootPath, join(rootPath, containerRelPath))
+  const tree = getLiveTree()
+  const wanted = new Set(pageIds)
+  const files: string[] = []
+  for (const [rel, id] of pageIdIndex(tree?.nexus.rootPath === rootPath ? tree : null))
+    if (wanted.has(id)) files.push(join(rootPath, rel))
+  return files
+}
+
 export async function loadValues(
   rootPath: string,
   containerRelPath: string,
+  pageIds?: readonly string[],
 ): Promise<Record<string, PageValues>> {
-  const absFolder = join(rootPath, containerRelPath)
-  const files = await folderCorpus(rootPath, absFolder)
+  const files = await corpus(rootPath, containerRelPath, pageIds)
   const records = await Promise.all(
     files.map((absFile) => {
       const relFile = relPosix(rootPath, absFile)

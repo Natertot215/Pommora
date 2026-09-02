@@ -176,7 +176,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { AssetMap, PageValues, PickFileOptions, ViewButton } from '@shared/types'
+import type { AssetMap, PickFileOptions, ViewButton } from '@shared/types'
 import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
@@ -1251,13 +1251,18 @@ serveBridge(
 
     // Batch value read for a container's view pipeline, lazy on open.
     'view:loadValues': {
-      kind: 'raw',
-      fn: async (containerPath: unknown): Promise<Record<string, PageValues>> => {
+      kind: 'envelope',
+      fn: async (containerPath: unknown, pageIds: unknown) => {
         const root = sessionRoot()
-        if (root === null || typeof containerPath !== 'string') return {}
+        if (root === null) return NO_NEXUS
+        if (typeof containerPath !== 'string' || (pageIds !== undefined && !isStringArray(pageIds)))
+          return fail(
+            'operation-failed',
+            'A container path, and optionally page ids, are required.',
+          )
         const resolved = await resolveUnderRoot(root, containerPath)
-        if (!resolved.ok) return {}
-        return loadValues(root, containerPath)
+        if (!resolved.ok) return resolved
+        return ok(await loadValues(root, containerPath, pageIds))
       },
     },
 

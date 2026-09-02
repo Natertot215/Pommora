@@ -118,7 +118,7 @@ beforeEach(() => {
   }
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = {
-    loadValues: async () => VALUES,
+    loadValues: async () => ({ ok: true, value: VALUES }),
     activeViews: { get: async () => ({}), set: async () => undefined },
     viewOrders: { get: async () => ({}) },
     views: { save: saveSpy },
@@ -219,36 +219,51 @@ describe('the values epoch', () => {
   const bump = (changes: { rel: string; pageIds: string[] }[]): void =>
     act(() => useSession.getState().bumpContainerValues(changes))
 
+  const P2 = pageValues({
+    p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'todo' }, [statusDef]) },
+  })
+
   beforeEach(() => {
-    nexus().loadValues = vi.fn(async () => VALUES)
+    nexus().loadValues = vi.fn(async () => ({ ok: true, value: VALUES }))
     useSession.setState({ valuesEpoch: null })
   })
 
-  it('a container push refetches the mounted path and retires the named overrides', async () => {
+  it('a container push re-reads only the named pages, merging them, and retires their overrides', async () => {
     await mount(collection())
-    nexus().loadValues.mockClear()
+    nexus().loadValues = vi.fn(async () => ({ ok: true, value: P2 }))
     act(() =>
       api?.setValueOverride({
-        p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
-        p2: { fm: { id: 'p2' } as never, write: null },
+        p1: { fm: { id: 'p1' } as never, write: null },
+        p2: { fm: { id: 'p2' } as never, write: new Promise(() => {}) },
       }),
     )
+    bump([{ rel: 'Col', pageIds: ['p2'] }])
+    await act(async () => {})
+    expect(nexus().loadValues).toHaveBeenCalledWith('Col', ['p2'])
+    expect(api?.effectiveValues.p2).toEqual(P2.p2)
+    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
+    expect(api?.values.p1).toEqual(VALUES.p1)
+  })
+
+  it('a failed read keeps the values already held', async () => {
+    await mount(collection())
+    nexus().loadValues = vi.fn(async () => ({ ok: false, error: { code: 'operation-failed' } }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
-    expect(nexus().loadValues).toHaveBeenCalledWith('Col')
     expect(api?.effectiveValues.p1).toEqual(VALUES.p1)
-    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
   it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
     await mount(collection())
-    let land: (v: typeof VALUES) => void = () => {}
-    nexus().loadValues = vi.fn(() => new Promise<typeof VALUES>((r) => (land = r)))
+    let land: (v: { ok: true; value: typeof VALUES }) => void = () => {}
+    nexus().loadValues = vi.fn(
+      () => new Promise<{ ok: true; value: typeof VALUES }>((r) => (land = r)),
+    )
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
     expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
-    await act(async () => land(VALUES))
+    await act(async () => land({ ok: true, value: VALUES }))
     expect(api?.effectiveValues.p2).toEqual(VALUES.p2)
   })
 

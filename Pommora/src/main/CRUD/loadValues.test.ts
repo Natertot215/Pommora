@@ -4,6 +4,8 @@ import { decodeTime } from 'ulidx'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadValues } from './loadValues'
+import { readNexus } from '../readNexus'
+import { dropLiveTree, seedLiveTree } from '../liveTree'
 
 const P1 = '01KVGMT8BFG350FZZXAMG1QDR1'
 const P2 = '01KVGMT8BFG350FZZXAMG1QDR2'
@@ -103,6 +105,22 @@ describe('loadValues', () => {
     expect(values[P1].modifiedAt).not.toBeNull()
     expect(values[P1].createdAt).not.toBeNull()
     expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('Active')
+  })
+
+  // A push names the pages it touched; reading only those keeps a body autosave from re-reading
+  // the whole container on every pause.
+  it('reads only the named pages, resolved through the live tree', async () => {
+    await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nPageID: ${P1}\nStatus: a\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'SetA', 'p2.md'), `---\nPageID: ${P2}\n---\n\nbody\n`)
+    seedLiveTree(await readNexus(root))
+    try {
+      const values = await loadValues(root, 'Col', [P2])
+      expect(Object.keys(values)).toEqual([P2])
+      expect(await loadValues(root, 'Col', ['01KVGMT8BFG350FZZXAMG1QDR9'])).toEqual({})
+    } finally {
+      dropLiveTree()
+    }
   })
 
   it('returns an empty map for an absent container', async () => {

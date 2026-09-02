@@ -32,7 +32,7 @@ import { flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { type Overrides, patchOverride, useValuesEpoch } from './useValuesEpoch'
+import { fetchValues, type Overrides, patchOverride, useValuesEpoch } from './useValuesEpoch'
 import { useViewOrders } from './useViewOrders'
 import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
 import { useViewCreation } from './useViewCreation'
@@ -83,8 +83,8 @@ export function useViewHost(
   useEffect(() => {
     let canceled = false
     setValueOverride(null) // canonical values for the new container supersede any optimistic patches
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!canceled) setValues(v)
+    void fetchValues(source.path).then((v) => {
+      if (v && !canceled) setValues(v)
     })
     return () => {
       canceled = true

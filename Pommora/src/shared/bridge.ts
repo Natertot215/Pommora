@@ -144,7 +144,10 @@ export interface Asks {
     ]
     reply: Result<null>
   }
-  'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageValues> }
+  'view:loadValues': {
+    args: [containerPath: string, pageIds?: string[]]
+    reply: Result<Record<string, PageValues>>
+  }
 
   // Schema (container-scoped) + registry-wide property ops
   'schema:add': {
