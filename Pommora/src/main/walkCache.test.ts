@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beginWalk, cachedParse, endWalk } from './walkCache'
+import { beginWalk, cachedParse, endWalk, forgetParse } from './walkCache'
 
 // Backdate a file past the racy window so (mtime, size) is trusted immediately.
 const cool = (path: string, secondsAgo = 10): void => {
@@ -39,6 +39,17 @@ describe('walkCache', () => {
     cool(file, 5)
     expect(await walk(file, parse)).toBe('parsed-2')
     expect(parses).toBe(2)
+  })
+
+  it('a forgotten entry re-parses even while (mtime, size) hold', async () => {
+    const file = join(root, 'a.md')
+    writeFileSync(file, 'one')
+    cool(file)
+    let parses = 0
+    const parse = async (): Promise<string> => `parsed-${++parses}`
+    expect(await walk(file, parse)).toBe('parsed-1')
+    forgetParse(file)
+    expect(await walk(file, parse)).toBe('parsed-2')
   })
 
   it('re-parses a hot file (mtime inside the racy window) every walk', async () => {

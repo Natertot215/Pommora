@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { rewritePageSerialized } from '../IO/atomicWrite'
@@ -107,6 +107,21 @@ describe('the property cascades open only the holders', () => {
     })
     expect(swept.touched).toEqual([])
     expect(await readFile(abs('Vault', 'Tagged.md'), 'utf8')).toBe(excludedPage)
+  })
+
+  it("a sweep keeps every holder's modification time", async () => {
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(abs('Notes', 'HolderA.md'), past, past)
+    const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
+      if (!('Stage' in raw)) return null
+      const next = { ...raw }
+      delete next.Stage
+      return { next }
+    })
+    expect(swept.touched).toContain(abs('Notes', 'HolderA.md'))
+    expect(Math.floor((await stat(abs('Notes', 'HolderA.md'))).mtimeMs / 1000)).toBe(
+      Math.floor(past.getTime() / 1000),
+    )
   })
 
   it('a delete snapshots and strips exactly the scoped holders — the un-governed note untouched', async () => {

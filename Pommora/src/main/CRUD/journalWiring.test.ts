@@ -7,7 +7,12 @@ import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { PropertyDefinition } from '@shared/properties'
-import { atomicWriteFile, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
+import {
+  atomicWriteFile,
+  rewritePageSerialized,
+  rewritePreservingTimes,
+  writeJson,
+} from '../IO/atomicWrite'
 import { closeSession, openSession } from '../session'
 import { dropLiveTree } from '../liveTree'
 import { listBundles } from '../provenance'
@@ -24,6 +29,7 @@ vi.mock('../IO/atomicWrite', async (importOriginal) => {
     atomicWriteFile: vi.fn(mod.atomicWriteFile),
     writeJson: vi.fn(mod.writeJson),
     rewritePageSerialized: vi.fn(mod.rewritePageSerialized),
+    rewritePreservingTimes: vi.fn(mod.rewritePreservingTimes),
   }
 })
 
@@ -70,11 +76,16 @@ beforeEach(async () => {
     note(path)
     return real.rewritePageSerialized(path, fn)
   })
+  vi.mocked(rewritePreservingTimes).mockImplementation(async (path, data) => {
+    note(path)
+    return real.rewritePreservingTimes(path, data)
+  })
 })
 afterEach(async () => {
   vi.mocked(atomicWriteFile).mockRestore()
   vi.mocked(writeJson).mockRestore()
   vi.mocked(rewritePageSerialized).mockRestore()
+  vi.mocked(rewritePreservingTimes).mockRestore()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
