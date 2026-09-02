@@ -7,7 +7,7 @@ import { mixAt, tintAt } from '../Tokens/tint'
 // § VALUES — every number a label uses, one place each.
 
 // Geometry for Pill + Label [Standard] chips; used by Status, Select, and Multi-Select
-const SIZE = {
+export const SIZE = {
   height: '20px',
   roomyHeight: '22px',
   gap: '4px',
