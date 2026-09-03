@@ -116,6 +116,24 @@ export const askEmptyTrash = async (count: number): Promise<boolean> => {
   })
 }
 
+export const askRestoreSnapshot = (): Promise<boolean> =>
+  ask({
+    message:
+      'Restoring this snapshot will replace the current version of this file; the overwritten snapshot will remain recoverable.',
+    detail: '',
+    action: 'Restore',
+    tone: 'positive',
+  })
+
+export const askDeleteSnapshots = (): Promise<boolean> =>
+  ask({
+    message:
+      'Deleting this snapshot will permanently delete it from history; this cannot be undone.',
+    detail: '',
+    action: 'Delete',
+    tone: 'destructive',
+  })
+
 export const askClearHistory = (): Promise<boolean> =>
   ask({
     message: 'Permanently delete stored snapshots for all files; this cannot be undone.',

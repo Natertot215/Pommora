@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, type RefObject } from 'react'
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { useSession } from '../store'
+import { fenceWarm, readPageDetail } from '../Store/tabState'
 import { captureWindowCache, readWindowCache, type WindowCacheEntry } from './windowCache'
 
 // Captures are liveness-gated — the editor's unmount capture trails the store's drop, and ungated
@@ -21,11 +22,15 @@ export function useWindowWarm(
     () =>
       activeTabId
         ? {
-            restore: () => readWindowCache(activeTabId),
+            restore: () =>
+              fenceWarm(
+                readWindowCache(activeTabId),
+                activePath === undefined ? undefined : readPageDetail(activePath)?.body,
+              ),
             capture: (state) => captureIfLive(activeTabId, state),
           }
         : undefined,
-    [activeTabId, captureIfLive],
+    [activeTabId, activePath, captureIfLive],
   )
 
   // A passive listener records the active tab's body scroll as it happens — never a switch-time

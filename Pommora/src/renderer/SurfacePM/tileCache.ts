@@ -1,5 +1,5 @@
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
-import { readPageDetail } from '../Store/tabState'
+import { fenceWarm, readPageDetail } from '../Store/tabState'
 
 // The tile counterpart of the tab and preview warm caches: the outer editor tears a tile's DOM
 // down whenever it leaves the viewport, and the nested editor re-creates from scratch — this
@@ -12,17 +12,11 @@ export function tileWarmSeam(chain: readonly string[]): WarmSeam {
   const path = chain[chain.length - 1]
   return {
     restore: () => {
-      const entry = tileCache.get(key)
-      if (!entry) return undefined
       // A page edited elsewhere since the capture invalidates the whole entry — selection and
       // history are positions into a doc that no longer exists; mount cold from the fresh slot.
-      const fresh = readPageDetail(path)?.body
-      const doc = (entry.editorState as { doc?: unknown }).doc
-      if (fresh !== undefined && fresh !== doc) {
-        tileCache.delete(key)
-        return undefined
-      }
-      return entry
+      const kept = fenceWarm(tileCache.get(key), readPageDetail(path)?.body)
+      if (!kept) tileCache.delete(key)
+      return kept
     },
     capture: (state) => tileCache.set(key, state),
   }

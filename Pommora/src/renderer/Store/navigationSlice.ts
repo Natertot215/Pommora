@@ -38,7 +38,15 @@ import {
   sameTabs,
   tabKey,
 } from '../Tabs/tabsModel'
-import { clearCache, dropPageDetail, dropCacheDetail, dropCacheTab, readCache } from './tabState'
+import {
+  bumpBodyEpoch,
+  clearCache,
+  dropPageDetail,
+  dropCacheDetail,
+  dropCacheTab,
+  fetchPageDetail,
+  readCache,
+} from './tabState'
 import {
   findCollection,
   findCollectionForSet,
@@ -69,6 +77,9 @@ export interface NavigationSlice {
   selection: SelectionState
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
+  /** A body replaced from outside the editor — restore today, the watcher later: every warm copy
+   *  of the path drops, the slot refetches, and the path's epoch remounts its editors. */
+  replaceBody: (path: string) => Promise<void>
   /** `{ record: false }` refreshes the shown detail without touching the tab set or recents.
    *  `{ newTab: true }` forces a new tab. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
@@ -355,6 +366,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   return {
     ...PER_NEXUS,
     setPageBody: (path, body) => patchReadyAt(path, (slot) => ({ ...slot, body })),
+    replaceBody: async (path) => {
+      dropCacheDetail(path)
+      const detail = await fetchPageDetail(path)
+      if (!detail) return
+      get().setPageBody(path, detail.body)
+      bumpBodyEpoch(path)
+    },
     crumbDepth: null,
     navSlide: null,
     thumbVersions: {},

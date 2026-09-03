@@ -1,0 +1,37 @@
+/* The Page History window: the Page Window's shell with no band, no footer, and a read-only body;
+   its right slot lists the snapshots over the body. */
+
+.page-history-body {
+  padding-top: var(--window-toolbar-h);
+  --over-scroll-fade: var(--window-toolbar-h);
+}
+
+.page-history-pane-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.page-history-list {
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--window-toolbar-h);
+}
+.page-history-row {
+  --row-pad-trail: 0px;
+}
+.page-history-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--label-secondary);
+}
+.page-history-when-rule {
+  align-self: stretch;
+  border-left: var(--width-150) solid var(--border-base);
+}
+.page-history-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  border-top: var(--width-150) solid var(--border-base);
+}

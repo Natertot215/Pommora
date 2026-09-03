@@ -10,7 +10,13 @@ import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import { navKey } from '../Navigation/navRecents'
-import { captureCache, readCache, cacheGeneration } from '../Store/tabState'
+import {
+  cacheGeneration,
+  captureCache,
+  fenceWarm,
+  readCache,
+  useBodyEpoch,
+} from '../Store/tabState'
 import { registerPageEditor } from './pageEditor'
 import { schedulePageSave } from './pageFlush'
 
@@ -49,6 +55,22 @@ export function PageView({
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const setPageBody = useSession((s) => s.setPageBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingLive = useRef<[string, string] | null>(null)
+  const bodyEpoch = useBodyEpoch(slot?.status === 'ready' ? slot.detail.path : '')
+  // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke
+  // must not write over it, and PageView's own unmount lands whatever is still pending.
+  useEffect(() => {
+    clearTimeout(liveTimer.current)
+    pendingLive.current = null
+  }, [bodyEpoch])
+  useEffect(
+    () => () => {
+      clearTimeout(liveTimer.current)
+      const pending = pendingLive.current
+      if (pending) useSession.getState().setPageBody(...pending)
+    },
+    [],
+  )
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   // Whether the header draws its glyph is chrome, not frontmatter, so it rides the keyed local
@@ -100,8 +122,12 @@ export function PageView({
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown
   // path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
-    if (liveTimer.current) clearTimeout(liveTimer.current)
-    liveTimer.current = setTimeout(() => setPageBody(path, body), STATS_DEBOUNCE_MS)
+    clearTimeout(liveTimer.current)
+    pendingLive.current = [path, body]
+    liveTimer.current = setTimeout(() => {
+      pendingLive.current = null
+      setPageBody(path, body)
+    }, STATS_DEBOUNCE_MS)
   }
 
   if (!slot) return <div className="detail-placeholder">Loading page…</div>
@@ -117,7 +143,7 @@ export function PageView({
   return (
     <>
       <MarkdownEditor
-        key={pageDetail.path}
+        key={`${pageDetail.path}:${bodyEpoch}`}
         initialBody={slot.body}
         title={pageDetail.title}
         path={pageDetail.path}
@@ -168,7 +194,9 @@ export function PageView({
         warm={{
           restore: () => {
             const entry = readCache(tabId, warmKey)
-            return entry?.pageDetail?.path === pageDetail.path ? entry : undefined
+            return entry?.pageDetail?.path === pageDetail.path
+              ? fenceWarm(entry, slot.body)
+              : undefined
           },
           capture: (state) => {
             if (cacheGeneration() !== mountedGen.current) return
