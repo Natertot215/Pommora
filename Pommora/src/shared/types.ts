@@ -90,6 +90,14 @@ export type SidebarMode = 'collections' | 'contexts' | 'agenda'
 /** How a picker marks the row you're on. */
 export type PickerSelection = 'outlined' | 'checked'
 
+/** Where a page snapshot came from: the autosave, a foreign writer's text about to be
+ *  overwritten, or the text a restore replaced. */
+export type SnapshotSource = 'edit' | 'external' | 'restore'
+export interface SnapshotRow {
+  ts: number
+  source: SnapshotSource
+}
+
 /** The `personalization` object in `.nexus/settings.json`. Every field optional; absent = the
  *  built-in default. One schema behind one apply-map + one setter — a new toggle is a field here
  *  plus an apply-map row. Icon names are bare strings so this stays free of renderer types. */
