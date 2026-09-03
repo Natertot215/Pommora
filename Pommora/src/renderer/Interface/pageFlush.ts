@@ -24,6 +24,12 @@ export function flushPageSave(path: string): Promise<void> {
   return pageWriter.flush(path)
 }
 
+/** Drop the path's pending save unwritten — a body replaced from outside the editor must not be
+ *  overwritten by the text it replaced. */
+export function cancelPageSave(path: string): void {
+  pageWriter.cancel(path)
+}
+
 /** Land every pending page write. The nexus-adopt path awaits this while the OLD root is still bound —
  *  a write after the flip would bind the new nexus and overwrite a same-relative-path file (data loss). */
 export function flushAllPageSaves(): Promise<void> {

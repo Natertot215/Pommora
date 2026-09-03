@@ -253,6 +253,12 @@ export function pagesOf(tree: NexusTree): ConnPage[] {
   return ix.pages
 }
 
+/** Where a page lives now, by id — its remembered path when the tree cannot say. */
+export const livePagePath = (
+  tree: NexusTree | null,
+  target: { id: string; path: string },
+): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
+
 export function pagesByIdOf(tree: NexusTree): ReadonlyMap<string, ConnPage> {
   const ix = indexFor(tree)
   if (!ix.pagesById) ix.pagesById = new Map(pagesOf(tree).map((p) => [p.id, p]))

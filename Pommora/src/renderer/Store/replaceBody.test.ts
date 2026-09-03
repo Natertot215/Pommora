@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSession } from '../store'
 import { captureCache, clearCache, readBodyEpoch, readCache, readPageDetail } from './tabState'
+import { schedulePageSave } from '../Interface/pageFlush'
 
 const detail = { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'restored' }
 
@@ -11,7 +12,10 @@ beforeEach(() => {
     openPage: vi.fn(async () => ({ ok: true, value: detail })),
   }
 })
-afterEach(() => clearCache())
+afterEach(() => {
+  vi.useRealTimers()
+  clearCache()
+})
 
 describe('replaceBody', () => {
   it('drops every warm detail, refetches, patches the slot, and bumps the epoch', async () => {
@@ -36,5 +40,17 @@ describe('replaceBody', () => {
     const slot = useSession.getState().pages.a
     expect(slot?.status === 'ready' && slot.body).toBe('restored')
     expect(readBodyEpoch('Notes/a.md')).toBe(before + 1)
+  })
+
+  it('drops the pending save so the replaced text is never written back', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))
+    ;(window as unknown as { nexus: { updatePageBody: unknown } }).nexus.updatePageBody =
+      updatePageBody
+    schedulePageSave('Notes/a.md', 'stale plus a keystroke')
+    await useSession.getState().replaceBody('Notes/a.md')
+    vi.advanceTimersByTime(1000)
+    expect(updatePageBody).not.toHaveBeenCalled()
+    expect(readPageDetail('Notes/a.md')?.body).toBe('restored')
   })
 })
