@@ -40,7 +40,7 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
 | Hover Preview Linger | `hoverPreviewLinger` | How long a connection's hover preview stays open after hovering off. | **None** · 1–30 seconds |
 | Default Opening Behavior | `tabOpenBehavior` | What opening an entity does: overtake the active tab, or open a new one. | **Overtake** · New Tab |
-| Take Focus | `tabTakeFocus` | A newly opened tab activates; off opens it in the background. Shown only under New Tab. | **On** · Off |
+| Focus New Tabs | `tabTakeFocus` | A newly opened tab activates; off opens it in the background — including Open New Tab. | **On** · Off |
 | Minimum Tab Width | `tabMinWidth` | The narrowest a tab shrinks before the strip scrolls. | 50–100px · **70px** |
 | Maximum Tab Width | `tabMaxWidth` | The widest a tab grows. | 150–350px · **250px** |
 
