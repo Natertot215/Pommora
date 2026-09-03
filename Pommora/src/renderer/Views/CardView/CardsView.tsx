@@ -1066,7 +1066,7 @@ const PageCard = memo(function PageCard({
       }),
     )
     if (!action) return
-    if (runPageSendAction(action, row.path)) return
+    if (runPageSendAction(action, row)) return
     if (action === 'image:edit') openEditor()
     else if (action === 'title:newtab') onOpen(row, true)
     else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')

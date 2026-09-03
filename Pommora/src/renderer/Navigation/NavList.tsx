@@ -54,7 +54,7 @@ export function NavRowMenu({
         if (!alive.current) return
         onClose()
         const st = useSession.getState()
-        if (action && livePath && runPageSendAction(action, livePath)) return
+        if (action && livePage?.kind === 'page' && runPageSendAction(action, livePage)) return
         switch (action) {
           case 'open-new-tab':
             onOpenNewTab?.(target)

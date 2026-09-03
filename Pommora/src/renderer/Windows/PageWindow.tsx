@@ -3,7 +3,7 @@ import { footerLabel } from '@shared/toggleLabels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
-import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { useHeldPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageTile } from '../SurfacePM/PageTile'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { CitationsToggle } from '../Interface/Subfield/CitationsToggle'
@@ -12,8 +12,8 @@ import type { ConnectionsApi } from '../MarkdownPM/Connections'
 import { showConnectionMenu } from '../Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { getContentViewRect } from '../Interface/ContentView'
-import { NavTrail, NO_TRAIL } from '@renderer/DesignSystem/Elements/NavTrail'
-import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { pageIndexOf, resolveIndexOf, trailOf } from '../treeIndex'
 import { previewTargetOf, useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { WindowActions } from './WindowActions'
 import { WindowInspector } from './WindowInspector'
@@ -32,11 +32,9 @@ const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as co
 export function PageWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.preview?.flavor === 'page')
   const target = useSession(previewTargetOf)
-  const { mounted, closing } = useExitPresence(open)
-  const held = useRef(target)
-  if (target) held.current = target
-  if (!mounted || !held.current) return null
-  return <PageWindowBody target={held.current} closing={closing} />
+  const shown = useHeldPresence(target, open)
+  if (!shown) return null
+  return <PageWindowBody target={shown.held} closing={shown.closing} />
 }
 
 function PageWindowBody({
@@ -100,7 +98,7 @@ function PageWindowBody({
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
-  const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
+  const trail = trailOf(tree, { kind: 'page', id: target.id })
 
   const previewSlide = useSession((s) => s.previewSlide)
   const bodyRef = useRef<HTMLDivElement>(null)

@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { coerceScale, type OpenIn, SCALE_STEPS } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
-import { NavTrail, NO_TRAIL } from '@renderer/DesignSystem/Elements/NavTrail'
-import { ancestryOf } from '../treeIndex'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { trailOf } from '../treeIndex'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet } from '../Interface/scope'
@@ -219,11 +219,7 @@ export function SettingsFrame(): React.JSX.Element | null {
       footer={
         <MenuFooting
           leading={
-            <NavTrail
-              segments={(tree && ancestryOf(tree, node)) ?? NO_TRAIL}
-              iconSize="control"
-              overScroll={false}
-            />
+            <NavTrail segments={trailOf(tree, node)} iconSize="control" overScroll={false} />
           }
           trailing={
             <AccessoryButton

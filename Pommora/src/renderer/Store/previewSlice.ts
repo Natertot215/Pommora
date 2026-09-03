@@ -297,6 +297,9 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
           commitPreview(next)
         }
       }
+      const history = get().historyTarget
+      if (history && reconcileWith(index, { kind: 'page', ...history }).kind === 'none')
+        set({ historyTarget: null })
       const file = get().previewsFile
       const dead = Object.keys(file.origins).filter(
         (id) => reconcileWith(index, { kind: 'page', id, path: '' }).kind === 'none',

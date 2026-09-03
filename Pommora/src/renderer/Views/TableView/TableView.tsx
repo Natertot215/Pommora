@@ -855,7 +855,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         : base
     const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
-    if (runPageSendAction(action, row.path)) return
+    if (runPageSendAction(action, row)) return
     if (
       runFileMenuAction(
         action,

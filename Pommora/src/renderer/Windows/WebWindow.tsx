@@ -10,7 +10,7 @@ import { WindowBase } from './window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
-import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { useHeldPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import './web-window.css'
 
@@ -33,13 +33,10 @@ interface BrowserGuest extends HTMLElement {
 
 export function WebWindow(): React.JSX.Element | null {
   const summon = useSession((s) => s.browserSummon)
-  const { mounted, closing } = useExitPresence(summon !== null)
-  // Held through the exit animation (the store nulls the summon at close). An overtake swaps the
-  // guest's destination in place; the window never remounts.
-  const held = useRef(summon)
-  if (summon) held.current = summon
-  if (!mounted || !held.current) return null
-  return <WebWindowBody summon={held.current} closing={closing} />
+  // An overtake swaps the guest's destination in place; the window never remounts.
+  const shown = useHeldPresence(summon)
+  if (!shown) return null
+  return <WebWindowBody summon={shown.held} closing={shown.closing} />
 }
 
 function WebWindowBody({

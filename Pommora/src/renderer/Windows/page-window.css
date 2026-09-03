@@ -24,12 +24,13 @@
   padding-right: calc(14px * var(--page-detail-scale));
 }
 
-/* The front-matter inspector rows are properties only — no title/banner rows. */
+/* The window's right-slot column — the inspector, and the history window's list over its foot. */
 .page-window-insp {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
+/* The front-matter inspector rows are properties only — no title/banner rows. */
 .page-window-insp-rows {
   flex: 1;
   min-height: 0;
@@ -86,4 +87,12 @@
 .page-window-insp-add {
   align-self: flex-start;
   color: var(--label-tertiary);
+}
+
+/* The Page History window: the same shell, the snapshots listed in the right slot. */
+.page-history-list {
+  padding-top: 16px; /* KNOB */
+}
+.page-history-row {
+  --row-pad-trail: 0px;
 }

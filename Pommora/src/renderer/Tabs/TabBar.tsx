@@ -157,7 +157,7 @@ function TabBarBody({
       else if (action === 'close') requestClose(tabId)
       else if (!isPage) return
       else if (action === 'preview') openPreview({ id: target.id, path: target.path })
-      else if (action) runPageSendAction(action, target.path)
+      else if (action) runPageSendAction(action, target)
     }
 
   // A native CSS app-region can't do this — it never delivers hover, killing the + button's
