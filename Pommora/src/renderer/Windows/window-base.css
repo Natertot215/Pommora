@@ -18,21 +18,16 @@
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
-  --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
+  /* Inputs to the shared --toolbar-slide swallow (DesignSystem/Animation/toolbar-slide.css). */
+  --slide-panel-w: var(--window-panel-r-w);
+  --slide-inset: var(--window-panel-inset);
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
-  --window-flow-home: calc(var(--window-panel-inset) + 22px);
-  --window-flow-inset: calc(
+  --slide-home: calc(var(--window-panel-inset) + 22px);
+  --slide-cluster-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
+  --slide-breathing: calc(
     var(--surface-inset) *
     2
   ); /* KNOB — breathing room off the pane's seam after the swallow */
-  --window-flow-shift: max(
-    0px,
-    var(--io) *
-    (var(--window-panel-r-w) + var(--window-panel-inset)) -
-    var(--window-flow-home) -
-    var(--window-flow-w) -
-    var(--window-flow-inset)
-  );
   /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the trailing cluster. */
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
 
@@ -66,6 +61,9 @@
   }
 }
 
+/* The window's one toolbar: a zero-height strip whose lead/trail action clusters float over the
+   content. Buttons re-enable pointer-events individually, so clicks pass through the strip to the
+   content beneath it; each body reserves --window-toolbar-h so its content clears the clusters. */
 .window-toolbar {
   position: absolute;
   color: var(--label-control);
@@ -75,36 +73,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--window-toolbar-h);
-  padding: 0 var(--surface-inset);
-}
-
-/* Floating mode: buttons re-enable pointer-events individually, so clicks pass through the
-   zero-height strip to reach content beneath it. */
-.window-toolbar-floating .window-toolbar {
   height: 0;
   padding: 0;
   pointer-events: none;
 }
-.window-toolbar-floating .window-actions {
-  position: absolute;
-  top: calc(var(--window-panel-inset) + 4px);
-  pointer-events: auto;
-  --window-trail-gap: 6px;
-  align-items: flex-start;
-}
-.window-toolbar-floating .window-actions-lead {
-  left: calc(var(--window-panel-inset) + 4px);
-}
-.window-toolbar-floating .window-actions-trail {
-  right: calc(var(--window-panel-inset) + 4px);
-}
 
 .window-actions {
+  position: absolute;
+  top: calc(var(--window-panel-inset) + 4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  --window-trail-gap: 6px;
   gap: var(--window-trail-gap);
+  pointer-events: auto;
   z-index: 4;
+}
+.window-actions-lead {
+  left: calc(var(--window-panel-inset) + 4px);
+}
+.window-actions-trail {
+  right: calc(var(--window-panel-inset) + 4px);
 }
 
 /* The scroll core plus the right-pane squeeze; each window adds its own top clearance (a band's height, a floating cluster's landing). */
@@ -129,12 +117,15 @@
   scrollbar-width: none;
 }
 
-/* The centered title slot both the web link and the page tab-strip title use. */
+/* The centered title slot both the web link and the page tab-strip title use — centered on the toolbar's action row. */
 .window-toolbar-title {
   position: absolute;
+  top: calc(var(--window-panel-inset) + 4px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  align-items: center;
+  height: 20px;
   max-width: 60%;
 }
 
@@ -281,8 +272,8 @@
 .window-actions-flow {
   display: flex;
   align-items: center;
-  gap: var(--window-trail-gap, 2px);
-  /* The trailing pair holds at home until the pane's leading edge makes contact (the max() gate), then lands flush inside its corner. A host that reveals the pair drives --window-flow-reveal rather than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
-  transform: translateX(var(--window-flow-reveal, 0px))
-    translateX(calc(-1 * var(--window-flow-shift)));
+  gap: var(--window-trail-gap);
+  /* A host that reveals the pair drives --window-flow-reveal (its entry nudge); the swallow rides the
+     shared --toolbar-slide, so the two compose instead of clobbering. */
+  transform: translateX(var(--window-flow-reveal, 0px)) translateX(calc(-1 * var(--toolbar-slide)));
 }

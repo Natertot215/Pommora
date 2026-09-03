@@ -152,7 +152,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       // The pane closes first — an Escape during the flavor-swap exit is the shell's own closing gate.
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
-      toolbar="floating"
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}

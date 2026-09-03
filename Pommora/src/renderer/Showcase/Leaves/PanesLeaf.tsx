@@ -50,7 +50,6 @@ export function PanesLeaf(): React.JSX.Element {
           onClose={() => undefined}
           bounds={SETTINGS_WIN}
           ariaLabel="Settings"
-          toolbar="floating"
           className="settings-window"
           left={{
             windowId: 'showcase-settings-rail',

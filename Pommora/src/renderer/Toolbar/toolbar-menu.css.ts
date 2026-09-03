@@ -20,7 +20,7 @@ export const wrapper = style({
   // wrapper rather than to the cluster's first child: the three menus appear on different
   // selections, so "first child" names a different component depending on what is open. Outside the
   // toolbar the var is unset and the declaration simply doesn't apply.
-  transform: 'translateX(calc(-1 * var(--toolbar-swallow)))',
+  transform: 'translateX(calc(-1 * var(--toolbar-slide)))',
 } as Parameters<typeof style>[0])
 
 /** The menu anchor — hangs straight down, centered on the button (the beak points up at its

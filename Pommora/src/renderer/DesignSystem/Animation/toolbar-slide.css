@@ -1,0 +1,19 @@
+/* The toolbar-cluster swallow, one formula for both hosts. As a side panel opens (--io → 1) the
+   trailing cluster slides left to land inside the panel's corner. Each host — the main shell toolbar
+   and every floating window — sets the five --slide-* inputs (the panel's width, the ring inset, the
+   cluster's home gap off the edge, the cluster's own width, and its breathing room past the seam)
+   and reads --toolbar-slide. --io is declared per host, so the shared formula tracks whichever driver
+   the host holds. A plain sheet: it paints host classes it does not emit — a cross-module contract. */
+.app-toolbar,
+.window {
+  --toolbar-slide: max(
+    0px,
+    calc(
+      var(--io) *
+      (var(--slide-panel-w) + var(--slide-inset)) -
+      var(--slide-home) -
+      var(--slide-cluster-w) -
+      var(--slide-breathing)
+    )
+  );
+}

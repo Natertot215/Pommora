@@ -179,7 +179,7 @@
   align-items: center;
   height: var(--tab-height);
   margin-left: 4px;
-  margin-right: calc(4px + var(--toolbar-swallow));
+  margin-right: calc(4px + var(--toolbar-slide));
   pointer-events: auto;
   -webkit-app-region: no-drag;
 }
