@@ -318,10 +318,10 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 **Verify — automated**
 
-- [ ] `watchPatch.test.ts`: a `page-upsert` arms a timer with source `external`. Red, then green.
-- [ ] A switch test: arm a page, switch roots; the old store holds the row, the new holds none.
-- [ ] The quit path: with a page armed and a nav write in flight, `before-quit` lands both flushes, closes both stores, and quits on one press; a rejected history flush still quits.
-- [ ] Full gate green. `rg -F "writeBody(" src/main` → 2 now, 3 after Task 6; control `rg -F "noteValueWrite(" src/main` → ≥ 5.
+- [x] `watchPatch.test.ts`: a `page-upsert` arms a timer with source `external`. Red, then green.
+- [x] A switch test: arm a page, switch roots; the old store holds the row, the new holds none.
+- [x] The quit path: with a page armed and a nav write in flight, `before-quit` lands both flushes, closes both stores, and quits on one press; a rejected history flush still quits. (`index.ts` is not loadable under Vitest; driven on the restarted dev instance at Gate 2.)
+- [x] Full gate green. `rg -F "writeBody(" src/main` → 2 now, 3 after Task 6; control `rg -F "noteValueWrite(" src/main` → ≥ 5.
 
 **Verify — user**
 
@@ -660,7 +660,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 2 · `12f6404f`
   - [x] Task 3 · `507232e8`
 - [ ] **Phase 2** — Capture
-  - [ ] Task 4 · `<commit>`
+  - [x] Task 4 · `a4e33d6b`
   - [ ] Task 5 · `<commit>`
 - [ ] **Phase 3** — The contract and the settings
   - [ ] Task 6 · `<commit>`
