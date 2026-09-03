@@ -1,13 +1,14 @@
 import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { GlassPane } from '@renderer/DesignSystem/Glass'
+import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { clamp } from '@renderer/DesignSystem/Util/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import './side-pane.css'
+import './window-panel.css'
 
-// Hosts own positioning (in-flow vs overlay), the width CSS var their layout math reads
-// (mirrored via onWidthChange), and any slide (--io).
+// The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host
+// owns only the width CSS var its layout math reads, mirrored back through onWidthChange.
 
-export interface SidePaneBounds {
+export interface WindowPanelBounds {
   min: number
   def: number
   max: number
@@ -18,34 +19,33 @@ const widths = new Map<string, number>()
 
 /** Hosts seed their CSS-var state from this so the first frame already carries the restored
  *  width — the mirror effect runs post-mount. */
-export const sidePaneWidth = (windowId: string, def: number): number => widths.get(windowId) ?? def
+export const windowPanelWidth = (windowId: string, def: number): number =>
+  widths.get(windowId) ?? def
 
-export function SidePane({
+export function WindowPanel({
   windowId,
   side,
+  mode,
   bounds,
   open = true,
   className,
-  resizeClassName,
   onWidthChange,
   onResizingChange,
   children,
 }: {
   /** One persisted-width slot per hosting window. */
   windowId: string
-  /** Which window edge the pane hugs; the resize strip drags the OPPOSITE edge. */
   side: 'left' | 'right'
-  bounds: SidePaneBounds
-  /** Overlay hosts toggle; in-flow hosts leave it true. */
+  mode: 'overlay' | 'inflow'
+  bounds: WindowPanelBounds
   open?: boolean
   className?: string
-  resizeClassName?: string
   onWidthChange?: (w: number) => void
-  /** Transitions pause while dragging so the pane tracks 1:1 (the house resize rule). */
+  /** Transitions pause while dragging so the panel tracks 1:1 (the house resize rule). */
   onResizingChange?: (resizing: boolean) => void
   children?: React.ReactNode
 }): React.JSX.Element {
-  const [width, setWidth] = useState(() => sidePaneWidth(windowId, bounds.def))
+  const [width, setWidth] = useState(() => windowPanelWidth(windowId, bounds.def))
   // Layout effect: the host's CSS var updates before paint, so a restored width never flashes.
   useLayoutEffect(() => {
     onWidthChange?.(width)
@@ -79,7 +79,12 @@ export function SidePane({
   return (
     <>
       <GlassPane
-        className={cx('sidepane', className)}
+        className={cx(
+          'window-panel',
+          `window-panel-${side}-${mode}`,
+          paneSlide({ side, mode, open }),
+          className,
+        )}
         style={{ background: 'var(--state-muted)' }}
         aria-hidden={!open}
       >
@@ -87,7 +92,7 @@ export function SidePane({
       </GlassPane>
       {open && (
         <div
-          className={cx('sidepane-resize', resizeClassName)}
+          className={cx('window-panel-resize', `window-panel-${side}-${mode}-resize`)}
           onPointerDown={startResize}
           aria-hidden="true"
         />

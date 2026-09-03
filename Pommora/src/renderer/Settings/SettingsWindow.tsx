@@ -13,7 +13,7 @@ import {
 import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
-import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
+import type { WindowPanelBounds } from '@renderer/Windows/window-panel'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { stepsWith, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
@@ -57,7 +57,7 @@ import './settings-window.css'
 // surface has to fit in: a title, a breadcrumb and the date lane, side by side. Exported so the
 // showcase's replica wears the real shell instead of a copy of its numbers.
 export const SETTINGS_WIN: FloatingBounds = { minW: 620, minH: 420, defW: 850, defH: 600 }
-export const SETTINGS_RAIL: SidePaneBounds = { min: 130, def: 170, max: 240 }
+export const SETTINGS_RAIL: WindowPanelBounds = { min: 130, def: 170, max: 240 }
 
 const DRAG_SURFACES =
   '.settings-body, .settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
