@@ -1,6 +1,4 @@
-/* The two persistent toolbar clusters float over the titlebar drag strip; the bar is click-through
-   (pointer-events: none) so empty space still drags the window, while each cluster opts back into
-   pointer events and out of the drag region. */
+/* The two persistent toolbar clusters float over the titlebar drag strip; the bar is click-through  (pointer-events: none) so empty space still drags the window, while each cluster opts back into pointer events and out of the drag region. */
 .app-toolbar {
   position: absolute;
   color: var(--label-control);
@@ -14,10 +12,7 @@
   justify-content: space-between;
   padding: 0 var(--app-inset) 0 4px;
   pointer-events: none;
-  --trio-inset: 4px; /* breathing room so the swallowed pill doesn't sit flush against the pane's seam */
-  /* Swallow magnitude shared with the tab bar's right-edge condense: how far the trio slides to land
-     flush in the inspector's left corner. Holds at home until the opening pane's edge reaches the trio
-     pill, then tracks the slide 1:1 off --io. --trio-w is the measured pill width (Toolbar.tsx). */
+  --trio-inset: 4px;
   --toolbar-swallow: max(
     0px,
     calc(
@@ -28,14 +23,12 @@
       var(--trio-inset)
     )
   );
-  /* Only `left` animates (sidebar collapse); the trio rides the inspector via its own transform, so the
-     bar's `right` stays fixed. */
+
   transition: left var(--duration-base) var(--ease-base);
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;
-  /* Reserve room for the traffic lights + the expand toggle, centered between them and Back/Forward. */
-  padding-left: 135px;
+  padding-left: 135px; /* Reserve room for the traffic lights + the expand toggle, centered between them and Back/Forward. */
 }
 .shell.is-resizing .app-toolbar {
   transition: none;
@@ -54,20 +47,16 @@
   gap: 8px;
   pointer-events: none;
 }
-/* Each dropdown slides with the trio via a rule keyed on the dropdown wrapper's own class, living in
-   toolbar-menu.css.ts — which dropdown is present depends on the selection, so a positional selector
-   here would aim at whichever one happened to survive. */
+
 .app-toolbar-cluster--trio {
   transform: translateX(calc(-1 * var(--toolbar-swallow)));
 }
 
-/* Trio glass pill = its own in-flow layer behind the live buttons, so it fades out independently as the
-   trio is swallowed (no double-glass on the inspector). In-flow so the liquid glass measures + clips
-   crisply; the fade is quick and subtle, complete by 30% of the slide. */
+/* Trio glass pill = its own in-flow layer behind the live buttons, so it fades out independently as the trio is swallowed (no double-glass on the inspector). In-flow so the liquid glass measures + clips crisply; the fade is quick and subtle, complete by 30% of the slide. */
 .toolbar-trio {
   position: relative;
   width: fit-content;
-  --trio-radius: 12px; /* KNOB — the trio pill's own corner, independent of any button size */
+  --trio-radius: 12px;
 }
 .toolbar-trio-glass {
   opacity: clamp(0, calc((0.3 - var(--io)) / 0.3), 1);
