@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@shared/result'
-import { openDb, SQLITE_NOTADB, type Db } from './driver'
+import { damagedStore, openDb, type Db } from './driver'
 import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'
 
@@ -70,8 +70,8 @@ export function openVersionsDb(nexusRoot: string): Db | null {
     const { db: existing, errcode } = openDb(dbPath)
     if (existing && healthy(existing)) return withTable(existing)
     // Locked, mid-sync, or unreadable is left intact for the next launch, as nexus.db is; only a
-    // file that is not a database, or fails its check, is set aside.
-    if (!existing && errcode !== SQLITE_NOTADB) return null
+    // damaged file, or one that fails its check, is set aside.
+    if (!existing && !damagedStore(errcode)) return null
     existing?.close()
     quarantine(dbPath)
     if (existsSync(dbPath)) {

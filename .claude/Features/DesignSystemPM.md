@@ -391,7 +391,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs. |
 | Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
 | PaneSlide | `paneSlide`                               | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode. |
-| Exit      | `useExitPresence`                         | Keeps a surface mounted through its close.                              |
+| Exit      | `useExitPresence` · `useHeldPresence`     | Keeps a surface mounted through its close; the held form also keeps the value it was showing. |
 
 ### Symbols
 
