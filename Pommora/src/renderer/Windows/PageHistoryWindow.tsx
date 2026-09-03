@@ -15,7 +15,7 @@ import { fetchPageDetail } from '../Store/tabState'
 import { livePagePath, resolveOnlyConnections, trailOf } from '../treeIndex'
 import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
-import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
+import { WINDOW_BASE_PANEL, WindowBase } from './window-base'
 import '../Navigation/nav-list.css'
 import './page-window.css'
 
@@ -210,7 +210,7 @@ function PageHistoryBody({
       title={<NavTrail segments={trail} selected className="page-window-crumbs" />}
       right={{
         windowId: 'page-history-list',
-        bounds: WINDOW_BASE_INSPECTOR,
+        bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
         open: true,
         children: list,

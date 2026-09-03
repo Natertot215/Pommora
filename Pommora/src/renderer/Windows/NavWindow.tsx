@@ -3,7 +3,7 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
+import { WINDOW_BASE_PANEL, WindowBase } from './window-base'
 import { SearchField } from '@renderer/DesignSystem/Fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
@@ -17,7 +17,7 @@ import { previewTargetOf, useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
 import { WindowActions } from './WindowActions'
-import { WindowInspector } from './WindowInspector'
+import { PagePanel } from './PageWindow'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
@@ -186,13 +186,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       right={{
         windowId: 'preview-inspector',
-        bounds: WINDOW_BASE_INSPECTOR,
+        bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && pageTarget && <WindowInspector target={pageTarget} />}
+            {inspectorOpen && pageTarget && <PagePanel target={pageTarget} />}
           </div>
         ),
       }}

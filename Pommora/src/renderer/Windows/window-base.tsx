@@ -3,27 +3,22 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
   type FloatingBounds,
 } from '@renderer/DesignSystem/Interactions/FloatingWindow'
-import {
-  SidePane,
-  sidePaneWidth,
-  type SidePaneBounds,
-} from '@renderer/DesignSystem/SidePane/SidePane'
+import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
-export const WINDOW_BASE_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
+export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, def: 260, max: 420 }
 
-export interface WindowBaseSide {
+export interface WindowBasePanel {
   windowId: string
-  bounds: SidePaneBounds
+  bounds: WindowPanelBounds
   mode: 'overlay' | 'inflow'
   open?: boolean
   className?: string
@@ -49,8 +44,8 @@ export interface WindowBaseProps {
   lead?: ReactNode
   title?: ReactNode
   actions?: ReactNode
-  left?: WindowBaseSide
-  right?: WindowBaseSide
+  left?: WindowBasePanel
+  right?: WindowBasePanel
   footer?: ReactNode
   footerLabel?: (open: boolean) => string
   footerLead?: ReactNode
@@ -88,10 +83,10 @@ export function WindowBase({
 
   // Seeded from the persisted slot so the first painted frame already carries the restored width.
   const [leftW, setLeftW] = useState(() =>
-    left ? sidePaneWidth(left.windowId, left.bounds.def) : 0,
+    left ? windowPanelWidth(left.windowId, left.bounds.def) : 0,
   )
   const [rightW, setRightW] = useState(() =>
-    right ? sidePaneWidth(right.windowId, right.bounds.def) : 0,
+    right ? windowPanelWidth(right.windowId, right.bounds.def) : 0,
   )
   const [resizing, setResizing] = useState(false)
 
@@ -118,34 +113,27 @@ export function WindowBase({
     return () => window.removeEventListener('keydown', onKey)
   }, [closing])
 
-  const pane = (side: WindowBaseSide, which: 'left' | 'right'): React.JSX.Element => {
-    const open = side.open !== false
-    return (
-      <SidePane
-        windowId={side.windowId}
-        side={which}
-        bounds={side.bounds}
-        open={open}
-        className={cx(
-          `window-side window-side-${which}-${side.mode}`,
-          paneSlide({ side: which, mode: side.mode, open }),
-          side.className,
-        )}
-        resizeClassName={`window-side-${which}-${side.mode}-resize`}
-        onWidthChange={which === 'left' ? setLeftW : setRightW}
-        onResizingChange={setResizing}
-      >
-        {side.children}
-      </SidePane>
-    )
-  }
+  const panel = (side: WindowBasePanel, which: 'left' | 'right'): React.JSX.Element => (
+    <WindowPanel
+      windowId={side.windowId}
+      side={which}
+      mode={side.mode}
+      bounds={side.bounds}
+      open={side.open !== false}
+      className={side.className}
+      onWidthChange={which === 'left' ? setLeftW : setRightW}
+      onResizingChange={setResizing}
+    >
+      {side.children}
+    </WindowPanel>
+  )
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   const body = inflow ? (
     <div className="window-row">
-      {left?.mode === 'inflow' && pane(left, 'left')}
+      {left?.mode === 'inflow' && panel(left, 'left')}
       {children}
-      {right?.mode === 'inflow' && pane(right, 'right')}
+      {right?.mode === 'inflow' && panel(right, 'right')}
     </div>
   ) : (
     children
@@ -158,8 +146,8 @@ export function WindowBase({
         'window',
         `window-toolbar-${toolbar}`,
         className,
-        leftOpen && 'is-side-left-open',
-        rightOpen && 'is-side-right-open',
+        leftOpen && 'is-panel-left-open',
+        rightOpen && 'is-panel-right-open',
         resizing && 'is-resizing',
         hasFooter && footerOpen && 'is-footer-open',
         hasFooter && reveal.near && 'is-footer-near',
@@ -169,8 +157,8 @@ export function WindowBase({
       style={
         {
           ...winStyle,
-          ...(left && { '--window-side-l-w': `${leftW}px` }),
-          ...(right && { '--window-side-r-w': `${rightW}px` }),
+          ...(left && { '--window-panel-l-w': `${leftW}px` }),
+          ...(right && { '--window-panel-r-w': `${rightW}px` }),
           ...style,
         } as CSSProperties
       }
@@ -215,8 +203,8 @@ export function WindowBase({
           <div className="window-footer">{footer}</div>
         </>
       )}
-      {left?.mode === 'overlay' && pane(left, 'left')}
-      {right?.mode === 'overlay' && pane(right, 'right')}
+      {left?.mode === 'overlay' && panel(left, 'left')}
+      {right?.mode === 'overlay' && panel(right, 'right')}
       <FloatingResizeCorners startDrag={startDrag} />
     </GlassWindow>
   )

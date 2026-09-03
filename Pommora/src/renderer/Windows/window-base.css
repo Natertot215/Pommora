@@ -1,4 +1,4 @@
-/* The floating-window surface every in-app window mounts: glass shell, toolbar, side panes, and
+/* The floating-window surface every in-app window mounts: glass shell, toolbar, panels, and
    the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or  an inset-ring layout. */
 
 .window {
@@ -7,18 +7,20 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--app-radius);
-  /* The window CLIPS: a parked side pane must never peek past the glass edge. */
+  /* The window CLIPS: a parked panel must never peek past the glass edge. */
   overflow: hidden;
   animation: window-in var(--duration-fast) var(--ease-base);
 
   --window-toolbar-h: 36px; /* KNOB — toolbar strip height */
-  /* KNOB — the ring side panes hold from the window edges. */
-  --window-side-inset: var(--app-inset);
+  /* KNOB — the ring the panels hold from the window edges. */
+  --window-panel-inset: var(--app-inset);
+  /* KNOB — the one clearance a panel's content holds below its top edge; hosts override per panel. */
+  --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
-  --window-flow-home: calc(var(--window-side-inset) + 22px);
+  --window-flow-home: calc(var(--window-panel-inset) + 22px);
   --window-flow-inset: calc(
     var(--surface-inset) *
     2
@@ -26,25 +28,25 @@
   --window-flow-shift: max(
     0px,
     var(--io) *
-    (var(--window-side-r-w) + var(--window-side-inset)) -
+    (var(--window-panel-r-w) + var(--window-panel-inset)) -
     var(--window-flow-home) -
     var(--window-flow-w) -
     var(--window-flow-inset)
   );
   /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the trailing cluster. */
-  --window-title-squeeze: max(0px, var(--io) * var(--window-side-r-w) - 6px - 62px);
+  --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
 
-  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an inheriting registered property driving the main inspector) can never leak into a floating window. */
+  /* The panel open/close drivers, declared HERE so the app-level --io (styles.css, an inheriting registered property driving the main inspector) can never leak into a floating window. */
   --io: 0;
   --io-l: 0;
   transition:
     --io var(--duration-base) var(--ease-base),
     --io-l var(--duration-base) var(--ease-base);
 }
-.window.is-side-right-open {
+.window.is-panel-right-open {
   --io: 1;
 }
-.window.is-side-left-open {
+.window.is-panel-left-open {
   --io-l: 1;
 }
 .window.closing {
@@ -86,16 +88,16 @@
 }
 .window-toolbar-floating .window-actions {
   position: absolute;
-  top: calc(var(--window-side-inset) + 4px);
+  top: calc(var(--window-panel-inset) + 4px);
   pointer-events: auto;
   --window-trail-gap: 6px;
   align-items: flex-start;
 }
 .window-toolbar-floating .window-actions-lead {
-  left: calc(var(--window-side-inset) + 4px);
+  left: calc(var(--window-panel-inset) + 4px);
 }
 .window-toolbar-floating .window-actions-trail {
-  right: calc(var(--window-side-inset) + 4px);
+  right: calc(var(--window-panel-inset) + 4px);
 }
 
 .window-actions {
@@ -114,8 +116,8 @@
   scrollbar-width: none;
   transition: padding-right var(--duration-base) var(--ease-base);
 }
-.window.is-side-right-open .window-body {
-  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
+.window.is-panel-right-open .window-body {
+  padding-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 .window.is-resizing .window-body {
   transition: none;
@@ -169,70 +171,70 @@
   min-width: 0;
 }
 
-/* Side panes: material and geometry come from the SidePane shell — only positioning and slide live here. An overlay pane rides the inset ring, carried by its driver with no transition of its own; an in-flow pane takes a column in the body row. */
+/* Panels: material comes from the window-panel component — only positioning lives here. An overlay panel rides the inset ring, carried by its driver with no transition of its own; an in-flow panel takes a column in the body row. */
 .window-row {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
-.window-side-right-overlay,
-.window-side-left-overlay {
+.window-panel-right-overlay,
+.window-panel-left-overlay {
   position: absolute;
-  top: var(--window-side-inset);
-  bottom: var(--window-side-inset);
+  top: var(--window-panel-inset);
+  bottom: var(--window-panel-inset);
   z-index: 2;
   pointer-events: none;
-  --pane-inset: var(--window-side-inset);
+  --pane-inset: var(--window-panel-inset);
 }
-.window-side-right-overlay {
-  right: var(--window-side-inset);
-  width: var(--window-side-r-w);
+.window-panel-right-overlay {
+  right: var(--window-panel-inset);
+  width: var(--window-panel-r-w);
 }
-.window.is-side-right-open .window-side-right-overlay {
+.window.is-panel-right-open .window-panel-right-overlay {
   pointer-events: auto;
 }
-.window-side-left-overlay {
-  left: var(--window-side-inset);
-  width: var(--window-side-l-w);
+.window-panel-left-overlay {
+  left: var(--window-panel-inset);
+  width: var(--window-panel-l-w);
 }
-.window.is-side-left-open .window-side-left-overlay {
+.window.is-panel-left-open .window-panel-left-overlay {
   pointer-events: auto;
 }
 
-.window-side-right-overlay-resize,
-.window-side-left-overlay-resize {
-  top: var(--window-side-inset);
-  bottom: var(--window-side-inset);
+.window-panel-right-overlay-resize,
+.window-panel-left-overlay-resize {
+  top: var(--window-panel-inset);
+  bottom: var(--window-panel-inset);
   z-index: 4;
 }
-.window-side-right-overlay-resize {
-  right: calc(var(--window-side-inset) + var(--window-side-r-w) - 4px);
+.window-panel-right-overlay-resize {
+  right: calc(var(--window-panel-inset) + var(--window-panel-r-w) - 4px);
 }
-.window-side-left-overlay-resize {
-  left: calc(var(--window-side-inset) + var(--window-side-l-w) - 4px);
+.window-panel-left-overlay-resize {
+  left: calc(var(--window-panel-inset) + var(--window-panel-l-w) - 4px);
 }
 
-.window-side-left-inflow,
-.window-side-right-inflow {
+.window-panel-left-inflow,
+.window-panel-right-inflow {
   flex-shrink: 0;
 }
-.window-side-left-inflow {
-  --pane-w: var(--window-side-l-w);
+.window-panel-left-inflow {
+  --pane-w: var(--window-panel-l-w);
 }
-.window-side-right-inflow {
-  --pane-w: var(--window-side-r-w);
+.window-panel-right-inflow {
+  --pane-w: var(--window-panel-r-w);
 }
-.window-side-left-inflow-resize,
-.window-side-right-inflow-resize {
-  width: var(--window-side-inset);
+.window-panel-left-inflow-resize,
+.window-panel-right-inflow-resize {
+  width: var(--window-panel-inset);
   flex-shrink: 0;
 }
 
 /* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window oot included (its own driver transitions must not re-animate mid-drag). */
 .window.is-resizing,
-.window.is-resizing .window-side-left-inflow,
-.window.is-resizing .window-side-right-inflow,
+.window.is-resizing .window-panel-left-inflow,
+.window.is-resizing .window-panel-right-inflow,
 .window.is-resizing .window-actions-flow,
 .window.is-resizing .window-footer,
 .window.is-resizing .window-footer-toggle {
@@ -248,8 +250,8 @@
 .window.is-footer-open .window-footer {
   height: var(--window-footer-h);
 }
-.window.is-side-right-open .window-footer {
-  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
+.window.is-panel-right-open .window-footer {
+  padding-right: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 .window-footer-toggle {
   right: 16px; /* KNOB — clears the se resize corner */

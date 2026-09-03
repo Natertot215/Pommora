@@ -4,7 +4,7 @@ import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { Menu, MenuItem, heading, headingCaps } from '@renderer/DesignSystem/Menus'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { WindowBase, WINDOW_BASE_INSPECTOR } from '@renderer/Windows/window-base'
+import { WindowBase, WINDOW_BASE_PANEL } from '@renderer/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@renderer/Settings/SettingsWindow'
 import '@renderer/Settings/settings-window.css'
 import './panes-leaf.css'
@@ -74,7 +74,7 @@ export function PanesLeaf(): React.JSX.Element {
           }}
           right={{
             windowId: 'showcase-settings-inspector',
-            bounds: WINDOW_BASE_INSPECTOR,
+            bounds: WINDOW_BASE_PANEL,
             mode: 'inflow',
             open: inspectorOpen,
             className: 'settings-rail',
