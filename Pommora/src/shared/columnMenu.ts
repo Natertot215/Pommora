@@ -33,8 +33,6 @@ export interface ColumnMenuContext {
 export interface StyleMenuContext {
   type: PropertyType
   current: ColumnStyle
-  /** Number only: whether the value can render a bar (percent, or fraction + a denominator). Gates the
-   *  'Bar' look out when there's no max to fill against — otherwise picking it silently shows text. */
   barCapable?: boolean
 }
 

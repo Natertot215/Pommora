@@ -78,9 +78,7 @@ export interface MarkdownBlockEntry {
   id: string
   type: 'markdown'
   style?: BlockStyle
-  /** Frozen prose can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
@@ -93,9 +91,7 @@ export interface PageBlockEntry {
   style?: BlockStyle
   banner?: boolean
   title?: boolean
-  /** A frozen page embed can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
@@ -119,14 +115,10 @@ export interface ViewBlockEntry {
   display_title?: string
   title?: boolean
   icon?: boolean
-  /** Heading level for the title (1–6, absent = the #### default) — sized by markdownPM's own `.md-hN`. */
   title_level?: number
   view_button?: ViewButton
   view_style?: ViewStyle
-  /** Freezes this embed's view config + view CRUD (data interaction stays live). The SettingsPane
-   *  footer lock writes it; absent = unlocked. */
   locked?: boolean
-  /** A discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
@@ -177,11 +169,9 @@ const knownEntry = z.union([markdownEntry, pageEntry, viewEntry])
  *  A node with `pick` resolves the menu; a node with `submenu` drills. */
 export interface DrillPickItem<T> {
   label: string
-  /** Leading glyph — locations carry their entity icon, views their view icon. */
   icon?: string
   pick?: T
   submenu?: Array<DrillPickItem<T>>
-  /** Renders in the pane's pinned BottomRow instead of the scrolling body (+ Custom). */
   footer?: boolean
 }
 

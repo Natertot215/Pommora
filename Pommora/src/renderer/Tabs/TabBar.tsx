@@ -17,8 +17,7 @@ import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cycle } from './tabsModel'
-import './tab-strip.css'
-import './tab-bar.css'
+import './tab-base.css'
 
 const BASE_MS = ms(duration.base)
 /** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole
@@ -84,8 +83,7 @@ function TabBarBody({
   const reorderTabs = useSession((s) => s.reorderTabs)
   const reorderPin = useSession((s) => s.reorderPin)
 
-  // Closing is store-first — the tab leaves the store immediately (a re-click spawns fresh instead
-  // of resurrecting a zombie) while a GHOST stays rendered for the width-collapse exit.
+  // Closing is store-first — the tab leaves the store immediately (a re-click spawns fresh instead of resurrecting a zombie) while a GHOST stays rendered for the width-collapse exit.
   const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: TabEntry; index: number }>>(
     new Map(),
   )
@@ -195,7 +193,7 @@ function TabBarBody({
 
   return (
     <div
-      className={cx('tab-bar', revealOnHover && 'reveal-on-hover')}
+      className={cx('tab-bar', 'tabs-standard', revealOnHover && 'reveal-on-hover')}
       role="tablist"
       aria-label="Open tabs"
       onPointerDown={onBarDown}

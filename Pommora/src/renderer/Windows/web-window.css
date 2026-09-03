@@ -11,8 +11,6 @@
   min-width: 0;
 }
 
-/* Two-tone like the page window's crumb: the domain stands back, the page title carries, ellipsized
-   from the middle out so a long title never crowds the clusters. */
 .wbrowser-title {
   align-items: center;
   gap: 6px;
