@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { dropLiveTree, refreshTree } from '../liveTree'
@@ -12,7 +12,9 @@ import {
   captureIfDue,
   flushFileHistory,
   noteExternalEdit,
+  readHistoryBody,
   resetFileHistory,
+  restoreSnapshot,
   sweepFileHistory,
   writeBody,
 } from './fileHistory'
@@ -241,6 +243,32 @@ describe('a switch of roots', () => {
     openSessionDb(root)
     expect(rows()).toHaveLength(before)
     await rm(next, { recursive: true, force: true })
+  })
+})
+
+describe('the history channels', () => {
+  it('reads a snapshot body by its own page only', async () => {
+    await writeBody(root, file, 'two', 'edit')
+    const ts = rows()[0].ts
+    expect(readHistoryBody(PAGE, ts)).toEqual({ ok: true, value: 'one\n' })
+    const other = readHistoryBody(OTHER, ts)
+    expect(other.ok).toBe(false)
+    if (!other.ok) expect(other.error.code).toBe('not-found')
+  })
+
+  it("restores by id at the page's live path, answering that path", async () => {
+    await writeBody(root, file, 'two', 'edit')
+    const ts = rows()[0].ts
+    const moved = abs('Notes', 'Renamed.md')
+    await rename(file, moved)
+    await refreshTree(root)
+    tick()
+    const r = await restoreSnapshot(root, PAGE, ts)
+    expect(r).toEqual({ ok: true, value: { path: 'Notes/Renamed.md' } })
+    expect(splitEnvelope(await readFile(moved, 'utf8')).body).toBe('one\n')
+    expect(rows().map((r) => r.source)).toEqual(['restore', 'edit'])
+    const missing = await restoreSnapshot(root, OTHER, ts)
+    expect(missing.ok).toBe(false)
   })
 })
 

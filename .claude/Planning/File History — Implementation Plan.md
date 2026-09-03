@@ -386,8 +386,8 @@ Confirms are the renderer's, on the parallel session's `ask()` seam (Tasks 7, 9)
 
 **Verify — automated**
 
-- [ ] A scratch-root test through the `serveBridge` map: `history:read` with another page's `ts` → `not-found`; `history:restore` on a renamed page answers the new path. Red, then green.
-- [ ] Full gate green. `rg -F "'open-history'" src` → 2 now, 3 after Task 8; control `rg -F "'open-in-preview'" src` → 3.
+- [x] A scratch-root test of the channel bodies (`readHistoryBody`, `restoreSnapshot` in `fileHistory.test.ts`): `history:read` with another page's `ts` → `not-found`; `history:restore` on a renamed page answers the new path. Red, then green.
+- [x] Full gate green. `rg -F "'open-history'" src` → 2 now, 3 after Task 8; control `rg -F "'open-in-preview'" src` → 3.
 
 **Verify — user**
 
@@ -692,6 +692,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Task 6: the channel bodies (`listHistory`, `readHistoryBody`, `restoreSnapshot`, `deleteHistory`, `clearHistory`) live in `CRUD/fileHistory.ts` over one `withStore` guard, and `index.ts`'s handlers only validate arguments — `index.ts` is not loadable under Vitest, so the plan's bridge-map test runs against the bodies; the restore handler pushes `values:changed` after the write, as the autosave handler does.
 - 09-02-2026, Gate 2 (Nathan's consolidation ruling): one `STORE_FILE` predicate in `exclusion.ts` — any `.db`, `-wal`, or `-shm` segment is never watched or listed, wherever it sits, so Task 3's scoped clause is gone and `neverWatched`'s `nexus.db` prefix with it; `DB_SIBLINGS` in `driver.ts` serves both `open.ts`'s remove and the quarantine; `fileStamp` in `atomicWrite.ts` stamps the trash and the quarantine alike; `pageIdIndex` is memoized per tree object and is the one walk behind `liveIdIndex`, `liveIdOf`, and `livePathOf`.
 - 09-02-2026, Gate 2 review: the foreign-overwrite memory is keyed by page id, not path, so a page recreated under a freed name inherits no stale hash; a restore arms no quiet timer — nothing was typed, so there is no settled text to capture.
 - 09-02-2026, Gate 2 fold: the `historyDays` sweep runs after `confirmSettingsWrite` so it reads the value just written rather than the tree's stale copy; the watcher arms a page after `patchPageFromDisk`, so an externally created page is in the index when it is looked up; the gate clock moves only when a row lands; a flush keeps the source a timer was armed with; `before-quit` quits on rejection as on settlement; `valuesChanged` memoizes both directions of the id index per tree and offers `liveIdOf(root, abs)`.

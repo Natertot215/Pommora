@@ -26,7 +26,9 @@ import type {
   ValueChange,
   ViewButton,
   ViewStyle,
+  SnapshotRow,
 } from './types'
+import type { FileHistoryMenuAction } from './fileHistoryMenu'
 import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } from './mutate'
 import type { Result } from './result'
 import type { FormatState } from './editorMenu'
@@ -98,6 +100,14 @@ export interface Asks {
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
   'page:updateBody': { args: [relPath: string, body: string]; reply: Result<null> }
+
+  // File history — snapshots keyed by page id; restore answers the page's live path.
+  'history:list': { args: [pageId: string]; reply: Result<SnapshotRow[]> }
+  'history:read': { args: [pageId: string, ts: number]; reply: Result<string> }
+  'history:restore': { args: [pageId: string, ts: number]; reply: Result<{ path: string }> }
+  'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
+  'history:clear': { args: []; reply: Result<number> }
+  'history:menu': { args: [ctx: { batch: boolean }]; reply: FileHistoryMenuAction | null }
 
   // Per-machine scopes (nexus.db rows)
   'folds:get': { args: []; reply: Record<string, string[]> }
@@ -369,6 +379,7 @@ export interface Pushes {
   // Delete asks in the renderer, so the native menu hands the target back rather than acting.
   'confirm-delete': ContextTarget
   'open-in-preview': ContextTarget
+  'open-history': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
