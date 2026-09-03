@@ -2,7 +2,6 @@ export {
   PickerControl,
   factorChoice,
   labelOf,
-  percentChoice,
   stepsWith,
   type PickerChoice,
 } from './PickerControl'
