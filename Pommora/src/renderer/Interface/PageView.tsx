@@ -210,6 +210,7 @@ export function PageView({
             )
           },
         }}
+        active={!parked}
       />
       <IconPicker
         open={iconPickerOpen}
