@@ -2,14 +2,18 @@
 
 import { NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
 
-/** A path segment the watcher never delivers: the trash, an install's churn, the store and its
- *  WAL, and OS/editor dotfile cruft. `.nexus` is the exception — Contexts and settings live there.
- *  Shared so any lister of a watched directory skips exactly what the watcher drops. */
+/** A SQLite store or its journal — Pommora's own and anyone else's; none is content, and a
+ *  journal's churn must never cost a walk. */
+export const STORE_FILE = /\.db(-wal|-shm)?$/
+
+/** A path segment the watcher never delivers: the trash, an install's churn, a store and its
+ *  journal, and OS/editor dotfile cruft. `.nexus` is the exception — Contexts and settings live
+ *  there. Shared so any lister of a watched directory skips exactly what the watcher drops. */
 export function neverWatched(seg: string): boolean {
   return (
     seg === TRASH_DIR ||
     seg === 'node_modules' ||
-    seg.startsWith('nexus.db') ||
+    STORE_FILE.test(seg) ||
     (seg.startsWith('.') && seg !== NEXUS_DIR)
   )
 }

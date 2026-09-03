@@ -184,7 +184,8 @@ async function trashChainDir(nexusRoot: string, absPath: string): Promise<string
   return dir
 }
 
-const trashStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
+/** An ISO instant with `:` and `.` flattened to `-` — a filename-safe stamp. */
+export const fileStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
 
 /** The trash's leaf naming, stated once: the stamp, then a de-collision counter once one is
  *  needed, then the name the entity had. Both trash paths de-collide differently — a bundle
@@ -202,7 +203,7 @@ const stampedLeaf = (stamp: string, n: number, base: string): string =>
  */
 export async function mintBundle(nexusRoot: string, absSource: string): Promise<string> {
   const dir = await trashChainDir(nexusRoot, absSource)
-  const stamp = trashStamp()
+  const stamp = fileStamp()
   const base = `${basename(absSource)}${BUNDLE_SUFFIX}`
   for (let n = 0; ; n++) {
     const bundle = join(dir, stampedLeaf(stamp, n, base))
@@ -232,7 +233,7 @@ export async function settleBundle(bundleDir: string, absPath: string): Promise<
 export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
   recordWrite(absPath)
   const dir = await trashChainDir(nexusRoot, absPath)
-  const stamp = trashStamp()
+  const stamp = fileStamp()
   const base = basename(absPath)
   let dest = join(dir, stampedLeaf(stamp, 0, base))
   for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))

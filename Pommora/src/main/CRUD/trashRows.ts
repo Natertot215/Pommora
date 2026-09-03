@@ -12,7 +12,7 @@ import {
   resolveRecord,
 } from '../provenance'
 
-/** `trashStamp` writes an ISO instant with `:` and `.` flattened to `-`. The optional counter
+/** `fileStamp` writes an ISO instant with `:` and `.` flattened to `-`. The optional counter
  *  that follows de-collides same-instant deletes and carries no time of its own. */
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 

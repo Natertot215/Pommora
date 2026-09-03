@@ -6,7 +6,8 @@ import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@shared/result'
 import type { SnapshotRow, SnapshotSource } from '@shared/types'
-import { openDb, type Db } from './driver'
+import { DB_SIBLINGS, openDb, type Db } from './driver'
+import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'
 
 export const VERSIONS_FILENAME = 'versions.db'
@@ -32,9 +33,8 @@ function healthy(db: Db): boolean {
 /** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's
  *  store clause keeps covering it; its WAL and SHM go with it, and nothing is deleted. */
 function quarantine(dbPath: string): void {
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const aside = dbPath.replace(/\.db$/, `.corrupt-${stamp}.db`)
-  for (const suffix of ['', '-wal', '-shm']) {
+  const aside = dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`)
+  for (const suffix of DB_SIBLINGS) {
     try {
       renameSync(dbPath + suffix, aside + suffix)
     } catch {

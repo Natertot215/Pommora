@@ -24,37 +24,43 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   files.add(rel)
 }
 
-export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
+interface PageIndices {
+  byPath: ReadonlyMap<string, string>
+  /** null marks an id two files claim. */
+  byId: ReadonlyMap<string, string | null>
+}
+
+const indices = new WeakMap<NexusTree, PageIndices>()
+
+/** Both directions of a tree's page index, walked once per tree object. */
+function indicesOf(tree: NexusTree): PageIndices {
+  const held = indices.get(tree)
+  if (held) return held
   const byPath = new Map<string, string>()
+  const byId = new Map<string, string | null>()
   const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
     for (const n of nodes) {
-      for (const p of n.pages) byPath.set(p.path, p.id)
+      for (const p of n.pages) {
+        byPath.set(p.path, p.id)
+        byId.set(p.id, byId.has(p.id) ? null : p.path)
+      }
       walk((n.sets ?? []) as typeof nodes)
     }
   }
-  if (tree) walk(tree.collections)
-  return byPath
+  walk(tree.collections)
+  const built = { byPath, byId }
+  indices.set(tree, built)
+  return built
 }
 
-interface LiveIndices {
-  tree: NexusTree
-  byPath: Map<string, string>
-  byId: Map<string, string | null>
-}
-let indices: LiveIndices | null = null
+export const pageIdIndex = (tree: NexusTree | null): ReadonlyMap<string, string> =>
+  tree ? indicesOf(tree).byPath : new Map()
 
-/** Both directions of the live tree's page index, or null when the tree is not this root's — so a
- *  stale tree never names ids for another nexus. Memoized per tree: a burst costs one walk. */
-function liveIndices(root: string): LiveIndices | null {
+/** The live tree's indices, or null when the tree is not this root's — so a stale tree never
+ *  names ids for another nexus. */
+function liveIndices(root: string): PageIndices | null {
   const tree = getLiveTree()
-  if (tree?.nexus.rootPath !== root) return null
-  if (indices?.tree !== tree) {
-    const byPath = pageIdIndex(tree)
-    const byId = new Map<string, string | null>()
-    for (const [path, pageId] of byPath) byId.set(pageId, byId.has(pageId) ? null : path)
-    indices = { tree, byPath, byId }
-  }
-  return indices
+  return tree?.nexus.rootPath === root ? indicesOf(tree) : null
 }
 
 /** The live tree's path→id map when it holds `root`; empty otherwise. */

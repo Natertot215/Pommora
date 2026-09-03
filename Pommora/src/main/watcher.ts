@@ -35,7 +35,6 @@ import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
 import type { NexusTree, ValueChange } from '@shared/types'
 
 const SETTLE_MS = 200
-const DB_FILE = /\.db(-wal|-shm)?$/
 
 let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
@@ -70,7 +69,6 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
       // Block-host content loads through blocks:get, never the tree walk — a debounced
       // block-body write must not cost a full re-walk. homepage.json stays watched.
       (segs[0] === NEXUS_DIR && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
-      (segs[0] === NEXUS_DIR && segs.length === 2 && DB_FILE.test(segs[1])) ||
       // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space
       // never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
       (segs[0] === NEXUS_DIR &&
@@ -150,12 +148,11 @@ function valueChangesOf(
 ): ValueChange[] {
   const held = getLiveTree()
   if (!held) return []
-  let byPath: Map<string, string> | null = null
+  const byPath = pageIdIndex(tree)
   const byContainer = new Map<string, Set<string>>()
   for (const ev of events) {
     const c = classifyEvent(held, root, ev, scope)
     if (c.kind !== 'page-upsert') continue
-    byPath ??= pageIdIndex(tree)
     const container = containerOf(c.rel)
     const ids = byContainer.get(container) ?? new Set<string>()
     byContainer.set(container, ids)
