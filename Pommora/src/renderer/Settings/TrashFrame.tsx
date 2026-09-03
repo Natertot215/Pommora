@@ -5,6 +5,7 @@ import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScro
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { overlay } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { retained, toggled } from '@renderer/DesignSystem/Util/checkSet'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -81,11 +82,8 @@ export function TrashFrame(): React.JSX.Element {
     }
     setFailed(false)
     setRows(res.value)
-    setChecked((prev) => {
-      const live = new Set(res.value.map((r) => r.bundlePath))
-      const next = new Set([...prev].filter((p) => live.has(p)))
-      return next.size === prev.size ? prev : next
-    })
+    const live = new Set(res.value.map((r) => r.bundlePath))
+    setChecked((prev) => retained(prev, live))
   }, [])
 
   useEffect(() => {
@@ -93,12 +91,7 @@ export function TrashFrame(): React.JSX.Element {
   }, [refresh])
 
   const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
-  const toggle = (bundlePath: string): void =>
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(bundlePath)) next.add(bundlePath)
-      return next
-    })
+  const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
   const one = async (req: MutateRequest): Promise<void> => {
     if (await mutate(req)) await refresh()

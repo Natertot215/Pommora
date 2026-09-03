@@ -7,6 +7,7 @@ import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/Nav
 import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@renderer/DesignSystem/Menus'
 import { gutter } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { retained, toggled } from '@renderer/DesignSystem/Util/checkSet'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { clockOf, formatDate, nexusDateFormat } from '@renderer/Properties/Assignment/formatValue'
@@ -61,10 +62,7 @@ function PageHistoryBody({
     if (list.ok) {
       setRows(list.value)
       const live = new Set(list.value.map((r) => r.ts))
-      setChecked((prev) => {
-        const next = new Set([...prev].filter((ts) => live.has(ts)))
-        return next.size === prev.size ? prev : next
-      })
+      setChecked((prev) => retained(prev, live))
       setShown((prev) => (prev !== null && live.has(prev) ? prev : null))
     }
     const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
@@ -98,17 +96,13 @@ function PageHistoryBody({
   )
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
-  const toggle = (ts: number): void =>
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(ts)) next.add(ts)
-      return next
-    })
+  const toggle = (ts: number): void => setChecked((prev) => toggled(prev, ts))
 
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
     if (!r.ok) window.nexus.showError(r.error.message)
+    setChecked(new Set())
     setShown(null)
     await refresh()
   }
