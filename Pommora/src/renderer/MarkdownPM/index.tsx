@@ -22,6 +22,7 @@ import {
   embedField,
   embedTiles,
   refreshTileZooms,
+  rerenderWebTiles,
   resolutionNudge,
   setEmbedHeights,
   setEmbedZooms,
@@ -104,6 +105,9 @@ interface Props {
   edgeFade?: boolean
   /** Warm-tab state seam — page editors only; embeds/blocks mount cold. */
   warm?: WarmSeam
+  /** Whether this editor's tab is the shown one. Absent = active; a parked tab (false) pauses its
+   *  webpage guests' media when the preference is on. */
+  active?: boolean
   /** Handle registration for hosts that reach into this editor programmatically (the page
    *  surface's outline seam): the live view at mount, null at teardown. */
   register?: (view: EditorView | null) => void
@@ -134,6 +138,7 @@ export function MarkdownEditor({
   edgeFade = false,
   warm,
   register,
+  active = true,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   /** Seeds the readOnly compartment at mount; compared on change to tell a real flip from a re-render. */
@@ -158,6 +163,8 @@ export function MarkdownEditor({
   foldsRef.current = folds
   const tableHeadingColsRef = useRef(tableHeadingColumns)
   tableHeadingColsRef.current = tableHeadingColumns
+  const activeRef = useRef(active)
+  activeRef.current = active
   const menuRef = useRef(menu)
   menuRef.current = menu
   const registerRef = useRef(register)
@@ -177,6 +184,11 @@ export function MarkdownEditor({
   useEffect(() => {
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (view) rerenderWebTiles(view)
+  }, [active])
 
   // Read from the live slice, not the tree, so flipping the setting reaches an open page immediately
   // and every surface drawing this page agrees.
@@ -269,6 +281,7 @@ export function MarkdownEditor({
         self: () => pageTitleRef.current,
         saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
         saveZooms: embedZoomsRef.current ? (z) => embedZoomsRef.current?.save(z) : undefined,
+        tabActive: () => activeRef.current,
       }),
       listDragExtension,
       listRenumberOnDelete,

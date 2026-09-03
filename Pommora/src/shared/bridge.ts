@@ -298,6 +298,7 @@ export interface Asks {
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'link:open': { args: [url: string]; reply: void }
   'webGuestZoom:set': { args: [guestId: number, factor: number]; reply: Result<null> }
+  'webGuestMedia:pause': { args: [guestId: number]; reply: Result<null> }
   'linkTitles:get': { args: []; reply: Record<string, string> }
   'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 

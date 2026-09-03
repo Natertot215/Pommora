@@ -12,6 +12,7 @@ import { NavView } from './NavView'
 import { Subfield } from './Subfield/Subfield'
 import type { SubfieldPage } from './Subfield/subfieldItems'
 import { footerLabel } from '@shared/toggleLabels'
+import { TAB_CACHE } from '@shared/types'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 
 function DetailView(): React.JSX.Element | null {
@@ -58,9 +59,6 @@ function DetailView(): React.JSX.Element | null {
   }
 }
 
-// KNOB — how many recently-visited page tabs keep their surface parked behind the shown one.
-const WARM_TABS = 2
-
 type Host = { tabId: string; pageId: string }
 
 function useHosts(): Host[] {
@@ -69,13 +67,14 @@ function useHosts(): Host[] {
   const tabMru = useSession((s) => s.tabMru)
   const activeTabId = useSession((s) => s.activeTabId)
   const readyIds = useSession(readyPageIds)
+  const warmTabs = useSession((s) => s.personalization.tabCache ?? TAB_CACHE.default)
   return useMemo(() => {
     const ready = new Set(readyIds.split(','))
     const hosts: Host[] = []
     if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
     let parked = 0
     for (const id of tabMru) {
-      if (parked >= WARM_TABS || id === activeTabId) continue
+      if (parked >= warmTabs || id === activeTabId) continue
       const target = tabs.find((t) => t.id === id)?.target
       if (target?.kind !== 'page' || !ready.has(target.id)) continue
       if (hosts.some((h) => h.pageId === target.id)) continue
@@ -85,7 +84,7 @@ function useHosts(): Host[] {
     // Fixed order, never most-recent-first: reordering keyed children moves their DOM, and a
     // moved webview re-attaches, ending the very guest this exists to keep.
     return hosts.sort((a, b) => (a.pageId < b.pageId ? -1 : 1))
-  }, [selection, tabs, tabMru, activeTabId, readyIds])
+  }, [selection, tabs, tabMru, activeTabId, readyIds, warmTabs])
 }
 
 const VIEW_SLIDE_PX = 14

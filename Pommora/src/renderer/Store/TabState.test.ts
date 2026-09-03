@@ -31,12 +31,12 @@ describe('warmCache', () => {
   })
 
   it('evicts the stalest entry past the per-tab cap (I-7), sparing recently-captured ones', () => {
-    for (let i = 0; i < 21; i++) captureCache('t1', `page:p${i}`, { scrollTop: i })
+    for (let i = 0; i < 51; i++) captureCache('t1', `page:p${i}`, { scrollTop: i })
     expect(readCache('t1', 'page:p0')).toBeUndefined()
-    expect(readCache('t1', 'page:p20')?.scrollTop).toBe(20)
+    expect(readCache('t1', 'page:p50')?.scrollTop).toBe(50)
     // Re-capturing an old key refreshes its slot, so the NEXT eviction takes the now-stalest instead.
     captureCache('t1', 'page:p1', { scrollTop: 99 })
-    captureCache('t1', 'page:p21', { scrollTop: 21 })
+    captureCache('t1', 'page:p51', { scrollTop: 51 })
     expect(readCache('t1', 'page:p1')?.scrollTop).toBe(99)
     expect(readCache('t1', 'page:p2')).toBeUndefined()
   })

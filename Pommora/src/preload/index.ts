@@ -90,6 +90,7 @@ const api = {
   embedHeights: { get: ask('embedHeights:get'), set: ask('embedHeights:set') },
   embedZooms: { get: ask('embedZooms:get'), set: ask('embedZooms:set') },
   webGuestZoom: { set: ask('webGuestZoom:set') },
+  webGuestMedia: { pause: ask('webGuestMedia:pause') },
   tableHeadingColumns: { get: ask('tableHeadingCols:get'), set: ask('tableHeadingCols:set') },
   headingIcon: { get: ask('headingIcon:get'), set: ask('headingIcon:set') },
   citations: { get: ask('citations:get'), set: ask('citations:set') },

@@ -26,6 +26,8 @@ import {
   HISTORY_DAYS,
   HISTORY_INTERVAL,
   HISTORY_INTERVAL_STEPS,
+  TAB_CACHE,
+  TAB_CACHE_STEPS,
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
@@ -134,6 +136,7 @@ const PERCENT: NumberUnit = { scale: 100, suffix: '%' }
 const DAYS: NumberUnit = { scale: 1, suffix: ' Days' }
 const MINUTES: NumberUnit = { scale: 1, suffix: ' Min' }
 const PIXELS: NumberUnit = { scale: 1, suffix: 'px' }
+const TABS: NumberUnit = { scale: 1, suffix: ' Tabs' }
 
 const clearExclusions = async (): Promise<boolean> => {
   const count = await window.nexus.countExclusions()
@@ -361,6 +364,22 @@ const FRAMES = roster([
             fallback: 250,
             steps: [150, 175, 200, 225, 250, 275, 300, 325, 350],
             unit: PIXELS,
+          },
+          {
+            kind: 'zoom',
+            key: 'tabCache',
+            label: 'Active Tab Cache',
+            hint: 'Maximum amount of open tabs are kept active before switching to on-demand loading.',
+            fallback: TAB_CACHE.default,
+            steps: TAB_CACHE_STEPS,
+            unit: TABS,
+          },
+          {
+            kind: 'toggle',
+            key: 'pauseMediaOnTabSwitch',
+            label: 'Pause Media on Tab Switch',
+            hint: 'Automatically pause video and audio playback from an open tab when no longer in the main view.',
+            defaultOn: true,
           },
         ],
       },
