@@ -139,9 +139,9 @@ export function sessionVersionsDb(): Db | null
 
 **Verify — automated**
 
-- [ ] Red first, `versionsDb.test.ts`: round-trip through zlib; delete returns its count and leaves other pages; sweep removes only older rows; same-`ts` add replaces; garbage header → fresh handle and the `.corrupt-` triple; interior corruption → same; a hot `-wal` quarantines all three. Then green.
-- [ ] `session.test.ts`: `openSessionDb` creates `versions.db`; `closeSessionDb` closes both.
-- [ ] Full gate green. `rg -F "nexus.db: cannot open" src/main` → 0; control `rg -F "openDb(" src/main` → ≥ 2.
+- [x] Red first, `versionsDb.test.ts`: round-trip through zlib; delete returns its count and leaves other pages; sweep removes only older rows; same-`ts` add replaces; garbage header → fresh handle and the `.corrupt-` triple; interior corruption → same; a hot `-wal` quarantines all three. Then green.
+- [x] `sessionDb.test.ts`: `openSessionDb` creates `versions.db`; `closeSessionDb` closes both.
+- [x] Full gate green. `rg -F "nexus.db: cannot open" src/main` → 0; control `rg -F "openDb(" src/main` → 4.
 
 **Verify — user**
 
@@ -655,7 +655,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Progress
 
-- [ ] **Phase 1** — The store and the writer · base `<commit>`
+- [ ] **Phase 1** — The store and the writer · base `b931ef59`
   - [ ] Task 1 · `<commit>`
   - [ ] Task 2 · `<commit>`
   - [ ] Task 3 · `<commit>`
@@ -673,6 +673,9 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [ ] Task 11 · `<commit>`
 
 ### Rulings
+
+- 09-02-2026 (mine): `versions.db` quarantines on a null handle as on a failed `quick_check` — `openDb` surfaces no errcode to tell garbage from busy, and a rename loses nothing.
+- 09-02-2026 (mine): the `sessionVersionsDb` test lives in a new `sessionDb.test.ts`; `session.test.ts` tests `./session`, not the handles.
 
 - 09-02-2026, Nathan: the deleted `Stamp Retirement — Implementation Plan.md` sitting in the index is committed at phase 1's start, by explicit path.
 - 09-02-2026, Nathan: no screenshots during the plan — he is present, sees the progress, and drives tweaks.

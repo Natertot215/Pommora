@@ -4,12 +4,18 @@
 
 import { errText } from '@shared/result'
 import { openNexusDb } from './Database/open'
+import { openVersionsDb } from './Database/versionsDb'
 import type { Db } from './Database/driver'
 
 let db: Db | null = null
+let versionsDb: Db | null = null
 
 export function sessionDb(): Db | null {
   return db
+}
+
+export function sessionVersionsDb(): Db | null {
+  return versionsDb
 }
 
 /** Open the database for `root`, replacing any prior handle. Never throws: opening a nexus on
@@ -22,14 +28,25 @@ export function openSessionDb(root: string): void {
     console.error('nexus.db: unavailable — operational state will not persist:', errText(e))
     db = null
   }
+  try {
+    versionsDb = openVersionsDb(root)
+  } catch (e) {
+    console.error('versions.db: unavailable — file history will not record:', errText(e))
+    versionsDb = null
+  }
 }
 
-export function closeSessionDb(): void {
-  if (!db) return
+const closeQuietly = (handle: Db | null): void => {
   try {
-    db.close()
+    handle?.close()
   } catch {
     /* best-effort — nothing here outlives the session that needs a clean close */
   }
+}
+
+export function closeSessionDb(): void {
+  closeQuietly(db)
+  closeQuietly(versionsDb)
   db = null
+  versionsDb = null
 }
