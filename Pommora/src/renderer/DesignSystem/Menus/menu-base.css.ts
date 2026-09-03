@@ -119,9 +119,7 @@ export const rowDisabled = style({
 
 export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 
-export const overlay = style({
-  opacity: 0,
-  transition: 'opacity var(--duration-base) var(--ease-base)',
+export const gutter = style({
   selectors: {
     '&&': {
       position: 'absolute',
@@ -129,12 +127,17 @@ export const overlay = style({
       top: '50%',
       transform: 'translate(-50%, -50%)',
     },
-    [`${item}:hover &`]: { opacity: 1 },
   },
 })
 
-/** The overlay slot kept in view — a check that lives in the row's gutter rather than under it. */
-export const gutter = style([overlay, { opacity: 1 }])
+export const overlay = style([
+  gutter,
+  {
+    opacity: 0,
+    transition: 'opacity var(--duration-base) var(--ease-base)',
+    selectors: { [`${item}:hover &`]: { opacity: 1 } },
+  },
+])
 
 export const side = style({
   display: 'flex',
@@ -166,7 +169,6 @@ export const titleInput = style([
 
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
-/** A caption whose parts stand apart on the segment bar — a date beside its clock. */
 export const subLabelSegments = style({
   display: 'inline-flex',
   alignItems: 'center',
