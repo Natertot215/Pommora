@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { PickerMenu, PickerOption } from '../picker-base'
+import { PickerMenu, PickerRow } from '../picker-base'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -386,9 +386,9 @@ export function CalendarPicker({
           <PickerMenu solid direction="up" closing={timeMenuPresence.closing}>
             <div className={cx(s.menuList, 'over-scroll')}>
               {(part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
-                <PickerOption key={v} selected={v === current} onClick={() => choose(v)}>
+                <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
                   {optionRow(part === 'h' ? hourText(v) : pad(v))}
-                </PickerOption>
+                </PickerRow>
               ))}
             </div>
           </PickerMenu>
@@ -515,22 +515,22 @@ export function CalendarPicker({
             <div className={cx(s.menuList, 'over-scroll')}>
               {kind === 'month'
                 ? Array.from({ length: 12 }, (_, m) => (
-                    <PickerOption
+                    <PickerRow
                       key={monthName(m)}
                       selected={m === cursor.getMonth()}
                       onClick={() => jump(year, m)}
                     >
                       {optionRow(monthName(m))}
-                    </PickerOption>
+                    </PickerRow>
                   ))
                 : yearChoices.map((y) => (
-                    <PickerOption
+                    <PickerRow
                       key={y}
                       selected={y === year}
                       onClick={() => jump(y, cursor.getMonth())}
                     >
                       {optionRow(y)}
-                    </PickerOption>
+                    </PickerRow>
                   ))}
             </div>
           </PickerMenu>

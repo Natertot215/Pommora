@@ -18,7 +18,7 @@ import {
   useDisclosureSet,
 } from '@renderer/DesignSystem/Menus'
 import { accessoryButton } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT, treePane } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
@@ -35,7 +35,7 @@ import { CheckboxGlyph } from '@renderer/Properties/Assignment/checkboxLook'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '../SurfacePM/ViewTileScope'
-import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { PickerControl, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { optionsOf } from './GroupFrame'
 import {
   type Connector,
@@ -54,12 +54,12 @@ import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'
 import { useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 
-const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
+const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },
 ]
 
-const ACTIVE_OPTIONS: PickerChoice<'on' | 'off'>[] = [
+const ACTIVE_OPTIONS: PickerOption<'on' | 'off'>[] = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
 ]
@@ -340,7 +340,7 @@ function ChipsField({
           : options.length === 0
             ? emptyPicker('No options yet.')
             : options.map((o) => (
-                <PickerOption
+                <PickerRow
                   key={o.value}
                   selected={shown.includes(o.value)}
                   onClick={() => toggle(o.value)}
@@ -350,7 +350,7 @@ function ChipsField({
                   ) : (
                     <OptionChip type={type} option={o} />
                   )}
-                </PickerOption>
+                </PickerRow>
               ))}
       </PickerMenu>
     </>
@@ -474,7 +474,7 @@ export function FilterFrame({
     current?: string,
   ): React.ReactNode =>
     targets.map((t) => (
-      <PickerOption
+      <PickerRow
         key={t.id}
         selected={t.id === current}
         ring
@@ -485,7 +485,7 @@ export function FilterFrame({
         }}
       >
         {t.label}
-      </PickerOption>
+      </PickerRow>
     ))
 
   const valueCell = (
@@ -624,7 +624,7 @@ export function FilterFrame({
             {(close) =>
               ops.map((o) => {
                 return (
-                  <PickerOption
+                  <PickerRow
                     key={o.label}
                     selected={o === current}
                     ring
@@ -648,7 +648,7 @@ export function FilterFrame({
                     }}
                   >
                     {o.label}
-                  </PickerOption>
+                  </PickerRow>
                 )
               })
             }

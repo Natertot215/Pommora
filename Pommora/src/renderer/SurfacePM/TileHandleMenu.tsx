@@ -10,7 +10,7 @@ import type {
   ViewPickerItem,
 } from '@shared/blocks'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { leadingRow, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import {
   FooterLockButton,
@@ -312,7 +312,7 @@ export function TileHandleMenu({
     <div className={s.pane}>
       <MenuTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
-        <PickerOption
+        <PickerRow
           key={v}
           ring
           align="start"
@@ -320,7 +320,7 @@ export function TileHandleMenu({
           onClick={act(() => onStyle(v))}
         >
           {v === 'bordered' ? 'Bordered' : 'Borderless'}
-        </PickerOption>
+        </PickerRow>
       ))}
     </div>
   )
@@ -352,7 +352,7 @@ export function TileHandleMenu({
       <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
         <div className={s.scaleMenu} data-scale-menu>
           {ZOOM_STEPS.map((st) => (
-            <PickerOption
+            <PickerRow
               key={st.label}
               ring
               align="start"
@@ -360,7 +360,7 @@ export function TileHandleMenu({
               onClick={() => onSetZoom?.(st.factor)}
             >
               {st.label}
-            </PickerOption>
+            </PickerRow>
           ))}
         </div>
       </PickerMenu>

@@ -43,7 +43,7 @@ import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../store'
-import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import type { PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { propertyIcon } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
@@ -56,34 +56,34 @@ import {
 
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
-const STRUCTURAL_ORDER: PickerChoice<StructuralOrderMode>[] = [
+const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },
   { value: 'location', label: 'Location' },
 ]
-const OPTION_ORDER: PickerChoice<GroupOrderMode>[] = [
+const OPTION_ORDER: PickerOption<GroupOrderMode>[] = [
   { value: 'configured', label: 'Default' },
   { value: 'reversed', label: 'Reversed' },
   { value: 'manual', label: 'Custom' },
 ]
-const DATE_ORDER: PickerChoice<GroupOrderMode>[] = [
+const DATE_ORDER: PickerOption<GroupOrderMode>[] = [
   { value: 'configured', label: 'Ascending' },
   { value: 'reversed', label: 'Descending' },
 ]
-const GRANULARITY: PickerChoice<DateGranularity>[] = [
+const GRANULARITY: PickerOption<DateGranularity>[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
 ]
 
-const orderOptionsFor = (type: string | undefined): PickerChoice<GroupOrderMode>[] =>
+const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
 
 const pickerRow = <T extends string>(
   glyph: string,
   label: string,
   value: T,
-  options: readonly PickerChoice<T>[],
+  options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
   sub = false,
 ): MenuRow => ({
@@ -160,7 +160,7 @@ export function GroupFrame({
       : !structural && group.kind === 'property'
         ? group.property_id
         : 'location'
-  const groupByOptions: PickerChoice<string>[] = [
+  const groupByOptions: PickerOption<string>[] = [
     ...(view.type === 'cards'
       ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }]
       : []),
@@ -816,7 +816,7 @@ function SubGroupRow({
   onSave: (sub: SubGroupConfig | undefined) => void
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
-  const options: PickerChoice<string>[] = [
+  const options: PickerOption<string>[] = [
     { value: '_location', label: 'Location', icon: 'folder' as const },
     ...groupable.map((d) => ({
       value: d.id,

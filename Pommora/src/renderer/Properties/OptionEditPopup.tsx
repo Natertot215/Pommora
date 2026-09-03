@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { ColorGrid } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
-import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { PickerControl, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
 import { MenuSeparator } from '@renderer/DesignSystem/Menus'
@@ -16,7 +16,7 @@ import * as s from './option-edit-popup.css'
 const APPEARANCE_OPTIONS = [
   { value: 'filled', label: 'Filled' },
   { value: 'clear', label: 'Clear' },
-] as const satisfies readonly PickerChoice<OptionAppearance>[]
+] as const satisfies readonly PickerOption<OptionAppearance>[]
 
 /** The one editor an option's square-pen opens: identity (icon + title) over the color grid over
  *  the Appearance footing. Each act commits through its own existing write — nothing batches. */

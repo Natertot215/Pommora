@@ -9,7 +9,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { contextOptionsFor } from '@renderer/Properties/contextOptions'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
@@ -284,24 +284,24 @@ export function WindowInspector({ target }: { target: PreviewTarget }): React.JS
         {contextRows
           .filter((t) => !isAssigned(t.id))
           .map((t) => (
-            <PickerOption
+            <PickerRow
               key={t.id}
               leading={<Icon name={t.icon} size="body" />}
               onClick={() => revealAndEdit(t.id)}
             >
               {t.label}
-            </PickerOption>
+            </PickerRow>
           ))}
         {schema
           .filter((d) => !isAssigned(d.id))
           .map((d) => (
-            <PickerOption
+            <PickerRow
               key={d.id}
               leading={<Icon name={propertyIcon(d)} size="body" />}
               onClick={() => revealAndEdit(d.id, d)}
             >
               {displayPropertyName(d.name, capitalize)}
-            </PickerOption>
+            </PickerRow>
           ))}
       </PickerMenu>
       {editing?.mode === 'rename' && (
