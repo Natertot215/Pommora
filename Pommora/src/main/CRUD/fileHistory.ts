@@ -4,14 +4,28 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { kindOf } from '@shared/identity'
-import { errText, ok, type Result } from '@shared/result'
-import { HISTORY_DAYS, HISTORY_INTERVAL, type SnapshotSource } from '@shared/types'
-import { addSnapshot, latestSnapshot, sweepSnapshots } from '../Database/versionsDb'
+import { errText, fail, ok, type Result } from '@shared/result'
+import {
+  HISTORY_DAYS,
+  HISTORY_INTERVAL,
+  type SnapshotRow,
+  type SnapshotSource,
+} from '@shared/types'
+import {
+  addSnapshot,
+  clearSnapshots,
+  deleteSnapshots,
+  latestSnapshot,
+  listSnapshots,
+  readSnapshot,
+  sweepSnapshots,
+} from '../Database/versionsDb'
 import { indexWrittenPage } from '../indexSeed'
 import { splitEnvelope } from '../IO/pageFile'
 import { sessionVersionsDb } from '../sessionDb'
 import { readLivePersonalization } from '../settings'
 import { liveIdOf, livePathOf, noteValueWrite } from '../valuesChanged'
+import type { Db } from '../Database/driver'
 import { updatePageBody } from './page'
 
 export const SNAPSHOT_MAX_BYTES = 1_048_576
@@ -159,6 +173,41 @@ export function resetFileHistory(): void {
   lastTs.clear()
   lastWritten.clear()
 }
+
+const NO_STORE = fail('operation-failed', 'File history is unavailable.')
+
+const withStore = <T>(read: (db: Db) => Result<T>): Result<T> => {
+  const db = sessionVersionsDb()
+  return db ? read(db) : NO_STORE
+}
+
+export const listHistory = (pageId: string): Result<SnapshotRow[]> =>
+  withStore((db) => ok(listSnapshots(db, pageId)))
+
+export const readHistoryBody = (pageId: string, ts: number): Result<string> =>
+  withStore((db) => {
+    const text = readSnapshot(db, pageId, ts)
+    return text === null ? fail('not-found', 'Snapshot not found.') : ok(splitEnvelope(text).body)
+  })
+
+/** The snapshot's body replaces the page's, at whatever path the page lives at now. */
+export async function restoreSnapshot(
+  root: string,
+  pageId: string,
+  ts: number,
+): Promise<Result<{ path: string }>> {
+  const rel = livePathOf(root, pageId)
+  if (rel === null) return fail('not-found', 'Page not found.')
+  const body = readHistoryBody(pageId, ts)
+  if (!body.ok) return body
+  const r = await writeBody(root, join(root, rel), body.value, 'restore')
+  return r.ok ? ok({ path: rel }) : r
+}
+
+export const deleteHistory = (pageId: string, ts: readonly number[]): Result<number> =>
+  withStore((db) => ok(deleteSnapshots(db, pageId, ts)))
+
+export const clearHistory = (): Result<number> => withStore((db) => ok(clearSnapshots(db)))
 
 export async function sweepFileHistory(root: string): Promise<void> {
   const db = sessionVersionsDb()
