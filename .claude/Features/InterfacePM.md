@@ -36,7 +36,7 @@ A page row's menu is the **page menu** (`src/shared/pageMenu.ts`), the same rows
 | Identity | Rename · Edit Icon                                                                                       |
 | Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
 | Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |
-| Locate   | Reveal Location                                                                                          |
+| Locate   | View History · Reveal Location                                                                           |
 | Remove   | Delete                                                                                                   |
 
 ### The Subfield
@@ -47,7 +47,7 @@ A page holding footnotes also carries the **Show Footnotes** / **Hide Footnotes*
 
 ### Floating Windows
 
-Every in-app window mounts one chassis, **WindowBase** (`Windows/`): a glass shell with per-window-id geometry, a toolbar in either **band** or **floating** form, side-pane slots, and a footer, opening and closing on a scale-fade and sealed off from the main shell's pane geometry so the inspector behind it shifts nothing inside. Four windows mount it: the Page Window, the Web Window, the NavWindow, and the Nexus Settings window.
+Every in-app window mounts one chassis, **WindowBase** (`Windows/`): a glass shell with per-window-id geometry, a toolbar in either **band** or **floating** form, side-pane slots, and a footer, opening and closing on a scale-fade and sealed off from the main shell's pane geometry so the inspector behind it shifts nothing inside. Five windows mount it: the Page Window, the Web Window, the NavWindow, the Page History window, and the Nexus Settings window.
 
 #### The Page Window
 

@@ -79,6 +79,15 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a block, or a folder that carries no schema. Collections, Sets, views and properties ask regardless. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 
+**File History**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| File History | `fileHistory` | Stores recoverable snapshots of device-local file history. | **On** · Off |
+| History Timeframe | `historyDays` | How long a snapshot is kept before the open-time sweep removes it; a typed value clamps into the range. | 7 · 14 · 30 · 60 · **90** Days |
+| Snapshot Interval | `historyInterval` | The least time between two edit snapshots of one page, and the quiet timer's length; a typed value clamps into the range. | **5** · 10 · 15 · 20 Min |
+| Clear History | — | Permanently delete stored snapshots for all files; this cannot be undone. Confirms, then reads Cleared for a moment. | Clear |
+
 **Exclusions**
 
 | Setting | Key | Description | Options |
