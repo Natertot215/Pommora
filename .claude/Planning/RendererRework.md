@@ -85,22 +85,19 @@ Rulings a sweep would otherwise re-derive. An audit agent may contradict one, bu
 1. **Radius literals stay literal** at feature sites — a fourth value outside `6/8/10/12` is the reportable defect.
 2. **Both ladders are settled** — `ICON_PX`/`size.icon` absorbs every icon size; the four button bundles are the button ladder (Settled 26); 13px is a real step.
 3. **Bridge completeness is deliberate** — unread members of a fully-bridged ramp are not orphans; the bridge is the primary token interface for every plain stylesheet.
-4. **Three var families look dead and are not** — bridge-completeness vars, fallback-only tuning hooks, `Glass/`'s specular whites; `--safe-*` are forward declarations for the mobile shell.
-5. **Vanilla-extract stays; `.css` vs `.css.ts` tracks module type** — the form question is closed, no reversal to plain CSS; no blanket migration either, and the thirty plain-CSS exceptions fail the test rather than disproving it.
-6. **`PickerMenu.closing` stays** — two live callers inside `CalendarPicker`.
-7. **No middle layer** between the design system and the features — `Properties/`, `Tables/`, `Cards/` are feature code, not a third tier.
-8. **Verified healthy:** Toolbar's dropdowns compose the menu shells · `RenamableTitle → RenamableLabel → EditableInput` · `fieldRing` (8 importers) · `OverScroll` (25) · no `backdrop-filter` outside `Glass/`.
-9. **`FileLabel` and `FileChip` are two recipes on purpose** — treatment over one shape.
-10. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
-11. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
-12. **`EmbedTitle` and `PageHeader` stay apart.**
-13. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
-14. **Design decisions are not bundled as tasks** — bundling forces them by default, which is how the drift accumulated.
-15. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
-16. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
-17. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name and absorbs `Blocks/` + `Embeds/`** — executed or ruled 08-27/08-28.
-18. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
-19. **The UI layer is "tile"; the block-doc data model stays "block."** Components, hooks, and CSS classes carry tile vocabulary (`PageTile`, `MarkdownTile`, `.page-tile`); the persisted model keeps block names (`@shared/blocks`, `MarkdownBlockEntry`, `BlockHostRef`, `loneWebpageEmbed`). A sweep proposing to rename the data model to "tile" is re-deriving a settled boundary.
+4. **Vanilla-extract stays; `.css` vs `.css.ts` tracks module type** — the form question is closed, no reversal to plain CSS; no blanket migration either, and the thirty plain-CSS exceptions fail the test rather than disproving it.
+5. **`PickerMenu.closing` stays** — two live callers inside `CalendarPicker`.
+6. **No middle layer** between the design system and the features — `Properties/`, `Tables/`, `Cards/` are feature code, not a third tier.
+7. **Verified healthy:** Toolbar's dropdowns compose the menu shells · `RenamableTitle → RenamableLabel → EditableInput` · `fieldRing` (8 importers) · `OverScroll` (25) · no `backdrop-filter` outside `Glass/`.
+8. **`FileLabel` and `FileChip` are two recipes on purpose** — treatment over one shape.
+9. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
+10. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
+11. **`EmbedTitle` and `PageHeader` stay apart.**
+12. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
+13. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
+14. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
+15. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
+16. **The UI layer is "tile"; the block-doc data model stays "block."** Components, hooks, and CSS classes carry tile vocabulary (`PageTile`, `MarkdownTile`, `.page-tile`); the persisted model keeps block names (`@shared/blocks`, `MarkdownBlockEntry`, `BlockHostRef`, `loneWebpageEmbed`). A sweep proposing to rename the data model to "tile" is re-deriving a settled boundary.
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers), chip/label (chip is a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a two-tier convention: a `*Menu` wraps a `*Frame`), select/option (layered correctly in `shared/properties.ts`), crumb/trail (split by layer). A `--space-*` ladder and a centralized radius scale were both refused with reasons.
 
@@ -124,9 +121,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 #### Tokens & Geometry
 
 - [ ] **Two clearance pairings that repeat** — `calc(clearance + --content-inset)` (`Interface.css` ×3, `MarkdownPM/Styles.css` ×5) and `calc(clearance + --surface-lane)` (`Interface.css` ×2, `navView.css`) — each could be a token the way `--content-start` is; different distances, so a decision each. *Status:* audit decides (count the readers).
-- [ ] **`--main-bg` → `--bg-window`** — a pure alias with five reads. *Status:* ruled; one edit.
 - [ ] **Sibling drift** — `Frames/groupFrame.css.ts:12`'s `subLabel` (`body.emphasized`) against `Menus/menu-base.css.ts:164`'s `subLabel` (`caption.standard`) — same export name, 13px against 11px. A shared class name is not a shared type decision. *Status:* audit decides which wins.
-- [ ] **Two token verdicts** — `text.callout` redefined as the table/column-header step (one read; its ledger assignment "frame header" has no referent); `surface.primary/secondary/tertiary` moved beside Ramp as the opaque grey ladder (2·1·1 reads). *Status:* awaiting ruling (§3.5).
 
 #### Recipes
 

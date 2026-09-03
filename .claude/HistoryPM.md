@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026 → 09-03      | PM-125 | Page File History                                    |
 | 09-02-2026              | PM-124 | In-App Confirmation & Notifications                  |
 | 09-01-2026              | PM-123 | Stamp Retirement                                     |
@@ -129,6 +130,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-126 || Active Cache Framework
+**DATE:** 09-03-2026
+
+The three hand-rolled insertion-order LRUs — `webRetention.ts`'s hidden-guest budget, `tabState.ts`'s per-tab and page-detail caches, and `docCache.ts`'s `perText` — collapsed onto one `capSet` in `DesignSystem/Util/capMap.ts`, each caller delegating with caps and semantics unchanged. The per-tab warm and page-detail caps then rose to 50, and `ContentView`'s `useHosts` reads the parked-tab count from `personalization.tabCache` — an Active Tab Cache stepper, 5–20, default 5, clamped once in `readPersonalization` against the `TAB_CACHE` constant — in place of the `WARM_TABS` literal. A Pause Media on Tab Switch toggle (`pauseMediaOnTabSwitch`, default on) pauses a parked tab's webpage-guest media: `pauseGuestMedia` runs a fixed `video/audio` pause across the guest's `mainFrame.framesInSubtree` over the new `webGuestMedia:pause` channel, and the tab-active signal threads through CodeMirror editor state — `EmbedHost.tabActive` to `WebTile` — because the tile mounts in a detached React root. The pause is one-directional by decision: returning to a tab leaves playback where the pause left it. A build-breaking pass found the pause reaching only the top document, closed by the per-subframe iteration so an iframe-embedded player pauses with the rest.
+
+- **Commits:** `29e5a6ba^..52363945`
+- **Diff:** Net +99 | +139 / −40
 
 #### PM-125 || Page File History
 **DATE:** 09-02-2026 → 09-03

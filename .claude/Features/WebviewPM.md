@@ -10,7 +10,7 @@ A guest is live only while its tile is fully visible in the scrollport, since a 
 
 ### Engagement & Retention
 
-A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`SurfacePM/webRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked, so a site resumes with its session, scroll, and playing media; a tab beyond that reach rebuilds and its sites load fresh.
+A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`SurfacePM/webRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked — up to the **Active Tab Cache** count — so a site resumes with its session and scroll; its video and audio, paused when the tab left the main view (**Pause Media on Tab Switch**, on by default), stay where the pause left them rather than resuming. A tab beyond that reach rebuilds and its sites load fresh.
 
 ### Link Opening
 
@@ -35,4 +35,4 @@ Dwelling on a website link raises the shared hover pane as a live render of the 
 - **The browser chrome's treatment** — the bar above a page whose color reads as the page's own isn't settled; the resting shape is the transparent band.
 - **Scripted popups** ride the open-link chain without a user-gesture gate — acceptable for trusted embeds, ungated by decision pending.
 - **Retention past viewport recycling** — a tile scrolled far enough loses its widget and its guest regardless of the cap.
-- **Audio on scroll-out** — a retained guest keeps playing by design; whether scroll-out should mute is open.
+- **Audio on scroll-out** — a guest scrolled out of the still-active tab keeps playing by design; whether scroll-out should pause the way a tab switch now does is open.
