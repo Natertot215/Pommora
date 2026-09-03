@@ -1,90 +1,89 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Execute .claude/Planning/Stamp Retirement — Implementation Plan.md end to end."* — then, after the Declared Stop: *"1. Please find a workaround to this or adjustment in the most cohesive and simple way possible, Fix this / 3. That's un-acceptable. It should only refresh its own. / 4. Don't leave this hanging if removal is the right call."* — then the vault pass, with the app closed.
+> **User Prompt:** *"Execute the closeout of .claude/Planning/File History — Implementation Plan.md … autonomously and overnight."* — then, awake: *"'Days' should be capitalized"*, *"Write it under Architecture as a short paragraph(s) instead"*, *"The description is true, its device local history even if the toggle is a preference."*
 
 #### Current Focus
 
-**Session ID:** 6cbb5580-fd70-4c11-a4aa-b2ba63a85d64
-**Dates:** 09-01-2026
+**Session ID:** 6136d3e7-c065-4171-a7c4-8303e63d3e74
+**Dates:** 09-02-2026 → 09-03
 **Model:** Fable 5.1
 
-**Stamp Retirement is closed.** The arc ran all three phases and three gates to its Declared Stop at `162c5677` (Task 0 through Task 8, a phase simplification pass per gate, a whole-arc simplification and comment pass, two attack rounds with five fixes). Pages and sidecars carry no `created_at` or `modified_at`; Last Modified is the file's modification time and Creation Time the instant in the `PageID` ULID; `loadValues` returns `PageValues = { frontmatter, createdAt, modifiedAt }` and both stamps reach every view as revealable, sortable, filterable columns under `RESERVED_LABEL`'s "Creation Time" / "Last Modified". Every writer that stamped is gone; adoption seeds a page's ULID from `min(birthtime, mtime)`.
+**Page File History is closed.** The arc ran five phases to its Declared Stop and then an unattended closeout: a sixteen-item live checklist (A1–A16) driven over CDP against NexusOS and a scratch nexus, two report-only simplifiers whose twenty-eight findings all folded (`c0f1b184`), a code reviewer that found nothing at its bar, an attacker whose five verified breaks folded with tests (`b1632f28`), and a neutral verifier reading every requirement and Core item as MET. The record landed under ArchitecturePM › Persistence, ConfigurationPM, InterfacePM, PagesPM, NexusRecordPM, and Context's Known Issues, with three lessons in Development-Environment.md.
 
-**The Declared Stop surfaced four decisions, and Nathan ruled on three.** Decision 1 — rename and schema cascades re-dated every holder because `atomicWriteFile` replaces the inode — became `rewritePreservingTimes` in `IO/atomicWrite.ts` (stat → write → `utimes` → `forgetParse`), the one writer for a rewrite the user did not make; `rewritePageSerialized`, both page writes in `sweepGovernedRoots`, and `adopt.ts` take it (`750dcad5`). Decision 3 — a value push refetched the whole container — became a page-id list on `loadValues`, resolved through the live tree, with `useValuesEpoch` merging a named refetch and reading whole only on a degraded batch (`7eaf39bf`). Decision 4 — `view:loadValues` was a raw channel with no failure branch — became the `Result` envelope with `fetchValues` unwrapping it and a failed read keeping held values (same commit). Decision 2 — `setGovernedRootKeys` rewriting byte-identical content — was not ruled on and landed as one compare line (`a5be9a13`), vetoable. Three docs that stated a schema rewrite moves Last Modified were restated; the plan's Rulings carry all four.
+**Verified live, as distinct from traced.** Capture on the real page: the pre-edit text as `edit`, an in-interval save held, the settled text from the quiet timer at 300 s, an outside edit as `external` from its own timer, a fresh outside text landing at once when the app overwrote it, identical text refused, zero `nexus:changed` pushes from the app's own saves. Restore reached the content pane, the Page Window, and an embed at once, a keystroke in the window saved restored text plus the keystroke, Back re-seeded the restored body, and a trash round-trip kept the rows. ⌘Q exited in 828 ms on one press and left the flush row; a root switch through the native chooser flushed NexusOS and opened the scratch nexus on a fresh store with its garbage file set aside; Clear History confirmed with Nathan's sentence and read Cleared. Screenshots of the window, the menus, and the settings section sit in the session scratchpad under `shots/`.
 
-**The vault pass ran with Nathan present and one ruling mid-pass.** The census read 133 pages and 37 sidecars against the plan's predicted 49 / 88 / 29 (the grounding grep counted one key per file), with a skip list of 0. The information-loss check, predicted 0, found 40 pages whose PageID encoded the 06-19 or 07-31 adoption instant while `created_at` held the real date; Nathan ruled "just manually change them in the db after the sweep", so after the strip each of the 40 took a fresh ULID seeded at its `created_at`, and the old id was substituted through its page, six sidecar `page_order` arrays, `navigation.json`, and 91 `nexus.db` rows, the db vacuumed after. Invariants held: 0 stamp keys, `PageID` control at 214, bodies byte-equal to the backup, mtimes held to the millisecond (the backup's are second-precision, macOS rsync). Backup at `~/NexusOS-stamp-backup-09-01-2026/`, 170 files plus the db and the six referencing files.
+**Nathan ruled three things live during the closeout**, each landed as it came: the timeframe's unit reads Days (`2bed5ade`); the feature is documented as two short paragraphs under ArchitecturePM rather than its own Features document (`a5662871`); the toggle's hint stands — the history is device-local even though the toggle is a preference.
 
-**The post-plan review ran as four agents — two on simplification, two on correctness — and its findings landed as `08bbc0f5`.** Narrowing the push to named pages exposed a pre-existing gap: a page moved into an open view never noted a value write, and the whole re-read that had been healing it was gone; a move now notes its destination like a creation. A parse that straddled a `forgetParse` could cache the retired bytes under an unchanged (mtime, size), so the cache refuses an entry whose parse spanned a forget. The scoped merge ignored a container swap and retired overrides for pages the read never resolved; both are guarded, each with a red test first. A denied `utimes` no longer aborts a sweep. Five simplifications folded alongside.
-
-**Verified, as distinct from assumed.** A neutral verifier found Requirements 1–11 MET with no contradictions. Twenty-four data-level checks ran over CDP in `~/PommoraScratch`: a created page's stamps, a wikilink added and removed (Last Modified moves, the `mentions` row appears and clears), a rename (neither moves), a value write (moves), a property rename over the holder (kept), a file dated 03-15-2025 adopted with that date. The visual clauses — the revealed columns, the sort reorder without reopening, a stamp cell opening no editor, the filter — are Nathan's own pass and were not driven. The target-file report reads 47 files, 10 067 → 10 223 non-comment non-test lines, one counter at both ends.
+**What the attack changed.** `replaceBody` cancels the path's pending save before the epoch remount, so a keystroke armed during a restore's round trips no longer writes the old body back; `livePagePath` in `treeIndex.ts` is the one resolver the restore and the window share, so a renamed page keeps its Current Version; the 1 MB cap binds `edit` offers alone; a Clear or Delete frees the interval clock; an identical write offers nothing; `arm` arms nothing while history is off.
 
 #### Completion Criteria
 
-- [x] Every task and gate of the plan landed with its gate green.
-- [x] The four post-stop decisions ruled and landed, one commit per decision (3 and 4 shared hunks and landed together).
-- [x] The vault pass complete with its invariants, the re-mint included, and the backup named.
-- [x] The neutral verifier, the data-level acceptance run, and the target-file report recorded in the plan.
-- [x] History PM-123, Context, the guideline lines, and the plan's closing records committed.
-- [x] The post-plan review's findings fixed red-green and recorded (`08bbc0f5`).
-- [ ] Nathan's own pass: the two labels; the Hidden frame on a real NexusOS Collection — reveal both, sort by each, filter by each.
+- [x] Every task and gate of the plan landed with its gate green; Gate 4's review ran as the closeout sweep.
+- [x] A1–A16 ticked with evidence in the progress artifact; every fix at the source, nothing ruled that could be fixed.
+- [x] Two simplifiers, the reviewer, the attacker, and the neutral verifier signed off; every finding folded or ruled in the plan's Log.
+- [x] History PM-125, Context, the guideline lines, the plan's Closeout and Delivery Claim committed.
+- [x] The throwaway pages, their bundles, their rows, the scratch nexus, and the gate files gone; the dev instance relaunched on NexusOS at the final main.
+- [ ] Nathan's own pass: the window against his mock on a real page; the Days unit; the two paragraphs under Persistence.
 
 #### Next Session
 
-- Nathan's own pass (above); a veto on Decision 2 is one revert of `a5be9a13`.
-- Two narrow windows the review left open, recorded in the plan's Deviations: a whole read in flight at mount landing over a newer scoped merge; a mid-session file body-edited before adoption seeding its id from the edit's inode.
-- From the retired Compatible Properties handoff, still open: the Properties frame's rename field under Capitalize, a cover save updating a card visually, Clear Exclusion's aliases and dashboard layouts surviving.
-- Sequenced After in the plan: the `---\n{}\n---` fence when Clear empties a page's map; the content index's legacy stamp rows self-healing on the next mtime move.
+- The external-edit reload: the watcher's `page-upsert` driving `replaceBody`, the mechanism the two-host Known Issue names.
+- `versions.db` in NexusOS's repository — a `.gitignore` line in the vault, or a ruling that it stays tracked.
+- Nathan's secondary review prompt (cohesion, simplicity, correctness, duplication, stability, debt) was drafted in chat and is his to run.
+- Sequenced After in the plan: per-snapshot titles, a diff view on `@codemirror/merge`, per-device store files, a git provider as a second store module.
 
 #### Feedback
 
-- "stop with the DOM. Do the testing yourself. If i can verify it visually, skip it. Just do what I told you to do with the checklist of operations."
-- "you dont need to drive my live nexus. I have it open."
-- "3. That's un-acceptable. It should only refresh its own."
+- "Anything that can be consolidated should not be left hanging. No simplification opportunities passed."
+- "selecting the snapshot should not auto-checkmark. Selection should have the row selected and the snapshot in view; checkmarking it is a separate action."
+- "Any parallel working tree edits must be in a separate commit on final closure; they're my own comment pruning."
+- "Write it under Architecture as a short paragraph(s) instead."
 
 #### Session Pointers
 
-- The plan and its closing records: `.claude/Planning/Stamp Retirement — Implementation Plan.md` — Rulings, Deviations, Closeout, Completion Criteria.
-- The preserving writer: `Pommora/src/main/IO/atomicWrite.ts` `rewritePreservingTimes`; the cache drop it needs: `walkCache.ts` `forgetParse`.
-- The scoped push: `Pommora/src/main/CRUD/loadValues.ts` (`corpus`), `Pommora/src/renderer/Views/useValuesEpoch.ts` (`fetchValues`, the partial merge).
-- The vault-pass scripts, throwaway: session scratchpad `stamp-migrate.mjs`, `remint-map.mjs`, `remint.mjs`, `remint-map.json` (the 40 old→new ids), `acceptance.mjs`, `loc-report.mjs`.
-- The review agents' briefs are one paragraph — scope, report-only, cite file:symbol — two on simplification and two on correctness.
-- The progress ledger artifact, retired at label `closeout`: https://claude.ai/code/artifact/03ff9f82-0887-430f-8636-57f67ba0805a.
+- The plan and its closing records: `.claude/Planning/File History — Implementation Plan.md` — Rulings, Deviations, Closeout (the Delivery Claim), Completion Criteria.
+- The progress artifact: https://claude.ai/code/artifact/4c986520-22fd-4965-b229-ed7d244dbf93 (its JSON and HTML sit beside the plan, untracked).
+- The capture rule: `Pommora/src/main/CRUD/fileHistory.ts`; the store: `Database/versionsDb.ts`; the window: `Windows/PageHistoryWindow.tsx`; the restore's renderer half: `Interface/restoreSnapshot.ts` and `navigationSlice.replaceBody`.
+- The drive scripts, throwaway, in the session scratchpad: `lib.mjs`, `a1.mjs` (capture, 16 min), `a7.mjs` (hosts, seams, trash), `a4.mjs` (settings), `a3.sh` (quit), `root.mjs` (the native chooser driven by keystrokes), `a5.mjs` (scratch store), `cleanup.mjs`, `locdelta.py` (the +/- with comments and tests excluded).
 
 #### Working Notes
 
-- The `mentions` table stores titles normalized lowercase; a query for `One` finds nothing while `one` does.
-- The auto-mode classifier blocks a script that rewrites many files under `~/NexusOS`; Nathan ran the strip step from his own terminal, and the re-mint went through once the backup command had run.
-- The commit hook's ledger amend takes whatever the index holds: Nathan's `168e90d2` carried this session's staged History, Context, and guideline edits, which is why they are absent from the closeout commit.
-- The dev app persists `lastNexusPath` in `~/Library/Application Support/pommora-react/pommora.json`; pointing it at a scratch nexus and relaunching is the way to drive the app off NexusOS, and it was restored after.
+- `electron-vite dev` does not restart Electron on a main-process change; a fresh `env -u ELECTRON_RUN_AS_NODE npm run dev -- --remote-debugging-port=9333` is the only way the new main runs, and a parallel session's relaunch drops the debug port.
+- AppleScript's `click menu item` hangs against an Electron context menu; type-select (`keystroke "View H"` then Return) selects the row, and `key code 53` dismisses.
+- The native folder chooser is drivable: fire `window.nexus.choose()` un-awaited, then ⌘⇧G, the path, Return, Return.
+- A page id minted by hand has to carry the kind mark at index 10 or the store refuses it as a non-page.
+- The commit hook stages `.claude` edits on its own, so a draft document rides the next commit by anyone; commit documents as soon as they are true.
 
 #### Changes
 
 **FILES ADDED**
 
-- Pommora/src/renderer/Testing/pageValues.ts
+- Pommora/src/main/Database/versionsDb.ts · versionsDb.test.ts · sessionDb.test.ts · CRUD/fileHistory.ts · fileHistory.test.ts
+- Pommora/src/shared/fileHistoryMenu.ts · fileHistoryMenu.test.ts
+- Pommora/src/renderer/Windows/PageHistoryWindow.tsx · page-history-window.css · Interface/restoreSnapshot.ts · Store/replaceBody.test.ts · DesignSystem/Util/checkSet.ts · Settings/ClearActionRow.tsx (renamed from ClearExclusionsRow.tsx)
 
 **FILES MODIFIED**
 
-- .claude/Planning/Stamp Retirement — Implementation Plan.md · .claude/HistoryPM.md · .claude/ContextPM.md · .claude/Guidelines/Development-Environment.md
-- .claude/Features/ArchitecturePM.md · PagesPM.md · PropertiesPM.md · ViewTypesPM.md
-- Pommora/src/shared: bridge.ts · cellMenu.ts · columnMenu.ts · columnStyles.ts · identity.ts · properties.ts · propertyValue.ts · schemas.ts · types.ts
-- Pommora/src/main: adopt.ts · exclusionScan.ts · identity.ts · ids.ts · index.ts · mutate.ts · readNexus.ts · walkCache.ts · IO/atomicWrite.ts · IO/pageFile.ts
-- Pommora/src/main/CRUD: cascade.ts · containerConfig.ts · contextCascade.ts · contextWrite.ts · deleteProperty.ts · governedSweep.ts · governedWrite.ts · loadValues.ts · page.ts · pageValue.ts · removeProperty.ts · replaySchemaCascade.ts · util.ts · views.ts
-- Pommora/src/renderer: Frames/GroupFrame.tsx · Frames/HiddenFrame.tsx · Frames/SortFrame.tsx · Frames/filterModel.ts · Frames/hiddenFrameModel.ts · Properties/PropertyTypes.tsx · Properties/value.ts · Properties/Assignment/columnLabel.ts · Properties/Assignment/cardValueInput.ts · Tables/columnWidths.ts · Views/Pipeline/{columns,filter,group,sort}.ts · Views/TableView/TableView.tsx · Views/useValuesEpoch.ts · Views/useViewCreation.ts · Views/useViewHost.ts
+- .claude: HistoryPM.md · ContextPM.md · HandoffPM.md · Guidelines/Development-Environment.md · Planning/File History — Implementation Plan.md
+- .claude/Features: ArchitecturePM.md · ConfigurationPM.md · InterfacePM.md · NexusRecordPM.md · PagesPM.md
+- Pommora/src/shared: types.ts · bridge.ts · pageMenu.ts · connMenu.ts · cellMenu.ts · cardMenu.ts
+- Pommora/src/main: index.ts · sessionDb.ts · exclusion.ts · watcher.ts · watchPatch.ts · valuesChanged.ts · readNexus.ts · contextMenu.ts · Database/driver.ts · IO/pageFile.ts · IO/atomicWrite.ts · IO/navigationFile.ts · CRUD/page.ts
+- Pommora/src/preload/index.ts
+- Pommora/src/renderer: App.tsx · treeIndex.ts · Store/previewSlice.ts · Store/navigationSlice.ts · Store/tabState.ts · Interface/PageView.tsx · Interface/pageFlush.ts · SurfacePM/PageTile.tsx · SurfacePM/tileCache.ts · Windows/useWindowWarm.ts · Windows/PageWindow.tsx · Windows/confirmations.ts · Settings/SettingsWindow.tsx · Settings/TrashFrame.tsx · Frames/PageMenu.tsx · Frames/SettingsFrame.tsx · Actions/pageMenuActions.ts · Links/ConnectionPane.tsx · MarkdownPM/AutocompletePane.tsx · Views/CardView/CardsView.tsx · Properties/Assignment/formatValue.ts · DesignSystem/Menus/menu-base.css.ts · menu-row.tsx · index.ts · DesignSystem/Elements/NavTrail/NavTrail.tsx · index.ts · DesignSystem/Elements/PickerControl
 - The matching test files beside each of the above.
 
 **FILES REMOVED**
 
-- (none of this session's own; two Gate 3 commits carried a parallel session's staged deletions under `.claude/Planning/`)
+- Pommora/src/renderer/Windows/pageHistoryModel.ts · pageHistoryModel.test.ts (folded into the window at the closeout)
 
 **COMMITS**
 
-- `9966332c` — Task 0 · `5770a1d9` Task 1 · `ba0ea590` Task 2 · `ca7958d5` Gate 1
-- `7b1a42ab` — Task 3 · `c465820f` Task 4 · `9b4ad05c` Gate 2 · `65faa86e` plan ticks
-- `4722f3a7` — Task 5 · `1132360d` Task 6 · `81caae42` Task 8
-- `92bf3e73` `7c7d3c81` `da7fce8c` `bf3a6e7b` — Gate 3 passes · `84b79d8c` `6ecd6d37` `581678af` `bf070dfc` `b443c5a5` `1c2dcae7` attack fixes · `162c5677` Declared Stop
-- `750dcad5` — Decision 1 · `a5be9a13` Decision 2 · `7eaf39bf` Decisions 3 and 4
-- `ab3e0a1c` — the plan closed (History, Context, and the guideline lines rode Nathan's `168e90d2`) · `d3dd98d9` Handoff · `08bbc0f5` the post-plan review's fixes and folds
+- `ac153859` Task 1 · `12f6404f` Task 2 · `507232e8` Task 3 · `1ef7370a` `a2435dea` Gate 1
+- `a4e33d6b` Task 4 · `3a0ce799` Task 5 · `79337e52` `6dd39091` `d8cb7095` `266e85fc` `6b5f7feb` Gate 2
+- `d20c6324` Task 6 · `b1df9dfc` Task 7 · `c2bf15f3` Gate 3
+- `085bfe51` Task 8 · `bc020d83` Tasks 9 and 10 · `6b9f7bc2` `3d10828b` `93fbcad5` `c4cf76ff` Gate 4
+- `47ebcd65` the scout's leftovers · `c0f1b184` the simplifier sweep · `2bed5ade` Days · `a5662871` the documents · `b1632f28` the attack · the record commit that follows this file
+- Nathan's own, interleaved: `5e13fd47` `86eafc48` `bd8725b3` `b35cb697` `82583e3b` `f7f81b81` `f8d7398a` `f556c354` `f9f9a2c1` and the tab work before them; his comment pruning (`OutlineMenu.tsx`, `WebWindow.tsx`) lands as its own commit at the push.
 
 #### Handoff Guidelines
 

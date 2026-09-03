@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Stamp Retirement landed 09-01-2026.** A page's Last Modified is its file's modification time and its Creation Time the instant in its `PageID` ULID; no page or sidecar writer stamps a key, and both columns reveal, sort, and filter from the value batch a container loads. A rewrite the user did not make — a sweep, a migration, adoption — keeps the file's time through `rewritePreservingTimes`, and a value push re-reads only the pages it names. The vault was normalized in place with timestamps restored, and 40 PageIDs whose adoption instant had displaced a real creation date were re-minted from that date (backup `~/NexusOS-stamp-backup-09-01-2026/`).
+**Page File History landed 09-03-2026.** Every body write offers the text it overwrites to `versions.db` under one rule in `CRUD/fileHistory.ts`, a quiet timer captures a burst's settled text, and the Page History window restores a snapshot's body into every open editor through `replaceBody`. The arc closed overnight against a sixteen-item live checklist on NexusOS and a scratch nexus, a four-agent sweep whose findings all folded, and a neutral verification of the delivery claim; the record and the settings copy took Nathan's live rulings as they came. What the arc seeded and left: the watcher's page-upsert driving the same `replaceBody` a restore uses, so an outside edit reaches an open editor without a reload.
 
 **The Renderer Rework is active — the exploration is reported, and execution is proceeding through directed cleanups.** [[]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). This latest pass landed the checkbox consolidation (`Controls/checkbox.css` owns `.checkbox`, out of the Labels domain), the button size scale (into `Buttons/button-base.css.ts`, `size.control` retired, segmented runs one clipped pill), a ⌘⇧T dev scratchpad (`Utilities/iteration-window`), the `Showcase` move to `renderer/Showcase`, and the doc infrastructure — CLAUDE.md's Testing Conventions, the Resources dismantling, and Guidelines collapsed to four. Each lands gated with its LOC and the map crossed off; §6 Working Rules governs the ledger.
 
@@ -83,6 +83,16 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-125 || Page File History
+**DATE:** 09-02-2026 → 09-03
+
+A page's body accumulates device-local snapshots in `versions.db` under one capture rule, restorable from a Page History window reached by View History in every page menu and History beside Properties; a restore replaces the body alone and reaches every open editor, cancelling any save armed under it. Files & Links carries the four File History settings. The two-host lost update and the store's presence in NexusOS's repository are recorded under Known Issues; the external-edit reload through `replaceBody` is the next mechanism the arc seeded.
+
+#### PM-124 || In-App Confirmation & Notifications
+**DATE:** 09-02-2026
+
+Every destructive confirmation moved out of main's native dialogs into one in-app window, `Windows/ConfirmationWindow.tsx`, behind named `ask*` wrappers in `Windows/confirmations.ts`; a new Confirm Before Deletion setting gates pages, tiles, and schema-less folders while Collections, Sets, views, and properties always ask. `Interface/NotificationLabel.tsx` reports the finished act with an Undo shaped by what left — a bundle-backed restore for files, a configuration re-save for a view.
+
 #### PM-123 || Stamp Retirement
 **DATE:** 09-01-2026
 
@@ -96,15 +106,6 @@ Property values moved from `<Property>:` keys to bare keys named as the property
 #### PM-121 || Custom Text-Selection
 
 A Pommora-native selection style — an accent-tinted drawn pill in place of the native `::selection`, seated at the `Carets.css` and `nativeCaret.ts` chokepoints. `user-select` bounds it to the editor, text fields, editable titles, and swept table and data cells; a field's pill sits behind its glyphs through a host-set `isolation`, height clamps to the caret through the exported `clampToLine`, and `Personalization.nativeHighlight` returns the platform paint through a root class. Webpage embeds keep their native selection.
-
-#### PM-120 || The Single ViewHost
-
-Both view renderers now mount through one seat. `Views/useViewHost.ts` owns everything a renderer needs before it can draw — the value stack and override layer, schema and active view, manual order, the optimistic order/hidden/style and band layers, collapse, the pipeline invocation and its lookups, the writers, the persist fold, and the creation engine — and `Views/ViewHost.tsx` seats it, decides loading and empty once, and passes a single `host` object; `TableView` keeps its column machinery and gestures, `CardsView` its grid and pickers, and each contributes a five-field seam. The four observable drift defects between the two files closed by construction, Cards adopting Table's documented side of each. A new renderer (List, Gallery, Calendar, Timeline) mounts the host and writes presentation only. `Properties/Editing/` is `Properties/Assignment/`. A simplification pass then reduced the seam to the renderer's four upward refs plus the seat's flattening flag, retired `mergeOverrides` in favor of the fold the renderers already own, and gave the host the band label and the container walk both files had been keeping separately.
-
-
-#### PM-119 || The Card Trail & The Landing Slot
-
-A card's location trail moved onto the card chassis: `CardTrail` renders its own `.card-trail` wrapper so the NavGallery and the Cards view emit one markup, and `cards.css` holds the four numbers that shape a card's text column, the trail row reserving `--card-trail-h` whether or not a card has a path so a locked card's thumb stops breaking a grid row's level. The drop preview a dragged card lands on became one `.drop-slot` in `dropChrome.css`, surfaced from the drag engine as `useDropSlot` and painted by the card chassis through `CardDropSlot` — the affordance belongs to cards, not to every zone the engine serves.
 
 ### Guidelines
 

@@ -614,9 +614,9 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 #### Gate 4 — **Declared Stop**
 
 - [x] Gates green. Every Verify ticked. Now counts re-run.
-- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/renderer`, `src/shared/pageMenu.ts`, `src/main/contextMenu.ts`; every concern fixed or ruled (simplifier: six edits folded, three flags fixed, three ruled; review pending).
-- [ ] A restarted dev instance; the acceptance sequence driven on a throwaway page. No screenshots — Nathan is watching live and drives tweaks himself.
-- [ ] Progress hashes filled. **Halt.** Nathan closes: the window against the mock; both confirms; the section, a typed value, Cleared; View History in every right-click menu; History beside Properties.
+- [x] Simplification, then review, against `<base>..HEAD` scoped to `src/renderer`, `src/shared/pageMenu.ts`, `src/main/contextMenu.ts`; every concern fixed or ruled (simplifier: six edits folded, three flags fixed, three ruled; the review ran over the whole arc at closeout — two simplifiers, the reviewer, the attacker, the neutral verifier — and every finding folded at `c0f1b184` and `b1632f28`).
+- [x] A restarted dev instance; the acceptance sequence driven on a throwaway page, then the sixteen-item closeout checklist with screenshots as the visual sign-off (Nathan's overnight ruling).
+- [x] Progress hashes filled. Nathan's live rulings on the window, the unit, and the documents landed as they came; his own pass stands on the screenshots.
 
 ---
 
@@ -634,18 +634,18 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 **Verify — automated**
 
-- [ ] `rg -F "Versioning, file history, backup" .claude/Features` → 0 · `rg -F "Git as opt-in content history" .claude/Features` → 0 · `rg -F "Four windows mount it" .claude/Features` → 0; control `rg -F "FileHistoryPM" .claude` → ≥ 3.
+- [x] `rg -F "Versioning, file history, backup" .claude/Features` → 0 · `rg -F "Git as opt-in content history" .claude/Features` → 0 · `rg -F "Four windows mount it" .claude/Features` → 0; the `FileHistoryPM` control is void by ruling (the feature is recorded under ArchitecturePM).
 
 **Verify — user**
 
-- [ ] The docs read as the Studio's encyclopedic guide.
+- [x] The docs read as the Studio's encyclopedic guide (Nathan, live: placed under ArchitecturePM as short paragraphs).
 
 
 #### Gate 5 — closeout, through `/closeout`
 
-- [ ] `/closeout` over the whole range `<phase-1 base>..HEAD`: simplification, the comment pass, code review, then the full-plan build-breaker; every finding fixed or ruled.
-- [ ] Delivery Claim; neutral verifier against the decision log; then the attack.
-- [ ] Dead Vocabulary at zero against its control.
+- [x] The closeout over the whole range `b931ef59^..HEAD`, by hand (no `/closeout` skill exists): two simplifiers, the reviewer, the attacker; every finding fixed (`c0f1b184`, `b1632f28`) or ruled.
+- [x] Delivery Claim (Closeout below); the neutral verifier at `f9f9a2c1`: Requirements 1–10 MET, every Core item MET, no contradictions; the attack folded.
+- [x] Dead Vocabulary at zero against its control (five at 0; `ClearActionRow` 3, `PAGE_REACH_ACTIONS` 3).
 - [ ] History entry **"PM-125 || Page File History"**; Context and Handoff current.
 - [ ] Final +/- line count, comments and tests excluded.
 
@@ -665,12 +665,12 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 - [x] **Phase 3** — The contract and the settings · gate `c2bf15f3`
   - [x] Task 6 · `d20c6324`
   - [x] Task 7 · `b1df9dfc`
-- [ ] **Phase 4** — The surface *(Declared Stop)*
+- [x] **Phase 4** — The surface · gate `6b9f7bc2` … `3d10828b`, the scout `93fbcad5` / `c4cf76ff`, the closeout folds `47ebcd65`, `c0f1b184`, `b1632f28`
   - [x] Task 9 · `bc020d83`
   - [x] Task 8 · `085bfe51`
   - [x] Task 10 · `bc020d83`
-- [ ] **Phase 5** — The record
-  - [ ] Task 11 · `<commit>`
+- [x] **Phase 5** — The record
+  - [x] Task 11 · `a5662871` (the documents), the History entry and Context with the closeout commit
 
 ### Rulings
 
