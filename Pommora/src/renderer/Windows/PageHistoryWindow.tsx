@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_TIME_FORMAT, embedZoom, type SnapshotRow } from '@shared/types'
-import { defaultStyleFor } from '@shared/columnStyles'
+import { parentOf } from '@shared/treePatch'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
-import { MenuItem, MenuSeparator } from '@renderer/DesignSystem/Menus'
-import { overlay } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { text } from '@renderer/DesignSystem/Tokens'
-import { cx } from '@renderer/DesignSystem/Util/cx'
+import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@renderer/DesignSystem/Menus'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
-import { clockOf, formatDate } from '@renderer/Properties/Assignment/formatValue'
+import { clockOf, formatDate, nexusDateFormat } from '@renderer/Properties/Assignment/formatValue'
 import { restoreSnapshot } from '../Interface/restoreSnapshot'
 import { fetchPageDetail } from '../Store/tabState'
 import { ancestryOf, pageIndexOf } from '../treeIndex'
@@ -32,7 +29,7 @@ export function PageHistoryWindow(): React.JSX.Element | null {
   const held = useRef(target)
   if (target) held.current = target
   if (!mounted || !held.current) return null
-  return <PageHistoryBody target={held.current} closing={closing} />
+  return <PageHistoryBody key={held.current.id} target={held.current} closing={closing} />
 }
 
 function PageHistoryBody({
@@ -46,19 +43,34 @@ function PageHistoryBody({
   const tree = useSession((s) => s.tree)
   const embedScale = useEmbedScale()
   const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
-  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
-  const dateFormat = defaultStyleFor('datetime', undefined, nexusDateFormat).date_format ?? 'full'
+  const dateFormat = nexusDateFormat(useSession((s) => s.personalization.dateFormat))
 
   const [rows, setRows] = useState<SnapshotRow[]>([])
+  const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
-  const [lastChecked, setLastChecked] = useState<number | null>(null)
+  // The highlighted row is the one the body shows; null is Current Version.
   const [highlighted, setHighlighted] = useState<number | null>(null)
-  const { shown, restoreEnabled, glyphOn } = historyRowModel(rows, checked, lastChecked)
+  const [reload, setReload] = useState(0)
+  const { checkedLive, restoreEnabled, glyphOn } = historyRowModel(rows, checked)
+  const shown = highlighted !== null && rows.some((r) => r.ts === highlighted) ? highlighted : null
 
   const refresh = useCallback(async (): Promise<void> => {
-    const r = await window.nexus.listHistory(target.id)
-    if (r.ok) setRows(r.value)
-  }, [target.id])
+    const [list, values] = await Promise.all([
+      window.nexus.listHistory(target.id),
+      window.nexus.loadValues(parentOf(target.path), [target.id]),
+    ])
+    if (list.ok) {
+      setRows(list.value)
+      setChecked((prev) => {
+        const live = new Set(list.value.map((r) => r.ts))
+        const next = new Set([...prev].filter((ts) => live.has(ts)))
+        return next.size === prev.size ? prev : next
+      })
+    }
+    const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
+    setModifiedAt(stamp ? new Date(stamp).getTime() : null)
+    setReload((n) => n + 1)
+  }, [target.id, target.path])
   useEffect(() => {
     void refresh()
   }, [refresh])
@@ -77,7 +89,8 @@ function PageHistoryBody({
     return () => {
       live = false
     }
-  }, [shown, target.id, target.path])
+    // reload re-reads the same selection after an action moved the file or the store.
+  }, [shown, reload, target.id, target.path])
 
   const resolveOnly = useMemo<ConnectionsApi | undefined>(
     () => (tree ? { ...pageIndexOf(tree), open: () => {} } : undefined),
@@ -85,20 +98,19 @@ function PageHistoryBody({
   )
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
-  const toggle = (ts: number): void => {
+  const toggle = (ts: number): void =>
     setChecked((prev) => {
       const next = new Set(prev)
       if (next.has(ts)) next.delete(ts)
       else next.add(ts)
       return next
     })
-    setLastChecked((prev) => (checked.has(ts) ? prev : ts))
-  }
 
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
     if (!r.ok) window.nexus.showError(r.error.message)
+    setHighlighted(null)
     await refresh()
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
@@ -107,27 +119,85 @@ function PageHistoryBody({
     if (!r.ok) window.nexus.showError(r.error.message)
     await refresh()
   }
-  const removeChecked = (): Promise<void> =>
-    remove(rows.filter((r) => checked.has(r.ts)).map((r) => r.ts))
-
   const openMenu = async (ts: number): Promise<void> => {
-    const inSet = checked.has(ts) ? rows.filter((r) => checked.has(r.ts)).map((r) => r.ts) : []
+    const inSet = checked.has(ts) ? checkedLive : []
     const batch = inSet.length > 1
     const action = await window.nexus.historyMenu({ batch })
     if (action === 'restore') await restore(ts)
     else if (action === 'delete') await remove(batch ? inSet : [ts])
   }
 
-  const when = (ts: number): React.JSX.Element => {
-    const date = new Date(ts)
+  const when = (ms: number): React.JSX.Element => {
+    const date = new Date(ms)
     return (
-      <span className={cx('page-history-when', text.caption.standard)}>
-        {formatDate(date.toISOString(), dateFormat, 'none')}
-        <span className="page-history-when-rule" />
-        {clockOf(date, nexusClock)}
-      </span>
+      <MenuSegments
+        parts={[formatDate(date.toISOString(), dateFormat, 'none'), clockOf(date, nexusClock)]}
+      />
     )
   }
+
+  const list = (
+    <div className="page-history-pane-inner">
+      <div className="window-pane-scroll nav-list page-history-list">
+        <MenuItem
+          className="page-history-row"
+          subLabel={modifiedAt === null ? undefined : when(modifiedAt)}
+          selected={shown === null}
+          onClick={() => setHighlighted(null)}
+        >
+          Current Version
+        </MenuItem>
+        <MenuSeparator />
+        {rows.map((row) => (
+          <MenuItem
+            key={row.ts}
+            className="page-history-row"
+            subLabel={when(row.ts)}
+            selected={shown === row.ts}
+            leading={
+              <Checkbox
+                size="compact"
+                state={checked.has(row.ts)}
+                onChange={() => toggle(row.ts)}
+                ariaLabel="Select snapshot"
+              />
+            }
+            trailing={
+              glyphOn(row.ts) ? (
+                <Button
+                  size="button-inline"
+                  icon="trash"
+                  iconSize="body"
+                  title="Delete"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void remove(checkedLive)
+                  }}
+                />
+              ) : undefined
+            }
+            onClick={() => setHighlighted(row.ts)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              void openMenu(row.ts)
+            }}
+          >
+            Untitled Snapshot
+          </MenuItem>
+        ))}
+      </div>
+      <MenuFooting
+        trailing={
+          <Button
+            size="button-inline"
+            label="Restore"
+            disabled={!restoreEnabled}
+            onClick={() => void restore(checkedLive[0])}
+          />
+        }
+      />
+    </div>
+  )
 
   return (
     <WindowBase
@@ -144,68 +214,7 @@ function PageHistoryBody({
         mode: 'overlay',
         open: true,
         className: 'page-history-pane',
-        children: (
-          <div className="page-history-pane-inner">
-            <div className="window-pane-scroll nav-list page-history-list">
-              <MenuItem
-                className="page-history-row"
-                selected={highlighted === null}
-                onClick={() => setHighlighted(null)}
-              >
-                Current Version
-              </MenuItem>
-              <MenuSeparator />
-              {rows.map((row) => (
-                <MenuItem
-                  key={row.ts}
-                  className="page-history-row"
-                  subLabel={when(row.ts)}
-                  selected={highlighted === row.ts}
-                  overlay={
-                    <Checkbox
-                      className={cx(overlay, 'page-history-check')}
-                      size="compact"
-                      state={checked.has(row.ts)}
-                      onChange={() => toggle(row.ts)}
-                      ariaLabel="Select snapshot"
-                    />
-                  }
-                  trailing={
-                    glyphOn(row.ts) ? (
-                      <Button
-                        size="button-inline"
-                        icon="trash"
-                        iconSize="body"
-                        title="Delete"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void removeChecked()
-                        }}
-                      />
-                    ) : undefined
-                  }
-                  onClick={() => setHighlighted(row.ts)}
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    void openMenu(row.ts)
-                  }}
-                >
-                  Untitled Snapshot
-                </MenuItem>
-              ))}
-            </div>
-            <div className="page-history-foot">
-              <Button
-                type="base"
-                label="Restore"
-                disabled={!restoreEnabled}
-                onClick={() => {
-                  if (shown !== null) void restore(shown)
-                }}
-              />
-            </div>
-          </div>
-        ),
+        children: list,
       }}
     >
       <div
@@ -214,7 +223,6 @@ function PageHistoryBody({
       >
         {body !== null && (
           <MarkdownEditor
-            key={`${target.path}:${shown ?? 'current'}`}
             initialBody={body}
             onChange={() => {}}
             readOnly

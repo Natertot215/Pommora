@@ -9,12 +9,11 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { askEmptyTrash } from '@renderer/Windows/confirmations'
-import { type DateFormat, defaultStyleFor } from '@shared/columnStyles'
 import type { MutateRequest } from '@shared/mutate'
 import type { CollectionNode } from '@shared/types'
 import { DEFAULT_TIME_FORMAT, type Personalization, type TrashRow } from '@shared/types'
 import { PropertyTypeIcon } from '../Properties/PropertyTypes'
-import { formatDate } from '@renderer/Properties/Assignment/formatValue'
+import { formatDate, nexusDateFormat } from '@renderer/Properties/Assignment/formatValue'
 import { containerTargets, contextTargets } from '@renderer/Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../store'
@@ -60,9 +59,7 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
 
 export function TrashFrame(): React.JSX.Element {
   const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
-  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
-  const columnDefault: DateFormat =
-    defaultStyleFor('datetime', undefined, nexusDateFormat).date_format ?? 'full'
+  const columnDefault = nexusDateFormat(useSession((s) => s.personalization.dateFormat))
   const dateFormat = useSession((s) => s.personalization.trashDateFormat) ?? columnDefault
   const timeShown = useSession((s) => s.personalization.trashHideTime !== true)
   const setPersonalization = useSession((s) => s.setPersonalization)

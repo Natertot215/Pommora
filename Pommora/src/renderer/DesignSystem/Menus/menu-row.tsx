@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
+import { forwardRef, Fragment, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Tokens/size.css'
 import { Button } from '../Buttons'
 import { Icon, type IconName } from '../Symbols'
@@ -6,6 +6,7 @@ import * as s from './menu-base.css'
 import { cx } from '../Util/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
+import { segment } from '../Elements/Segment/segment.css'
 
 const BAR_GLYPH = 12 // KNOB
 
@@ -148,6 +149,21 @@ export function MenuSeparator({
     <div className={cx(s.separator, flush && s.separatorFlush, className)} aria-hidden="true">
       <span className={s.separatorLine} />
     </div>
+  )
+}
+
+/** A row's caption in parts, each stood off the next on the segment bar. */
+export function MenuSegments({ parts }: { parts: readonly ReactNode[] }): React.JSX.Element {
+  return (
+    <span className={s.subLabelSegments}>
+      {parts.map((part, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: the parts are positional by definition
+        <Fragment key={i}>
+          {i > 0 && <span className={cx(segment, s.subLabelSegment)} aria-hidden="true" />}
+          {part}
+        </Fragment>
+      ))}
+    </span>
   )
 }
 

@@ -12,7 +12,7 @@ export interface WindowCacheEntry {
 
 const cache = new Map<string, WindowCacheEntry>()
 
-/** Merge a partial capture — the editor (state) and the window (body scroll) write under one key. */
+// Merge a partial capture — the editor (state) and the window (body scroll) write under one key.
 export function captureWindowCache(tabId: string, patch: WindowCacheEntry): void {
   cache.set(tabId, { ...cache.get(tabId), ...patch })
 }
