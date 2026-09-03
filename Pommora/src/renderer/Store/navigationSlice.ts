@@ -78,9 +78,9 @@ export interface NavigationSlice {
   selection: SelectionState
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
-  /** A body replaced from outside the editor — restore today, the watcher later: the path's pending
-   *  save is dropped, every warm copy drops, the slot refetches, and the path's epoch remounts its
-   *  editors. False when the refetch failed and the editors still hold the old body. */
+  /** A body replaced from outside the editor: the path's pending save is dropped, every warm copy
+   *  drops, the slot refetches, and the path's epoch remounts its editors. False when the refetch
+   *  failed and the editors still hold the old body. */
   replaceBody: (path: string) => Promise<boolean>
   /** `{ record: false }` refreshes the shown detail without touching the tab set or recents.
    *  `{ newTab: true }` forces a new tab. */

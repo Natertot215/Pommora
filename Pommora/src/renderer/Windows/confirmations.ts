@@ -124,7 +124,7 @@ export const askRestoreSnapshot = (): Promise<boolean> =>
 export const askDeleteSnapshots = (): Promise<boolean> =>
   ask({
     message:
-      'Deleting this snapshot will permanently delete it from history; this cannot be undone.',
+      'Deleting these snapshots will permanently delete them from history; this cannot be undone.',
     detail: '',
     action: 'Delete',
     tone: 'destructive',

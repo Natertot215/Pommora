@@ -6,7 +6,7 @@
   --toolbar-h: 38px;
   --subfield-h: 24px;
   --content-edge: 12px;
-  /* Ratified mobile pre-paving.*/
+  /* Ratified mobile pre-paving. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);

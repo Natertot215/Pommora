@@ -4,7 +4,7 @@
 
 import type { Band, DividerRef, Edge, LayoutNode, SurfaceLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
-import { clamp } from '@renderer/DesignSystem/Util/clamp'
+import { clamp } from '@shared/clamp'
 
 function renormalize(ratios: number[]): number[] {
   const sum = ratios.reduce((a, r) => a + r, 0)

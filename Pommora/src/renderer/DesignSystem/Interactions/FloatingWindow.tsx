@@ -4,7 +4,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { clamp } from '../Util/clamp'
+import { clamp } from '@shared/clamp'
 import './floating-window.css'
 
 export interface FloatingBounds {

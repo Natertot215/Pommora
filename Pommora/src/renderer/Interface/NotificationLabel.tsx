@@ -3,7 +3,7 @@ import { useSession } from '@renderer/store'
 import { duration, ms, paneSlide } from '@renderer/DesignSystem/Animation'
 import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
 import { useHeld } from '@renderer/DesignSystem/Interactions/useHeld'
-import { clamp } from '@renderer/DesignSystem/Util/clamp'
+import { clamp } from '@shared/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './notification-label.css'
 

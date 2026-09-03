@@ -7,14 +7,14 @@ import * as s from './nav-trail.css'
 
 /** One stop on a location trail. `onSelect` makes it a button; `ghost` dims a stop past the current
  *  one — a path backed out of, still there to re-descend into. */
-export const NO_TRAIL: TrailSegment[] = []
-
 export interface TrailSegment {
   title: string
   icon?: string
   ghost?: boolean
   onSelect?: () => void
 }
+
+export const NO_TRAIL: TrailSegment[] = []
 
 export interface NavTrailProps {
   segments: readonly TrailSegment[]

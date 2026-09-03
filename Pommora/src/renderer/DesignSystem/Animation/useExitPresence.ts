@@ -28,7 +28,7 @@ export function useExitPresence(
 }
 
 /** A value kept through its exit animation: the store nulls it at close, and the body renders the
- *  last one until the window has left. `open` defaults to the value's presence. */
+ *  last one until the window has left. */
 export function useHeldPresence<T>(
   value: T | null,
   open: boolean = value !== null,

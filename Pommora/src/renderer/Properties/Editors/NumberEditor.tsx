@@ -5,7 +5,6 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
 import { numberDivisor } from '@renderer/Properties/Assignment/formatValue'
 import type { PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { MenuRowView, type MenuRow, type Trailing } from '@renderer/DesignSystem/Menus'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as s from './number-editor.css'
@@ -34,11 +33,12 @@ const decimalsToPicker = (d: NumberConfig['number_decimals']): string =>
   typeof d === 'number' ? String(d) : 'hidden'
 const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hidden' : Number(v))
 
-const row = (label: string, trailing: Trailing): MenuRow => ({
+const row = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => ({
   kind: 'item',
   inert: true,
   label,
   trailing,
+  reveal,
   className: s.rowRhythm,
 })
 
@@ -108,28 +108,32 @@ export function NumberEditor({
         })}
       />
 
-      <Reveal open={family === 'currency'} fill>
-        <MenuRowView
-          row={row('Currency', {
+      <MenuRowView
+        row={row(
+          'Currency',
+          {
             kind: 'picker',
             ariaLabel: 'Currency',
             value: config.number_currency ?? 'USD',
             options: CURRENCY_OPTIONS,
             onPick: (v) => onSetConfig({ number_currency: v }),
-          })}
-        />
-      </Reveal>
+          },
+          family === 'currency',
+        )}
+      />
 
-      <Reveal open={!isPercent} fill>
-        <MenuRowView
-          row={row('Separators', {
+      <MenuRowView
+        row={row(
+          'Separators',
+          {
             kind: 'switch',
             checked: config.number_separators ?? true,
             onChange: (next) => onSetConfig({ number_separators: next }),
             ariaLabel: 'Separators',
-          })}
-        />
-      </Reveal>
+          },
+          !isPercent,
+        )}
+      />
 
       <MenuRowView
         row={row('Decimals', {
@@ -141,20 +145,23 @@ export function NumberEditor({
         })}
       />
 
-      <Reveal open={!isPercent} fill>
-        <MenuRowView
-          row={row('Fraction', {
+      <MenuRowView
+        row={row(
+          'Fraction',
+          {
             kind: 'switch',
             checked: fraction,
             onChange: (next) => onSetConfig({ number_fraction: next }),
             ariaLabel: 'Fraction',
-          })}
-        />
-      </Reveal>
+          },
+          !isPercent,
+        )}
+      />
 
-      <Reveal open={!isPercent && fraction} fill>
-        <MenuRowView
-          row={row('Value', {
+      <MenuRowView
+        row={row(
+          'Value',
+          {
             kind: 'field',
             children: (
               <ValueField
@@ -162,21 +169,24 @@ export function NumberEditor({
                 onCommit={(n) => onSetConfig({ number_denominator: n })}
               />
             ),
-          })}
-        />
-      </Reveal>
+          },
+          !isPercent && fraction,
+        )}
+      />
 
-      <Reveal open={barCapable} fill>
-        <MenuRowView
-          row={row('Style', {
+      <MenuRowView
+        row={row(
+          'Style',
+          {
             kind: 'picker',
             ariaLabel: 'Number style',
             value: look,
             options: STYLE_OPTIONS,
             onPick: onSetStyle,
-          })}
-        />
-      </Reveal>
+          },
+          barCapable,
+        )}
+      />
     </div>
   )
 }

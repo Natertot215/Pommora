@@ -1,5 +1,5 @@
 /* The floating-window surface every in-app window mounts: glass shell, toolbar, panels, and
-   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or  an inset-ring layout. */
+   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or an inset-ring layout. */
 
 .window {
   position: fixed;
@@ -231,7 +231,7 @@
   flex-shrink: 0;
 }
 
-/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window oot included (its own driver transitions must not re-animate mid-drag). */
+/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window root included (its own driver transitions must not re-animate mid-drag). */
 .window.is-resizing,
 .window.is-resizing .window-panel-left-inflow,
 .window.is-resizing .window-panel-right-inflow,
