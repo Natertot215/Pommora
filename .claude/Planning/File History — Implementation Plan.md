@@ -1,7 +1,7 @@
 ## File History — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[File History — Decision Log]] · Execute tasks in order.
-> Citations name files and symbols at HEAD `af6f28a5`; re-derive before editing. The parallel session's confirm work landed at `605db15e` and `c3ca16ed` (`Windows/ConfirmationWindow.tsx`, `Windows/confirmations.ts`, `askConfirm` on `chromeSlice`), so Tasks 5–7's Now counts re-derive against HEAD at execution.
+> **Status:** ratified 09-02-2026 · executing · Spec: [[File History — Decision Log]] · Execute tasks in order.
+> Citations name files and symbols at HEAD `bfa68847`, re-derived after the parallel session's confirm work landed at `605db15e` and `c3ca16ed` (`Windows/ConfirmationWindow.tsx`, `Windows/confirmations.ts`, `askConfirm` on `chromeSlice`).
 
 **Goal**
 
@@ -36,7 +36,7 @@ Bounded by: recovery is body-only by construction; pages only, filtered by the U
 
 **Grounding** *(re-open these; don't cite them)*
 
-- `src/main/CRUD/page.ts:46-78` · `IO/pageFile.ts:25-33,176-191` · `IO/atomicWrite.ts` · `IO/fileLock.ts` · `Database/driver.ts:8-22` · `Database/open.ts:17,31-74` · `Database/schema.ts:41-61` · `Database/localState.ts:1-30` · `sessionDb.ts` · `index.ts:333-431,1094-1110,1584-1600,1602-1609,1883-1894,1991-2007` · `contextMenu.ts:106-165` · `rowMenu.ts:81` · `valuesChanged.ts:27-43` · `liveTree.ts:19-51` · `settings.ts:54-84` · `readNexus.ts:136-148` · `watcher.ts:54-81` · `watchPatch.ts:130-143,242-247` · `exclusion.ts:8-15` · `mutate.ts:125-135` · `ipc.ts:70-77`.
+- `src/main/CRUD/page.ts:46-78` · `IO/pageFile.ts:25-33,176-191` · `IO/atomicWrite.ts` · `IO/fileLock.ts` · `Database/driver.ts:8-22` · `Database/open.ts:17,31-74` · `Database/schema.ts:41-61` · `Database/localState.ts:1-30` · `sessionDb.ts` · `index.ts:333-431,1097-1113,1553-1569,1571-1578,1883-1902,1994-2007` · `contextMenu.ts:106-165` · `rowMenu.ts:81` · `valuesChanged.ts:27-43` · `liveTree.ts:19-51` · `settings.ts:54-84` · `readNexus.ts:136-148` · `watcher.ts:54-81` · `watchPatch.ts:130-143,242-247` · `exclusion.ts:8-15` · `mutate.ts:125-135` · `ipc.ts:70-77`.
 - `src/shared/bridge.ts:90-97,237-246,266-274,357-374` · `types.ts:90-180,225-232,524-530` · `pageMenu.ts` · `pageMenu.test.ts:1-40` · `tabMenu.ts` · `navRowMenu.ts` · `cellMenu.ts:128-138` · `cardMenu.ts:32-45` · `cropGeometry.ts:13` · `nexusPaths.ts:6-26` · `src/preload/index.ts:31-38,116-127,170-188`.
 - `src/renderer/Store/tabState.ts` · `SurfacePM/tileCache.ts` · `Interface/PageView.tsx:51,100-185` · `Windows/useWindowWarm.ts` · `Windows/windowCache.ts` · `SurfacePM/PageTile.tsx:40-148` · `Windows/PageWindow.tsx` · `Windows/window-base.tsx:20-75,185-201` · `Interface/pageFlush.ts` · `Store/navigationSlice.ts:234-241,355-357,599,627` · `Store/previewSlice.ts:23-59,151-172,232-236,304-307` · `Store/configSlice.ts:34-50` · `App.tsx:113-138,284-291` · `Frames/PageMenu.tsx` · `Actions/pageMenuActions.ts` · `Settings/SettingsWindow.tsx:52-165,335-415,669-689,744-787` · `Settings/ClearExclusionsRow.tsx` · `Settings/TrashFrame.tsx:60-95,178-195,261-341` · `DesignSystem/Elements/PickerControl/PickerControl.tsx:1-60` · `DesignSystem/Menus/menu-row.tsx:52-101` · `DesignSystem/Buttons/Button.tsx:9-52` · `DesignSystem/Controls/Checkbox.tsx:6-31` · `DesignSystem/Elements/Segment/segment.css.ts` · `Properties/Assignment/formatValue.ts:47,57-102` · `Links/ConnectionPane.tsx:34,288,419-429` · `shared/connMenu.ts:9,93,164` · `Links/connectionMenu.ts:63` · `MarkdownPM/index.tsx:76-137,227-232,459` · `MarkdownPM/Editor/embedWidget.tsx:259,478` · `treeIndex.ts:200,240-262`.
 - `.claude/Guidelines/Development-Environment.md`.
@@ -297,7 +297,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 **Why:** Capture happens where the app already knows a body changed.
 
-**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 (`:1102`) · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 (`:245`) · `rg -F "await rename(root, newRoot)" src/main/index.ts` → 1 (`:1885`, before `adoptNexus(newRoot, false)`) · `openNexusSequence` (`index.ts:364-378`) · `'personalization:set'` (`:1584-1600`) · `app.on('before-quit'` (`:1991-2007`). Re-derive at HEAD.
+**Now** — `rg -F "updatePageBody(" src/main/index.ts` → 1 (`:1105`) · `rg -F "case 'page-upsert'" src/main/watchPatch.ts` → 1 (`:246`) · `rg -F "await rename(root, newRoot)" src/main/index.ts` → 1 (`:1898`, before `adoptNexus(newRoot, false)`) · `openNexusSequence` (`index.ts:366-382`) · `'personalization:set'` (`:1553-1569`) · `app.on('before-quit'` (`:1994-2007`).
 
 **Becomes**
 
@@ -309,7 +309,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 // openNexusSequence: before openSession(path) when priorRoot !== null → await flushFileHistory(priorRoot); resetFileHistory()
 //                    after openSessionDb(root) when root !== priorRoot → sweepFileHistory(root)
 // root rename: before `await rename(root, newRoot)` → await flushFileHistory(root); resetFileHistory()
-// 'before-quit' (index.ts:1991-2007 — two branches today: a synchronous close, and a preventDefault + latch + flushNavigation + closeSessionDb + re-quit when a nav write is in flight):
+// 'before-quit' (index.ts:1994-2007 — two branches today: a synchronous close, and a preventDefault + latch + flushNavigation + closeSessionDb + re-quit when a nav write is in flight):
 //   one deferred branch for every quit — preventDefault, latch, await both flushes, closeSessionDb(), re-quit; the latch's early return lets the re-quit through.
 //   flushFileHistory never rejects, as flushNavigation never does — a rejection would leave ⌘Q dead on the first press
 // sweepFileHistory awaits readLivePersonalization, which reads the new root's settings.json from disk at that point
@@ -345,7 +345,7 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 **Why:** The renderer reaches snapshots only through the bridge; restore and delete validate by id.
 
-**Now** — `rg -F "'trash:list'" src/shared/bridge.ts src/preload/index.ts src/main/index.ts` → 3 (the template triple) · `'open-in-preview'` (`bridge.ts:366`, `preload:177`, `contextMenu.ts:113`) · `popModelMenu` (`rowMenu.ts:81`). Re-derive after the hazard window closes.
+**Now** — `rg -F "'trash:list'" src/shared/bridge.ts src/preload/index.ts src/main/index.ts` → 3 (the template triple) · `'open-in-preview'` (`bridge.ts:371`, `preload:177`, `contextMenu.ts:100`) · `popModelMenu` (`rowMenu.ts:81`).
 
 **Becomes**
 
@@ -400,7 +400,7 @@ Confirms are the renderer's, on the parallel session's `ask()` seam (Tasks 7, 9)
 
 **Why:** The three knobs and the device-wide clear, on the roster every setting rides.
 
-**Now** — `rg -F "kind: 'zoom'" src/renderer/Settings/SettingsWindow.tsx` → 3 (`:115-120` the row type; `ZoomRow` `:744-770` bakes `percentChoice`, `'%'`, and `/100`) · `rg -F "ClearExclusionsRow" src/renderer` → re-derive after the hazard window closes (the parallel session reshaped it around `ask(clearExclusions(n))`).
+**Now** — `rg -F "kind: 'zoom'" src/renderer/Settings/SettingsWindow.tsx` → 5 (`:116` the row type; rows `:231,239,257,455`; `ZoomRow` `:750-776` bakes `percentChoice`, `'%'`, and `/100`) · `rg -F "ClearExclusionsRow" src/renderer` → 3 (the import, the `'clear-exclusions'` case at `:693`, the definition) · `rg -F "percentChoice" src` → 4 (`SettingsWindow.tsx:19,757`, `PickerControl/index.ts:5`, `PickerControl.tsx:18` — the definition leaves with its one consumer) · `ClearExclusionsRow.tsx` counts first through `countExclusions`, asks through `askClearExclusions(n)` with the count in the copy, and reads a null reply as an already-empty list that earns no Cleared · `confirmations.ts:17` keeps `ask` private behind named `ask*` wrappers.
 
 **Becomes**
 
@@ -409,16 +409,16 @@ Confirms are the renderer's, on the parallel session's `ask()` seam (Tasks 7, 9)
 type NumberUnit = { scale: number; suffix: string; label: (shown: number) => string }
 const PERCENT: NumberUnit · const DAYS: NumberUnit · const MINUTES: NumberUnit
   | (RowText & { kind: 'zoom'; key: KeyOf<number>; fallback: number; steps?: readonly number[]; unit?: NumberUnit })   // absent = PERCENT
-  | (RowText & { kind: 'clear'; action: () => Promise<Result<unknown>>; confirm: ConfirmRequest })
+  | (RowText & { kind: 'clear'; clear: () => Promise<boolean> })   // asks, acts, answers whether a clear ran
 // Files & Links, section 'File History' after Deletion:
 //   toggle fileHistory (defaultOn) · zoom historyDays steps [7,14,30,60,90] unit DAYS · zoom historyInterval steps [5,10,15,20] unit MINUTES
-//   · clear { action: clearHistory, confirm: <Nathan's copy> }
-// the Exclusions clear row becomes the same kind
+//   · clear { clear: clearHistory }  — askClearHistory() in confirmations.ts with Nathan's copy → window.nexus.clearHistory()
+// the Exclusions clear row becomes the same kind; its count-first ask and null-reply reading move into its `clear`
 ```
 
 ```tsx
 // src/renderer/Settings/ClearActionRow.tsx (renamed from ClearExclusionsRow.tsx)
-export function ClearActionRow(props: RowOf<'clear'>): React.JSX.Element   // ask(confirm) → action() → 'Cleared' 1500 ms on ok
+export function ClearActionRow({ row }: { row: RowOf<'clear'> }): React.JSX.Element   // await row.clear() → true flips 'Cleared' 1500 ms
 ```
 
 Labels, hints, and confirm copy: Nathan's, at execution.
@@ -508,7 +508,7 @@ export function PageHistoryWindow(): React.JSX.Element | null
 
 **Why:** The window is reachable from wherever a page is, through the shared model and the shared router.
 
-**Now** — `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 5 (`pageMenu.ts:68,79,85`, `connMenu.ts:7,164`) · `rg -F "PageClipboardAction" src` → 5 (`pageMenu.ts:66,71,75`, `connMenu.ts:9,93` inside `ConnMenuAction` — the `[[link]]` menu, routed by `Links/connectionMenu.ts:63` with explicit cases and no default) · `rg -F "runPageSendAction(" src/renderer` → 5 · `rg -F "reveal: true" src` → 2 (`contextMenu.ts:144`, `pageMenu.ts:147`) · `pageMenu.test.ts:15-26` asserts the full-menu order · `Frames/PageMenu.tsx:58-65` one Properties `MenuItem`.
+**Now** — `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 5 (`pageMenu.ts:68,79,85`, `connMenu.ts:7,164`) · `rg -F "PageClipboardAction" src` → 5 (`pageMenu.ts:66,71,75`, `connMenu.ts:9,93` inside `ConnMenuAction` — the `[[link]]` menu, routed by `Links/connectionMenu.ts:63` with explicit cases and no default) · `rg -F "runPageSendAction(" src/renderer` → 5 · `rg -F "reveal: true" src` → 4 (`contextMenu.ts:144`, `pageMenu.ts:147`, two in `pageMenu.test.ts`) · `pageMenu.test.ts:15-26` asserts the full-menu order · `Frames/PageMenu.tsx:58-65` one Properties `MenuItem`.
 
 **Becomes**
 
@@ -683,6 +683,8 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 ### Open Against Later Tasks
 
 ### Deviations
+
+- 09-02-2026, Task 7 (re-derived at HEAD): the clear row carries one `clear: () => Promise<boolean>` instead of `action` + a static `confirm` — the exclusions clear counts first, puts the count in its copy, and reads a null reply as nothing to clear, which a static `ConfirmRequest` can't express; `ask` stays private, so each clear's confirm is a named wrapper in `confirmations.ts`.
 
 ### Lessons
 
