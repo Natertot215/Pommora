@@ -22,9 +22,8 @@ export function groupKeyToValue(groupKey: string, type: string | undefined): Pro
   }
 }
 
-/** The value a reorder hands a row when its slot lands STRICTLY INSIDE another value's run: both
- *  neighbors must exist and agree on a key the dragged row doesn't already carry. A slot at a run's
- *  edge — either end of the list, or the seam between two runs — stays a pure reorder. */
+/** The value a reorder hands a row, or undefined for a pure reorder — the neighbor rule that keeps a
+ *  drop to a run's edge (a seam, or either end of the list) from rewriting anything. */
 export function reassignTarget(
   order: string[],
   draggedId: string,
