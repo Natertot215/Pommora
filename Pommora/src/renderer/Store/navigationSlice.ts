@@ -406,6 +406,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     openNewTab: () => {
       const s = get()
       const res = openNewTabModel(s.tabs, makeTabId())
+      if (res.tabs !== s.tabs && s.personalization.tabTakeFocus === false) {
+        set({ tabs: res.tabs })
+        persistTabs()
+        return
+      }
       const swaps = res.activeTabId !== s.activeTabId || s.selection.kind !== 'none'
       set({
         tabs: res.tabs,

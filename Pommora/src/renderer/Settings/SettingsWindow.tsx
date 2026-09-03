@@ -67,7 +67,6 @@ type KeyOf<V> = {
 interface RowText {
   label: string
   hint?: string
-  when?: (p: Personalization) => boolean
 }
 
 type PickerRow<T extends string> = RowText & {
@@ -155,12 +154,11 @@ const clearHistory = async (): Promise<boolean> => {
   return r.ok
 }
 
-const settingsRow = (row: RowText, trailing: Trailing, reveal?: boolean): MenuRow => ({
+const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',
   label: row.label,
   caption: row.hint,
   trailing,
-  reveal,
 })
 
 interface Section {
@@ -345,9 +343,8 @@ const FRAMES = roster([
           {
             kind: 'toggle',
             key: 'tabTakeFocus',
-            label: 'Take Focus',
+            label: 'Focus New Tabs',
             defaultOn: true,
-            when: (p) => p.tabOpenBehavior === 'newtab',
           },
           {
             kind: 'zoom',
@@ -754,7 +751,6 @@ function RailTab({
 }
 
 function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
-  const personalization = useSession((s) => s.personalization)
   const frame = frameFor(category)
   if (frame.Surface) return <frame.Surface />
   const { sections } = frame
@@ -775,7 +771,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
             {section.rows.map((row) => (
               // Keyed on the label: the one row writing a top-level settings key has no
               // personalization key to be identified by, and a label is unique within a section.
-              <RowControl key={row.label} row={row} reveal={row.when?.(personalization)} />
+              <RowControl key={row.label} row={row} />
             ))}
           </div>
         ))
@@ -784,18 +780,18 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
   )
 }
 
-function RowControl({ row, reveal }: { row: Row; reveal?: boolean }): React.JSX.Element {
+function RowControl({ row }: { row: Row }): React.JSX.Element {
   switch (row.kind) {
     case 'toggle':
-      return <ToggleRow row={row} reveal={reveal} />
+      return <ToggleRow row={row} />
     case 'slider':
-      return <SliderRow row={row} reveal={reveal} />
+      return <SliderRow row={row} />
     case 'picker':
-      return <PickerRow row={row} reveal={reveal} />
+      return <PickerRow row={row} />
     case 'zoom':
-      return <ZoomRow row={row} reveal={reveal} />
+      return <ZoomRow row={row} />
     case 'device':
-      return <DeviceRow row={row} reveal={reveal} />
+      return <DeviceRow row={row} />
     case 'path':
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'exclusions':
@@ -803,11 +799,11 @@ function RowControl({ row, reveal }: { row: Row; reveal?: boolean }): React.JSX.
     case 'clear':
       return <ClearActionRow label={row.label} hint={row.hint} clear={row.clear} />
     case 'color':
-      return <ColorRow row={row} reveal={reveal} />
+      return <ColorRow row={row} />
   }
 }
 
-function ColorRow({ row, reveal }: { row: RowOf<'color'>; reveal?: boolean }): React.JSX.Element {
+function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key]) as string | undefined
   const setPersonalization = useSession((s) => s.setPersonalization)
 
@@ -815,63 +811,51 @@ function ColorRow({ row, reveal }: { row: RowOf<'color'>; reveal?: boolean }): R
 
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'color',
-          label: row.label,
-          selected: inheriting ? 'default' : labelColorFor(value),
-          css: inheriting ? row.inheritsVar : solidColorCss(value),
-          greyscale: row.greyscale,
-          onPick: (next) => setPersonalization(row.key, (next ?? row.inherits) as never),
-        },
-        reveal,
-      )}
+      row={settingsRow(row, {
+        kind: 'color',
+        label: row.label,
+        selected: inheriting ? 'default' : labelColorFor(value),
+        css: inheriting ? row.inheritsVar : solidColorCss(value),
+        greyscale: row.greyscale,
+        onPick: (next) => setPersonalization(row.key, (next ?? row.inherits) as never),
+      })}
     />
   )
 }
 
-function ToggleRow({ row, reveal }: { row: RowOf<'toggle'>; reveal?: boolean }): React.JSX.Element {
+function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   const on = value ?? row.defaultOn ?? false
 
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'switch',
-          checked: on,
-          ariaLabel: row.label,
-          onChange: (next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next),
-        },
-        reveal,
-      )}
+      row={settingsRow(row, {
+        kind: 'switch',
+        checked: on,
+        ariaLabel: row.label,
+        onChange: (next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next),
+      })}
     />
   )
 }
 
-function DeviceRow({ row, reveal }: { row: RowOf<'device'>; reveal?: boolean }): React.JSX.Element {
+function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   const on = useSession((s) => s.devicePrefs[row.key] ?? false)
   const setDevicePref = useSession((s) => s.setDevicePref)
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'switch',
-          checked: on,
-          ariaLabel: row.label,
-          onChange: (next) => setDevicePref(row.key, next || undefined),
-        },
-        reveal,
-      )}
+      row={settingsRow(row, {
+        kind: 'switch',
+        checked: on,
+        ariaLabel: row.label,
+        onChange: (next) => setDevicePref(row.key, next || undefined),
+      })}
     />
   )
 }
 
-function ZoomRow({ row, reveal }: { row: RowOf<'zoom'>; reveal?: boolean }): React.JSX.Element {
+function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
   const steps = row.steps ?? SCALE_STEPS
@@ -885,70 +869,58 @@ function ZoomRow({ row, reveal }: { row: RowOf<'zoom'>; reveal?: boolean }): Rea
   }))
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'picker',
-          ariaLabel: row.label,
-          value: String(stored),
-          options: choices,
-          onPick: (v) => commit(Number(v)),
-          typeable: {
-            text: String(shown(stored)),
-            suffix: unit.suffix,
-            onCommit: (written) => {
-              const typed = Number.parseFloat(written.replace(unit.suffix, '').trim())
-              if (Number.isFinite(typed))
-                commit(Math.min(steps[steps.length - 1], Math.max(steps[0], typed / unit.scale)))
-            },
+      row={settingsRow(row, {
+        kind: 'picker',
+        ariaLabel: row.label,
+        value: String(stored),
+        options: choices,
+        onPick: (v) => commit(Number(v)),
+        typeable: {
+          text: String(shown(stored)),
+          suffix: unit.suffix,
+          onCommit: (written) => {
+            const typed = Number.parseFloat(written.replace(unit.suffix, '').trim())
+            if (Number.isFinite(typed))
+              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], typed / unit.scale)))
           },
         },
-        reveal,
-      )}
+      })}
     />
   )
 }
 
-function PickerRow({ row, reveal }: { row: RowOf<'picker'>; reveal?: boolean }): React.JSX.Element {
+function PickerRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'picker',
-          ariaLabel: row.label,
-          value: stored ?? row.fallback,
-          options: row.options,
-          onPick: (v: typeof row.fallback) =>
-            setPersonalization(row.key, v === row.fallback ? undefined : v),
-        },
-        reveal,
-      )}
+      row={settingsRow(row, {
+        kind: 'picker',
+        ariaLabel: row.label,
+        value: stored ?? row.fallback,
+        options: row.options,
+        onPick: (v: typeof row.fallback) =>
+          setPersonalization(row.key, v === row.fallback ? undefined : v),
+      })}
     />
   )
 }
 
-function SliderRow({ row, reveal }: { row: RowOf<'slider'>; reveal?: boolean }): React.JSX.Element {
+function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key] ?? 0)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
     <MenuRowView
-      row={settingsRow(
-        row,
-        {
-          kind: 'slider',
-          value,
-          min: 0,
-          max: row.max,
-          step: 1,
-          ariaLabel: row.label,
-          format: row.format,
-          onCommit: (v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined),
-        },
-        reveal,
-      )}
+      row={settingsRow(row, {
+        kind: 'slider',
+        value,
+        min: 0,
+        max: row.max,
+        step: 1,
+        ariaLabel: row.label,
+        format: row.format,
+        onCommit: (v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined),
+      })}
     />
   )
 }
