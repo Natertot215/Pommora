@@ -120,10 +120,12 @@ describe('ignoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
     ignoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
 
-  it('ignores a store and its journal wherever it sits, and nothing else under .nexus', () => {
+  it('ignores a store, its journal, and a quarantined store wherever it sits, and nothing else under .nexus', () => {
     expect(ignored('.nexus', 'versions.db')).toBe(true)
     expect(ignored('.nexus', 'versions.db-wal')).toBe(true)
     expect(ignored('.nexus', 'versions.db-shm')).toBe(true)
+    expect(ignored('.nexus', 'versions.corrupt-2026-09-03T00-00-00-000Z.db')).toBe(true)
+    expect(ignored('.nexus', 'versions.corrupt-2026-09-03T00-00-00-000Z.db-wal')).toBe(true)
     expect(ignored('.nexus', 'settings.json')).toBe(false)
     expect(ignored('Notes', 'report.db')).toBe(true)
     expect(ignored('Notes', 'report.md')).toBe(false)

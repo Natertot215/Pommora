@@ -29,10 +29,13 @@ describe('cellMenuModel', () => {
       kind: 'title',
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    expect(withTargets.items.slice(-5, -2).map((i) => i.action)).toEqual([
+    const actions = withTargets.items.map((i) => i.action)
+    const at = actions.indexOf('title:moveto')
+    expect(actions.slice(at, at + 4)).toEqual([
       'title:moveto',
       'title:copylink',
       'title:copypath',
+      'title:history',
     ])
     expect(withTargets.items.find((i) => i.action === 'title:moveto')?.separatorBefore).toBe(true)
     expect(withTargets.items.find((i) => i.action === 'title:copylink')?.separatorBefore).toBe(

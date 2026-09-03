@@ -13,7 +13,7 @@ import {
 } from './readNexus'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { corpusFiles } from './IO/walk'
-import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
+import { DEFAULT_ACCENT, DEFAULT_COMMANDS, HISTORY_DAYS } from '@shared/types'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRP'
 const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'
@@ -144,13 +144,14 @@ describe('readPersonalization: the Metadata toggles', () => {
 
 describe('readPersonalization: file history', () => {
   it('clamps the numbers into their ranges and drops what is not a number', () => {
-    expect(readPersonalization({ historyDays: 200 }).historyDays).toBe(90)
-    expect(readPersonalization({ historyDays: 2 }).historyDays).toBe(7)
+    expect(readPersonalization({ historyDays: 200 }).historyDays).toBe(HISTORY_DAYS.max)
+    expect(readPersonalization({ historyDays: 2 }).historyDays).toBe(HISTORY_DAYS.min)
     expect(readPersonalization({ historyInterval: '5' }).historyInterval).toBeUndefined()
-    expect(readPersonalization({ historyInterval: 12.4 }).historyInterval).toBe(12)
+    expect(readPersonalization({ historyInterval: 12.6 }).historyInterval).toBe(13)
   })
   it('holds only an explicit off', () => {
     expect(readPersonalization({ fileHistory: false }).fileHistory).toBe(false)
+    expect(readPersonalization({ fileHistory: true }).fileHistory).toBeUndefined()
     expect(readPersonalization({ fileHistory: 'no' }).fileHistory).toBeUndefined()
     expect(readPersonalization({}).fileHistory).toBeUndefined()
   })

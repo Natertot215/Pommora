@@ -113,16 +113,13 @@ describe('a link naming an address', () => {
   })
 
   it("never offers a page's history — the link menu points, it does not keep", () => {
-    expect(
-      JSON.stringify(
-        connMenuModel({
-          surface: 'editor',
-          editable: true,
-          hasAlias: false,
-          open: 'closed',
-          previewing: false,
-        }),
-      ),
-    ).not.toContain('title:history')
+    const model = connMenuModel({
+      surface: 'editor',
+      editable: true,
+      hasAlias: false,
+      open: 'closed',
+      previewing: false,
+    })
+    expect(model.map((r) => r.action)).not.toContain('title:history')
   })
 })

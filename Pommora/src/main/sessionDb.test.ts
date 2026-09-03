@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach } from 'vitest'
 import { mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -8,13 +8,15 @@ import { DB_FILENAME } from './Database/open'
 
 describe('sessionDb', () => {
   let root: string
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'pom-sessdb-'))
+  })
   afterEach(() => {
     closeSessionDb()
     rmSync(root, { recursive: true, force: true })
   })
 
   it('opens both stores for a root and closes both', () => {
-    root = mkdtempSync(join(tmpdir(), 'pom-sessdb-'))
     openSessionDb(root)
     expect(sessionDb()).not.toBeNull()
     expect(sessionVersionsDb()).not.toBeNull()

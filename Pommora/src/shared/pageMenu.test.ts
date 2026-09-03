@@ -8,7 +8,7 @@ import {
 } from './pageMenu'
 
 describe('the page menu', () => {
-  it('offers the copy and reveal group only where it is asked for', () => {
+  it('offers the copy, history, and reveal group only where it is asked for', () => {
     const bare = pageMetaMenuItems(false, { newPages: 'pair' }).map((i) => i.action)
     expect(bare).not.toContain('title:copylink')
     expect(bare).not.toContain('title:reveal')
@@ -32,8 +32,11 @@ describe('the page menu', () => {
       'title:reveal',
       'title:delete',
     ])
-    expect(full.find((i) => i.action === 'title:history')?.separatorBefore).toBe(true)
-    expect(full.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(false)
+  })
+  it('history opens its own group, and reveal joins it', () => {
+    const items = pageMetaMenuItems(false, { clipboard: true, history: true, reveal: true })
+    expect(items.find((i) => i.action === 'title:history')?.separatorBefore).toBe(true)
+    expect(items.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(false)
   })
   it('reveal opens its own group when nothing copies before it', () => {
     const items = pageMetaMenuItems(false, { reveal: true })

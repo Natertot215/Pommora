@@ -41,7 +41,7 @@ afterEach(async () => {
 })
 
 describe('useWindowWarm', () => {
-  it('does not restore an entry whose doc differs from the fresh detail', async () => {
+  it("fences the active tab's entry against the active path's fresh detail", async () => {
     captureWindowCache('tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
     cachePageDetail({ id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'new' })
     await act(async () => {

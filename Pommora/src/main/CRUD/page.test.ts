@@ -121,10 +121,10 @@ describe('updatePageBody', () => {
     if (!c.ok) throw new Error('setup failed')
     const before = await bytesOf(c.value.path)
     const r = await updatePageBody(c.value.path, 'two')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.previous).toBe(before)
-    expect(r.value.written).toBe(await bytesOf(c.value.path))
+    expect(r).toEqual({
+      ok: true,
+      value: { previous: before, written: await bytesOf(c.value.path) },
+    })
   })
 
   it.skipIf(process.getuid?.() === 0)(

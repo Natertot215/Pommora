@@ -51,10 +51,13 @@ describe('cardMenuModel', () => {
       addable: [],
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    expect(m.items.slice(-5, -2).map((i) => i.action)).toEqual([
+    const actions = m.items.map((i) => i.action)
+    const at = actions.indexOf('title:moveto')
+    expect(actions.slice(at, at + 4)).toEqual([
       'title:moveto',
       'title:copylink',
       'title:copypath',
+      'title:history',
     ])
   })
 })

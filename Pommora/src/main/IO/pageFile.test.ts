@@ -202,7 +202,7 @@ describe('writePageFile (fs)', () => {
       const before = assembleEnvelope('id: X\n', 'one')
       await writeFile(p, before, 'utf8')
       await chmod(p, 0o000)
-      await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow()
+      await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow(/EACCES/)
       await chmod(p, 0o644)
       expect(await readFile(p, 'utf8')).toBe(before)
     },

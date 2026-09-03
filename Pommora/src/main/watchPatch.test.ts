@@ -406,12 +406,21 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
   })
 })
 
-describe('a page written from outside', () => {
-  it('arms the file-history timer for it', async () => {
+describe('the file-history timer', () => {
+  beforeEach(async () => {
     await refreshTree(root)
     vi.mocked(noteExternalEdit).mockClear()
-    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha edited\n`)
+  })
+
+  it('arms once on a change event for a page', async () => {
     await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())
+    expect(noteExternalEdit).toHaveBeenCalledTimes(1)
     expect(noteExternalEdit).toHaveBeenCalledWith(root, abs('Notes', 'A.md'))
+  })
+
+  it('does not arm on a page removed', async () => {
+    await unlink(abs('Notes', 'A.md'))
+    await applyWatchEvents(root, [ev('unlink', 'Notes', 'A.md')], scope())
+    expect(noteExternalEdit).not.toHaveBeenCalled()
   })
 })
