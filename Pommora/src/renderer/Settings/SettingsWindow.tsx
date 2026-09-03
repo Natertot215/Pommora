@@ -347,7 +347,7 @@ const FRAMES = roster([
             key: 'tabTakeFocus',
             label: 'Take Focus',
             defaultOn: true,
-            when: (p) => (p.tabOpenBehavior ?? 'overtake') === 'newtab',
+            when: (p) => p.tabOpenBehavior === 'newtab',
           },
           {
             kind: 'zoom',

@@ -380,7 +380,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     goForward: () => stepActiveHistory(1),
     navigateCrumb: (target, dir) => {
       // crumbDepth (kept current inside select) holds the deeper path across the move.
-      void get().select(target)
+      void get().select(target, { newTab: false })
       // select always slides 'forward'; a move up the path reads as 'back'.
       if (dir === 'back') {
         const ns = get().navSlide
@@ -550,8 +550,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         const newTab = opts?.newTab ?? s.personalization.tabOpenBehavior === 'newtab'
         pending = openTabModel(s.tabs, s.activeTabId, s.pinnedTabs, target, { newTab }, makeTabId())
         if (
+          newTab &&
           pending.tabs.length > s.tabs.length &&
-          (s.personalization.tabTakeFocus ?? true) === false
+          s.personalization.tabTakeFocus === false
         ) {
           set({ tabs: pending.tabs })
           commitRecents(recordRecent(s.recents, target, RECENTS_CAP))
@@ -568,17 +569,16 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (get().navSlide?.seq === coldStampSeq) set({ navSlide: null })
       if (pending) {
         const s = get()
-        const res = pending
-        const opened = res.tabs !== s.tabs
+        const opened = pending.tabs !== s.tabs
         set({
-          tabs: res.tabs,
-          activeTabId: res.activeTabId,
-          tabMru: pushMru(s.tabMru, res.activeTabId),
+          tabs: pending.tabs,
+          activeTabId: pending.activeTabId,
+          tabMru: pushMru(s.tabMru, pending.activeTabId),
           ...(sameShownTarget(s.selection, target)
             ? {}
             : {
                 navSlide: {
-                  tabId: res.activeTabId,
+                  tabId: pending.activeTabId,
                   dir: 'forward' as const,
                   seq: (s.navSlide?.seq ?? 0) + 1,
                   source: 'select' as const,
@@ -677,7 +677,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (parentPath === null) return
       // main disambiguates the name on collision.
       await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, (created) =>
-        get().select({ kind: 'page', id: created.id, path: created.path }),
+        get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
       )
     },
 
