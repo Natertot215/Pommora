@@ -3,6 +3,7 @@
 // unmount, and a path-keyed detail slot for embed rehydration, written through by the shared save
 // scheduler so a returning tile always seeds on the newest body.
 import { useSyncExternalStore } from 'react'
+import { capSet } from '@renderer/DesignSystem/Util/capMap'
 import type { PageDetail } from '@shared/types'
 
 export interface CacheEntry {
@@ -17,15 +18,6 @@ const CACHE_CAP_PER_TAB = 20
 
 const cache = new Map<string, Map<string, CacheEntry>>()
 
-/** LRU by Map insertion order — every write re-inserts, so `.keys().next()` is always the stalest. */
-function trimToCap<V>(map: Map<string, V>, cap: number): void {
-  while (map.size > cap) {
-    const oldest = map.keys().next().value
-    if (oldest === undefined) break
-    map.delete(oldest)
-  }
-}
-
 export function captureCache(tabId: string, navKey: string, patch: Partial<CacheEntry>): void {
   let tabMap = cache.get(tabId)
   if (!tabMap) {
@@ -33,9 +25,7 @@ export function captureCache(tabId: string, navKey: string, patch: Partial<Cache
     cache.set(tabId, tabMap)
   }
   const merged = { ...tabMap.get(navKey), ...patch }
-  tabMap.delete(navKey)
-  tabMap.set(navKey, merged)
-  trimToCap(tabMap, CACHE_CAP_PER_TAB)
+  capSet(tabMap, navKey, merged, CACHE_CAP_PER_TAB)
 }
 
 export function readCache(tabId: string, navKey: string): CacheEntry | undefined {
@@ -48,9 +38,7 @@ const DETAIL_CAP = 40
 const detailByPath = new Map<string, PageDetail>()
 
 export function cachePageDetail(detail: PageDetail): void {
-  detailByPath.delete(detail.path)
-  detailByPath.set(detail.path, detail)
-  trimToCap(detailByPath, DETAIL_CAP)
+  capSet(detailByPath, detail.path, detail, DETAIL_CAP)
 }
 
 export function readPageDetail(path: string): PageDetail | undefined {
