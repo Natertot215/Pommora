@@ -19,8 +19,8 @@
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
   --window-flow-home: calc(var(--window-side-inset) + 22px);
-  --window-flow-inset: var(
-    --surface-inset
+  --window-flow-inset: calc(
+    var(--surface-inset) + 12px
   ); /* KNOB — breathing room off the pane's seam after the swallow */
   --window-flow-shift: max(
     0px,
@@ -280,8 +280,6 @@
   display: flex;
   align-items: center;
   gap: var(--window-trail-gap, 2px);
-  --window-actions-indent: 8px; /* KNOB — left indent off the side pane when it's toggled open */
-  padding-left: calc(var(--io) * var(--window-actions-indent));
   /* The trailing pair holds at home until the pane's leading edge makes contact (the max() gate), then lands flush inside its corner. A host that reveals the pair drives --window-flow-reveal rather than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
   transform: translateX(var(--window-flow-reveal, 0px))
     translateX(calc(-1 * var(--window-flow-shift)));
