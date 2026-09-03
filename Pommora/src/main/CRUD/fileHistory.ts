@@ -137,6 +137,7 @@ export async function writeBody(
     }
     lastWritten.set(pageId, bodyHash(written))
     if (source === 'edit') await arm(root, pageId, 'edit')
+    else disarm(pageId)
   }
   return ok(null)
 }
