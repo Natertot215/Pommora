@@ -201,12 +201,12 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
   return ix.resolve
 }
 
-/** The entity's ancestry including itself, outermost first — what every location trail draws from.
- *  Null when the ref no longer resolves. */
 /** The location trail a surface draws for a node — empty until the tree can say. */
 export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
   (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
 
+/** The entity's ancestry including itself, outermost first — what every location trail draws from.
+ *  Null when the ref no longer resolves. */
 export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null {
   const ix = indexFor(tree)
   if (!ix.ancestry) {

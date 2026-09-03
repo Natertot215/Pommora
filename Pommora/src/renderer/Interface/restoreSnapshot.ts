@@ -1,4 +1,4 @@
-import { ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@shared/result'
 import { flushPageSave } from './pageFlush'
 import { livePagePath } from '../treeIndex'
 import { useSession, type PreviewTarget } from '../store'
@@ -11,6 +11,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   await flushPageSave(live)
   const r = await window.nexus.restoreSnapshot(target.id, ts)
   if (!r.ok) return r
-  await replaceBody(r.value.path)
-  return ok(null)
+  return (await replaceBody(r.value.path))
+    ? ok(null)
+    : fail('operation-failed', 'The page was restored but could not be reread.')
 }
