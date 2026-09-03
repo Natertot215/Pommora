@@ -11,6 +11,7 @@ describe('cardMenuModel', () => {
       ['New Page', 'title:newbelow'],
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
+      ['View History', 'title:history'],
       ['Delete', 'title:delete'],
     ])
     expect(m.items.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
@@ -50,7 +51,7 @@ describe('cardMenuModel', () => {
       addable: [],
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    expect(m.items.slice(-4, -1).map((i) => i.action)).toEqual([
+    expect(m.items.slice(-5, -2).map((i) => i.action)).toEqual([
       'title:moveto',
       'title:copylink',
       'title:copypath',

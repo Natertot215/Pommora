@@ -25,6 +25,7 @@ export function PageMenu(): React.JSX.Element | null {
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
+  const openHistory = useSession((st) => st.openHistory)
   const [iconOpen, setIconOpen] = useState(false)
   const [pane, setPane] = useState<'root' | 'properties'>('root')
   const iconRef = useRef<HTMLButtonElement>(null)
@@ -63,6 +64,12 @@ export function PageMenu(): React.JSX.Element | null {
         onClick={() => setPane('properties')}
       >
         Properties
+      </MenuItem>
+      <MenuItem
+        leading={<Icon name="history" size={ICON.rootEntry} />}
+        onClick={() => openHistory({ id: pageDetail.id, path: pageDetail.path })}
+      >
+        History
       </MenuItem>
     </>
   )

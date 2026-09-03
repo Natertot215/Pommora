@@ -3,12 +3,7 @@
 // `cellMenu.ts` sits apart from the cell: that module states the grammar, this one the actions.
 
 import type { ActionItem } from './menuModel'
-import {
-  PAGE_CLIPBOARD_ACTIONS,
-  pageMetaMenuSubset,
-  type PageClipboardAction,
-  type PageMetaAction,
-} from './pageMenu'
+import { pageMetaMenuSubset, type PageMetaAction, type PageReachAction } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from './properties'
 
 /** What the link menu needs in order to render itself. The two authoring actions are built into
@@ -90,7 +85,7 @@ export type ConnMenuAction =
   | ConnSiteAction
   | ConnEditAction
   | ConnCellAction
-  | PageClipboardAction
+  | Extract<PageReachAction, 'title:copylink' | 'title:copypath'>
   | ConnUrlAction
 
 export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction =>
@@ -161,7 +156,7 @@ export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[
   return [
     ...opens,
     ...authoring,
-    ...pageMetaMenuSubset(PAGE_CLIPBOARD_ACTIONS).map((r, i) => ({
+    ...pageMetaMenuSubset(['title:copylink', 'title:copypath']).map((r, i) => ({
       ...r,
       separatorBefore: i === 0,
     })),

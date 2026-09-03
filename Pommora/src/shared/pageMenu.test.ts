@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { pageLinkText, pageMetaMenuItems, pageMetaMenuSubset, pagePathText } from './pageMenu'
+import {
+  pageLinkText,
+  pageMetaMenuItems,
+  pageMetaMenuSubset,
+  pagePathText,
+  pageSendActions,
+} from './pageMenu'
 
 describe('the page menu', () => {
   it('offers the copy and reveal group only where it is asked for', () => {
@@ -10,9 +16,10 @@ describe('the page menu', () => {
       preview: true,
       newPages: 'pair',
       clipboard: true,
+      history: true,
       reveal: true,
-    }).map((i) => i.action)
-    expect(full).toEqual([
+    })
+    expect(full.map((i) => i.action)).toEqual([
       'title:preview',
       'title:newtab',
       'title:rename',
@@ -21,13 +28,19 @@ describe('the page menu', () => {
       'title:newbelow',
       'title:copylink',
       'title:copypath',
+      'title:history',
       'title:reveal',
       'title:delete',
     ])
+    expect(full.find((i) => i.action === 'title:history')?.separatorBefore).toBe(true)
+    expect(full.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(false)
   })
   it('reveal opens its own group when nothing copies before it', () => {
     const items = pageMetaMenuItems(false, { reveal: true })
     expect(items.find((i) => i.action === 'title:reveal')?.separatorBefore).toBe(true)
+  })
+  it('a surface that only points at a page reaches its link, its path, and its history', () => {
+    expect(pageSendActions({})).toEqual(['title:copylink', 'title:copypath', 'title:history'])
   })
 
   it('a subset keeps the full menu order and drops a leading separator', () => {

@@ -122,6 +122,8 @@ export async function showContextMenu(
         return clipboard.writeText(pageLinkText(target.title))
       case 'title:copypath':
         return clipboard.writeText(pagePathText(target.path))
+      case 'title:history':
+        return push(win, 'open-history', target)
       case 'title:reveal':
         return reveal()
       case 'title:delete':
@@ -141,6 +143,7 @@ export async function showContextMenu(
           newPages: 'pair',
           move: offersMove(target),
           clipboard: true,
+          history: true,
           reveal: true,
         }),
         (action) => () => void runPageAction(action),
