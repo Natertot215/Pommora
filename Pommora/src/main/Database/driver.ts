@@ -8,6 +8,9 @@ import { errText } from '@shared/result'
 
 export type Db = DatabaseSync
 
+/** A store file's suffixes — the file, its WAL, its SHM — for anything that moves or removes one whole. */
+export const DB_SIBLINGS = ['', '-wal', '-shm'] as const
+
 /** A null handle here is LOUD: every operational store silently no-ops behind it, so a quiet
  *  failure reads as "Pommora forgot my tabs" with nothing pointing at the cause. */
 export function openDb(path: string): Db | null {
