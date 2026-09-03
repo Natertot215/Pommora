@@ -21,3 +21,18 @@ export function groupKeyToValue(groupKey: string, type: string | undefined): Pro
       return null
   }
 }
+
+/** The value a reorder hands a row when its slot lands STRICTLY INSIDE another value's run: both
+ *  neighbors must exist and agree on a key the dragged row doesn't already carry. A slot at a run's
+ *  edge — either end of the list, or the seam between two runs — stays a pure reorder. */
+export function reassignTarget(
+  order: string[],
+  draggedId: string,
+  keyOf: (id: string) => string,
+): string | undefined {
+  const i = order.indexOf(draggedId)
+  if (i <= 0 || i >= order.length - 1) return undefined
+  const key = keyOf(order[i - 1])
+  if (key !== keyOf(order[i + 1]) || key === keyOf(draggedId)) return undefined
+  return key
+}
