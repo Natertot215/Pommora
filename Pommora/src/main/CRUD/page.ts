@@ -2,13 +2,13 @@ import { join, dirname, basename } from 'node:path'
 import { rename } from 'node:fs/promises'
 import { ID_KEY } from '@shared/identity'
 import { newContentId } from '../ids'
-import { writePageFile } from '../IO/pageFile'
+import { type PageWrite, writePageFile } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
 import { type Adoption, encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { GovernedWorld } from '@shared/contextResolve'
 import { PAGE_MODELED_KEYS } from '@shared/identity'
-import { ok, fail, type Result } from '@shared/result'
+import { errText, ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName } from './util'
 import { setGovernedRootKeys } from './governedWrite'
 import type { PropertyDefinition } from '@shared/properties'
@@ -67,13 +67,16 @@ export async function renamePage(
   return ok({ path: target })
 }
 
-export async function updatePageBody(absFile: string, body: string): Promise<Result<null>> {
+export async function updatePageBody(absFile: string, body: string): Promise<Result<PageWrite>> {
   // Locked here rather than at the caller: the existence check and the write must sit inside
   // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
   return serializeOnFile(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    await writePageFile(absFile, {}, [], body)
-    return ok(null)
+    try {
+      return ok(await writePageFile(absFile, {}, [], body))
+    } catch (e) {
+      return fail('operation-failed', errText(e))
+    }
   })
 }
 
