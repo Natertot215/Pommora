@@ -8,7 +8,9 @@
 **Dates:** 09-02-2026 → 09-03
 **Model:** Fable 5.1
 
-**Page File History is closed.** The arc ran five phases to its Declared Stop and then an unattended closeout: a sixteen-item live checklist (A1–A16) driven over CDP against NexusOS and a scratch nexus, two report-only simplifiers whose twenty-eight findings all folded (`c0f1b184`), a code reviewer that found nothing at its bar, an attacker whose five verified breaks folded with tests (`b1632f28`), and a neutral verifier reading every requirement and Core item as MET. The record landed under ArchitecturePM › Persistence, ConfigurationPM, InterfacePM, PagesPM, NexusRecordPM, and Context's Known Issues, with three lessons in Development-Environment.md.
+**Page File History is closed, and its secondary review has landed.** Six report-only lenses, a tests pass, and a final regression pass ran after the closeout; every finding was folded or ruled in the plan's log, the feature is documented as its own section under ArchitecturePM's data layer, and the review's five commits net −11 lines against the arc's +975.
+
+**The closeout.** The arc ran five phases to its Declared Stop and then an unattended closeout: a sixteen-item live checklist (A1–A16) driven over CDP against NexusOS and a scratch nexus, two report-only simplifiers whose twenty-eight findings all folded (`c0f1b184`), a code reviewer that found nothing at its bar, an attacker whose five verified breaks folded with tests (`b1632f28`), and a neutral verifier reading every requirement and Core item as MET. The record landed under ArchitecturePM › Persistence, ConfigurationPM, InterfacePM, PagesPM, NexusRecordPM, and Context's Known Issues, with three lessons in Development-Environment.md.
 
 **Verified live, as distinct from traced.** Capture on the real page: the pre-edit text as `edit`, an in-interval save held, the settled text from the quiet timer at 300 s, an outside edit as `external` from its own timer, a fresh outside text landing at once when the app overwrote it, identical text refused, zero `nexus:changed` pushes from the app's own saves. Restore reached the content pane, the Page Window, and an embed at once, a keystroke in the window saved restored text plus the keystroke, Back re-seeded the restored body, and a trash round-trip kept the rows. ⌘Q exited in 828 ms on one press and left the flush row; a root switch through the native chooser flushed NexusOS and opened the scratch nexus on a fresh store with its garbage file set aside; Clear History confirmed with Nathan's sentence and read Cleared. Screenshots of the window, the menus, and the settings section sit in the session scratchpad under `shots/`.
 
@@ -23,7 +25,8 @@
 - [x] Two simplifiers, the reviewer, the attacker, and the neutral verifier signed off; every finding folded or ruled in the plan's Log.
 - [x] History PM-125, Context, the guideline lines, the plan's Closeout and Delivery Claim committed.
 - [x] The throwaway pages, their bundles, their rows, the scratch nexus, and the gate files gone; the dev instance relaunched on NexusOS at the final main.
-- [ ] Nathan's own pass: the window against his mock on a real page; the Days unit; the two paragraphs under Persistence.
+- [x] The secondary review: cohesion, simplicity, correctness, duplication, stability, debt, the tests, and a final regression pass — folded, gated, pushed.
+- [ ] Nathan's own pass: the window against his mock on a real page; the Days unit; the File History section under ArchitecturePM.
 
 #### Next Session
 
