@@ -1,0 +1,257 @@
+/* ─── Mechanism ─────────────────────────────────────────────────────────────── */
+
+.tab {
+  --tab-max-absolute: 450px; /* KNOB — the trailing tab's grow ceiling */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tab-gap, 6px);
+  height: 100%;
+  flex: 0 1 var(--tab-pref, 180px);
+  min-width: var(--tab-min, 90px);
+  max-width: var(--tab-max, 240px);
+  padding: 0 var(--tab-pad-x, 12px);
+  color: var(--label-tertiary);
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  border-radius: 12px;
+  transition:
+    color var(--duration-base) var(--ease-base),
+    max-width var(--duration-base) var(--ease-base) var(--duration-fast),
+    min-width var(--duration-base) var(--ease-base) var(--duration-fast),
+    padding var(--duration-base) var(--ease-base) var(--duration-fast),
+    opacity var(--duration-base) var(--ease-base) var(--duration-fast);
+}
+.tab:last-child:not(.tab-map) {
+  flex: 0 1 auto;
+  max-width: var(--tab-max-absolute);
+}
+.tab:last-child:not(.tab-map) .tab-label {
+  padding-right: 16px;
+}
+@starting-style {
+  .tab {
+    min-width: 0;
+    max-width: 0;
+    padding: 0;
+    opacity: 0;
+  }
+}
+.tab.is-closing {
+  min-width: 0;
+  max-width: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition-delay: 0s;
+}
+.tab:hover {
+  background: var(--state-hover);
+}
+.tab.is-active {
+  color: var(--label-control);
+}
+.tab.is-dragging {
+  opacity: var(--state-ghost);
+}
+
+.tab-seg {
+  --segment-width: var(--width-200);
+  height: var(--tab-divider-h, 16px);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-base) var(--ease-base) var(--duration-fast),
+    width var(--duration-base) var(--ease-base) var(--duration-fast);
+}
+@starting-style {
+  .tab-seg {
+    opacity: 0;
+  }
+}
+.tab-seg.is-closing {
+  --segment-width: 0;
+  opacity: 0;
+  transition-delay: 0s;
+}
+.tab-icon {
+  flex: 0 0 auto;
+  color: inherit;
+}
+
+@keyframes tab-nav-slide-back {
+  from {
+    transform: translateX(calc(-1 * var(--tab-nav-slide, 10px)));
+    opacity: 0;
+  }
+}
+@keyframes tab-nav-slide-fwd {
+  from {
+    transform: translateX(var(--tab-nav-slide, 10px));
+    opacity: 0;
+  }
+}
+.nav-slide-back {
+  animation: tab-nav-slide-back var(--duration-base) var(--ease-base);
+}
+.nav-slide-fwd {
+  animation: tab-nav-slide-fwd var(--duration-base) var(--ease-base);
+}
+
+.tab-label {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+  --over-scroll-fade: var(--fade-base);
+}
+
+.tab-x {
+  position: absolute;
+  right: calc(var(--tab-pad-x, 12px) - 6px);
+  border-radius: 6px;
+  color: var(--label-secondary);
+  transition:
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
+}
+.tab-x.tab-x {
+  padding: 4px;
+}
+.tab-x:hover {
+  background: var(--state-hover);
+}
+
+.tab-map {
+  flex: 0 0 auto;
+  min-width: 34px;
+  max-width: 34px;
+  justify-content: center;
+  padding: 0;
+}
+
+/* ─── Variants ──────────────────────────────────────────────────────────────── */
+
+.tabs-standard {
+  --tab-min: var(--tab-min-user, 70px);
+  --tab-max: var(--tab-max-user, 250px);
+  --tab-pref: 180px;
+  --tab-pad-x: 12px;
+  --tab-gap: 6px;
+  --tab-height: var(--button-large-height);
+  --tab-divider-h: 16px;
+  --tab-pinned-w: 34px;
+  --tab-nav-slide: 10px;
+  --tab-plus-gutter: 28px;
+}
+.tabs-compact {
+  --tab-min: 70px;
+  --tab-max: 200px;
+  --tab-pref: 150px;
+  --tab-pad-x: 10px;
+  --tab-gap: 6px;
+}
+
+/* ─── Shared scroller + strip ───────────────────────────────────────────────── */
+
+.tab-scroll {
+  --over-scroll-fade: var(--fade-base);
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.tab-strip {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  height: 100%;
+  padding-right: var(--tab-plus-gutter, 0px);
+}
+
+/* ─── Toolbar tab chrome (Standard host) ────────────────────────────────────── */
+
+.tab-bar {
+  flex: 1;
+  min-width: 0;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  height: var(--tab-height);
+  margin-left: 4px;
+  margin-right: calc(4px + var(--toolbar-swallow));
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+.tab-bar.reveal-on-hover {
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-base);
+}
+.tab-bar.reveal-on-hover:hover {
+  opacity: 1;
+}
+
+.tab-pinned-zone {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.tab-pinned {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tab-pinned-w);
+  height: 100%;
+  flex: 0 0 auto;
+  color: var(--label-tertiary);
+  cursor: default;
+  transition: color var(--duration-base) var(--ease-base);
+}
+.tab-pinned:hover {
+  background: var(--state-hover);
+}
+.tab-pinned.is-active {
+  color: var(--label-control);
+}
+.tab-pinned.is-dragging {
+  opacity: var(--state-ghost);
+}
+
+.tab-divider {
+  height: var(--tab-divider-h);
+  margin: 0 4px;
+}
+
+.tab-plus {
+  flex: 0 0 auto;
+  margin-left: calc(-1 * var(--tab-plus-gutter));
+  position: relative;
+  z-index: 1;
+  color: var(--label-secondary);
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) var(--ease-base),
+    color var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
+}
+.tab-bar:hover .tab-plus {
+  opacity: 1;
+}
+.shell:has(.detail-scroll .banner:hover) .tab-plus,
+.shell:has(.detail-scroll .banner-empty:hover) .tab-plus,
+.shell:has(.mdpm-header:hover) .tab-plus,
+.shell:has(.nav-view-banner:hover) .tab-plus,
+.shell:has(.nav-view-head:hover) .tab-plus {
+  opacity: 1;
+}
+.app-toolbar:has(.app-toolbar-cluster--nav button:hover) .tab-plus,
+.app-toolbar:has(.app-toolbar-right button:hover) .tab-plus {
+  opacity: 0;
+}
