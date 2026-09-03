@@ -4,7 +4,7 @@
 
 **Page File History landed 09-03-2026.** Every body write offers the text it overwrites to `versions.db` under one rule in `CRUD/fileHistory.ts`, a quiet timer captures a burst's settled text, and the Page History window restores a snapshot's body into every open editor through `replaceBody`. The arc closed overnight against a sixteen-item live checklist on NexusOS and a scratch nexus, a four-agent sweep whose findings all folded, and a neutral verification of the delivery claim; the record and the settings copy took Nathan's live rulings as they came. What the arc seeded and left: the watcher's page-upsert driving the same `replaceBody` a restore uses, so an outside edit reaches an open editor without a reload.
 
-**The Renderer Rework is active — the exploration is reported, and execution is proceeding through directed cleanups.** [[]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). This latest pass landed the checkbox consolidation (`Controls/checkbox.css` owns `.checkbox`, out of the Labels domain), the button size scale (into `Buttons/button-base.css.ts`, `size.control` retired, segmented runs one clipped pill), a ⌘⇧T dev scratchpad (`Utilities/iteration-window`), the `Showcase` move to `renderer/Showcase`, and the doc infrastructure — CLAUDE.md's Testing Conventions, the Resources dismantling, and Guidelines collapsed to four. Each lands gated with its LOC and the map crossed off; §6 Working Rules governs the ledger.
+**The Renderer Rework is active — the exploration is reported, and execution is proceeding through directed cleanups.** [[]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). 
 
 **Where it stands.** The value editing and visual tuning are mostly done; the design-system consolidations are in. What remains on the rework is the larger folder moves (`Core/`, `Interface/` absorbing `Sidebar/`, the tile world, the casing renames) and the collapse/split rows, then the framework. Nathan's lean is the next feature asap — the structural rows resume when the rework is picked back up.
 
@@ -12,7 +12,7 @@
 
 ### Immediate Work
 
-- [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
+- [ ] 
 
 ### Pending Focuses
 
@@ -35,7 +35,6 @@ The behavioral half — correctness, performance, and the structural moves insid
 #### II. Open Against The Web Layer
 
 - [ ] **A guest's scripted popups ride the open-link chain with no user-gesture gate** — acceptable for trusted embeds, ungated by decision pending Nathan's ruling.
-- [ ] **Retention's two bounds.** A tile scrolled far enough loses its widget to the editor's viewport recycling regardless of the cap, and a retained guest keeps playing audio by design — whether scroll-out should mute is a product call.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 
 #### II. Open Calls
@@ -43,7 +42,7 @@ The behavioral half — correctness, performance, and the structural moves insid
 Findings where the correct answer isn't established in the codebase — design and product decisions, not cleanup. Each is cheap once it's decided.
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
-- [ ] **Two retention budgets act on the same guests and neither knows it.** Parked page surfaces cap at 2 tabs, hidden web guests at 5, and parking routes every tile inside a parked surface through the hidden-guest path — two parked tabs holding four web tiles each already exceeds the guest cap, so the LRU tears down the live sessions parking exists to preserve. One budget with tiers, or the numbers chosen together.
+- [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 
 #### II. Next-Feature Candidates
 
@@ -83,6 +82,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-126 || Active Cache Framework
+**DATE:** 09-03-2026
+
+Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `DesignSystem/Util/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
+
 #### PM-125 || Page File History
 **DATE:** 09-02-2026 → 09-03
 
@@ -102,10 +106,6 @@ Every destructive confirmation moved out of main's native dialogs into one in-ap
 **DATE:** 08-31-2026 → 09-01
 
 Property values moved from `<Property>:` keys to bare keys named as the property, Context keys from `(Title):` to `<Title>:`, and Select/Status values to one-element lists, so a page's frontmatter reads identically in Pommora and in another frontmatter editor. `governedKeys.ts` and `standing.ts` dissolved: a key is Pommora's when the registry names it, a reserved-name rule and a held-key refusal guard the namespace, and `reconcileGovernedRoot` is the one reconcile every governed write, restore, and the opt-in on-open sweep run. A `values:changed` push fed by the watcher and by every main-side writer replaced the `refreshValues` thread, with overrides retired by page id. Two Settings toggles — Repair Properties On Open and Capitalize All Metadata — opened the Properties leaf's Metadata section.
-
-#### PM-121 || Custom Text-Selection
-
-A Pommora-native selection style — an accent-tinted drawn pill in place of the native `::selection`, seated at the `Carets.css` and `nativeCaret.ts` chokepoints. `user-select` bounds it to the editor, text fields, editable titles, and swept table and data cells; a field's pill sits behind its glyphs through a host-set `isolation`, height clamps to the caret through the exported `clampToLine`, and `Personalization.nativeHighlight` returns the platform paint through a root class. Webpage embeds keep their native selection.
 
 ### Guidelines
 
