@@ -27,6 +27,13 @@
     padding var(--duration-base) var(--ease-base) var(--duration-fast),
     opacity var(--duration-base) var(--ease-base) var(--duration-fast);
 }
+/* The trailing tab fills the lane's slack so its × rides up to the parked + (main) or the side
+   pane's edge (preview), rather than leaving a dead gap; the cap keeps a lone tab from running the
+   full width on a wide window. On overflow there's no slack, so it sits and scrolls like the rest. */
+.tab:last-child:not(.tab-map) {
+  flex-grow: 1;
+  max-width: var(--tab-max-last, 500px);
+}
 @starting-style {
   .tab {
     min-width: 0;
