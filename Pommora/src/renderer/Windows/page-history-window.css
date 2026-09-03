@@ -14,24 +14,8 @@
 .page-history-list {
   flex: 1;
   min-height: 0;
-  padding-top: var(--window-toolbar-h);
+  padding-top: 16px; /* KNOB */
 }
 .page-history-row {
   --row-pad-trail: 0px;
-}
-.page-history-when {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--label-secondary);
-}
-.page-history-when-rule {
-  align-self: stretch;
-  border-left: var(--width-150) solid var(--border-base);
-}
-.page-history-foot {
-  display: flex;
-  justify-content: flex-end;
-  padding: 6px 8px;
-  border-top: var(--width-150) solid var(--border-base);
 }

@@ -98,6 +98,10 @@ export function dropCacheDetail(path: string): void {
   inFlight.delete(path)
 }
 
+export function dropCacheTab(tabId: string): void {
+  cache.delete(tabId)
+}
+
 /** A warm entry stands only while its doc is the fresh body; a scroll-only entry has no doc to
  *  disagree, and no fresh body means nothing to disagree with. */
 export function fenceWarm<E extends { editorState?: unknown }>(
@@ -128,10 +132,6 @@ export function subscribeBodyEpoch(fn: () => void): () => void {
 export const useBodyEpoch = (path: string): number =>
   useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
 
-export function dropCacheTab(tabId: string): void {
-  cache.delete(tabId)
-}
-
 // A surface unmounting because of a clear captures after it — the generation lets it tell.
 let generation = 0
 export const cacheGeneration = (): number => generation
@@ -140,5 +140,6 @@ export function clearCache(): void {
   cache.clear()
   detailByPath.clear()
   inFlight.clear()
+  bodyEpochs.clear()
   generation++
 }

@@ -613,8 +613,8 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 #### Gate 4 — **Declared Stop**
 
-- [ ] Gates green. Every Verify ticked. Now counts re-run.
-- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/renderer`, `src/shared/pageMenu.ts`, `src/main/contextMenu.ts`; every concern fixed or ruled.
+- [x] Gates green. Every Verify ticked. Now counts re-run.
+- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/renderer`, `src/shared/pageMenu.ts`, `src/main/contextMenu.ts`; every concern fixed or ruled (simplifier: six edits folded, three flags fixed, three ruled; review pending).
 - [ ] A restarted dev instance; the acceptance sequence driven on a throwaway page. No screenshots — Nathan is watching live and drives tweaks himself.
 - [ ] Progress hashes filled. **Halt.** Nathan closes: the window against the mock; both confirms; the section, a typed value, Cleared; View History in every right-click menu; History beside Properties.
 
@@ -666,14 +666,16 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 6 · `d20c6324`
   - [x] Task 7 · `b1df9dfc`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
-  - [ ] Task 9 · `<commit>`
-  - [ ] Task 8 · `<commit>`
-  - [ ] Task 10 · `<commit>`
+  - [x] Task 9 · `bc020d83`
+  - [x] Task 8 · `085bfe51`
+  - [x] Task 10 · `bc020d83`
 - [ ] **Phase 5** — The record
   - [ ] Task 11 · `<commit>`
 
 ### Rulings
 
+- 09-02-2026, Nathan (Gate 4, live): Current Version carries the file's Last Modified as its date · time caption; the checkboxes sit in the gutter, always visible, and stay through a highlight; a click on a snapshot row shows that snapshot — the highlight drives the body, the check is the restore and delete target; the foot is a `MenuFooting` row; the date · time caption is a menu-layer primitive (`MenuSegments`) so any row can use it; his parallel session is his own — its in-flight edits fold into the commits rather than being stepped around.
+- 09-02-2026 (mine, Gate 4): a keystroke landing between the pre-restore flush and main's write re-saves the old body — the same window as the recorded two-host lost update, carried into Context's Known Issues; the body epoch is keyed by path like every other renderer slot, and a host still holding a pre-rename path is stale for its saves too, not just its epoch; the delete confirm's singular sentence stands for a batch as Nathan wrote it.
 - 09-02-2026 (mine, Gate 3): Clear History asks and clears without counting first — there is no count channel, and an empty store clearing to empty is not an error; a fractional typed day or minute rounds on every read through `clampInt`, so the rule never runs on a fraction; the twelve `showError(r.error.message)` sites across the renderer are outside this plan's paths and stay as they are.
 - 09-02-2026, Nathan (Task 7 copy): toggle hint "Stores recoverable snapshots of device-local file history"; the interval's unit reads "Min"; Clear History's caption and its dialog both read "Permanently delete stored snapshots for all files; this cannot be undone." (his "Perminately" corrected); the two picker hints were not given and stay empty. Once the window lands: a one-time seeded History window — one Current Version and five differing snapshots — kept in front for his look.
 - 09-02-2026, Nathan: the live NexusOS instance may be restarted and driven for the gates' live checks — a throwaway page only, reverted afterward.
@@ -694,6 +696,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Gate 4 fold: `historyRowModel(rows, checked)` answers `checkedLive`, `restoreEnabled`, and `glyphOn` — the shown snapshot is the window's highlight, not a check; the window body re-reads after every action (a restore re-reads Current Version under the same highlight) and checks are pruned to the rows that survive a refresh; the body is keyed on `target.id` so a second page's window starts clean; the editor mounts on its body alone, with no key; `clearCache` clears the body epochs; `nexusDateFormat` in `formatValue.ts` serves the trash and the history window; `connMenu.ts` names its two copy actions locally.
 - 09-02-2026, Tasks 9–10: the window's Restore calls the renderer half (`Interface/restoreSnapshot.ts`) from the start, so Tasks 9 and 10 land in one commit — the window cannot compile without `replaceBody`; a replaced body also clears PageView's pending live-body timer, so the outgoing editor's last keystroke cannot write over the restored slot; the restore confirm is `positive` (its own copy calls the overwritten text recoverable), the delete confirm `destructive`; both dialogs carry Nathan's sentence as the message with an empty detail, as Clear History does.
 - 09-02-2026, Gate 3 fold: the four store channels answer `no-nexus` with no nexus open like every other data channel; a timestamp must be finite; the step arrays live in `types.ts` beside the ranges they bound, so min and max derive from the steps; a unit's suffix carries its own spacing (`' days'`, `' Min'`), read the same in the picker's labels and the typed field; `ClearActionRow` clears its Cleared timer on unmount.
 - 09-02-2026, Task 6: the channel bodies (`listHistory`, `readHistoryBody`, `restoreSnapshot`, `deleteHistory`, `clearHistory`) live in `CRUD/fileHistory.ts` over one `withStore` guard, and `index.ts`'s handlers only validate arguments — `index.ts` is not loadable under Vitest, so the plan's bridge-map test runs against the bodies; the restore handler pushes `values:changed` after the write, as the autosave handler does.

@@ -9,37 +9,31 @@ const rows: SnapshotRow[] = [
 ]
 
 describe('historyRowModel', () => {
-  it('shows Current Version with nothing checked, restore off, no glyphs', () => {
-    const m = historyRowModel(rows, new Set(), null)
-    expect(m.shown).toBeNull()
+  it('nothing checked: restore off, no glyphs', () => {
+    const m = historyRowModel(rows, new Set())
+    expect(m.checkedLive).toEqual([])
     expect(m.restoreEnabled).toBe(false)
     expect(m.glyphOn(30)).toBe(false)
   })
 
-  it('follows the last check; one check enables restore', () => {
-    const m = historyRowModel(rows, new Set([20]), 20)
-    expect(m.shown).toBe(20)
+  it('one check enables restore and its glyph alone', () => {
+    const m = historyRowModel(rows, new Set([20]))
     expect(m.restoreEnabled).toBe(true)
     expect(m.glyphOn(20)).toBe(true)
     expect(m.glyphOn(30)).toBe(false)
   })
 
-  it('a multi-check shows the last checked and dims restore', () => {
-    const m = historyRowModel(rows, new Set([10, 30]), 30)
-    expect(m.shown).toBe(30)
+  it('a multi-check dims restore and glyphs every checked row', () => {
+    const m = historyRowModel(rows, new Set([10, 30]))
+    expect(m.checkedLive).toEqual([10, 30])
     expect(m.restoreEnabled).toBe(false)
     expect(m.glyphOn(10)).toBe(true)
     expect(m.glyphOn(30)).toBe(true)
   })
 
-  it('an uncheck falls back to the most recently checked survivor, then to Current Version', () => {
-    expect(historyRowModel(rows, new Set([10, 20]), 30).shown).toBe(20)
-    expect(historyRowModel(rows, new Set(), 30).shown).toBeNull()
-  })
-
   it('a checked row no longer listed counts for nothing', () => {
-    const m = historyRowModel(rows, new Set([99]), 99)
-    expect(m.shown).toBeNull()
+    const m = historyRowModel(rows, new Set([99]))
+    expect(m.checkedLive).toEqual([])
     expect(m.restoreEnabled).toBe(false)
     expect(m.glyphOn(99)).toBe(false)
   })
