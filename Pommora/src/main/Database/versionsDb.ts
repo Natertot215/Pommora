@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
+import { errText } from '@shared/result'
 import type { SnapshotRow, SnapshotSource } from '@shared/types'
 import { openDb, type Db } from './driver'
 import { nexusDir } from '../paths'
@@ -46,7 +47,11 @@ function withTable(db: Db | null): Db | null {
   try {
     db?.exec(DDL)
     return db
-  } catch {
+  } catch (e) {
+    console.error(
+      'versions.db: cannot create its table — file history will not record:',
+      errText(e),
+    )
     db?.close()
     return null
   }
@@ -61,7 +66,12 @@ export function openVersionsDb(nexusRoot: string): Db | null {
     if (existing && healthy(existing)) return withTable(existing)
     existing?.close()
     quarantine(dbPath)
-    if (existsSync(dbPath)) return null
+    if (existsSync(dbPath)) {
+      console.error(
+        `versions.db: damaged and could not be set aside — file history is off: ${dbPath}`,
+      )
+      return null
+    }
   }
   return withTable(openDb(dbPath))
 }
