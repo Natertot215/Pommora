@@ -195,15 +195,18 @@ describe('writePageFile (fs)', () => {
     expect(r.written).toContain('id: X')
   })
 
-  it('refuses when the read fails for any reason but absence', async () => {
-    const p = join(dir, 'page.md')
-    const before = assembleEnvelope('id: X\n', 'one')
-    await writeFile(p, before, 'utf8')
-    await chmod(p, 0o000)
-    await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow()
-    await chmod(p, 0o644)
-    expect(await readFile(p, 'utf8')).toBe(before)
-  })
+  it.skipIf(process.getuid?.() === 0)(
+    'refuses when the read fails for any reason but absence',
+    async () => {
+      const p = join(dir, 'page.md')
+      const before = assembleEnvelope('id: X\n', 'one')
+      await writeFile(p, before, 'utf8')
+      await chmod(p, 0o000)
+      await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow()
+      await chmod(p, 0o644)
+      expect(await readFile(p, 'utf8')).toBe(before)
+    },
+  )
 })
 
 describe('mergeFrontmatter — broken frontmatter is never re-serialized', () => {

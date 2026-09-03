@@ -63,10 +63,9 @@ import { flattenBands } from '../bandDndModel'
 import { bandReorderPatch } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NO_TRAIL, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../../treeIndex'
 
-const NO_TRAIL: TrailSegment[] = []
 import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
 import { reorderIds } from './cardsOrder'

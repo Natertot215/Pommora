@@ -18,7 +18,12 @@ import {
   toNavRef,
 } from '@shared/types'
 import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
-import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/Connections'
+import {
+  buildPageIndex,
+  type ConnectionsApi,
+  type ConnPage,
+  type PageIndex,
+} from './MarkdownPM/Connections'
 import { navKey } from './Navigation/navRecents'
 import type { NavCore, ResolveIndex } from './Navigation/navResolve'
 import type { SearchEntry } from './Navigation/navSearch'
@@ -260,6 +265,10 @@ export function pageIndexOf(tree: NexusTree): PageIndex {
   if (!ix.pageIndex) ix.pageIndex = buildPageIndex(pagesOf(tree))
   return ix.pageIndex
 }
+
+/** The page index with `open` inert — links style and resolve, and a click goes nowhere. */
+export const resolveOnlyConnections = (tree: NexusTree | null): ConnectionsApi | undefined =>
+  tree ? { ...pageIndexOf(tree), open: () => {} } : undefined
 
 /** path → container display core — embed and menu surfaces resolving a container by its path. */
 export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, ContainerCore> {

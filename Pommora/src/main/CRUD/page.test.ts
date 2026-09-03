@@ -127,18 +127,21 @@ describe('updatePageBody', () => {
     expect(r.value.written).toBe(await bytesOf(c.value.path))
   })
 
-  it('a read failure refuses and leaves the file alone', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
-    if (!c.ok) throw new Error('setup failed')
-    const before = await bytesOf(c.value.path)
-    await chmod(c.value.path, 0o000)
-    const r = await updatePageBody(c.value.path, 'two')
-    await chmod(c.value.path, 0o644)
-    expect(r.ok).toBe(false)
-    if (r.ok) return
-    expect(r.error.code).toBe('operation-failed')
-    expect(await bytesOf(c.value.path)).toBe(before)
-  })
+  it.skipIf(process.getuid?.() === 0)(
+    'a read failure refuses and leaves the file alone',
+    async () => {
+      const c = await createPage(typeDir, 'P', { body: 'one' })
+      if (!c.ok) throw new Error('setup failed')
+      const before = await bytesOf(c.value.path)
+      await chmod(c.value.path, 0o000)
+      const r = await updatePageBody(c.value.path, 'two')
+      await chmod(c.value.path, 0o644)
+      expect(r.ok).toBe(false)
+      if (r.ok) return
+      expect(r.error.code).toBe('operation-failed')
+      expect(await bytesOf(c.value.path)).toBe(before)
+    },
+  )
 })
 
 describe('movePage', () => {

@@ -32,6 +32,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  vi.useRealTimers()
   await act(async () => root.unmount())
   container.remove()
 })
@@ -85,6 +86,5 @@ describe('PageView seeds its editor from the slot', () => {
     await act(async () => root.render(null))
     const slot = useSession.getState().pages.a
     expect(slot?.status === 'ready' && slot.body).toBe('xlive')
-    vi.useRealTimers()
   })
 })
