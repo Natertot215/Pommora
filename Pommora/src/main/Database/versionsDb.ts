@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@shared/result'
-import { DB_SIBLINGS, openDb, SQLITE_NOTADB, type Db } from './driver'
+import { openDb, SQLITE_NOTADB, type Db } from './driver'
 import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'
 
@@ -38,15 +38,13 @@ function healthy(db: Db): boolean {
 }
 
 /** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's
- *  store clause keeps covering it; its WAL and SHM go with it, and nothing is deleted. */
+ *  store clause keeps covering it; nothing is deleted. Its journal is already gone — the handle's
+ *  close reclaims a WAL and SHM whatever the file held. */
 function quarantine(dbPath: string): void {
-  const aside = dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`)
-  for (const suffix of DB_SIBLINGS) {
-    try {
-      renameSync(dbPath + suffix, aside + suffix)
-    } catch {
-      /* the sibling was never written */
-    }
+  try {
+    renameSync(dbPath, dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`))
+  } catch {
+    /* left where it is; the caller reads the outcome from the path */
   }
 }
 
