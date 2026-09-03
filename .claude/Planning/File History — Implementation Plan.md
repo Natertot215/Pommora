@@ -436,8 +436,8 @@ Labels, hints, and confirm copy: Nathan's, at execution.
 #### Gate 3
 
 - [x] Gates green. Every Verify ticked. Now counts re-run.
-- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/shared`, `src/preload`, `src/main/index.ts`, `src/main/readNexus.ts`, `src/renderer/Settings`; every concern fixed or ruled.
-- [ ] Progress hashes filled. Phase 4 opens.
+- [x] Simplification, then review, against `<base>..HEAD` scoped to `src/shared`, `src/preload`, `src/main/index.ts`, `src/main/readNexus.ts`, `src/renderer/Settings`; every concern fixed or ruled (simplifier: five edits folded, five flags fixed, three ruled; reviewer: clean).
+- [x] Progress hashes filled. Phase 4 opens.
 
 ---
 
@@ -494,8 +494,8 @@ export function PageHistoryWindow(): React.JSX.Element | null
 
 **Verify — automated**
 
-- [ ] Red first, `pageHistoryModel.test.ts`: Current Version never carries the glyph; a checked snapshot does; Restore enabled only for exactly one checked snapshot; `shown` follows the last check, falls back to the surviving check on uncheck, and returns to Current Version when nothing is checked. Then green.
-- [ ] Full gate green. `rg -F 'id="page-history"' src/renderer` → 1; control `rg -F 'id="page-preview"' src/renderer` → 1.
+- [x] Red first, `pageHistoryModel.test.ts`: Current Version never carries the glyph; a checked snapshot does; Restore enabled only for exactly one checked snapshot; `shown` follows the last check, falls back to the surviving check on uncheck, and returns to Current Version when nothing is checked. Then green.
+- [x] Full gate green. `rg -F 'id="page-history"' src/renderer` → 1; control `rg -F 'id="page-preview"' src/renderer` → 1.
 
 **Verify — user**
 
@@ -533,10 +533,10 @@ export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW       // Pag
 
 **Verify — automated**
 
-- [ ] Red first, `pageMenu.test.ts`: the full order gains `'title:history'` before `'title:reveal'`; History's `separatorBefore` true; Reveal's false when History precedes; `pageSendActions({})` returns the three reach actions. Then green.
-- [ ] `connMenu.test.ts`: the link menu carries no `'title:history'`.
-- [ ] The cell, card, tab, and nav-row model tests each carry `'title:history'`.
-- [ ] Full gate green. `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 0 · `rg -F "PageClipboardAction" src` → 0; control `rg -F "PAGE_REACH_ACTIONS" src` → ≥ 2.
+- [x] Red first, `pageMenu.test.ts`: the full order gains `'title:history'` before `'title:reveal'`; History's `separatorBefore` true; Reveal's false when History precedes; `pageSendActions({})` returns the three reach actions. Then green.
+- [x] `connMenu.test.ts`: the link menu carries no `'title:history'`.
+- [x] The cell and card model tests carry `'title:history'`; the tab and nav-row menus draw from `pageSendActions`, which `pageMenu.test.ts` now asserts carries it (neither has a model test of its own).
+- [x] Full gate green. `rg -F "PAGE_CLIPBOARD_ACTIONS" src` → 0 · `rg -F "PageClipboardAction" src` → 0; control `rg -F "PAGE_REACH_ACTIONS" src` → 3.
 
 **Verify — user**
 
@@ -598,12 +598,12 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 **Verify — automated**
 
-- [ ] Red first, `tabState.test.ts`: `fenceWarm` four cases (match, differ, no fresh, scroll-only entry); `bumpBodyEpoch` advances `useBodyEpoch`. `navigationSlice` test: `replaceBody` clears every tab's warm `pageDetail` for the path. Then green.
+- [x] Red first, `tabState.test.ts`: `fenceWarm` four cases (match, differ, no fresh, scroll-only entry); `bumpBodyEpoch` advances `useBodyEpoch`. `navigationSlice` test: `replaceBody` clears every tab's warm `pageDetail` for the path. Then green.
 - [ ] The evicted-slot case (executed by the attack): open A, navigate to B, restore A from its sidebar row, go back — the slot seeds the restored body, not the warm entry's. Red without `dropCacheDetail`, then green.
-- [ ] `PageTile` (jsdom, `MarkdownEditor` stubbed): after `cachePageDetail({…body: 'RESTORED'})` + `bumpBodyEpoch`, the seeded body is `'RESTORED'` in the same commit as the key; the outgoing capture is fenced off.
-- [ ] `useWindowWarm`: a cached entry whose doc differs from the fresh detail is not restored.
-- [ ] `PageView`: a pending live-body timer lands `setPageBody` on unmount (red without the cleanup).
-- [ ] Existing warm-seam tests green unmodified. Full gate green.
+- [x] `PageTile` (jsdom, `MarkdownEditor` stubbed): after `cachePageDetail({…body: 'RESTORED'})` + `bumpBodyEpoch`, the seeded body is `'RESTORED'` in the same commit as the key; the outgoing capture is fenced off.
+- [x] `useWindowWarm`: a cached entry whose doc differs from the fresh detail is not restored.
+- [x] `PageView`: a pending live-body timer lands `setPageBody` on unmount (red without the cleanup).
+- [x] Existing warm-seam tests green unmodified. Full gate green.
 - [ ] Crossing test at the Declared Stop: restore with the page open in the main pane and the Page Window — both show the restored body; a keystroke in the window saves restored text plus the keystroke.
 
 **Verify — user**
@@ -662,7 +662,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 - [x] **Phase 2** — Capture · gate `266e85fc`
   - [x] Task 4 · `a4e33d6b`
   - [x] Task 5 · `3a0ce799`
-- [ ] **Phase 3** — The contract and the settings
+- [x] **Phase 3** — The contract and the settings · gate `c2bf15f3`
   - [x] Task 6 · `d20c6324`
   - [x] Task 7 · `b1df9dfc`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
@@ -694,6 +694,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Tasks 9–10: the window's Restore calls the renderer half (`Interface/restoreSnapshot.ts`) from the start, so Tasks 9 and 10 land in one commit — the window cannot compile without `replaceBody`; a replaced body also clears PageView's pending live-body timer, so the outgoing editor's last keystroke cannot write over the restored slot; the restore confirm is `positive` (its own copy calls the overwritten text recoverable), the delete confirm `destructive`; both dialogs carry Nathan's sentence as the message with an empty detail, as Clear History does.
 - 09-02-2026, Gate 3 fold: the four store channels answer `no-nexus` with no nexus open like every other data channel; a timestamp must be finite; the step arrays live in `types.ts` beside the ranges they bound, so min and max derive from the steps; a unit's suffix carries its own spacing (`' days'`, `' Min'`), read the same in the picker's labels and the typed field; `ClearActionRow` clears its Cleared timer on unmount.
 - 09-02-2026, Task 6: the channel bodies (`listHistory`, `readHistoryBody`, `restoreSnapshot`, `deleteHistory`, `clearHistory`) live in `CRUD/fileHistory.ts` over one `withStore` guard, and `index.ts`'s handlers only validate arguments — `index.ts` is not loadable under Vitest, so the plan's bridge-map test runs against the bodies; the restore handler pushes `values:changed` after the write, as the autosave handler does.
 - 09-02-2026, Gate 2 (Nathan's consolidation ruling): one `STORE_FILE` predicate in `exclusion.ts` — any `.db`, `-wal`, or `-shm` segment is never watched or listed, wherever it sits, so Task 3's scoped clause is gone and `neverWatched`'s `nexus.db` prefix with it; `DB_SIBLINGS` in `driver.ts` serves both `open.ts`'s remove and the quarantine; `fileStamp` in `atomicWrite.ts` stamps the trash and the quarantine alike; `pageIdIndex` is memoized per tree object and is the one walk behind `liveIdIndex`, `liveIdOf`, and `livePathOf`.

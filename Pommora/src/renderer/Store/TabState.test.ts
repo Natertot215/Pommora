@@ -1,13 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageDetail } from '@shared/types'
 import {
+  bumpBodyEpoch,
   captureCache,
   clearCache,
   dropPageDetail,
   dropCacheTab,
+  fenceWarm,
   fetchPageDetail,
+  readBodyEpoch,
   readPageDetail,
   readCache,
+  subscribeBodyEpoch,
 } from './tabState'
 
 beforeEach(() => clearCache()) // module state — never leaks across tests
@@ -89,5 +93,35 @@ describe('fetchPageDetail', () => {
     dropPageDetail('x/a.md')
     expect(await pending).not.toBeNull()
     expect(readPageDetail('x/a.md')).toBeUndefined()
+  })
+})
+
+describe('fenceWarm', () => {
+  const warm = { editorState: { doc: 'one' }, scrollTop: 3 }
+  it('keeps an entry whose doc matches the fresh body', () => {
+    expect(fenceWarm(warm, 'one')).toBe(warm)
+  })
+  it('drops an entry whose doc differs', () => {
+    expect(fenceWarm(warm, 'two')).toBeUndefined()
+  })
+  it('keeps an entry when no fresh body is known', () => {
+    expect(fenceWarm(warm, undefined)).toBe(warm)
+  })
+  it('keeps a scroll-only entry', () => {
+    const scroll: { editorState?: unknown; scrollTop: number } = { scrollTop: 3 }
+    expect(fenceWarm(scroll, 'two')).toBe(scroll)
+  })
+})
+
+describe('the body epoch', () => {
+  it('advances per path and notifies', () => {
+    const seen: number[] = []
+    const off = subscribeBodyEpoch(() => seen.push(readBodyEpoch('Notes/a.md')))
+    const before = readBodyEpoch('Notes/a.md')
+    bumpBodyEpoch('Notes/a.md')
+    expect(readBodyEpoch('Notes/a.md')).toBe(before + 1)
+    expect(readBodyEpoch('Notes/b.md')).toBe(0)
+    expect(seen).toEqual([before + 1])
+    off()
   })
 })

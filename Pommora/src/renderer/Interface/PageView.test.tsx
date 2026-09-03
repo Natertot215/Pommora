@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../store'
+import { EditorView } from '@codemirror/view'
 import { PageView } from './PageView'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -55,5 +56,35 @@ describe('PageView seeds its editor from the slot', () => {
       root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
     })
     expect(container.querySelector('.cm-content')?.textContent).toBe('live')
+  })
+
+  it('lands a live body still waiting when the view unmounts', async () => {
+    vi.useFakeTimers()
+    useSession.setState({
+      tree: null,
+      pages: {
+        a: {
+          status: 'ready',
+          target: { kind: 'page', id: 'a', path: 'Notes/a.md' },
+          detail: { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'live' },
+          body: 'live',
+        },
+      },
+    })
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => {
+      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+    })
+    const editor = container.querySelector('.cm-editor') as HTMLElement
+    const view = EditorView.findFromDOM(editor)
+    await act(async () => {
+      view?.dispatch({ changes: { from: 0, insert: 'x' } })
+    })
+    await act(async () => root.render(null))
+    const slot = useSession.getState().pages.a
+    expect(slot?.status === 'ready' && slot.body).toBe('xlive')
+    vi.useRealTimers()
   })
 })

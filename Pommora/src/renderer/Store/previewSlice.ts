@@ -28,6 +28,10 @@ export interface PreviewSlice {
   previewSlide: { dir: 'back' | 'fwd'; seq: number } | null
   previewExit: 'dismiss' | 'engulf' | 'morph'
   openPreview: (target: PreviewTarget) => void
+  /** The page whose history window is open; null = closed. */
+  historyTarget: PreviewTarget | null
+  openHistory: (target: PreviewTarget) => void
+  closeHistory: () => void
   openNavPreview: () => void
   openPreviewTab: (target: PreviewTarget) => void
   activatePreviewTab: (id: string) => void
@@ -54,6 +58,7 @@ export const previewTargetOf = (s: SessionState): PreviewTarget | null => derive
 const PER_NEXUS = {
   navOpen: false,
   preview: null,
+  historyTarget: null,
   previewsFile: EMPTY_PREVIEWS,
   previewSlide: null,
 } satisfies Partial<PreviewSlice>
@@ -151,6 +156,8 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
   return {
     ...PER_NEXUS,
     previewExit: 'dismiss',
+    openHistory: (target) => set({ historyTarget: target }),
+    closeHistory: () => set({ historyTarget: null }),
     openPreview: (target) => {
       const cur = get().preview
       if (cur?.flavor === 'page' && cur.originId === target.id) return

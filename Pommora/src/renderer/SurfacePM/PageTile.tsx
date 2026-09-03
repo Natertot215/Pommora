@@ -6,7 +6,7 @@ import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Interface/pageFlush'
-import { fetchPageDetail, readPageDetail } from '@renderer/Store/tabState'
+import { fetchPageDetail, readPageDetail, useBodyEpoch } from '@renderer/Store/tabState'
 import { useAssetUrl, useEmbedScale, useSession } from '../store'
 import { AssetImage } from '@renderer/Assets/AssetImage'
 import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePicker'
@@ -37,6 +37,13 @@ const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   cover: coverOf(detail),
 })
 
+const initialEntry = (path: string, warm: WarmSeam | undefined): EmbedEntry | null => {
+  const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
+  const cached = readPageDetail(path)
+  const slot = cached ? entryFrom(path, cached) : null
+  return typeof doc === 'string' ? { path, ...slot, body: doc } : slot
+}
+
 export function PageTile({
   path,
   editing,
@@ -58,12 +65,19 @@ export function PageTile({
   ancestors?: readonly string[]
   chrome?: 'none' | 'page'
 }): React.JSX.Element {
-  const [loaded, setLoaded] = useState<EmbedEntry | null>(() => {
-    const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
-    const cached = readPageDetail(path)
-    const slot = cached ? entryFrom(path, cached) : null
-    return typeof doc === 'string' ? { path, ...slot, body: doc } : slot
-  })
+  // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh
+  // slot before the remounting editor reads it.
+  const epoch = useBodyEpoch(path)
+  const [seed, setSeed] = useState(() => ({ epoch, entry: initialEntry(path, warm) }))
+  if (seed.epoch !== epoch) {
+    const fresh = readPageDetail(path)
+    setSeed({ epoch, entry: fresh ? entryFrom(path, fresh) : null })
+  }
+  const setLoaded = (
+    next: EmbedEntry | null | ((l: EmbedEntry | null) => EmbedEntry | null),
+  ): void =>
+    setSeed((s) => ({ epoch: s.epoch, entry: typeof next === 'function' ? next(s.entry) : next }))
+  const loaded = seed.entry
   const entry = loaded?.path === path ? loaded : null
   const body = entry?.body ?? null
   const failed = entry !== null && entry.body === null
@@ -128,6 +142,7 @@ export function PageTile({
     >
       {header}
       <MarkdownEditor
+        key={epoch}
         initialBody={body}
         onChange={(next) => {
           onBodyRef.current?.(next)
