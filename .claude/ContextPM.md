@@ -79,7 +79,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
 - [ ] **The in-app two-host lost update.** Two editors holding one page — the content pane and the Page Window, or a page and its embed — each save their own body with no lock between them, so the later keystroke writes over the earlier host's text. The watcher-driven reload through `replaceBody` is the mechanism that closes it.
-- [ ] **`versions.db` is tracked by NexusOS's own repository.** The snapshot store sits inside `.nexus` like `nexus.db`, and the vault's `.gitignore` does not yet exclude it, so every capture dirties the repository.
+- [ ] **`versions.db` is tracked by NexusOS's own repository.** The snapshot store sits inside `.nexus` on the same terms as `nexus.db`, so every capture dirties the repository; Pommora seeds no `.gitignore`, by decision, so the vault's own is where this closes.
 
 ### Recent Work
 
