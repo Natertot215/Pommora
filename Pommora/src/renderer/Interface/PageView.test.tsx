@@ -29,6 +29,9 @@ beforeEach(() => {
     onMenuAction: vi.fn(() => () => undefined),
     titleMenu: vi.fn(),
   }
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
 })
 
 afterEach(async () => {
@@ -37,44 +40,27 @@ afterEach(async () => {
   container.remove()
 })
 
+const slot = (detailBody: string, liveBody: string) => ({
+  a: {
+    status: 'ready' as const,
+    target: { kind: 'page' as const, id: 'a', path: 'Notes/a.md' },
+    detail: { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: detailBody },
+    body: liveBody,
+  },
+})
+
 describe('PageView seeds its editor from the slot', () => {
   it('a cold mount shows the live body, not the load snapshot', async () => {
-    useSession.setState({
-      tree: null,
-      pages: {
-        a: {
-          status: 'ready',
-          target: { kind: 'page', id: 'a', path: 'Notes/a.md' },
-          detail: { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'stale' },
-          body: 'live',
-        },
-      },
-    })
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
+    useSession.setState({ tree: null, pages: slot('stale', 'live') })
     await act(async () => {
       root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
     })
     expect(container.querySelector('.cm-content')?.textContent).toBe('live')
   })
 
-  it('lands a live body still waiting when the view unmounts', async () => {
-    vi.useFakeTimers()
-    useSession.setState({
-      tree: null,
-      pages: {
-        a: {
-          status: 'ready',
-          target: { kind: 'page', id: 'a', path: 'Notes/a.md' },
-          detail: { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'live' },
-          body: 'live',
-        },
-      },
-    })
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
+  it('lands a live body still inside its debounce when the view unmounts', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    useSession.setState({ tree: null, pages: slot('live', 'live') })
     await act(async () => {
       root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
     })
@@ -84,7 +70,7 @@ describe('PageView seeds its editor from the slot', () => {
       view?.dispatch({ changes: { from: 0, insert: 'x' } })
     })
     await act(async () => root.render(null))
-    const slot = useSession.getState().pages.a
-    expect(slot?.status === 'ready' && slot.body).toBe('xlive')
+    const slotAfter = useSession.getState().pages.a
+    expect(slotAfter?.status === 'ready' && slotAfter.body).toBe('xlive')
   })
 })

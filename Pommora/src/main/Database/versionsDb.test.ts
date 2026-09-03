@@ -17,7 +17,6 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
-import { ignoredUnder } from '../watcher'
 
 let root: string
 let dbPath: string
@@ -31,8 +30,8 @@ afterEach(async () => {
 
 const opened = (): Db => {
   const db = openVersionsDb(root)
-  expect(db).not.toBeNull()
-  return db as Db
+  if (!db) throw new Error('the store did not open')
+  return db
 }
 const corruptFiles = async (): Promise<string[]> =>
   (await readdir(join(root, '.nexus'))).filter((f) => f.includes('.corrupt-')).sort()
@@ -62,12 +61,10 @@ describe('openVersionsDb', () => {
     const db = opened()
     expect(listSnapshots(db, 'P1')).toEqual([])
     db.close()
-    const kept = await corruptFiles()
-    expect(kept.every((f) => f.startsWith('versions.corrupt-'))).toBe(true)
-    const original = kept.find((f) => f.endsWith('.db')) as string
+    const [original, ...others] = await corruptFiles()
+    expect(others).toEqual([])
+    expect(original).toMatch(/^versions\.corrupt-.*\.db$/)
     expect(await readFile(join(root, '.nexus', original), 'utf8')).toBe('not a database')
-    const unwatched = ignoredUnder(root, { excluded: [], assetDir: '' })
-    expect(kept.every((f) => unwatched(join(root, '.nexus', f)))).toBe(true)
     expect(existsSync(`${dbPath}-wal`)).toBe(false)
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })

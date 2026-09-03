@@ -117,11 +117,10 @@ describe('the body epoch', () => {
   it('advances per path and notifies', () => {
     const seen: number[] = []
     const off = subscribeBodyEpoch(() => seen.push(readBodyEpoch('Notes/a.md')))
-    const before = readBodyEpoch('Notes/a.md')
     bumpBodyEpoch('Notes/a.md')
-    expect(readBodyEpoch('Notes/a.md')).toBe(before + 1)
+    expect(readBodyEpoch('Notes/a.md')).toBe(1)
     expect(readBodyEpoch('Notes/b.md')).toBe(0)
-    expect(seen).toEqual([before + 1])
+    expect(seen).toEqual([1])
     off()
   })
 })

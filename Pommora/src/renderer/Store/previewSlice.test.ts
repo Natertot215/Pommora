@@ -11,7 +11,7 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
 })
 
 describe('reconcilePreview', () => {
-  it('closes the history window of a page the tree no longer holds', () => {
+  it('keeps the history window while the tree holds its page, and closes it once the page is gone', () => {
     useSession.setState({ historyTarget: { id: 'a', path: 'Notes/a.md' } })
     useSession.getState().reconcilePreview(indexOf({ a: 'Notes/a.md' }))
     expect(useSession.getState().historyTarget).toEqual({ id: 'a', path: 'Notes/a.md' })
