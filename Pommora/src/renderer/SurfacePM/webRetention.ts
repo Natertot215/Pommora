@@ -2,6 +2,8 @@
 // mounted invisible — but every retained guest is a live renderer process, so the hidden set is
 // capped. Visible guests are never the registry's business, always live.
 
+import { capSet } from '@renderer/DesignSystem/Util/capMap'
+
 // KNOB — how many hidden guests stay alive beyond the visible ones.
 export const WEB_RETAINED_MAX = 5
 
@@ -16,18 +18,10 @@ export interface WebRetention {
 }
 
 export function createRetention(cap: number): WebRetention {
-  // LRU by Map insertion order, the warm-cache idiom: every hide re-inserts, so the first key is
-  // always the least-recently-hidden.
   const hidden = new Map<symbol, () => void>()
   return {
     hide(id, evict) {
-      hidden.delete(id)
-      hidden.set(id, evict)
-      if (hidden.size <= cap) return
-      const oldest: symbol = hidden.keys().next().value as symbol
-      const evictOldest = hidden.get(oldest)
-      hidden.delete(oldest)
-      evictOldest?.()
+      capSet(hidden, id, evict, cap, (evictOldest) => evictOldest())
     },
     show(id) {
       hidden.delete(id)

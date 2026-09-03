@@ -1,6 +1,7 @@
 // CM's Text.toString() re-joins the rope on every call, and several extensions re-scanning the
 // result per keystroke was the lag source — hence the per-version caching below.
 import type { Text } from '@codemirror/state'
+import { capSet } from '@renderer/DesignSystem/Util/capMap'
 import { docLineIntents, scanDoc } from '../Decorations/intent'
 import type { Token } from '../Tokens'
 
@@ -31,9 +32,7 @@ export function perText<T>(derive: (text: string) => T): (text: string) => T {
     const hit = held.get(text)
     if (hit !== undefined) return hit
     const v = derive(text)
-    held.set(text, v)
-    // Insertion-ordered, so the first key is the least recently added.
-    if (held.size > TEXT_SLOTS) held.delete(held.keys().next().value as string)
+    capSet(held, text, v, TEXT_SLOTS)
     return v
   }
 }
