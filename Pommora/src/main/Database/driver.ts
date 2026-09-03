@@ -3,6 +3,7 @@
 // compile and no ABI to match.
 
 import { DatabaseSync } from 'node:sqlite'
+import { basename } from 'node:path'
 import { errText } from '@shared/result'
 
 export type Db = DatabaseSync
@@ -16,7 +17,10 @@ export function openDb(path: string): Db | null {
     db.exec('PRAGMA foreign_keys = ON')
     return db
   } catch (e) {
-    console.error(`nexus.db: cannot open ${path} — operational state will not persist:`, errText(e))
+    console.error(
+      `${basename(path)}: cannot open ${path} — its state will not persist:`,
+      errText(e),
+    )
     return null
   }
 }
