@@ -59,7 +59,7 @@ async function capture(
 ): Promise<boolean> {
   try {
     if (kindOf(pageId) !== 'page') return false
-    if (source !== 'restore' && Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
+    if (source === 'edit' && Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
     const now = Date.now()
     const { enabled, intervalMs } = await config(root)
     if (!enabled) return false
@@ -117,8 +117,9 @@ async function captureFromDisk(
 
 /** The quiet timer: a burst of writes ends with one snapshot of the settled text. */
 async function arm(root: string, pageId: string, source: SnapshotSource): Promise<void> {
-  const { intervalMs } = await config(root)
+  const { enabled, intervalMs } = await config(root)
   disarm(pageId)
+  if (!enabled) return
   const timer = setTimeout(() => {
     timers.delete(pageId)
     void captureFromDisk(root, pageId, source, source === 'edit')
@@ -145,7 +146,7 @@ export async function writeBody(
   await indexWrittenPage(root, absPath)
   noteValueWrite(root, absPath)
   if (pageId) {
-    if (previous !== null) {
+    if (previous !== null && bodyHash(previous) !== bodyHash(written)) {
       const foreign = known !== undefined && known !== bodyHash(previous)
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
@@ -212,9 +213,16 @@ export async function restoreSnapshot(
 }
 
 export const deleteHistory = (pageId: string, ts: readonly number[]): Result<number> =>
-  withStore((db) => ok(deleteSnapshots(db, pageId, ts)))
+  withStore((db) => {
+    lastTs.delete(pageId)
+    return ok(deleteSnapshots(db, pageId, ts))
+  })
 
-export const clearHistory = (): Result<number> => withStore((db) => ok(clearSnapshots(db)))
+export const clearHistory = (): Result<number> =>
+  withStore((db) => {
+    lastTs.clear()
+    return ok(clearSnapshots(db))
+  })
 
 export async function sweepFileHistory(root: string): Promise<void> {
   const db = sessionVersionsDb()

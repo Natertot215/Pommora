@@ -12,7 +12,7 @@ import { MarkdownEditor } from '@renderer/MarkdownPM'
 import { clockOf, formatDate, nexusDateFormat } from '@renderer/Properties/Assignment/formatValue'
 import { restoreSnapshot } from '../Interface/restoreSnapshot'
 import { fetchPageDetail } from '../Store/tabState'
-import { ancestryOf, resolveOnlyConnections } from '../treeIndex'
+import { ancestryOf, livePagePath, resolveOnlyConnections } from '../treeIndex'
 import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
 import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
@@ -49,12 +49,13 @@ function PageHistoryBody({
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
   const [shown, setShown] = useState<number | null>(null)
   const [reload, setReload] = useState(0)
+  const livePath = livePagePath(tree, target)
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, values] = await Promise.all([
       window.nexus.listHistory(target.id),
-      window.nexus.loadValues(parentOf(target.path), [target.id]),
+      window.nexus.loadValues(parentOf(livePath), [target.id]),
     ])
     if (list.ok) {
       setRows(list.value)
@@ -64,7 +65,7 @@ function PageHistoryBody({
     } else window.nexus.showError(list.error.message)
     const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
     setModifiedAt(stamp ? new Date(stamp).getTime() : null)
-  }, [target.id, target.path])
+  }, [target.id, livePath])
   useEffect(() => {
     void refresh()
   }, [refresh])
@@ -75,7 +76,7 @@ function PageHistoryBody({
     setBody(null)
     const read =
       shown === null
-        ? fetchPageDetail(target.path).then((d) => d?.body ?? null)
+        ? fetchPageDetail(livePath).then((d) => d?.body ?? null)
         : window.nexus.readSnapshot(target.id, shown).then((r) => (r.ok ? r.value : null))
     void read.then((b) => {
       if (live) setBody(b)
@@ -84,7 +85,7 @@ function PageHistoryBody({
       live = false
     }
     // reload re-reads Current Version after a restore replaced the file under it.
-  }, [shown, reload, target.id, target.path])
+  }, [shown, reload, target.id, livePath])
 
   const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
@@ -221,7 +222,7 @@ function PageHistoryBody({
             onChange={() => {}}
             readOnly
             connections={resolveOnly}
-            embedAncestors={[HISTORY_ANCESTOR, target.path]}
+            embedAncestors={[HISTORY_ANCESTOR, livePath]}
             zoom={embedZoom(embedScale)}
             edgeFade
           />
