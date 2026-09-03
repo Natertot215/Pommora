@@ -217,8 +217,8 @@ const DB_FILE = /\.db(-wal|-shm)?$/
 #### Gate 1
 
 - [x] Gates green, exit codes read directly. Every Verify ticked against a watched result. Now counts re-run.
-- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/main/Database`, `src/main/sessionDb.ts`, `src/main/IO/pageFile.ts`, `src/main/CRUD/page.ts`, `src/main/watcher.ts`; every concern fixed or ruled.
-- [ ] Progress hashes filled. Phase 2 opens.
+- [x] Simplification, then review, against `<base>..HEAD` scoped to `src/main/Database`, `src/main/sessionDb.ts`, `src/main/IO/pageFile.ts`, `src/main/CRUD/page.ts`, `src/main/watcher.ts`; every concern fixed or ruled (simplifier: one opener, one counter, six flags folded or ruled; reviewer: the two silent null returns now log).
+- [x] Progress hashes filled. Phase 2 opens.
 
 ---
 
@@ -655,10 +655,10 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Progress
 
-- [ ] **Phase 1** — The store and the writer · base `b931ef59`
+- [x] **Phase 1** — The store and the writer · base `b931ef59` · gate `1ef7370a` + the review's fold
   - [x] Task 1 · `ac153859`
   - [x] Task 2 · `12f6404f`
-  - [ ] Task 3 · `<commit>`
+  - [x] Task 3 · `507232e8`
 - [ ] **Phase 2** — Capture
   - [ ] Task 4 · `<commit>`
   - [ ] Task 5 · `<commit>`
