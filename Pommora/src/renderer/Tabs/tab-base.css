@@ -144,8 +144,8 @@
   --tab-plus-gutter: 28px;
 }
 .tabs-compact {
-  --tab-min: 70px;
-  --tab-max: 200px;
+  --tab-min: var(--tab-min-user, 70px);
+  --tab-max: var(--tab-max-user, 200px);
   --tab-pref: 150px;
   --tab-pad-x: 10px;
   --tab-gap: 6px;
