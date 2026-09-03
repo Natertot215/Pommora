@@ -13,6 +13,7 @@ import { pathExists, readJsonObject } from './IO/atomicWrite'
 import { isMarkdownFile } from './IO/walk'
 import { removePathIndex } from './Database/contentIndex'
 import { indexWrittenPage } from './indexSeed'
+import { noteExternalEdit } from './CRUD/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig, relPosix } from './paths'
@@ -245,6 +246,7 @@ async function applyOne(
       return removePage(root, c.rel)
     case 'page-upsert':
       await indexWrittenPage(root, join(root, c.rel))
+      noteExternalEdit(root, join(root, c.rel))
       return patchPageFromDisk(root, c.rel)
     case 'container-meta':
       return patchContainerFromDisk(root, c.dirRel)

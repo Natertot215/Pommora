@@ -39,7 +39,7 @@ import {
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
-import { indexWrittenPage, seedContentIndex } from './indexSeed'
+import { seedContentIndex } from './indexSeed'
 import { readPage } from './readPage'
 import {
   convertTileToPage,
@@ -77,7 +77,7 @@ import { sanitizeExclusions } from './exclusionInput'
 import { clearExclusionData } from './exclusionScan'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
-import { flushValueWrites, noteValueWrite } from './valuesChanged'
+import { flushValueWrites } from './valuesChanged'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -97,18 +97,13 @@ import {
 } from './settings'
 import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
-import { updatePageBody } from './CRUD/page'
+import { flushFileHistory, resetFileHistory, sweepFileHistory, writeBody } from './CRUD/fileHistory'
 import { listBundles } from './provenance'
 import { trashRows } from './CRUD/trashRows'
 import { replayPendingRename } from './CRUD/contextCascade'
 import { replaySchemaCascade } from './CRUD/replaySchemaCascade'
 import { runRepairSweep } from './repairSweep'
-import {
-  flushNavigation,
-  hasPendingNavigation,
-  readNavigationState,
-  writeNavigationState,
-} from './IO/navigationFile'
+import { flushNavigation, readNavigationState, writeNavigationState } from './IO/navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './IO/tabsState'
 import { readValue, writeValue } from './Database/localState'
 import { readPreviewsState, sanitizePreviews, writePreviewsState } from './IO/previewState'
@@ -367,6 +362,10 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
   // Re-adopting the already-open nexus is a re-point of a live session, not a genuine open —
   // the latch below compares roots and stands down.
   const priorRoot = sessionRoot()
+  if (priorRoot !== null) {
+    await flushFileHistory(priorRoot)
+    resetFileHistory()
+  }
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
   // session-match guard and the persistence layer key off the same string.
@@ -378,6 +377,7 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
   // The record's one explicit walk, before the watcher starts, so the baseline latches what
   // the closed window left rather than whatever a sync daemon materializes first.
   if (root !== priorRoot) {
+    void sweepFileHistory(root)
     dropLiveTree()
     if (latchRecord) {
       await runOpenRecord(root)
@@ -1102,12 +1102,9 @@ serveBridge(
         if (typeof body !== 'string') return fail('operation-failed', 'A body string is required.')
         const resolved = await resolveUnderRoot(root, relPath)
         if (!resolved.ok) return resolved
-        const r = await updatePageBody(resolved.value, body)
-        if (!r.ok) return r
-        await indexWrittenPage(root, resolved.value)
-        noteValueWrite(root, resolved.value)
+        const r = await writeBody(root, resolved.value, body, 'edit')
         pushValueChanges(root)
-        return ok(null)
+        return r
       },
     },
 
@@ -1558,6 +1555,7 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
+        if (key === 'historyDays') void sweepFileHistory(root)
         if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
         if (key === 'interfaceScale' && mainWindow && !mainWindow.isDestroyed())
           setHostZoom(mainWindow.webContents, interfaceScaleZoom(coerceInterfaceScale(value)))
@@ -1895,6 +1893,8 @@ serveBridge(
         const newRoot = join(dirname(root), trimmed)
         if (await pathExists(newRoot))
           return fail('operation-failed', 'A folder with that name already exists.')
+        await flushFileHistory(root)
+        resetFileHistory()
         await rename(root, newRoot)
         // Reuses adoptNexus rather than replicating its re-target work; opts out of the record
         // latch, which belongs to genuine opens only.
@@ -1993,15 +1993,14 @@ app.on('window-all-closed', () => {
 let flushingBeforeQuit = false
 app.on('before-quit', (e) => {
   if (flushingBeforeQuit) return
-  stopWatcher()
-  if (!hasPendingNavigation()) {
-    closeSessionDb()
-    return
-  }
   e.preventDefault()
   flushingBeforeQuit = true
-  void flushNavigation().then(() => {
-    closeSessionDb()
-    app.quit()
-  })
+  stopWatcher()
+  const root = sessionRoot()
+  void Promise.all([flushNavigation(), root === null ? undefined : flushFileHistory(root)]).then(
+    () => {
+      closeSessionDb()
+      app.quit()
+    },
+  )
 })
