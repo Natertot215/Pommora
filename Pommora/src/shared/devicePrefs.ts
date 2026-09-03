@@ -3,8 +3,6 @@
 // operating system in front of the user, so it stays with the device and travels nowhere.
 
 export interface DevicePrefs {
-  /** Menus that are plain lists open as system menus instead of in-app panes. A menu that isn't a
-   *  list — a grid, a calendar, a field — has no system equivalent and is unaffected. */
   nativeMenus?: boolean
 }
 

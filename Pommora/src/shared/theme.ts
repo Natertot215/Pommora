@@ -1,12 +1,8 @@
-// Single source for the app substrate color (the window background). The main process can't read
-// renderer CSS vars or vanilla-extract tokens, so this plain constant is the seam both sides
-// share — main's BrowserWindow backgroundColor, color.css.ts's background.window token, and
-// styles.css's --main-bg all trace back here.
+// Single source for the app substrate color (the window background). The main process can't read renderer CSS vars or vanilla-extract tokens, so this plain constant is the seam both sides share — main's BrowserWindow backgroundColor, color.css.ts's background.window token, and styles.css's --main-bg all trace back here.
 export const WINDOW_BG = '#1A1A1C'
 
 // The spectrum solids, for the same reason: main can't read a vanilla-extract token, while
-// color.css.ts needs the values to build the :root vars. The legacy half of the storable-color
-// vocabulary, beside the ramp cells.
+// color.css.ts needs the values to build the :root vars.
 export const SPECTRUM = {
   red: '#FF453A',
   orange: '#FF9F0A',
@@ -20,17 +16,10 @@ export const SPECTRUM = {
   grey: '#8E8E93',
 } as const
 
-/** The chip "Default" neutral. A palette value, never a selectable spectrum color — which is why
- *  it sits beside SPECTRUM rather than in it. */
+/** The chip "Default" neutral. A palette value, never a selectable spectrum color — which is why it sits beside SPECTRUM rather than in it. */
 export const GREY_DEFAULT = '#48484A'
-
-/** The purple row's light seat. A palette value beside SPECTRUM rather than inside it — pink is a
- *  ramp cell, never a selectable accent or Space color. */
 export const PINK = '#EF7697'
 
-// The color-ramp vocabulary: the grammar a stored color key is written in. Main validates a stored
-// Space color against these keys and cannot read a renderer token, so the KEY SET lives here while
-// every cell's VALUE stays renderer-side.
 export const RAMP_FAMILIES = [
   'red',
   'orange',

@@ -1,6 +1,5 @@
 /* The floating-window surface every in-app window mounts: glass shell, toolbar, side panes, and
-   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or
-   an inset-ring layout. */
+   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or  an inset-ring layout. */
 
 .window {
   position: fixed;
@@ -18,8 +17,7 @@
   --window-footer-h: var(--subfield-h);
 
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
-  /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math
-     stays true at any ring. */
+  /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
   --window-flow-home: calc(var(--window-side-inset) + 22px);
   --window-flow-inset: var(
     --surface-inset
@@ -32,14 +30,10 @@
     var(--window-flow-w) -
     var(--window-flow-inset)
   );
-  /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so
-     clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the
-     trailing cluster. */
+  /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the trailing cluster. */
   --window-title-squeeze: max(0px, var(--io) * var(--window-side-r-w) - 6px - 62px);
 
-  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
-     inheriting registered property driving the main inspector) can never leak into a floating
-     window. */
+  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an inheriting registered property driving the main inspector) can never leak into a floating window. */
   --io: 0;
   --io-l: 0;
   transition:
@@ -75,8 +69,6 @@
   top: 0;
   left: 0;
   right: 0;
-  /* No stacking context of its own: the buttons carry their own z (.window-actions) to ride ON an
-     open side pane, while the centered title stays z-auto and falls UNDER the pane. */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -112,8 +104,7 @@
   z-index: 4;
 }
 
-/* The scroll core plus the right-pane squeeze; each window adds its own top clearance (a band's
-   height, a floating cluster's landing). */
+/* The scroll core plus the right-pane squeeze; each window adds its own top clearance (a band's height, a floating cluster's landing). */
 .window-body {
   flex: 1;
   min-width: 0;
@@ -144,9 +135,41 @@
   max-width: 60%;
 }
 
-/* Side panes: material and geometry come from the SidePane shell — only positioning and slide live
-   here. An overlay pane rides the inset ring, carried by its driver with no transition of its own;
-   an in-flow pane takes a column in the body row. */
+.page-window-title {
+  min-width: 0;
+  pointer-events: none;
+  font-size: var(--text-caption-size);
+  --page-window-morph-slide: -12px; /* KNOB — the title's collapse-left travel as the strip grows in */
+  transition:
+    opacity var(--duration-base) var(--ease-base),
+    transform var(--duration-base) var(--ease-base);
+}
+@starting-style {
+  .page-window-title {
+    opacity: 0;
+    transform: translateX(-50%) translateX(var(--page-window-morph-slide));
+  }
+}
+.page-window-title.is-collapsing {
+  opacity: 0;
+  transform: translateX(-50%) translateX(var(--page-window-morph-slide));
+}
+
+.page-window-tabwrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-right: var(--window-title-squeeze, 0px);
+}
+.page-window-crumbs {
+  min-width: 0;
+  --over-scroll-fade: var(--fade-base);
+}
+
+/* Side panes: material and geometry come from the SidePane shell — only positioning and slide live here. An overlay pane rides the inset ring, carried by its driver with no transition of its own; an in-flow pane takes a column in the body row. */
 .window-row {
   display: flex;
   flex: 1;
@@ -206,8 +229,7 @@
   flex-shrink: 0;
 }
 
-/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window
-   root included (its own driver transitions must not re-animate mid-drag). */
+/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window oot included (its own driver transitions must not re-animate mid-drag). */
 .window.is-resizing,
 .window.is-resizing .window-side-left-inflow,
 .window.is-resizing .window-side-right-inflow,
@@ -217,8 +239,7 @@
   transition: none;
 }
 
-/* Footer: a bar pinned at the window bottom, its own border-top the flush body/footer divider. It
-   squeezes left of an open right pane exactly as the body does, so it animates its padding too. */
+/* Footer: a bar pinned at the window bottom, its own border-top the flush body/footer divider. It squeezes left of an open right pane exactly as the body does, so it animates its padding too. */
 .window-footer {
   transition:
     height var(--duration-base) var(--ease-base),
@@ -259,10 +280,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  /* The trailing pair holds at home until the pane's leading edge makes contact (the max() gate),
-     then lands flush inside its corner. A host that reveals the pair drives --window-flow-reveal
-     rather than the transform itself, so its entry nudge and the swallow compose instead of
-     clobbering. */
+  /* The trailing pair holds at home until the pane's leading edge makes contact (the max() gate), then lands flush inside its corner. A host that reveals the pair drives --window-flow-reveal rather than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
   transform: translateX(var(--window-flow-reveal, 0px))
     translateX(calc(-1 * var(--window-flow-shift)));
 }

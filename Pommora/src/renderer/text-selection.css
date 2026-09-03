@@ -1,5 +1,4 @@
-/* The Pommora text selection — drawn rather than native because `::selection` takes only a color: no
-   corner, no bleed, no height of its own. Painted by MarkdownPM/Editor/selection.ts and nativeCaret.ts. */
+/* The Pommora text selection — drawn rather than native because `::selection` takes only a color: no corner, no bleed, no height of its own.*/
 
 :root {
   /* --text-selection-radius and --text-selection-pad are a KNOB pair. */
@@ -9,9 +8,6 @@
   --text-selection-pad: 1.5px;
 }
 
-/* Width/height arrive inline as the CONTENT box, so horizontal bleed is padding plus a matching negative
-   margin — the pill grows outward, centered on the glyphs. Vertical stays untouched: padding there would
-   break the caret-height match and reopen the seams a multi-line ribbon closes. */
 .mdpm-sel {
   position: absolute;
   box-sizing: content-box;
@@ -39,9 +35,7 @@
   background: var(--text-selection);
 }
 
-/* A zero-box anchor in the field's parent reports where local (0,0) landed, so pills place by delta and
-   never care which ancestor positions them. The negative seat clears the parent's background only because
-   nativeCaret.ts isolates that parent. */
+/* A zero-box anchor in the field's parent reports where local (0,0) landed, so pills place by delta and never care which ancestor positions them.*/
 .mdpm-sel-host {
   position: absolute;
   left: 0;
@@ -52,9 +46,7 @@
   pointer-events: none;
 }
 
-/* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection
-   layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any
-   editor. A surface outside that set keeps its native selection rather than losing one. */
+/* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any editor.*/
 :root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content::selection,
 :root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content ::selection,
 :root:not(.native-highlight)
