@@ -92,3 +92,26 @@ Slots into the existing `navigation` frame in `SettingsWindow.tsx` (data-driven 
 - Runtime writer: one `ROOT_VARS` entry each in `personalization.ts` (the established `--var`-write-with-null-fallback pattern).
 
 Open question for Phase 2: `Slider` (continuous) vs `ZoomRow`-style stepper (discrete steps + typeable). The step values (10 / 25) suggest the stepper.
+
+## Post-Work Review
+
+Six-lens review over the folded arc (Simplicity · Duplication · Cohesion · Correctness · Stability · Debt), two agents at a time, report-only, folded by hand.
+
+### Folds
+
+- **The variants are the sole width writers.** The `.tab` fallback literals disagreed with the live variant values (min 90≠70, max 240 vs 250/200, pref 180 vs 150, pad 12 vs 10); stripped so `.tabs-standard`/`.tabs-compact` alone write `--tab-min/max/pref/pad-x`. `--tab-gap` never varied, so its value is a plain `6px` on `.tab` — the `--tab-gap` var is gone rather than left as a phantom knob nothing writes.
+- **Two redundant fades dropped.** `.tab-scroll` and `.page-window-crumbs` each restated the 16px their own `over-scroll-x` default already supplies.
+- **The four tab settings read back.** `readPersonalization` never projected `tabOpenBehavior`/`tabTakeFocus`/`tabMinWidth`/`tabMaxWidth`, so every read dropped them and the settings reverted a macrotask after being set — the feature was non-functional. Added the four rows, widths clamped like `historyDays`; `clampInt` also bars a hand-edited min>max inversion.
+
+### Rulings
+
+- The `.tabs-standard`/`.tabs-compact` density naming is the deliberate two-tier spec, kept though neither class is toggled on one element (unlike `menuCompact`).
+- `--window-flow-inset: calc(var(--surface-inset) * 2)`, `--tab-max-absolute: 450px`, `border-radius: 12px`, the trailing `padding-right: 16px`, and the four caption-less Tabs rows are all deliberate.
+- `MenuRow.reveal` stays at zero consumers as the DRY disclosure primitive.
+
+### Named decisions (fixes are additive — out of a no-net-lines pass)
+
+- Tab-width bounds live in two places (SettingsWindow steps + readNexus clamp) that can drift; the neighbors share a `types.ts` constant, so hoisting `TAB_MIN`/`TAB_MAX` would align them.
+- The `tabTakeFocus === false` background-open guard is written in both `openNewTab` and `select`; a third open-gesture triples it.
+- A future third `TabOpenBehavior` value degrades silently to overtake at both read sites with no signal.
+- The `EXIT_MS`/`requestClose`/`renderEntries` ghost-close machinery is duplicated verbatim across `TabBar` and `WindowTabStrip` — inherited (pre-arc), owned by the two strip components.
