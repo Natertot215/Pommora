@@ -12,6 +12,7 @@ import { SettingsMenu } from '../Frames/SettingsMenu'
 import { useSession } from '../store'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import './toolbar.css'
+import '@renderer/DesignSystem/Animation/toolbar-slide.css'
 
 type TrioPanel = 'navigation' | 'settings'
 type TrioSegment = Segment & { panel?: TrioPanel }

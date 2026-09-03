@@ -11,6 +11,7 @@ import {
 } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
+import '@renderer/DesignSystem/Animation/toolbar-slide.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
@@ -25,8 +26,6 @@ export interface WindowBasePanel {
   children: ReactNode
 }
 
-export type WindowBaseToolbar = 'band' | 'floating'
-
 export interface WindowBaseProps {
   id: string
   closing: boolean
@@ -38,7 +37,6 @@ export interface WindowBaseProps {
   className?: string
   style?: CSSProperties
   rootRef?: Ref<HTMLDivElement>
-  toolbar?: WindowBaseToolbar
   onScan?: () => void
   scanLabel?: string
   lead?: ReactNode
@@ -65,7 +63,6 @@ export function WindowBase({
   className,
   style,
   rootRef,
-  toolbar = 'band',
   onScan,
   scanLabel = 'Open Full Page',
   lead,
@@ -144,7 +141,6 @@ export function WindowBase({
       ref={rootRef}
       className={cx(
         'window',
-        `window-toolbar-${toolbar}`,
         className,
         leftOpen && 'is-panel-left-open',
         rightOpen && 'is-panel-right-open',
