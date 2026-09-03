@@ -5,7 +5,7 @@
 
 import type { SortCriterion } from '@shared/views'
 import type { ViewRow } from '@shared/types'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import { optionValues, type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { declaredType, fileName, resolveFieldValue } from '@renderer/Properties/value'
 import { linkDisplayText } from '@shared/linkValue'
 
@@ -102,9 +102,14 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
   switch (declaredType(c.property_id, schema)) {
     case 'select':
     case 'status': {
-      // A Custom criterion ranks by its own order (unknowns last); direction is moot for it.
+      // A Custom criterion ranks by its own order; direction is moot for it. Options the saved order
+      // predates rank after the listed ones — left at MAX_SAFE_INTEGER they tie with the no-value
+      // rows and interleave, which is the same appended tail `configuredOrder` gives the group path.
       if (c.order?.length) {
-        const order = Object.fromEntries(c.order.map((v, i) => [v, i]))
+        const def = schema.find((d) => d.id === c.property_id)
+        const listed = new Set(c.order)
+        const tail = def ? optionValues(def).filter((v) => !listed.has(v)) : []
+        const order = Object.fromEntries([...c.order, ...tail].map((v, i) => [v, i]))
         return {
           extract: (r) => rank(r, c.property_id, order, schema),
           less: numericLess,

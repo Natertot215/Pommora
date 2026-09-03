@@ -189,9 +189,10 @@ export function useViewHost(
       rows,
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
-  // A single-sorted, ungrouped view lays its rows out in value RUNS rather than bands, so a reorder
-  // that lands one strictly inside another run rewrites the sorted property. Armed only when the
-  // column is shown — an unrendered property leaves the run boundaries with nothing to read them by.
+  // Absent a property grouping, a single-sorted view lays its rows out in value RUNS — within each
+  // band, where there are bands — so a reorder that lands one strictly inside another run rewrites
+  // the sorted property. Armed only when the column is shown: an unrendered property leaves the run
+  // boundaries with nothing to read them by.
   const sortReassign = useMemo(() => {
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
     for (const c of liveView.sort ?? []) {
@@ -299,15 +300,16 @@ export function useViewHost(
       mutate({ op: 'setProperty', path: row.path, propertyId, value }),
     )
   }
-  /** Fold a sorted-run reassignment into a reorder that just placed `activeId` within `order` (the
-   *  band-local row order). A no-op unless the slot landed inside a foreign run. */
-  const reassignBySortRun = (order: string[], activeId: string): void => {
+  /** Fold a sorted-run reassignment into a reorder that just placed `activeId` in `bandKey`, given
+   *  the view's whole new row order. */
+  const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return
     const keyOf = (id: string): string => {
       const row = rowById.get(id)
       return (row ? bucketKey(row, sortReassign.propertyId, schema, 'day') : null) ?? UNGROUPED
     }
-    const target = reassignTarget(order, activeId, keyOf)
+    const band = orderIds.filter((id) => rowBand.get(id) === bandKey)
+    const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
     const row = rowById.get(activeId)
     if (row) setProperty(row, sortReassign.propertyId, groupKeyToValue(target, sortReassign.type))
