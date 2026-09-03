@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-02-2026 → 09-03      | PM-125 | Page File History                                    |
 | 09-02-2026              | PM-124 | In-App Confirmation & Notifications                  |
 | 09-01-2026              | PM-123 | Stamp Retirement                                     |
 | 08-31-2026 → 09-01      | PM-122 | Compatible Properties                                |
@@ -128,6 +129,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-125 || Page File History
+**DATE:** 09-02-2026 → 09-03
+
+A page's body accumulates snapshots in `.nexus/versions.db`, a second device-local SQLite file behind the driver seam (`Database/versionsDb.ts`): one table of deflated whole texts keyed by page `ID` and timestamp, marked `edit`, `external`, or `restore`, with a damaged file set aside as `versions.corrupt-<stamp>.db` for a fresh store. Every body write passes through `writeBody` in `CRUD/fileHistory.ts`, which offers the text it overwrites to one rule — pages only, an interval gate on `edit` offers, foreign text and a restore's outgoing text ungated, identical text never twice, a 1 MB cap on edits alone — while per-page quiet timers capture a burst's settled text, the watcher arms them for outside edits, and a quit, root switch, or rename flushes every armed page through `retireFileHistory`. `writePageFile` answers the text it overwrote and refuses on a failed read; `STORE_FILE` in `exclusion.ts` keeps every `.db` and journal name out of the walk and the watcher; `pageIdIndex` memoizes the id index both ways behind `liveIdOf` and `livePathOf`. Six `history:*` channels and an `open-history` push reach the renderer, **View History** joined the shared page menu above Reveal Location, and **History** the page's Settings menu beside Properties. The Page History window on `WindowBase` lists Current Version and each snapshot with a gutter check and a `MenuSegments` date | time caption — a click shows a snapshot, a check names the restore or delete target, Restore sits filled on a `MenuFooting` — and a restore flushes the page's pending save, cancels any armed after it, captures the outgoing text, and re-seeds every open editor through `replaceBody`, a per-path body epoch, and the `fenceWarm` guard the three warm seams share. Files & Links gained a File History section — a toggle, a 7–90 Days timeframe, a 5–20 Min interval, and a device-wide Clear History — on the `NumberUnit` and `clear` row kinds that `ClearActionRow` and the zoom row now share. The closeout ran unattended: a sixteen-item live checklist on NexusOS and a scratch nexus, two simplifiers, a reviewer, an attacker whose five verified breaks folded with tests, and a neutral verifier finding every requirement met.
+
+- **Commits:** `b931ef59^..b1632f28`
+- **Diff:** Net +975 | +1534 / −559
 
 #### PM-124 || In-App Confirmation & Notifications
 **DATE:** 09-02-2026
