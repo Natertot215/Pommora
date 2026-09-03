@@ -21,8 +21,7 @@ import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import './page-window.css'
 
-const DRAG_SURFACES =
-  '.page-window-body, .page-window-tabwrap, .page-window-tabscroll, .page-window-tabstrip'
+const DRAG_SURFACES = '.page-window-body, .page-window-tabwrap, .tab-scroll, .tab-strip'
 
 const SLIDE_PX = 14
 

@@ -1,5 +1,4 @@
-/* The Pommora caret — one text-insertion identity for the whole app: the drawn blinking bar (the "I", a
-   CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
+/* The Pommora caret — one text-insertion identity for the whole app: the drawn blinking bar (the "I", a CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
 
 :root {
   --caret-width: 2px;
@@ -47,11 +46,11 @@ textarea,
 /* Two identical keyframes so caret.ts can swap names to restart the blink cycle on caret move, without a reflow. */
 @keyframes mdpm-blink {
   0%,
-  42% {
+  40% {
     opacity: 1;
   }
   50%,
-  92% {
+  90% {
     opacity: var(--caret-dim, 0);
   }
   100% {
@@ -60,11 +59,11 @@ textarea,
 }
 @keyframes mdpm-blink2 {
   0%,
-  42% {
+  40% {
     opacity: 1;
   }
   50%,
-  92% {
+  90% {
     opacity: var(--caret-dim, 0);
   }
   100% {
@@ -72,7 +71,6 @@ textarea,
   }
 }
 
-/* Height comes from RectangleMarker's line-box sizing; only width and centering are set here. */
 .mdpm-caret {
   display: none;
   width: var(--caret-width);

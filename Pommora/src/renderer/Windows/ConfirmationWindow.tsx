@@ -16,8 +16,6 @@ export function ConfirmationWindow(): React.JSX.Element | null {
 
   useEffect(() => {
     if (!pending) return
-    // The panel itself takes focus, never a button: typing can't reach the page behind the scrim,
-    // and no answer sits under the Return key waiting to be pressed by accident.
     panelRef.current?.focus()
     return markPickerOpen()
   }, [pending])

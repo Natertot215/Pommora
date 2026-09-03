@@ -11,8 +11,7 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import type { PreviewTab } from './windowTabs'
-import '../Tabs/tab-strip.css'
-import './window-tab-strip.css'
+import '../Tabs/tab-base.css'
 
 const BASE_MS = ms(duration.base)
 /** The toolbar strip's EXIT_MS twin. */
@@ -107,9 +106,9 @@ export function WindowTabStrip({
           {titlePresence.closing ? heldTitle.current : title}
         </div>
       )}
-      <div className="page-window-tabwrap">
+      <div className="page-window-tabwrap tabs-compact">
         {showStrip && (
-          <div className="page-window-tabscroll over-scroll-x" ref={scrollRef}>
+          <div className="tab-scroll over-scroll-x" ref={scrollRef}>
             {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}
             <SortableZone
               items={renderEntries
@@ -119,7 +118,7 @@ export function WindowTabStrip({
               axis="x"
               onReorder={reorderPreviewTabs}
             >
-              <div className="page-window-tabstrip" role="tablist" aria-label="Preview tabs">
+              <div className="tab-strip" role="tablist" aria-label="Preview tabs">
                 {renderEntries.map(({ entry, ghost }, i) => (
                   <Fragment key={entry.tab.id}>
                     {i > 0 && (
