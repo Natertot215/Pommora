@@ -7,13 +7,10 @@ export interface ConfirmRequest {
   detail: string
   action: string
   tone: 'destructive' | 'positive'
-  /** Enter answers the default. The two sweeps that empty a whole store default to Cancel, so a
-   *  stray Return can't run them. */
   defaultsToCancel?: boolean
 }
 
-/** Puts a question up from anywhere, inside a callback or not — the answer is what matters, never
- *  a subscription to it. */
+/** Puts a question up from anywhere, inside a callback or not — the answer is what matters, never a subscription to it. */
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
 /** The nexus's Confirm Before Deletion switch, off. A Collection or a Set carries a schema and
@@ -48,8 +45,7 @@ export const confirmDelete = async (target: {
     .mutate({ op: 'delete', path: target.path, kind: target.kind }, undefined, undefined, (t) => {
       bundlePath = t?.bundlePath
     })
-  // A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and
-  // there is nothing to name.
+  // A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name.
   if (!ok) return
   const bundle = bundlePath
   notifyDeleted(target.title, bundle ? () => void undoTrashed(bundle) : undefined)

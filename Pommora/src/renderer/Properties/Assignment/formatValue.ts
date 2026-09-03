@@ -2,7 +2,12 @@
 // ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across
 // machines.
 
-import type { DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
+import {
+  type DateFormat,
+  defaultStyleFor,
+  type TimeFormat,
+  type WeekdayFormat,
+} from '@shared/columnStyles'
 import type { DateGranularity, DateSeparator } from '@shared/views'
 import type { NumberConfig } from '@shared/properties'
 import { pad } from '@renderer/DesignSystem/Util/pad'
@@ -43,6 +48,10 @@ function ordinal(day: number): string {
       return `${day}th`
   }
 }
+
+/** The date form a surface shows when its column has none of its own — the nexus's, else full. */
+export const nexusDateFormat = (setting: DateFormat | undefined): DateFormat =>
+  defaultStyleFor('datetime', undefined, setting).date_format ?? 'full'
 
 export function clockOf(date: Date, timeFormat: TimeFormat): string {
   return timeFormat === 'twelveHour'

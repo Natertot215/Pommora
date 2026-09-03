@@ -1,4 +1,4 @@
-// The send block, renderer-side: what a surface hands over to offer it, and the three actions every
+// The send block, renderer-side: what a surface hands over to offer it, and the actions every
 // surface answers identically. Sidebar rows are the exception — their menu runs main-side.
 
 import { titleFromPath } from '@shared/connections'
