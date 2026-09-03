@@ -435,7 +435,7 @@ Labels, hints, and confirm copy: Nathan's, at execution.
 
 #### Gate 3
 
-- [ ] Gates green. Every Verify ticked. Now counts re-run.
+- [x] Gates green. Every Verify ticked. Now counts re-run.
 - [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/shared`, `src/preload`, `src/main/index.ts`, `src/main/readNexus.ts`, `src/renderer/Settings`; every concern fixed or ruled.
 - [ ] Progress hashes filled. Phase 4 opens.
 
@@ -664,7 +664,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 5 · `3a0ce799`
 - [ ] **Phase 3** — The contract and the settings
   - [x] Task 6 · `d20c6324`
-  - [ ] Task 7 · `<commit>`
+  - [x] Task 7 · `b1df9dfc`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
   - [ ] Task 9 · `<commit>`
   - [ ] Task 8 · `<commit>`
@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026 (mine, Gate 3): Clear History asks and clears without counting first — there is no count channel, and an empty store clearing to empty is not an error; a fractional typed day or minute rounds on every read through `clampInt`, so the rule never runs on a fraction; the twelve `showError(r.error.message)` sites across the renderer are outside this plan's paths and stay as they are.
 - 09-02-2026, Nathan (Task 7 copy): toggle hint "Stores recoverable snapshots of device-local file history"; the interval's unit reads "Min"; Clear History's caption and its dialog both read "Permanently delete stored snapshots for all files; this cannot be undone." (his "Perminately" corrected); the two picker hints were not given and stay empty. Once the window lands: a one-time seeded History window — one Current Version and five differing snapshots — kept in front for his look.
 - 09-02-2026, Nathan: the live NexusOS instance may be restarted and driven for the gates' live checks — a throwaway page only, reverted afterward.
 - 09-02-2026 (mine, Gate 2): a body write still inside its lock when ⌘Q lands offers its text after the store closed and records nothing — quit does not wait on in-flight IPC, as it never has; `arm` awaits a config read that is microtask-only whenever the tree holds the root, so a flush cannot interleave with it today; the `values:changed` push, the id index, and the write echo stay three seams because they carry three facts.
@@ -693,6 +694,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Gate 3 fold: the four store channels answer `no-nexus` with no nexus open like every other data channel; a timestamp must be finite; the step arrays live in `types.ts` beside the ranges they bound, so min and max derive from the steps; a unit's suffix carries its own spacing (`' days'`, `' Min'`), read the same in the picker's labels and the typed field; `ClearActionRow` clears its Cleared timer on unmount.
 - 09-02-2026, Task 6: the channel bodies (`listHistory`, `readHistoryBody`, `restoreSnapshot`, `deleteHistory`, `clearHistory`) live in `CRUD/fileHistory.ts` over one `withStore` guard, and `index.ts`'s handlers only validate arguments — `index.ts` is not loadable under Vitest, so the plan's bridge-map test runs against the bodies; the restore handler pushes `values:changed` after the write, as the autosave handler does.
 - 09-02-2026, Gate 2 (Nathan's consolidation ruling): one `STORE_FILE` predicate in `exclusion.ts` — any `.db`, `-wal`, or `-shm` segment is never watched or listed, wherever it sits, so Task 3's scoped clause is gone and `neverWatched`'s `nexus.db` prefix with it; `DB_SIBLINGS` in `driver.ts` serves both `open.ts`'s remove and the quarantine; `fileStamp` in `atomicWrite.ts` stamps the trash and the quarantine alike; `pageIdIndex` is memoized per tree object and is the one walk behind `liveIdIndex`, `liveIdOf`, and `livePathOf`.
 - 09-02-2026, Gate 2 review: the foreign-overwrite memory is keyed by page id, not path, so a page recreated under a freed name inherits no stale hash; a restore arms no quiet timer — nothing was typed, so there is no settled text to capture.
