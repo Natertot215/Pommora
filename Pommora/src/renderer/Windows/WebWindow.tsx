@@ -57,7 +57,7 @@ function WebWindowBody({
   const [nav, setNav] = useState({ back: false, forward: false })
   // A retake aims the standing guest at the address — imperatively, because the guest may have
   // navigated away from the very url being re-summoned, which the src attribute reads as
-  // unchanged. The mount run stands down; src carries the first aim.
+  // unchanged.
   const applied = useRef(seq)
   useEffect(() => {
     setTitle('')

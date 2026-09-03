@@ -49,10 +49,7 @@ function OutlinePane(): React.JSX.Element {
   const body = useSession((st) => pageBody(shownPage(st)))
   const flat = useMemo(() => headingOutline(body), [body])
   const tree = useMemo(() => outlineTree(flat), [flat])
-  // Headings disclose open — an outline's job is to show the shape, not to be unpacked first.
   const disclosure = useDisclosureSet(true)
-  // A right-clicked row swaps its title for an inline field; committing rewrites the heading in the
-  // live editor. Keyed by node.key, which the derivation re-mints on the new text, ending the edit.
   const [renaming, setRenaming] = useState<string | null>(null)
 
   const rows = (nodes: OutlineNode[]): React.JSX.Element[] =>
