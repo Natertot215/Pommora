@@ -369,7 +369,7 @@ const FRAMES = roster([
             kind: 'zoom',
             key: 'tabCache',
             label: 'Active Tab Cache',
-            hint: 'Maximum amount of open tabs are kept active before switching to on-demand loading.',
+            hint: 'Maximum amount of open tabs kept active before switching to on-demand loading.',
             fallback: TAB_CACHE.default,
             steps: TAB_CACHE_STEPS,
             unit: TABS,
