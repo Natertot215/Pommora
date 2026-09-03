@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: var(--window-toolbar-h) 4px 4px;
+  padding: var(--window-panel-top) 4px 4px;
 }
 .page-window-insp-group {
   display: flex;
@@ -91,7 +91,7 @@
 
 /* The Page History window: the same shell, the snapshots listed in the right slot. */
 .page-history-list {
-  padding-top: 16px; /* KNOB */
+  padding-top: var(--window-panel-top);
 }
 .page-history-row {
   --row-pad-trail: 0px;
