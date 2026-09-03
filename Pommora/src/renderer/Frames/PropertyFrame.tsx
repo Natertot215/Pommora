@@ -19,10 +19,10 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import { useActiveView } from '@renderer/Views/useActiveView'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
-import { DateTimeEditor } from './Editors/DateTimeEditor'
-import { CheckboxEditor } from './Editors/CheckboxEditor'
-import { FileEditor } from './Editors/FileEditor'
-import { NumberEditor } from './Editors/NumberEditor'
+import { DateTimeEditor } from '@renderer/Properties/Editors/DateTimeEditor'
+import { CheckboxEditor } from '@renderer/Properties/Editors/CheckboxEditor'
+import { FileEditor } from '@renderer/Properties/Editors/FileEditor'
+import { NumberEditor } from '@renderer/Properties/Editors/NumberEditor'
 import {
   MenuItem,
   MenuCaption,
@@ -37,18 +37,23 @@ import { titleInput, actionRow } from '@renderer/DesignSystem/Menus/menu-base.cs
 import { Reveal, duration, useEntrance } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
-import { InlineEditHeader } from '../Frames/InlineEditHeader'
-import { OptionEditor } from './Editors/OptionEditor'
-import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
+import { InlineEditHeader } from './InlineEditHeader'
+import { OptionEditor } from '@renderer/Properties/Editors/OptionEditor'
+import { OPTION_STYLE_OPTIONS, type OptionStyle } from '@renderer/Properties/OptionRow'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
-import { StatusEditor } from './Editors/StatusEditor'
-import { URLEditor } from './Editors/URLEditor'
+import { StatusEditor } from '@renderer/Properties/Editors/StatusEditor'
+import { URLEditor } from '@renderer/Properties/Editors/URLEditor'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
-import { FrameDnd, RowShell, useFrameRegions } from '../Frames/frameDnd'
-import { nexusReorderIndex, type PaneDrop, type FrameRow } from '../Frames/frameDndModel'
-import { CREATABLE_TYPES, PropertyTypeIcon, propertyIcon, propertyTypeLabel } from './PropertyTypes'
+import { FrameDnd, RowShell, useFrameRegions } from './frameDnd'
+import { nexusReorderIndex, type PaneDrop, type FrameRow } from './frameDndModel'
+import {
+  CREATABLE_TYPES,
+  PropertyTypeIcon,
+  propertyIcon,
+  propertyTypeLabel,
+} from '@renderer/Properties/PropertyTypes'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import * as s from '../Frames/frames.css'
+import * as s from './frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { normalizePropertyName } from '@shared/properties'
 import { askDestroyProperty } from '@renderer/Windows/confirmations'
