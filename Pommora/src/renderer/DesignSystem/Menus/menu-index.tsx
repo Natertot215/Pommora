@@ -5,6 +5,7 @@ import { ColorSwatch } from '../Controls/Switches/ColorSwatch'
 import { Slider } from '../Controls/Slider/Slider'
 import { PickerControl } from '../Elements/PickerControl'
 import { cx } from '../Util/cx'
+import { Reveal } from '../Animation/Reveal'
 import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
 import { actionRow, heading, headingCaps, side, titleWrap } from './menu-base.css'
 
@@ -21,7 +22,7 @@ export type Trailing =
   | ({ kind: 'color' } & ComponentProps<typeof ColorSwatch>)
   | { kind: 'field'; children: ReactNode }
 
-export type MenuRow =
+export type MenuRow = (
   | { kind: 'heading'; label: string; caps?: boolean }
   | { kind: 'separator' }
   | { kind: 'caption'; text: ReactNode }
@@ -38,6 +39,7 @@ export type MenuRow =
       onSelect?: () => void
       className?: string
     }
+) & { reveal?: boolean }
 
 export type MenuSection = { title?: string; caps?: boolean; rows: MenuRow[] }
 
@@ -77,6 +79,17 @@ function trailingNode(t: Trailing): ReactNode {
 }
 
 export function MenuRowView({ row }: { row: MenuRow }): React.JSX.Element {
+  const el = rowNode(row)
+  return row.reveal === undefined ? (
+    el
+  ) : (
+    <Reveal open={row.reveal} fill>
+      {el}
+    </Reveal>
+  )
+}
+
+function rowNode(row: MenuRow): React.JSX.Element {
   switch (row.kind) {
     case 'heading':
       return <div className={cx(heading, row.caps && headingCaps)}>{row.label}</div>

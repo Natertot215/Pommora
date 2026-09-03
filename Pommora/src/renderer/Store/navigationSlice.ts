@@ -543,6 +543,22 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     select: async (target, opts) => {
+      const record = opts?.record !== false
+      let pending: ReturnType<typeof openTabModel> | null = null
+      if (record) {
+        const s = get()
+        const newTab = opts?.newTab ?? s.personalization.tabOpenBehavior === 'newtab'
+        pending = openTabModel(s.tabs, s.activeTabId, s.pinnedTabs, target, { newTab }, makeTabId())
+        if (
+          pending.tabs.length > s.tabs.length &&
+          (s.personalization.tabTakeFocus ?? true) === false
+        ) {
+          set({ tabs: pending.tabs })
+          commitRecents(recordRecent(s.recents, target, RECENTS_CAP))
+          persistTabs()
+          return
+        }
+      }
       pageFetchSeq++
       // Held while walking up the breadcrumb spine so the tail stays dimmed; reset on a branch.
       {
@@ -550,17 +566,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         if (depth !== get().crumbDepth) set({ crumbDepth: depth })
       }
       if (get().navSlide?.seq === coldStampSeq) set({ navSlide: null })
-      if (opts?.record !== false) {
+      if (pending) {
         const s = get()
-        const pinned = s.pinnedTabs
-        const res = openTabModel(
-          s.tabs,
-          s.activeTabId,
-          pinned,
-          target,
-          { newTab: opts?.newTab },
-          makeTabId(),
-        )
+        const res = pending
         const opened = res.tabs !== s.tabs
         set({
           tabs: res.tabs,
