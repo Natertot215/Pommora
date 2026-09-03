@@ -129,7 +129,7 @@ type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
  *  and `suffix` follows the digits as written. */
 type NumberUnit = { scale: number; suffix: string }
 const PERCENT: NumberUnit = { scale: 100, suffix: '%' }
-const DAYS: NumberUnit = { scale: 1, suffix: ' days' }
+const DAYS: NumberUnit = { scale: 1, suffix: ' Days' }
 const MINUTES: NumberUnit = { scale: 1, suffix: ' Min' }
 
 const clearExclusions = async (): Promise<boolean> => {
