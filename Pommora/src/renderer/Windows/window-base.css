@@ -19,7 +19,10 @@
   --window-flow-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
   --window-flow-home: calc(var(--window-side-inset) + 22px);
-  --window-flow-inset: calc(var(--surface-inset) * 2); /* KNOB — breathing room off the pane's seam after the swallow */
+  --window-flow-inset: calc(
+    var(--surface-inset) *
+    2
+  ); /* KNOB — breathing room off the pane's seam after the swallow */
   --window-flow-shift: max(
     0px,
     var(--io) *
