@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile, readdir, stat } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, writeFile, readdir, stat, truncate } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { tmpdir } from 'node:os'
@@ -17,6 +17,7 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
+import { ignoredUnder } from '../watcher'
 
 let root: string
 let dbPath: string
@@ -65,8 +66,22 @@ describe('openVersionsDb', () => {
     expect(others).toEqual([])
     expect(original).toMatch(/^versions\.corrupt-.*\.db$/)
     expect(await readFile(join(root, '.nexus', original), 'utf8')).toBe('not a database')
+    expect(ignoredUnder(root, { excluded: [], assetDir: '' })(join(root, '.nexus', original))).toBe(
+      true,
+    )
     expect(existsSync(`${dbPath}-wal`)).toBe(false)
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
+  })
+
+  it('quarantines a truncated store and starts fresh', async () => {
+    const first = opened()
+    for (let ts = 1; ts <= 40; ts++) addSnapshot(first, 'P1', ts, 'edit', 'x'.repeat(4000))
+    first.close()
+    await truncate(dbPath, Math.floor((await stat(dbPath)).size / 2))
+    const db = opened()
+    expect(listSnapshots(db, 'P1')).toEqual([])
+    db.close()
+    expect(await corruptFiles()).toHaveLength(1)
   })
 
   it('leaves a store it cannot open where it is', async () => {

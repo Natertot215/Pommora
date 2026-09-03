@@ -11,8 +11,13 @@ export type Db = DatabaseSync
 /** A store file's suffixes — the file, its WAL, its SHM — for anything that moves or removes one whole. */
 export const DB_SIBLINGS = ['', '-wal', '-shm'] as const
 
-/** SQLite's own code for a file that is not a database at all. */
-export const SQLITE_NOTADB = 26
+const SQLITE_CORRUPT = 11
+const SQLITE_NOTADB = 26
+
+/** Whether an open failed because the file is damaged — not a database, or a malformed image —
+ *  rather than locked, mid-sync, or unreadable, which a later launch may find whole. */
+export const damagedStore = (errcode: number | undefined): boolean =>
+  errcode === SQLITE_CORRUPT || errcode === SQLITE_NOTADB
 
 /** A null handle here is LOUD: every operational store silently no-ops behind it, so a quiet
  *  failure reads as "Pommora forgot my tabs" with nothing pointing at the cause. The failure's
