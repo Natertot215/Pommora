@@ -2,6 +2,7 @@
 // stores live here: per-tab entries (editorState, scrollTop, live-body detail) written at
 // unmount, and a path-keyed detail slot for embed rehydration, written through by the shared save
 // scheduler so a returning tile always seeds on the newest body.
+import { useSyncExternalStore } from 'react'
 import type { PageDetail } from '@shared/types'
 
 export interface CacheEntry {
@@ -96,6 +97,36 @@ export function dropCacheDetail(path: string): void {
   detailByPath.delete(path)
   inFlight.delete(path)
 }
+
+/** A warm entry stands only while its doc is the fresh body; a scroll-only entry has no doc to
+ *  disagree, and no fresh body means nothing to disagree with. */
+export function fenceWarm<E extends { editorState?: unknown }>(
+  entry: E | undefined,
+  fresh: string | undefined,
+): E | undefined {
+  if (!entry || fresh === undefined) return entry
+  const doc = (entry.editorState as { doc?: unknown } | undefined)?.doc
+  return doc === undefined || doc === fresh ? entry : undefined
+}
+
+// A body replaced from outside the editor bumps its path's epoch; every host keyed on it remounts.
+const bodyEpochs = new Map<string, number>()
+const epochListeners = new Set<() => void>()
+
+export function bumpBodyEpoch(path: string): void {
+  bodyEpochs.set(path, (bodyEpochs.get(path) ?? 0) + 1)
+  for (const fn of epochListeners) fn()
+}
+
+export const readBodyEpoch = (path: string): number => bodyEpochs.get(path) ?? 0
+
+export function subscribeBodyEpoch(fn: () => void): () => void {
+  epochListeners.add(fn)
+  return () => epochListeners.delete(fn)
+}
+
+export const useBodyEpoch = (path: string): number =>
+  useSyncExternalStore(subscribeBodyEpoch, () => readBodyEpoch(path))
 
 export function dropCacheTab(tabId: string): void {
   cache.delete(tabId)

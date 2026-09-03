@@ -14,6 +14,7 @@ import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPane } from './Interface/InspectorPane/InspectorPane'
 import { NavWindow } from './Windows/NavWindow'
 import { PageWindow } from './Windows/PageWindow'
+import { PageHistoryWindow } from './Windows/PageHistoryWindow'
 import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from './Settings/SettingsWindow'
 import { IterationWindow } from './Utilities/iteration-window'
@@ -130,6 +131,13 @@ export function App(): React.JSX.Element {
       if (target.id) openPreview({ id: target.id, path: target.path })
     })
   }, [openPreview])
+
+  const openHistory = useSession((s) => s.openHistory)
+  useEffect(() => {
+    return window.nexus.onOpenHistory((target) => {
+      if (target.id) openHistory({ id: target.id, path: target.path })
+    })
+  }, [openHistory])
 
   useEffect(() => {
     return window.nexus.onNexusChanged((next) => void applyTree(next))
@@ -289,6 +297,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <InspectorPane open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}
       {status === 'ready' && <PageWindow />}
+      {status === 'ready' && <PageHistoryWindow />}
       {status === 'ready' && <WebWindow />}
       {status === 'ready' && <SettingsWindow />}
       {status === 'ready' && <IterationWindow />}

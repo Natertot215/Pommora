@@ -44,7 +44,7 @@ function ordinal(day: number): string {
   }
 }
 
-function clockOf(date: Date, timeFormat: TimeFormat): string {
+export function clockOf(date: Date, timeFormat: TimeFormat): string {
   return timeFormat === 'twelveHour'
     ? dateFmt({ hour: 'numeric', minute: '2-digit' }).format(date)
     : dateFmt({ hour: '2-digit', minute: '2-digit', hour12: false }).format(date)
