@@ -330,8 +330,8 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 #### Gate 2
 
-- [ ] Gates green. Every Verify ticked. Now counts re-run.
-- [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; every concern fixed or ruled.
+- [x] Gates green. Every Verify ticked. Now counts re-run.
+- [x] Simplification, then review, against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; every concern fixed or ruled.
 - [ ] A restarted dev instance against a scratch Nexus: rows appear in `versions.db` after typing; no `full-refresh` per save. No screenshots.
 - [ ] Progress hashes filled. Phase 3 opens.
 
@@ -661,7 +661,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 3 · `507232e8`
 - [ ] **Phase 2** — Capture
   - [x] Task 4 · `a4e33d6b`
-  - [ ] Task 5 · `<commit>`
+  - [x] Task 5 · `3a0ce799`
 - [ ] **Phase 3** — The contract and the settings
   - [ ] Task 6 · `<commit>`
   - [ ] Task 7 · `<commit>`
@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026, Nathan: the live NexusOS instance may be restarted and driven for the gates' live checks — a throwaway page only, reverted afterward.
 - 09-02-2026 (mine, Gate 2): a body write still inside its lock when ⌘Q lands offers its text after the store closed and records nothing — quit does not wait on in-flight IPC, as it never has; `arm` awaits a config read that is microtask-only whenever the tree holds the root, so a flush cannot interleave with it today; the `values:changed` push, the id index, and the write echo stay three seams because they carry three facts.
 - 09-02-2026 (mine, Task 4): the full suite's two editor stress suites (`embedAbsorb`, `citationBreakage`) timed out at 5 s under a load average of 22 during the gate and pass in isolation (49/49, 8 s); no timeout was raised, the gate is read as green with that noted.
 - 09-02-2026 (mine, Gate 1): `PRAGMA quick_check` runs once per open — O(store) at startup on a file sized in megabytes, off every hot path; a same-millisecond `edit`/`external` pair replaces rather than doubles, which the interval gate makes unreachable in practice; `neverWatched`'s `nexus.db` prefix and the watcher's scoped `.db` clause stay two predicates because the first also feeds `adoptFile`, where the scoped rule would blind a user's own `.db` page-sibling.
@@ -690,6 +691,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Gate 2 review: the foreign-overwrite memory is keyed by page id, not path, so a page recreated under a freed name inherits no stale hash; a restore arms no quiet timer — nothing was typed, so there is no settled text to capture.
 - 09-02-2026, Gate 2 fold: the `historyDays` sweep runs after `confirmSettingsWrite` so it reads the value just written rather than the tree's stale copy; the watcher arms a page after `patchPageFromDisk`, so an externally created page is in the index when it is looked up; the gate clock moves only when a row lands; a flush keeps the source a timer was armed with; `before-quit` quits on rejection as on settlement; `valuesChanged` memoizes both directions of the id index per tree and offers `liveIdOf(root, abs)`.
 - 09-02-2026, Task 4: `writeBody` leaves the `values:changed` push to its caller — `pushValueChanges` is private to `index.ts` and bound to the main window, so the handler's tail is `await writeBody(...)` then the push; the interval gate binds `edit` offers only — `external` and `restore` land at once — and the private `capture(…, gated)` serves both the gated offer and the ungated flush.
 - 09-02-2026, Task 1 (Gate 1): the quarantine name is `versions.corrupt-<stamp>.db` (siblings `…db-wal`, `…db-shm`) rather than `versions.db.corrupt-<stamp>`, so the watcher's store clause covers the set-aside files and a quarantine costs no walk; a store whose rename failed is left where it is and the session runs without history rather than reopening a damaged file; `openDb` closes the handle it failed to configure; a failed `CREATE TABLE` closes and answers null; `deleteSnapshots` deletes in chunks of 500 ids.
