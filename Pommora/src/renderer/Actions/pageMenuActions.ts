@@ -6,7 +6,6 @@ import { pageLinkText, pagePathText, type PageMoveContext } from '@shared/pageMe
 import type { NexusTree } from '@shared/types'
 import { parentOf } from '@shared/treePatch'
 import { containerTargets } from '@renderer/Actions/destinationTree'
-import { pagesOf } from '@renderer/treeIndex'
 import { useSession } from '@renderer/store'
 
 /** Where this page may be sent: every container in the nexus, with the one it already sits in
@@ -19,9 +18,12 @@ export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveC
 }
 
 /** Runs the send-block actions and reports whether it took one, so a surface's own routing picks
- *  up where this leaves off. A page is named by its file, which is what a connection resolves;
- *  its history is keyed by id, which the tree resolves from the file. */
-export function runPageSendAction(action: string, path: string): boolean {
+ *  up where this leaves off. A page is named by its file, which is what a connection resolves,
+ *  and its history by its id. */
+export function runPageSendAction(
+  action: string,
+  { id, path }: { id: string; path: string },
+): boolean {
   if (action.startsWith('move:')) {
     void useSession.getState().mutate({ op: 'movePage', path, newParentPath: action.slice(5) })
     return true
@@ -35,9 +37,7 @@ export function runPageSendAction(action: string, path: string): boolean {
     return true
   }
   if (action === 'title:history') {
-    const { tree, openHistory } = useSession.getState()
-    const page = tree && pagesOf(tree).find((p) => p.path === path)
-    if (page) openHistory({ id: page.id, path })
+    useSession.getState().openHistory({ id, path })
     return true
   }
   return false

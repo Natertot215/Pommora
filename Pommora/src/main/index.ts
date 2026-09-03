@@ -335,7 +335,6 @@ const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 
 const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
-const isTimestamp = isFiniteNumber
 const isCardSize = (v: unknown): v is HoverCardSize =>
   isPlainObject(v) && ['w', 'h'].every((k) => isFiniteNumber(v[k]))
 
@@ -1593,7 +1592,7 @@ serveBridge(
       kind: 'envelope',
       fn: async (pageId: unknown, ts: unknown) => {
         if (sessionRoot() === null) return NO_NEXUS
-        return typeof pageId === 'string' && isTimestamp(ts)
+        return typeof pageId === 'string' && isFiniteNumber(ts)
           ? readHistoryBody(pageId, ts)
           : NEEDS_SNAPSHOT_KEY
       },
@@ -1604,7 +1603,7 @@ serveBridge(
       fn: async (pageId: unknown, ts: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof pageId !== 'string' || !isTimestamp(ts)) return NEEDS_SNAPSHOT_KEY
+        if (typeof pageId !== 'string' || !isFiniteNumber(ts)) return NEEDS_SNAPSHOT_KEY
         const r = await restoreSnapshot(root, pageId, ts)
         pushValueChanges(root)
         return r
@@ -1615,7 +1614,7 @@ serveBridge(
       kind: 'envelope',
       fn: async (pageId: unknown, ts: unknown) => {
         if (sessionRoot() === null) return NO_NEXUS
-        return typeof pageId === 'string' && Array.isArray(ts) && ts.every(isTimestamp)
+        return typeof pageId === 'string' && Array.isArray(ts) && ts.every(isFiniteNumber)
           ? deleteHistory(pageId, ts)
           : fail('operation-failed', 'A page id and timestamps are required.')
       },

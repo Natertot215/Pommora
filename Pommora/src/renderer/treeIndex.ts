@@ -18,6 +18,7 @@ import {
   toNavRef,
 } from '@shared/types'
 import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
+import { NO_TRAIL, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import {
   buildPageIndex,
   type ConnectionsApi,
@@ -202,6 +203,10 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
 
 /** The entity's ancestry including itself, outermost first — what every location trail draws from.
  *  Null when the ref no longer resolves. */
+/** The location trail a surface draws for a node — empty until the tree can say. */
+export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
+  (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
+
 export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null {
   const ix = indexFor(tree)
   if (!ix.ancestry) {

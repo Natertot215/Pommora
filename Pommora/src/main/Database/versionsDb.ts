@@ -5,12 +5,19 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@shared/result'
-import type { SnapshotRow, SnapshotSource } from '@shared/types'
 import { DB_SIBLINGS, openDb, type Db } from './driver'
 import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'
 
 export const VERSIONS_FILENAME = 'versions.db'
+
+/** Where a snapshot came from: the autosave, a foreign writer's text about to be overwritten, or
+ *  the text a restore replaced. */
+export type SnapshotSource = 'edit' | 'external' | 'restore'
+export interface SnapshotRow {
+  ts: number
+  source: SnapshotSource
+}
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS snapshots (
@@ -98,10 +105,9 @@ export function latestSnapshot(db: Db, pageId: string): { ts: number; text: stri
 }
 
 export function listSnapshots(db: Db, pageId: string): SnapshotRow[] {
-  const rows = db
+  return db
     .prepare('SELECT ts, source FROM snapshots WHERE page_id = ? ORDER BY ts DESC')
     .all(pageId) as { ts: number; source: SnapshotSource }[]
-  return rows.map(({ ts, source }) => ({ ts, source }))
 }
 
 export function readSnapshot(db: Db, pageId: string, ts: number): string | null {
@@ -113,20 +119,11 @@ export function readSnapshot(db: Db, pageId: string, ts: number): string | null 
 
 const removed = (run: { changes: number | bigint }): number => Number(run.changes)
 
-const DELETE_CHUNK = 500
-
 export function deleteSnapshots(db: Db, pageId: string, ts: readonly number[]): number {
-  let count = 0
-  for (let i = 0; i < ts.length; i += DELETE_CHUNK) {
-    const chunk = ts.slice(i, i + DELETE_CHUNK)
-    const marks = chunk.map(() => '?').join(', ')
-    count += removed(
-      db
-        .prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN (${marks})`)
-        .run(pageId, ...chunk),
-    )
-  }
-  return count
+  const marks = ts.map(() => '?').join(', ')
+  return removed(
+    db.prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN (${marks})`).run(pageId, ...ts),
+  )
 }
 
 export function clearSnapshots(db: Db): number {
