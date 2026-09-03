@@ -205,6 +205,23 @@ describe('the quiet timer', () => {
   })
 })
 
+describe('a switch of roots', () => {
+  it('leaves the old store holding its row and the new one empty', async () => {
+    await writeBody(root, file, 'two', 'edit')
+    await flushFileHistory(root)
+    resetFileHistory()
+    const before = rows().length
+    const next = await mkdtemp(join(tmpdir(), 'pom-history-next-'))
+    closeSessionDb()
+    openSessionDb(next)
+    expect(rows()).toEqual([])
+    closeSessionDb()
+    openSessionDb(root)
+    expect(rows()).toHaveLength(before)
+    await rm(next, { recursive: true, force: true })
+  })
+})
+
 describe('sweepFileHistory', () => {
   it('removes only rows older than the timeframe', async () => {
     await captureIfDue(root, PAGE, 'old', 'edit')

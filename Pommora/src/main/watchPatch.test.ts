@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdir, mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -10,6 +10,9 @@ import type { WatchScope } from './exclusion'
 import { getHeldAssetMap, liveAssetMap } from './assetMap'
 import { ignoredUnder } from './watcher'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
+import { noteExternalEdit } from './CRUD/fileHistory'
+
+vi.mock('./CRUD/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
@@ -400,5 +403,15 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
     expect(
       touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], scope()),
     ).toBe(true)
+  })
+})
+
+describe('a page written from outside', () => {
+  it('arms the file-history timer for it', async () => {
+    await refreshTree(root)
+    vi.mocked(noteExternalEdit).mockClear()
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha edited\n`)
+    await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())
+    expect(noteExternalEdit).toHaveBeenCalledWith(root, abs('Notes', 'A.md'))
   })
 })
