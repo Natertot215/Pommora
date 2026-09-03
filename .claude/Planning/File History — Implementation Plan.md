@@ -206,8 +206,8 @@ const DB_FILE = /\.db(-wal|-shm)?$/
 
 **Verify — automated**
 
-- [ ] Red first, `watcher.test.ts`: ignores `.nexus/versions.db`, `-wal`, `-shm`; still watches `.nexus/settings.json`; does not ignore `Notes/report.db`. Then green.
-- [ ] `mutate.test.ts` `adoptFile` cases green unmodified. Full gate green.
+- [x] Red first, `watcher.test.ts`: ignores `.nexus/versions.db`, `-wal`, `-shm`; still watches `.nexus/settings.json`; does not ignore `Notes/report.db`. Then green.
+- [x] `mutate.test.ts` `adoptFile` cases green unmodified. Full gate green.
 
 **Verify — user**
 
@@ -657,7 +657,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 - [ ] **Phase 1** — The store and the writer · base `b931ef59`
   - [x] Task 1 · `ac153859`
-  - [ ] Task 2 · `<commit>`
+  - [x] Task 2 · `12f6404f`
   - [ ] Task 3 · `<commit>`
 - [ ] **Phase 2** — Capture
   - [ ] Task 4 · `<commit>`

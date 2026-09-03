@@ -6,7 +6,7 @@ import type { BrowserWindow } from 'electron'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { push } from './ipc'
 import { sessionRoot } from './session'
-import { startWatcher, stopWatcher } from './watcher'
+import { ignoredUnder, startWatcher, stopWatcher } from './watcher'
 
 vi.mock('./ipc', () => ({ push: vi.fn() }))
 vi.mock('./session', () => ({ sessionRoot: vi.fn() }))
@@ -113,5 +113,18 @@ describe('the watcher settle', () => {
         ?.collections[0]?.pages.map((p) => p.title)
         .sort(),
     ).toEqual(['A', 'B'])
+  })
+})
+
+describe('ignoredUnder', () => {
+  const ignored = (...segs: string[]): boolean =>
+    ignoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
+
+  it('ignores the stores and their journals under .nexus alone', () => {
+    expect(ignored('.nexus', 'versions.db')).toBe(true)
+    expect(ignored('.nexus', 'versions.db-wal')).toBe(true)
+    expect(ignored('.nexus', 'versions.db-shm')).toBe(true)
+    expect(ignored('.nexus', 'settings.json')).toBe(false)
+    expect(ignored('Notes', 'report.db')).toBe(false)
   })
 })
