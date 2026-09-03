@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Crop } from '@shared/schemas'
 import {
-  clamp,
   clampZoom,
   coverRect,
   DEFAULT_CROP,
@@ -10,6 +9,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
 } from '@shared/cropGeometry'
+import { clamp } from '@shared/clamp'
 import { HTTP_URL } from '@shared/nexusPaths'
 import { resolveAssetUrl, resolveAssetValue } from '@renderer/Assets/assetUrl'
 import { useSession } from '@renderer/store'

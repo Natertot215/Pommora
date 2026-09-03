@@ -1,6 +1,6 @@
 // The cross-process contract. Imported by main, preload, and renderer — NO fs, NO React here.
 
-import { clamp } from './cropGeometry'
+import { clamp } from './clamp'
 import { SPECTRUM, type CellKey } from './theme'
 import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
@@ -107,6 +107,20 @@ export const HISTORY_INTERVAL = {
   min: HISTORY_INTERVAL_STEPS[0],
   max: HISTORY_INTERVAL_STEPS[HISTORY_INTERVAL_STEPS.length - 1],
   default: 5,
+} as const
+/** `personalization.tabMinWidth` / `tabMaxWidth` — the bounds a tab's width lands between, in
+ *  pixels: the steps offered, and the range a typed value clamps into. */
+export const TAB_MIN_WIDTH_STEPS = [50, 60, 70, 80, 90, 100] as const
+export const TAB_MIN_WIDTH = {
+  min: TAB_MIN_WIDTH_STEPS[0],
+  max: TAB_MIN_WIDTH_STEPS[TAB_MIN_WIDTH_STEPS.length - 1],
+  default: 70,
+} as const
+export const TAB_MAX_WIDTH_STEPS = [150, 175, 200, 225, 250, 275, 300, 325, 350] as const
+export const TAB_MAX_WIDTH = {
+  min: TAB_MAX_WIDTH_STEPS[0],
+  max: TAB_MAX_WIDTH_STEPS[TAB_MAX_WIDTH_STEPS.length - 1],
+  default: 250,
 } as const
 /** `personalization.tabCache` — how many open page tabs keep their surface live before older ones
  *  fall to on-demand loading. */

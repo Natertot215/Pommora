@@ -1,6 +1,5 @@
 import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { MenuRowView, type MenuRow } from '@renderer/DesignSystem/Menus'
 import * as s from './date-time-editor.css'
 
@@ -29,12 +28,14 @@ const pickerRow = <T extends string>(
   value: T,
   options: { value: T; label: string }[],
   onPick: (v: T) => void,
+  reveal?: boolean,
 ): MenuRow => ({
   kind: 'item',
   inert: true,
   icon: <Icon name={glyph} size="headline" />,
   label,
   trailing: { kind: 'picker', ariaLabel, value, options, onPick },
+  reveal,
 })
 
 /** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
@@ -55,18 +56,17 @@ export function DateTimeEditor({
           onChange({ date_format: v }),
         )}
       />
-      <Reveal open={showDay} fill>
-        <MenuRowView
-          row={pickerRow(
-            'calendar',
-            'Day',
-            'Weekday format',
-            style.weekday ?? 'none',
-            WEEKDAY_OPTIONS,
-            (v) => onChange({ weekday: v }),
-          )}
-        />
-      </Reveal>
+      <MenuRowView
+        row={pickerRow(
+          'calendar',
+          'Day',
+          'Weekday format',
+          style.weekday ?? 'none',
+          WEEKDAY_OPTIONS,
+          (v) => onChange({ weekday: v }),
+          showDay,
+        )}
+      />
       <MenuRowView
         row={pickerRow(
           'clock',

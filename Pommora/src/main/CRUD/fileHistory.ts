@@ -162,7 +162,6 @@ export function resetFileHistory(): void {
   lastWritten.clear()
 }
 
-/** A root is leaving: every armed page lands, then nothing of it remains. */
 export async function retireFileHistory(root: string): Promise<void> {
   await flushFileHistory(root)
   resetFileHistory()

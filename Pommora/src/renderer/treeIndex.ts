@@ -201,7 +201,6 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
   return ix.resolve
 }
 
-/** The location trail a surface draws for a node — empty until the tree can say. */
 export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
   (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
 
