@@ -7,13 +7,11 @@ import { MenuItem, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
 import { useKeepInView } from '@renderer/DesignSystem/Interactions/useKeepInView'
-import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavTrail, NO_TRAIL, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { ancestryOf } from '@renderer/treeIndex'
 import { useSession } from '@renderer/store'
 import type { AcRow, ConnectionForm } from './autocomplete'
-
-const NO_TRAIL: TrailSegment[] = []
 
 interface Props {
   open: boolean

@@ -91,6 +91,8 @@ export type SidebarMode = 'collections' | 'contexts' | 'agenda'
 /** How a picker marks the row you're on. */
 export type PickerSelection = 'outlined' | 'checked'
 
+export type TabOpenBehavior = 'overtake' | 'newtab'
+
 /** Where a page snapshot came from: the autosave, a foreign writer's text about to be
  *  overwritten, or the text a restore replaced. */
 export type SnapshotSource = 'edit' | 'external' | 'restore'
@@ -103,14 +105,14 @@ export interface SnapshotRow {
 export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const
 export const HISTORY_DAYS = {
   min: HISTORY_DAY_STEPS[0],
-  max: HISTORY_DAY_STEPS[4],
+  max: HISTORY_DAY_STEPS[HISTORY_DAY_STEPS.length - 1],
   default: 90,
 } as const
 /** `personalization.historyInterval` — the least time between two snapshots of one page, in minutes. */
 export const HISTORY_INTERVAL_STEPS = [5, 10, 15, 20] as const
 export const HISTORY_INTERVAL = {
   min: HISTORY_INTERVAL_STEPS[0],
-  max: HISTORY_INTERVAL_STEPS[3],
+  max: HISTORY_INTERVAL_STEPS[HISTORY_INTERVAL_STEPS.length - 1],
   default: 5,
 } as const
 export function clampInt(v: unknown, min: number, max: number): number | undefined {
@@ -156,6 +158,10 @@ export interface Personalization {
   sidebarMode?: SidebarMode
   /** Absent = always shown. */
   revealTabBarOnHover?: boolean
+  tabOpenBehavior?: TabOpenBehavior
+  tabTakeFocus?: boolean
+  tabMinWidth?: number
+  tabMaxWidth?: number
   /** Absent = Pommora draws its own text selection; true hands the paint back to the platform's. */
   nativeHighlight?: boolean
   /** Absent = `outlined`. */

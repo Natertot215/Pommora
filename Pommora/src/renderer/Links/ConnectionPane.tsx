@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/Connections'
+import type { ConnPage } from '@renderer/MarkdownPM/Connections'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import { PickerMenu, type PickerDirection } from '@renderer/DesignSystem/Pickers/picker-base'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/Editor/folding'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
-import { pageIndexOf } from '../treeIndex'
+import { resolveOnlyConnections } from '../treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Store/tabState'
 import { useSession } from '../store'
 import { PageTile } from '../SurfacePM/PageTile'
@@ -285,10 +285,7 @@ export function ConnectionPane(): React.JSX.Element {
   // hover its own contents), no menu, no bypass, and `open` deliberately inert (clicks inside
   // the pane do nothing).
   const tree = useSession((s) => s.tree)
-  const resolveOnly = useMemo<ConnectionsApi | undefined>(
-    () => (tree ? { ...pageIndexOf(tree), open: () => {} } : undefined),
-    [tree],
-  )
+  const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
 
   useEffect(() => {
     if (!hovered) return

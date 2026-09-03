@@ -58,12 +58,13 @@ async function capture(
   gated: boolean,
 ): Promise<boolean> {
   try {
+    if (kindOf(pageId) !== 'page') return false
+    if (source !== 'restore' && Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
     const now = Date.now()
     const { enabled, intervalMs } = await config(root)
-    if (!enabled || kindOf(pageId) !== 'page') return false
+    if (!enabled) return false
     const last = lastTs.get(pageId)
     if (gated && last !== undefined && now - last < intervalMs) return false
-    if (Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
     const db = sessionVersionsDb()
     if (!db) return false
     const latest = latestSnapshot(db, pageId)
@@ -93,11 +94,11 @@ function disarm(pageId: string): void {
 }
 
 function disarmAll(): [string, SnapshotSource][] {
-  const armed = [...timers].map(([pageId, { source }]): [string, SnapshotSource] => [
-    pageId,
-    source,
-  ])
-  for (const { timer } of timers.values()) clearTimeout(timer)
+  const armed: [string, SnapshotSource][] = []
+  for (const [pageId, { source, timer }] of timers) {
+    clearTimeout(timer)
+    armed.push([pageId, source])
+  }
   timers.clear()
   return armed
 }
@@ -116,8 +117,8 @@ async function captureFromDisk(
 
 /** The quiet timer: a burst of writes ends with one snapshot of the settled text. */
 async function arm(root: string, pageId: string, source: SnapshotSource): Promise<void> {
-  disarm(pageId)
   const { intervalMs } = await config(root)
+  disarm(pageId)
   const timer = setTimeout(() => {
     timers.delete(pageId)
     void captureFromDisk(root, pageId, source, source === 'edit')
@@ -137,19 +138,19 @@ export async function writeBody(
 ): Promise<Result<null>> {
   const r = await updatePageBody(absPath, body)
   if (!r.ok) return r
-  await indexWrittenPage(root, absPath)
-  noteValueWrite(root, absPath)
   const { previous, written } = r.value
   const pageId = liveIdOf(root, absPath)
+  const known = pageId ? lastWritten.get(pageId) : undefined
+  if (pageId) lastWritten.set(pageId, bodyHash(written))
+  await indexWrittenPage(root, absPath)
+  noteValueWrite(root, absPath)
   if (pageId) {
     if (previous !== null) {
-      const known = lastWritten.get(pageId)
       const foreign = known !== undefined && known !== bodyHash(previous)
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
       await captureIfDue(root, pageId, previous, offered)
     }
-    lastWritten.set(pageId, bodyHash(written))
     if (source === 'edit') await arm(root, pageId, 'edit')
     else disarm(pageId)
   }
@@ -172,6 +173,12 @@ export function resetFileHistory(): void {
   disarmAll()
   lastTs.clear()
   lastWritten.clear()
+}
+
+/** A root is leaving: every armed page lands, then nothing of it remains. */
+export async function retireFileHistory(root: string): Promise<void> {
+  await flushFileHistory(root)
+  resetFileHistory()
 }
 
 const NO_STORE = fail('operation-failed', 'File history is unavailable.')

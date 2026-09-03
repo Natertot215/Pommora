@@ -141,5 +141,6 @@ export function clearCache(): void {
   detailByPath.clear()
   inFlight.clear()
   bodyEpochs.clear()
+  for (const fn of epochListeners) fn()
   generation++
 }
