@@ -108,7 +108,7 @@ describe('upgrade in place', () => {
     // A database as the pre-index schema wrote it: meta + local_state alone, stamped v1.
     const { mkdirSync } = await import('node:fs')
     mkdirSync(join(root, '.nexus'), { recursive: true })
-    const v1 = openDb(join(root, '.nexus', 'nexus.db'))
+    const v1 = openDb(join(root, '.nexus', 'nexus.db')).db
     if (!v1) throw new Error('fixture db failed to open')
     v1.exec(`
       CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
