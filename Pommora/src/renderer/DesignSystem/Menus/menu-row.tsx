@@ -152,7 +152,6 @@ export function MenuSeparator({
   )
 }
 
-/** A row's caption in parts, each stood off the next on the segment bar. */
 export function MenuSegments({ parts }: { parts: readonly ReactNode[] }): React.JSX.Element {
   return (
     <span className={s.subLabelSegments}>
