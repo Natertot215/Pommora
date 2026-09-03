@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-03-2026              | PM-127 | PropertyFrame Joins The Frames                       |
 | 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026 → 09-03      | PM-125 | Page File History                                    |
 | 09-02-2026              | PM-124 | In-App Confirmation & Notifications                  |
@@ -130,6 +131,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-127 || PropertyFrame Joins The Frames
+**DATE:** 09-03-2026
+
+`PropertyFrame` moved from `Properties/` to `Frames/`, beside the group, sort, filter, hidden, layout, and settings frames it already shares a chassis with. Its only importer was `SettingsFrame`, itself in `Frames/`, so by consumers-decide-the-folder it had no home in `Properties/`; the move also files it alongside `HiddenFrame` and `FilterFrame`, which already make its two outward imports — `useActiveView` (Views) and `useStyleFor` (Tables). That closes the last `Properties → Views/Tables` edge: the grep the boundary rests on returns nothing over `Properties/`, and the frame's cross-layer reach reads as ordinary Frames composition rather than a carve-out. The per-type editors, `OptionRow`, and `PropertyTypes` stay in `Properties/` as the value layer the frame reaches down into. Import paths only; no behavior changed.
+
+- **Commit:** `10043198`
+- **Diff:** Net +5 | +19 / −14
 
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
