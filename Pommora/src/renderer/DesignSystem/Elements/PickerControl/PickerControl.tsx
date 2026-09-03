@@ -15,11 +15,6 @@ export type PickerChoice<T extends string> = {
 export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-export const percentChoice = (f: number): PickerChoice<string> => ({
-  value: String(f),
-  label: `${Math.round(f * 100)}%`,
-})
-
 export const factorChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
   label: `${f.toFixed(2)}x`,

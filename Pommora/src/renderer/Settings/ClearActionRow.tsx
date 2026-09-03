@@ -1,26 +1,24 @@
 import { useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
-import { askClearExclusions } from '@renderer/Windows/confirmations'
 
-export function ClearExclusionsRow({
+const CLEARED_MS = 1500
+
+/** A destructive Clear that reads Cleared for a moment once `clear` reports it ran. */
+export function ClearActionRow({
   label,
   hint,
+  clear,
 }: {
   label: string
   hint: string
+  clear: () => Promise<boolean>
 }): React.JSX.Element {
   const [done, setDone] = useState(false)
-  const clear = async (): Promise<void> => {
-    const count = await window.nexus.countExclusions()
-    if (!count.ok) return void window.nexus.showError(count.error.message)
-    if (count.value === 0 || !(await askClearExclusions(count.value))) return
-    const r = await window.nexus.clearExclusions()
-    if (!r.ok) return void window.nexus.showError(r.error.message)
-    // A report means a clear ran; null is an emptied list.
-    if (r.value === null) return
+  const run = async (): Promise<void> => {
+    if (!(await clear())) return
     setDone(true)
-    window.setTimeout(() => setDone(false), 1500)
+    window.setTimeout(() => setDone(false), CLEARED_MS)
   }
   return (
     <MenuRowView
@@ -34,7 +32,7 @@ export function ClearExclusionsRow({
             <Button
               type="destructive"
               label={done ? 'Cleared' : 'Clear'}
-              onClick={() => void clear()}
+              onClick={() => void run()}
             />
           ),
         },

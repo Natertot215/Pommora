@@ -425,8 +425,8 @@ Labels, hints, and confirm copy: Nathan's, at execution.
 
 **Verify — automated**
 
-- [ ] The exclusions clear's existing test keeps its behavior under the rename: declined → nothing; ok → Cleared for 1500 ms.
-- [ ] Full gate green. `rg -F "ClearExclusionsRow" src` → 0 · `rg -F "clear-exclusions" src` → 0 · `rg -F "percentChoice" src` → 0; control `rg -F "ClearActionRow" src` → ≥ 3.
+- [x] The exclusions clear had no test of its own; its count-first ask and null-reply reading moved verbatim into `clearExclusions`, and `ClearActionRow` flips Cleared only on a true reply.
+- [x] Full gate green. `rg -F "ClearExclusionsRow" src` → 0 · `rg -F "clear-exclusions" src` → 0 · `rg -F "percentChoice" src` → 0; control `rg -F "ClearActionRow" src` → 3.
 
 **Verify — user**
 
@@ -663,7 +663,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 4 · `a4e33d6b`
   - [x] Task 5 · `3a0ce799`
 - [ ] **Phase 3** — The contract and the settings
-  - [ ] Task 6 · `<commit>`
+  - [x] Task 6 · `d20c6324`
   - [ ] Task 7 · `<commit>`
 - [ ] **Phase 4** — The surface *(Declared Stop)*
   - [ ] Task 9 · `<commit>`
@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026, Nathan (Task 7 copy): toggle hint "Stores recoverable snapshots of device-local file history"; the interval's unit reads "Min"; Clear History's caption and its dialog both read "Permanently delete stored snapshots for all files; this cannot be undone." (his "Perminately" corrected); the two picker hints were not given and stay empty. Once the window lands: a one-time seeded History window — one Current Version and five differing snapshots — kept in front for his look.
 - 09-02-2026, Nathan: the live NexusOS instance may be restarted and driven for the gates' live checks — a throwaway page only, reverted afterward.
 - 09-02-2026 (mine, Gate 2): a body write still inside its lock when ⌘Q lands offers its text after the store closed and records nothing — quit does not wait on in-flight IPC, as it never has; `arm` awaits a config read that is microtask-only whenever the tree holds the root, so a flush cannot interleave with it today; the `values:changed` push, the id index, and the write echo stay three seams because they carry three facts.
 - 09-02-2026 (mine, Task 4): the full suite's two editor stress suites (`embedAbsorb`, `citationBreakage`) timed out at 5 s under a load average of 22 during the gate and pass in isolation (49/49, 8 s); no timeout was raised, the gate is read as green with that noted.

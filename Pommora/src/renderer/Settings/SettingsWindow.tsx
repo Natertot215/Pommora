@@ -15,17 +15,15 @@ import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import {
-  percentChoice,
-  stepsWith,
-  type PickerChoice,
-} from '@renderer/DesignSystem/Elements/PickerControl'
+import { stepsWith, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/linkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
   DEFAULT_TIME_FORMAT,
+  HISTORY_DAYS,
+  HISTORY_INTERVAL,
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
@@ -46,7 +44,8 @@ import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
-import { ClearExclusionsRow } from './ClearExclusionsRow'
+import { ClearActionRow } from './ClearActionRow'
+import { askClearExclusions, askClearHistory } from '@renderer/Windows/confirmations'
 import './settings-window.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a frame carrying a
@@ -99,7 +98,9 @@ type Row =
       kind: 'exclusions'
     })
   | (RowText & {
-      kind: 'clear-exclusions'
+      kind: 'clear'
+      /** Asks, acts, and answers whether a clear ran — the row reads Cleared only then. */
+      clear: () => Promise<boolean>
     })
   | (RowText & {
       kind: 'color'
@@ -117,9 +118,38 @@ type Row =
       key: KeyOf<number>
       fallback: number
       steps?: readonly number[]
+      unit?: NumberUnit
     })
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
+
+/** How a numeric row shows its stored value: `scale` turns the stored number into the shown one. */
+type NumberUnit = { scale: number; suffix: string; label: (shown: number) => string }
+const PERCENT: NumberUnit = { scale: 100, suffix: '%', label: (n) => `${n}%` }
+const DAYS: NumberUnit = { scale: 1, suffix: 'days', label: (n) => `${n} days` }
+const MINUTES: NumberUnit = { scale: 1, suffix: 'Min', label: (n) => `${n} Min` }
+
+const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const satisfies readonly number[]
+const HISTORY_INTERVAL_STEPS = [5, 10, 15, 20] as const satisfies readonly number[]
+
+const clearExclusions = async (): Promise<boolean> => {
+  const count = await window.nexus.countExclusions()
+  if (!count.ok) {
+    window.nexus.showError(count.error.message)
+    return false
+  }
+  if (count.value === 0 || !(await askClearExclusions(count.value))) return false
+  const r = await window.nexus.clearExclusions()
+  if (!r.ok) window.nexus.showError(r.error.message)
+  return r.ok && r.value !== null
+}
+
+const clearHistory = async (): Promise<boolean> => {
+  if (!(await askClearHistory())) return false
+  const r = await window.nexus.clearHistory()
+  if (!r.ok) window.nexus.showError(r.error.message)
+  return r.ok
+}
 
 const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',
@@ -394,9 +424,10 @@ const FRAMES = roster([
             hint: 'Excluded folders will not be recognized by the app; removing a folder from exclusion will re-index.',
           },
           {
-            kind: 'clear-exclusions',
+            kind: 'clear',
             label: 'Clear Exclusion Cache',
             hint: 'Remove existing app data that may have been written onto previously indexed folders.',
+            clear: clearExclusions,
           },
         ],
       },
@@ -415,6 +446,42 @@ const FRAMES = roster([
             key: 'permanentDelete',
             label: 'Permanently Delete Files',
             hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
+          },
+        ],
+      },
+      {
+        title: 'File History',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'fileHistory',
+            label: 'File History',
+            hint: 'Stores recoverable snapshots of device-local file history.',
+            defaultOn: true,
+          },
+          {
+            kind: 'zoom',
+            key: 'historyDays',
+            label: 'History Timeframe',
+            hint: '',
+            fallback: HISTORY_DAYS.default,
+            steps: HISTORY_DAY_STEPS,
+            unit: DAYS,
+          },
+          {
+            kind: 'zoom',
+            key: 'historyInterval',
+            label: 'Snapshot Interval',
+            hint: '',
+            fallback: HISTORY_INTERVAL.default,
+            steps: HISTORY_INTERVAL_STEPS,
+            unit: MINUTES,
+          },
+          {
+            kind: 'clear',
+            label: 'Clear History',
+            hint: 'Permanently delete stored snapshots for all files; this cannot be undone.',
+            clear: clearHistory,
           },
         ],
       },
@@ -689,8 +756,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'exclusions':
       return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
-    case 'clear-exclusions':
-      return <ClearExclusionsRow label={row.label} hint={row.hint} />
+    case 'clear':
+      return <ClearActionRow label={row.label} hint={row.hint} clear={row.clear} />
     case 'color':
       return <ColorRow row={row} />
   }
@@ -752,9 +819,13 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
   const steps = row.steps ?? SCALE_STEPS
-  const commit = (factor: number): void =>
-    setPersonalization(row.key, factor === row.fallback ? undefined : factor)
-  const choices = stepsWith(steps, stored).map(percentChoice)
+  const unit = row.unit ?? PERCENT
+  const commit = (value: number): void =>
+    setPersonalization(row.key, value === row.fallback ? undefined : value)
+  const choices: PickerChoice<string>[] = stepsWith(steps, stored).map((f) => ({
+    value: String(f),
+    label: unit.label(Math.round(f * unit.scale)),
+  }))
   return (
     <MenuRowView
       row={settingsRow(row, {
@@ -764,12 +835,12 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
         options: choices,
         onPick: (v) => commit(Number(v)),
         typeable: {
-          text: String(Math.round(stored * 100)),
-          suffix: '%',
+          text: String(Math.round(stored * unit.scale)),
+          suffix: unit.suffix,
           onCommit: (written) => {
-            const percent = Number.parseFloat(written.replace('%', '').trim())
-            if (Number.isFinite(percent))
-              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], percent / 100)))
+            const shown = Number.parseFloat(written.replace(unit.suffix, '').trim())
+            if (Number.isFinite(shown))
+              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], shown / unit.scale)))
           },
         },
       })}
