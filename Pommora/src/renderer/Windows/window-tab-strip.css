@@ -53,6 +53,7 @@
   --tab-min: 70px;
   --tab-pref: 150px;
   --tab-max: 200px;
+  --tab-max-last: 400px;
   --tab-pad-x: 10px;
   --tab-gap: 6px;
   display: flex;
