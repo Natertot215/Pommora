@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile, writeFile, readdir } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, writeFile, readdir, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -71,6 +72,13 @@ describe('openVersionsDb', () => {
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })
 
+  it('leaves a store it cannot open where it is', async () => {
+    await mkdir(dbPath, { recursive: true })
+    expect(openVersionsDb(root)).toBeNull()
+    expect(existsSync(dbPath)).toBe(true)
+    expect(await corruptFiles()).toEqual([])
+  })
+
   it('quarantines interior corruption the header does not show', async () => {
     const first = opened()
     addSnapshot(first, 'P1', 10, 'edit', 'one')
@@ -133,11 +141,14 @@ describe('snapshots', () => {
     expect(readSnapshot(db, 'P2', 10)).toBe('other')
   })
 
-  it('clear empties the store', () => {
-    addSnapshot(db, 'P1', 10, 'edit', 'one')
+  it('clear empties the store and gives its bytes back', async () => {
+    for (let ts = 1; ts <= 400; ts++)
+      addSnapshot(db, 'P1', ts, 'edit', randomBytes(12_000).toString('base64'))
     addSnapshot(db, 'P2', 10, 'edit', 'other')
-    expect(clearSnapshots(db)).toBe(2)
+    const full = (await stat(dbPath)).size
+    expect(clearSnapshots(db)).toBe(401)
     expect(listSnapshots(db, 'P2')).toEqual([])
+    expect((await stat(dbPath)).size).toBeLessThan(full / 10)
   })
 
   it('sweep removes only rows older than the cutoff', () => {

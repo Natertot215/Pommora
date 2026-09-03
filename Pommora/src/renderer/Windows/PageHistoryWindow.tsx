@@ -45,6 +45,7 @@ function PageHistoryBody({
   const [rows, setRows] = useState<number[]>([])
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
   const [shown, setShown] = useState<number | null>(null)
+  // Bumped by a restore: the file's stamp and its body re-read under the same highlight.
   const [reload, setReload] = useState(0)
   const livePath = livePagePath(tree, target)
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
@@ -64,7 +65,6 @@ function PageHistoryBody({
     void refresh()
   }, [refresh])
 
-  // reload re-reads the file's stamp and its body after a restore replaced it.
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   useEffect(() => {
     let live = true
