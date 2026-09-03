@@ -16,6 +16,7 @@
   cursor: default;
   white-space: nowrap;
   overflow: hidden;
+  border-radius: 12px;
   /* Open/close is width motion on --duration-base. Opening delays the width one fast beat so the
      sibling segment (below) appears first and the tab then slides out beside it; closing skips that
      delay so the tab collapses immediately and the segment's own delayed exit follows. Color is the
@@ -27,12 +28,13 @@
     padding var(--duration-base) var(--ease-base) var(--duration-fast),
     opacity var(--duration-base) var(--ease-base) var(--duration-fast);
 }
-/* The trailing tab grows into the lane's slack so its × rides up to the parked + (main) or the side
-   pane's edge (preview) rather than leaving a dead gap — the gutter/pane inset is its only limit, so
-   the standard max-width lifts here. On overflow there's no slack, so it sits and scrolls like the rest. */
+
 .tab:last-child:not(.tab-map) {
-  flex-grow: 1;
+  flex: 0 1 auto;
   max-width: none;
+}
+.tab:last-child:not(.tab-map) .tab-label {
+  padding-right: 16px;
 }
 @starting-style {
   .tab {
