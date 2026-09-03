@@ -111,4 +111,18 @@ describe('a link naming an address', () => {
       'format:link-title',
     ])
   })
+
+  it("never offers a page's history — the link menu points, it does not keep", () => {
+    expect(
+      JSON.stringify(
+        connMenuModel({
+          surface: 'editor',
+          editable: true,
+          hasAlias: false,
+          open: 'closed',
+          previewing: false,
+        }),
+      ),
+    ).not.toContain('title:history')
+  })
 })

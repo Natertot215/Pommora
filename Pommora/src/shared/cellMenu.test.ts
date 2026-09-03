@@ -14,6 +14,7 @@ describe('cellMenuModel', () => {
       ['New Page Below', 'title:newbelow'],
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
+      ['View History', 'title:history'],
       ['Delete', 'title:delete'],
     ])
     // An already-open page reads "Open" (focus, I-1) — same action either way.
@@ -28,7 +29,7 @@ describe('cellMenuModel', () => {
       kind: 'title',
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    expect(withTargets.items.slice(-4, -1).map((i) => i.action)).toEqual([
+    expect(withTargets.items.slice(-5, -2).map((i) => i.action)).toEqual([
       'title:moveto',
       'title:copylink',
       'title:copypath',

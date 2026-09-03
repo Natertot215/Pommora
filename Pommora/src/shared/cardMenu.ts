@@ -35,6 +35,7 @@ export function cardMenuModel(ctx: CardMenuContext): CardMenuModel {
     newPages: 'single',
     move: offersMove(ctx),
     clipboard: true,
+    history: true,
   })
   return {
     items: ctx.editableImage ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta] : meta,
