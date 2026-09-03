@@ -15,7 +15,7 @@ export function ExcludedDirectoriesRow({
   hint,
 }: {
   label: string
-  hint: string
+  hint?: string
 }): React.JSX.Element {
   const stored = useSession((s) => s.tree?.excluded ?? [])
   const setExclusions = useSession((s) => s.setExclusions)

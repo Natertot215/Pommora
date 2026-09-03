@@ -11,7 +11,7 @@ export function ClearActionRow({
   clear,
 }: {
   label: string
-  hint: string
+  hint?: string
   clear: () => Promise<boolean>
 }): React.JSX.Element {
   const [done, setDone] = useState(false)
