@@ -139,7 +139,7 @@ export function sessionVersionsDb(): Db | null
 
 **Verify — automated**
 
-- [x] Red first, `versionsDb.test.ts`: round-trip through zlib; delete returns its count and leaves other pages; sweep removes only older rows; same-`ts` add replaces; garbage header → fresh handle and the `.corrupt-` triple; interior corruption → same; a hot `-wal` quarantines all three. Then green.
+- [x] Red first, `versionsDb.test.ts`: round-trip through zlib; delete returns its count and leaves other pages; sweep removes only older rows; same-`ts` add replaces; garbage header → fresh handle, the original bytes under `versions.corrupt-<stamp>.db`, every set-aside file unwatched; interior corruption → same. Then green. (SQLite removes a `-wal`/`-shm` pair itself when the failed handle closes, so the triple is not observable; surviving siblings are renamed.)
 - [x] `sessionDb.test.ts`: `openSessionDb` creates `versions.db`; `closeSessionDb` closes both.
 - [x] Full gate green. `rg -F "nexus.db: cannot open" src/main` → 0; control `rg -F "openDb(" src/main` → 4.
 
@@ -216,7 +216,7 @@ const DB_FILE = /\.db(-wal|-shm)?$/
 
 #### Gate 1
 
-- [ ] Gates green, exit codes read directly. Every Verify ticked against a watched result. Now counts re-run.
+- [x] Gates green, exit codes read directly. Every Verify ticked against a watched result. Now counts re-run.
 - [ ] Simplification, then review, against `<base>..HEAD` scoped to `src/main/Database`, `src/main/sessionDb.ts`, `src/main/IO/pageFile.ts`, `src/main/CRUD/page.ts`, `src/main/watcher.ts`; every concern fixed or ruled.
 - [ ] Progress hashes filled. Phase 2 opens.
 
@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026 (mine, Gate 1): `PRAGMA quick_check` runs once per open — O(store) at startup on a file sized in megabytes, off every hot path; a same-millisecond `edit`/`external` pair replaces rather than doubles, which the interval gate makes unreachable in practice; `neverWatched`'s `nexus.db` prefix and the watcher's scoped `.db` clause stay two predicates because the first also feeds `adoptFile`, where the scoped rule would blind a user's own `.db` page-sibling.
 - 09-02-2026 (mine): `versions.db` quarantines on a null handle as on a failed `quick_check` — `openDb` surfaces no errcode to tell garbage from busy, and a rename loses nothing.
 - 09-02-2026 (mine): the `sessionVersionsDb` test lives in a new `sessionDb.test.ts`; `session.test.ts` tests `./session`, not the handles.
 
@@ -687,6 +688,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Task 1 (Gate 1): the quarantine name is `versions.corrupt-<stamp>.db` (siblings `…db-wal`, `…db-shm`) rather than `versions.db.corrupt-<stamp>`, so the watcher's store clause covers the set-aside files and a quarantine costs no walk; a store whose rename failed is left where it is and the session runs without history rather than reopening a damaged file; `openDb` closes the handle it failed to configure; a failed `CREATE TABLE` closes and answers null; `deleteSnapshots` deletes in chunks of 500 ids.
 - 09-02-2026, Task 7 (re-derived at HEAD): the clear row carries one `clear: () => Promise<boolean>` instead of `action` + a static `confirm` — the exclusions clear counts first, puts the count in its copy, and reads a null reply as nothing to clear, which a static `ConfirmRequest` can't express; `ask` stays private, so each clear's confirm is a named wrapper in `confirmations.ts`.
 
 ### Lessons

@@ -11,12 +11,14 @@ export type Db = DatabaseSync
 /** A null handle here is LOUD: every operational store silently no-ops behind it, so a quiet
  *  failure reads as "Pommora forgot my tabs" with nothing pointing at the cause. */
 export function openDb(path: string): Db | null {
+  let db: Db | null = null
   try {
-    const db = new DatabaseSync(path)
+    db = new DatabaseSync(path)
     db.exec('PRAGMA journal_mode = WAL')
     db.exec('PRAGMA foreign_keys = ON')
     return db
   } catch (e) {
+    db?.close()
     console.error(
       `${basename(path)}: cannot open ${path} — its state will not persist:`,
       errText(e),
