@@ -133,6 +133,9 @@ export const overlay = style({
   },
 })
 
+/** The overlay slot kept in view — a check that lives in the row's gutter rather than under it. */
+export const gutter = style([overlay, { opacity: 1 }])
+
 export const side = style({
   display: 'flex',
   alignItems: 'center',

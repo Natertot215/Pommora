@@ -5,6 +5,7 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@renderer/DesignSystem/Menus'
+import { gutter } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
@@ -48,11 +49,13 @@ function PageHistoryBody({
   const [rows, setRows] = useState<SnapshotRow[]>([])
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
-  // The highlighted row is the one the body shows; null is Current Version.
-  const [highlighted, setHighlighted] = useState<number | null>(null)
+  const [lastChecked, setLastChecked] = useState<number | null>(null)
   const [reload, setReload] = useState(0)
-  const { checkedLive, restoreEnabled, glyphOn } = historyRowModel(rows, checked)
-  const shown = highlighted !== null && rows.some((r) => r.ts === highlighted) ? highlighted : null
+  const { checkedLive, shown, restoreEnabled, glyphOn } = historyRowModel(
+    rows,
+    checked,
+    lastChecked,
+  )
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, values] = await Promise.all([
@@ -98,19 +101,23 @@ function PageHistoryBody({
   )
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
-  const toggle = (ts: number): void =>
+  const toggle = (ts: number): void => {
+    const on = !checked.has(ts)
     setChecked((prev) => {
       const next = new Set(prev)
-      if (next.has(ts)) next.delete(ts)
-      else next.add(ts)
+      if (on) next.add(ts)
+      else next.delete(ts)
       return next
     })
+    if (on) setLastChecked(ts)
+  }
+  const showCurrent = (): void => setChecked(new Set())
 
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
     if (!r.ok) window.nexus.showError(r.error.message)
-    setHighlighted(null)
+    showCurrent()
     await refresh()
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
@@ -143,7 +150,8 @@ function PageHistoryBody({
           className="page-history-row"
           subLabel={modifiedAt === null ? undefined : when(modifiedAt)}
           selected={shown === null}
-          onClick={() => setHighlighted(null)}
+          overlay={<Checkbox className={gutter} size="compact" state={shown === null} readOnly />}
+          onClick={showCurrent}
         >
           Current Version
         </MenuItem>
@@ -154,8 +162,9 @@ function PageHistoryBody({
             className="page-history-row"
             subLabel={when(row.ts)}
             selected={shown === row.ts}
-            leading={
+            overlay={
               <Checkbox
+                className={gutter}
                 size="compact"
                 state={checked.has(row.ts)}
                 onChange={() => toggle(row.ts)}
@@ -176,7 +185,7 @@ function PageHistoryBody({
                 />
               ) : undefined
             }
-            onClick={() => setHighlighted(row.ts)}
+            onClick={() => toggle(row.ts)}
             onContextMenu={(e) => {
               e.preventDefault()
               void openMenu(row.ts)
@@ -189,6 +198,7 @@ function PageHistoryBody({
       <MenuFooting
         trailing={
           <Button
+            type="filled"
             size="button-inline"
             label="Restore"
             disabled={!restoreEnabled}
