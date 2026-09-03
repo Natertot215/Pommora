@@ -544,6 +544,8 @@ const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
 const NOT_A_PROPERTY_DIR = fail('invalid-path', NOT_A_PROPERTY_DIR_MESSAGE)
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
+const NEEDS_SNAPSHOT_KEY = fail('operation-failed', 'A page id and a timestamp are required.')
+const isTimestamp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
 const optionValueOp = (
   write: (root: string, propertyId: string, value: string) => Promise<Result<null>>,
@@ -1579,18 +1581,22 @@ serveBridge(
 
     'history:list': {
       kind: 'envelope',
-      fn: async (pageId: unknown) =>
-        typeof pageId === 'string'
+      fn: async (pageId: unknown) => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return typeof pageId === 'string'
           ? listHistory(pageId)
-          : fail('operation-failed', 'A page id is required.'),
+          : fail('operation-failed', 'A page id is required.')
+      },
     },
 
     'history:read': {
       kind: 'envelope',
-      fn: async (pageId: unknown, ts: unknown) =>
-        typeof pageId === 'string' && typeof ts === 'number'
+      fn: async (pageId: unknown, ts: unknown) => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return typeof pageId === 'string' && isTimestamp(ts)
           ? readHistoryBody(pageId, ts)
-          : fail('operation-failed', 'A page id and a timestamp are required.'),
+          : NEEDS_SNAPSHOT_KEY
+      },
     },
 
     'history:restore': {
@@ -1598,8 +1604,7 @@ serveBridge(
       fn: async (pageId: unknown, ts: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof pageId !== 'string' || typeof ts !== 'number')
-          return fail('operation-failed', 'A page id and a timestamp are required.')
+        if (typeof pageId !== 'string' || !isTimestamp(ts)) return NEEDS_SNAPSHOT_KEY
         const r = await restoreSnapshot(root, pageId, ts)
         pushValueChanges(root)
         return r
@@ -1608,15 +1613,17 @@ serveBridge(
 
     'history:delete': {
       kind: 'envelope',
-      fn: async (pageId: unknown, ts: unknown) =>
-        typeof pageId === 'string' && Array.isArray(ts) && ts.every((t) => typeof t === 'number')
+      fn: async (pageId: unknown, ts: unknown) => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return typeof pageId === 'string' && Array.isArray(ts) && ts.every(isTimestamp)
           ? deleteHistory(pageId, ts)
-          : fail('operation-failed', 'A page id and timestamps are required.'),
+          : fail('operation-failed', 'A page id and timestamps are required.')
+      },
     },
 
     'history:clear': {
       kind: 'envelope',
-      fn: async () => clearHistory(),
+      fn: async () => (sessionRoot() === null ? NO_NEXUS : clearHistory()),
     },
 
     'history:menu': {
