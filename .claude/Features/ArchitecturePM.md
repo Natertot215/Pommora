@@ -24,6 +24,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   ├── homepage.json                    | • The Homepage's banner and heading icon
 │   ├── navigation.json                  | • Pins and favorites as ordered id arrays, plus the NavView banner
 │   ├── nexus.db                         | • Device-local operational state and the content index
+│   ├── versions.db                      | • Device-local page file history — the snapshot store
 │   ├── nexus.json                       | • The Nexus id, creation stamp, and the Agenda registration
 │   ├── properties.json                  | • The nexus-wide property registry
 │   ├── settings.json                    | • Personalization, accent, excluded folders, the profile
@@ -106,6 +107,10 @@ Autosave belongs to one path-keyed flush registry shared by every editor host: e
 
 `nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session, and what this computer has indexed of the content, rather than the content itself. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, the active view and manual order per container, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the hover pane size, and device preferences — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `indexed_files`) records which pages mention which titles and which governed keys and values each page carries. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
 
+**File history** (`Pommora/src/main/CRUD/fileHistory.ts` · `Database/versionsDb.ts`) is the second device-local file, `versions.db`: one table, `snapshots(page_id, ts, source, blob)`, holding whole page texts deflated with `zlib`, keyed by the page's `ID` and a timestamp, and marked `edit`, `external`, or `restore` by what produced them. It opens and closes beside `nexus.db`, travels with a moved Nexus, never syncs, and a file that fails its integrity check is set aside as `versions.corrupt-<stamp>.db` for a fresh store — nothing is deleted. Every body write passes through `writeBody`, which offers the text it is overwriting to one rule, `captureIfDue`: pages only, by the `ID`'s kind mark; nothing with the toggle off; an `edit` lands only when the page's last row is older than the Snapshot Interval, while text a foreign writer left (its hash differs from the last one written) and the text a restore overwrites land at once; a body identical to the latest row never lands twice; a body over 1 MB is refused except by a restore. A burst of typing ends with one more row from a per-page quiet timer at the interval, which a watcher-noticed outside edit also arms and a restore disarms; a quit, a root switch, or a root rename offers every armed page first. Rows older than the History Timeframe are deleted at open and whenever the timeframe shrinks.
+
+A restore replaces the body alone: the renderer flushes the page's pending save, main captures the outgoing text as a `restore` row and writes the snapshot's body under the page's own frontmatter, and the renderer drops every warm copy of the page and re-seeds each open editor — content pane, Page Window, and embed — through a per-path body epoch. The Page History window (`Windows/PageHistoryWindow.tsx`, reached by **View History** in the page menu and **History** in the page's Settings menu), the page-menu placement, and the Files & Links › File History settings are recorded in [[InterfacePM]] and [[ConfigurationPM]]. Any name ending in `.db`, `-wal`, or `-shm` is neither watched nor listed anywhere in the Nexus, so a store's own churn never costs a walk.
+
 The schema grows without migrations — additive tables reach existing files on open — and a version mismatch on an existing table's shape deletes the file and starts clean, costing a machine its chrome once while the index reseeds from the corpus; the index carries its own generation, so a change to what it records drops the index alone. On the file side, nothing on disk carries a schema version: sidecars decode loosely, a version key an outside tool adds survives as a foreign key, and `settings.json` is written into existence by the first write that needs it, every read tolerating its absence.
 
 #### II. The File Watcher
@@ -133,7 +138,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Saved views and what a container is | Each container's own sidecar | Editing the view; deleting the container |
 | Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
 
-**Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs; it holds this machine's chrome and the index it derived from the content.
+**Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs; it holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history.
 
 | State | What it remembers | What clears it |
 | --- | --- | --- |
@@ -148,6 +153,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
 | Dashboard blocks | Each block surface's layout and its blocks | Editing the surface |
 | Aliases | The names each page has been given, for the picker | Forgetting one from the picker |
+| Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History |
 | The record baseline | What the last open saw, for the deletion record | The next open |
 | Use Native Menus | The one machine-level preference | Toggling it |
 
@@ -195,7 +201,7 @@ Deliberately never kept: the window opens at one size every launch, and floating
 
 ### What the Data Layer Leaves to the OS
 
-- **Versioning, file history, backup** — Time Machine, `git` on the Nexus, filesystem snapshots. In-session undo comes from the editor.
+- **Backup and versioning beyond the body** — Time Machine, `git` on the Nexus, filesystem snapshots. Page file history is Pommora's own, in `versions.db`; in-session undo comes from the editor.
 - **Cross-device sync** — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term prospect.
 
 ---

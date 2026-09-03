@@ -32,4 +32,4 @@ The baseline is also what settles a duplicated id. At the next open, the path th
 - **A compare view** — reading a bundle's frozen content against what stands in its place now.
 - **Crash-safe moves and link renames** — the write→act→settle shape applied to the move cascade and the `[[link]]` rename cascade, which today are per-file with a revert.
 - **Change capture** — property and frontmatter changes as event payloads; the record shape widens additively.
-- **Git as opt-in content history** — complementary to the record; Pommora never auto-commits.
+- **Git as an opt-in second history provider** — a second store module beside `versions.db`, complementary to the record; Pommora never auto-commits.
