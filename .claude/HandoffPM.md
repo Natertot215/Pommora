@@ -85,7 +85,8 @@
 - `a4e33d6b` Task 4 · `3a0ce799` Task 5 · `79337e52` `6dd39091` `d8cb7095` `266e85fc` `6b5f7feb` Gate 2
 - `d20c6324` Task 6 · `b1df9dfc` Task 7 · `c2bf15f3` Gate 3
 - `085bfe51` Task 8 · `bc020d83` Tasks 9 and 10 · `6b9f7bc2` `3d10828b` `93fbcad5` `c4cf76ff` Gate 4
-- `47ebcd65` the scout's leftovers · `c0f1b184` the simplifier sweep · `2bed5ade` Days · `a5662871` the documents · `b1632f28` the attack · the record commit that follows this file
+- `47ebcd65` the scout's leftovers · `c0f1b184` the simplifier sweep · `2bed5ade` Days · `a5662871` the documents · `b1632f28` the attack · `b0bf0f1d` the record
+- The secondary review: `1866ca5d` cohesion and simplicity · `9aa3a4af` correctness and duplication · `3ad1c405` stability and debt · `c86026c0` the tests pass · `c770e9a4` the final pass and the ArchitecturePM section
 - Nathan's own, interleaved: `5e13fd47` `86eafc48` `bd8725b3` `b35cb697` `82583e3b` `f7f81b81` `f8d7398a` `f556c354` `f9f9a2c1` and the tab work before them; his comment pruning (`OutlineMenu.tsx`, `WebWindow.tsx`) lands as its own commit at the push.
 
 #### Handoff Guidelines
