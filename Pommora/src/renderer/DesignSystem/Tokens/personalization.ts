@@ -55,6 +55,8 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   // Cleared REMOVES `--code` rather than restating the theme's red: the stylesheet declares it at
   // :root, so an absent inline var is what lets the theme keep answering as it moves.
   codeColor: (v) => ({ '--code': settingColorCss(v, null) }),
+  tabMinWidth: (v) => ({ '--tab-min-user': v == null ? null : `${v}px` }),
+  tabMaxWidth: (v) => ({ '--tab-max-user': v == null ? null : `${v}px` }),
 }
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */
