@@ -13,16 +13,12 @@
   padding: 0 var(--app-inset) 0 4px;
   pointer-events: none;
   --trio-inset: 4px;
-  --toolbar-swallow: max(
-    0px,
-    calc(
-      var(--io) *
-      (var(--inspector-width) + var(--app-inset)) -
-      var(--app-inset) -
-      var(--trio-w) -
-      var(--trio-inset)
-    )
-  );
+  /* Inputs to the shared --toolbar-slide swallow (DesignSystem/Animation/toolbar-slide.css). */
+  --slide-panel-w: var(--inspector-width);
+  --slide-inset: var(--app-inset);
+  --slide-home: var(--app-inset);
+  --slide-cluster-w: var(--trio-w);
+  --slide-breathing: var(--trio-inset);
 
   transition: left var(--duration-base) var(--ease-base);
 }
@@ -49,7 +45,7 @@
 }
 
 .app-toolbar-cluster--trio {
-  transform: translateX(calc(-1 * var(--toolbar-swallow)));
+  transform: translateX(calc(-1 * var(--toolbar-slide)));
 }
 
 /* Trio glass pill = its own in-flow layer behind the live buttons, so it fades out independently as the trio is swallowed (no double-glass on the inspector). In-flow so the liquid glass measures + clips crisply; the fade is quick and subtle, complete by 30% of the slide. */
