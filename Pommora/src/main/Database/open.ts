@@ -3,7 +3,7 @@
 
 import { rmSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { openDb, type Db } from './driver'
+import { DB_SIBLINGS, openDb, type Db } from './driver'
 import {
   applySchema,
   INDEX_GENERATION,
@@ -19,7 +19,7 @@ export const DB_FILENAME = 'nexus.db'
 /** Drops the WAL/SHM siblings alongside the file — leaving them orphans a journal that SQLite
  *  would replay into the next database created at this path. */
 function removeDbFiles(dbPath: string): void {
-  for (const suffix of ['', '-wal', '-shm']) {
+  for (const suffix of DB_SIBLINGS) {
     try {
       rmSync(dbPath + suffix, { force: true })
     } catch {
