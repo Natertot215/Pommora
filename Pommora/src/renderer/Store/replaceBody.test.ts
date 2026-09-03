@@ -42,15 +42,32 @@ describe('replaceBody', () => {
     expect(readBodyEpoch('Notes/a.md')).toBe(before + 1)
   })
 
-  it('drops the pending save so the replaced text is never written back', async () => {
+  it('drops the pending save before a slow refetch could let it land', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))
-    ;(window as unknown as { nexus: { updatePageBody: unknown } }).nexus.updatePageBody =
-      updatePageBody
+    const nexus = window.nexus as unknown as { updatePageBody: unknown; openPage: unknown }
+    nexus.updatePageBody = updatePageBody
+    nexus.openPage = () =>
+      new Promise((r) => setTimeout(() => r({ ok: true, value: detail }), 5000))
     schedulePageSave('Notes/a.md', 'stale plus a keystroke')
-    await useSession.getState().replaceBody('Notes/a.md')
-    vi.advanceTimersByTime(1000)
+    const replaced = useSession.getState().replaceBody('Notes/a.md')
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(await replaced).toBe(true)
     expect(updatePageBody).not.toHaveBeenCalled()
     expect(readPageDetail('Notes/a.md')?.body).toBe('restored')
+  })
+
+  it('a failed refetch still drops the save, and answers false', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))
+    const nexus = window.nexus as unknown as { updatePageBody: unknown; openPage: unknown }
+    nexus.updatePageBody = updatePageBody
+    nexus.openPage = async () => ({ ok: false, error: { code: 'not-found', message: 'gone' } })
+    schedulePageSave('Notes/a.md', 'stale plus a keystroke')
+    const before = readBodyEpoch('Notes/a.md')
+    expect(await useSession.getState().replaceBody('Notes/a.md')).toBe(false)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(updatePageBody).not.toHaveBeenCalled()
+    expect(readBodyEpoch('Notes/a.md')).toBe(before)
   })
 })
