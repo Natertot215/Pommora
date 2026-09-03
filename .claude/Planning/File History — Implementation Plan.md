@@ -281,10 +281,10 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 **Verify — automated**
 
-- [ ] Red first, `fileHistory.test.ts` on a scratch root with a real store and a seeded tree: first offer captures; a body opening with a blank line or holding CRLF is not foreign on its second save; inside the interval doesn't; after it does; identical body never; over the cap never; a `T`-marked id never; a foreign outgoing body captures ungated; `writeBody(…, 'restore')` captures ungated then writes; the quiet timer fires once and resets on a new write (fake timers); `flushFileHistory` captures at once and `resetFileHistory` leaves no timer; a missing id disarms; a twice-claimed id disarms; `fileHistory: false` captures nothing; the sweep removes only older rows. Then green.
-- [ ] `readNexus.test.ts`: `historyDays: 200` → 90; `historyInterval: "5"` → absent; `fileHistory: 'no'` → absent.
-- [ ] Both halves of the gate: the refused case adds a row with source `'restore'`.
-- [ ] Full gate green.
+- [x] Red first, `fileHistory.test.ts` on a scratch root with a real store and a seeded tree: first offer captures; a body opening with a blank line or holding CRLF is not foreign on its second save; inside the interval doesn't; after it does; identical body never; over the cap never; a `T`-marked id never; a foreign outgoing body captures ungated; `writeBody(…, 'restore')` captures ungated then writes; the quiet timer fires once and resets on a new write (fake timers); `flushFileHistory` captures at once and `resetFileHistory` leaves no timer; a missing id disarms; a twice-claimed id disarms; `fileHistory: false` captures nothing; the sweep removes only older rows. Then green.
+- [x] `readNexus.test.ts`: `historyDays: 200` → 90; `historyInterval: "5"` → absent; `fileHistory: 'no'` → absent.
+- [x] Both halves of the gate: the refused case adds a row with source `'restore'`.
+- [x] Full gate green.
 
 **Verify — user**
 
@@ -674,6 +674,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Rulings
 
+- 09-02-2026 (mine, Task 4): the full suite's two editor stress suites (`embedAbsorb`, `citationBreakage`) timed out at 5 s under a load average of 22 during the gate and pass in isolation (49/49, 8 s); no timeout was raised, the gate is read as green with that noted.
 - 09-02-2026 (mine, Gate 1): `PRAGMA quick_check` runs once per open — O(store) at startup on a file sized in megabytes, off every hot path; a same-millisecond `edit`/`external` pair replaces rather than doubles, which the interval gate makes unreachable in practice; `neverWatched`'s `nexus.db` prefix and the watcher's scoped `.db` clause stay two predicates because the first also feeds `adoptFile`, where the scoped rule would blind a user's own `.db` page-sibling.
 - 09-02-2026 (mine): `versions.db` quarantines on a null handle as on a failed `quick_check` — `openDb` surfaces no errcode to tell garbage from busy, and a rename loses nothing.
 - 09-02-2026 (mine): the `sessionVersionsDb` test lives in a new `sessionDb.test.ts`; `session.test.ts` tests `./session`, not the handles.
@@ -688,6 +689,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 
 ### Deviations
 
+- 09-02-2026, Task 4: `writeBody` leaves the `values:changed` push to its caller — `pushValueChanges` is private to `index.ts` and bound to the main window, so the handler's tail is `await writeBody(...)` then the push; the interval gate binds `edit` offers only — `external` and `restore` land at once — and the private `capture(…, gated)` serves both the gated offer and the ungated flush.
 - 09-02-2026, Task 1 (Gate 1): the quarantine name is `versions.corrupt-<stamp>.db` (siblings `…db-wal`, `…db-shm`) rather than `versions.db.corrupt-<stamp>`, so the watcher's store clause covers the set-aside files and a quarantine costs no walk; a store whose rename failed is left where it is and the session runs without history rather than reopening a damaged file; `openDb` closes the handle it failed to configure; a failed `CREATE TABLE` closes and answers null; `deleteSnapshots` deletes in chunks of 500 ids.
 - 09-02-2026, Task 7 (re-derived at HEAD): the clear row carries one `clear: () => Promise<boolean>` instead of `action` + a static `confirm` — the exclusions clear counts first, puts the count in its copy, and reads a null reply as nothing to clear, which a static `ConfirmRequest` can't express; `ask` stays private, so each clear's confirm is a named wrapper in `confirmations.ts`.
 

@@ -1,5 +1,6 @@
 // The cross-process contract. Imported by main, preload, and renderer — NO fs, NO React here.
 
+import { clamp } from './cropGeometry'
 import { SPECTRUM, type CellKey } from './theme'
 import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
@@ -97,10 +98,17 @@ export interface SnapshotRow {
   ts: number
   source: SnapshotSource
 }
+/** `personalization.historyDays` — how long a snapshot is kept, in days. */
+export const HISTORY_DAYS = { min: 7, max: 90, default: 90 } as const
+/** `personalization.historyInterval` — the least time between two snapshots of one page, in minutes. */
+export const HISTORY_INTERVAL = { min: 5, max: 20, default: 5 } as const
+export function clampInt(v: unknown, min: number, max: number): number | undefined {
+  return typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), min, max) : undefined
+}
 
 /** The `personalization` object in `.nexus/settings.json`. Every field optional; absent = the
- *  built-in default. One schema behind one apply-map + one setter — a new toggle is a field here
- *  plus an apply-map row. Icon names are bare strings so this stays free of renderer types. */
+ *  built-in default. One schema behind one apply-map + one setter — a new toggle is a field here,
+ *  a `readPersonalization` row, and an apply-map row. Icon names are bare strings so this stays free of renderer types. */
 export interface Personalization {
   accent?: AccentSetting
   connectionColor?: ConnectionColorSetting
@@ -154,6 +162,12 @@ export interface Personalization {
   interfaceScale?: number
   /** Whole seconds (1–30). Absent = None: only the short pointer-travel grace. */
   hoverPreviewLinger?: number
+  /** Absent = on. Off records no page snapshots on this device. */
+  fileHistory?: boolean
+  /** Days a snapshot is kept, within HISTORY_DAYS. Absent = its default. */
+  historyDays?: number
+  /** Minutes between two snapshots of one page, within HISTORY_INTERVAL. Absent = its default. */
+  historyInterval?: number
   /** Absent = the artifact goes to the OS trash and the OS owns the last undo; true erases it
    *  from the machine outright. */
   permanentDelete?: boolean

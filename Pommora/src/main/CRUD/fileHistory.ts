@@ -1,0 +1,162 @@
+// The page-history rule: when a snapshot happens, and the one path every body write takes.
+
+import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { kindOf } from '@shared/identity'
+import { errText, ok, type Result } from '@shared/result'
+import { HISTORY_DAYS, HISTORY_INTERVAL, type SnapshotSource } from '@shared/types'
+import { addSnapshot, latestSnapshot, sweepSnapshots } from '../Database/versionsDb'
+import { indexWrittenPage } from '../indexSeed'
+import { splitEnvelope } from '../IO/pageFile'
+import { relPosix } from '../paths'
+import { sessionVersionsDb } from '../sessionDb'
+import { readLivePersonalization } from '../settings'
+import { liveIdIndex, livePathOf, noteValueWrite } from '../valuesChanged'
+import { updatePageBody } from './page'
+
+export const SNAPSHOT_MAX_BYTES = 1_048_576
+const MINUTE_MS = 60_000
+const DAY_MS = 86_400_000
+
+const lastTs = new Map<string, number>()
+const lastWritten = new Map<string, string>()
+const timers = new Map<string, NodeJS.Timeout>()
+
+const bodyHash = (text: string): string =>
+  createHash('sha1').update(splitEnvelope(text).body).digest('hex')
+
+async function config(
+  root: string,
+): Promise<{ enabled: boolean; intervalMs: number; keepMs: number }> {
+  const p = await readLivePersonalization(root)
+  return {
+    enabled: p.fileHistory !== false,
+    intervalMs: (p.historyInterval ?? HISTORY_INTERVAL.default) * MINUTE_MS,
+    keepMs: (p.historyDays ?? HISTORY_DAYS.default) * DAY_MS,
+  }
+}
+
+async function capture(
+  root: string,
+  pageId: string,
+  text: string,
+  source: SnapshotSource,
+  gated: boolean,
+): Promise<boolean> {
+  try {
+    const now = Date.now()
+    const { enabled, intervalMs } = await config(root)
+    if (!enabled || kindOf(pageId) !== 'page') return false
+    const last = lastTs.get(pageId)
+    if (gated && last !== undefined && now - last < intervalMs) return false
+    if (Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
+    const db = sessionVersionsDb()
+    if (!db) return false
+    const latest = latestSnapshot(db, pageId)
+    lastTs.set(pageId, now)
+    if (latest && bodyHash(latest.text) === bodyHash(text)) return false
+    addSnapshot(db, pageId, now, source, text)
+    return true
+  } catch (e) {
+    console.error('file history: a snapshot was not recorded:', errText(e))
+    return false
+  }
+}
+
+/** Offer a page's text to the store: an `edit` waits out the interval since the page's last
+ *  snapshot; `external` and `restore` land at once. Identical text never lands twice. */
+export const captureIfDue = (
+  root: string,
+  pageId: string,
+  text: string,
+  source: SnapshotSource,
+): Promise<boolean> => capture(root, pageId, text, source, source === 'edit')
+
+function disarm(pageId: string): void {
+  const timer = timers.get(pageId)
+  if (timer) clearTimeout(timer)
+  timers.delete(pageId)
+}
+
+async function captureFromDisk(
+  root: string,
+  pageId: string,
+  source: SnapshotSource,
+  gated: boolean,
+) {
+  const rel = livePathOf(root, pageId)
+  if (rel === null) return
+  const text = await readFile(join(root, rel), 'utf8').catch(() => null)
+  if (text !== null) await capture(root, pageId, text, source, gated)
+}
+
+/** The quiet timer: a burst of writes ends with one snapshot of the settled text. */
+async function arm(root: string, pageId: string, source: SnapshotSource): Promise<void> {
+  disarm(pageId)
+  const { intervalMs } = await config(root)
+  const timer = setTimeout(() => {
+    timers.delete(pageId)
+    void captureFromDisk(root, pageId, source, source === 'edit')
+  }, intervalMs)
+  timer.unref()
+  timers.set(pageId, timer)
+}
+
+/** The one body-write path. The text being overwritten is offered first — at once when a foreign
+ *  writer left it or a restore is replacing it — and the quiet timer is re-armed. The caller
+ *  pushes the value change. */
+export async function writeBody(
+  root: string,
+  absPath: string,
+  body: string,
+  source: 'edit' | 'restore',
+): Promise<Result<null>> {
+  const r = await updatePageBody(absPath, body)
+  if (!r.ok) return r
+  await indexWrittenPage(root, absPath)
+  noteValueWrite(root, absPath)
+  const { previous, written } = r.value
+  const pageId = liveIdIndex(root).get(relPosix(root, absPath))
+  if (pageId) {
+    if (previous !== null) {
+      const known = lastWritten.get(absPath)
+      const foreign = known !== undefined && known !== bodyHash(previous)
+      const offered: SnapshotSource =
+        source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
+      await captureIfDue(root, pageId, previous, offered)
+    }
+    lastWritten.set(absPath, bodyHash(written))
+    await arm(root, pageId, 'edit')
+  }
+  return ok(null)
+}
+
+export function noteExternalEdit(root: string, absPath: string): void {
+  const pageId = liveIdIndex(root).get(relPosix(root, absPath))
+  if (pageId) void arm(root, pageId, 'external')
+}
+
+/** Every armed page is offered now, ungated — before a switch, a rename, or a quit. Never rejects. */
+export async function flushFileHistory(root: string): Promise<void> {
+  const armed = [...timers.keys()]
+  for (const pageId of armed) disarm(pageId)
+  await Promise.all(armed.map((pageId) => captureFromDisk(root, pageId, 'edit', false)))
+}
+
+export function resetFileHistory(): void {
+  for (const pageId of [...timers.keys()]) disarm(pageId)
+  lastTs.clear()
+  lastWritten.clear()
+}
+
+export async function sweepFileHistory(root: string): Promise<void> {
+  const db = sessionVersionsDb()
+  if (!db) return
+  try {
+    const { keepMs } = await config(root)
+    sweepSnapshots(db, Date.now() - keepMs)
+  } catch (e) {
+    console.error('file history: the sweep failed:', errText(e))
+  }
+}

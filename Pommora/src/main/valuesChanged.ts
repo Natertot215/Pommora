@@ -43,6 +43,21 @@ export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
   return byPath
 }
 
+let pathIndex: { tree: NexusTree; byId: Map<string, string | null> } | null = null
+
+/** The live path of a page by id — null when the tree is not this root's, the id is absent, or
+ *  two files claim it. Memoized per tree, so a burst of lookups costs one walk. */
+export function livePathOf(root: string, id: string): string | null {
+  const tree = getLiveTree()
+  if (!tree || tree.nexus.rootPath !== root) return null
+  if (pathIndex?.tree !== tree) {
+    const byId = new Map<string, string | null>()
+    for (const [path, pageId] of pageIdIndex(tree)) byId.set(pageId, byId.has(pageId) ? null : path)
+    pathIndex = { tree, byId }
+  }
+  return pathIndex.byId.get(id) ?? null
+}
+
 /** Drain one root's ledger into the push payload — one entry per container. */
 export function flushValueWrites(root: string): ValueChange[] {
   if (ledger?.root !== root) return []
