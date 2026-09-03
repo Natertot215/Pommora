@@ -116,6 +116,15 @@ export const askEmptyTrash = async (count: number): Promise<boolean> => {
   })
 }
 
+export const askClearHistory = (): Promise<boolean> =>
+  ask({
+    message: 'Permanently delete stored snapshots for all files; this cannot be undone.',
+    detail: '',
+    action: 'Clear',
+    tone: 'destructive',
+    defaultsToCancel: true,
+  })
+
 export const askClearExclusions = (folderCount: number): Promise<boolean> =>
   ask({
     message: `Clear Pommora’s data from ${folderCount === 1 ? 'the excluded folder' : `${folderCount} excluded folders`}?`,
