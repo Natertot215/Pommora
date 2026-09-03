@@ -86,7 +86,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-125 || Page File History
 **DATE:** 09-02-2026 → 09-03
 
-A page's body accumulates device-local snapshots in `versions.db` under one capture rule, restorable from a Page History window reached by View History in every page menu and History beside Properties; a restore replaces the body alone and reaches every open editor, cancelling any save armed under it. Files & Links carries the four File History settings. The two-host lost update and the store's presence in NexusOS's repository are recorded under Known Issues; the external-edit reload through `replaceBody` is the next mechanism the arc seeded.
+A page's body accumulates device-local snapshots in `versions.db` under one capture rule, restorable from a Page History window reached by View History in every page menu and History beside Properties; a restore replaces the body alone and reaches every open editor, cancelling any save armed under it. Files & Links carries the four File History settings. The two-host lost update and the store's presence in NexusOS's repository are recorded under Known Issues; the external-edit reload through `replaceBody` is the next mechanism the arc seeded. A secondary review over six lenses, the tests, and a final regression pass landed after the closeout in five commits ending at `c770e9a4`, netting −11 lines against the arc.
 
 #### PM-124 || In-App Confirmation & Notifications
 **DATE:** 09-02-2026
