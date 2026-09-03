@@ -12,7 +12,7 @@ import type { ConnectionsApi } from '../MarkdownPM/Connections'
 import { showConnectionMenu } from '../Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { getContentViewRect } from '../Interface/ContentView'
-import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavTrail, NO_TRAIL } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { previewTargetOf, useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { WindowActions } from './WindowActions'
@@ -28,8 +28,6 @@ const SLIDE_PX = 14
 const STATS_DEBOUNCE_MS = 120
 
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
-
-const NO_TRAIL: TrailSegment[] = []
 
 export function PageWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.preview?.flavor === 'page')

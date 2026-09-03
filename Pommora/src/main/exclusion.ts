@@ -4,7 +4,7 @@ import { NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
 
 /** A SQLite store or its journal — Pommora's own and anyone else's; none is content, and a
  *  journal's churn must never cost a walk. */
-export const STORE_FILE = /\.db(-wal|-shm)?$/
+const STORE_FILE = /\.db(-wal|-shm)?$/
 
 /** A path segment the watcher never delivers: the trash, an install's churn, a store and its
  *  journal, and OS/editor dotfile cruft. `.nexus` is the exception — Contexts and settings live

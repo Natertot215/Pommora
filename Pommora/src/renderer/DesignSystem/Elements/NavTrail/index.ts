@@ -1,1 +1,7 @@
-export { NavTrail, type NavTrailProps, pathSegments, type TrailSegment } from './NavTrail'
+export {
+  NavTrail,
+  type NavTrailProps,
+  NO_TRAIL,
+  pathSegments,
+  type TrailSegment,
+} from './NavTrail'

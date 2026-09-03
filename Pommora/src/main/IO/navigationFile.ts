@@ -124,9 +124,6 @@ export async function writeNavigationState(
   }
 }
 
-/** A navigation write still settling — the quit gate checks this before letting the app exit. */
-export const hasPendingNavigation = (): boolean => inFlight !== null
-
 /** Settle any owed write; never rejects (a failed write must not block the quit). */
 export const flushNavigation = (): Promise<void> =>
   inFlight ? inFlight.then(noop, noop) : Promise.resolve()

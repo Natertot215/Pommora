@@ -3,25 +3,22 @@ import { DEFAULT_TIME_FORMAT, embedZoom, type SnapshotRow } from '@shared/types'
 import { parentOf } from '@shared/treePatch'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
-import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavTrail, NO_TRAIL } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@renderer/DesignSystem/Menus'
 import { gutter } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { retained, toggled } from '@renderer/DesignSystem/Util/checkSet'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
-import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { clockOf, formatDate, nexusDateFormat } from '@renderer/Properties/Assignment/formatValue'
 import { restoreSnapshot } from '../Interface/restoreSnapshot'
 import { fetchPageDetail } from '../Store/tabState'
-import { ancestryOf, pageIndexOf } from '../treeIndex'
+import { ancestryOf, resolveOnlyConnections } from '../treeIndex'
 import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
-import { historyRowModel } from './pageHistoryModel'
 import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
 import '../Navigation/nav-list.css'
 import './page-history-window.css'
 
-const NO_TRAIL: TrailSegment[] = []
 // A non-path host chain: embeds inside a snapshot render inert, and no page path can collide with it.
 const HISTORY_ANCESTOR = 'page-history'
 
@@ -52,7 +49,7 @@ function PageHistoryBody({
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
   const [shown, setShown] = useState<number | null>(null)
   const [reload, setReload] = useState(0)
-  const { restoreTarget } = historyRowModel(checked)
+  const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, values] = await Promise.all([
@@ -64,10 +61,9 @@ function PageHistoryBody({
       const live = new Set(list.value.map((r) => r.ts))
       setChecked((prev) => retained(prev, live))
       setShown((prev) => (prev !== null && live.has(prev) ? prev : null))
-    }
+    } else window.nexus.showError(list.error.message)
     const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
     setModifiedAt(stamp ? new Date(stamp).getTime() : null)
-    setReload((n) => n + 1)
   }, [target.id, target.path])
   useEffect(() => {
     void refresh()
@@ -87,13 +83,10 @@ function PageHistoryBody({
     return () => {
       live = false
     }
-    // reload re-reads the same selection after an action moved the file or the store.
+    // reload re-reads Current Version after a restore replaced the file under it.
   }, [shown, reload, target.id, target.path])
 
-  const resolveOnly = useMemo<ConnectionsApi | undefined>(
-    () => (tree ? { ...pageIndexOf(tree), open: () => {} } : undefined),
-    [tree],
-  )
+  const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
   const toggle = (ts: number): void => setChecked((prev) => toggled(prev, ts))
@@ -101,9 +94,14 @@ function PageHistoryBody({
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
-    if (!r.ok) window.nexus.showError(r.error.message)
-    setChecked(new Set())
+    if (!r.ok) {
+      window.nexus.showError(r.error.message)
+      await refresh()
+      return
+    }
+    setChecked((prev) => (prev.has(ts) ? toggled(prev, ts) : prev))
     setShown(null)
+    setReload((n) => n + 1)
     await refresh()
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
@@ -200,7 +198,6 @@ function PageHistoryBody({
   return (
     <WindowBase
       id="page-history"
-      className="page-history-window"
       closing={closing}
       onClose={closeHistory}
       onEscape={closeHistory}
@@ -211,12 +208,11 @@ function PageHistoryBody({
         bounds: WINDOW_BASE_INSPECTOR,
         mode: 'overlay',
         open: true,
-        className: 'page-history-pane',
         children: list,
       }}
     >
       <div
-        className="window-body page-history-body over-scroll page-tile-grows"
+        className="window-body page-window-body over-scroll page-tile-grows"
         style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       >
         {body !== null && (

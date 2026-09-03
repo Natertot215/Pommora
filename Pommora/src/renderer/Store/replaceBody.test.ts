@@ -14,7 +14,7 @@ beforeEach(() => {
 afterEach(() => clearCache())
 
 describe('replaceBody', () => {
-  it('drops every warm copy, refetches, patches the slot, and bumps the epoch', async () => {
+  it('drops every warm detail, refetches, patches the slot, and bumps the epoch', async () => {
     const stale = { ...detail, body: 'stale' }
     captureCache('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4, pageDetail: stale })
     captureCache('t2', 'page:a', { pageDetail: stale })

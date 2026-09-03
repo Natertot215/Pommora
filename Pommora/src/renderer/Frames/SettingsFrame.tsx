@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { coerceScale, type OpenIn, SCALE_STEPS } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
-import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavTrail, NO_TRAIL } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
@@ -35,8 +35,6 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
 import { lockLabel } from '@shared/toggleLabels'
-
-const NO_TRAIL: TrailSegment[] = []
 
 type FrameId =
   | 'configuration'

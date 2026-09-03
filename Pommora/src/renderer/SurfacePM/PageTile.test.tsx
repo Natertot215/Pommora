@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, createElement } from 'react'
+import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { bumpBodyEpoch, cachePageDetail, clearCache } from '@renderer/Store/tabState'
 
 vi.mock('@renderer/MarkdownPM', () => ({
-  MarkdownEditor: (p: { initialBody: string }) =>
-    createElement('div', { className: 'stub-editor' }, p.initialBody),
+  MarkdownEditor: (p: { initialBody: string }) => {
+    const [body] = useState(p.initialBody)
+    return createElement('div', { className: 'stub-editor' }, body)
+  },
 }))
 vi.mock('@renderer/Interface/pageFlush', () => ({
   flushPageSave: vi.fn(async () => undefined),

@@ -103,7 +103,7 @@ import {
   flushFileHistory,
   listHistory,
   readHistoryBody,
-  resetFileHistory,
+  retireFileHistory,
   restoreSnapshot,
   sweepFileHistory,
   writeBody,
@@ -334,8 +334,10 @@ function createWindow(): void {
 const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+const isTimestamp = isFiniteNumber
 const isCardSize = (v: unknown): v is HoverCardSize =>
-  isPlainObject(v) && ['w', 'h'].every((k) => typeof v[k] === 'number' && Number.isFinite(v[k]))
+  isPlainObject(v) && ['w', 'h'].every((k) => isFiniteNumber(v[k]))
 
 // Run after openSession and before anything reads it. Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
@@ -374,8 +376,7 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
   // the latch below compares roots and stands down.
   const priorRoot = sessionRoot()
   if (priorRoot !== null) {
-    await flushFileHistory(priorRoot)
-    resetFileHistory()
+    await retireFileHistory(priorRoot)
   }
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
@@ -461,7 +462,7 @@ const isHeightMap = (v: unknown): v is Record<string, number> =>
   typeof v === 'object' &&
   v !== null &&
   !Array.isArray(v) &&
-  Object.values(v).every((h) => typeof h === 'number' && Number.isFinite(h) && h > 0)
+  Object.values(v).every((h) => isFiniteNumber(h) && h > 0)
 const isIndexArray = (v: unknown): v is number[] =>
   Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
@@ -545,7 +546,6 @@ const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are
 const NOT_A_PROPERTY_DIR = fail('invalid-path', NOT_A_PROPERTY_DIR_MESSAGE)
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
 const NEEDS_SNAPSHOT_KEY = fail('operation-failed', 'A page id and a timestamp are required.')
-const isTimestamp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
 const optionValueOp = (
   write: (root: string, propertyId: string, value: string) => Promise<Result<null>>,
@@ -1959,8 +1959,7 @@ serveBridge(
         const newRoot = join(dirname(root), trimmed)
         if (await pathExists(newRoot))
           return fail('operation-failed', 'A folder with that name already exists.')
-        await flushFileHistory(root)
-        resetFileHistory()
+        await retireFileHistory(root)
         await rename(root, newRoot)
         // Reuses adoptNexus rather than replicating its re-target work; opts out of the record
         // latch, which belongs to genuine opens only.
