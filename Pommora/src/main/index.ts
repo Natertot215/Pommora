@@ -1555,13 +1555,13 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
-        if (key === 'historyDays') void sweepFileHistory(root)
         if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
         if (key === 'interfaceScale' && mainWindow && !mainWindow.isDestroyed())
           setHostZoom(mainWindow.webContents, interfaceScaleZoom(coerceInterfaceScale(value)))
         // No renderer confirm exists for this channel (the slice patches optimistically), yet
         // it writes a field the walk reads — the push set's membership predicate.
         await confirmSettingsWrite()
+        if (key === 'historyDays') void sweepFileHistory(root)
         return ok(null)
       },
     },
@@ -1997,10 +1997,12 @@ app.on('before-quit', (e) => {
   flushingBeforeQuit = true
   stopWatcher()
   const root = sessionRoot()
+  const quit = (): void => {
+    closeSessionDb()
+    app.quit()
+  }
   void Promise.all([flushNavigation(), root === null ? undefined : flushFileHistory(root)]).then(
-    () => {
-      closeSessionDb()
-      app.quit()
-    },
+    quit,
+    quit,
   )
 })

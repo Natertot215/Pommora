@@ -24,13 +24,6 @@ export function noteValueWrite(root: string | null, absFile: string): void {
   files.add(rel)
 }
 
-/** The live tree's path→id map when it holds `root`; empty otherwise, so a stale tree never
- *  names ids for another nexus. */
-export function liveIdIndex(root: string): Map<string, string> {
-  const tree = getLiveTree()
-  return pageIdIndex(tree?.nexus.rootPath === root ? tree : null)
-}
-
 export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
   const byPath = new Map<string, string>()
   const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
@@ -43,20 +36,38 @@ export function pageIdIndex(tree: NexusTree | null): Map<string, string> {
   return byPath
 }
 
-let pathIndex: { tree: NexusTree; byId: Map<string, string | null> } | null = null
+interface LiveIndices {
+  tree: NexusTree
+  byPath: Map<string, string>
+  byId: Map<string, string | null>
+}
+let indices: LiveIndices | null = null
+
+/** Both directions of the live tree's page index, or null when the tree is not this root's — so a
+ *  stale tree never names ids for another nexus. Memoized per tree: a burst costs one walk. */
+function liveIndices(root: string): LiveIndices | null {
+  const tree = getLiveTree()
+  if (tree?.nexus.rootPath !== root) return null
+  if (indices?.tree !== tree) {
+    const byPath = pageIdIndex(tree)
+    const byId = new Map<string, string | null>()
+    for (const [path, pageId] of byPath) byId.set(pageId, byId.has(pageId) ? null : path)
+    indices = { tree, byPath, byId }
+  }
+  return indices
+}
+
+/** The live tree's path→id map when it holds `root`; empty otherwise. */
+export const liveIdIndex = (root: string): ReadonlyMap<string, string> =>
+  liveIndices(root)?.byPath ?? new Map()
+
+export const liveIdOf = (root: string, absFile: string): string | undefined =>
+  liveIdIndex(root).get(relPosix(root, absFile))
 
 /** The live path of a page by id — null when the tree is not this root's, the id is absent, or
- *  two files claim it. Memoized per tree, so a burst of lookups costs one walk. */
-export function livePathOf(root: string, id: string): string | null {
-  const tree = getLiveTree()
-  if (!tree || tree.nexus.rootPath !== root) return null
-  if (pathIndex?.tree !== tree) {
-    const byId = new Map<string, string | null>()
-    for (const [path, pageId] of pageIdIndex(tree)) byId.set(pageId, byId.has(pageId) ? null : path)
-    pathIndex = { tree, byId }
-  }
-  return pathIndex.byId.get(id) ?? null
-}
+ *  two files claim it. */
+export const livePathOf = (root: string, id: string): string | null =>
+  liveIndices(root)?.byId.get(id) ?? null
 
 /** Drain one root's ledger into the push payload — one entry per container. */
 export function flushValueWrites(root: string): ValueChange[] {

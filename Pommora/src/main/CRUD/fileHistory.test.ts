@@ -40,9 +40,13 @@ const tick = (ms = 1000): void => {
 const untilRows = async (n: number, id = PAGE): Promise<void> => {
   for (let i = 0; i < 200 && rows(id).length < n; i++) await new Promise((r) => setImmediate(r))
 }
+const settleIo = async (): Promise<void> => {
+  for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r))
+}
 const advance = async (ms: number, expectRows: number): Promise<void> => {
-  await new Promise((r) => setImmediate(r))
+  await settleIo()
   await vi.advanceTimersByTimeAsync(ms)
+  await settleIo()
   await untilRows(expectRows)
 }
 
@@ -85,11 +89,13 @@ describe('captureIfDue', () => {
     expect(rows()[0].source).toBe('restore')
   })
 
-  it('never stores the body it already holds', async () => {
+  it('never stores the body it already holds, and a refused duplicate leaves the clock alone', async () => {
     await captureIfDue(root, PAGE, '---\nID: x\n---\nsame', 'edit')
     vi.advanceTimersByTime(10 * MINUTE)
     expect(await captureIfDue(root, PAGE, '---\nID: y\n---\nsame', 'edit')).toBe(false)
     expect(rows()).toHaveLength(1)
+    tick()
+    expect(await captureIfDue(root, PAGE, 'changed', 'edit')).toBe(true)
   })
 
   it('refuses a text over the cap, a non-page id, and a switched-off history', async () => {
@@ -189,6 +195,14 @@ describe('the quiet timer', () => {
     await refreshTree(root)
     await advance(5 * MINUTE, 1)
     expect(rows()).toHaveLength(1)
+  })
+
+  it('a flush keeps the source an external arming gave', async () => {
+    await writeFile(file, `---\nID: ${PAGE}\n---\nfrom outside`)
+    noteExternalEdit(root, file)
+    await settleIo()
+    await flushFileHistory(root)
+    expect(rows().map((r) => r.source)).toEqual(['external'])
   })
 
   it('a flush captures every armed page at once and a reset leaves no timer', async () => {
