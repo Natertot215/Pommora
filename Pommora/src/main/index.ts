@@ -31,6 +31,7 @@ import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
 import {
   installWebGuests,
+  pauseGuestMedia,
   setGuestTileZoom,
   setHostZoom,
   setWebZoomFactor,
@@ -1139,6 +1140,13 @@ serveBridge(
       kind: 'envelope',
       fn: (guestId: number, factor: number) => {
         setGuestTileZoom(guestId, factor)
+        return ok(null)
+      },
+    },
+    'webGuestMedia:pause': {
+      kind: 'envelope',
+      fn: (guestId: number) => {
+        pauseGuestMedia(guestId)
         return ok(null)
       },
     },

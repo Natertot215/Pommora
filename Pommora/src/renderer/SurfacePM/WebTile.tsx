@@ -19,6 +19,9 @@ import '@renderer/SurfacePM/block-title.css'
 /** What the guest element answers with once attached — the parting frame's only surface. */
 type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }
 
+/** The guest's webContents id, readable only once attached — the handle main zooms and pauses by. */
+type GuestWithId = HTMLElement & { getWebContentsId?: () => number }
+
 // How long a capture may hang before the clip proceeds without a frame.
 const CAPTURE_DEADLINE_MS = 200
 
@@ -39,6 +42,7 @@ export function WebTile({
   url,
   label = '',
   visible,
+  tabInactive = false,
   zoom = 1,
   refocusHost,
 }: {
@@ -47,12 +51,15 @@ export function WebTile({
   label?: string
   /** Fully visible in the owning scrollport, per the host's observer. */
   visible: boolean
+  /** The host tab left the main view — pauses this guest's media when the preference is on. */
+  tabInactive?: boolean
   /** The tile's Scale factor, joining the host-zoom × Webpage Zoom derivation main stamps. */
   zoom?: number
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
 }): React.JSX.Element {
   const title = useWebpageTitle(label, url)
+  const pauseOnTabSwitch = useSession((s) => s.personalization.pauseMediaOnTabSwitch !== false)
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [engaged, setEngaged] = useState(false)
@@ -147,7 +154,7 @@ export function WebTile({
   // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change
   // or remount; 1.0 must still be sent — it clears a previous factor's map entry.
   useEffect(() => {
-    const wv = ref.current as (HTMLElement & { getWebContentsId?: () => number }) | null
+    const wv = ref.current as GuestWithId | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
       void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
@@ -155,6 +162,16 @@ export function WebTile({
       // A guest torn down between render and effect has no id to stamp — the next mount re-sends.
     }
   }, [zoom, loaded])
+
+  // Only ever pauses, never plays — returning to the tab leaves media where the pause left it.
+  useEffect(() => {
+    if (!tabInactive || !pauseOnTabSwitch) return
+    const wv = ref.current as GuestWithId | null
+    if (!wv?.getWebContentsId || !loaded) return
+    try {
+      void window.nexus.webGuestMedia.pause(wv.getWebContentsId())
+    } catch {}
+  }, [tabInactive, pauseOnTabSwitch, loaded])
 
   // The shared hook also shields the open Edit Link picker, whose portal renders outside this tree.
   useDismiss(rootRef, () => setEngaged(false), engaged)

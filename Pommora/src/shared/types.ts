@@ -108,6 +108,14 @@ export const HISTORY_INTERVAL = {
   max: HISTORY_INTERVAL_STEPS[HISTORY_INTERVAL_STEPS.length - 1],
   default: 5,
 } as const
+/** `personalization.tabCache` — how many open page tabs keep their surface live before older ones
+ *  fall to on-demand loading. */
+export const TAB_CACHE_STEPS = [5, 10, 15, 20] as const
+export const TAB_CACHE = {
+  min: TAB_CACHE_STEPS[0],
+  max: TAB_CACHE_STEPS[TAB_CACHE_STEPS.length - 1],
+  default: 5,
+} as const
 export function clampInt(v: unknown, min: number, max: number): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), min, max) : undefined
 }
@@ -155,6 +163,10 @@ export interface Personalization {
   tabTakeFocus?: boolean
   tabMinWidth?: number
   tabMaxWidth?: number
+  /** How many open page tabs keep their surface live, within TAB_CACHE. Absent = its default. */
+  tabCache?: number
+  /** Absent = on. Off lets a tab's video and audio keep playing once it leaves the main view. */
+  pauseMediaOnTabSwitch?: boolean
   /** Absent = Pommora draws its own text selection; true hands the paint back to the platform's. */
   nativeHighlight?: boolean
   /** Absent = `outlined`. */

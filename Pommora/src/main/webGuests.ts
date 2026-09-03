@@ -169,6 +169,16 @@ export function wheelGuest(
   guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
 }
 
+// The script is a fixed constant, never renderer-supplied — only a guest id crosses the wire. Run
+// per frame, so an iframe-embedded player (YouTube and the like) pauses, not just the top document.
+const PAUSE_MEDIA = 'document.querySelectorAll("video,audio").forEach((m)=>m.pause())'
+export function pauseGuestMedia(guestId: number): void {
+  const guest = webContents.fromId(guestId)
+  if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
+  for (const frame of guest.mainFrame.framesInSubtree)
+    void frame.executeJavaScript(PAUSE_MEDIA).catch(() => {})
+}
+
 /** The single seam every host-zoom writer uses; a bare `setZoomFactor` elsewhere leaves guests
  *  at the old scale. */
 export function setHostZoom(wc: WebContents, factor: number): void {

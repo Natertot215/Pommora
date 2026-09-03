@@ -50,6 +50,8 @@ export interface EmbedHost {
   saveHeights?: (heights: Record<string, number>) => void
   /** Present alongside saveHeights — the page surface persisting each tile's Scale factor. */
   saveZooms?: (zooms: Record<string, number>) => void
+  /** Whether this editor's tab is the shown one; false parks it, and its webpage guests pause. */
+  tabActive?: () => boolean
 }
 
 const embedHost = Facet.define<EmbedHost, EmbedHost>({
@@ -403,6 +405,7 @@ class WebpageTileWidget extends WidgetType {
         url: this.url,
         label: this.label,
         visible: this.pageSurface && dom._visible === true,
+        tabInactive: host.tabActive?.() === false,
         zoom: zoomStep(view.state.field(embedField).zooms[this.url]).factor,
         refocusHost: () => view.focus(),
       }),
@@ -840,15 +843,21 @@ export function embedZoomAt(state: EditorState, pos: number): number | null {
   return key === null ? null : zoomStep(state.field(embedField).zooms[key]).factor
 }
 
+/** This view's own embed-tile spans, never a nested editor's — whose tiles own their own state. */
+function ownTiles(view: EditorView): WebTileDom[] {
+  const tiles: WebTileDom[] = []
+  for (const el of view.dom.querySelectorAll<HTMLElement>('[data-embed-target]')) {
+    if (el.closest('.cm-content') === view.contentDOM) tiles.push(el as WebTileDom)
+  }
+  return tiles
+}
+
 /** Pushes the live Scale factors onto the rendered tiles without a widget rebuild — page tiles
  *  take the var (transitioned on a pick, instant on the persistence load), webpage tiles re-render
- *  their React root, which re-sends the guest factor. Only this view's own tiles, never a nested
- *  editor's. */
+ *  their React root, which re-sends the guest factor. */
 export function refreshTileZooms(view: EditorView, animate: boolean): void {
   const zooms = view.state.field(embedField).zooms
-  for (const el of view.dom.querySelectorAll<HTMLElement>('[data-embed-target]')) {
-    if (el.closest('.cm-content') !== view.contentDOM) continue
-    const span = el as WebTileDom
+  for (const span of ownTiles(view)) {
     if (span._renderW) {
       span._renderW()
       continue
@@ -857,6 +866,12 @@ export function refreshTileZooms(view: EditorView, animate: boolean): void {
     applyTileZoom(span, zooms[span.dataset.embedTarget ?? ''])
     if (!animate) requestAnimationFrame(() => span.style.removeProperty('transition'))
   }
+}
+
+/** Re-renders this view's own webpage-tile roots so each re-reads live host state; page tiles have
+ *  no root and no-op. */
+export function rerenderWebTiles(view: EditorView): void {
+  for (const span of ownTiles(view)) span._renderW?.()
 }
 
 /** The grip menu's pick: restate the whole record with this tile's factor (1.0 drops the key,

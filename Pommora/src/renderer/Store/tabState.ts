@@ -14,7 +14,7 @@ export interface CacheEntry {
 }
 
 /** Beyond this many entries deep, a Back/Forward restore goes cold. */
-const CACHE_CAP_PER_TAB = 20
+const CACHE_CAP_PER_TAB = 50
 
 const cache = new Map<string, Map<string, CacheEntry>>()
 
@@ -33,7 +33,7 @@ export function readCache(tabId: string, navKey: string): CacheEntry | undefined
 }
 
 /** Beyond this many pages, the stalest embed detail goes cold. */
-const DETAIL_CAP = 40
+const DETAIL_CAP = 50
 
 const detailByPath = new Map<string, PageDetail>()
 
