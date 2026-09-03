@@ -1,4 +1,4 @@
-/* The two persistent toolbar clusters float over the titlebar drag strip; the bar is click-through  (pointer-events: none) so empty space still drags the window, while each cluster opts back into pointer events and out of the drag region. */
+/* The two persistent toolbar clusters float over the titlebar drag strip; the bar is click-through (pointer-events: none) so empty space still drags the window, while each cluster opts back into pointer events and out of the drag region. */
 .app-toolbar {
   position: absolute;
   color: var(--label-control);

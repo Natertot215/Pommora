@@ -1,4 +1,4 @@
-/* The Pommora text selection — drawn rather than native because `::selection` takes only a color: no corner, no bleed, no height of its own.*/
+/* The Pommora text selection — drawn rather than native because `::selection` takes only a color: no corner, no bleed, no height of its own. */
 
 :root {
   /* --text-selection-radius and --text-selection-pad are a KNOB pair. */
@@ -35,7 +35,7 @@
   background: var(--text-selection);
 }
 
-/* A zero-box anchor in the field's parent reports where local (0,0) landed, so pills place by delta and never care which ancestor positions them.*/
+/* A zero-box anchor in the field's parent reports where local (0,0) landed, so pills place by delta and never care which ancestor positions them. */
 .mdpm-sel-host {
   position: absolute;
   left: 0;
@@ -46,7 +46,7 @@
   pointer-events: none;
 }
 
-/* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any editor.*/
+/* The native highlight goes only where a drawn one replaces it: an editor that mounts the selection layer, and what nativeCaret.ts paints — writable text fields, and editable text outside any editor. */
 :root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content::selection,
 :root:not(.native-highlight) .cm-editor:has(.mdpm-sel-layer) .cm-scroller .cm-content ::selection,
 :root:not(.native-highlight)

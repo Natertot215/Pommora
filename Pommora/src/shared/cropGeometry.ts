@@ -1,3 +1,4 @@
+import { clamp } from './clamp'
 import type { Crop } from './schemas'
 
 export interface CoverStyle {
@@ -10,7 +11,6 @@ export const DEFAULT_CROP: Crop = { x: 0.5, y: 0.5, zoom: 1 }
 export const MIN_ZOOM = 0.25
 export const MAX_ZOOM = 2
 
-export const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 const usable = (n: number): boolean => Number.isFinite(n) && n > 0
 const pct = (n: number): string => `${Number((n * 100).toFixed(4))}%`
 

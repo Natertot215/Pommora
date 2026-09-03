@@ -28,6 +28,10 @@ import {
   HISTORY_INTERVAL_STEPS,
   TAB_CACHE,
   TAB_CACHE_STEPS,
+  TAB_MAX_WIDTH,
+  TAB_MAX_WIDTH_STEPS,
+  TAB_MIN_WIDTH,
+  TAB_MIN_WIDTH_STEPS,
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
@@ -353,16 +357,16 @@ const FRAMES = roster([
             kind: 'zoom',
             key: 'tabMinWidth',
             label: 'Minimum Tab Width',
-            fallback: 70,
-            steps: [50, 60, 70, 80, 90, 100],
+            fallback: TAB_MIN_WIDTH.default,
+            steps: TAB_MIN_WIDTH_STEPS,
             unit: PIXELS,
           },
           {
             kind: 'zoom',
             key: 'tabMaxWidth',
             label: 'Maximum Tab Width',
-            fallback: 250,
-            steps: [150, 175, 200, 225, 250, 275, 300, 325, 350],
+            fallback: TAB_MAX_WIDTH.default,
+            steps: TAB_MAX_WIDTH_STEPS,
             unit: PIXELS,
           },
           {
@@ -717,7 +721,6 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
       onClose={closeSettings}
       bounds={SETTINGS_WIN}
       dragSurfaces={DRAG_SURFACES}
-      toolbar="floating"
       className="settings-window"
       ariaLabel="Settings"
       left={{

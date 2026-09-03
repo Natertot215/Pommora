@@ -87,8 +87,6 @@ export async function readPermanentDelete(root: string): Promise<boolean> {
 const MINUTE_MS = 60_000
 const DAY_MS = 86_400_000
 
-/** File history's three knobs in the units its rule runs on: whether it records, the least time
- *  between two snapshots of a page, and how long a snapshot is kept. */
 export async function readFileHistoryConfig(
   root: string,
 ): Promise<{ enabled: boolean; intervalMs: number; keepMs: number }> {

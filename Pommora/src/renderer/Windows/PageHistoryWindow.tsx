@@ -115,7 +115,6 @@ function PageHistoryBody({
     if (!r.ok) window.nexus.showError(r.error.message)
     await refresh()
   }
-  // A right-click on a checked row acts on the whole check set; on an unchecked row, on that row alone.
   const openMenu = async (ts: number): Promise<void> => {
     const keys = checked.has(ts) ? [...checked] : [ts]
     const action = await window.nexus.historyMenu({ batch: keys.length > 1 })

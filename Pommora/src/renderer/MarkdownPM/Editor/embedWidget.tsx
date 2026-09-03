@@ -26,7 +26,7 @@ import {
 } from '@codemirror/view'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
-import { clamp } from '@renderer/DesignSystem/Util/clamp'
+import { clamp } from '@shared/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
 import '@renderer/SurfacePM/block-tile-base.css'
