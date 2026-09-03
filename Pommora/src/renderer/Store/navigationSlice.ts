@@ -55,6 +55,7 @@ import {
   isDepth1Set,
   parentPathOf,
 } from '../Interface/scope'
+import { cancelPageSave } from '../Interface/pageFlush'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/viewMint'
 import type { SessionState, Slice } from './sessionState'
@@ -370,6 +371,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       dropCacheDetail(path)
       const detail = await fetchPageDetail(path)
       if (!detail) return
+      cancelPageSave(path)
       get().setPageBody(path, detail.body)
       bumpBodyEpoch(path)
     },

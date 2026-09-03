@@ -10,6 +10,8 @@ import type { Db } from '../Database/driver'
 import {
   SNAPSHOT_MAX_BYTES,
   captureIfDue,
+  clearHistory,
+  deleteHistory,
   flushFileHistory,
   noteExternalEdit,
   readHistoryBody,
@@ -101,7 +103,13 @@ describe('captureIfDue', () => {
   })
 
   it('refuses a text over the cap, a non-page id, and a switched-off history', async () => {
-    expect(await captureIfDue(root, PAGE, 'x'.repeat(SNAPSHOT_MAX_BYTES + 1), 'edit')).toBe(false)
+    const big = 'x'.repeat(SNAPSHOT_MAX_BYTES + 1)
+    expect(await captureIfDue(root, PAGE, big, 'edit')).toBe(false)
+    expect(await captureIfDue(root, PAGE, big, 'external')).toBe(true)
+    tick()
+    expect(await captureIfDue(root, PAGE, `${big}y`, 'restore')).toBe(true)
+    expect(rows()).toHaveLength(2)
+    expect(clearHistory()).toEqual({ ok: true, value: 2 })
     expect(await captureIfDue(root, TASK, 'task text', 'edit')).toBe(false)
     await settle({ fileHistory: false })
     expect(await captureIfDue(root, PAGE, 'off', 'edit')).toBe(false)
@@ -156,6 +164,15 @@ describe('writeBody', () => {
     expect(splitEnvelope(await readFile(file, 'utf8')).body).toBe('one')
   })
 
+  it('restoring the text the page already holds records nothing', async () => {
+    await writeBody(root, file, 'two', 'edit')
+    tick()
+    await writeBody(root, file, 'one', 'restore')
+    tick()
+    await writeBody(root, file, 'one', 'restore')
+    expect(rows().map((r) => r.source)).toEqual(['restore', 'edit'])
+  })
+
   it('a restore arms no quiet timer', async () => {
     await writeBody(root, file, 'two', 'edit')
     tick()
@@ -183,6 +200,15 @@ describe('the quiet timer', () => {
     expect(bodyOf(PAGE, rows()[0].ts)).toBe('three')
     await advance(10 * MINUTE, 2)
     expect(rows()).toHaveLength(2)
+  })
+
+  it('a switched-off history arms nothing', async () => {
+    await settle({ fileHistory: false })
+    await writeBody(root, file, 'two', 'edit')
+    noteExternalEdit(root, file)
+    await settleIo()
+    expect(vi.getTimerCount()).toBe(0)
+    expect(rows()).toEqual([])
   })
 
   it('an external edit arms the timer with its own source', async () => {
@@ -254,6 +280,18 @@ describe('the history channels', () => {
     const other = readHistoryBody(OTHER, ts)
     expect(other.ok).toBe(false)
     if (!other.ok) expect(other.error.code).toBe('not-found')
+  })
+
+  it('a clear and a delete free the interval clock', async () => {
+    await writeBody(root, file, 'two', 'edit')
+    expect(clearHistory()).toEqual({ ok: true, value: 1 })
+    tick()
+    await writeBody(root, file, 'three', 'edit')
+    expect(rows()).toHaveLength(1)
+    expect(deleteHistory(PAGE, [rows()[0].ts])).toEqual({ ok: true, value: 1 })
+    tick()
+    await writeBody(root, file, 'four', 'edit')
+    expect(bodyOf(PAGE, rows()[0].ts)).toBe('three')
   })
 
   it("restores by id at the page's live path, answering that path", async () => {
