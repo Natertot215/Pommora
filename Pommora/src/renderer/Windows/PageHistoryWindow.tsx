@@ -49,8 +49,9 @@ function PageHistoryBody({
   const [rows, setRows] = useState<SnapshotRow[]>([])
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
+  const [shown, setShown] = useState<number | null>(null)
   const [reload, setReload] = useState(0)
-  const { shown, restoreEnabled } = historyRowModel(checked)
+  const { restoreTarget } = historyRowModel(checked)
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, values] = await Promise.all([
@@ -59,11 +60,12 @@ function PageHistoryBody({
     ])
     if (list.ok) {
       setRows(list.value)
+      const live = new Set(list.value.map((r) => r.ts))
       setChecked((prev) => {
-        const live = new Set(list.value.map((r) => r.ts))
         const next = new Set([...prev].filter((ts) => live.has(ts)))
         return next.size === prev.size ? prev : next
       })
+      setShown((prev) => (prev !== null && live.has(prev) ? prev : null))
     }
     const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
     setModifiedAt(stamp ? new Date(stamp).getTime() : null)
@@ -102,13 +104,12 @@ function PageHistoryBody({
       if (!next.delete(ts)) next.add(ts)
       return next
     })
-  const showCurrent = (): void => setChecked(new Set())
 
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
     if (!r.ok) window.nexus.showError(r.error.message)
-    showCurrent()
+    setShown(null)
     await refresh()
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
@@ -142,7 +143,7 @@ function PageHistoryBody({
           subLabel={modifiedAt === null ? undefined : when(modifiedAt)}
           selected={shown === null}
           overlay={<Checkbox className={gutter} size="compact" state={shown === null} readOnly />}
-          onClick={showCurrent}
+          onClick={() => setShown(null)}
         >
           Current Version
         </MenuItem>
@@ -176,7 +177,7 @@ function PageHistoryBody({
                 />
               ) : undefined
             }
-            onClick={() => toggle(row.ts)}
+            onClick={() => setShown(row.ts)}
             onContextMenu={(e) => {
               e.preventDefault()
               void openMenu(row.ts)
@@ -192,9 +193,9 @@ function PageHistoryBody({
             type="filled"
             size="button-inline"
             label="Restore"
-            disabled={!restoreEnabled}
+            disabled={restoreTarget === null}
             onClick={() => {
-              if (shown !== null) void restore(shown)
+              if (restoreTarget !== null) void restore(restoreTarget)
             }}
           />
         }
