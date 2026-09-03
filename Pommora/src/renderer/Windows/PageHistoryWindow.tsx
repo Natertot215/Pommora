@@ -49,13 +49,8 @@ function PageHistoryBody({
   const [rows, setRows] = useState<SnapshotRow[]>([])
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())
-  const [lastChecked, setLastChecked] = useState<number | null>(null)
   const [reload, setReload] = useState(0)
-  const { checkedLive, shown, restoreEnabled, glyphOn } = historyRowModel(
-    rows,
-    checked,
-    lastChecked,
-  )
+  const { shown, restoreEnabled } = historyRowModel(checked)
 
   const refresh = useCallback(async (): Promise<void> => {
     const [list, values] = await Promise.all([
@@ -101,16 +96,12 @@ function PageHistoryBody({
   )
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
-  const toggle = (ts: number): void => {
-    const on = !checked.has(ts)
+  const toggle = (ts: number): void =>
     setChecked((prev) => {
       const next = new Set(prev)
-      if (on) next.add(ts)
-      else next.delete(ts)
+      if (!next.delete(ts)) next.add(ts)
       return next
     })
-    if (on) setLastChecked(ts)
-  }
   const showCurrent = (): void => setChecked(new Set())
 
   const restore = async (ts: number): Promise<void> => {
@@ -127,7 +118,7 @@ function PageHistoryBody({
     await refresh()
   }
   const openMenu = async (ts: number): Promise<void> => {
-    const inSet = checked.has(ts) ? checkedLive : []
+    const inSet = checked.has(ts) ? [...checked] : []
     const batch = inSet.length > 1
     const action = await window.nexus.historyMenu({ batch })
     if (action === 'restore') await restore(ts)
@@ -172,7 +163,7 @@ function PageHistoryBody({
               />
             }
             trailing={
-              glyphOn(row.ts) ? (
+              checked.has(row.ts) ? (
                 <Button
                   size="button-inline"
                   icon="trash"
@@ -180,7 +171,7 @@ function PageHistoryBody({
                   title="Delete"
                   onClick={(e) => {
                     e.stopPropagation()
-                    void remove(checkedLive)
+                    void remove([...checked])
                   }}
                 />
               ) : undefined
@@ -202,7 +193,9 @@ function PageHistoryBody({
             size="button-inline"
             label="Restore"
             disabled={!restoreEnabled}
-            onClick={() => void restore(checkedLive[0])}
+            onClick={() => {
+              if (shown !== null) void restore(shown)
+            }}
           />
         }
       />
