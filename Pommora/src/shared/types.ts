@@ -98,10 +98,21 @@ export interface SnapshotRow {
   ts: number
   source: SnapshotSource
 }
-/** `personalization.historyDays` — how long a snapshot is kept, in days. */
-export const HISTORY_DAYS = { min: 7, max: 90, default: 90 } as const
+/** `personalization.historyDays` — how long a snapshot is kept, in days: the steps offered, and
+ *  the range a typed value clamps into. */
+export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const
+export const HISTORY_DAYS = {
+  min: HISTORY_DAY_STEPS[0],
+  max: HISTORY_DAY_STEPS[4],
+  default: 90,
+} as const
 /** `personalization.historyInterval` — the least time between two snapshots of one page, in minutes. */
-export const HISTORY_INTERVAL = { min: 5, max: 20, default: 5 } as const
+export const HISTORY_INTERVAL_STEPS = [5, 10, 15, 20] as const
+export const HISTORY_INTERVAL = {
+  min: HISTORY_INTERVAL_STEPS[0],
+  max: HISTORY_INTERVAL_STEPS[3],
+  default: 5,
+} as const
 export function clampInt(v: unknown, min: number, max: number): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), min, max) : undefined
 }

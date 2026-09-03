@@ -22,8 +22,10 @@ import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/linkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
   DEFAULT_TIME_FORMAT,
+  HISTORY_DAY_STEPS,
   HISTORY_DAYS,
   HISTORY_INTERVAL,
+  HISTORY_INTERVAL_STEPS,
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
@@ -123,14 +125,12 @@ type Row =
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
-/** How a numeric row shows its stored value: `scale` turns the stored number into the shown one. */
-type NumberUnit = { scale: number; suffix: string; label: (shown: number) => string }
-const PERCENT: NumberUnit = { scale: 100, suffix: '%', label: (n) => `${n}%` }
-const DAYS: NumberUnit = { scale: 1, suffix: 'days', label: (n) => `${n} days` }
-const MINUTES: NumberUnit = { scale: 1, suffix: 'Min', label: (n) => `${n} Min` }
-
-const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const satisfies readonly number[]
-const HISTORY_INTERVAL_STEPS = [5, 10, 15, 20] as const satisfies readonly number[]
+/** How a numeric row shows its stored value: `scale` turns the stored number into the shown one,
+ *  and `suffix` follows the digits as written. */
+type NumberUnit = { scale: number; suffix: string }
+const PERCENT: NumberUnit = { scale: 100, suffix: '%' }
+const DAYS: NumberUnit = { scale: 1, suffix: ' days' }
+const MINUTES: NumberUnit = { scale: 1, suffix: ' Min' }
 
 const clearExclusions = async (): Promise<boolean> => {
   const count = await window.nexus.countExclusions()
@@ -820,11 +820,12 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const setPersonalization = useSession((s) => s.setPersonalization)
   const steps = row.steps ?? SCALE_STEPS
   const unit = row.unit ?? PERCENT
+  const shown = (value: number): number => Math.round(value * unit.scale)
   const commit = (value: number): void =>
     setPersonalization(row.key, value === row.fallback ? undefined : value)
-  const choices: PickerChoice<string>[] = stepsWith(steps, stored).map((f) => ({
+  const choices = stepsWith(steps, stored).map((f) => ({
     value: String(f),
-    label: unit.label(Math.round(f * unit.scale)),
+    label: `${shown(f)}${unit.suffix}`,
   }))
   return (
     <MenuRowView
@@ -835,12 +836,12 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
         options: choices,
         onPick: (v) => commit(Number(v)),
         typeable: {
-          text: String(Math.round(stored * unit.scale)),
+          text: String(shown(stored)),
           suffix: unit.suffix,
           onCommit: (written) => {
-            const shown = Number.parseFloat(written.replace(unit.suffix, '').trim())
-            if (Number.isFinite(shown))
-              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], shown / unit.scale)))
+            const typed = Number.parseFloat(written.replace(unit.suffix, '').trim())
+            if (Number.isFinite(typed))
+              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], typed / unit.scale)))
           },
         },
       })}
