@@ -129,14 +129,14 @@ export async function writeBody(
   const pageId = liveIdOf(root, absPath)
   if (pageId) {
     if (previous !== null) {
-      const known = lastWritten.get(absPath)
+      const known = lastWritten.get(pageId)
       const foreign = known !== undefined && known !== bodyHash(previous)
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
       await captureIfDue(root, pageId, previous, offered)
     }
-    lastWritten.set(absPath, bodyHash(written))
-    await arm(root, pageId, 'edit')
+    lastWritten.set(pageId, bodyHash(written))
+    if (source === 'edit') await arm(root, pageId, 'edit')
   }
   return ok(null)
 }

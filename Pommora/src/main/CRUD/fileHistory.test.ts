@@ -154,6 +154,14 @@ describe('writeBody', () => {
     expect(splitEnvelope(await readFile(file, 'utf8')).body).toBe('one')
   })
 
+  it('a restore arms no quiet timer', async () => {
+    await writeBody(root, file, 'two', 'edit')
+    tick()
+    await writeBody(root, file, 'one', 'restore')
+    await advance(10 * MINUTE, 2)
+    expect(rows()).toHaveLength(2)
+  })
+
   it('answers not-found for a missing page and captures nothing', async () => {
     const r = await writeBody(root, abs('Notes', 'Missing.md'), 'x', 'edit')
     expect(r.ok).toBe(false)
