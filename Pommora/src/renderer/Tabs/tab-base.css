@@ -5,7 +5,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--tab-gap, 6px);
+  gap: 6px;
   height: 100%;
   flex: 0 1 var(--tab-pref);
   min-width: var(--tab-min);

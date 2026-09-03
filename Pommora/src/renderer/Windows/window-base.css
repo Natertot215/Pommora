@@ -127,7 +127,7 @@
   scrollbar-width: none;
 }
 
-/* The centered title slot both the web link and the page tab-strip title wear. */
+/* The centered title slot both the web link and the page tab-strip title use. */
 .window-toolbar-title {
   position: absolute;
   left: 50%;
