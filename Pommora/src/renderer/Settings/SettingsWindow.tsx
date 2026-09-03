@@ -15,7 +15,7 @@ import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import { stepsWith, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { stepsWith, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/linkFormat'
@@ -71,10 +71,10 @@ interface RowText {
   hint?: string
 }
 
-type PickerRow<T extends string> = RowText & {
+type PickerControlRow<T extends string> = RowText & {
   kind: 'picker'
   key: KeyOf<T>
-  options: readonly PickerChoice<T>[]
+  options: readonly PickerOption<T>[]
   fallback: T
 }
 
@@ -114,11 +114,11 @@ type Row =
       inheritsVar: string
       greyscale?: boolean
     })
-  | PickerRow<LinkDisplay>
-  | PickerRow<DateFormat>
-  | PickerRow<TimeFormatSetting>
-  | PickerRow<PickerSelection>
-  | PickerRow<TabOpenBehavior>
+  | PickerControlRow<LinkDisplay>
+  | PickerControlRow<DateFormat>
+  | PickerControlRow<TimeFormatSetting>
+  | PickerControlRow<PickerSelection>
+  | PickerControlRow<TabOpenBehavior>
   | (RowText & {
       kind: 'zoom'
       key: KeyOf<number>
@@ -179,16 +179,16 @@ type Frame = {
   | { Surface: () => React.JSX.Element; sections?: never }
 )
 
-const pickerSelectionOptions: readonly PickerChoice<PickerSelection>[] = [
+const pickerSelectionOptions: readonly PickerOption<PickerSelection>[] = [
   { value: 'outlined', label: 'Outlined' },
   { value: 'checked', label: 'Checked' },
 ]
 
-const dateFormatOptions: readonly PickerChoice<DateFormat>[] = DATE_FORMATS.map((value) => ({
+const dateFormatOptions: readonly PickerOption<DateFormat>[] = DATE_FORMATS.map((value) => ({
   value,
   label: DATE_FORMAT_LABELS[value],
 }))
-const timeFormatOptions: readonly PickerChoice<TimeFormatSetting>[] = TIME_FORMAT_SETTINGS.map(
+const timeFormatOptions: readonly PickerOption<TimeFormatSetting>[] = TIME_FORMAT_SETTINGS.map(
   (value) => ({ value, label: TIME_FORMAT_LABELS[value] }),
 )
 
@@ -804,7 +804,7 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
     case 'slider':
       return <SliderRow row={row} />
     case 'picker':
-      return <PickerRow row={row} />
+      return <PickerControlRow row={row} />
     case 'zoom':
       return <ZoomRow row={row} />
     case 'device':
@@ -906,7 +906,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   )
 }
 
-function PickerRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
+function PickerControlRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (

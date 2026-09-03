@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import type { ColumnLook } from '@shared/columnStyles'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import type { PickKind } from './massAssign'
@@ -129,7 +129,7 @@ export function PropertyOptionRows({
   return (
     <>
       {options.map((o) => (
-        <PickerOption
+        <PickerRow
           key={o.value}
           selected={selected.includes(o.value)}
           onClick={() => onPick(o.value)}
@@ -144,7 +144,7 @@ export function PropertyOptionRows({
               def={def}
             />
           )}
-        </PickerOption>
+        </PickerRow>
       ))}
     </>
   )

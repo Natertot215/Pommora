@@ -255,7 +255,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
-| PickerControl | `PickerControl` · `labelOf` · `PickerChoice` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
+| PickerControl | `PickerControl` · `labelOf` · `PickerOption` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
 | EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
 | EmptyValue | `EmptyValue` | The one "nothing here yet" mark for value slots. |
 
@@ -299,7 +299,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title | Export | What it is |
 | ------------- | -------------------- | ------------------------------------------------------------------- |
-| PickerMenu | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. |
+| PickerMenu | `PickerMenu` · `PointMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. |
 | CalendarPicker | `CalendarPicker` | Date and time selection. |
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |

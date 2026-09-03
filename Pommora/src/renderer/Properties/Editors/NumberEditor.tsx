@@ -4,7 +4,7 @@ import { CURRENCY_CODES } from '@shared/properties'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
 import { numberDivisor } from '@renderer/Properties/Assignment/formatValue'
-import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import type { PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { MenuRowView, type MenuRow, type Trailing } from '@renderer/DesignSystem/Menus'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
@@ -12,20 +12,20 @@ import * as s from './number-editor.css'
 
 export type NumberLook = 'number' | 'bar'
 
-const FAMILY_OPTIONS: PickerChoice<NumberFamily>[] = [
+const FAMILY_OPTIONS: PickerOption<NumberFamily>[] = [
   { value: 'number', label: 'Number' },
   { value: 'percent', label: 'Percent' },
   { value: 'currency', label: 'Currency' },
 ]
-const CURRENCY_OPTIONS: PickerChoice<string>[] = CURRENCY_CODES.map((code) => ({
+const CURRENCY_OPTIONS: PickerOption<string>[] = CURRENCY_CODES.map((code) => ({
   value: code,
   label: code,
 }))
-const STYLE_OPTIONS: PickerChoice<NumberLook>[] = [
+const STYLE_OPTIONS: PickerOption<NumberLook>[] = [
   { value: 'number', label: 'Number' },
   { value: 'bar', label: 'Bar' },
 ]
-const DECIMAL_OPTIONS: PickerChoice<string>[] = [
+const DECIMAL_OPTIONS: PickerOption<string>[] = [
   { value: 'hidden', label: 'Hidden' },
   ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),
 ]

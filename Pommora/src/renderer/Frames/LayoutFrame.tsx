@@ -19,7 +19,7 @@ import { InlineEditHeader } from './InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { LayoutToggles } from './LayoutToggles'
 import { CardsOptions } from './CardsOptions'
-import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { PickerControl, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -43,7 +43,7 @@ const IMPLEMENTED: ReadonlySet<ViewType> = new Set(['table', 'cards'])
 const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
 
-const BANNERS: PickerChoice<CardBanner>[] = [
+const BANNERS: PickerOption<CardBanner>[] = [
   { value: 'image', label: 'Image' },
   { value: 'preview', label: 'Preview' },
   { value: 'none', label: 'None' },

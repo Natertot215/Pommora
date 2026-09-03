@@ -139,7 +139,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 #### Naming
 
 - [ ] **Three "preview" strings** — the setting label "Open Connections In Preview", its hint ("…opens the preview window…"), and one test title ("Open Preview floats it instead"). *Status:* awaiting wording (§3.8).
-- [ ] **`PickerChoice` vs `PickerOption`** — 42 vs 46, two spellings for one list in the same layer. *Status:* audit decides the winner; mechanical after.
 - [ ] **`band` ×3** — SurfacePM's layout run, the Views' group header, the toolbar's band form: three unrelated concepts on one word; `pipeline/group.ts` already exports `ResolvedGroup` for what `GroupBand` renders. *Status:* audit proposes.
 
 ---

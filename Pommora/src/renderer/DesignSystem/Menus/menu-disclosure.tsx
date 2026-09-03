@@ -3,7 +3,7 @@ import { Icon } from '../Symbols'
 import { cx } from '../Util/cx'
 import { Reveal } from '../Animation/Reveal'
 import { MenuItem } from './menu-row'
-import { PickerOption } from '../Pickers/picker-base'
+import { PickerRow } from '../Pickers/picker-base'
 import { side } from './menu-base.css'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
@@ -87,7 +87,7 @@ export function DisclosureRow({
   children?: ReactNode
 }): React.JSX.Element {
   const row = picker ? (
-    <PickerOption
+    <PickerRow
       selected={selected}
       ring
       onClick={onClick}
@@ -99,7 +99,7 @@ export function DisclosureRow({
       }
     >
       {title}
-    </PickerOption>
+    </PickerRow>
   ) : (
     <MenuItem
       selected={selected}

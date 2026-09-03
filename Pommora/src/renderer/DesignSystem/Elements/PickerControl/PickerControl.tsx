@@ -2,20 +2,20 @@ import { useRef, useState } from 'react'
 import { EditableInput } from '../../Fields'
 import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
-import { PickerMenu, PickerOption } from '../../Pickers/picker-base'
+import { PickerMenu, PickerRow } from '../../Pickers/picker-base'
 import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
 import * as s from './picker-control.css'
 
-export type PickerChoice<T extends string> = {
+export type PickerOption<T extends string> = {
   value: T
   label: string
   icon?: React.ComponentProps<typeof Icon>['name']
 }
 
-export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T): string =>
+export const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-export const factorChoice = (f: number): PickerChoice<string> => ({
+export const factorChoice = (f: number): PickerOption<string> => ({
   value: String(f),
   label: `${f.toFixed(2)}x`,
 })
@@ -37,7 +37,7 @@ export function PickerControl<T extends string>({
 }: {
   ariaLabel: string
   value: T
-  options: readonly PickerChoice<T>[]
+  options: readonly PickerOption<T>[]
   onPick: (v: T) => void
   /** A control whose value can also be written out. A right press turns the trigger's value into a
    *  field holding `text`, selected and ready to overwrite, without opening the list at all. A value
@@ -138,7 +138,7 @@ export function PickerControl<T extends string>({
         solid={solid}
       >
         {options.map((o) => (
-          <PickerOption
+          <PickerRow
             key={o.value}
             selected={o.value === value}
             ring
@@ -150,7 +150,7 @@ export function PickerControl<T extends string>({
             }}
           >
             {o.label}
-          </PickerOption>
+          </PickerRow>
         ))}
       </PickerMenu>
     </>
