@@ -116,6 +116,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     canReassign,
     canReorderWithin,
     canRelocate,
+    reassignBySortRun,
     structuralOrder,
     dragDisabled,
     viewOrders,
@@ -395,6 +396,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
     setManualOverride(full)
     persistViewOrder(full)
+    reassignBySortRun(
+      full.filter((id) => rowBand.get(id) === bandKey),
+      activeId,
+    )
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
     const from = groups.find((g) => flattenGroups([g]).some((r) => r.id === activeId))?.key
