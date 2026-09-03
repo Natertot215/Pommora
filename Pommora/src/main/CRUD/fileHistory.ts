@@ -9,10 +9,9 @@ import { HISTORY_DAYS, HISTORY_INTERVAL, type SnapshotSource } from '@shared/typ
 import { addSnapshot, latestSnapshot, sweepSnapshots } from '../Database/versionsDb'
 import { indexWrittenPage } from '../indexSeed'
 import { splitEnvelope } from '../IO/pageFile'
-import { relPosix } from '../paths'
 import { sessionVersionsDb } from '../sessionDb'
 import { readLivePersonalization } from '../settings'
-import { liveIdIndex, livePathOf, noteValueWrite } from '../valuesChanged'
+import { liveIdOf, livePathOf, noteValueWrite } from '../valuesChanged'
 import { updatePageBody } from './page'
 
 export const SNAPSHOT_MAX_BYTES = 1_048_576
@@ -21,7 +20,7 @@ const DAY_MS = 86_400_000
 
 const lastTs = new Map<string, number>()
 const lastWritten = new Map<string, string>()
-const timers = new Map<string, NodeJS.Timeout>()
+const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }>()
 
 const bodyHash = (text: string): string =>
   createHash('sha1').update(splitEnvelope(text).body).digest('hex')
@@ -54,9 +53,9 @@ async function capture(
     const db = sessionVersionsDb()
     if (!db) return false
     const latest = latestSnapshot(db, pageId)
-    lastTs.set(pageId, now)
     if (latest && bodyHash(latest.text) === bodyHash(text)) return false
     addSnapshot(db, pageId, now, source, text)
+    lastTs.set(pageId, now)
     return true
   } catch (e) {
     console.error('file history: a snapshot was not recorded:', errText(e))
@@ -74,9 +73,19 @@ export const captureIfDue = (
 ): Promise<boolean> => capture(root, pageId, text, source, source === 'edit')
 
 function disarm(pageId: string): void {
-  const timer = timers.get(pageId)
-  if (timer) clearTimeout(timer)
+  const armed = timers.get(pageId)
+  if (armed) clearTimeout(armed.timer)
   timers.delete(pageId)
+}
+
+function disarmAll(): [string, SnapshotSource][] {
+  const armed = [...timers].map(([pageId, { source }]): [string, SnapshotSource] => [
+    pageId,
+    source,
+  ])
+  for (const { timer } of timers.values()) clearTimeout(timer)
+  timers.clear()
+  return armed
 }
 
 async function captureFromDisk(
@@ -100,7 +109,7 @@ async function arm(root: string, pageId: string, source: SnapshotSource): Promis
     void captureFromDisk(root, pageId, source, source === 'edit')
   }, intervalMs)
   timer.unref()
-  timers.set(pageId, timer)
+  timers.set(pageId, { source, timer })
 }
 
 /** The one body-write path. The text being overwritten is offered first — at once when a foreign
@@ -117,7 +126,7 @@ export async function writeBody(
   await indexWrittenPage(root, absPath)
   noteValueWrite(root, absPath)
   const { previous, written } = r.value
-  const pageId = liveIdIndex(root).get(relPosix(root, absPath))
+  const pageId = liveIdOf(root, absPath)
   if (pageId) {
     if (previous !== null) {
       const known = lastWritten.get(absPath)
@@ -133,19 +142,19 @@ export async function writeBody(
 }
 
 export function noteExternalEdit(root: string, absPath: string): void {
-  const pageId = liveIdIndex(root).get(relPosix(root, absPath))
+  const pageId = liveIdOf(root, absPath)
   if (pageId) void arm(root, pageId, 'external')
 }
 
 /** Every armed page is offered now, ungated — before a switch, a rename, or a quit. Never rejects. */
 export async function flushFileHistory(root: string): Promise<void> {
-  const armed = [...timers.keys()]
-  for (const pageId of armed) disarm(pageId)
-  await Promise.all(armed.map((pageId) => captureFromDisk(root, pageId, 'edit', false)))
+  await Promise.all(
+    disarmAll().map(([pageId, source]) => captureFromDisk(root, pageId, source, false)),
+  )
 }
 
 export function resetFileHistory(): void {
-  for (const pageId of [...timers.keys()]) disarm(pageId)
+  disarmAll()
   lastTs.clear()
   lastWritten.clear()
 }

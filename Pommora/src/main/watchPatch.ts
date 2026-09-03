@@ -244,10 +244,12 @@ async function applyOne(
     case 'page-remove':
       removePathIndex(c.rel)
       return removePage(root, c.rel)
-    case 'page-upsert':
+    case 'page-upsert': {
       await indexWrittenPage(root, join(root, c.rel))
+      const outcome = await patchPageFromDisk(root, c.rel)
       noteExternalEdit(root, join(root, c.rel))
-      return patchPageFromDisk(root, c.rel)
+      return outcome
+    }
     case 'container-meta':
       return patchContainerFromDisk(root, c.dirRel)
     case 'space-meta':
