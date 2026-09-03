@@ -30,6 +30,7 @@ export type PageMetaAction =
   | 'title:moveto'
   | 'title:copylink'
   | 'title:copypath'
+  | 'title:history'
   | 'title:reveal'
   | 'title:delete'
 
@@ -61,28 +62,33 @@ export function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
-/** The two actions a surface can offer for a page it only points at — a tab, a connection — since
- *  neither asks anything of the page but its name and where it sits. */
-export type PageClipboardAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
+/** The actions a surface can offer for a page it only points at — a tab, a row — since none asks
+ *  anything of the page but its name, where it sits, and the history kept for it. */
+export type PageReachAction = Extract<
+  PageMetaAction,
+  'title:copylink' | 'title:copypath' | 'title:history'
+>
 
-export const PAGE_CLIPBOARD_ACTIONS = [
+export const PAGE_REACH_ACTIONS = [
   'title:copylink',
   'title:copypath',
-] as const satisfies readonly PageClipboardAction[]
+  'title:history',
+] as const satisfies readonly PageReachAction[]
 
-/** The send block — where a page can go, then what it can be carried away as. Every surface that
- *  reaches a page offers all three together, so the group reads the same wherever it's popped. */
-export type PageSendAction = PageClipboardAction | typeof PAGE_MOVE_ROW
+/** The send block — where a page can go, then what it can be carried away as, then its history.
+ *  Every surface that reaches a page offers them together, so the group reads the same wherever
+ *  it's popped. */
+export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW
 
 const PAGE_SEND_ACTIONS = [
   PAGE_MOVE_ROW,
-  ...PAGE_CLIPBOARD_ACTIONS,
+  ...PAGE_REACH_ACTIONS,
 ] as const satisfies readonly PageSendAction[]
 
-/** The block as a surface that only points at a page should ask for it — the two copies alone
+/** The block as a surface that only points at a page should ask for it — the reach actions alone
  *  where nothing was offered to send to. */
 export function pageSendActions(ctx: PageMoveContext): readonly PageSendAction[] {
-  return offersMove(ctx) ? PAGE_SEND_ACTIONS : PAGE_CLIPBOARD_ACTIONS
+  return offersMove(ctx) ? PAGE_SEND_ACTIONS : PAGE_REACH_ACTIONS
 }
 
 export function pageMetaMenuItems(
@@ -95,6 +101,7 @@ export function pageMetaMenuItems(
     newPages?: 'pair' | 'single'
     move?: boolean
     clipboard?: boolean
+    history?: boolean
     reveal?: boolean
   } = {},
 ): ActionItem<PageMetaAction>[] {
@@ -119,12 +126,15 @@ export function pageMetaMenuItems(
           { label: 'Copy Path', action: 'title:copypath' as const },
         ]
       : []),
+    ...(opts.history
+      ? [{ label: 'View History', action: 'title:history' as const, separatorBefore: true }]
+      : []),
     ...(opts.reveal
       ? [
           {
             label: 'Reveal Location',
             action: 'title:reveal' as const,
-            separatorBefore: !opts.clipboard && !opts.move,
+            separatorBefore: !opts.history && !opts.clipboard && !opts.move,
           },
         ]
       : []),
@@ -144,6 +154,7 @@ export function pageMetaMenuSubset<A extends PageMetaAction>(
     newPages: 'pair',
     move: true,
     clipboard: true,
+    history: true,
     reveal: true,
   }).filter((i): i is ActionItem<A> => (actions as readonly PageMetaAction[]).includes(i.action))
   return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))

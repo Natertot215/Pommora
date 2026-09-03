@@ -134,6 +134,7 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
           newPages: 'pair',
           move: offersMove(ctx),
           clipboard: true,
+          history: true,
         }),
       }
     case 'style-only':
