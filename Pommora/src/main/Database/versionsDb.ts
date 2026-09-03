@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@shared/result'
-import { DB_SIBLINGS, openDb, type Db } from './driver'
+import { DB_SIBLINGS, openDb, SQLITE_NOTADB, type Db } from './driver'
 import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'
 
@@ -69,8 +69,11 @@ export function openVersionsDb(nexusRoot: string): Db | null {
   mkdirSync(dir, { recursive: true })
   const dbPath = join(dir, VERSIONS_FILENAME)
   if (existsSync(dbPath)) {
-    const existing = openDb(dbPath)
+    const { db: existing, errcode } = openDb(dbPath)
     if (existing && healthy(existing)) return withTable(existing)
+    // Locked, mid-sync, or unreadable is left intact for the next launch, as nexus.db is; only a
+    // file that is not a database, or fails its check, is set aside.
+    if (!existing && errcode !== SQLITE_NOTADB) return null
     existing?.close()
     quarantine(dbPath)
     if (existsSync(dbPath)) {
@@ -80,7 +83,7 @@ export function openVersionsDb(nexusRoot: string): Db | null {
       return null
     }
   }
-  return withTable(openDb(dbPath))
+  return withTable(openDb(dbPath).db)
 }
 
 export function addSnapshot(
@@ -126,8 +129,13 @@ export function deleteSnapshots(db: Db, pageId: string, ts: readonly number[]): 
   )
 }
 
+/** Empties the store and gives its bytes back — the one reason to press Clear History is disk. */
 export function clearSnapshots(db: Db): number {
-  return removed(db.prepare('DELETE FROM snapshots').run())
+  const count = removed(db.prepare('DELETE FROM snapshots').run())
+  // Under WAL the rebuilt file lands in the journal; the checkpoint is what truncates the store.
+  db.exec('VACUUM')
+  db.exec('PRAGMA wal_checkpoint(TRUNCATE)')
+  return count
 }
 
 export function sweepSnapshots(db: Db, cutoffMs: number): number {
