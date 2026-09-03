@@ -7,10 +7,10 @@
   align-items: center;
   gap: var(--tab-gap, 6px);
   height: 100%;
-  flex: 0 1 var(--tab-pref, 180px);
-  min-width: var(--tab-min, 90px);
-  max-width: var(--tab-max, 240px);
-  padding: 0 var(--tab-pad-x, 12px);
+  flex: 0 1 var(--tab-pref);
+  min-width: var(--tab-min);
+  max-width: var(--tab-max);
+  padding: 0 var(--tab-pad-x);
   color: var(--label-tertiary);
   cursor: default;
   white-space: nowrap;
@@ -107,7 +107,7 @@
 
 .tab-x {
   position: absolute;
-  right: calc(var(--tab-pad-x, 12px) - 6px);
+  right: calc(var(--tab-pad-x) - 6px);
   border-radius: 6px;
   color: var(--label-secondary);
   transition:
@@ -136,7 +136,6 @@
   --tab-max: var(--tab-max-user, 250px);
   --tab-pref: 180px;
   --tab-pad-x: 12px;
-  --tab-gap: 6px;
   --tab-height: var(--button-large-height);
   --tab-divider-h: 16px;
   --tab-pinned-w: 34px;
@@ -148,13 +147,11 @@
   --tab-max: var(--tab-max-user, 200px);
   --tab-pref: 150px;
   --tab-pad-x: 10px;
-  --tab-gap: 6px;
 }
 
 /* ─── Shared scroller + strip ───────────────────────────────────────────────── */
 
 .tab-scroll {
-  --over-scroll-fade: var(--fade-base);
   position: relative;
   flex: 1;
   min-width: 0;

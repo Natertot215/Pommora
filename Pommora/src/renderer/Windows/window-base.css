@@ -167,7 +167,6 @@
 }
 .page-window-crumbs {
   min-width: 0;
-  --over-scroll-fade: var(--fade-base);
 }
 
 /* Side panes: material and geometry come from the SidePane shell — only positioning and slide live here. An overlay pane rides the inset ring, carried by its driver with no transition of its own; an in-flow pane takes a column in the body row. */
