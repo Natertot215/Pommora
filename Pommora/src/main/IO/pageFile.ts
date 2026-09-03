@@ -173,19 +173,28 @@ export function renameFrontmatterKey(
   return out === null ? null : assembleEnvelope(out, body)
 }
 
-/** Read the existing page (if any), merge modeled fields preserving foreign data,
- *  and write back atomically. A missing file starts from empty frontmatter. */
+export interface PageWrite {
+  /** The file's text before the write; null when the file did not exist. */
+  previous: string | null
+  written: string
+}
+
+/** Read the existing page, merge modeled fields preserving foreign data, and write back
+ *  atomically. Only a missing file starts from empty frontmatter — any other read failure
+ *  refuses the write, since rewriting a page that could not be read would drop its frontmatter. */
 export async function writePageFile(
   absPath: string,
   modeled: Record<string, unknown>,
   modeledKeys: readonly string[],
   body: string,
-): Promise<void> {
-  let existing = ''
+): Promise<PageWrite> {
+  let previous: string | null = null
   try {
-    existing = await readFile(absPath, 'utf8')
-  } catch {
-    /* new file — start from empty frontmatter */
+    previous = await readFile(absPath, 'utf8')
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e
   }
-  await atomicWriteFile(absPath, mergeFrontmatter(existing, modeled, modeledKeys, body))
+  const written = mergeFrontmatter(previous ?? '', modeled, modeledKeys, body)
+  await atomicWriteFile(absPath, written)
+  return { previous, written }
 }

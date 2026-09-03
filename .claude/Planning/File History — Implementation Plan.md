@@ -179,9 +179,9 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
 
 **Verify — automated**
 
-- [ ] Red first, `pageFile.test.ts`: returns the prior text and the written text; `previous` null on a missing file; EISDIR throws with no file written. Then green.
-- [ ] `page.test.ts`: `updatePageBody` answers `ok({ previous, written })`; on a read failure answers `fail` and the bytes are unchanged.
-- [ ] Existing tests green unmodified. Full gate green.
+- [x] Red first, `pageFile.test.ts`: returns the prior text and the written text; `previous` null on a missing file; EISDIR throws with no file written. Then green.
+- [x] `page.test.ts`: `updatePageBody` answers `ok({ previous, written })`; on a read failure answers `fail` and the bytes are unchanged.
+- [x] Existing tests green unmodified. Full gate green.
 
 **Verify — user**
 
@@ -656,7 +656,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
 ### Progress
 
 - [ ] **Phase 1** — The store and the writer · base `b931ef59`
-  - [ ] Task 1 · `<commit>`
+  - [x] Task 1 · `ac153859`
   - [ ] Task 2 · `<commit>`
   - [ ] Task 3 · `<commit>`
 - [ ] **Phase 2** — Capture

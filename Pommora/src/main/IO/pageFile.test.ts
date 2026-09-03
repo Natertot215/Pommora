@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -177,6 +177,29 @@ describe('writePageFile (fs)', () => {
     expect(content).toContain('id: NEW')
     expect(content).toContain('plugin: keep')
     expect(splitEnvelope(content).body).toBe('Body')
+  })
+
+  it('answers the text it overwrote and the text it wrote', async () => {
+    const p = join(dir, 'page.md')
+    const before = assembleEnvelope('id: X\n', 'one')
+    await writeFile(p, before, 'utf8')
+    const r = await writePageFile(p, {}, [], 'two')
+    expect(r.previous).toBe(before)
+    expect(r.written).toBe(await readFile(p, 'utf8'))
+    expect(splitEnvelope(r.written).body).toBe('two')
+  })
+
+  it('a missing file answers no previous text', async () => {
+    const r = await writePageFile(join(dir, 'new.md'), { id: 'X' }, ['id'], 'Hello')
+    expect(r.previous).toBeNull()
+    expect(r.written).toContain('id: X')
+  })
+
+  it('refuses when the read fails for any reason but absence', async () => {
+    const p = join(dir, 'folder.md')
+    await mkdir(p)
+    await expect(writePageFile(p, {}, [], 'Body')).rejects.toThrow()
+    expect((await stat(p)).isDirectory()).toBe(true)
   })
 })
 

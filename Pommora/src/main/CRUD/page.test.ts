@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '@shared/identity'
-import { mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
@@ -114,6 +114,30 @@ describe('updatePageBody', () => {
     expect(fm[ID_KEY]).toBe(c.value.id)
     expect(fm.plugin_key).toBe('keep')
     expect('modified_at' in fm).toBe(false)
+  })
+
+  it('answers the overwritten and the written text', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const before = await bytesOf(c.value.path)
+    const r = await updatePageBody(c.value.path, 'two')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.previous).toBe(before)
+    expect(r.value.written).toBe(await bytesOf(c.value.path))
+  })
+
+  it('a read failure refuses and leaves the file alone', async () => {
+    const c = await createPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const before = await bytesOf(c.value.path)
+    await chmod(c.value.path, 0o000)
+    const r = await updatePageBody(c.value.path, 'two')
+    await chmod(c.value.path, 0o644)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.error.code).toBe('operation-failed')
+    expect(await bytesOf(c.value.path)).toBe(before)
   })
 })
 
