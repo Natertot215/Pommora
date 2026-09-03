@@ -93,13 +93,6 @@ export type PickerSelection = 'outlined' | 'checked'
 
 export type TabOpenBehavior = 'overtake' | 'newtab'
 
-/** Where a page snapshot came from: the autosave, a foreign writer's text about to be
- *  overwritten, or the text a restore replaced. */
-export type SnapshotSource = 'edit' | 'external' | 'restore'
-export interface SnapshotRow {
-  ts: number
-  source: SnapshotSource
-}
 /** `personalization.historyDays` — how long a snapshot is kept, in days: the steps offered, and
  *  the range a typed value clamps into. */
 export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const

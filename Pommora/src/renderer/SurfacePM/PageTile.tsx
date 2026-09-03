@@ -73,10 +73,8 @@ export function PageTile({
     const fresh = readPageDetail(path)
     setSeed({ epoch, entry: fresh ? entryFrom(path, fresh) : null })
   }
-  const setLoaded = (
-    next: EmbedEntry | null | ((l: EmbedEntry | null) => EmbedEntry | null),
-  ): void =>
-    setSeed((s) => ({ epoch: s.epoch, entry: typeof next === 'function' ? next(s.entry) : next }))
+  const setLoaded = (next: (l: EmbedEntry | null) => EmbedEntry | null): void =>
+    setSeed((s) => ({ epoch: s.epoch, entry: next(s.entry) }))
   const loaded = seed.entry
   const entry = loaded?.path === path ? loaded : null
   const body = entry?.body ?? null
@@ -94,7 +92,7 @@ export function PageTile({
     let live = true
     void fetchPageDetail(path).then((detail) => {
       if (!live) return
-      setLoaded(detail ? entryFrom(path, detail) : { path, body: null })
+      setLoaded(() => (detail ? entryFrom(path, detail) : { path, body: null }))
     })
     return () => {
       live = false

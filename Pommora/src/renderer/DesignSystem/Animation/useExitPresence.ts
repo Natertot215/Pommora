@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { duration, ms } from './motion'
 
 // `exitMs` must cover the slowest close animation — the default gives the menu Bloom (duration.slow)
@@ -25,4 +25,16 @@ export function useExitPresence(
     return () => clearTimeout(t)
   }, [open, mounted, exitMs])
   return { mounted, closing }
+}
+
+/** A value kept through its exit animation: the store nulls it at close, and the body renders the
+ *  last one until the window has left. `open` defaults to the value's presence. */
+export function useHeldPresence<T>(
+  value: T | null,
+  open: boolean = value !== null,
+): { held: T; closing: boolean } | null {
+  const { mounted, closing } = useExitPresence(open)
+  const held = useRef(value)
+  if (value !== null) held.current = value
+  return mounted && held.current !== null ? { held: held.current, closing } : null
 }

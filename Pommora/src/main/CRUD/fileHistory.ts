@@ -5,12 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { kindOf } from '@shared/identity'
 import { errText, fail, ok, type Result } from '@shared/result'
-import {
-  HISTORY_DAYS,
-  HISTORY_INTERVAL,
-  type SnapshotRow,
-  type SnapshotSource,
-} from '@shared/types'
+import { HISTORY_DAYS, HISTORY_INTERVAL } from '@shared/types'
 import {
   addSnapshot,
   clearSnapshots,
@@ -18,6 +13,7 @@ import {
   latestSnapshot,
   listSnapshots,
   readSnapshot,
+  type SnapshotSource,
   sweepSnapshots,
 } from '../Database/versionsDb'
 import { indexWrittenPage } from '../indexSeed'
@@ -142,12 +138,14 @@ export async function writeBody(
   const { previous, written } = r.value
   const pageId = liveIdOf(root, absPath)
   const known = pageId ? lastWritten.get(pageId) : undefined
-  if (pageId) lastWritten.set(pageId, bodyHash(written))
+  const writtenHash = bodyHash(written)
+  if (pageId) lastWritten.set(pageId, writtenHash)
   await indexWrittenPage(root, absPath)
   noteValueWrite(root, absPath)
   if (pageId) {
-    if (previous !== null && bodyHash(previous) !== bodyHash(written)) {
-      const foreign = known !== undefined && known !== bodyHash(previous)
+    const previousHash = previous === null ? null : bodyHash(previous)
+    if (previous !== null && previousHash !== writtenHash) {
+      const foreign = known !== undefined && known !== previousHash
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
       await captureIfDue(root, pageId, previous, offered)
@@ -184,13 +182,14 @@ export async function retireFileHistory(root: string): Promise<void> {
 
 const NO_STORE = fail('operation-failed', 'File history is unavailable.')
 
-const withStore = <T>(read: (db: Db) => Result<T>): Result<T> => {
+const withStore = <T>(run: (db: Db) => Result<T>): Result<T> => {
   const db = sessionVersionsDb()
-  return db ? read(db) : NO_STORE
+  return db ? run(db) : NO_STORE
 }
 
-export const listHistory = (pageId: string): Result<SnapshotRow[]> =>
-  withStore((db) => ok(listSnapshots(db, pageId)))
+/** The page's snapshot timestamps, newest first. */
+export const listHistory = (pageId: string): Result<number[]> =>
+  withStore((db) => ok(listSnapshots(db, pageId).map((r) => r.ts)))
 
 export const readHistoryBody = (pageId: string, ts: number): Result<string> =>
   withStore((db) => {

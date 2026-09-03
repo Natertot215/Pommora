@@ -26,7 +26,6 @@ import type {
   ValueChange,
   ViewButton,
   ViewStyle,
-  SnapshotRow,
 } from './types'
 import type { FileHistoryMenuAction } from './fileHistoryMenu'
 import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } from './mutate'
@@ -102,7 +101,7 @@ export interface Asks {
   'page:updateBody': { args: [relPath: string, body: string]; reply: Result<null> }
 
   // File history — snapshots keyed by page id; restore answers the page's live path.
-  'history:list': { args: [pageId: string]; reply: Result<SnapshotRow[]> }
+  'history:list': { args: [pageId: string]; reply: Result<number[]> }
   'history:read': { args: [pageId: string, ts: number]; reply: Result<string> }
   'history:restore': { args: [pageId: string, ts: number]; reply: Result<{ path: string }> }
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
