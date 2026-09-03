@@ -332,8 +332,8 @@ export async function sweepFileHistory(root: string): Promise<void>
 
 - [x] Gates green. Every Verify ticked. Now counts re-run.
 - [x] Simplification, then review, against `<base>..HEAD` scoped to `src/main/CRUD/fileHistory.ts`, `src/main/valuesChanged.ts`, `src/main/readNexus.ts`, `src/shared/types.ts`, `src/main/index.ts`, `src/main/watchPatch.ts`; every concern fixed or ruled.
-- [ ] A restarted dev instance against a scratch Nexus: rows appear in `versions.db` after typing; no `full-refresh` per save. No screenshots.
-- [ ] Progress hashes filled. Phase 3 opens.
+- [x] A restarted dev instance on the live NexusOS (Nathan's ruling), a throwaway page driven over CDP: the pre-edit text landed as `edit`, a second save inside the interval was held, an outside edit landed as `external`, zero `nexus:changed` pushes across the saves, ⌘Q exited in 500 ms on one press and left a third row (the flush); the page, its trash bundle, and its rows were removed afterward.
+- [x] Progress hashes filled. Phase 3 opens.
 
 ---
 
@@ -659,7 +659,7 @@ export async function restoreSnapshot(target: PreviewTarget, ts: number): Promis
   - [x] Task 1 · `ac153859`
   - [x] Task 2 · `12f6404f`
   - [x] Task 3 · `507232e8`
-- [ ] **Phase 2** — Capture
+- [x] **Phase 2** — Capture · gate `266e85fc`
   - [x] Task 4 · `a4e33d6b`
   - [x] Task 5 · `3a0ce799`
 - [ ] **Phase 3** — The contract and the settings
