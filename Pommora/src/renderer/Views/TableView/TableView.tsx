@@ -1339,10 +1339,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // as the sort tiebreaker, and it agrees with the page_order the fs reload brings back.
   const reorderTo = (orderIds: string[], groupKey: string, activeId: string): void => {
     setManualOverride(orderIds)
-    reassignBySortRun(
-      orderIds.filter((id) => rowBand.get(id) === groupKey),
-      activeId,
-    )
     if (structuralOrder) {
       const groupPages = orderIds.filter((id) => rowBand.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
@@ -1358,6 +1354,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return
     }
     persistViewOrder(orderIds)
+    reassignBySortRun(orderIds, groupKey, activeId)
   }
 
   // The hover ghost row — pure chrome on the shared mechanism (useGhostAnchor): pixels only, no

@@ -111,6 +111,19 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(ids(sorter(rows))).toEqual(['r2', 'r4', 'r1', 'r3'])
   })
 
+  it('a Custom order ranks options it predates after the listed ones, ahead of the no-value rows', () => {
+    const rows = [
+      makeRow('r1', {}),
+      makeRow('r2', { props: { prop_sel: 'c' } }),
+      makeRow('r3', { props: { prop_sel: 'a' } }),
+    ]
+    const sorter = makeSorter(
+      [{ property_id: 'prop_sel', direction: 'ascending', order: ['a', 'b'] }],
+      schema,
+    )!
+    expect(ids(sorter(rows))).toEqual(['r3', 'r2', 'r1'])
+  })
+
   it('status sorts by flattened group-option order, and descending flips', () => {
     const rows = [
       makeRow('r1', { props: { prop_status: 'done' } }),
