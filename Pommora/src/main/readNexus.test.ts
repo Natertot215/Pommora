@@ -142,6 +142,20 @@ describe('readPersonalization: the Metadata toggles', () => {
   })
 })
 
+describe('readPersonalization: file history', () => {
+  it('clamps the numbers into their ranges and drops what is not a number', () => {
+    expect(readPersonalization({ historyDays: 200 }).historyDays).toBe(90)
+    expect(readPersonalization({ historyDays: 2 }).historyDays).toBe(7)
+    expect(readPersonalization({ historyInterval: '5' }).historyInterval).toBeUndefined()
+    expect(readPersonalization({ historyInterval: 12.4 }).historyInterval).toBe(12)
+  })
+  it('holds only an explicit off', () => {
+    expect(readPersonalization({ fileHistory: false }).fileHistory).toBe(false)
+    expect(readPersonalization({ fileHistory: 'no' }).fileHistory).toBeUndefined()
+    expect(readPersonalization({}).fileHistory).toBeUndefined()
+  })
+})
+
 describe('readPersonalization: picker selection', () => {
   it('reads the stored mode back so a set survives the next tree push', () => {
     expect(readPersonalization({ pickerSelection: 'checked' }).pickerSelection).toBe('checked')
