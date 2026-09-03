@@ -66,7 +66,7 @@ type KeyOf<V> = {
 
 interface RowText {
   label: string
-  hint: string
+  hint?: string
   when?: (p: Personalization) => boolean
 }
 
@@ -336,7 +336,6 @@ const FRAMES = roster([
             kind: 'picker',
             key: 'tabOpenBehavior',
             label: 'Default Opening Behavior',
-            hint: 'What opening an entity does: overtake the current tab, or open a new one.',
             fallback: 'overtake',
             options: [
               { value: 'overtake', label: 'Overtake' },
@@ -347,7 +346,6 @@ const FRAMES = roster([
             kind: 'toggle',
             key: 'tabTakeFocus',
             label: 'Take Focus',
-            hint: 'A new tab becomes active. Off opens it in the background.',
             defaultOn: true,
             when: (p) => (p.tabOpenBehavior ?? 'overtake') === 'newtab',
           },
@@ -355,7 +353,6 @@ const FRAMES = roster([
             kind: 'zoom',
             key: 'tabMinWidth',
             label: 'Minimum Tab Width',
-            hint: 'The narrowest a tab shrinks before the strip scrolls.',
             fallback: 70,
             steps: [50, 60, 70, 80, 90, 100],
             unit: PIXELS,
@@ -364,7 +361,6 @@ const FRAMES = roster([
             kind: 'zoom',
             key: 'tabMaxWidth',
             label: 'Maximum Tab Width',
-            hint: 'The widest a tab grows.',
             fallback: 250,
             steps: [150, 175, 200, 225, 250, 275, 300, 325, 350],
             unit: PIXELS,

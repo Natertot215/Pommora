@@ -7,7 +7,7 @@ export function AssetDirectoryRow({
   hint,
 }: {
   label: string
-  hint: string
+  hint?: string
 }): React.JSX.Element {
   const stored = useSession((s) => s.tree?.assetDirectory ?? '')
   const setAssetDirectory = useSession((s) => s.setAssetDirectory)
