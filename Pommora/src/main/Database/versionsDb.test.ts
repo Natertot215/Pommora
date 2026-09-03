@@ -16,6 +16,7 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
+import { ignoredUnder } from '../watcher'
 
 let root: string
 let dbPath: string
@@ -61,12 +62,13 @@ describe('openVersionsDb', () => {
     expect(listSnapshots(db, 'P1')).toEqual([])
     db.close()
     const kept = await corruptFiles()
-    expect(kept).toHaveLength(3)
-    expect(kept.every((f) => f.startsWith(`${VERSIONS_FILENAME}.corrupt-`))).toBe(true)
-    expect(kept.some((f) => f.endsWith('-wal'))).toBe(true)
-    expect(kept.some((f) => f.endsWith('-shm'))).toBe(true)
-    const original = kept.find((f) => !f.endsWith('-wal') && !f.endsWith('-shm')) as string
+    expect(kept.every((f) => f.startsWith('versions.corrupt-'))).toBe(true)
+    const original = kept.find((f) => f.endsWith('.db')) as string
     expect(await readFile(join(root, '.nexus', original), 'utf8')).toBe('not a database')
+    const unwatched = ignoredUnder(root, { excluded: [], assetDir: '' })
+    expect(kept.every((f) => unwatched(join(root, '.nexus', f)))).toBe(true)
+    expect(existsSync(`${dbPath}-wal`)).toBe(false)
+    expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })
 
   it('quarantines interior corruption the header does not show', async () => {

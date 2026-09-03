@@ -28,15 +28,27 @@ function healthy(db: Db): boolean {
   }
 }
 
-/** A damaged store is set aside under a dated name, its WAL and SHM with it, never deleted. */
+/** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's
+ *  store clause keeps covering it; its WAL and SHM go with it, and nothing is deleted. */
 function quarantine(dbPath: string): void {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const aside = dbPath.replace(/\.db$/, `.corrupt-${stamp}.db`)
   for (const suffix of ['', '-wal', '-shm']) {
     try {
-      renameSync(dbPath + suffix, `${dbPath}.corrupt-${stamp}${suffix}`)
+      renameSync(dbPath + suffix, aside + suffix)
     } catch {
       /* the sibling was never written */
     }
+  }
+}
+
+function withTable(db: Db | null): Db | null {
+  try {
+    db?.exec(DDL)
+    return db
+  } catch {
+    db?.close()
+    return null
   }
 }
 
@@ -46,16 +58,12 @@ export function openVersionsDb(nexusRoot: string): Db | null {
   const dbPath = join(dir, VERSIONS_FILENAME)
   if (existsSync(dbPath)) {
     const existing = openDb(dbPath)
-    if (existing && healthy(existing)) {
-      existing.exec(DDL)
-      return existing
-    }
+    if (existing && healthy(existing)) return withTable(existing)
     existing?.close()
     quarantine(dbPath)
+    if (existsSync(dbPath)) return null
   }
-  const db = openDb(dbPath)
-  db?.exec(DDL)
-  return db
+  return withTable(openDb(dbPath))
 }
 
 export function addSnapshot(
@@ -93,19 +101,28 @@ export function readSnapshot(db: Db, pageId: string, ts: number): string | null 
   return row ? inflate(row.blob) : null
 }
 
+const removed = (run: { changes: number | bigint }): number => Number(run.changes)
+
+const DELETE_CHUNK = 500
+
 export function deleteSnapshots(db: Db, pageId: string, ts: readonly number[]): number {
-  if (ts.length === 0) return 0
-  const marks = ts.map(() => '?').join(', ')
-  return Number(
-    db.prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN (${marks})`).run(pageId, ...ts)
-      .changes,
-  )
+  let count = 0
+  for (let i = 0; i < ts.length; i += DELETE_CHUNK) {
+    const chunk = ts.slice(i, i + DELETE_CHUNK)
+    const marks = chunk.map(() => '?').join(', ')
+    count += removed(
+      db
+        .prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN (${marks})`)
+        .run(pageId, ...chunk),
+    )
+  }
+  return count
 }
 
 export function clearSnapshots(db: Db): number {
-  return Number(db.prepare('DELETE FROM snapshots').run().changes)
+  return removed(db.prepare('DELETE FROM snapshots').run())
 }
 
 export function sweepSnapshots(db: Db, cutoffMs: number): number {
-  return Number(db.prepare('DELETE FROM snapshots WHERE ts < ?').run(cutoffMs).changes)
+  return removed(db.prepare('DELETE FROM snapshots WHERE ts < ?').run(cutoffMs))
 }

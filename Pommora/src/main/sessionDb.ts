@@ -18,22 +18,27 @@ export function sessionVersionsDb(): Db | null {
   return versionsDb
 }
 
-/** Open the database for `root`, replacing any prior handle. Never throws: opening a nexus on
+const openQuietly = (open: () => Db | null, note: string): Db | null => {
+  try {
+    return open()
+  } catch (e) {
+    console.error(note, errText(e))
+    return null
+  }
+}
+
+/** Open the databases for `root`, replacing any prior handles. Never throws: opening a nexus on
  *  read-only media must leave it browsable, not fail the adopt half-way through. */
 export function openSessionDb(root: string): void {
   closeSessionDb()
-  try {
-    db = openNexusDb(root)
-  } catch (e) {
-    console.error('nexus.db: unavailable — operational state will not persist:', errText(e))
-    db = null
-  }
-  try {
-    versionsDb = openVersionsDb(root)
-  } catch (e) {
-    console.error('versions.db: unavailable — file history will not record:', errText(e))
-    versionsDb = null
-  }
+  db = openQuietly(
+    () => openNexusDb(root),
+    'nexus.db: unavailable — operational state will not persist:',
+  )
+  versionsDb = openQuietly(
+    () => openVersionsDb(root),
+    'versions.db: unavailable — file history will not record:',
+  )
 }
 
 const closeQuietly = (handle: Db | null): void => {
