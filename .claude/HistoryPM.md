@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-03-2026              | PM-128 | The Picker Vocabulary Splits Clean                   |
 | 09-03-2026              | PM-127 | PropertyFrame Joins The Frames                       |
 | 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026 → 09-03      | PM-125 | Page File History                                    |
@@ -131,6 +132,14 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-128 || The Picker Vocabulary Splits Clean
+**DATE:** 09-03-2026
+
+The picker layer carried two synonyms for one idea — `PickerChoice`, the `{ value, label, icon }` data a `PickerControl` maps into rows, and `PickerOption`, the component that rendered each row. The names now say which is which: the component is `PickerRow`, a row of a `PickerMenu`, and the data type takes `PickerOption`. Freeing `PickerRow` first meant renaming Settings' own `PickerRow` — the `'picker'` row-kind that hosts a `PickerControl` — to `PickerControlRow`. Identifiers only, across the picker and its consumers; no behavior changed.
+
+- **Commit:** `01519198`
+- **Diff:** Net 0 | +97 / −97
 
 #### PM-127 || PropertyFrame Joins The Frames
 **DATE:** 09-03-2026
