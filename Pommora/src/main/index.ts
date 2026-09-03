@@ -97,7 +97,18 @@ import {
 } from './settings'
 import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
-import { flushFileHistory, resetFileHistory, sweepFileHistory, writeBody } from './CRUD/fileHistory'
+import {
+  clearHistory,
+  deleteHistory,
+  flushFileHistory,
+  listHistory,
+  readHistoryBody,
+  resetFileHistory,
+  restoreSnapshot,
+  sweepFileHistory,
+  writeBody,
+} from './CRUD/fileHistory'
+import { fileHistoryMenuItems } from '@shared/fileHistoryMenu'
 import { listBundles } from './provenance'
 import { trashRows } from './CRUD/trashRows'
 import { replayPendingRename } from './CRUD/contextCascade'
@@ -153,7 +164,7 @@ import { popNavRowMenu } from './navRowMenu'
 import type { NavRowMenuContext } from '@shared/navRowMenu'
 import { popPropertyMenu } from './propertyMenu'
 import { popOptionMenu } from './optionMenu'
-import { popRowMenu } from './rowMenu'
+import { popModelMenu, popRowMenu } from './rowMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
 import { iconLabel } from '@shared/toggleLabels'
 import { popViewButtonMenu } from './viewButtonMenu'
@@ -1564,6 +1575,54 @@ serveBridge(
         if (key === 'historyDays') void sweepFileHistory(root)
         return ok(null)
       },
+    },
+
+    'history:list': {
+      kind: 'envelope',
+      fn: async (pageId: unknown) =>
+        typeof pageId === 'string'
+          ? listHistory(pageId)
+          : fail('operation-failed', 'A page id is required.'),
+    },
+
+    'history:read': {
+      kind: 'envelope',
+      fn: async (pageId: unknown, ts: unknown) =>
+        typeof pageId === 'string' && typeof ts === 'number'
+          ? readHistoryBody(pageId, ts)
+          : fail('operation-failed', 'A page id and a timestamp are required.'),
+    },
+
+    'history:restore': {
+      kind: 'envelope',
+      fn: async (pageId: unknown, ts: unknown) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        if (typeof pageId !== 'string' || typeof ts !== 'number')
+          return fail('operation-failed', 'A page id and a timestamp are required.')
+        const r = await restoreSnapshot(root, pageId, ts)
+        pushValueChanges(root)
+        return r
+      },
+    },
+
+    'history:delete': {
+      kind: 'envelope',
+      fn: async (pageId: unknown, ts: unknown) =>
+        typeof pageId === 'string' && Array.isArray(ts) && ts.every((t) => typeof t === 'number')
+          ? deleteHistory(pageId, ts)
+          : fail('operation-failed', 'A page id and timestamps are required.'),
+    },
+
+    'history:clear': {
+      kind: 'envelope',
+      fn: async () => clearHistory(),
+    },
+
+    'history:menu': {
+      kind: 'menu',
+      fn: async (win: BrowserWindow, ctx: { batch: boolean }) =>
+        isPlainObject(ctx) ? popModelMenu(win, fileHistoryMenuItems(ctx.batch === true)) : null,
     },
 
     'trash:list': {
