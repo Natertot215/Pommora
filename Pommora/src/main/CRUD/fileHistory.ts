@@ -5,7 +5,6 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { kindOf } from '@shared/identity'
 import { errText, fail, ok, type Result } from '@shared/result'
-import { HISTORY_DAYS, HISTORY_INTERVAL } from '@shared/types'
 import {
   addSnapshot,
   clearSnapshots,
@@ -19,14 +18,12 @@ import {
 import { indexWrittenPage } from '../indexSeed'
 import { splitEnvelope } from '../IO/pageFile'
 import { sessionVersionsDb } from '../sessionDb'
-import { readLivePersonalization } from '../settings'
+import { readFileHistoryConfig } from '../settings'
 import { liveIdOf, livePathOf, noteValueWrite } from '../valuesChanged'
 import type { Db } from '../Database/driver'
 import { updatePageBody } from './page'
 
 export const SNAPSHOT_MAX_BYTES = 1_048_576
-const MINUTE_MS = 60_000
-const DAY_MS = 86_400_000
 
 const lastTs = new Map<string, number>()
 const lastWritten = new Map<string, string>()
@@ -35,36 +32,26 @@ const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }
 const bodyHash = (text: string): string =>
   createHash('sha1').update(splitEnvelope(text).body).digest('hex')
 
-async function config(
-  root: string,
-): Promise<{ enabled: boolean; intervalMs: number; keepMs: number }> {
-  const p = await readLivePersonalization(root)
-  return {
-    enabled: p.fileHistory !== false,
-    intervalMs: (p.historyInterval ?? HISTORY_INTERVAL.default) * MINUTE_MS,
-    keepMs: (p.historyDays ?? HISTORY_DAYS.default) * DAY_MS,
-  }
-}
-
 async function capture(
   root: string,
   pageId: string,
   text: string,
   source: SnapshotSource,
   gated: boolean,
+  hash = bodyHash(text),
 ): Promise<boolean> {
   try {
     if (kindOf(pageId) !== 'page') return false
     if (source === 'edit' && Buffer.byteLength(text) > SNAPSHOT_MAX_BYTES) return false
     const now = Date.now()
-    const { enabled, intervalMs } = await config(root)
+    const { enabled, intervalMs } = await readFileHistoryConfig(root)
     if (!enabled) return false
     const last = lastTs.get(pageId)
     if (gated && last !== undefined && now - last < intervalMs) return false
     const db = sessionVersionsDb()
     if (!db) return false
     const latest = latestSnapshot(db, pageId)
-    if (latest && bodyHash(latest.text) === bodyHash(text)) return false
+    if (latest && bodyHash(latest.text) === hash) return false
     addSnapshot(db, pageId, now, source, text)
     lastTs.set(pageId, now)
     return true
@@ -81,7 +68,8 @@ export const captureIfDue = (
   pageId: string,
   text: string,
   source: SnapshotSource,
-): Promise<boolean> => capture(root, pageId, text, source, source === 'edit')
+  hash?: string,
+): Promise<boolean> => capture(root, pageId, text, source, source === 'edit', hash)
 
 function disarm(pageId: string): void {
   const armed = timers.get(pageId)
@@ -113,7 +101,7 @@ async function captureFromDisk(
 
 /** The quiet timer: a burst of writes ends with one snapshot of the settled text. */
 async function arm(root: string, pageId: string, source: SnapshotSource): Promise<void> {
-  const { enabled, intervalMs } = await config(root)
+  const { enabled, intervalMs } = await readFileHistoryConfig(root)
   disarm(pageId)
   if (!enabled) return
   const timer = setTimeout(() => {
@@ -143,12 +131,12 @@ export async function writeBody(
   await indexWrittenPage(root, absPath)
   noteValueWrite(root, absPath)
   if (pageId) {
-    const previousHash = previous === null ? null : bodyHash(previous)
+    const previousHash = previous === null ? writtenHash : bodyHash(previous)
     if (previous !== null && previousHash !== writtenHash) {
       const foreign = known !== undefined && known !== previousHash
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'
-      await captureIfDue(root, pageId, previous, offered)
+      await captureIfDue(root, pageId, previous, offered, previousHash)
     }
     if (source === 'edit') await arm(root, pageId, 'edit')
     else disarm(pageId)
@@ -227,7 +215,7 @@ export async function sweepFileHistory(root: string): Promise<void> {
   const db = sessionVersionsDb()
   if (!db) return
   try {
-    const { keepMs } = await config(root)
+    const { keepMs } = await readFileHistoryConfig(root)
     sweepSnapshots(db, Date.now() - keepMs)
   } catch (e) {
     console.error('file history: the sweep failed:', errText(e))

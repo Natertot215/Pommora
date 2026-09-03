@@ -78,9 +78,10 @@ export interface NavigationSlice {
   selection: SelectionState
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
-  /** A body replaced from outside the editor — restore today, the watcher later: every warm copy
-   *  of the path drops, the slot refetches, and the path's epoch remounts its editors. */
-  replaceBody: (path: string) => Promise<void>
+  /** A body replaced from outside the editor — restore today, the watcher later: the path's pending
+   *  save is dropped, every warm copy drops, the slot refetches, and the path's epoch remounts its
+   *  editors. False when the refetch failed and the editors still hold the old body. */
+  replaceBody: (path: string) => Promise<boolean>
   /** `{ record: false }` refreshes the shown detail without touching the tab set or recents.
    *  `{ newTab: true }` forces a new tab. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
@@ -368,12 +369,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     ...PER_NEXUS,
     setPageBody: (path, body) => patchReadyAt(path, (slot) => ({ ...slot, body })),
     replaceBody: async (path) => {
+      cancelPageSave(path)
       dropCacheDetail(path)
       const detail = await fetchPageDetail(path)
-      if (!detail) return
-      cancelPageSave(path)
+      if (!detail) return false
       get().setPageBody(path, detail.body)
       bumpBodyEpoch(path)
+      return true
     },
     crumbDepth: null,
     navSlide: null,
