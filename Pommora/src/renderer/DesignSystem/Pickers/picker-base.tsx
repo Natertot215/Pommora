@@ -425,7 +425,7 @@ export function PointMenu({
   )
 }
 
-export function PickerOption({
+export function PickerRow({
   children,
   onClick,
   selected = false,

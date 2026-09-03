@@ -4,7 +4,7 @@ import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker'
 import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePicker'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuSurface } from '@renderer/DesignSystem/Menus'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
 import { condensedDate, formatDate } from '@renderer/Properties/Assignment/formatValue'
@@ -92,18 +92,18 @@ export function ComponentsLeaf(): React.JSX.Element {
           <PopupButton label="PickerMenu">
             <PickerMenu solid>
               {PICKER_LABELS.map((o, i) => (
-                <PickerOption key={o.label} selected={i === 0} onClick={() => {}}>
+                <PickerRow key={o.label} selected={i === 0} onClick={() => {}}>
                   <Label color={o.color} text={o.label} shape="tag" />
-                </PickerOption>
+                </PickerRow>
               ))}
             </PickerMenu>
           </PopupButton>
-          <PopupButton label="PickerOption rows">
+          <PopupButton label="PickerRow">
             <PickerMenu solid>
               {POPOUT_LABELS.map((label, i) => (
-                <PickerOption key={label} ring selected={i === 0} onClick={() => {}}>
+                <PickerRow key={label} ring selected={i === 0} onClick={() => {}}>
                   {label}
-                </PickerOption>
+                </PickerRow>
               ))}
             </PickerMenu>
           </PopupButton>

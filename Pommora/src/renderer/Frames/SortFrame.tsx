@@ -6,7 +6,7 @@ import { MenuRowView, MenuTopRow, MenuSeparator, type MenuRow } from '@renderer/
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { declaredType } from '@renderer/Properties/value'
-import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import type { PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupFrame'
 import { bucketOrder } from '@renderer/Views/Pipeline/group'
 import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
@@ -28,24 +28,24 @@ const SORTABLE_PANE = new Set([
   'file',
 ])
 
-const OPTION_DIRECTIONS: PickerChoice<Direction>[] = [
+const OPTION_DIRECTIONS: PickerOption<Direction>[] = [
   { value: 'ascending', label: 'Default' },
   { value: 'descending', label: 'Reversed' },
 ]
 type OrderChoice = Direction | 'custom'
-const CUSTOM_OPTION_DIRECTIONS: PickerChoice<OrderChoice>[] = [
+const CUSTOM_OPTION_DIRECTIONS: PickerOption<OrderChoice>[] = [
   ...OPTION_DIRECTIONS,
   { value: 'custom', label: 'Custom' },
 ]
-const LOCATION_ORDERS: PickerChoice<'location' | 'custom'>[] = [
+const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
   { value: 'location', label: 'Location' },
   { value: 'custom', label: 'Custom' },
 ]
-const VALUE_DIRECTIONS: PickerChoice<Direction>[] = [
+const VALUE_DIRECTIONS: PickerOption<Direction>[] = [
   { value: 'ascending', label: 'Ascending' },
   { value: 'descending', label: 'Descending' },
 ]
-const TEXT_DIRECTIONS: PickerChoice<Direction>[] = [
+const TEXT_DIRECTIONS: PickerOption<Direction>[] = [
   { value: 'ascending', label: 'A → Z' },
   { value: 'descending', label: 'Z → A' },
 ]
@@ -53,7 +53,7 @@ const TEXT_DIRECTIONS: PickerChoice<Direction>[] = [
 function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
-): PickerChoice<Direction>[] {
+): PickerOption<Direction>[] {
   if (propertyId === RESERVED_PROPERTY_ID.title) return TEXT_DIRECTIONS
   switch (declaredType(propertyId, schema)) {
     case 'select':
@@ -72,7 +72,7 @@ const pickerRow = <T extends string>(
   glyph: string,
   label: string,
   value: T,
-  options: readonly PickerChoice<T>[],
+  options: readonly PickerOption<T>[],
   onPick: (v: T) => void,
   sub = false,
 ): MenuRow => ({
@@ -86,7 +86,7 @@ const pickerRow = <T extends string>(
 interface SortTarget {
   id: string
   label: string
-  icon: PickerChoice<string>['icon']
+  icon: PickerOption<string>['icon']
 }
 
 function sortTargets(schema: PropertyDefinition[], capitalize: boolean): SortTarget[] {
@@ -164,7 +164,7 @@ export function SortFrame({
       new Set(optionsOf(finiteDef).map((o) => o.value)),
     )
 
-  const sortByOptions: PickerChoice<string>[] = [
+  const sortByOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
     ...(view.type === 'cards'
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
@@ -177,7 +177,7 @@ export function SortFrame({
       : []),
   ]
 
-  const subOptions: PickerChoice<string>[] = [
+  const subOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
     ...targets
       .filter((t) => t.id !== primary?.property_id)

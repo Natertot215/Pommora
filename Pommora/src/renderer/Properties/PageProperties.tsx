@@ -6,7 +6,7 @@ import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
@@ -270,7 +270,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
         origin="center"
       >
         {hiddenContexts.map((t) => (
-          <PickerOption
+          <PickerRow
             key={t.id}
             leading={<Icon name={t.icon} size="body" />}
             onClick={() => {
@@ -279,16 +279,16 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
             }}
           >
             {t.label}
-          </PickerOption>
+          </PickerRow>
         ))}
         {hiddenProps.map((def) => (
-          <PickerOption
+          <PickerRow
             key={def.id}
             leading={<Icon name={propertyIcon(def)} size="body" />}
             onClick={() => revealAndEdit(def)}
           >
             {displayPropertyName(def.name, capitalize)}
-          </PickerOption>
+          </PickerRow>
         ))}
       </PickerMenu>
       {editing?.mode === 'rename' && (
