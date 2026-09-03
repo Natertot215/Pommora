@@ -134,6 +134,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     canReassign,
     canReorderWithin,
     canRelocate,
+    reassignBySortRun,
     structuralOrder,
     dragDisabled,
     viewOrders,
@@ -1336,8 +1337,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // filesystem-first table). A sorted / property-grouped view instead writes the per-view manual
   // tiebreaker (viewOrders). setManualOverride gives instant feedback either way: the pipeline reads it
   // as the sort tiebreaker, and it agrees with the page_order the fs reload brings back.
-  const reorderTo = (orderIds: string[], groupKey: string): void => {
+  const reorderTo = (orderIds: string[], groupKey: string, activeId: string): void => {
     setManualOverride(orderIds)
+    reassignBySortRun(
+      orderIds.filter((id) => rowBand.get(id) === groupKey),
+      activeId,
+    )
     if (structuralOrder) {
       const groupPages = orderIds.filter((id) => rowBand.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined

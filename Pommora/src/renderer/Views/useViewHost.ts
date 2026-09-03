@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { UNGROUPED } from '@shared/types'
 import type {
   CollectionNode,
   PageValues,
@@ -28,7 +29,7 @@ import {
 import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { resolveBandHead } from './GroupBand'
 import { resolveContainerSchema } from './Pipeline/pickView'
-import { flattenContainer, groupsStructurally } from './Pipeline/group'
+import { bucketKey, flattenContainer, groupsStructurally } from './Pipeline/group'
 import { resolveView } from './Pipeline/resolveView'
 import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
 import { useActiveView } from './useActiveView'
@@ -38,7 +39,7 @@ import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { writeContextValue } from './contextCellWrite'
 import { mergeStyleRecords } from './viewMerge'
-import { REASSIGNABLE_GROUP_TYPES } from './TableView/reassign'
+import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from './TableView/reassign'
 import { sameIds } from './creationOrder'
 
 export interface ViewHostUpward {
@@ -188,6 +189,20 @@ export function useViewHost(
       rows,
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
+  // A single-sorted, ungrouped view lays its rows out in value RUNS rather than bands, so a reorder
+  // that lands one strictly inside another run rewrites the sorted property. Armed only when the
+  // column is shown — an unrendered property leaves the run boundaries with nothing to read them by.
+  const sortReassign = useMemo(() => {
+    if (groupPropId !== undefined || sortKeys !== 1) return undefined
+    for (const c of liveView.sort ?? []) {
+      const type = declaredType(c.property_id, schema)
+      if (!type || !REASSIGNABLE_GROUP_TYPES.has(type)) continue
+      if (columns.some((col) => col.id === c.property_id))
+        return { propertyId: c.property_id, type }
+    }
+    return undefined
+  }, [groupPropId, sortKeys, liveView.sort, schema, columns])
+
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
     // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
@@ -284,6 +299,19 @@ export function useViewHost(
       mutate({ op: 'setProperty', path: row.path, propertyId, value }),
     )
   }
+  /** Fold a sorted-run reassignment into a reorder that just placed `activeId` within `order` (the
+   *  band-local row order). A no-op unless the slot landed inside a foreign run. */
+  const reassignBySortRun = (order: string[], activeId: string): void => {
+    if (!sortReassign) return
+    const keyOf = (id: string): string => {
+      const row = rowById.get(id)
+      return (row ? bucketKey(row, sortReassign.propertyId, schema, 'day') : null) ?? UNGROUPED
+    }
+    const target = reassignTarget(order, activeId, keyOf)
+    if (target === undefined) return
+    const row = rowById.get(activeId)
+    if (row) setProperty(row, sortReassign.propertyId, groupKeyToValue(target, sortReassign.type))
+  }
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
     if (column.kind === 'context') {
       const ids = value?.kind === 'context' ? value.value : []
@@ -350,6 +378,7 @@ export function useViewHost(
     canReassign,
     canReorderWithin,
     canRelocate,
+    reassignBySortRun,
     structuralOrder,
     dragDisabled,
     manualOrder,
