@@ -87,18 +87,17 @@ Rulings a sweep would otherwise re-derive. An audit agent may contradict one, bu
 2. **Both ladders are settled** — `ICON_PX`/`size.icon` absorbs every icon size; the four button bundles are the button ladder (Settled 26); 13px is a real step.
 3. **Bridge completeness is deliberate** — unread members of a fully-bridged ramp are not orphans; the bridge is the primary token interface for every plain stylesheet.
 4. **Vanilla-extract stays; `.css` vs `.css.ts` tracks module type** — the form question is closed, no reversal to plain CSS; no blanket migration either, and the thirty plain-CSS exceptions fail the test rather than disproving it.
-5. **`PickerMenu.closing` stays** — two live callers inside `CalendarPicker`.
-6. **No middle layer** between the design system and the features — `Properties/`, `Tables/`, `Cards/` are feature code, not a third tier.
-7. **Verified healthy:** Toolbar's dropdowns compose the menu shells · `RenamableTitle → RenamableLabel → EditableInput` · `fieldRing` (8 importers) · `OverScroll` (25) · no `backdrop-filter` outside `Glass/`.
-8. **`FileLabel` and `FileChip` are two recipes on purpose** — treatment over one shape.
-9. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
-10. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
-11. **`EmbedTitle` and `PageHeader` stay apart.**
-12. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
-13. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
-14. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
-15. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
-16. **The UI layer is "tile"; the block-doc data model stays "block."** Components, hooks, and CSS classes carry tile vocabulary (`PageTile`, `MarkdownTile`, `.page-tile`); the persisted model keeps block names (`@shared/blocks`, `MarkdownBlockEntry`, `BlockHostRef`, `loneWebpageEmbed`). A sweep proposing to rename the data model to "tile" is re-deriving a settled boundary.
+5. **No middle layer** between the design system and the features — `Properties/`, `Tables/`, `Cards/` are feature code, not a third tier.
+6. **Verified healthy:** Toolbar's dropdowns compose the menu shells · `RenamableTitle → RenamableLabel → EditableInput` · `fieldRing` (8 importers) · `OverScroll` (25) · no `backdrop-filter` outside `Glass/`.
+7. **`FileLabel` and `FileChip` are two recipes on purpose** — treatment over one shape.
+8. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
+9. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
+10. **`EmbedTitle` and `PageHeader` stay apart.**
+11. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
+12. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
+13. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
+14. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
+15. **The UI layer is "tile"; the block-doc data model stays "block."** Components, hooks, and CSS classes carry tile vocabulary (`PageTile`, `MarkdownTile`, `.page-tile`); the persisted model keeps block names (`@shared/blocks`, `MarkdownBlockEntry`, `BlockHostRef`, `loneWebpageEmbed`). A sweep proposing to rename the data model to "tile" is re-deriving a settled boundary.
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers), chip/label (chip is a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a two-tier convention: a `*Menu` wraps a `*Frame`), select/option (layered correctly in `shared/properties.ts`), crumb/trail (split by layer). A `--space-*` ladder and a centralized radius scale were both refused with reasons.
 
