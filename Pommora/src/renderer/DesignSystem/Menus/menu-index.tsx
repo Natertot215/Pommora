@@ -5,7 +5,7 @@ import { ColorSwatch } from '../Controls/Switches/ColorSwatch'
 import { Slider } from '../Controls/Slider/Slider'
 import { PickerControl } from '../Elements/PickerControl'
 import { cx } from '../Util/cx'
-import { Reveal } from '../Animation/Reveal'
+import { Reveal } from '@renderer/Animation/Reveal'
 import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
 import { actionRow, heading, headingCaps, side, titleWrap } from './menu-base.css'
 

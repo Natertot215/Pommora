@@ -1,6 +1,6 @@
 ## Design System
 
-The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
+The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/` — with the Animation and Interactions layers hoisted to the renderer root — and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
 - **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Util/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
 
@@ -354,7 +354,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 ### Interactions
 
-`Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. [[InteractionPM]] and [[PommoraDND]] hold the depth.
+`src/renderer/Interactions/` (hoisted to the renderer root, outside the design system) — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. [[InteractionPM]] and [[PommoraDND]] hold the depth.
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
@@ -374,7 +374,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 ### Animation
 
-`Animation/` — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, the enter/exit primitives, and the side-pane slide. [[InteractionPM]] describes the named motions.
+`src/renderer/Animation/` (hoisted to the renderer root, outside the design system) — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, the enter/exit primitives, and the pane slide. [[InteractionPM]] describes the named motions.
 
 | Title     | Export                                    | What it is                                                              |
 | --------- | ----------------------------------------- | ----------------------------------------------------------------------- |

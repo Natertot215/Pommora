@@ -13,12 +13,12 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/DesignSystem/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostAnchor'
 import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { contextDirRel } from '@shared/nexusPaths'
 import { MenuItem, titleInput } from '@renderer/DesignSystem/Menus'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { Reveal } from '@renderer/Animation/Reveal'
 import type {
   CollectionNode,
   ContextGroup,
@@ -34,7 +34,7 @@ import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/
 import { createSpaceLabel } from '@shared/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
-import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
+import { registerDiscloseTarget } from '@renderer/Interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'

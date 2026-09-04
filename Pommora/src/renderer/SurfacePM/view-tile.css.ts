@@ -1,7 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
-import { titleReveal } from '@renderer/DesignSystem/Animation/animations.css'
+import { titleReveal } from '@renderer/Animation/animations.css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
-import { duration } from '@renderer/DesignSystem/Animation'
+import { duration } from '@renderer/Animation'
 import { SEGMENT_H, segmentRow, settingsBtn } from '../Interface/action-band.css'
 import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 

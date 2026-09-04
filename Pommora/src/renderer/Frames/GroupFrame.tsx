@@ -23,7 +23,7 @@ import {
   heading,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol, side } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
+import { registerDiscloseTarget } from '@renderer/Interactions/dragDisclose'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'

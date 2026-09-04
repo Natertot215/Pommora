@@ -109,7 +109,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 #### Filing
 
-- [ ] **`Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
+- [ ] **`Sidebar/sidebarDndModel` → `Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Interface/` absorbing `Sidebar/`.** *Why:* the same window's chrome, read by the same InterfacePM; one top-level folder disappears. *Status:* awaiting ruling (§3.2).
 
 #### Tokens & Geometry

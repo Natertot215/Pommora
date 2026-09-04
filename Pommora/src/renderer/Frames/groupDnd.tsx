@@ -2,7 +2,7 @@
 // semantics live here. frameDnd doesn't fit: its two-region assigned/all vocabulary has no
 // parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 import type { Band, BandIndex, BandSlot } from '@renderer/Views/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '@renderer/Views/bandDndModel'
 

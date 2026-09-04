@@ -13,7 +13,7 @@
   padding: 0 var(--app-inset) 0 4px;
   pointer-events: none;
   --trio-inset: 4px;
-  /* Inputs to the shared --toolbar-slide swallow (DesignSystem/Animation/toolbar-slide.css). */
+  /* Inputs to the shared --toolbar-slide swallow (Animation/toolbar-slide.css). */
   --slide-panel-w: var(--inspector-width);
   --slide-inset: var(--app-inset);
   --slide-home: var(--app-inset);

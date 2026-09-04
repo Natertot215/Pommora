@@ -12,7 +12,7 @@ The **active view** is tracked per machine and kept out of the synced sidecar. T
 
 Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real. A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
 
-Every renderer also shares the **hover ghost** (`DesignSystem/Interactions/ghostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
+Every renderer also shares the **hover ghost** (`Interactions/ghostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
 
 ### The Pipeline
 

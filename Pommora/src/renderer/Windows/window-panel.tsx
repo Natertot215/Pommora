@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { GlassPane } from '@renderer/DesignSystem/Glass'
-import { paneSlide } from '@renderer/DesignSystem/Animation'
+import { paneSlide } from '@renderer/Animation'
 import { clamp } from '@shared/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './window-panel.css'

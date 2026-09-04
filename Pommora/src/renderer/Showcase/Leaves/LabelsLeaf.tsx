@@ -12,11 +12,11 @@ import {
   textCap,
 } from '@renderer/DesignSystem/Labels'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
-import { SortableZone, useDragItem, reorder } from '@renderer/DesignSystem/Interactions/drag'
+import { SortableZone, useDragItem, reorder } from '@renderer/Interactions/drag'
 import type { LabelColorName } from '@renderer/DesignSystem/Labels'
 import { ANCHOR_CELLS, cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { overScrollUnmasked } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollUnmasked } from '@renderer/Interactions/OverScroll'
 import { humanize, useIsCompact } from './helpers'
 
 // The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the

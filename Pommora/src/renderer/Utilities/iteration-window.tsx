@@ -1,4 +1,4 @@
-import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { WindowBase } from '@renderer/Windows/window-base'
 import { useSession } from '@renderer/store'
 import './iteration-window.css'

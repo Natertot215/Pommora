@@ -1,5 +1,5 @@
 import { type PointerEvent as ReactPointerEvent, useState } from 'react'
-import { beginPointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { beginPointerGesture } from '@renderer/Interactions/gesture'
 
 export type CellSweep = { colId: string; rows: Set<string> }
 

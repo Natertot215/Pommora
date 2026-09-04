@@ -9,8 +9,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { stack } from '../Tokens/stack'
-import { moveItem } from '../Util/moveItem'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 import { DEFAULT_FEEL, type Feel } from '../Animation/feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'

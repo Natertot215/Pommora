@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { useSession } from './store'
 import { Surface } from '@renderer/DesignSystem/Glass/glass-pane'
-import { paneSlide } from '@renderer/DesignSystem/Animation'
+import { paneSlide } from '@renderer/Animation'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { ContentView } from './Interface/ContentView'

@@ -1,5 +1,5 @@
 import { keyframes, style } from '@vanilla-extract/css'
-import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
+import { duration, easing } from '@renderer/Animation/motion'
 import { text, vars } from '@renderer/DesignSystem/Tokens'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 

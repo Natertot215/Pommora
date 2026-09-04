@@ -3,7 +3,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../../store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
-import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollEllipsis } from '@renderer/Interactions/OverScroll'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldPage, isSubfieldItemId } from './subfieldItems'
 import './subfield.css'
 

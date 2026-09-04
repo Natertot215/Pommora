@@ -2,8 +2,8 @@
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
-import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
+import { resolveScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { closeActiveHoverCard } from '@renderer/Links/panePresenter'
 import type { Align, TableModel } from './model'

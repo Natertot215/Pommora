@@ -6,8 +6,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
-import { DROP_LINE_INSET } from '@renderer/DesignSystem/Interactions/shared'
+import { nearestByTop, useInsertionDrag } from '@renderer/Interactions/insertionDrag'
+import { DROP_LINE_INSET } from '@renderer/Interactions/shared'
 
 // Table row drag — the sidebar drop-line gesture: an insertion line marks the slot, the picked-up
 // row mutes in place, no row displaces. A slot in the dragged row's own group reorders it; a slot

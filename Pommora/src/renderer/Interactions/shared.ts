@@ -34,7 +34,7 @@ export type DragItem = {
 
 export const ACTIVATION = 5 // px the pointer must travel before a drag starts (vs. a click)
 // The inset's one source is the size tokens — the CSS side reads it as `--drop-line-inset`.
-export { DROP_LINE_INSET } from '../Tokens/size.css'
+export { DROP_LINE_INSET } from '@renderer/DesignSystem/Tokens/size.css'
 /** The cursor offset every floating drag chip hangs at (the sidebar's grab-point ghost is the
  *  deliberate exception). */
 export const GHOST_OFFSET = { x: 12, y: 8 }
