@@ -47,14 +47,17 @@ const clampSize = (s: GlanceSize): GlanceSize => ({
 // reopen out of bounds) and writes through on set.
 let sizeCache: GlanceSize | null = null
 let sizeNexus: string | null = null
+// Only the newest load may land: a nexus switch mid-flight, or a set during the load, supersedes it.
+let sizeLoad = 0
 
 // Per nexus, since the row is the nexus's own; a load that fails (no nexus yet) leaves the seed
 // unclaimed so the next mount tries again.
 function seedGlanceSize(nexusId: string | undefined): void {
   if (!nexusId || sizeNexus === nexusId) return
   sizeCache = null
+  const token = ++sizeLoad
   void window.nexus.glance.load().then((r) => {
-    if (!r.ok) return
+    if (token !== sizeLoad || !r.ok) return
     sizeNexus = nexusId
     if (r.value) sizeCache = clampSize(r.value)
   })
@@ -65,6 +68,7 @@ export function glanceSize(): GlanceSize {
 }
 
 export function setGlanceSize(next: GlanceSize): void {
+  sizeLoad++
   sizeCache = clampSize(next)
   void window.nexus.glance.save(sizeCache)
 }
@@ -127,8 +131,7 @@ export function GlancePane(): React.JSX.Element {
   const pendingFetch = useRef(0)
   const retargetRaf = useRef(0)
   /** The pane goes away, and nothing queued may bring it back: a retarget beat still pending and a
-   *  cold fetch still in flight are both superseded. The leave lifecycle's `close` hands focus back
-   *  first, then lands here. */
+   *  cold fetch still in flight are both superseded. */
   const dismiss = useCallback(() => {
     if (retargetRaf.current) {
       cancelAnimationFrame(retargetRaf.current)
@@ -228,11 +231,15 @@ export function GlancePane(): React.JSX.Element {
           // silently ratchet the universal size down to that anchor's band-clamped render.
           const stored = glanceSize()
           const cap = maxSize()
-          const kept = (axis: 'w' | 'h'): number =>
-            liveRef.current[axis] >= cap[axis] && stored[axis] > cap[axis]
-              ? stored[axis]
-              : liveRef.current[axis]
-          setGlanceSize({ w: axes.x ? kept('w') : stored.w, h: axes.y ? kept('h') : stored.h })
+          const persist = (axis: 'w' | 'h'): number => {
+            const live = liveRef.current[axis]
+            const pinnedAtCap = live >= cap[axis] && stored[axis] > cap[axis]
+            return pinnedAtCap ? stored[axis] : live
+          }
+          setGlanceSize({
+            w: axes.x ? persist('w') : stored.w,
+            h: axes.y ? persist('h') : stored.h,
+          })
         },
         onAbort: () => {
           markResizing(false)
