@@ -6,7 +6,7 @@ export interface WindowCacheEntry {
   editorState?: unknown
   /** The editor's INTERNAL scroller — always 0 in the window (the body owns scroll there). */
   scrollTop?: number
-  /** The window body's scroll — the window captures it per tab (two scrollers, two fields). */
+  /** The body's scroll — captured per tab alongside the editor's (two scrollers, two fields). */
   bodyScrollTop?: number
 }
 

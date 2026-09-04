@@ -838,7 +838,7 @@ serveBridge(
       fn: (size: unknown) => {
         if (adopting()) return BUSY
         if (!isGlanceSize(size))
-          return fail('operation-failed', 'A card size needs finite w and h.')
+          return fail('operation-failed', 'A glance size needs finite w and h.')
         if (!writeValue('glancePane', { w: size.w, h: size.h })) return NO_NEXUS
         return ok(null)
       },

@@ -14,8 +14,8 @@ export function useWindowWarm(
   const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
 
   const captureIfLive = useCallback((tabId: string, entry: WindowCacheEntry): void => {
-    const p = useSession.getState().pageWindow
-    if (p?.tabs.some((t) => t.id === tabId)) captureWindowCache(tabId, entry)
+    const win = useSession.getState().pageWindow
+    if (win?.tabs.some((t) => t.id === tabId)) captureWindowCache(tabId, entry)
   }, [])
 
   const seam = useMemo<WarmSeam | undefined>(
