@@ -27,16 +27,12 @@ The behavioral half — correctness, performance, and the structural moves insid
 - [ ] **Neither renderer virtualizes.** `@tanstack/react-virtual` is installed and used only by the icon picker. A 2,000-page Collection with eight columns contains around 18,000 elements, and every pipeline re-run reconciles them all. Group bands complicate it, so the scoped version virtualizes the flat, ungrouped case first, where the win is largest and the band machinery is absent.
 - [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher in the file-owning process, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
 
-#### II. Open Against The Web Layer
-
-- [ ] **A guest's scripted popups ride the open-link chain with no user-gesture gate** — acceptable for trusted embeds, ungated by decision pending Nathan's ruling.
-
 #### II. Open Calls
 
 Findings where the correct answer isn't established in the codebase — design and product decisions, not cleanup. Each is cheap once it's decided.
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
-- [ ] **The renderer's open filing and recipe rulings.** Whether `Interface/` absorbs `Sidebar/`; the recipe's five calls (rows carrying a switch or eye measure 31–32 against the 16px line, locked cards clipping their trail, a Trash row's `onClick` tab stop beside its checkbox's, Settings' section titles rendering as the index's `div`, the footing row kind); `text.callout` as the table-header step and the `surface.*` trio beside Ramp; and whether `menuBackdrop` moves to the `menu` step so DOM order sorts a nested picker and OptionEditPopup's hand-rolled capture listener goes.
+- [ ] **The renderer's open filing and recipe rulings.** Whether `Interface/` absorbs `Sidebar/`; the recipe's five calls (rows carrying a switch or eye measure 31–32 against the 16px line, locked cards clipping their trail, a Trash row's `onClick` tab stop beside its checkbox's, Settings' section titles rendering as the index's `div`, the footing row kind); and `text.callout` as the table-header step and the `surface.*` trio beside Ramp.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 
 #### II. Next-Feature Candidates
@@ -68,6 +64,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 - [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `blocks.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `glance.save`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at sixteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
 - [ ] **The renderer's remaining filing and style rows.** `Sidebar/sidebarDndModel` → `Interactions/reorderModel` and `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker` (each has zero importers in its own folder); the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `main.tsx` first; the six static `style={{…}}` sites (`SurfaceLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `MarkdownPM/Tables/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across SurfacePM, the Views, and the toolbar.
+- [ ] **Two renders of a page's property rows.** `Properties/PageProperties.tsx` and the inspector in `Windows/PageWindow.tsx` share `usePropertyRows` and `PropertyValueEditors`, but each still renders the row itself — label, value cell, inline editor, the row and value menus — on its own styling system (`page-properties.css` against the `page-window-insp-*` classes). One row component both surfaces mount closes it.
 - [ ] **Table perf ceilings.** Tables render every row without virtualization, so a very long collection will eventually feel it, and a value edited outside the app doesn't live-refresh an open table.
 - [ ] **Scroll waits by timer, and the signal can't simply replace it.** `revealPageOffset` sleeps for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
 
@@ -77,7 +74,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
 - [ ] **The in-app two-host lost update.** Two editors holding one page — the content pane and the Page Window, or a page and its embed — each save their own body with no lock between them, so the later keystroke writes over the earlier host's text. The watcher-driven reload through `replaceBody` is the mechanism that closes it.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
-- [ ] **`versions.db` is tracked by NexusOS's own repository.** The snapshot store sits inside `.nexus` on the same terms as `nexus.db`, so every capture dirties the repository; Pommora seeds no `.gitignore`, by decision, so the vault's own is where this closes.
 
 ### Recent Work
 
