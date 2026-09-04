@@ -8,7 +8,7 @@ import { OverScroll } from '@renderer/Interactions/OverScroll'
 import { linkDisplayText, readLink, type LinkTarget } from '@shared/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { openWebLink } from '@renderer/Links/openWebLink'
+import { openWebLink } from '@renderer/Actions/openWebLink'
 
 /** The url-cell body, split out so ONLY url cells pay for the page-title store subscription + the
  *  on-demand fetch — Cell's other branches stay pure renders under the row memo. The alias always wins;

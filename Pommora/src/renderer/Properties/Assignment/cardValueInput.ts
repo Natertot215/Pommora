@@ -8,7 +8,7 @@ import { resolveFieldValue } from '@renderer/Properties/value'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { urlValueFromEdit } from '@shared/linkValue'
-import { resolveTitle } from '@renderer/Links/linkResolve'
+import { resolveTitle } from '@renderer/Actions/linkResolve'
 
 /** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the
  *  pane split (its box on the card is the toggle — an add-list pick just reveals it); Context columns
