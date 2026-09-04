@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { lockLabel } from '@shared/toggleLabels'
 import type {
@@ -162,25 +162,6 @@ export function TileHandleMenu({
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
   const [scaleOpen, setScaleOpen] = useState(false)
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    if (!scaleOpen) return
-    const onDown = (e: PointerEvent): void => {
-      const t = e.target as HTMLElement | null
-      if (scaleTriggerRef.current?.contains(t) || t?.closest?.('[data-scale-menu]')) return
-      setScaleOpen(false)
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation() // close the scale menu first, not the whole menu
-      setScaleOpen(false)
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    document.addEventListener('keydown', onKey, true)
-    return () => {
-      document.removeEventListener('pointerdown', onDown, true)
-      document.removeEventListener('keydown', onKey, true)
-    }
-  }, [scaleOpen])
   const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   const currentStep = zoomStep(zoom)
   const locked = (entry.locked ?? false) || containerLocked
@@ -349,8 +330,13 @@ export function TileHandleMenu({
       <PickerMenu open={open} onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
         <FrameSlide open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
-      <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
-        <div className={s.scaleMenu} data-scale-menu>
+      <PickerMenu
+        open={open && scaleOpen}
+        onDismiss={() => setScaleOpen(false)}
+        triggerRef={scaleTriggerRef}
+        solid
+      >
+        <div className={s.scaleMenu}>
           {ZOOM_STEPS.map((st) => (
             <PickerRow
               key={st.label}

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { clamp } from '@shared/clamp'
 import { shadowLiftVar, shadowStandardVar } from '../Tokens/color.css'
 
 /** The Pommora glass recipe — a clear, slightly-dimmed blur with a glassy edge: a crisp top specular, hairline inner ring, and soft light pooling at the lower rim — made parametric so each tier is the same recipe at its own dim and fill. Layout (size / position / radius) is the consumer's. */
@@ -151,6 +152,6 @@ export function notchGeometry(
   const nMin = BEAK_RADIUS + NOTCH_W / 2 + 2
   const nMax = w - BEAK_RADIUS - NOTCH_W / 2 - 2
   const nRaw = insetRight !== undefined ? w - insetRight : w / 2
-  const pos = nMin < nMax ? Math.min(Math.max(nRaw, nMin), nMax) : w / 2
+  const pos = nMin < nMax ? clamp(nRaw, nMin, nMax) : w / 2
   return { d: beakPath(w, h, pos), originX: pos }
 }

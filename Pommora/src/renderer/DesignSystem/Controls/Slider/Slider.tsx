@@ -3,6 +3,7 @@ import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/Progres
 import { GlassSegment } from '@renderer/DesignSystem/Glass'
 import * as s from './slider.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
+import { clamp } from '@shared/clamp'
 
 const decimalsOf = (step: number): number => {
   const str = String(step)
@@ -42,18 +43,17 @@ export function Slider({
   revertRef.current = () => {
     if (!scrubbing.current) return
     scrubbing.current = false
-    onInput?.(clamp(value))
+    onInput?.(clamp(value, min, max))
     setDraft(null)
   }
   useEffect(() => () => revertRef.current(), [])
   const decimals = decimalsOf(step)
-  const clamp = (v: number): number => Math.max(min, Math.min(max, v))
-  const v = clamp(draft ?? value)
+  const v = clamp(draft ?? value, min, max)
   const pct = ((v - min) / (max - min)) * 100
   const valueAt = (clientX: number): number => {
     const r = stripRef.current?.getBoundingClientRect()
     if (!r || r.width === 0) return v
-    const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width))
+    const t = clamp((clientX - r.left) / r.width, 0, 1)
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
   // A canceled scrub reverts through the same onInput channel before the draft clears. The ref is
@@ -96,6 +96,8 @@ export function Slider({
           e.preventDefault()
           const next = clamp(
             Number((value + (e.key === 'ArrowRight' ? step : -step)).toFixed(decimals)),
+            min,
+            max,
           )
           if (next !== value) onCommit(next)
         }}

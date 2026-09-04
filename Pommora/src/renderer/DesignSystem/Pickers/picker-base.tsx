@@ -401,30 +401,6 @@ export function PickerMenu({
   )
 }
 
-export function PointMenu({
-  at,
-  onDismiss,
-  children,
-}: {
-  at: { x: number; y: number } | null
-  onDismiss: () => void
-  children: ReactNode
-}): React.JSX.Element {
-  const point = useHeld(at, at !== null)
-  return (
-    <PickerMenu
-      solid
-      open={at !== null}
-      onDismiss={onDismiss}
-      anchorX={point?.x ?? 0}
-      anchorY={point?.y ?? 0}
-      origin="center"
-    >
-      {children}
-    </PickerMenu>
-  )
-}
-
 export function PickerRow({
   children,
   onClick,
