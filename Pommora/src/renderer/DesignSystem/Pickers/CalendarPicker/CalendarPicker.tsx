@@ -529,24 +529,22 @@ export function CalendarPicker({
       <div className={s.divider} />
       <div className={s.fields}>
         {endOn ? (
-          <>
-            <div className={s.fieldRow}>
-              {dateField(start, 'start', condensed)}
-              {dateField(end, 'end', condensed)}
-            </div>
-            <Reveal open={timeOn} fill>
-              <div className={cx(s.fieldRow, s.fieldRowStacked)}>
-                {timeField(start ? startMin : null, 'start-t', 'start')}
-                {timeField(end ? endMin : null, 'end-t', 'end')}
-              </div>
-            </Reveal>
-          </>
+          <div className={s.fieldRow}>
+            {dateField(start, 'start', condensed)}
+            {dateField(end, 'end', condensed)}
+          </div>
         ) : (
           <div className={s.fieldRow}>
             {dateField(start, 'date')}
             {timeOn && timeField(start ? startMin : null, 'time', 'start')}
           </div>
         )}
+        <Reveal open={endOn && timeOn} fill>
+          <div className={cx(s.fieldRow, s.fieldRowStacked)}>
+            {timeField(start ? startMin : null, 'start-t', 'start')}
+            {timeField(end ? endMin : null, 'end-t', 'end')}
+          </div>
+        </Reveal>
       </div>
       {range && (
         <div className={rowBox}>

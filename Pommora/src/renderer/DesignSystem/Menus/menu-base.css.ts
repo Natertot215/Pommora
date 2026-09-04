@@ -261,4 +261,5 @@ export const scrollFrameBody = style({
   flex: '1 1 auto',
   minHeight: 0,
   overflowY: 'auto',
+  scrollbarWidth: 'none',
 })
