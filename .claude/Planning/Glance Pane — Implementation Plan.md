@@ -553,7 +553,7 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
   - [x] Task 7 — MarkdownPM calls the seam · (with 6 and 8)
   - [x] Task 8 — Hosts, App, Links/ deleted · `3c1010d4` (Tasks 6–8 together)
   - [ ] Task 9 — Docs and ledgers · `<commit>`
-- [ ] **Phase 4** — Closeout
+- [x] **Phase 4** — Closeout · record `a3ce42eb`, window glass `37fa4c59`, attack folds `a25d7e8f`, simplifier rerun `c5990564`, comment pass `7343d5ac`, close `bfe2e425`
 
 ### Rulings
 
