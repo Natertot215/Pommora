@@ -12,9 +12,9 @@ The shape was settled by the decision log: delegation rides PickerMenu's existin
 **Requirements**
 
 1. PickerMenu's close render holds: children captured from the last open render, and the placement effect does not re-run once `open` is false (`closing` is one effect late for both).
-2. PickerMenu gains `morph?: boolean` (default `false`): the pane's height eases between content heights on `duration.base`, armed after first paint, height written to the element rather than through state, the pane's position re-computed only when its values change.
+2. ~~PickerMenu gains `morph`~~ (withdrawn 09-04-2026, see Rulings). PickerMenu's placement re-renders only when its values change; CalendarPicker owns its height changes: a `base` CSS transition on the grid viewport and a `Reveal` on the second field row.
 3. CalendarPicker's month/year dropdown and its time dropdown are two root-mounted, self-managed PickerMenus anchored to the frozen click-time point, `origin` at `auto`, `manageFocus` at its default, list capped through `maxHeight`.
-4. CalendarPicker's `PortalMenu`, `rectOf`/`TriggerRect`, both `useExitPresence`, both `useHeld`, the three-mode dismiss effect, `SizeMorph`, `ddWrap`, and `stack.top.menuOverlay` are deleted; the five PickerMenu hosts of CalendarPicker pass `morph`.
+4. CalendarPicker's `PortalMenu`, `rectOf`/`TriggerRect`, both `useExitPresence`, both `useHeld`, the three-mode dismiss effect, `SizeMorph`, `ddWrap`, and `stack.top.menuOverlay` are deleted; no host changes.
 5. PickerMenu's `closing` prop is deleted after its last caller is gone; manual mode (`open` undefined) survives for the showcase.
 6. Every behavior in the decision log's Preserved table holds; the changes-of-hands are the ones it lists plus the two Task 3 adds.
 7. Documents that go false are rewritten in the commit that falsifies them.
@@ -67,7 +67,6 @@ Every app host passes `range={false}` (`DatetimeValuePicker.tsx:23`, `FilterFram
 
 | Doc                              | The specific claim                                                                  | What makes it false                                   | Task     |
 | -------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------- | -------- |
-| `DesignSystemPM.md:302`          | PickerMenu row's capability list                                                    | `morph` is a capability                               | 2        |
 | `DatetimeValuePicker.tsx:7-9`    | "(a PickerMenu or a pane row)"                                                      | five PickerMenu hosts, no pane row                    | 4        |
 | `calendar-picker.css.ts:87-89`   | "SizeMorph animates the change WITH the slide (one beat, the FrameSlide contract…)" | SizeMorph is gone; the host's `morph` eases on `base` | 4        |
 | `stack.ts` `menuOverlay` comment | "a portalled host that has to clear a menu AND its backdrop"                        | the step is deleted                                   | 4        |
@@ -75,8 +74,7 @@ Every app host passes `range={false}` (`DatetimeValuePicker.tsx:23`, `FilterFram
 
 **Dead Vocabulary**
 
-- `SizeMorph` · `PortalMenu` · `data-calmenu` · `ddWrap` · `menuOverlay` · `closingProp` · `menuPresence` · `lastTimeMenu` · `TriggerRect` · `morphAnimated` → each 0 under `rg -F <token> src`. No allowlist.
-- `rg -n "^export const morph" src/renderer/DesignSystem/Pickers` → 0 (the new classes are `paneMorph`/`paneMorphArmed`).
+- `SizeMorph` · `PortalMenu` · `data-calmenu` · `ddWrap` · `menuOverlay` · `closingProp` · `menuPresence` · `lastTimeMenu` · `TriggerRect` · `morphAnimated` · `paneMorph` · `PaneMorph` → each 0 under `rg -F <token> src`. No allowlist.
 - Control: `rg -F "PickerMenu" src` → 113. Zero here means the sweep never ran.
 
 ---
@@ -200,7 +198,7 @@ export const paneMorphBody = style({ display: 'flex', flexDirection: 'column' })
 - [x] Red first: a test renders a self-managed PickerMenu with `morph` and asserts the body's closest `[data-picker-portal]` contains an element whose class list includes the `paneMorph` class; a second asserts the default renders none (import the class names from `./picker-base.css`). Expect two failures. Then green.
 - [x] `rg -F "paneMorph" src` → ≥ 6. Control: `rg -F "MenuScrollFrame" src/renderer/DesignSystem/Pickers/picker-base.tsx` → 2.
 - [x] Full gate green; 3947 tests.
-- [x] `DesignSystemPM.md:302` PickerMenu row names the opt-in height morph and its one constraint: not for a pane whose content animates its own height (Reveal, FrameSlide).
+- [x] `DesignSystemPM.md:302` PickerMenu row (withdrawn with the prop in Task 4).
 
 **Verify — user**
 
@@ -330,51 +328,48 @@ export const menuList = style({ display: 'flex', flexDirection: 'column', gap: '
 - [ ] Tab inside the dropdown wraps; closing returns focus to the title/segment (changed: default focus management).
 - [ ] Wheel over the calendar pane with a dropdown open: nothing scrolls, the dropdown stays.
 
-#### Task 4: The hosts opt in; SizeMorph goes
+#### Task 4: SizeMorph goes; the calendar owns its height changes
 
 **Requirement:** 2, 4, 6, 7
 
-**Why:** With `morph` in the shell, a content component measuring itself is the duplication the ruling removes; the five hosts are the writers of the pane, so they opt in.
+**Why:** The pane already follows its content's height; only the ease was missing, and the two things that change height already have a house primitive each (a fixed-pixel viewport → a CSS transition; a row appearing → `Reveal`, the same primitive the menu recipe's `reveal` row option wraps).
 
-**Now** — `rg -F "SizeMorph" src` → 4 · `rg -F "menuOverlay" src` → 1 (after Task 3):
+**Now** — `rg -F "SizeMorph" src` → 4 · `rg -F "menuOverlay" src` → 1 · `rg -F "paneMorph" src` → 7 (Task 2's prop, withdrawn):
 
 ```tsx
-// CalendarPicker.tsx:2 (useLayoutEffect and type ReactNode, only SizeMorph's after Task 3), 56-75 (SizeMorph), 543 + 689 (its tags)
-// calendar-picker.css.ts:3 (import { duration, easing } — morphAnimated is its only consumer), 24-25
-export const morph = style({ overflow: 'hidden' })
-export const morphAnimated = style({ transition: `height ${duration.base} ${easing.baseEase}` })
-// stack.ts
-menuOverlay: 1200, // a portalled host that has to clear a menu AND its backdrop
-// Hosts — src/renderer/Properties/PageProperties.tsx:324-329 · Windows/PageWindow.tsx:541-546
-// · Views/TableView/TableView.tsx:102 (DatetimeCellPicker) · Views/CardView/CardPickerHost.tsx:166-171
-// · Frames/FilterFrame.tsx:111 (FieldPicker, which hosts every filter value picker)
+// CalendarPicker.tsx:29-48 SizeMorph; 450 + 596 its tags; 552-557 the second time row behind `timeOn &&`
+// calendar-picker.css.ts:23-24 morph/morphAnimated; 80 viewport; 81-83 the track comment naming SizeMorph; 140-147 fields gap 6px
+// picker-base.tsx PaneMorph + `morph` prop; picker-base.css.ts paneMorph*; picker-base.test.tsx 'PickerMenu morph'
+// stack.ts menuOverlay · DatetimeValuePicker.tsx:9 "(a PickerMenu or a pane row)" · DesignSystemPM.md:302 the morph clause
 ```
 
 **Becomes**
 
 ```tsx
-// CalendarPicker.tsx — SizeMorph and its two tags deleted (children sit directly in s.root); useLayoutEffect and type ReactNode imports deleted
-// calendar-picker.css.ts — morph, morphAnimated, and the duration/easing import deleted
-// stack.ts — menuOverlay and its comment deleted
-// the five hosts each add `morph` to their PickerMenu; FieldPicker takes `morph?: boolean` and forwards it; the date branch at FilterFrame.tsx:519 passes it
-// DatetimeValuePicker.tsx:7-9 → "The caller owns the mount + dismissal (a PickerMenu)."
-// calendar-picker.css.ts:87-89 track comment → the viewport's computed height decides the pane; the host's morph eases the change with the slide.
+// CalendarPicker.tsx
+import { Reveal } from '@renderer/Animation/Reveal'
+<Reveal open={timeOn} fill>
+  <div className={cx(s.fieldRow, s.fieldRowStacked)}>…</div>
+</Reveal>
+// calendar-picker.css.ts
+export const viewport = style({ overflow: 'hidden', transition: `height ${duration.base} ${easing.baseEase}` })
+export const fieldRowStacked = style({ paddingTop: '6px' })
+// fields drops its gap: a collapsed Reveal wrapper would otherwise hold a phantom 6px
+// picker-base.tsx / .css.ts / .test.tsx — Task 2's morph removed; the setPos gate stays
+// stack.ts — menuOverlay deleted · DatetimeValuePicker doc → "(a PickerMenu)" · DesignSystemPM row → no morph clause
 ```
 
 **Verify — automated**
 
-- [ ] `rg -F "SizeMorph" src` → 0 · `rg -F "menuOverlay" src` → 0 · `rg -F "morphAnimated" src` → 0 · `rg -F "pane row" src` → 0 · `rg -n "^export const morph" src/renderer/DesignSystem/Pickers` → 0.
-- [ ] `rg -c "morph" <file>` ≥ 1 for each of the five host files; `rg -c "morph" src/renderer/Frames/FilterFrame.tsx` → ≥ 3 (prop, forward, date branch). Control: `rg -F "paneMorph" src` → ≥ 6.
-- [ ] `npm run lint` output read in full: no `noUnusedImports` warning.
-- [ ] Full gate green; `npm run build:showcase` green.
+- [x] `rg -F "SizeMorph" src` → 0 · `rg -F "menuOverlay" src` → 0 · `rg -F "morphAnimated" src` → 0 · `rg -F "pane row" src` → 0 · `rg -F "paneMorph" src` → 0 · `rg -F "PaneMorph" src` → 0.
+- [x] Scoped gates green (biome on the touched dirs, typecheck shows no error in a touched file, vitest over DesignSystem/Views/Properties: 57 files, 592 tests). The whole-tree gates are red on the peer session's in-flight Glance rename, not on this range (see Deviations).
 
 **Verify — user**
 
-- [ ] Navigate from a 5-week month to a 6-week month (TableView datetime cell): the grid slides and the pane grows; the grow and the slide land together (both `base`).
+- [ ] TableView datetime cell: navigate from a 5-week month to a 6-week month; the grid slides and the pane grows on one beat.
 - [ ] Toggle Use Time: the pane's bottom edge either holds or eases; it never snaps.
-- [ ] The morph reads correctly with the pane flipped upward.
-- [ ] The showcase CalendarPicker (plain div host) snaps; accepted under the ruling.
-- [ ] A non-calendar filter value picker in FilterFrame (chips, location) still snaps.
+- [ ] Showcase CalendarPicker (`range`): End Date on, then Use Time on; the second time row unfolds (menu-recipe beat, `fast`) and the pane grows with it.
+- [ ] The grid ease reads correctly with the pane flipped upward.
 
 #### Task 5: Delete the `closing` prop
 
@@ -430,25 +425,30 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
   - [x] Task 1 — the close render gates on `open` · `f66cf8ab`
   - [x] Task 2 — `morph` opt-in · `43f87590` (+ `46efc7d8` simplification)
 - [ ] **Phase 2** — CalendarPicker · base `46efc7d8`
-  - [x] Task 3 — two root PickerMenus · (this commit)
+  - [x] Task 3 — two root PickerMenus · `ecc20fe5`
+  - [x] Task 4 — SizeMorph goes, the calendar owns its height changes · (this commit)
   - [ ] Task 4 — hosts opt in, SizeMorph goes · `<commit>`
   - [ ] Task 5 — delete the `closing` prop · `<commit>`
 
 ### Rulings
 
+- 09-04-2026, Nathan (mid-execution, after Task 3): the opt-in `morph` prop is withdrawn — "does size morph even need to exist if a picker is height adjustable anyways? If content shift is simpler, why don't we redo this with that instead?" — and the Menu recipe's reveal (a `Reveal`-wrapped row) is the pattern to follow. Task 4 is rewritten to the decision log's Option 1: SizeMorph deleted, the grid viewport eases on `base`, the second field row rides `Reveal` on the recipe's default beat. Task 2's `PaneMorph`, its styles, tests, and doc clause are removed in Task 4; the `setPos` gate stays (it stops per-frame re-renders for every Reveal-bearing pane, FilterFrame's included).
 - 09-03-2026, Nathan: opt-in `morph` over the recommended content-owned Reveal · `origin` auto · morph beat `base` (first ruled `fast`, changed at the go) · the final shape of `picker-base.tsx` and `CalendarPicker.tsx` must read legibly with clear structure · scroll-dismiss dropped · no History, no Handoff · net code delta negative · iteration window available for driving. Unruled, defaults taken by Claude: `manageFocus` default; nested-backdrop z-order untouched; the morph helper stays private to `picker-base.tsx`; the seg input's Escape gains `preventDefault` (pre-existing: it dismissed the calendar too); the switches close the Month/Year dropdown.
 
 ### Open Against Later Tasks
 
 ### Deviations
 
+- A peer session works this branch concurrently (the Glance rename). Its staged renames rode Task 3's commit `ecc20fe5` (both `git add <paths>` and `git commit --only <paths>` swept the already-staged index entries); that commit's tree is broken by the peer's half-landed rename, not by this range. From Task 4 on, foreign staged paths are unstaged before each commit and re-staged after.
+- The same peer session ran `git stash` mid-Task 4 (`stash@{0}` on `ecc20fe5`), which carried away half of this plan's uncommitted Task 4 edits; they were re-applied idempotently on the current tree. That stash is the peer's and was left untouched; it still holds a copy of those edits.
+- Whole-tree `npm run typecheck` and `npm run test` are red during execution on the peer's in-flight files (`Interface/Glance/*`, `PageView`, `MarkdownPM/*`); every gate here is read scoped to this plan's files, with the failing paths recorded.
 ### Lessons
 
 ### Sequenced After
 
 - **Nested backdrop z-order** (decision log F2): `backdrop` at `stack.top.menu` so DOM order sorts nesting; would delete OptionEditPopup's capture listener. Needs Nathan's ruling on the swallowed click.
-- **TableView's `lastPicker` hold** is redundant for the datetime branch once Task 1 lands; the picker branch still needs the cell for its anchor. Fold when TableView is next opened.
-- **CardPickerHost** passes `anchorX` plus a live `triggerRef`; after Task 1 the exit no longer re-places, so the `triggerRef` may be dispensable for that mount.
+- **TableView's `lastPicker` hold** is redundant for the datetime branch once Task 1 lands; the picker branch still needs the cell for its anchor. Fold when TableView is next opened. (Fix with closeout)
+- **CardPickerHost** passes `anchorX` plus a live `triggerRef`; after Task 1 the exit no longer re-places, so the `triggerRef` may be dispensable for that mount.(sweep on closeout)
 - **DesignSystemPM.md:302** still names the deleted `PointMenu`.
 
 ### Closeout

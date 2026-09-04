@@ -29,7 +29,6 @@ export const stack = {
     floating: 1000,
     menuBackdrop: 1099, // the transparent dismiss catcher one step under a portalled menu
     menu: 1100,
-    menuOverlay: 1200, // a portalled host that has to clear a menu AND its backdrop
     caret: 2147483647, // over every layer, deliberately unbeatable
   },
 } as const
