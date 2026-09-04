@@ -76,6 +76,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-127 || The Resize Frame
+**DATE:** 09-04-2026
+
+One box, one clamp: `Interactions/ResizeFrame.tsx` replaced `FloatingWindow.tsx`, `resize-strip.css`, and three hand-rolled pointer paths with a hook on the shared gesture engine, driving the windows' corners and move, the glance's edges, and every strip; a host declares its floor, ceiling, `equilateral`, and `outlined`, and Escape now aborts a resize to its start rect. Surface tiles and the embed tile keep their own gestures on the frame's handle classes. The tile grid stayed its own owner because a tile edge is a boundary between neighbors, not a box — the distinction the Tiles decision log in `// Planning` builds on.
+
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
 
@@ -95,11 +100,6 @@ Every destructive confirmation moved out of main's native dialogs into one in-ap
 **DATE:** 09-01-2026
 
 `created_at` and `modified_at` left every page and sidecar; Last Modified is the file's mtime and Creation Time the `PageID` ULID's instant, carried to every view as `PageValues` from `loadValues`. A `created_time` type sits beside `last_edited_time`, both stamps reveal from the Hidden frame, and every stamping writer is gone. A rewrite the user did not make restores the file's time, `setGovernedRootKeys` skips an identical write, and a push refreshes only its named pages over the `Result` envelope; the vault pass re-minted 40 adopted PageIDs from their real creation dates. A post-plan review closed four gaps the scoped push exposed — a move now notes its page, a straddled parse never caches, a scoped read settles only what it resolved — and folded five simplifications.
-
-#### PM-122 || Compatible Properties
-**DATE:** 08-31-2026 → 09-01
-
-Property values moved from `<Property>:` keys to bare keys named as the property, Context keys from `(Title):` to `<Title>:`, and Select/Status values to one-element lists, so a page's frontmatter reads identically in Pommora and in another frontmatter editor. `governedKeys.ts` and `standing.ts` dissolved: a key is Pommora's when the registry names it, a reserved-name rule and a held-key refusal guard the namespace, and `reconcileGovernedRoot` is the one reconcile every governed write, restore, and the opt-in on-open sweep run. A `values:changed` push fed by the watcher and by every main-side writer replaced the `refreshValues` thread, with overrides retired by page id. Two Settings toggles — Repair Properties On Open and Capitalize All Metadata — opened the Properties leaf's Metadata section.
 
 ### Guidelines
 
