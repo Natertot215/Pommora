@@ -25,7 +25,7 @@ import {
   WidgetType,
 } from '@codemirror/view'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { usePointerGesture } from '@renderer/Interactions/gesture'
+import { useResizeFrame } from '@renderer/Interactions/ResizeFrame'
 import { clamp } from '@shared/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
@@ -153,51 +153,35 @@ function unmountIfDetached(d: TileDom): void {
  *  through the host's save callback. */
 function EmbedResizeHandle({
   view,
+  span,
   targetId,
 }: {
   view: EditorView
+  span: HTMLElement
   targetId: string
 }): React.JSX.Element {
-  const beginGesture = usePointerGesture()
-  return createElement('div', {
-    className: 'resize-edge resize-edge-s',
-    onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-      if (e.button !== 0) return
-      e.preventDefault()
-      const strip = e.currentTarget
-      const span = strip.parentElement
-      if (!span) return
-      const startH = span.getBoundingClientRect().height
-      const startY = e.clientY
+  const setHeight = (h: number): void => {
+    span.style.height = `${h}px`
+    view.requestMeasure()
+  }
+  const frame = useResizeFrame<{ h: number }>({
+    rect: () => ({ h: span.getBoundingClientRect().height }),
+    min: { h: TILE_MIN_PX },
+    max: { h: Number.POSITIVE_INFINITY },
+    equilateral: true,
+    onChange: (next, phase) => {
+      if (phase !== 'drop') {
+        setHeight(next.h)
+        return
+      }
       // The drop commits the height the drag computed, never a DOM re-read — a detached span (target
       // deleted or renamed mid-drag) would rect to 0 and silently refuse every later save.
-      let lastH = Math.round(startH)
-      beginGesture({
-        el: strip,
-        event: e,
-        activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
-        onActivate: () => {
-          span.classList.add('is-resizing-tile')
-          return undefined
-        },
-        onDragMove: (ev) => {
-          lastH = Math.max(TILE_MIN_PX, Math.round(startH + ev.clientY - startY))
-          span.style.height = `${lastH}px`
-          view.requestMeasure()
-        },
-        teardown: () => span.classList.remove('is-resizing-tile'),
-        onDrop: () => {
-          const heights = { ...view.state.field(embedField).heights, [targetId]: lastH }
-          view.dispatch({ effects: setEmbedHeights.of(heights) })
-          view.state.facet(embedHost).saveHeights?.(heights)
-        },
-        onAbort: () => {
-          span.style.height = `${startH}px`
-          view.requestMeasure()
-        },
-      })
+      const heights = { ...view.state.field(embedField).heights, [targetId]: Math.round(next.h) }
+      view.dispatch({ effects: setEmbedHeights.of(heights) })
+      view.state.facet(embedHost).saveHeights?.(heights)
     },
   })
+  return frame.edges(['s'])[0]
 }
 
 /** What a tile answers CodeMirror with when it has not been measured yet: a real estimate (not the
@@ -264,7 +248,7 @@ class EmbedTileWidget extends WidgetType {
         warm: tileWarmSeam([...this.ancestors, this.path]),
       }),
       this.interactive && host.saveHeights
-        ? createElement(EmbedResizeHandle, { view, targetId: this.targetId })
+        ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.targetId })
         : null,
     )
   }
@@ -412,7 +396,7 @@ class WebpageTileWidget extends WidgetType {
       // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are free
       // by design.
       this.pageSurface && host.saveHeights
-        ? createElement(EmbedResizeHandle, { view, targetId: this.url })
+        ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.url })
         : null,
     )
   }

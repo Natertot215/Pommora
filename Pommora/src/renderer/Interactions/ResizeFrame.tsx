@@ -23,7 +23,8 @@ export const CORNERS: readonly ResizeEdge[] = ['nw', 'ne', 'sw', 'se']
 const MOVE_KEEP: Size = { w: 80, h: 40 }
 
 export interface ResizeFrameSpec<R extends Partial<Rect>> {
-  rect: R
+  /** Read at press when given as a function — for a box whose size is measured, not held. */
+  rect: R | (() => R)
   min?: Partial<Size>
   /** The ceiling — read live per move when given as a function; the viewport otherwise. */
   max?: Partial<Size> | (() => Partial<Size>)
@@ -105,7 +106,7 @@ export function useResizeFrame<R extends Partial<Rect>>(
   const start =
     (grip: ResizeGrip) =>
     (e: ReactPointerEvent<HTMLElement>): void => {
-      const from = { ...spec.rect }
+      const from = { ...(typeof spec.rect === 'function' ? spec.rect() : spec.rect) }
       let last = from
       const sx = e.clientX
       const sy = e.clientY

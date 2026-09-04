@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 function Frame<R extends Partial<Rect>>(
-  props: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' },
+  props: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' | 's' },
 ): React.JSX.Element {
   const frame = useResizeFrame(props)
   return (
@@ -34,7 +34,7 @@ function Frame<R extends Partial<Rect>>(
 }
 
 const mount = <R extends Partial<Rect>>(
-  spec: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' },
+  spec: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' | 's' },
 ): HTMLElement => {
   act(() => root.render(<Frame {...spec} />))
   return host.querySelector('.box') as HTMLElement
@@ -98,6 +98,19 @@ describe('the resize frame', () => {
     drag(el, 40, 0)
     act(() => pressEscape())
     expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'abort')
+  })
+
+  it('a rect given as a function is measured at each press', () => {
+    const onChange = vi.fn()
+    let measured = 100
+    const el = mount({ rect: () => ({ h: measured }), equilateral: true, onChange, grip: 's' })
+    drag(el, 0, 30)
+    expect(onChange).toHaveBeenLastCalledWith({ h: 130 }, 'move')
+    release()
+    measured = 300
+    drag(el, 0, 30)
+    expect(onChange).toHaveBeenLastCalledWith({ h: 330 }, 'move')
+    release()
   })
 
   it('a move keeps a grab of the frame on screen', () => {

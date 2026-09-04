@@ -366,7 +366,7 @@
 .mdpm-embed-tile.is-inert {
   pointer-events: none;
 }
-.mdpm-embed-tile.is-resizing-tile {
+.mdpm-embed-tile:has(> .resize-edge.is-active) {
   --tile-border-color: var(--accent-stroke-hot);
   cursor: ns-resize;
 }
