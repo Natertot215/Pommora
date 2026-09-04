@@ -1,7 +1,3 @@
-// One singleton rAF loop scrolls a FIXED container, resolved once at drag start. Tuning is read off
-// the drag element once per drag. The pure math below is unit-tested; the loop's DOM glue is
-// verified live.
-
 import { duration, ms } from '../Animation/motion'
 
 export type Axis = 'x' | 'y' | 'xy'
@@ -62,8 +58,6 @@ export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLEle
   return null
 }
 
-/** The scroller for a drag that already knows its own element: one that overflows scrolls itself,
- *  one at rest climbs to the nearest scrollable ancestor. Falls back to the element itself. */
 export function resolveScroller(el: HTMLElement, axis: Axis = 'xy'): HTMLElement {
   const cs = getComputedStyle(el)
   return scrollableInAxis(cs.overflowX, cs.overflowY, el, axis)
@@ -71,8 +65,6 @@ export function resolveScroller(el: HTMLElement, axis: Axis = 'xy'): HTMLElement
     : (findScroller(el, axis) ?? el)
 }
 
-/** Signed velocity for one axis: negative toward `lo`, positive toward `hi`. Pre-acceleration,
- *  pre-limit — composed with accelFactor/clampToLimit downstream. */
 export function edgeVelocity(
   lo: number,
   hi: number,
@@ -91,7 +83,6 @@ export function accelFactor(scrolled: number, { accelStart, accelMax, accelDist 
   return accelStart + (accelMax - accelStart) * Math.min(1, scrolled / accelDist)
 }
 
-/** Zero a velocity that would push past a scroll limit — no render churn while pinned at a maxed edge. */
 export function clampToLimit(v: number, pos: number, max: number): number {
   if (v < 0 && pos <= 0) return 0
   if (v > 0 && pos >= max) return 0
@@ -225,28 +216,18 @@ export function stopAutoScroll(): void {
   live = null
 }
 
-// Glide: the other way this module scrolls a container — a finite travel to a known destination,
-// for a surface sending the reader somewhere. It shares scroller resolution and the
-// one-owner-at-a-time rule with the drag loop above, but is otherwise a different animation.
-
 export interface GlideParams {
-  /** px per ms of travel — the apparent speed the document moves at, before the floor and ceiling. */
   speed: number
-  /** Floor, so a short hop still reads as movement rather than a cut. */
   minMs: number
-  /** Ceiling, so crossing a long document never becomes a wait. */
   maxMs: number
 }
 
-/** The house tuning for programmatic seeks — one recipe for every surface that glides to a target. */
 export const SEEK_GLIDE: GlideParams = {
   speed: 3,
   minMs: ms(duration.fast),
   maxMs: ms(duration.slow),
 }
 
-/** How long a glide over `distance` px runs. Proportional to the distance so near and far jumps travel
- *  at one apparent speed, clamped at both ends. */
 export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams): number {
   return Math.min(maxMs, Math.max(minMs, Math.abs(distance) / speed))
 }
@@ -333,8 +314,6 @@ function tick(ts: number): void {
   let vx = L.axis === 'y' ? 0 : edgeVelocity(r.left, r.right, pt.x, L.params)
   let vy = L.axis === 'x' ? 0 : edgeVelocity(r.top, r.bottom, pt.y, L.params)
   ;({ vx, vy } = gateIntent(L.intent, vx, vy))
-  // No edge velocity (out of the band, or a gated direction) resets the run so the next scroll
-  // eases in fresh.
   if (vx === 0 && vy === 0) L.dist = 0
   const accel = accelFactor(L.dist, L.params)
   vx = clampToLimit(

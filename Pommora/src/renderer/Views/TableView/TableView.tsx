@@ -63,7 +63,7 @@ import {
   GHOST_DWELL_MS,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostCreate'
 import { useCellSweep } from '@renderer/Tables/cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'

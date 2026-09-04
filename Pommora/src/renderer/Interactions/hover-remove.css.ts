@@ -5,7 +5,6 @@ import { style } from '@vanilla-extract/css'
 
 export const host = style({ position: 'relative' })
 
-/** `--hover-remove-ink` lets a neutral-filled host paint the × in its own color. */
 export const removeButton = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -22,12 +21,10 @@ export const removeButton = style({
   },
 })
 
-/** The whole host surfaces the ×. */
 export const revealFromHost = style({
   selectors: { [`${host}:hover &`]: { opacity: 1 } },
 })
 
-/** The host's right third: a × only its own hover reveals has to be big enough to find. */
 export const removeZone = style({
   position: 'absolute',
   top: 0,
@@ -43,7 +40,6 @@ export const removeZone = style({
   },
 })
 
-/** Two stacked copies crossfade over one ramp ending at the ×'s left edge. */
 const crispRamp =
   'linear-gradient(to right, transparent 0, #000000 var(--over-scroll-fade, 0px), #000000 calc(100% - 18px), transparent calc(100% - 8px))'
 const blurRamp =
@@ -81,7 +77,6 @@ export const labelText = style({
   selectors: { [reveal]: { opacity: 0 } },
 })
 
-/** `max-width` makes the ramp's `100%` the label BOX rather than the whole string. */
 export const labelMelt = style({
   position: 'absolute',
   top: 0,

@@ -30,7 +30,6 @@ export function useRevealNear(): {
   const [nearLead, setNearLead] = useState(false)
   const rect = useRef<DOMRect | null>(null)
   const leadEdge = useRef(0)
-  // Stable, so a host can hang it off an effect without re-dropping the cache on every render.
   const remeasure = useCallback(() => {
     rect.current = null
   }, [])

@@ -10,7 +10,6 @@ export function onActivateClick(e: KeyboardEvent<HTMLElement>): void {
   e.currentTarget.click()
 }
 
-/** The same contract where the action is a plain callback rather than the element's own onClick. */
 export const onActivateKey =
   (run: () => void) =>
   (e: KeyboardEvent): void => {

@@ -61,7 +61,6 @@ function onMove(e: PointerEvent): void {
     }, DWELL_MS)
 }
 
-/** A collapsed band registers its header element + expand; returns an unregister for the effect. */
 export function registerDiscloseTarget(el: HTMLElement, expand: () => void): () => void {
   targets.set(el, expand)
   return () => {
@@ -70,7 +69,6 @@ export function registerDiscloseTarget(el: HTMLElement, expand: () => void): () 
   }
 }
 
-/** `onDisclose` re-snapshots the calling engine's drop geometry after a group springs open. */
 export function beginDragDisclose(onDisclose?: () => void): void {
   remeasure = onDisclose ?? null
   if (drags++ === 0) window.addEventListener('pointermove', onMove)
