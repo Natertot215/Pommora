@@ -122,8 +122,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **The floating identity label** — embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element, or NavTrail absorbing the webpage case. *Status:* audit decides whether the three share enough chrome.
 - [ ] **Menu rows with horizontal property values** — multi-value rows land their values tight against the label; a pane-width-relative max-width for the value side has been tried and reverted several times. *Status:* audit decides (a known issue carried from ContextPM).
 - [ ] **`{ minWidth: 96, height: 24 }`** written byte-identically in `PropertyPicker.tsx:123` and `CardAddPicker.tsx:118` — one class. *Status:* ruled.
-- [ ] **CalendarPicker delegates its dropdowns to `PickerMenu`** — the month, year, and time menus hand-roll the anchored-dropdown lifecycle (a local `PortalMenu` + `rectOf`, two `useExitPresence`, a three-mode dismiss effect) that `PickerMenu`'s own `open` / `onDismiss` / `anchorX` already is; delegating drops ~60–80 lines and removes Settled 5's two `closing` callers. `SizeMorph` is a separate hand-roll (one of ~15 `ResizeObserver` sites) wanting a shared height-morph primitive minted first. *Why:* R2/DRY. *Status:* ruled — the cheap folds (the held menus onto `useHeld`, the render gate) landed; this is the deferred proper look. Behavior: the dropdowns' positioning, dismissal, and exit change hands — verify live.
-
 #### Styling
 
 - [ ] **The thirty plain `.css` sheets for ordinary React components** migrate to `.css.ts` as each is next opened, never as a sweep; the three feature sheets loading globally from `main.tsx` (`Sidebar.css`, `Interface.css`, `content-banner.css`) go first. *Why:* R6; Settled 5. *Status:* ruled.
@@ -146,6 +144,8 @@ The calls only Nathan can make; each deletes a row above when taken, and is take
 7. **The cursor convention** — `default` except links?
 8. **The three "preview" strings** — what word replaces it?
 9. **Scope of the rework itself** — taken: everything is in scope, behavior included, the DesignSystemPM pending items with it.
+10. **The nested picker backdrop** — `menuBackdrop` sits one step under `menu`, so a picker opened from inside another picker's pane can't catch clicks on that pane; OptionEditPopup hand-rolls a capture listener for it. Moving `backdrop` to the `menu` step lets DOM order sort nesting and deletes the hand-roll; the cost is that a click on the parent pane closes the child and is swallowed.
+11. **TableView's `lastPicker` hold** — redundant for the datetime branch now that PickerMenu holds its own children through the exit; the picker branch still needs the cell for its anchor. CardPickerHost's live `triggerRef` beside its `anchorX` may be dispensable for the same reason.
 
 ---
 

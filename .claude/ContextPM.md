@@ -2,17 +2,13 @@
 
 ### Current Focus
 
-**Page File History landed 09-03-2026.** Every body write offers the text it overwrites to `versions.db` under one rule in `CRUD/fileHistory.ts`, a quiet timer captures a burst's settled text, and the Page History window restores a snapshot's body into every open editor through `replaceBody`. The arc closed overnight against a sixteen-item live checklist on NexusOS and a scratch nexus, a four-agent sweep whose findings all folded, and a neutral verification of the delivery claim; the record and the settings copy took Nathan's live rulings as they came. What the arc seeded and left: the watcher's page-upsert driving the same `replaceBody` a restore uses, so an outside edit reaches an open editor without a reload.
+**The Glance Pane landed 09-04-2026.** The hover surface is `Interface/Glance/GlancePane.tsx` on the PickerMenu chassis, raised through one import-free seam, `Interface/Glance/glanceAction.ts`, that any host can call with an anchor element and a page or website target: it owns the per-host dwell table, the presenter slot, and the anchor watch that keeps a glance standing while the content view scrolls. MarkdownPM is one host of it through a single `ConnectionsApi.glance` hook, the pane resolves its page itself, hands focus back on close through the host editor's own view, and keeps a small fenced per-page warm store so a re-glance returns to where it was left. The code vocabulary settled with it — Window names the floating Page Window (`windowSlice`, `pageWindow`, `openWindow`, `windows:*`), Glance names the hover surface — while every label and on-disk word still reads "Preview" by ruling. `Links/` is gone; its three helpers live in `Actions/`. What the arc left open: the non-editor hosts it exists to allow (sidebar rows, tabs, view rows, PropertyPanel values), each a host supplying an element and a dwell row.
 
-**The Renderer Rework is active — the exploration is reported, and execution is proceeding through directed cleanups.** [[]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). 
-
-**Where it stands.** The value editing and visual tuning are mostly done; the design-system consolidations are in. What remains on the rework is the larger folder moves (`Core/`, `Interface/` absorbing `Sidebar/`, the tile world, the casing renames) and the collapse/split rows, then the framework. Nathan's lean is the next feature asap — the structural rows resume when the rework is picked back up.
-
-**Where the tree stands.** The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` standing on the design system alone; `DesignSystem/Glass/` is the material in four tiers and `DesignSystem/Menus/` the menu recipe in kebab parts. The five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface. The rulings taken so far are in the atlas's Settled list.
+**The Renderer Rework stands paused behind features.** [[RendererRework]] is its one document — the filing rules, target tree, the rulings a sweep must not re-derive, and the checklist. The value editing, visual tuning, and design-system consolidations are in; what remains is the larger folder moves (`Core/`, `Interface/` absorbing `Sidebar/`, the tile world, the casing renames) and the collapse/split rows, then the framework. The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` on the design system alone, and the five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface.
 
 ### Immediate Work
 
-- [ ] 
+- [ ] Nathan's own pass over the glance in the running app and the Page Window routes; the machine's remembered window tab sets and glance size reset once with the local_state key rename.
 
 ### Pending Focuses
 
@@ -22,9 +18,13 @@
 
 #### Two — The Renderer Rework
 
-The whole-renderer organizational and stylistic arc, being shaped — see §Current Focus. [[RendererRework]] is its one document: the rules, the checklist, the open rulings, and the exploration; [[DesignSystemPM]] keeps the vocabulary. Nothing about the arc lives anywhere else.
+The whole-renderer organizational and stylistic arc, paused — see §Current Focus. [[RendererRework]] is its one document; [[DesignSystemPM]] keeps the vocabulary.
 
-#### Three — The Codebase Cleanup
+#### Three — Glance Hosts
+
+- [ ] **A sidebar row, a tab, a view row, or a PropertyPanel value raising the glance** on dwell. The seam takes any element and a dwell row; a host wires pointer-enter to `armGlance` and pointer-leave to `cancelGlance`, adds its row to `GLANCE_DWELL`, and nothing pane-side changes.
+
+#### Four — The Codebase Cleanup
 
 The behavioral half — correctness, performance, and the structural moves inside the processes. Each is a session of its own, each verified by something a typecheck cannot supply, and none of it is visible from the interface. The session-sized work rides [[Codebase-Cleanup-Checklist]].
 
@@ -63,6 +63,8 @@ Findings where the correct answer isn't established in the codebase — design a
 - **A write built on a failed parse must refuse, and `rmwJsonStrict` is that refusal.** The config readers stay lenient — a malformed file reads as empty — but every read-modify-write goes through the strict primitive, which fails the operation on an unparseable file rather than rewriting it holding only the toggled key; only a genuinely absent file starts from a seed.
 - **A repair that fires with no user gesture may only canonicalize shape.** The write-path reconcile deletes what it cannot decode because the user's own edit earned it; a sweep reusing it inherits that deletion and must strip it back to shape — the on-open sweep leaves an undecodable value as written.
 - **A live push's write leg is a per-writer obligation.** The watcher is blind to main's own writes (the echo window), so every frontmatter writer notes its page or an open view goes stale; a new writer that skips `noteValueWrite` fails silently.
+- **Focus at press time is read on the capture phase.** CodeMirror focuses its own content inside the native mousedown, so a bubbling handler asking "who had focus before this press" already sees the editor.
+- **One shared timer under several pointer handlers turns every defensive pre-gate cancel into a killer** of the one that armed; when a dwell is hoisted, audit the cancels rather than the arms.
 - **Two rules any future in-app window must respect**, both learned on the WindowBase: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
 #### II. Debt & Ride-Alongs

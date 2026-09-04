@@ -84,7 +84,7 @@ const sources = () =>
 
 // Directives a tool reads rather than a reader. Deleting one is a silent behavior change the
 // token hash cannot see, because the comment was never a token.
-const PRAGMAS = { 'biome-ignore': 79, KNOB: 83, '@vitest-environment': 84 }
+const PRAGMAS = { 'biome-ignore': 79, KNOB: 84, '@vitest-environment': 88 }
 
 function pragmas() {
   const out = {}
