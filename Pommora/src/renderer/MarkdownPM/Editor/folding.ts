@@ -47,7 +47,7 @@ export type FoldKind = 'heading' | 'citations'
  *  never collide with a heading's saved key — and it is never saved in the first place. */
 const CITATIONS_KEY = '\u0000citations'
 
-/** The heading's own gesture class — the drag gate, the grip menu's hit-test and the hover card's
+/** The heading's own gesture class — the drag gate, the grip menu's hit-test and the glance's
  *  click-to-fold all read it. Kept apart from `md-foldable`, which means "draws a chevron" and
  *  nothing else: a non-heading anchor wearing one class would inherit all four behaviors, and the
  *  hit-test would fail silently. */
@@ -354,7 +354,7 @@ export function expandFoldsAt(view: EditorView, pos: number): boolean {
 }
 
 /** Toggle the fold of the heading whose line starts at `pos`. The chevron's own gesture and the
- *  hover card's click-a-heading affordance both land here, so fold behavior stays one fact. */
+ *  glance's click-a-heading affordance both land here, so fold behavior stays one fact. */
 export function toggleFoldAt(view: EditorView, pos: number): boolean {
   const r = regionsOf(view.state.doc).find((x) => x.anchorLine === pos)
   if (!r) return false

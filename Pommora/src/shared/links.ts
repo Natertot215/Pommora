@@ -14,7 +14,7 @@ const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
 const WEB_SCHEME = /^https?:\/\//i
 export const hasWebScheme = (url: string): boolean => WEB_SCHEME.test(url)
 
-/** The title fetch and the hover card's site load share this one deadline. */
+/** The title fetch and the glance's site load share this one deadline. */
 export const LINK_RESOLVE_TIMEOUT_MS = 6000
 
 /** Group 1 = the (still-escaped) alias, group 2 = the target URL. The alias group allows escape
