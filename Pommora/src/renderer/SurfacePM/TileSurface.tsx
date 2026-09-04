@@ -18,7 +18,7 @@ import {
   pagesByIdOf,
   type ContainerCore,
 } from '@renderer/treeIndex'
-import { showConnectionMenu } from '@renderer/Links/connectionMenu'
+import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
 import { hoverConnection, hoverWebsite } from '@renderer/Links/ConnectionPane'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/Core/ops'
 import { getTile } from '@renderer/SurfacePM/Core/model'

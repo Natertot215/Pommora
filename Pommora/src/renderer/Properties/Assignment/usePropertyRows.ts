@@ -16,7 +16,7 @@ import { resolveFieldValue } from '@renderer/Properties/value'
 import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
 import { sharedValueClickAction } from './valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
-import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Actions/connectionMenu'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
 // window's inspector — for resolving a page into rows and writing a value back. Every write here

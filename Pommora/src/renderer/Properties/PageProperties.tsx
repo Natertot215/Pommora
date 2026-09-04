@@ -10,7 +10,7 @@ import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-bas
 import { MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
-import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
+import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Pickers/TextPicker'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { contextOptionsFor } from '@renderer/Properties/contextOptions'

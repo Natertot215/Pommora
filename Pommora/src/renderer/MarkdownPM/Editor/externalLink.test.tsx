@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { ConnMenuAction } from '@shared/connMenu'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
-import { showConnectionMenu } from '@renderer/Links/connectionMenu'
+import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 class ResizeObserverStub {

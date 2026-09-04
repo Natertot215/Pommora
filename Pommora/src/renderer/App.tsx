@@ -28,7 +28,7 @@ import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { matchesCommand } from '@renderer/Actions/commands'
-import { openWebLink } from './Links/openWebLink'
+import { openWebLink } from './Actions/openWebLink'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
