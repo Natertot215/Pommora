@@ -5,7 +5,7 @@
 
 **Goal**
 
-At the end, `renderer/Links/` no longer exists. The hover-preview surface is `renderer/Glance/GlancePane.tsx`, raised through an import-free seam `renderer/Glance/glance.ts` that takes any anchor element and a page or site target, owns the dwell timer, resolves the page itself, restores focus to whatever held it, and keeps its own bounded warm store. MarkdownPM is one host of that seam rather than its owner. The three link helpers live in `renderer/Actions/`. Every code identifier that said "preview" and meant the floating window says "window"; every one that meant the hover surface says "glance". Nothing the user reads or that sits on disk changes.
+At the end, `renderer/Links/` no longer exists. The hover-preview surface is `renderer/Interface/Glance/GlancePane.tsx`, raised through an import-free seam `renderer/Interface/Glance/glance.ts` that takes any anchor element and a page or site target and owns the dwell timer and the presenter slot. The pane itself resolves the page, restores focus to whatever held it, and keeps its own bounded warm store. MarkdownPM is one host of that seam rather than its owner. The three link helpers live in `renderer/Actions/`. Every code identifier that said "preview" and meant the floating window says "window"; every one that meant the hover surface says "glance". Nothing the user reads or that sits on disk changes.
 
 The shape follows the decision log: the pane stays on the PickerMenu chassis (the canonical anchored surface) with one small stylesheet for the rules PickerMenu cannot express; the seam stays a leaf because the pane renders `PageTile`, which reaches into MarkdownPM; the dwell moves into the seam as a per-call delay so a future host can set its own; the `glance` hook on `ConnectionsApi` survives as a hook because `armable()` reads its presence and that is what stops a glance from glancing its own body. Disk words and UI copy stay "Preview" by Nathan's ruling, which removes every migration and coerce from the plan.
 
@@ -13,8 +13,8 @@ Not solved here: any new glance host (sidebar, tabs, view rows), blur-close, the
 
 **Requirements**
 
-1. `Glance/glance.ts`: `armGlance(target, el, dwellMs)`, `cancelGlance()`, `closeGlance()`, `setGlancePresenter()`, `GlanceTarget`; imports nothing.
-2. `Glance/GlancePane.tsx` renders today's page and site glances with today's contract (no focus on open, glance-only, resize, linger, detachment, site cover + wheel), owns size persistence, resolves the page itself, and restores focus host-neutrally.
+1. `Interface/Glance/glance.ts`: `armGlance(target, el, dwellMs)`, `cancelGlance()`, `closeGlance()`, `setGlancePresenter()`, `GlanceTarget`; imports nothing; refuses an anchor inside the pane's own body.
+2. `Interface/Glance/GlancePane.tsx` renders today's page and site glances with today's contract (no focus on open, glance-only, resize, linger, detachment, site cover + wheel), owns size persistence, resolves the page itself, and restores focus host-neutrally.
 3. A fenced, id-keyed, bounded warm store inside the pane; the tab cache and window cache are never touched.
 4. MarkdownPM (editor pointer path, markdown links, table cells) calls the seam through one `ConnectionsApi.glance` hook; `hoverIntent` and the pre-gate cancels are gone; the bloom still fires past the dwell.
 5. The window vocabulary: every identifier, channel, preload namespace, local_state key, and menu action string in B-4 through B-7 of the log renamed; UI labels and disk values untouched; the do-not-rename list (B-8) untouched.
@@ -62,14 +62,14 @@ Not solved here: any new glance host (sidebar, tabs, view rows), blur-close, the
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| InterfacePM | "the components live in … `Windows/`, and `Links/`" · "### The Hover Pane … (`Links/ConnectionPane.tsx`)" | Links/ gone; the pane is `Glance/GlancePane.tsx` | 9 |
+| InterfacePM | "the components live in … `Windows/`, and `Links/`" · "### The Hover Pane … (`Links/ConnectionPane.tsx`)" | Links/ gone; the pane is `Interface/Glance/GlancePane.tsx` | 9 |
 | ConnectionsPM | "Resting on a resolved connection raises the hover pane" · "A read-only surface — a hover pane" | the surface is the glance pane | 9 |
 | WebviewPM | "live hover previews for website links" · "### Website Hover Previews … raises the shared hover pane" · "the hover pane — all on the shared partition" | glance | 9 |
 | ArchitecturePM | "the hover pane size" (local_state list, table row 158) · "the hover pane rides the lighter PickerMenu chassis" · "hover preview" (row 172) | glance pane / glance size | 9 |
 | DesignSystemPM | "the hover pane, the autocomplete" (vocabulary line 9, GlassPane row 209) | glance pane | 9 |
 | ConfigurationPM | "How long a connection's hover preview stays open" | glance (label stays "Hover Preview Linger") | 9 |
 | SurfacePM, MarkdownPM, InteractionPM | "the hover pane" as a PageTile consumer / Bloom taker | glance pane | 9 |
-| Guidelines/Editor-Internals | "`Links/ConnectionPane` reaches into MarkdownPM … (`Links/PanePresenter.ts`)" | `Glance/GlancePane.tsx`, `Glance/glance.ts` | 9 |
+| Guidelines/Editor-Internals | "`Links/ConnectionPane` reaches into MarkdownPM … (`Links/PanePresenter.ts`)" | `Interface/Glance/GlancePane.tsx`, `Interface/Glance/glance.ts` | 9 |
 | Guidelines/Web-Guests | "the hover pane's load cover" · "the tile and hover pane both do this" | glance pane | 9 |
 | CLAUDE.md Codebase Map | "`// Links` · Everything that happens to a link — the hover pane, the link menu, resolution" | `// Glance` · the glance pane; helpers in Actions | 9 |
 | Planning/RendererRework | "`Links/connectionMenu`" (R2 example) | `Actions/connectionMenu` | 9 |
@@ -78,7 +78,7 @@ Not solved here: any new glance host (sidebar, tabs, view rows), blur-close, the
 
 **Dead Vocabulary**
 
-- `Links/` · `panePresenter` · `hoverIntent` · `hoverConnection` · `hoverWebsite` · `hoverPaneSize` · `HoverCardSize` · `hoverCard` · `conn-hover` · `HOVER_ANCESTORS` · `hover-card` · `ConnectionPane` · `openPreview` · `PreviewState` · `previewsFile` · `PreviewsFile` · `previewState` · `previews:` · `open-in-preview` · `onOpenInPreview` · `title:preview` · `link:preview` · `open-preview` · `previewTargetOf` · `previewSlice` → expect 0 in `Pommora/src` and `.claude` (Planning excluded for the log and this plan). Legitimate hits: none.
+- `Links/` · `panePresenter` · `hoverIntent` · `hoverConnection` · `hoverWebsite` · `hoverPaneSize` · `HoverCardSize` · `hoverCard` · `conn-hover` · `HOVER_ANCESTORS` · `hover-card` · `ConnectionPane` · `openPreview` · `PreviewState` · `previewsFile` · `PreviewsFile` · `previewState` · `previews:` · `open-in-preview` · `onOpenInPreview` · `title:preview` · `link:preview` · `open-preview` · `previewTargetOf` · `previewSlice` → expect 0 in `Pommora/src` and `.claude` with `--glob '!**/Planning/Glance*' --glob '!**/Planning/CalendarPicker*' --glob '!**/Sessions/**' --glob '!**/HistoryPM.md'`. Legitimate hits: the two excluded plans, session transcripts, and History.
 - Control: `PickerMenu` → 20+. `openWindow` → 20+ after Phase 1. Zero here means the sweep never ran.
 
 ---
@@ -148,7 +148,7 @@ windows: { load, save } · glance: { load, save } · onOpenInWindow: on('open-in
 
 **Why:** The slice is where the word does the most damage, since every host reads `s.preview` to mean the Page Window while the glance also calls itself a preview.
 
-**Now** — `rg -F "openPreview" Pommora/src/renderer` → 54 · `rg -F "s.preview" Pommora/src/renderer` → 30+:
+**Now** — `rg -F "openPreview" Pommora/src/renderer` → 78 · `rg -F "s.preview" Pommora/src/renderer` → 15 · test fixtures setting `preview:` through `useSession.setState`: `Windows/useWindowWarm.test.tsx:27`, `Windows/windowTabs.test.ts:34`; `previewing:` fixtures: `MarkdownPM/Editor/externalLink.test.tsx:145`, `linkEdit.test.tsx:55,68,80,110`:
 
 ```ts
 // renderer/Store/previewSlice.ts
@@ -193,7 +193,7 @@ export const createWindowSlice
 
 **Why:** The action vocabulary is internal; the labels beside it keep "Open Preview" by ruling, so only the strings move.
 
-**Now** — `rg -F "title:preview" Pommora/src` → 8 · `rg -F "link:preview" Pommora/src` → 8 · `rg -F "'open-preview'" Pommora/src` → 2 · `rg -F "'preview'" Pommora/src/shared/tabMenu.ts Pommora/src/main/tabMenu.ts Pommora/src/renderer/Tabs/TabBar.tsx` → 3:
+**Now** — `rg -F "title:preview" Pommora/src` → 15 · `rg -F "link:preview" Pommora/src` → 8 · `rg -F "'open-preview'" Pommora/src` → 3 · `rg -F "'preview'" Pommora/src/shared/tabMenu.ts Pommora/src/main/tabMenu.ts Pommora/src/renderer/Tabs/TabBar.tsx` → 3:
 
 ```ts
 // shared/pageMenu.ts:24 'title:preview' · :100 preview?: boolean · :109 label 'Open Preview' · :153 preview: true
@@ -214,7 +214,7 @@ export const createWindowSlice
 **Verify — automated**
 
 - [ ] `shared/pageMenu.test.ts`, `connMenu.test.ts`, `cellMenu.test.ts`, `linkEdit.test.tsx` green with label assertions unchanged.
-- [ ] `rg -F "title:preview" Pommora/src` → 0 · `rg -F "link:preview" Pommora/src` → 0 · `rg -F "open-preview" Pommora/src` → 0. Control: `rg -F "'Open Preview'" Pommora/src` → 9 (unchanged).
+- [ ] `rg -F "title:preview" Pommora/src` → 0 · `rg -F "link:preview" Pommora/src` → 0 · `rg -F "open-preview" Pommora/src` → 0. Control: `rg -F "'Open Preview'" Pommora/src` → 10 (unchanged).
 - [ ] Full gate green.
 
 **Verify — user**
@@ -285,7 +285,7 @@ export const createWindowSlice
 **Becomes**
 
 ```ts
-// renderer/Glance/glance.ts (new) + renderer/Glance/glance.test.ts
+// renderer/Interface/Glance/glance.ts (new) + renderer/Interface/Glance/glance.test.ts
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string }
   | { kind: 'site'; url: string }
@@ -293,7 +293,8 @@ export interface GlanceRequest { target: GlanceTarget; el: Element }
 
 export function setGlancePresenter(fn: ((next: GlanceRequest | null) => void) | null): void
 /** Starts the dwell; a re-arm replaces the pending one. Fires present({target, el}) after
- *  dwellMs. A call before the pane mounts fires into nothing. */
+ *  dwellMs. A call before the pane mounts fires into nothing. An el inside `[data-glance]`
+ *  (the pane's own body) arms nothing — the self-guard is structural, not host-cooperative. */
 export function armGlance(target: GlanceTarget, el: Element, dwellMs: number): void
 /** Clears a pending dwell; idempotent. Never closes an open pane. */
 export function cancelGlance(): void
@@ -305,8 +306,8 @@ export function closeGlance(): void
 
 **Verify — automated**
 
-- [ ] Red first: arm fires once after `dwellMs` (fake timers); re-arm within the window fires once with the latest target; cancel prevents the fire; close calls the presenter with null and clears a pending arm; arm with no presenter is a no-op. Expect 5 failures, module not found. Then green.
-- [ ] `rg -F "from '" Pommora/src/renderer/Glance/glance.ts` → 0 (imports nothing). Control: `rg -F "export function" Pommora/src/renderer/Glance/glance.ts` → 4.
+- [ ] Red first: arm fires once after `dwellMs` (fake timers); re-arm within the window fires once with the latest target; cancel prevents the fire; close calls the presenter with null and clears a pending arm; arm with no presenter is a no-op; arm with an el under `[data-glance]` never fires. Expect 6 failures, module not found. Then green.
+- [ ] `rg -F "from '" Pommora/src/renderer/Interface/Glance/glance.ts` → 0 (imports nothing). Control: `rg -F "export function" Pommora/src/renderer/Interface/Glance/glance.ts` → 4.
 
 **Verify — user**
 
@@ -333,33 +334,41 @@ export function ConnectionPane(): JSX.Element                         // PickerM
 **Becomes**
 
 ```tsx
-// renderer/Glance/GlancePane.tsx (git mv from ConnectionPane.tsx, then rewritten)
+// renderer/Interface/Glance/GlancePane.tsx (git mv from ConnectionPane.tsx, then rewritten)
 export function GlancePane(): React.JSX.Element
 // claims setGlancePresenter at mount; releases on unmount
-// present({kind:'page'}): warm store by id → readPageDetail(path) → fetchPageDetail(path);
+// present({kind:'page'}): readPageDetail(path) → fetchPageDetail(path), as today;
 //   opens only if el.isConnected && el.matches(':hover'); a newer request supersedes the fetch
+//   (the warm store is read only at PageTile mount, through the seam, so the fence always has a fresh body)
 // present({kind:'site'}): as today (cover, did-fail-load, render-process-gone, resolve deadline)
-// onMouseDown (button 0): focusBefore = document.activeElement; selectingRef = true
-// close(): if pane contains activeElement →
-//   (EditorView.findFromDOM(focusBefore) ?? focusBefore as HTMLElement | null)?.focus()
+// body div carries data-glance (the seam's self-guard reads it)
+// onMouseDown (button 0): selectingRef = true; if (!body.contains(document.activeElement)) focusBefore = document.activeElement
+// close(): if body contains activeElement → const host = focusBefore?.closest('.cm-editor');
+//   (host ? EditorView.findFromDOM(host) : null)?.focus() ?? (focusBefore as HTMLElement | null)?.focus()
+//   — never findFromDOM(body): it is a descendant query and would focus the first editor on the page
 // ancestors={['glance']}
 // size: KNOB GLANCE_DEFAULT {260,120} · GLANCE_MIN {180,100}; seed/read/set folded in, nexus.glance
 // warm store: KNOB GLANCE_WARM_CAP = 8; Map<pageId, {editorState, scrollTop}> insertion-ordered LRU;
 //   warmSeam(id, path): restore = fenceWarm(entry, readPageDetail(path)?.body) with self-delete on stale;
 //   capture = set + trim to cap; passed to <PageTile warm={…}>
+// scroll owner: the seam captures/restores view.scrollDOM (.cm-scroller). Today `.page-tile` scrolls and
+//   the scroller never does, so the glance sheet moves `overflow-y: auto; overscroll-behavior: contain`
+//   from `.glance-body .page-tile` onto `.glance-body .cm-scroller` (verified live at Task 6: the
+//   clip, the inset KNOB, and heading folds must still hold)
 // closes on selection / activeTabId / pageWindow change, as today
 
-// renderer/Glance/glance-pane.css (git mv from connection-pane.css) — `conn-hover-` → `glance-`
-// renderer/Glance/glancePane.test.tsx — ports connectionPane.test.tsx + hoverPaneSize.test.ts against the seam
+// renderer/Interface/Glance/glance-pane.css (git mv from connection-pane.css) — `conn-hover-` → `glance-`
+// renderer/Interface/Glance/glancePane.test.tsx — ports connectionPane.test.tsx + hoverPaneSize.test.ts against the seam;
+//   the warm-path cases carry the same `el.matches` spy the cold-path cases already do
 ```
 
 **Assumed by:** Task 7 (`GlanceTarget` shape from the seam), Task 8 (mount).
 
 **Verify — automated**
 
-- [ ] Red first, new assertions: a glance re-opened for the same page id restores captured scroll (warm hit); after `cachePageDetail` with a changed body the warm entry is dropped and the fresh body renders (fence); the ninth distinct page evicts the first (cap); close after a press inside the pane focuses the element that held focus before the press. Expect 4 failures. Then green with every ported assertion also green.
+- [ ] Red first, new assertions: a glance re-opened for the same page id restores captured scroll on `.cm-scroller` (the assertion sets and reads that element, not `.page-tile`); after `cachePageDetail` with a changed body the warm entry is dropped and the fresh body renders (fence); the ninth distinct page evicts the first (cap); close after a press inside the pane focuses the element that held focus before the press; a second press inside the pane does not re-record; with `<body>` focused before the press, close leaves focus on `<body>` rather than an unrelated editor. Expect 6 failures. Then green with every ported assertion also green.
 - [ ] Size tests ported: absent row keeps the default; stored value clamps on read; set clamps, rounds, writes through `nexus.glance.save`.
-- [ ] `rg -F "conn-hover" Pommora/src` → 0 · `rg -F "hover-card" Pommora/src` → 0 · `rg -F "HoverCardSize" Pommora/src` → 0. Control: `rg -F "glance-" Pommora/src/renderer/Glance/glance-pane.css` → 20+.
+- [ ] `rg -F "conn-hover" Pommora/src` → 0 · `rg -F "hover-card" Pommora/src` → 0 · `rg -F "HoverCardSize" Pommora/src` → 0. Control: `rg -F "glance-" Pommora/src/renderer/Interface/Glance/glance-pane.css` → 20+.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -372,7 +381,7 @@ export function GlancePane(): React.JSX.Element
 
 **Why:** The editor becomes one host: it wires a `glance` hook, and every dwell, cancel, and close it owes goes through the seam. Deleting the two pre-gate cancels is what makes one timer safe under four handlers.
 
-**Now** — `rg -F "hoverIntent" Pommora/src` → 4 · `rg -F "api.hover" Pommora/src/renderer/MarkdownPM` → 6 · `rg -F "closeActiveHoverCard" Pommora/src` → 8:
+**Now** — `rg -F "hoverIntent" Pommora/src` → 4 · `rg -F "api.hover" Pommora/src/renderer/MarkdownPM` → 2 · `rg -F "closeActiveHoverCard" Pommora/src` → 11:
 
 ```ts
 // MarkdownPM/Connections/index.ts:57-61
@@ -398,8 +407,8 @@ contextmenu: … closeActiveHoverCard(); pop()
 
 ```ts
 // MarkdownPM/Connections/index.ts
-import { armGlance, type GlanceTarget } from '@renderer/Glance/glance'
-export const CONN_HOVER_INTENT_MS = 1000   // KNOB — moved here from pointerPath
+import { armGlance, type GlanceTarget } from '@renderer/Interface/Glance/glance'
+export const CONN_HOVER_INTENT_MS = 1000   // KNOB — sits beside the hook that passes it (Ruling R-1)
 /** The hook every host wires; its presence is what makes a surface armable. */
 export const glanceConnections: NonNullable<ConnectionsApi['glance']> = (target, el) =>
   armGlance(target, el, CONN_HOVER_INTENT_MS)
@@ -442,7 +451,7 @@ onMouseOut={cancelGlance}   // onContextMenu / onClick: closeGlance()
 
 **Why:** The last four consumers of the old entries switch to the hook, the app mounts the renamed pane, and the folder is deleted; the residue check proves nothing points at it.
 
-**Now** — `rg -F "hoverConnection" Pommora/src` → 6 · `rg -F "ConnectionPane" Pommora/src` → 3:
+**Now** — `rg -F "hoverConnection" Pommora/src` → 17 · `rg -F "ConnectionPane" Pommora/src` → 10:
 
 ```ts
 // Interface/PageView.tsx:116-117 · SurfacePM/TileSurface.tsx:141-142 · Windows/PageWindow.tsx:120-121 · Windows/NavWindow.tsx:140-141
@@ -475,7 +484,7 @@ glance: glanceConnections,
 
 **Why:** Everything in Made False goes false in Phase 3; the rewrites land here, and the comment ledgers follow the moved paths so the next comment pass reads the right rows.
 
-**Now** — `rg -F "hover pane" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → 14 · `rg -F "Links/" .claude --glob '!Planning/Glance*'` → 6:
+**Now** — `rg -F "hover pane" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → 19 · `rg -F "Links/" .claude --glob '!**/Planning/Glance*'` → 15 (Editor-Internals 1, InterfacePM 2, RendererRework 2, HandoffPM 1, comment-baseline 1, comment-units 8):
 
 ```md
 (the rows of Made False, quoted)
@@ -484,18 +493,18 @@ glance: glanceConnections,
 **Becomes**
 
 ```md
-InterfacePM: "### The Glance Pane" — Resting on a resolved connection past a short intent delay raises the glance pane (`Glance/GlancePane.tsx`) … re-opening a page just glanced restores its scroll from a small per-page store …
+InterfacePM: "### The Glance Pane" — Resting on a resolved connection past a short intent delay raises the glance pane (`Interface/Glance/GlancePane.tsx`) … re-opening a page just glanced restores its scroll from a small per-page store …
 ConnectionsPM / WebviewPM / ArchitecturePM / DesignSystemPM / ConfigurationPM / SurfacePM / MarkdownPM / InteractionPM: "hover pane" → "glance pane"; "hover preview" → "glance"; labels quoted verbatim stay
-Editor-Internals: `Glance/GlancePane.tsx` … the imperative seam lives in its own leaf (`Glance/glance.ts`)
+Editor-Internals: `Interface/Glance/GlancePane.tsx` … the imperative seam lives in its own leaf (`Interface/Glance/glance.ts`)
 Web-Guests: "the glance pane's load cover" · "the tile and glance pane both do this"
-CLAUDE.md map: `// Glance | • The glance pane — the hover surface any anchor can raise` ; Actions line gains "link menu, link resolution, external-link routing"
+CLAUDE.md map: under `// Interface` add `// Glance | • The glance pane — the hover surface any anchor can raise`; InterfacePM's one-liner gains "the glance pane"; Actions line gains "link menu, link resolution, external-link routing"
 RendererRework R2: `Actions/connectionMenu`
-scripts: `node .claude/scripts/comment-ledger.mjs` re-run per its README so the rows follow
+scripts: no regenerator exists for `comment-units.json` and a bare `comment-ledger.mjs` run writes nothing — the `renderer/Links/` rows in both JSON files are re-keyed by hand to their new paths (three to `Actions/`, the pane files to `Interface/Glance/`, `panePresenter` → `glance`), `PRAGMAS.KNOB` at `comment-ledger.mjs:87` is bumped by the KNOBs Task 6 adds, and a fresh `--snapshot` is taken at closeout after the comment pass because rewritten files legitimately moved their token streams (accepted: the pre-arc `was` resets)
 ```
 
 **Verify — automated**
 
-- [ ] `rg -F "hover pane" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → 0 · `rg -F "Links/" .claude --glob '!Planning/Glance*'` → 0 · `rg -F "renderer/Links" .claude/scripts` → 0. Control: `rg -F "glance pane" .claude/Features` → 10+.
+- [ ] `rg -F "hover pane" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → 0 · `rg -F "Links/" .claude --glob '!**/Planning/Glance*' --glob '!**/Planning/CalendarPicker*' --glob '!**/Sessions/**'` → 0 · `rg -F "renderer/Links" .claude/scripts` → 0 · `node .claude/scripts/comment-ledger.mjs --verify` exits 0 after the snapshot. Control: `rg -F "glance pane" .claude/Features` → 10+.
 - [ ] Markdown prose never hard-wraps: each rewritten paragraph is one line.
 
 **Verify — user**
@@ -506,7 +515,7 @@ scripts: `node .claude/scripts/comment-ledger.mjs` re-run per its README so the 
 
 - [ ] Gate commands green.
 - [ ] Every Now count re-run.
-- [ ] Simplification (code-simplifier, comment-killer single-handed) then code review against `<base>..HEAD` scoped to `Glance/`, `MarkdownPM/`, the four hosts, `App.tsx`.
+- [ ] Simplification (code-simplifier, comment-killer single-handed) then code review against `<base>..HEAD` scoped to `Interface/Glance/`, `MarkdownPM/`, the four hosts, `App.tsx`.
 - [ ] Attack review (build-breaking-agent) against the same range, briefed with the log's Considered & Rejected as the do-not-re-raise list.
 - [ ] Every concern fixed or ruled.
 - [ ] Progress hashes filled in.
@@ -515,7 +524,7 @@ scripts: `node .claude/scripts/comment-ledger.mjs` re-run per its README so the 
 
 ### Phase 4 — Closeout
 
-Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier against the decision log, the attack, the Dead Vocabulary sweep against its control, History entry, Handoff, Context.
+Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier against the decision log, the attack, the Dead Vocabulary sweep against its control. **No History entry** (Nathan's ruling). Rewrite `HandoffPM.md` for this session and `ContextPM.md` so the Glance arc is the standing focus: drop the other focus, and condense the RendererRework portion.
 
 ---
 
@@ -539,6 +548,11 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 
 ### Rulings
 
+- R-1 (Claude, pre-execution, disclosed): `CONN_HOVER_INTENT_MS` moves from `pointerPath.ts` to `MarkdownPM/Connections/index.ts` beside the `glanceConnections` hook that passes it; the log's C-5 said "stays in pointerPath.ts" — the knob stays MarkdownPM's, only the file changes.
+- R-2 (Claude, pre-execution, disclosed): the seam self-guards against an anchor inside the pane's body via a `data-glance` attribute, so the no-recursion guarantee no longer rests on `resolveOnlyConnections` alone.
+- R-3 (Claude, pre-execution, disclosed): the glance's scroll owner moves from `.page-tile` to `.cm-scroller` so the shared warm seam captures real scroll; verified live in Task 6.
+- R-4 (Claude, pre-execution, disclosed): the comment ledgers are re-keyed by hand and re-snapshotted at closeout.
+
 - Nathan (09-03): UI copy stands ("Open Preview", "Open Connections In Preview", "Hover Preview Linger", "Preview / Full Page"); disk words stand.
 - Nathan (09-03): the surface is the Glance; component `GlancePane.tsx`; the action is `glance`; the store IPC is `glance:load/save`.
 - Nathan (09-03): size owned by the core TSX; minimal file count; no glance slice (assumed, unobjected).
@@ -548,6 +562,8 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Plan review round 1 (build-breaking-agent): nine findings folded before ratification — scroll owner (R-3), focus record/restore guard, glob anchoring on the sweeps, the ledger mechanism (R-4), the knob move (R-1), the Goal sentence, Now counts re-derived, warm-store open order reverted to resolve-then-open, the seam self-guard (R-2).
 
 ### Lessons
 
@@ -570,7 +586,7 @@ Execute Glance Pane — Implementation Plan. Unattended overnight.
 Live-verify: the acceptance walkthrough with Nathan's own eyes (the agent drives it over CDP first).
 Screenshots: Phase 3 — the glance open over an editor link, a table cell, a Page Window tab, a dashboard tile; a site glance.
 Pings: at completion.
-Record: History arc "Glance Pane".
+Record: no History entry; Handoff + ContextPM rewritten.
 Also: UI copy and disk words never change; the do-not-rename list is inviolable.
 Everything else is the standard below.
 ```
@@ -589,7 +605,7 @@ Everything else is the standard below.
 
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause, over CDP.
-- [ ] The Links/ folder does not exist; `Glance/` holds exactly `GlancePane.tsx`, `glance.ts`, `glance-pane.css`, and their tests.
+- [ ] The Links/ folder does not exist; `Interface/Glance/` holds exactly `GlancePane.tsx`, `glance.ts`, `glance-pane.css`, and their tests.
 
 **The passes**
 
@@ -608,7 +624,7 @@ Everything else is the standard below.
 
 - [ ] Documents made false rewritten in the commits that falsified them.
 - [ ] The closing sweep at zero against its control.
-- [ ] Context and Handoff current; the History entry written to its format.
+- [ ] Context and Handoff rewritten; no History entry (ruled).
 - [ ] Lessons routed to `.claude/Guidelines`; successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · what each screenshot showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
