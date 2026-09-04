@@ -322,6 +322,7 @@ class TableWidget extends WidgetType {
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}
+        readOnly={() => view.state.readOnly}
       />,
     )
   }
