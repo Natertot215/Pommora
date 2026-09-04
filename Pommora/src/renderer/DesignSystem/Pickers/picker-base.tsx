@@ -56,32 +56,6 @@ const POS_KEYS = ['top', 'bottom', 'right', 'left', 'origin', 'centered'] as con
 const samePos = (a: Pos | null, b: Pos): boolean =>
   a !== null && POS_KEYS.every((k) => a[k] === b[k])
 
-function PaneMorph({ children }: { children: ReactNode }): React.JSX.Element {
-  const outer = useRef<HTMLDivElement>(null)
-  const inner = useRef<HTMLDivElement>(null)
-  const [armed, setArmed] = useState(false)
-  useLayoutEffect(() => {
-    const o = outer.current
-    const i = inner.current
-    if (!o || !i) return
-    const size = (): void => {
-      o.style.height = `${i.offsetHeight}px`
-    }
-    size()
-    const ro = new ResizeObserver(size)
-    ro.observe(i)
-    return () => ro.disconnect()
-  }, [])
-  useEffect(() => setArmed(true), [])
-  return (
-    <div ref={outer} className={cx(s.paneMorph, armed && s.paneMorphArmed)}>
-      <div ref={inner} className={s.paneMorphBody}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 export function PickerMenu({
   children,
   open,
@@ -103,7 +77,6 @@ export function PickerMenu({
   manageFocus = true,
   contentClassName,
   style,
-  morph = false,
   onDirection,
 }: {
   children: ReactNode
@@ -126,7 +99,6 @@ export function PickerMenu({
   manageFocus?: boolean
   contentClassName?: string
   style?: CSSProperties
-  morph?: boolean
   onDirection?: (dir: PickerDirection) => void
 }): React.JSX.Element | null {
   const selfManaged = open !== undefined
@@ -348,14 +320,6 @@ export function PickerMenu({
 
   const up = effDir === 'up'
   const Shell = glass === 'pane' ? GlassPane : GlassSurface
-  const content =
-    maxHeight === undefined && !header && !footer ? (
-      body
-    ) : (
-      <MenuScrollFrame maxHeight={maxHeight ?? s.PICKER_MAX_HEIGHT} header={header} footer={footer}>
-        {body}
-      </MenuScrollFrame>
-    )
   const pane = (
     <Shell
       ref={glassRef}
@@ -374,7 +338,17 @@ export function PickerMenu({
         } as CSSProperties
       }
     >
-      {morph ? <PaneMorph>{content}</PaneMorph> : content}
+      {maxHeight === undefined && !header && !footer ? (
+        body
+      ) : (
+        <MenuScrollFrame
+          maxHeight={maxHeight ?? s.PICKER_MAX_HEIGHT}
+          header={header}
+          footer={footer}
+        >
+          {body}
+        </MenuScrollFrame>
+      )}
     </Shell>
   )
 

@@ -1,5 +1,6 @@
 import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Reveal } from '@renderer/Animation/Reveal'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
@@ -26,26 +27,6 @@ const anchorOf = (el: HTMLElement): Anchor => {
   return { x: r.left + r.width / 2, y: r.top, h: r.height }
 }
 
-function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
-  const ref = useRef<HTMLDivElement>(null)
-  const [h, setH] = useState(0)
-  const [armed, setArmed] = useState(false)
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const measure = (): void => setH(el.offsetHeight)
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  useEffect(() => setArmed(true), [])
-  return (
-    <div className={cx(s.morph, armed && s.morphAnimated)} style={{ height: h || undefined }}>
-      <div ref={ref}>{children}</div>
-    </div>
-  )
-}
 // Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
 // formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -447,153 +428,151 @@ export function CalendarPicker({
 
   return (
     <div className={s.root}>
-      <SizeMorph>
-        <div className={s.head}>
-          <span className={s.titleGroup}>
-            <Button
-              size="button-inline"
-              paddingX={TITLE_PAD_X}
-              className={s.titleBtn}
-              onClick={(e) => {
-                setTimeMenu(null)
-                setMenu(
-                  menu?.kind === 'month' ? null : { kind: 'month', at: anchorOf(e.currentTarget) },
-                )
-              }}
-            >
-              {cursor.toLocaleDateString('en-US', { month: 'long' })}
-            </Button>
-            <Button
-              size="button-inline"
-              paddingX={TITLE_PAD_X}
-              className={s.titleBtn}
-              onClick={(e) => {
-                setTimeMenu(null)
-                setMenu(
-                  menu?.kind === 'year' ? null : { kind: 'year', at: anchorOf(e.currentTarget) },
-                )
-              }}
-            >
-              {year}
-            </Button>
-          </span>
-          <span className={s.nav}>
-            <Button
-              size="button-inline"
-              paddingX="0"
-              icon="chevron-left"
-              iconSize="headline"
-              className={s.navBtn}
-              aria-label="Previous month"
-              onClick={() => nav(-1)}
-            />
-            <span className={s.navSegment} aria-hidden />
-            <Button
-              size="button-inline"
-              paddingX="0"
-              icon="chevron-right"
-              iconSize="headline"
-              className={s.navBtn}
-              aria-label="Next month"
-              onClick={() => nav(1)}
-            />
-          </span>
-        </div>
-        <div className={s.headDivider} />
-        <div className={s.weekRow}>
-          {WEEKDAYS.map((w) => (
-            <span key={w} className={s.weekday}>
-              {w}
-            </span>
-          ))}
-        </div>
-        <div className={s.viewport} style={{ height: gridHeight }} onWheel={onGridWheel}>
-          <div
-            className={cx(
-              s.track,
-              slide ? (slide.dir === 1 ? s.trackLeft : s.trackRight) : undefined,
-            )}
-            onAnimationEnd={() => setSlide(null)}
-            onPointerDown={onGridPointerDown}
-            onPointerMove={onGridPointerMove}
-            onPointerUp={onGridPointerUp}
-            onPointerCancel={onGridPointerUp}
+      <div className={s.head}>
+        <span className={s.titleGroup}>
+          <Button
+            size="button-inline"
+            paddingX={TITLE_PAD_X}
+            className={s.titleBtn}
+            onClick={(e) => {
+              setTimeMenu(null)
+              setMenu(
+                menu?.kind === 'month' ? null : { kind: 'month', at: anchorOf(e.currentTarget) },
+              )
+            }}
           >
-            {slide ? (
-              slide.dir === 1 ? (
-                <>
-                  {grid(prevMonth)}
-                  {grid(cursor)}
-                </>
-              ) : (
-                <>
-                  {grid(cursor)}
-                  {grid(prevMonth)}
-                </>
+            {cursor.toLocaleDateString('en-US', { month: 'long' })}
+          </Button>
+          <Button
+            size="button-inline"
+            paddingX={TITLE_PAD_X}
+            className={s.titleBtn}
+            onClick={(e) => {
+              setTimeMenu(null)
+              setMenu(
+                menu?.kind === 'year' ? null : { kind: 'year', at: anchorOf(e.currentTarget) },
               )
+            }}
+          >
+            {year}
+          </Button>
+        </span>
+        <span className={s.nav}>
+          <Button
+            size="button-inline"
+            paddingX="0"
+            icon="chevron-left"
+            iconSize="headline"
+            className={s.navBtn}
+            aria-label="Previous month"
+            onClick={() => nav(-1)}
+          />
+          <span className={s.navSegment} aria-hidden />
+          <Button
+            size="button-inline"
+            paddingX="0"
+            icon="chevron-right"
+            iconSize="headline"
+            className={s.navBtn}
+            aria-label="Next month"
+            onClick={() => nav(1)}
+          />
+        </span>
+      </div>
+      <div className={s.headDivider} />
+      <div className={s.weekRow}>
+        {WEEKDAYS.map((w) => (
+          <span key={w} className={s.weekday}>
+            {w}
+          </span>
+        ))}
+      </div>
+      <div className={s.viewport} style={{ height: gridHeight }} onWheel={onGridWheel}>
+        <div
+          className={cx(
+            s.track,
+            slide ? (slide.dir === 1 ? s.trackLeft : s.trackRight) : undefined,
+          )}
+          onAnimationEnd={() => setSlide(null)}
+          onPointerDown={onGridPointerDown}
+          onPointerMove={onGridPointerMove}
+          onPointerUp={onGridPointerUp}
+          onPointerCancel={onGridPointerUp}
+        >
+          {slide ? (
+            slide.dir === 1 ? (
+              <>
+                {grid(prevMonth)}
+                {grid(cursor)}
+              </>
             ) : (
-              grid(cursor)
-            )}
-          </div>
+              <>
+                {grid(cursor)}
+                {grid(prevMonth)}
+              </>
+            )
+          ) : (
+            grid(cursor)
+          )}
         </div>
-        <div className={s.divider} />
-        <div className={s.fields}>
-          {(() => {
-            if (endOn) {
-              const condensed = {
-                withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
-              }
-              return (
-                <>
-                  <div className={s.fieldRow}>
-                    {dateField(start, 'start', condensed)}
-                    {dateField(end, 'end', condensed)}
-                  </div>
-                  {timeOn && (
-                    <div className={s.fieldRow}>
-                      {timeField(start ? startMin : null, 'start-t', 'start')}
-                      {timeField(end ? endMin : null, 'end-t', 'end')}
-                    </div>
-                  )}
-                </>
-              )
+      </div>
+      <div className={s.divider} />
+      <div className={s.fields}>
+        {(() => {
+          if (endOn) {
+            const condensed = {
+              withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
             }
             return (
-              <div className={s.fieldRow}>
-                {dateField(start, 'date')}
-                {timeOn && timeField(start ? startMin : null, 'time', 'start')}
-              </div>
+              <>
+                <div className={s.fieldRow}>
+                  {dateField(start, 'start', condensed)}
+                  {dateField(end, 'end', condensed)}
+                </div>
+                <Reveal open={timeOn} fill>
+                  <div className={cx(s.fieldRow, s.fieldRowStacked)}>
+                    {timeField(start ? startMin : null, 'start-t', 'start')}
+                    {timeField(end ? endMin : null, 'end-t', 'end')}
+                  </div>
+                </Reveal>
+              </>
             )
-          })()}
-        </div>
-        {range && (
-          <div className={rowBox}>
-            <span className={s.switchLabel}>End Date</span>
-            <DualSwitch
-              checked={endOn}
-              ariaLabel="End Date"
-              onChange={(v) => {
-                setEndOn(v)
-                if (!v) setEnd(null)
-                setSegEdit(null)
-                closeMenus()
-              }}
-            />
-          </div>
-        )}
+          }
+          return (
+            <div className={s.fieldRow}>
+              {dateField(start, 'date')}
+              {timeOn && timeField(start ? startMin : null, 'time', 'start')}
+            </div>
+          )
+        })()}
+      </div>
+      {range && (
         <div className={rowBox}>
-          <span className={s.switchLabel}>Use Time</span>
+          <span className={s.switchLabel}>End Date</span>
           <DualSwitch
-            checked={timeOn}
-            ariaLabel="Use Time"
+            checked={endOn}
+            ariaLabel="End Date"
             onChange={(v) => {
-              setTimeOn(v)
+              setEndOn(v)
+              if (!v) setEnd(null)
               setSegEdit(null)
               closeMenus()
             }}
           />
         </div>
-      </SizeMorph>
+      )}
+      <div className={rowBox}>
+        <span className={s.switchLabel}>Use Time</span>
+        <DualSwitch
+          checked={timeOn}
+          ariaLabel="Use Time"
+          onChange={(v) => {
+            setTimeOn(v)
+            setSegEdit(null)
+            closeMenus()
+          }}
+        />
+      </div>
       <PickerMenu
         solid
         open={menu !== null}
