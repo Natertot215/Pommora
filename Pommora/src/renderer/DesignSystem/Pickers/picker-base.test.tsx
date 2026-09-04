@@ -73,6 +73,7 @@ const render = async (el: React.JSX.Element): Promise<void> => {
 }
 const find = (id: string): HTMLElement =>
   document.querySelector<HTMLElement>(`[data-id="${id}"]`) as HTMLElement
+const layerOf = (id: string): HTMLElement => find(id).closest('[data-picker-portal]') as HTMLElement
 const tab = async (shiftKey: boolean): Promise<void> => {
   await act(async () => {
     document.activeElement?.dispatchEvent(
@@ -318,7 +319,7 @@ describe('PickerMenu auto-centering', () => {
     if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
   })
 
-  const layer = (): HTMLElement => find('first').closest('[data-picker-portal]') as HTMLElement
+  const layer = (): HTMLElement => layerOf('first')
 
   it('straddles the trigger when the whole pane fits there', async () => {
     triggerCenter = 512 // mid-viewport (jsdom is 1024 wide)
@@ -412,10 +413,7 @@ describe('PickerMenu close render', () => {
       </PickerMenu>
     )
   }
-  const layer = (): HTMLElement =>
-    document
-      .querySelector('[data-picker-portal]:not([class*="backdrop"]) [data-id="body"]')
-      ?.closest('[data-picker-portal]') as HTMLElement
+  const layer = (): HTMLElement => layerOf('body')
 
   it('holds children a caller nulls in the closing tick', async () => {
     await render(<Anchored open at={{ x: 400, y: 300 }} />)
