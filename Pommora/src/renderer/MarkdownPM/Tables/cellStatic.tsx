@@ -11,11 +11,7 @@ import {
 import { titleOf } from '@shared/connections'
 import { linkActionText, linkHalves } from '../Editor/linkFormat'
 import { wikiAuthorTarget } from '../Editor/linkEdit'
-import {
-  cancelGlance,
-  closeGlance,
-  GLANCE_BODY_ATTR,
-} from '@renderer/Interface/Glance/glanceAction'
+import { cancelGlance, closeGlance, insideGlance } from '@renderer/Interface/Glance/glanceAction'
 import { dwellTarget, followTarget } from '../Editor/links'
 import { useSession } from '../../store'
 import { CITE_GLYPH } from '../Editor/citationPointer'
@@ -254,7 +250,7 @@ function StaticCellImpl({
       onContextMenu={(e) => {
         // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed
         // AND dismiss what is open — unless the gesture is inside the glance itself.
-        if (!e.currentTarget.closest(`[${GLANCE_BODY_ATTR}]`)) closeGlance()
+        if (!insideGlance(e.currentTarget)) closeGlance()
         openMenu(e)
       }}
       onMouseOver={(e) => {
@@ -266,7 +262,7 @@ function StaticCellImpl({
       onMouseOut={cancelGlance}
       onClick={(e) => {
         if (e.button !== 0) return
-        if (!e.currentTarget.closest(`[${GLANCE_BODY_ATTR}]`)) closeGlance()
+        if (!insideGlance(e.currentTarget)) closeGlance()
         const go = claimCite(e) ?? claimLink(e)
         if (go) return go()
         // A press that dragged out a selection leaves it standing — the highlight IS what it asked

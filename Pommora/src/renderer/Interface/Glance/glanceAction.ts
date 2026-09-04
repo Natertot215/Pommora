@@ -15,8 +15,14 @@ export interface GlanceRequest {
 export const GLANCE_DWELL = { link: 1000 } as const
 export type GlanceDwell = keyof typeof GLANCE_DWELL
 
-/** The pane's own body carries this attribute; an anchor inside it never arms. */
+/** The pane's own body carries this attribute. */
 export const GLANCE_BODY_ATTR = 'data-glance'
+
+/** Whether an element sits inside the open pane's body — a gesture there acts on the glance, so it
+ *  neither arms a new one nor dismisses the one it landed in. */
+export function insideGlance(el: Element): boolean {
+  return el.closest(`[${GLANCE_BODY_ATTR}]`) !== null
+}
 
 let present: ((next: GlanceRequest | null) => void) | null = null
 let pending: ReturnType<typeof setTimeout> | null = null
@@ -29,7 +35,7 @@ export function setGlancePresenter(fn: ((next: GlanceRequest | null) => void) | 
  *  nothing, and an anchor inside the pane's own body arms nothing. */
 export function armGlance(target: GlanceTarget, el: Element, dwell: GlanceDwell): void {
   cancelGlance()
-  if (el.closest(`[${GLANCE_BODY_ATTR}]`)) return
+  if (insideGlance(el)) return
   pending = setTimeout(() => {
     pending = null
     present?.({ target, el })
