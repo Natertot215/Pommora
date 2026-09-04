@@ -2,6 +2,7 @@ import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
 import { linkTarget, tokenize } from '../Tokens'
+import { insideGlance } from '@renderer/Interface/Glance/glanceAction'
 import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from '../Connections'
 import { openWebLink } from '../../Actions/openWebLink'
 import { MD_LINK_CLASS } from './decorations'
@@ -46,16 +47,17 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   }
 }
 
-/** Where a markdown link's target leads, for a caller with no editor to hit-test against — a
- *  resting table cell reads the same answer the body's own click path does. Null when it names
- *  nothing to follow. */
+/** Where a link leads — the one answer the body's click path, the wikilink's, and a resting table
+ *  cell's all read. Null when it names nothing to follow, and null for anything inside a glance:
+ *  the pane is a glance surface by contract, so neither a page nor a website follows there. */
 export function followTarget(
   target: MdTarget,
   url: string,
   api: ConnectionsApi | undefined,
   bypass: boolean,
+  el: Element,
 ): (() => void) | null {
-  if (target.kind === 'invalid') return null
+  if (target.kind === 'invalid' || insideGlance(el)) return null
   if (target.kind === 'page') {
     if (!api) return null
     const page = target.page
@@ -93,7 +95,9 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
     armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => linkUnder(view, getApi, event),
     follow: (hit, _view, event) =>
-      hit.onText ? followTarget(hit.target, hit.url, getApi(), event.metaKey) : null,
+      hit.onText
+        ? followTarget(hit.target, hit.url, getApi(), event.metaKey, event.target as Element)
+        : null,
     dwell: (hit, el) => (hit.onText ? dwellTarget(hit.target, hit.url, getApi(), el) : null),
     menu: (hit, view) => {
       const menu = getApi()?.menu

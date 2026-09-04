@@ -133,6 +133,29 @@ describe('the connection dwell', () => {
   })
 })
 
+describe('inside a glance', () => {
+  afterEach(() => document.body.removeAttribute('data-glance'))
+
+  it('neither a page link nor a website link follows on click', async () => {
+    document.body.setAttribute('data-glance', '')
+    const open = vi.fn()
+    const openExternal = vi.fn()
+    ;(window as unknown as { nexus: Record<string, unknown> }).nexus.openExternal = openExternal
+    const view = await mountEditor({
+      initialBody: '[[Alpha]] and [site](https://example.com)',
+      connections: { ...conn, open },
+    })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    const page = view.dom.querySelector('.md-connection-resolved') as HTMLElement
+    page.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(16)
+    const site = view.dom.querySelector('.md-link') as HTMLElement
+    site.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(open).not.toHaveBeenCalled()
+    expect(openExternal).not.toHaveBeenCalled()
+  })
+})
+
 describe('read-only autocomplete gate', () => {
   const coords = { left: 10, right: 10, top: 10, bottom: 20 }
   // A partial title, deliberately: a complete one suggests only itself, and the picker stands down.
