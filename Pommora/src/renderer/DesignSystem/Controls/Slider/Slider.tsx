@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
 import { GlassSegment } from '@renderer/DesignSystem/Glass'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import * as s from './slider.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { clamp } from '@shared/clamp'
@@ -35,18 +36,7 @@ export function Slider({
 }): React.JSX.Element {
   const [draft, setDraft] = useState<number | null>(null)
   const stripRef = useRef<HTMLDivElement>(null)
-  // Synchronous scrub flag — lostpointercapture fires right after a normal pointerup, and the
-  // draft-null guard would only hold as long as React happened to flush first. The unmount cleanup
-  // reasserts the committed value so a host closing mid-scrub can't strand a scrubbed preview.
-  const scrubbing = useRef(false)
-  const revertRef = useRef<() => void>(() => {})
-  revertRef.current = () => {
-    if (!scrubbing.current) return
-    scrubbing.current = false
-    onInput?.(clamp(value, min, max))
-    setDraft(null)
-  }
-  useEffect(() => () => revertRef.current(), [])
+  const begin = usePointerGesture()
   const decimals = decimalsOf(step)
   const v = clamp(draft ?? value, min, max)
   const pct = ((v - min) / (max - min)) * 100
@@ -56,9 +46,10 @@ export function Slider({
     const t = clamp((clientX - r.left) / r.width, 0, 1)
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
-  // A canceled scrub reverts through the same onInput channel before the draft clears. The ref is
-  // the guard — synchronous where the draft state waits on a render flush.
-  const revertScrub = (): void => revertRef.current()
+  const scrub = (next: number): void => {
+    setDraft(next)
+    onInput?.(next)
+  }
   return (
     <>
       <div
@@ -71,26 +62,29 @@ export function Slider({
         aria-valuenow={v}
         tabIndex={0}
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId)
-          scrubbing.current = true
-          const next = valueAt(e.clientX)
-          setDraft(next)
-          onInput?.(next)
+          let last = valueAt(e.clientX)
+          const settle = (commit: boolean): void => {
+            if (commit && last !== value) onCommit(last)
+            else if (!commit) onInput?.(clamp(value, min, max))
+            setDraft(null)
+          }
+          const started = begin({
+            el: e.currentTarget,
+            event: e,
+            activation: 0,
+            capture: true,
+            swallowActiveEscape: true,
+            onActivate: () => true,
+            onDragMove: (ev) => {
+              last = valueAt(ev.clientX)
+              scrub(last)
+            },
+            onDrop: () => settle(true),
+            onTap: () => settle(true),
+            onAbort: () => settle(false),
+          })
+          if (started) scrub(last)
         }}
-        onPointerMove={(e) => {
-          if (!scrubbing.current) return
-          const next = valueAt(e.clientX)
-          setDraft(next)
-          onInput?.(next)
-        }}
-        onPointerUp={() => {
-          if (!scrubbing.current) return
-          scrubbing.current = false
-          if (draft !== null && draft !== value) onCommit(draft)
-          setDraft(null)
-        }}
-        onPointerCancel={revertScrub}
-        onLostPointerCapture={revertScrub}
         onKeyDown={(e) => {
           if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
           e.preventDefault()
