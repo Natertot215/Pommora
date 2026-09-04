@@ -111,7 +111,7 @@ export function PickerMenu({
     return markPickerOpen()
   }, [selfManaged, mounted, modal])
   const liveRef = useRef(false)
-  liveRef.current = selfManaged && ((open ?? false) || exitClosing)
+  liveRef.current = open === true || closing
   useEffect(
     () => () => {
       if (import.meta.env.DEV && liveRef.current)
@@ -157,7 +157,7 @@ export function PickerMenu({
   useLayoutEffect(() => {
     // Freeze the pane's position through the Bloom-out: once `open` drops, a detached or moved
     // trigger must not re-measure to zeros and snap the fading pane away.
-    if (!selfManaged || !mounted || open !== true) return
+    if (!mounted || open !== true) return
     const point =
       anchorX !== undefined && anchorY !== undefined
         ? {
@@ -246,7 +246,6 @@ export function PickerMenu({
       window.removeEventListener('resize', measureOnFrame)
     }
   }, [
-    selfManaged,
     mounted,
     triggerRef,
     open,
@@ -260,7 +259,7 @@ export function PickerMenu({
   ])
 
   useEffect(() => {
-    if (!selfManaged || !onDismiss || open !== true || closing) return
+    if (!onDismiss || open !== true || closing) return
     const onKey = (e: KeyboardEvent): void => {
       // A field that handled its own Escape marks the press — the same stand-down contract
       // useDismiss honors, so abandoning a rename never takes the pane holding it.
@@ -274,7 +273,7 @@ export function PickerMenu({
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [selfManaged, onDismiss, open, closing])
+  }, [onDismiss, open, closing])
 
   const managed = selfManaged && manageFocus
   const focusReturn = useRef<HTMLElement | null>(null)
