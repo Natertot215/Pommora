@@ -14,6 +14,8 @@
 
 **Verified live over CDP against NexusOS, as distinct from traced:** a website glance on a markdown link (its cover never lifted for a slow external site and the resolve deadline closed it, the standing contract); a connection glance in the main editor that stayed through a content-view scroll, scrolled inside on `.cm-scroller`, closed on Escape, and re-glanced at the same scroll (402 → 402); a connection glance inside a Page Window tab; and, after a Gate 3 fix, the focus hand-back after a selection drag with no scroll jump. Not driven live: a table-cell link and a dashboard-tile link (no NexusOS page holds one; the unit suites cover both hosts), "Open Preview" from the native link menu (native menus are not CDP-drivable), and the edit-then-re-glance fence (unit-covered, a real page would have been mutated).
 
+**The closeout attack found no regression from the arc** and six inherited fragilities; four are fixed (`a25d7e8f`): the pane no longer registers as a modal picker, so menus and toolbar panels dismiss normally while a glance stands; a drag pinned at a cramped anchor's cap keeps the stored size; the size seeds per nexus; a table inside a glanced page no longer closes the pane, and a read-only tile's cell no longer mounts an editor. Two are logged: a website link inside a glance follows on click (your call), and one Escape both exits a tile's edit and closes a glance. Nathan's mid-closeout ruling put the glance and the autocomplete on the window glass (`37fa4c59`), and the simplifier rerun over the folds landed one `insideGlance` predicate and a supersession token on the size seed (`c5990564`).
+
 **What the reviews changed.** The plan attack before ratification folded nine findings — the scroll owner moving to `.cm-scroller`, the focus record's guards, the sweep globs, the ledger mechanism, the knob's home, the resolve-then-open order, and the seam's self-guard. The implementation review folded two: every close routes through one `dismiss` that cancels a queued retarget beat and supersedes an in-flight cold fetch. The live walkthrough found the third: CodeMirror focuses its own content inside the native mousedown, so the press record moved to `onMouseDownCapture`.
 
 #### Completion Criteria
@@ -23,7 +25,7 @@
 - [x] Simplification, comment pass, code review, and attack ran per gate; every finding folded or ruled in the plan's Log.
 - [x] Docs, guidelines, the Codebase Map, RendererRework, and the comment ledgers rewritten; the closing sweep at zero against its control.
 - [x] Handoff and Context rewritten; no History entry, by ruling.
-- [ ] Nathan's own pass: the glance in the running app, the Page Window routes, and InterfacePM's Glance Pane section.
+- [ ] Nathan's own pass: the glance in the running app (now on the window glass), the Page Window routes, InterfacePM's Glance Pane section, and the F4 call — should a website link inside a glance follow on click?
 
 #### Next Session
 
@@ -84,7 +86,7 @@
 **COMMITS**
 
 - `f19ca8bd` the ratified plan · `6992b60f` Task 1 · `c54a2c57` Task 2 · `e26a0095` Task 3 · `97ac9438` Gate 1
-- `6f7cb913` Task 4 · `70afe9da` Task 5 · `3c1010d4` Tasks 6–8 · `2ef7e752` Task 9 · `99acb80b` Gate 3 · `cf2ba0fe` the comment pass and residue sweep · the closeout record
+- `6f7cb913` Task 4 · `70afe9da` Task 5 · `3c1010d4` Tasks 6–8 · `2ef7e752` Task 9 · `99acb80b` Gate 3 · `cf2ba0fe` the comment pass and residue sweep · `a3ce42eb` the record · `37fa4c59` the window glass · `a25d7e8f` the attack's folds · `c5990564` the simplifier rerun · `7343d5ac` the comment pass
 - The parallel session's, interleaved and not this session's: the `pickers` commits from `e7e3bd17` onward.
 
 #### Handoff Guidelines
