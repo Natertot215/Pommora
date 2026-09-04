@@ -16,9 +16,9 @@ This arc builds the substrate only. No inspector tab strip, no new tile kinds, n
 1. One pointer engine: `Sensors/pointerDrag.ts` folds into `gesture.ts`; the embed tile's handle runs on `ResizeFrame`.
 2. `SurfacePM/` becomes `Tiles/` and every "block" leaves the tile system: files, types, channels, classes, variables, user strings, docs, tests.
 3. The three tile kinds are declared through a recipe (a shared table beside the schemas, a renderer table, and main's per-kind copy arm) that the host, the menu model, both menu presenters, main's lifecycle, the Space seed, and the remint read; no `.type ===` / `!==` branch on a tile kind survives outside the tables.
-4. `TileHostRef` enumerates its current consumers, and a new member is one union entry, one `hostDir` arm, one `listTileHosts` entry, one watcher ignore arm, and one classify resolver — five named sites, no hidden ones.
+4. `TileHostRef` enumerates its current consumers, and a new member is seven named sites, no hidden ones: the union entry, `tileHostKey`, `coerceTileHost`, the `hostDir` arm, the `listTileHosts` entry, the watcher ignore arm, and the classify resolver. A host is a folder; that is what the document's identity is.
 5. The document lives in `<hostDir>/_tiles.json`, reloads live on external change (the layout and entries; markdown bodies stay unwatched, recorded in Sequenced After), migrates once from `local_state`, and the nexus-wide inspector configuration has a reserved key in `state.json` with `MAX_INSPECTOR_TABS = 6`.
-6. Stale prose and doubled mechanisms go: the shared contract's sidecar comment, the README, `has-live-editor`, the zoom ramp's seven CSS rules (the variable is set inline, as the embed already does), and the two default tile heights (`NEW_TILE_H` 160 for a grid mint, `TILE_DEFAULT_PX` 320 for an embed) become one named pair in `shared/tiles.ts`.
+6. Stale prose and doubled mechanisms go: the shared contract's sidecar comment, the README, `has-live-editor`, the zoom ramp's seven CSS rules (the variable is set inline, as the embed already does). `NEW_TILE_H` (a grid mint) and `TILE_DEFAULT_PX` (an embed's default) stay two constants: two concepts, and a `.css.ts` reads the second.
 
 **Acceptance — the whole thing working:** With the app open on a Space, copying that Space's `_tiles.json` from a second Nexus (a different layout, one view tile with a re-minted config id) over the open one re-renders the grid within a second without a remount; dragging a tile edge, a tile handle, a window corner, the glance edge, the sidebar strip, and an embed tile's bottom edge each writes through `beginPointerGesture` (a breakpoint or log there fires for all six); `rg -F "SurfacePM" src` → 0, `rg -o 'blk-[A-Za-z0-9_-]+' src | wc -l` → 0, `rg -o 'spm-[A-Za-z0-9_-]+' src | wc -l` → 0, and `rg -n "\.type\s*[!=]==\s*'(markdown|page|view)'" src` → 0; the `local_state` table holds no `blockDoc` row after one open.
 
@@ -33,6 +33,8 @@ This arc builds the substrate only. No inspector tab strip, no new tile kinds, n
 - `.nexus/homepage/**` is unwatched and tile `.md` files under a Space are unwatched by depth → the `_tiles.json` arm is added by exact filename, before those ignores (Task 8).
 - `readScope`/`readKey` answer empty before `openSessionDb` (`index.ts:388`) → the migration runs beside `runAssetMigration` (`index.ts:407`), never in `prepareOpenedNexus` (Task 9).
 - `blockDoc` rows are never deleted and `nexus.db` is device-local → the migration's rule is file-wins: a row writes a file only where none exists, and every row is dropped after (Task 9).
+- `flush()` is fire-and-forget and `readTileDocAt` takes no lock → the push handler awaits the last issued save's promise before it re-reads, never `flush()` (Task 8).
+- `.css.ts` files evaluate at build only and fail there on a bad import → nothing under `DesignSystem/Tokens` imports `shared/tiles.ts` (Task 5, 10).
 - Chokidar never descends an ignored directory, and `ignoredUnder` ignores `.nexus/homepage` itself (`watcher.ts:71`) → the homepage exception must exempt the directory entry, not only the file (Task 8).
 - The write-echo window keys on the path and drops, not defers (`watcher.ts:107`) → the doc path is exempt from echo suppression the way `isNavPath` is (`watcher.ts:98-104`), and the pending save flushes before a re-read so the app's own echo is never stale (Task 8).
 - `rmwJsonStrict` refuses a corrupt file with no write (`atomicWrite.ts:88-92`) → the read side must name corrupt as distinct from absent, and the host quarantines it (Task 7).
@@ -92,6 +94,7 @@ This arc builds the substrate only. No inspector tab strip, no new tile kinds, n
 | `Pommora/src/renderer/SurfacePM/README.md:32-41` | `core/`, `sensors/` lowercase; "codec … repairs (renormalize, collapse, dedupe) rather than rejects" | the dirs are `Core/`, no `Sensors/` after Task 2; the codec parses | 2, 3 |
 | `Pommora/src/renderer/SurfacePM/SurfaceView.tsx:526-529` | "letting React move the keyed DOM nodes to match silently releases pointer capture (the pointerup never lands → zombie gesture" | window-level listeners; the stable order stays for reflow, not capture | 2 |
 | `Pommora/src/main/blocks.ts:1-9` | "ONE row in nexus.db, keyed by host" | a file per host | 7 |
+| `Pommora/src/main/blocks.ts:74-77` | "one synchronous pair … which is what the file lock used to buy" | the lock is back; the pair is the rmw's mutate | 7 |
 | `Pommora/src/main/blocks.ts:250-251` | "The shared walk under both the link-index read and the rename heal" | only the rename heal reads it | 4 |
 | [[SurfacePM]] (whole) | "Each block is one row in `nexus.db`", "Block Surface", "BlockHost", `SurfacePM/block-tile-base.css` | rename + storage | 3, 4, 7 |
 | [[DesignSystemPM]] roster row | `SurfacePM` module path | `Tiles/` | 3 |
@@ -347,7 +350,7 @@ export type TileEntry = MarkdownTileEntry | PageTileEntry | ViewTileEntry
 export function knownTile(raw: unknown): TileEntry | null
 export interface TileDoc { layout: unknown; blocks: unknown[]; locked: boolean }       // the field IS the row's JSON key; it becomes `tiles` with the file format in Task 7, never here
 export interface TileDocPatch { layout?: unknown; blocks?: unknown[]; locked?: boolean }
-export function tilePatchProblem(patch: TileDocPatch): string | null
+export function tilePatchProblem(patch: TileDocPatch): string | null   // the key it checks renames with the field in Task 7: `'tiles' in patch`
 
 // src/shared/bridge.ts — 'tiles:get' 'tiles:save' 'tiles:createMarkdown' 'tiles:removeTile' 'tiles:readMarkdown'
 //   'tiles:writeMarkdown' 'tiles:convertToPage' 'tiles:convertToView' 'tiles:duplicateTile'
@@ -358,7 +361,7 @@ export function tilePatchProblem(patch: TileDocPatch): string | null
 // src/renderer/Tiles/TileHost.tsx — setTileZoom, removeTile, duplicateTile; root class 'tile-host', has-live-editor dropped
 // src/renderer/Tiles/tileZoom.ts — `tile-zoom-${…}`; tile-grid.css — .tile-grid .tile .tile-handle .tile-placement, --tile-zoom
 // src/renderer/Tiles/Core/{model,rects}.ts — TileLayout, TileGeometry; TileGridProps
-// src/renderer/Tiles/tileZoom.ts — ZoomStep loses `cls`; TileHost sets `--tile-zoom` inline from zoomStep(entry.zoom).factor (the embed's applyTileZoom, embedWidget.tsx:464-468, already does exactly this); tile-grid.css's seven zoom rules deleted; TileZoom.test.ts asserts factors, not class strings
+// src/renderer/Tiles/tileZoom.ts — ZoomStep loses `cls`; TileGridProps gains `tileStyle?: (id: string) => CSSProperties | undefined`, and TileHost sets `--tile-zoom` through it from zoomStep(entry.zoom).factor, so the variable lands on `.tile`, the element that transitions it (the embed's applyTileZoom, embedWidget.tsx:464-468, sets it on the span for the same reason); tile-grid.css's seven zoom rules deleted; TileZoom.test.ts asserts factors, not class strings
 // src/renderer/MarkdownPM/Styles.css:1 — @property --tile-zoom; Views/TableView/table-view.css, Views/CardView/cards-view.css read --tile-zoom
 // src/renderer/Interface/Interface.css:63,65,71 — :not(:has(.tile-host))
 // main strings: 'Unknown tile host.' (one site — tiles:get and tiles:save route through tileHostAnd like the other seven) 'Invalid tile-doc patch.' 'Tile file not found.'
@@ -417,7 +420,7 @@ export interface TileKind {
   /** The kind owns a `<id>.md` beside the document: minted empty, trashed on remove or convert, copied on duplicate, walked by the rename heal. */
   fileBacked: boolean
   /** The handle menu's link rows, in order; `source: 'none'` renders the row refused. */
-  menuRows: ReadonlyArray<{ label: 'Link View' | 'Link Page' | 'Source'; source: 'pages' | 'views' | 'none' }>
+  menuRows: ReadonlyArray<{ label: string; source: 'pages' | 'views' | 'none' }>   // a later kind names its own row without editing a union
 }
 export const TILE_KINDS: Record<TileType, TileKind>   // { markdown: {…, menuRows: [Link View→views, Link Page→pages]}, page: {…, [Source→pages]}, view: {…, [Source→none]} }
 // knownTile keeps its explicit z.union([markdownEntry, pageEntry, viewEntry]); the table references the same three members
@@ -427,7 +430,6 @@ export const TILE_KINDS: Record<TileType, TileKind>   // { markdown: {…, menuR
 //   export const TILE_COPY: Partial<Record<TileType, (raw: Record<string, unknown>) => Record<string, unknown>>> = { view: re-mint views[].config.id }  — raw in, raw out; unknown types pass through
 //   duplicateTile and remint.ts's copy both map entries through TILE_COPY[type] ?? identity
 // src/main/CRUD/contextWrite.ts — the seed builds its four entries through mintSeed('markdown', id) exported from tiles.ts
-// src/shared/tiles.ts — export const TILE_HEIGHT = { grid: 160, embed: 320 } replaces NEW_TILE_H and DesignSystem/Tokens/size.css.ts's TILE_DEFAULT_PX (its `--tile-default-height` var reads the same pair through theme-vars)
 // src/renderer/Tiles/TileHost.tsx:289 — mutateViewEntry's `!== 'view'` guard goes: mutateEntry is offered to every kind, and only the view surface calls it
 ```
 
@@ -476,7 +478,7 @@ export interface TileSurface<E extends TileEntry = TileEntry> {
   render: (ctx: TileRenderContext & { entry: E }) => React.ReactNode   // a dead reference returns <div className="tile-inert"/>
   sourceInfo?: (entry: E, pagesById: ReadonlyMap<string, ConnPage>) => { title: string; icon?: string; path: string; id: string } | undefined
 }
-export const TILE_SURFACES: Record<TileType, TileSurface>
+export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> }   // the mapped type is what compiles under strict (render is contravariant in E); the ONE cast lives at renderTile's dispatch, nowhere per surface
 
 // TileHost.tsx — renderTile = useCallback((id) => { const entry = entries.get(id); return entry ? TILE_SURFACES[entry.type].render({...}) : <div className="tile-inert"/> }, [...same deps])
 //   menu source identity → TILE_SURFACES[type].sourceInfo?.(entry, pagesById) at both sites
@@ -516,7 +518,7 @@ export const TILE_SURFACES: Record<TileType, TileSurface>
 
 **Why:** A layout is content; it belongs with the host it arranges and travels with the Nexus. One file per host with one writer keeps it clear of the identity sidecars' fourteen writers.
 
-**Now** — `rg -F "'blockDoc'" src` → 11 (scope union, `readTileDoc`/`writeTileDoc`, the Space seed, `copyTileDoc` read + write, tests):
+**Now** — `rg -F "'blockDoc'" src` → 10 (scope union, `readTileDoc`/`writeTileDoc`, the Space seed, `copyTileDoc` read + write, tests):
 
 ```ts
 // src/main/tiles.ts:66-86
@@ -538,13 +540,15 @@ export const tileDocPath = (hostDirAbs: string): string => join(hostDirAbs, TILE
 // src/main/tiles.ts — the directory is the primitive; a host resolves to one only at the IPC edge
 export interface TileDoc { layout: unknown; tiles: unknown[]; locked: boolean }        // the file's key is `tiles`; the field renames with it here
 export interface TileDocPatch { layout?: unknown; tiles?: unknown[]; locked?: boolean }
+export function coerceTileDoc(raw: unknown): TileDoc   // the shape the row guaranteed and a hand-edited file does not: tiles must be an array, locked a strict true, layout left raw for the codec
 export async function readTileDocAt(dir: string): Promise<TileDoc>
-// readJsonStrict: absent → empty doc. Corrupt → the bytes move aside to `_tiles.json.bad` (one rename, never overwritten if one exists) and the host opens empty and writable; a corrupt file must never read as empty while the writer refuses it, or every later save silently fails
+// read-only by construction: absent → empty doc; corrupt → empty doc, logged; any object → coerceTileDoc
 export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => TileDoc): Promise<Result<null>>
-// rmwJsonStrict(tileDocPath(dir), mutate, () => EMPTY_DOC) — the file's only writer, under its own lock; a read-modify-write stays one atomic pair (setTiles, removeTile, duplicate all mutate inside the lock); the IPC patch form is `(cur) => ({ ...cur, ...patch })` at its one call site
+// mkdir(dir) then rmwJsonStrict(tileDocPath(dir), (cur) => mutate(coerceTileDoc(cur)), () => EMPTY_DOC) — the file's only writer, under its own lock; a read-modify-write stays one atomic pair (setTiles, removeTile, duplicate all mutate inside the lock); the IPC patch form is `(cur) => ({ ...cur, ...patch })` at its one call site
+// a corrupt file is adjudicated HERE, under the lock, by the one writer: the bytes move to `_tiles.json.bad-<ulid>` (always a fresh name) and the mutate runs on EMPTY_DOC — so the read that showed the host empty is followed by a write that lands, and no read ever writes
 // The JSON on disk: { "layout": …, "tiles": [ … ], "locked": false } — entries raw, foreign keys survive as today
 
-// src/main/CRUD/contextWrite.ts — createSpace: four .md seeds, then writeTileDocAt(created.value.path, seed) — files first, doc second, one crash ordering, no context re-load
+// src/main/CRUD/contextWrite.ts — createSpace: four .md seeds, then writeTileDocAt(created.value.path, () => seed) — files first, doc second, one crash ordering, no context re-load
 // src/main/remint.ts — the folder copy already carries _tiles.json; remintSidecar's pass also rewrites tileDocPath(dir) through writeTileDocAt with TILE_COPY; copyTileDoc deleted
 // src/main/index.ts — all nine handlers route through tileHostAnd (root + coerced host + dir); tiles:get/save lose their hand-rolled preamble and the sessionDb() gate (the db is not the store); adopting() gate stays; tiles:get answers the empty doc for a host whose dir no longer resolves, as the row did
 // src/shared/tiles.ts — TileHostRef comment: the two hosts that exist; a new member is one union entry + one hostDir arm (`tiles.ts`)
@@ -554,8 +558,9 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Verify — automated**
 
-- [ ] Red first: `main/tiles.test.ts` — `writeTileDocAt` then `readTileDocAt` round-trips layout, tiles, locked, and a foreign key on an entry; `_space.json` is byte-identical before and after (the existing assertion at `blocks.test.ts:81-85`, kept); an absent file reads empty; a malformed file reads empty and is not rewritten. Red on the signature, then green. (Serialization under the lock is `atomicWrite.test.ts`'s existing coverage.)
-- [ ] `main/tiles.test.ts` — a corrupt `_tiles.json` reads empty, is renamed `.bad`, the next write lands, and a second corrupt file never overwrites the first `.bad`.
+- [ ] Red first: `main/tiles.test.ts` — `writeTileDocAt` then `readTileDocAt` round-trips layout, tiles, locked, and a foreign key on an entry; `_space.json` is byte-identical before and after (the existing assertion at `blocks.test.ts:81-85`, kept); an absent file reads empty. Red on the signature, then green. (Serialization under the lock is `atomicWrite.test.ts`'s existing coverage.)
+- [ ] `main/tiles.test.ts` — a corrupt `_tiles.json` reads empty and is not touched by the read; the next `writeTileDocAt` moves it to a fresh `.bad-<ulid>` and lands; a second corrupt file gets its own `.bad-` name; `"tiles": {}` coerces to `[]` on read and inside the mutate; `tilePatchProblem({ tiles: 'x' })` refuses; the homepage host's dir is created by the first write.
+- [ ] Requirement 4's seven sites are the only places `rg -n "'homepage'" src/shared/tiles.ts src/main/tiles.ts src/main/watcher.ts src/main/watchPatch.ts` matches a host-kind branch; listed in the Log against the count.
 - [ ] `contextWrite.test.ts` — the Space seed lands in `_tiles.json` with four markdown entries and the 2×2 layout; `_space.json` carries no `tiles` key.
 - [ ] `remint.test.ts:220-284` — the copied Space's `_tiles.json` view config id is a fresh ULID and the source's is unchanged.
 - [ ] `rg -F "writeKey('blockDoc'" src` → 0 outside Task 9's migration; `rg -F "'Unknown tile host.'" src` → 1. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
@@ -571,7 +576,7 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Why:** A file that syncs is a file that changes underneath an open host. The watcher names it, main pushes the host key, and the host re-reads. Most recent wins.
 
-**Now** — `rg -F "homepage-leaf" src` → 3 (classify, patch, test); `useTileDoc` loads once per `hostKey` and has no subscription:
+**Now** — `rg -F "homepage-leaf" src` → 4 (the `WatchClass` member, classify, patch, test); `useTileDoc` loads once per `hostKey` and has no subscription:
 
 ```ts
 // src/main/watcher.ts:66-79 — ignoredUnder: `.nexus/homepage/**` entirely; `.nexus/contexts/*/*/**.md` at depth ≥ 5
@@ -586,12 +591,13 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 // src/main/watcher.ts — ignoredUnder gains two exceptions: the homepage directory entry itself (chokidar never descends an ignored dir) and basename TILE_DOC_FILENAME under it; a Space's _tiles.json is already watched (neverWatched skips `.`-prefixed segments only; the depth rule ignores markdown alone)
 //   the doc path is exempt from echo suppression exactly as isNavPath is (watcher.ts:98-104): an external write to it is never swallowed, so the app's own save echoes back too — harmless, because useTileDoc flushes before it re-reads and the re-read returns what it just wrote
 // src/main/watchPatch.ts — WatchClass gains { kind: 'tiles-leaf'; host: TileHostRef }; classify: basename === TILE_DOC_FILENAME → tiles-leaf
-//   (homepage: `.nexus/homepage/_tiles.json`; space: `.nexus/contexts/<ctx>/<space>/_tiles.json` resolved through findSpace; a miss → 'ignored': nothing is mounted on it)
+//   (homepage: `.nexus/homepage/_tiles.json`; space: `.nexus/contexts/<ctx>/<space>/_tiles.json` resolved through findSpace; a miss → 'ignored': nothing is mounted on it; a basename starting with TILE_DOC_FILENAME + '.bad' → 'ignored', never a full refresh)
 //   the arm patches nothing on the tree; settle pushes 'tiles:changed' with the host
 // src/shared/bridge.ts — 'tiles:changed': { push: [host: TileHostRef] }  (the push-kind entry the bridge already models for nexus:changed)
 // src/preload/index.ts — window.nexus.onTilesChanged(fn): () => void
-// src/renderer/Tiles/useTileDoc.ts — useEffect: subscribe; on a push whose tileHostKey matches: flush the pending save first (the last writer to disk wins, which is what most-recent-wins means), then re-read and replace layout + tiles + lock;
-//   a push arriving mid-gesture (TileGrid reports resizing / lifted / settling through one `busy` boolean it already holds as state) is held and applied at the gesture's teardown — a drop would otherwise commit a layout reduced from a pre-push origin
+// src/renderer/Tiles/useTileDoc.ts — useEffect: subscribe; useTileDoc keeps `lastSave: Promise<unknown> | null` (every save path — setLayout's flush, commitLayout, saveTiles — assigns it); on a push whose tileHostKey matches: `await lastSave`, then re-read and replace layout + tiles + lock — the last writer to disk wins, which is what most-recent-wins means;
+//   TileGridProps gains `onBusyChange?: (busy: boolean) => void`, busy = resizingId !== null || tileDrag !== null || settle !== null (never `tracking`, which clears on a timer); a push arriving while busy is held and applied when busy → false
+//   Ruling: a held push is applied after the drop's save — the drop is the newer write, so its layout stands and the entries come from disk; an entry the layout no longer names renders inert until its owner arranges it (the same rule the row had for a foreign entry)
 ```
 
 **Assumed by:** none later.
@@ -602,12 +608,12 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 - [ ] Both halves of the ignore change: `ignoredUnder` returns false for `_tiles.json` under the homepage dir and true for `<ulid>.md` there; a Space's `_tiles.json` was watched before and classifies `tiles-leaf` after (before: `full-refresh`).
 - [ ] `useTileDoc.test.tsx` (new): a `tiles:changed` push for the mounted host replaces the layout; one for another host does not; a pending save is cancelled by the push.
 - [ ] Echo: a new `watcher.test.ts` case (none exists for echo today): an external change to `_tiles.json` 200ms after the app's own write reaches `batch` (exempt), while the same timing on `_space.json` is still swallowed.
-- [ ] `useTileDoc.test.tsx`: a push during a pending save flushes then re-reads (the file carries the save); a push while `busy` applies after teardown, not during.
+- [ ] `useTileDoc.test.tsx`: a push during an in-flight save awaits it and the re-read carries the save; a push while busy applies when busy clears, not during; a `.bad-` file classifies `ignored`.
 - [ ] Full gate green; dev process restarted.
 
 **Verify — user**
 
-- [ ] With a Space open: drag a tile, then within two seconds edit its `_tiles.json` in a text editor and save — the grid takes the edit; then the same on the Homepage. Paste a foreign `_tiles.json` while a markdown tile is mid-edit and confirm the caret and unsaved text survive (an Unknown from the attack round; if they don't, the entry replace defers behind `editingId` the way it defers behind a gesture).
+- [ ] With a Space open: drag a tile, then within two seconds edit its `_tiles.json` in a text editor and save — the grid takes the edit; then the same on the Homepage.
 
 #### Task 9: The migration
 
@@ -654,7 +660,7 @@ export async function migrateTileRows(root: string): Promise<{ written: number; 
 
 **Requirement:** 5
 
-**Why:** The inspector's nexus-wide configuration has a named home and a named cap before anything writes them, so the tab feature later is one reader and one writer. Rides the shared-contract commit of Task 7.
+**Why:** The inspector's nexus-wide configuration has a named home and a named cap before anything writes them, so the tab feature later is one reader and one writer. Its own commit.
 
 **Now** — `state.json` has two consumed keys (`collection_order`, `space_orders`); `rg -F "MAX_INSPECTOR_TABS" src` → 0.
 
@@ -718,6 +724,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: `MAX_INSPECTOR_TABS` and `INSPECTOR_STATE_KEY` are declared unread — a reserved contract Nathan asked for, exempt from the reachability razor.
 - 09-04-2026, Claude: a Space folder copied while the app runs renders with the source's view-config ids until the next open re-mints them — accepted; the open-time pass is the one remint, and a `full-refresh` does not re-mint (attack finding 8).
 - 09-04-2026, Claude: `tiles:get` for a host whose folder is gone answers the empty doc, as the row did; the walk navigates away on its own (attack finding 17).
+- 09-04-2026, Claude: a corrupt `_tiles.json` is adjudicated by the writer under the lock, never by a read; the read shows the host empty, the next save quarantines and lands.
 - 09-04-2026, Claude: the simplification round's twenty findings folded (blocks-key timing, rmwJsonStrict, dir-first primitives, the copy arm in main, static menu rows, the inline zoom variable, listTileHosts-driven migration, counts).
 
 ### Open Against Later Tasks
@@ -786,7 +793,7 @@ Everything else is the standard below.
 - [ ] A scratch Nexus round-trips a Space layout through quit and reopen.
 - [ ] Editing `_tiles.json` by hand updates the open Space live.
 - [ ] NexusOS opens once with every layout intact and `_tiles.json` in every host folder.
-- [ ] The Scale ramp applies at every step on a Space tile (the inline variable replaced seven classes).
+- [ ] The Scale ramp applies and animates at every step on a Space tile (the inline variable replaced seven classes).
 
 **The record**
 
