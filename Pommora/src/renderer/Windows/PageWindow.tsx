@@ -48,7 +48,7 @@ import {
 } from '@renderer/Properties/Assignment/columnLabel'
 import './page-window.css'
 
-const DRAG_SURFACES = '.page-window-body, .page-window-tabwrap, .tab-scroll, .tab-strip'
+const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
 
 const SLIDE_PX = 14
 

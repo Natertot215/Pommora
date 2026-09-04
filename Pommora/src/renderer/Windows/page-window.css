@@ -13,7 +13,6 @@
 }
 
 .page-window-body {
-  padding-top: var(--window-toolbar-h);
   --over-scroll-fade: var(--window-toolbar-h);
 }
 
