@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-04-2026              | PM-127 | The Resize Frame                                     |
 | 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026              | PM-125 | Page File History                                    |
 | 09-02-2026              | PM-124 | In-App Confirmation & Notifications                  |
@@ -129,6 +130,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-127 || The Resize Frame
+**DATE:** 09-04-2026
+
+Every drag-to-size and drag-to-move gesture that acts on one box — the floating windows' corners and move, the glance pane's free edges, the sidebar and inspector strips, the window side panes — runs through one hook, `useResizeFrame` in `Interactions/ResizeFrame.tsx`, on the shared pointer engine; `FloatingWindow.tsx`, `floating-window.css`, and `resize-strip.css` are gone with their three hand-rolled capture paths. A host owns its rect and whatever remembers it (a window's session size, the glance's per-nexus size, the store's pane widths) and declares its floor, its ceiling — a value, or a function read live per move for the glance's anchor band — whether it is `equilateral` (the box holds its origin and grows the same size from either side) or free (a leading-edge pull carries the origin, and `move` carries it alone, clamped so a grab's worth stays on screen), and whether it is `outlined`, which tints the chassis stroke through one `:has()` rule on the handles' parent. The frame reports `move`, `drop`, and on Escape `abort` with the start rect, so a cancelled resize lands back where it began, and a window's Escape no longer closes it mid-drag. Surface tiles and MarkdownPM's embed tile keep their own gestures but take the frame's `.resize-edge-*` classes, so every band and cursor has one definition in `resize-frame.css`; a simplification pass caught a window reopening at its last position instead of centered and settled the strip and inflow placement so nothing depends on stylesheet order.
+
+- **Commits:** `68b1c824^..68b1c824`
+- **Diff:** Net −150 | +476 / −531
 
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
