@@ -77,8 +77,6 @@ textarea,
 .shell {
   position: relative;
   height: 100dvh;
-  /* The inspector (right, --io) and the sidebar (left, --io-l) slide on the shared paneSlide
-     overlay — the sidebar opens by default, the inspector closed. */
   --io: 0;
   --io-l: 1;
   transition:

@@ -29,9 +29,7 @@
   ); /* KNOB — breathing room off the pane's seam after the swallow */
   /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the trailing cluster. */
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
-  /* The tab strip's clearance past the floating clusters — the one definition read by whichever
-     wrapper holds the strip: PageWindow's toolbar slot (.page-window .window-tabwrap) and the
-     NavWindow's own tab row (.navwindow-tabs). The trailing side carries the pane squeeze. */
+  /* Also read by nav-window.css's .navwindow-tabs. */
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px); /* KNOB — past the scan glyph */
   --window-tab-clear-r: calc(
     var(--window-panel-inset) +
@@ -101,9 +99,7 @@
   right: calc(var(--window-panel-inset) + 4px);
 }
 
-/* The scroll core plus the right-pane squeeze. The top padding clears the floating toolbar clusters
-   — one landing for every window that mounts a .window-body; a window with --window-toolbar-h: 0
-   (its content owns the top) collapses it away. */
+/* The scroll core plus the right-pane squeeze; the top padding clears the floating clusters. */
 .window-body {
   flex: 1;
   min-width: 0;
@@ -161,8 +157,6 @@
   transform: translateX(-50%) translateX(var(--page-window-morph-slide));
 }
 
-/* The strip wrap inside WindowTabStrip: layout-neutral, so nesting it (the NavWindow mounts it inside
-   its own tab row) adds nothing. The placement that holds it owns the height and clearance. */
 .window-tabwrap {
   position: relative;
   flex: 1;
@@ -170,9 +164,6 @@
   display: flex;
   align-items: center;
 }
-/* PageWindow's placement: the strip sits in the zero-height floating toolbar, so it stands its own
-   height and clears the clusters. Empty space stays click-through (the toolbar's pointer-events:
-   none) so the window still drags there — only the tabs (tab-base.css) opt back in. */
 .page-window .window-tabwrap {
   align-self: flex-start;
   height: var(--window-toolbar-h);
