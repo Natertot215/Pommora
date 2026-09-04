@@ -11,7 +11,11 @@ import {
 import { titleOf } from '@shared/connections'
 import { linkActionText, linkHalves } from '../Editor/linkFormat'
 import { wikiAuthorTarget } from '../Editor/linkEdit'
-import { cancelGlance, closeGlance } from '@renderer/Interface/Glance/glanceAction'
+import {
+  cancelGlance,
+  closeGlance,
+  GLANCE_BODY_ATTR,
+} from '@renderer/Interface/Glance/glanceAction'
 import { dwellTarget, followTarget } from '../Editor/links'
 import { useSession } from '../../store'
 import { CITE_GLYPH } from '../Editor/citationPointer'
@@ -149,6 +153,7 @@ function StaticCellImpl({
   text,
   ordinalOf,
   connections,
+  readOnly,
   onActivate,
   onCommit,
   onSelect,
@@ -161,6 +166,8 @@ function StaticCellImpl({
   cites?: string
   ordinalOf?: (label: string) => number | null
   connections?: () => ConnectionsApi | undefined
+  /** A read-only host offers a resting cell's links and menu, never its editor. */
+  readOnly?: () => boolean
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   /** Replace the cell's whole text — how a resting cell performs a link action without becoming an editor. */
   onCommit: (text: string) => void
@@ -246,8 +253,8 @@ function StaticCellImpl({
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
         // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed
-        // AND dismiss what is open.
-        closeGlance()
+        // AND dismiss what is open — unless the gesture is inside the glance itself.
+        if (!e.currentTarget.closest(`[${GLANCE_BODY_ATTR}]`)) closeGlance()
         openMenu(e)
       }}
       onMouseOver={(e) => {
@@ -259,11 +266,13 @@ function StaticCellImpl({
       onMouseOut={cancelGlance}
       onClick={(e) => {
         if (e.button !== 0) return
-        closeGlance()
+        if (!e.currentTarget.closest(`[${GLANCE_BODY_ATTR}]`)) closeGlance()
         const go = claimCite(e) ?? claimLink(e)
         if (go) return go()
         // A press that dragged out a selection leaves it standing — the highlight IS what it asked
-        // for. A plain click carries none, and enters the cell at the point it landed on.
+        // for. A plain click carries none, and enters the cell at the point it landed on — where
+        // the host can edit; a read-only host lets the click reach whatever the host does with it.
+        if (readOnly?.()) return
         if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
         onActivate({ x: e.clientX, y: e.clientY })
       }}
@@ -271,7 +280,7 @@ function StaticCellImpl({
         // A sweep that crossed into the table from the prose: the page's document and the cell's are
         // two documents, so only the half that reached this cell can be acted on. Re-seat it here.
         // A sweep that began inside the table is the cell-to-cell highlight, and stands as drawn.
-        if (e.button !== 0) return
+        if (e.button !== 0 || readOnly?.()) return
         const sel = window.getSelection()
         const anchor = sel?.anchorNode
         if (!sel || sel.isCollapsed || !anchor) return

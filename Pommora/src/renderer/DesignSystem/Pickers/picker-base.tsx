@@ -74,6 +74,7 @@ export function PickerMenu({
   maxHeight,
   bareSurface = false,
   manageFocus = true,
+  modal = true,
   contentClassName,
   style,
   onDirection,
@@ -95,6 +96,9 @@ export function PickerMenu({
   maxHeight?: number
   bareSurface?: boolean
   manageFocus?: boolean
+  /** Whether the pane owns outside clicks and Escape while it stands, so the host under it stays;
+   *  a glance surface passes false and lets the app's own dismissals through. */
+  modal?: boolean
   contentClassName?: string
   style?: CSSProperties
   onDirection?: (dir: PickerDirection) => void
@@ -103,9 +107,9 @@ export function PickerMenu({
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
   const closing = selfManaged && exitClosing
   useEffect(() => {
-    if (!selfManaged || !mounted) return
+    if (!selfManaged || !mounted || !modal) return
     return markPickerOpen()
-  }, [selfManaged, mounted])
+  }, [selfManaged, mounted, modal])
   const liveRef = useRef(false)
   liveRef.current = selfManaged && ((open ?? false) || exitClosing)
   useEffect(

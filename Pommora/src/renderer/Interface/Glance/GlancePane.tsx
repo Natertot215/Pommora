@@ -46,13 +46,17 @@ const clampSize = (s: GlanceSize): GlanceSize => ({
 // per-machine. The accessor clamps on read (a stored value from before a bounds change must not
 // reopen out of bounds) and writes through on set.
 let sizeCache: GlanceSize | null = null
-let sizeSeeded = false
+let sizeNexus: string | null = null
 
-function seedGlanceSize(): void {
-  if (sizeSeeded) return
-  sizeSeeded = true
+// Per nexus, since the row is the nexus's own; a load that fails (no nexus yet) leaves the seed
+// unclaimed so the next mount tries again.
+function seedGlanceSize(nexusId: string | undefined): void {
+  if (!nexusId || sizeNexus === nexusId) return
+  sizeCache = null
   void window.nexus.glance.load().then((r) => {
-    if (r.ok && r.value) sizeCache = clampSize(r.value)
+    if (!r.ok) return
+    sizeNexus = nexusId
+    if (r.value) sizeCache = clampSize(r.value)
   })
 }
 
@@ -134,7 +138,8 @@ export function GlancePane(): React.JSX.Element {
     setShownState(null)
   }, [])
   const [size, setSize] = useState(glanceSize)
-  useEffect(seedGlanceSize, [])
+  const nexusId = useSession((s) => s.tree?.nexus.id)
+  useEffect(() => seedGlanceSize(nexusId), [nexusId])
   const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   // State, not a ref: the pane's portal lands a beat after the open render (exit-presence mounts
@@ -218,14 +223,16 @@ export function GlancePane(): React.JSX.Element {
         },
         onDrop: () => {
           markResizing(false)
-          // Only the dragged axes persist — the other rides the stored value, or a width-only
-          // drag near a cramped anchor would silently ratchet the universal height down to that
-          // anchor's band-clamped render.
+          // Only the dragged axes persist — the other rides the stored value, and a dragged axis that
+          // ended pinned at a cramped anchor's cap keeps the stored value too, or either drag would
+          // silently ratchet the universal size down to that anchor's band-clamped render.
           const stored = glanceSize()
-          setGlanceSize({
-            w: axes.x ? liveRef.current.w : stored.w,
-            h: axes.y ? liveRef.current.h : stored.h,
-          })
+          const cap = maxSize()
+          const kept = (axis: 'w' | 'h'): number =>
+            liveRef.current[axis] >= cap[axis] && stored[axis] > cap[axis]
+              ? stored[axis]
+              : liveRef.current[axis]
+          setGlanceSize({ w: axes.x ? kept('w') : stored.w, h: axes.y ? kept('h') : stored.h })
         },
         onAbort: () => {
           markResizing(false)
@@ -411,6 +418,7 @@ export function GlancePane(): React.JSX.Element {
       open={shown !== null}
       triggerRef={anchorRef}
       manageFocus={false}
+      modal={false}
       origin="center"
       onDirection={setDir}
     >
