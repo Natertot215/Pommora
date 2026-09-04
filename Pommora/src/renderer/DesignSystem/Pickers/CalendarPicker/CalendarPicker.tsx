@@ -251,7 +251,7 @@ export function CalendarPicker({
           const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i)
           const k = keyOf(d)
           const sel = k === start || k === end
-          const mid = ranged && start !== null && end !== null && k > start && k < end
+          const mid = ranged && k > start && k < end
           const col = i % 7
           return (
             <button
