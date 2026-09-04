@@ -12,32 +12,32 @@ import {
   closeTabIn,
   deriveTarget,
   openTabIn,
-  type PreviewState,
-  type PreviewTab,
+  type WindowState,
+  type WindowTab,
   reorderTabIn,
 } from '../Windows/windowTabs'
 import { clearWindowCache, dropWindowCache } from '../Windows/windowCache'
 import { stashWindowMorph } from '../Windows/windowMorph'
 import type { SessionState, Slice } from './sessionState'
 
-export type PreviewTarget = { id: string; path: string }
+export type WindowTarget = { id: string; path: string }
 
-export interface PreviewSlice {
-  preview: PreviewState | null
-  previewsFile: WindowsFile
-  previewSlide: { dir: 'back' | 'fwd'; seq: number } | null
-  previewExit: 'dismiss' | 'engulf' | 'morph'
-  openPreview: (target: PreviewTarget) => void
+export interface WindowSlice {
+  pageWindow: WindowState | null
+  windowsFile: WindowsFile
+  windowSlide: { dir: 'back' | 'fwd'; seq: number } | null
+  windowExit: 'dismiss' | 'engulf' | 'morph'
+  openWindow: (target: WindowTarget) => void
   /** The page whose history window is open; null = closed. */
-  historyTarget: PreviewTarget | null
-  openHistory: (target: PreviewTarget) => void
+  historyTarget: WindowTarget | null
+  openHistory: (target: WindowTarget) => void
   closeHistory: () => void
-  openNavPreview: () => void
-  openPreviewTab: (target: PreviewTarget) => void
-  activatePreviewTab: (id: string) => void
-  reorderPreviewTabs: (activeId: string, overId: string) => void
-  closePreviewTab: (id: string, exit?: 'dismiss' | 'engulf') => void
-  closePreview: (reason?: 'dismiss' | 'engulf') => void
+  openNavWindow: () => void
+  openWindowTab: (target: WindowTarget) => void
+  activateWindowTab: (id: string) => void
+  reorderWindowTabs: (activeId: string, overId: string) => void
+  closeWindowTab: (id: string, exit?: 'dismiss' | 'engulf') => void
+  closeWindow: (reason?: 'dismiss' | 'engulf') => void
   setNavOverride: (on: boolean) => void
   navOpen: boolean
   openNav: () => void
@@ -49,36 +49,33 @@ export interface PreviewSlice {
   browserSeq: number
   openBrowser: (url: string) => void
   closeBrowser: () => void
-  reconcilePreview: (index: ReconcileIndex) => void
-  resetPreview: () => void
+  reconcileWindow: (index: ReconcileIndex) => void
+  resetWindow: () => void
 }
 
-export const previewTargetOf = (s: SessionState): PreviewTarget | null => deriveTarget(s.preview)
+export const windowTargetOf = (s: SessionState): WindowTarget | null => deriveTarget(s.pageWindow)
 
 const PER_NEXUS = {
   navOpen: false,
-  preview: null,
+  pageWindow: null,
   historyTarget: null,
-  previewsFile: EMPTY_WINDOWS,
-  previewSlide: null,
-} satisfies Partial<PreviewSlice>
+  windowsFile: EMPTY_WINDOWS,
+  windowSlide: null,
+} satisfies Partial<WindowSlice>
 
-export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
-  let previewSlideSeq = 0
-  const stampByOrder = (
-    cur: PreviewState,
-    nextId: string,
-  ): { dir: 'back' | 'fwd'; seq: number } => {
+export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
+  let windowSlideSeq = 0
+  const stampByOrder = (cur: WindowState, nextId: string): { dir: 'back' | 'fwd'; seq: number } => {
     const from = cur.tabs.findIndex((t) => t.id === cur.activeTabId)
     const to = cur.tabs.findIndex((t) => t.id === nextId)
-    return { dir: to < from ? 'back' : 'fwd', seq: ++previewSlideSeq }
+    return { dir: to < from ? 'back' : 'fwd', seq: ++windowSlideSeq }
   }
 
   // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by
   // the stored (page-only) order.
-  const toPreviewRecord = (p: PreviewState): WindowSetRecord => {
+  const toWindowRecord = (p: WindowState): WindowSetRecord => {
     const pages = p.tabs.filter(
-      (t): t is PreviewTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
+      (t): t is WindowTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
     )
     return {
       tabs: pages.map((t) => ({ target: toNavRef(t.target) })),
@@ -90,22 +87,22 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
   }
 
   const saveWindowsFile = (file: WindowsFile): void => {
-    set({ previewsFile: file })
+    set({ windowsFile: file })
     void (window as { nexus?: typeof window.nexus }).nexus?.windows
       ?.save(file)
       .catch(() => undefined)
   }
 
-  const mirrorPreviews = (retire?: string): void => {
+  const mirrorWindows = (retire?: string): void => {
     const s = get()
-    const p = s.preview
-    let file = s.previewsFile
+    const p = s.pageWindow
+    let file = s.windowsFile
     if (retire && retire !== p?.originId) {
       const { [retire]: _dropped, ...origins } = file.origins
       file = { ...file, origins }
     }
     if (p) {
-      const rec = toPreviewRecord(p)
+      const rec = toWindowRecord(p)
       file =
         p.flavor === 'nav'
           ? { ...file, navSet: rec, open: { flavor: 'nav', originId: p.originId } }
@@ -122,13 +119,13 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
 
   const reconcileRecord = (
     rec: WindowSetRecord | null | undefined,
-  ): { tabs: PreviewTab[]; activeTab: PreviewTab | null } => {
+  ): { tabs: WindowTab[]; activeTab: WindowTab | null } => {
     if (!rec) return { tabs: [], activeTab: null }
     const tree = get().tree
     const index = tree ? reconcileIndexOf(tree) : null
     const seen = new Set<string>()
-    const tabs: PreviewTab[] = []
-    let activeTab: PreviewTab | null = null
+    const tabs: WindowTab[] = []
+    let activeTab: WindowTab | null = null
     rec.tabs.forEach((t, i) => {
       if (t.target.kind !== 'page' || !index) return
       const target = liveTarget(index, t.target)
@@ -142,114 +139,114 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
     return { tabs, activeTab }
   }
 
-  const commitPreview = (
-    next: PreviewState | null,
-    extra?: { previewSlide: ReturnType<typeof stampByOrder> },
+  const commitWindow = (
+    next: WindowState | null,
+    extra?: { windowSlide: ReturnType<typeof stampByOrder> },
   ): void => {
-    const prev = get().preview
-    set({ preview: next, ...extra })
+    const prev = get().pageWindow
+    set({ pageWindow: next, ...extra })
     const retire =
       prev && prev.flavor === 'page' && prev.originId !== next?.originId ? prev.originId : undefined
-    mirrorPreviews(retire)
+    mirrorWindows(retire)
   }
 
   return {
     ...PER_NEXUS,
-    previewExit: 'dismiss',
+    windowExit: 'dismiss',
     openHistory: (target) => set({ historyTarget: target }),
     closeHistory: () => set({ historyTarget: null }),
-    openPreview: (target) => {
-      const cur = get().preview
+    openWindow: (target) => {
+      const cur = get().pageWindow
       if (cur?.flavor === 'page' && cur.originId === target.id) return
-      const { tabs: restored, activeTab } = reconcileRecord(get().previewsFile.origins[target.id])
+      const { tabs: restored, activeTab } = reconcileRecord(get().windowsFile.origins[target.id])
       const tabs =
         restored.length > 0
           ? restored
           : [{ id: makeTabId(), target: { kind: 'page' as const, ...target } }]
-      const preview: PreviewState = {
+      const pageWindow: WindowState = {
         flavor: 'page',
         originId: target.id,
         tabs,
         activeTabId: (activeTab ?? tabs[0]).id,
       }
       clearWindowCache()
-      // previewExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
-      set({ preview, navOpen: false, previewExit: 'dismiss' })
-      mirrorPreviews()
+      // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
+      set({ pageWindow, navOpen: false, windowExit: 'dismiss' })
+      mirrorWindows()
     },
-    openNavPreview: () => {
-      const cur = get().preview
+    openNavWindow: () => {
+      const cur = get().pageWindow
       if (cur?.flavor === 'nav') return
-      // A live page preview morphs into the NavWindow rather than dismiss + fresh open — its
+      // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its
       // rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
       const morphing = cur?.flavor === 'page'
       if (morphing) stashWindowMorph()
-      const { tabs: pages } = reconcileRecord(get().previewsFile.navSet)
+      const { tabs: pages } = reconcileRecord(get().windowsFile.navSet)
       const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }
-      const preview: PreviewState = {
+      const pageWindow: WindowState = {
         flavor: 'nav',
         originId: 'navwindow',
         tabs: [sentinel, ...pages],
         activeTabId: sentinel.id,
       }
       clearWindowCache()
-      set({ preview, previewExit: morphing ? 'morph' : 'dismiss' })
-      mirrorPreviews()
+      set({ pageWindow, windowExit: morphing ? 'morph' : 'dismiss' })
+      mirrorWindows()
     },
-    setNavOverride: (on) => saveWindowsFile({ ...get().previewsFile, navOverride: on }),
-    openPreviewTab: (target) => {
-      const cur = get().preview
+    setNavOverride: (on) => saveWindowsFile({ ...get().windowsFile, navOverride: on }),
+    openWindowTab: (target) => {
+      const cur = get().pageWindow
       if (!cur) {
-        get().openPreview(target)
+        get().openWindow(target)
         return
       }
       const next = openTabIn(cur, makeTabId, target)
       if (next === cur) return
       const spawned = next.tabs.length > cur.tabs.length
-      commitPreview(next, {
-        previewSlide: spawned
-          ? { dir: 'fwd', seq: ++previewSlideSeq }
+      commitWindow(next, {
+        windowSlide: spawned
+          ? { dir: 'fwd', seq: ++windowSlideSeq }
           : stampByOrder(cur, next.activeTabId),
       })
     },
-    activatePreviewTab: (id) => {
-      const cur = get().preview
+    activateWindowTab: (id) => {
+      const cur = get().pageWindow
       if (!cur || cur.activeTabId === id || !cur.tabs.some((t) => t.id === id)) return
       const next = { ...cur, activeTabId: id }
-      commitPreview(next, { previewSlide: stampByOrder(cur, id) })
+      commitWindow(next, { windowSlide: stampByOrder(cur, id) })
     },
-    reorderPreviewTabs: (activeId, overId) => {
-      const cur = get().preview
+    reorderWindowTabs: (activeId, overId) => {
+      const cur = get().pageWindow
       if (!cur) return
       const next = reorderTabIn(cur, activeId, overId)
       if (next === cur) return
-      commitPreview(next)
+      commitWindow(next)
     },
-    closePreviewTab: (id, exit) => {
-      const cur = get().preview
+    closeWindowTab: (id, exit) => {
+      const cur = get().pageWindow
       if (!cur) return
       const next = closeTabIn(cur, id)
       if (next === cur) return
       if (next === null) {
         clearWindowCache()
-        set({ previewExit: exit ?? 'dismiss' })
+        set({ windowExit: exit ?? 'dismiss' })
       } else dropWindowCache(id)
-      commitPreview(next)
+      commitWindow(next)
     },
-    closePreview: (reason) => {
+    closeWindow: (reason) => {
       clearWindowCache()
-      set({ preview: null, previewExit: reason ?? 'dismiss' })
-      mirrorPreviews()
+      set({ pageWindow: null, windowExit: reason ?? 'dismiss' })
+      mirrorWindows()
     },
 
     openNav: () => {
       set({ navOpen: true })
-      get().openNavPreview()
+      get().openNavWindow()
     },
     closeNav: () => {
       clearWindowCache()
-      set({ navOpen: false, preview: null })
-      mirrorPreviews()
+      set({ navOpen: false, pageWindow: null })
+      mirrorWindows()
     },
     toggleNav: () => {
       if (get().navOpen) get().closeNav()
@@ -269,8 +266,8 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
 
     // A deleted page's flush would hit a dead path, which the crud guard refuses — the stale
     // body is never written anywhere.
-    reconcilePreview: (index) => {
-      const cur = get().preview
+    reconcileWindow: (index) => {
+      const cur = get().pageWindow
       if (cur) {
         const deadIds: string[] = []
         const repath = new Map<string, string>()
@@ -282,7 +279,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
         }
         if (deadIds.length > 0 || repath.size > 0) {
           for (const id of deadIds) dropWindowCache(id)
-          let next: PreviewState | null = cur
+          let next: WindowState | null = cur
           for (const id of deadIds) next = next && closeTabIn(next, id)
           if (next && repath.size > 0)
             next = {
@@ -294,13 +291,13 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
                   : t
               }),
             }
-          commitPreview(next)
+          commitWindow(next)
         }
       }
       const history = get().historyTarget
       if (history && reconcileWith(index, { kind: 'page', ...history }).kind === 'none')
         set({ historyTarget: null })
-      const file = get().previewsFile
+      const file = get().windowsFile
       const dead = Object.keys(file.origins).filter(
         (id) => reconcileWith(index, { kind: 'page', id, path: '' }).kind === 'none',
       )
@@ -311,7 +308,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
       }
     },
 
-    resetPreview: () => {
+    resetWindow: () => {
       set(PER_NEXUS)
       clearWindowCache()
     },

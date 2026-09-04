@@ -7,22 +7,22 @@ import { createChromeSlice } from './Store/chromeSlice'
 import { createConfigSlice } from './Store/configSlice'
 import { createNavigationSlice } from './Store/navigationSlice'
 import { createNexusSlice } from './Store/nexusSlice'
-import { createPreviewSlice } from './Store/previewSlice'
+import { createWindowSlice } from './Store/windowSlice'
 import { createRenameSlice } from './Store/renameSlice'
 import type { SessionState } from './Store/sessionState'
 
 export type { SelectTarget } from '@shared/types'
 export type { SessionState } from './Store/sessionState'
 export type { PageSlot, PageTarget } from './Store/navigationSlice'
-export type { PreviewTarget } from './Store/previewSlice'
+export type { WindowTarget } from './Store/windowSlice'
 export { frozenOf, pageBody, readyPageIds, shownDetail, shownPage } from './Store/navigationSlice'
-export { previewTargetOf } from './Store/previewSlice'
+export { windowTargetOf } from './Store/windowSlice'
 export { citationsVisible } from './Store/configSlice'
 
 export const useSession = create<SessionState>()((...a) => ({
   ...createNexusSlice(...a),
   ...createNavigationSlice(...a),
-  ...createPreviewSlice(...a),
+  ...createWindowSlice(...a),
   ...createChromeSlice(...a),
   ...createConfigSlice(...a),
   ...createRenameSlice(...a),

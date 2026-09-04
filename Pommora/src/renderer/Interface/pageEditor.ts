@@ -5,7 +5,7 @@ import { blockMoveChanges } from '@renderer/MarkdownPM/Editor/listDragModel'
 import { headingParts } from '@renderer/MarkdownPM/Detect'
 
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
-// or preview's editor can never be picked up instead.
+// or window's editor can never be picked up instead.
 let pageView: EditorView | null = null
 
 /** PageView hands its editor's view in at mount and null at teardown, through MarkdownEditor's

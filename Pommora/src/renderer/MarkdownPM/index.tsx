@@ -91,7 +91,7 @@ interface Props {
   connections?: ConnectionsApi
   /** The embed-host chain above this editor — feeds the tile facet (cycle guard + nesting depth). */
   embedAncestors?: readonly string[]
-  /** Per-machine tile heights for this page; absent (preview, blocks) hides the resize handle. */
+  /** Per-machine tile heights for this page; absent (window, blocks) hides the resize handle. */
   embedHeights?: EmbedHeightsApi
   embedZooms?: EmbedHeightsApi
   folds?: FoldsApi

@@ -11,10 +11,10 @@ export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
   activePath: string | undefined,
 ): WarmSeam | undefined {
-  const activeTabId = useSession((s) => s.preview?.activeTabId)
+  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
 
   const captureIfLive = useCallback((tabId: string, entry: WindowCacheEntry): void => {
-    const p = useSession.getState().preview
+    const p = useSession.getState().pageWindow
     if (p?.tabs.some((t) => t.id === tabId)) captureWindowCache(tabId, entry)
   }, [])
 

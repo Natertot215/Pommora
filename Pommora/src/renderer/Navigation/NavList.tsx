@@ -64,8 +64,8 @@ export function NavRowMenu({
               const livePage = liveTarget(reconcileIndexOf(st.tree), target)
               if (livePage?.kind !== 'page') break
               const ref = { id: livePage.id, path: livePage.path }
-              if (st.navOpen && (st.previewsFile.navOverride ?? true)) st.openPreviewTab(ref)
-              else st.openPreview(ref)
+              if (st.navOpen && (st.windowsFile.navOverride ?? true)) st.openWindowTab(ref)
+              else st.openWindow(ref)
             }
             break
           case 'pin':

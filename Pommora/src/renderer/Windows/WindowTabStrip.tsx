@@ -11,7 +11,7 @@ import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { useHeld } from '@renderer/Interactions/useHeld'
 import { useSession } from '../store'
-import type { PreviewTab } from './windowTabs'
+import type { WindowTab } from './windowTabs'
 import '../Tabs/tab-base.css'
 
 const BASE_MS = ms(duration.base)
@@ -20,7 +20,7 @@ const EXIT_MS = BASE_MS + ms(duration.fast)
 const TAB_ICON = 'control'
 
 interface Entry {
-  tab: PreviewTab
+  tab: WindowTab
   res: ResolvedNav | null
 }
 
@@ -34,12 +34,12 @@ export function WindowTabStrip({
   index: ResolveIndex | null
   title: React.ReactNode
 }): React.JSX.Element {
-  const preview = useSession((s) => s.preview)
-  const activatePreviewTab = useSession((s) => s.activatePreviewTab)
-  const closePreviewTab = useSession((s) => s.closePreviewTab)
-  const reorderPreviewTabs = useSession((s) => s.reorderPreviewTabs)
-  const tabs = preview?.tabs
-  const activeTabId = preview?.activeTabId
+  const pageWindow = useSession((s) => s.pageWindow)
+  const activateWindowTab = useSession((s) => s.activateWindowTab)
+  const closeWindowTab = useSession((s) => s.closeWindowTab)
+  const reorderWindowTabs = useSession((s) => s.reorderWindowTabs)
+  const tabs = pageWindow?.tabs
+  const activeTabId = pageWindow?.activeTabId
 
   const entries = useMemo<Entry[]>(
     () =>
@@ -59,7 +59,7 @@ export function WindowTabStrip({
     const entry = entries[i]
     if (!entry) return
     setGhosts((m) => new Map(m).set(id, { entry, index: i }))
-    closePreviewTab(id)
+    closeWindowTab(id)
     setTimeout(() => {
       setGhosts((m) => {
         const next = new Map(m)
@@ -116,7 +116,7 @@ export function WindowTabStrip({
                 .map((e) => e.entry.tab.id)}
               layout="list"
               axis="x"
-              onReorder={reorderPreviewTabs}
+              onReorder={reorderWindowTabs}
             >
               <div className="tab-strip" role="tablist" aria-label="Preview tabs">
                 {renderEntries.map(({ entry, ghost }, i) => (
@@ -127,12 +127,12 @@ export function WindowTabStrip({
                         aria-hidden
                       />
                     )}
-                    <PreviewTabItem
+                    <WindowTabItem
                       entry={entry}
-                      navFlavor={preview?.flavor === 'nav'}
+                      navFlavor={pageWindow?.flavor === 'nav'}
                       active={!ghost && entry.tab.id === activeTabId}
                       closing={ghost}
-                      onActivate={() => activatePreviewTab(entry.tab.id)}
+                      onActivate={() => activateWindowTab(entry.tab.id)}
                       onClose={() => requestClose(entry.tab.id)}
                     />
                   </Fragment>
@@ -146,7 +146,7 @@ export function WindowTabStrip({
   )
 }
 
-function PreviewTabItem({
+function WindowTabItem({
   entry,
   navFlavor,
   active,

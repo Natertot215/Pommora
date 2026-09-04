@@ -3,37 +3,37 @@ import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 
-export interface PreviewTab {
+export interface WindowTab {
   id: string
   target: WindowTabTarget
 }
 
-export interface PreviewState {
+export interface WindowState {
   /** 'page' = summoned from a page open; 'nav' = the NavWindow flavor (map-tab sentinel first). */
   flavor: 'page' | 'nav'
   /** The durable set's key; re-parents to the left-most survivor on origin close. */
   originId: string
-  tabs: PreviewTab[]
+  tabs: WindowTab[]
   activeTabId: string
 }
 
 const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
 export function openTabIn(
-  p: PreviewState,
+  p: WindowState,
   makeId: () => string,
   target: { id: string; path: string },
-): PreviewState {
+): WindowState {
   const existing = p.tabs.find((t) => targetPageId(t.target) === target.id)
   if (existing) {
     return existing.id === p.activeTabId ? p : { ...p, activeTabId: existing.id }
   }
-  const tab: PreviewTab = { id: makeId(), target: { kind: 'page', ...target } }
+  const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
   return { ...p, tabs: [...p.tabs, tab], activeTabId: tab.id }
 }
 
 /** The map sentinel is immovable AND un-landable — it holds slot 1. */
-export function reorderTabIn(p: PreviewState, activeId: string, overId: string): PreviewState {
+export function reorderTabIn(p: WindowState, activeId: string, overId: string): WindowState {
   const from = p.tabs.findIndex((t) => t.id === activeId)
   const to = p.tabs.findIndex((t) => t.id === overId)
   if (from === -1 || to === -1 || from === to) return p
@@ -41,7 +41,7 @@ export function reorderTabIn(p: PreviewState, activeId: string, overId: string):
   return { ...p, tabs: moveItem(p.tabs, from, to) }
 }
 
-export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
+export function closeTabIn(p: WindowState, id: string): WindowState | null {
   const idx = p.tabs.findIndex((t) => t.id === id)
   if (idx === -1) return p
   if (p.tabs[idx].target.kind === 'navwindow') return p // the map tab is perma-pinned
@@ -59,7 +59,7 @@ export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
 /** The page the window is showing — the active tab's own target, so a subscriber sees one
  *  reference per state; the nav flavor's map tab is no page. */
 export function deriveTarget(
-  p: PreviewState | null,
+  p: WindowState | null,
 ): Extract<WindowTabTarget, { kind: 'page' }> | null {
   if (!p) return null
   const active = p.tabs.find((t) => t.id === p.activeTabId)

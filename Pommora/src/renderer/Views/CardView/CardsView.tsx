@@ -133,7 +133,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     select,
     tree,
   } = host
-  const openPreview = useSession((s) => s.openPreview)
+  const openWindow = useSession((s) => s.openWindow)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
 
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
@@ -169,7 +169,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const owner =
     source.kind === 'collection' ? source : tree ? findCollectionForSet(tree, source.id) : undefined
   const openPage = (row: ViewRow, newTab: boolean): void => {
-    if (owner?.openIn === 'page-preview' && !newTab) openPreview({ id: row.id, path: row.path })
+    if (owner?.openIn === 'page-preview' && !newTab) openWindow({ id: row.id, path: row.path })
     else void select({ kind: 'page', id: row.id, path: row.path }, { newTab })
   }
 

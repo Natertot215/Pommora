@@ -46,7 +46,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   const page = target.page
   const ref = { kind: 'page', id: page.id, path: page.path } as const
   const s = useSession.getState()
-  const { tabs, pinned, preview } = s
+  const { tabs, pinned, pageWindow } = s
   const ctx: ConnMenuContext = {
     ...shared,
     hasAlias: target.hasAlias,
@@ -58,14 +58,14 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         : isOpenInTabs(tabs, pinned, ref)
           ? 'tab'
           : 'closed',
-    previewing: deriveTarget(preview)?.id === page.id,
+    previewing: deriveTarget(pageWindow)?.id === page.id,
   }
   void window.nexus.connMenu(ctx).then((action) => {
     switch (action) {
       case null:
         return
       case 'title:preview':
-        useSession.getState().openPreview({ id: page.id, path: page.path })
+        useSession.getState().openWindow({ id: page.id, path: page.path })
         return
       case 'title:newtab':
         void useSession.getState().select(ref, { newTab: true })
