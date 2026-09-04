@@ -145,7 +145,7 @@ The calls only Nathan can make; each deletes a row above when taken, and is take
 8. **The three "preview" strings** — what word replaces it?
 9. **Scope of the rework itself** — taken: everything is in scope, behavior included, the DesignSystemPM pending items with it.
 10. **The nested picker backdrop** — `menuBackdrop` sits one step under `menu`, so a picker opened from inside another picker's pane can't catch clicks on that pane; OptionEditPopup hand-rolls a capture listener for it. Moving `backdrop` to the `menu` step lets DOM order sort nesting and deletes the hand-roll; the cost is that a click on the parent pane closes the child and is swallowed.
-11. **TableView's `lastPicker` hold** — redundant for the datetime branch now that PickerMenu holds its own children through the exit; the picker branch still needs the cell for its anchor. CardPickerHost's live `triggerRef` beside its `anchorX` may be dispensable for the same reason.
+11. **CardPickerHost's live `triggerRef` beside its `anchorX`** — PickerMenu no longer re-places during the exit, so the ref may be dispensable for that mount.
 
 ---
 

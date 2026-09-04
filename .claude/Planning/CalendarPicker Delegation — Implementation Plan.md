@@ -367,8 +367,8 @@ export const fieldRowStacked = style({ paddingTop: '6px' })
 **Verify — user**
 
 - [ ] TableView datetime cell: navigate from a 5-week month to a 6-week month; the grid slides and the pane grows on one beat.
-- [ ] Toggle Use Time: the pane's bottom edge either holds or eases; it never snaps.
-- [ ] Showcase CalendarPicker (`range`): End Date on, then Use Time on; the second time row unfolds (menu-recipe beat, `fast`) and the pane grows with it.
+- [ ] Toggle Use Time in single mode: the one field row changes by ~2px (the time field is taller than the date field), instantly; nothing eases a 2px sibling swap.
+- [ ] Showcase CalendarPicker (`range`): with Use Time already on, End Date on unfolds the second time row and End Date off folds it (both directions, menu-recipe beat); Use Time on/off with End Date on does the same.
 - [ ] The grid ease reads correctly with the pane flipped upward.
 
 #### Task 5: Delete the `closing` prop
@@ -437,8 +437,11 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 
 ### Open Against Later Tasks
 
+- Gate 1 code review (Unproven, all three): a `header`/`footer`/`maxHeight` that flips in the closing tick would change the scroll-frame wrap mid-exit (no caller does); the backdrop, `data-picker-live`, and `pointerEvents: none` still gate on `closing` rather than `open`, a one-frame inconsistency only a non-discrete close could reach; `TileHandleMenu` mints `triggerRef={{ current }}` per render (pre-existing, neutralized by the `setPos` gate).
 ### Deviations
 
+- Gate 2 attack review folded: the second time row's `Reveal` moved outside the `endOn` branch (`open={endOn && timeOn}`) so it unfolds and folds in both toggle orders instead of mounting expanded; `scrollFrameBody` (`menu-base.css.ts`) gained `scrollbarWidth: 'none'`, which the deleted `menuList` rule used to carry and which the showcase bundle's missing global `::-webkit-scrollbar` rule had exposed for every menu there; the Sequenced After line proposing to fold TableView's `lastPicker` was wrong (that hold is what keeps the picker element rendered through its exit; PickerMenu's hold covers only a rendered pane) and was removed here and from RendererRework §3.
+- Use Time in single mode moves the pane by 2px instantly (measured 275→273); the acceptance line claiming it never snaps was rewritten to the measured fact.
 - A peer session works this branch concurrently (the Glance rename). Its staged renames rode Task 3's commit `ecc20fe5` (both `git add <paths>` and `git commit --only <paths>` swept the already-staged index entries); that commit's tree is broken by the peer's half-landed rename, not by this range. From Task 4 on, foreign staged paths are unstaged before each commit and re-staged after.
 - The same peer session ran `git stash` mid-Task 4 (`stash@{0}` on `ecc20fe5`), which carried away half of this plan's uncommitted Task 4 edits; they were re-applied idempotently on the current tree. That stash is the peer's and was left untouched; it still holds a copy of those edits.
 - Whole-tree `npm run typecheck` and `npm run test` are red during execution on the peer's in-flight files (`Interface/Glance/*`, `PageView`, `MarkdownPM/*`); every gate here is read scoped to this plan's files, with the failing paths recorded.
@@ -447,12 +450,21 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 ### Sequenced After
 
 - **Nested backdrop z-order** (decision log F2): `backdrop` at `stack.top.menu` so DOM order sorts nesting; would delete OptionEditPopup's capture listener. Needs Nathan's ruling on the swallowed click.
-- **TableView's `lastPicker` hold** is redundant for the datetime branch once Task 1 lands; the picker branch still needs the cell for its anchor. Fold when TableView is next opened. (Fix with closeout)
 - **CardPickerHost** passes `anchorX` plus a live `triggerRef`; after Task 1 the exit no longer re-places, so the `triggerRef` may be dispensable for that mount.(sweep on closeout)
 - **DesignSystemPM.md:302** still names the deleted `PointMenu`.
 
 ### Closeout
 
+**Live drive, 09-04-2026, over CDP on 9333** (the iteration window mounted CalendarPicker behind two buttons: a `range={false}` mount opening downward mid-window, a `range` mount opening near the bottom edge; scaffolding reverted at closeout; 14 screenshots in the session scratchpad):
+
+- Month dropdown opened under the Month title (12 rows, capped list); clicking Year swapped the list in place (21 rows) without an exit; Escape peeled the dropdown alone, the rows visible through the exit (`data-picker-live` gone, 21 rows still rendered), and the calendar pane stayed.
+- Minute dropdown opened above its segment (`direction="up"`, pane bottom 413 against a segment at ~430), first row focused; Tab moved focus 00→05 inside the dropdown; an outside click at (40,40) peeled only the dropdown; the calendar stayed.
+- Double-click on a segment produced the inline input with focus; Escape abandoned it and the calendar pane stayed open.
+- With the Month dropdown open, toggling Use Time closed it (the pane's height moved 275→273 on the sub-pixel row change).
+- Nav from February 2026 (4 rows) to March (5 rows): pane height sampled 274→278→288→294→298→300 across ~280ms, the viewport's computed `transition: height 0.28s`.
+- Range mount near the bottom: End Date on left the height at 274 (the row swaps content); Use Time on revealed the second time row (274→308, 34→37 buttons). The pane had decided `down` at open (it fit at 274) and grew past the viewport bottom (1050 vs 1027) — pre-existing behavior of the once-per-open flip decision, identical under SizeMorph; noted for Nathan, not changed.
+- End Date path (Nathan's ask, driven on the `range` mount): End Date on filled the second date field with a placeholder; picking Feb 12 set both fields (`2026-02-01`, `2026-02-12`) and painted the 10-cell band; Use Time on revealed the second time row (274→308) with start 9:00 AM and end 5:00 PM; the end-hour segment opened its dropdown above itself with the current hour checked, and a pick landed; End Date off cleared the end field and the band and the pane returned to one row (276).
+- Code-only delta over the range, tests excluded, this plan's paths only: **+283 −377 = −94**.
 ---
 
 ## Completion Criteria
