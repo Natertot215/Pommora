@@ -1,15 +1,11 @@
 import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
-import { createPortal } from 'react-dom'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { OverScroll } from '@renderer/Interactions/OverScroll'
 import { clamp } from '@shared/clamp'
 import { PickerMenu, PickerRow } from '../picker-base'
-import { useExitPresence } from '@renderer/Animation/useExitPresence'
-import { useHeld } from '@renderer/Interactions/useHeld'
-import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { pad } from '@renderer/DesignSystem/Util/pad'
 import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
@@ -21,36 +17,13 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const HOURS_24 = Array.from({ length: 24 }, (_, h) => h)
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
-type TriggerRect = { x: number; y: number; w: number; h: number }
-const rectOf = (el: HTMLElement): TriggerRect => {
-  const r = el.getBoundingClientRect()
-  return { x: r.x, y: r.y, w: r.width, h: r.height }
-}
+/** KNOB — the dropdown list's ceiling. */
+const DROPDOWN_MAX_HEIGHT = 136
 
-function PortalMenu({
-  rect,
-  children,
-}: {
-  rect: TriggerRect
-  children: ReactNode
-}): React.JSX.Element {
-  return createPortal(
-    <div
-      data-calmenu
-      style={{
-        position: 'fixed',
-        left: rect.x,
-        top: rect.y,
-        width: rect.w,
-        height: rect.h,
-        zIndex: stack.top.menuOverlay,
-        pointerEvents: 'none',
-      }}
-    >
-      {children}
-    </div>,
-    document.body,
-  )
+type Anchor = { x: number; y: number; h: number }
+const anchorOf = (el: HTMLElement): Anchor => {
+  const r = el.getBoundingClientRect()
+  return { x: r.left + r.width / 2, y: r.top, h: r.height }
 }
 
 function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
@@ -108,51 +81,21 @@ export function CalendarPicker({
   const [end, setEnd] = useState<string | null>(null)
   const [endOn, setEndOn] = useState(false)
   const [timeOn, setTimeOn] = useState(initHasTime)
-  const [menu, setMenu] = useState<{ kind: 'month' | 'year'; rect: TriggerRect } | null>(null)
+  const [menu, setMenu] = useState<{ kind: 'month' | 'year'; at: Anchor } | null>(null)
   const [timeMenu, setTimeMenu] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
-    rect: TriggerRect
+    at: Anchor
   } | null>(null)
-  const menuPresence = useExitPresence(menu !== null)
-  const timeMenuPresence = useExitPresence(timeMenu !== null)
-  const lastMenu = useHeld(menu, menu !== null)
-  const lastTimeMenu = useHeld(timeMenu, timeMenu !== null)
+  const closeMenus = (): void => {
+    setMenu(null)
+    setTimeMenu(null)
+  }
   const [segEdit, setSegEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     draft: string
   } | null>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!menu && !timeMenu) return
-    const close = (): void => {
-      setMenu(null)
-      setTimeMenu(null)
-    }
-    const onDown = (e: PointerEvent): void => {
-      const t = e.target as HTMLElement
-      if (rootRef.current?.contains(t) || t.closest('[data-calmenu]')) return
-      close()
-    }
-    const onScroll = (e: Event): void => {
-      if ((e.target as HTMLElement)?.closest?.('[data-calmenu]')) return
-      close()
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      close()
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    document.addEventListener('scroll', onScroll, true)
-    document.addEventListener('keydown', onKey, true)
-    return () => {
-      document.removeEventListener('pointerdown', onDown, true)
-      document.removeEventListener('scroll', onScroll, true)
-      document.removeEventListener('keydown', onKey, true)
-    }
-  }, [menu, timeMenu])
   const drag = useRef<{ which: 'start' | 'end'; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const [startMin, setStartMin] = useState(
@@ -203,8 +146,7 @@ export function CalendarPicker({
 
   const nav = (dir: 1 | -1): void => {
     if (slide) return
-    setMenu(null)
-    setTimeMenu(null)
+    closeMenus()
     setSlide({ dir, from: cursor })
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1))
   }
@@ -366,8 +308,7 @@ export function CalendarPicker({
     (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
   const hourText = (v: number): string => (twelve ? String(v) : pad(v))
 
-  const timeOptions = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element | null => {
-    if (!timeMenuPresence.mounted || !lastTimeMenu) return null
+  const timeRows = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element[] => {
     const mins = minsOf(which)
     const setMins = setMinsFor(which)
     const current = part === 'h' ? hourShown(mins) : mins % 60
@@ -375,26 +316,11 @@ export function CalendarPicker({
       setMins(part === 'h' ? hourToMins(v, mins) : Math.floor(mins / 60) * 60 + v)
       setTimeMenu(null)
     }
-    return (
-      <PortalMenu rect={lastTimeMenu.rect}>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
-        <span
-          className={s.ddWrap}
-          style={timeMenuPresence.closing ? { pointerEvents: 'none' } : undefined}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <PickerMenu solid direction="up" closing={timeMenuPresence.closing}>
-            <div className={cx(s.menuList, 'over-scroll')}>
-              {(part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
-                <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
-                  {optionRow(part === 'h' ? hourText(v) : pad(v))}
-                </PickerRow>
-              ))}
-            </div>
-          </PickerMenu>
-        </span>
-      </PortalMenu>
-    )
+    return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
+      <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
+        {optionRow(part === 'h' ? hourText(v) : pad(v))}
+      </PickerRow>
+    ))
   }
   const segCommit = (): void => {
     if (!segEdit) return
@@ -425,7 +351,10 @@ export function CalendarPicker({
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') segCommit()
-          else if (e.key === 'Escape') setSegEdit(null)
+          else if (e.key === 'Escape') {
+            e.preventDefault()
+            setSegEdit(null)
+          }
         }}
         onBlur={segCommit}
       />
@@ -436,10 +365,11 @@ export function CalendarPicker({
         className={s.timeSeg}
         onClick={(e) => {
           if (e.detail > 1) return
+          setMenu(null)
           setTimeMenu(
             timeMenu?.which === which && timeMenu.part === part
               ? null
-              : { which, part, rect: rectOf(e.currentTarget) },
+              : { which, part, at: anchorOf(e.currentTarget) },
           )
         }}
         onDoubleClick={() => {
@@ -448,10 +378,6 @@ export function CalendarPicker({
         }}
       >
         {part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
-        {timeMenuPresence.mounted &&
-          lastTimeMenu?.which === which &&
-          lastTimeMenu.part === part &&
-          timeOptions(which, part)}
       </button>
     )
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
@@ -502,44 +428,25 @@ export function CalendarPicker({
   const optionRow = (label: string | number): React.JSX.Element => (
     <span className={s.optionRow}>{label}</span>
   )
-  const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
-    menuPresence.mounted && lastMenu ? (
-      <PortalMenu rect={lastMenu.rect}>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
-        <span
-          className={s.ddWrap}
-          style={menuPresence.closing ? { pointerEvents: 'none' } : undefined}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <PickerMenu solid closing={menuPresence.closing}>
-            <div className={cx(s.menuList, 'over-scroll')}>
-              {kind === 'month'
-                ? Array.from({ length: 12 }, (_, m) => (
-                    <PickerRow
-                      key={monthName(m)}
-                      selected={m === cursor.getMonth()}
-                      onClick={() => jump(year, m)}
-                    >
-                      {optionRow(monthName(m))}
-                    </PickerRow>
-                  ))
-                : yearChoices.map((y) => (
-                    <PickerRow
-                      key={y}
-                      selected={y === year}
-                      onClick={() => jump(y, cursor.getMonth())}
-                    >
-                      {optionRow(y)}
-                    </PickerRow>
-                  ))}
-            </div>
-          </PickerMenu>
-        </span>
-      </PortalMenu>
-    ) : null
+  const monthRows = (): React.JSX.Element[] =>
+    Array.from({ length: 12 }, (_, m) => (
+      <PickerRow
+        key={monthName(m)}
+        selected={m === cursor.getMonth()}
+        onClick={() => jump(year, m)}
+      >
+        {optionRow(monthName(m))}
+      </PickerRow>
+    ))
+  const yearRows = (): React.JSX.Element[] =>
+    yearChoices.map((y) => (
+      <PickerRow key={y} selected={y === year} onClick={() => jump(y, cursor.getMonth())}>
+        {optionRow(y)}
+      </PickerRow>
+    ))
 
   return (
-    <div className={s.root} ref={rootRef}>
+    <div className={s.root}>
       <SizeMorph>
         <div className={s.head}>
           <span className={s.titleGroup}>
@@ -547,27 +454,27 @@ export function CalendarPicker({
               size="button-inline"
               paddingX={TITLE_PAD_X}
               className={s.titleBtn}
-              onClick={(e) =>
+              onClick={(e) => {
+                setTimeMenu(null)
                 setMenu(
-                  menu?.kind === 'month' ? null : { kind: 'month', rect: rectOf(e.currentTarget) },
+                  menu?.kind === 'month' ? null : { kind: 'month', at: anchorOf(e.currentTarget) },
                 )
-              }
+              }}
             >
               {cursor.toLocaleDateString('en-US', { month: 'long' })}
-              {lastMenu?.kind === 'month' && selectionMenu('month')}
             </Button>
             <Button
               size="button-inline"
               paddingX={TITLE_PAD_X}
               className={s.titleBtn}
-              onClick={(e) =>
+              onClick={(e) => {
+                setTimeMenu(null)
                 setMenu(
-                  menu?.kind === 'year' ? null : { kind: 'year', rect: rectOf(e.currentTarget) },
+                  menu?.kind === 'year' ? null : { kind: 'year', at: anchorOf(e.currentTarget) },
                 )
-              }
+              }}
             >
               {year}
-              {lastMenu?.kind === 'year' && selectionMenu('year')}
             </Button>
           </span>
           <span className={s.nav}>
@@ -669,7 +576,7 @@ export function CalendarPicker({
                 setEndOn(v)
                 if (!v) setEnd(null)
                 setSegEdit(null)
-                setTimeMenu(null)
+                closeMenus()
               }}
             />
           </div>
@@ -682,11 +589,36 @@ export function CalendarPicker({
             onChange={(v) => {
               setTimeOn(v)
               setSegEdit(null)
-              setTimeMenu(null)
+              closeMenus()
             }}
           />
         </div>
       </SizeMorph>
+      <PickerMenu
+        solid
+        open={menu !== null}
+        onDismiss={() => setMenu(null)}
+        anchorX={menu?.at.x}
+        anchorY={menu?.at.y}
+        anchorHeight={menu?.at.h}
+        maxHeight={DROPDOWN_MAX_HEIGHT}
+      >
+        {menu && (
+          <div className={s.menuList}>{menu.kind === 'month' ? monthRows() : yearRows()}</div>
+        )}
+      </PickerMenu>
+      <PickerMenu
+        solid
+        direction="up"
+        open={timeMenu !== null}
+        onDismiss={() => setTimeMenu(null)}
+        anchorX={timeMenu?.at.x}
+        anchorY={timeMenu?.at.y}
+        anchorHeight={timeMenu?.at.h}
+        maxHeight={DROPDOWN_MAX_HEIGHT}
+      >
+        {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.which, timeMenu.part)}</div>}
+      </PickerMenu>
     </div>
   )
 }
