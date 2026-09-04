@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { closeGlance } from '@renderer/Interface/Glance/glanceAction'
+import { closeGlance, GLANCE_BODY_ATTR } from '@renderer/Interface/Glance/glanceAction'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -112,6 +112,7 @@ export function MarkdownTable({
   onUndo,
   onRedo,
   connections,
+  readOnly,
 }: {
   model: TableModel
   /** The document's footnote numbering, serialized as `LABEL=n` pairs. A resting cell's marker is
@@ -137,6 +138,8 @@ export function MarkdownTable({
   onUndo: () => void
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
+  /** Read at event time: editability flips in place through a compartment, never through a rebuild. */
+  readOnly?: () => boolean
 }): React.JSX.Element {
   const total =
     model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0) || model.columns.length
@@ -543,6 +546,7 @@ export function MarkdownTable({
         cites={cites}
         ordinalOf={ordinalOf}
         connections={connections}
+        readOnly={readOnly}
         onCite={onCite}
         onActivate={(coords, sweep) => {
           // Activation swaps the cell into its editor — a pending or open glance over the
@@ -603,7 +607,10 @@ export function MarkdownTable({
       ref={wrapRef}
       // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
-      onContextMenuCapture={closeGlance}
+      // Inside a glance no menu opens, and the close would shut the pane the gesture was aimed in.
+      onContextMenuCapture={(e) => {
+        if (!e.currentTarget.closest(`[${GLANCE_BODY_ATTR}]`)) closeGlance()
+      }}
       onMouseOver={trackHover}
       onMouseLeave={() => {
         setHover(null)
