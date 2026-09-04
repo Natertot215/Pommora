@@ -14,7 +14,7 @@ import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import type {
-  HoverCardSize,
+  GlanceSize,
   NavigationState,
   NavViewModes,
   NexusState,
@@ -118,7 +118,7 @@ import { runRepairSweep } from './repairSweep'
 import { flushNavigation, readNavigationState, writeNavigationState } from './IO/navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './IO/tabsState'
 import { readValue, writeValue } from './Database/localState'
-import { readPreviewsState, sanitizePreviews, writePreviewsState } from './IO/previewState'
+import { readWindowsState, sanitizeWindows, writeWindowsState } from './IO/windowState'
 import { captureThumbnail, evictThumbnails } from './IO/thumbnails'
 import { saveView, reorderViews, deleteView } from './CRUD/views'
 import { setContainerConfig, type ContainerConfigPatch } from './CRUD/containerConfig'
@@ -336,7 +336,7 @@ const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 
 const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
-const isCardSize = (v: unknown): v is HoverCardSize =>
+const isGlanceSize = (v: unknown): v is GlanceSize =>
   isPlainObject(v) && ['w', 'h'].every((k) => isFiniteNumber(v[k]))
 
 // Run after openSession and before anything reads it. Best-effort: never blocks opening the folder.
@@ -806,39 +806,40 @@ serveBridge(
       },
     },
 
-    'previews:load': {
+    'windows:load': {
       kind: 'envelope',
       fn: () => {
         if (sessionRoot() === null) return NO_NEXUS
-        return ok(readPreviewsState())
+        return ok(readWindowsState())
       },
     },
 
-    'previews:save': {
+    'windows:save': {
       kind: 'envelope',
       fn: (file: unknown) => {
         if (adopting()) return BUSY
-        const clean = sanitizePreviews(file)
-        if (!clean) return fail('operation-failed', 'Bad previews file.')
-        if (!writePreviewsState(clean)) return NO_NEXUS
+        const clean = sanitizeWindows(file)
+        if (!clean) return fail('operation-failed', 'Bad windows file.')
+        if (!writeWindowsState(clean)) return NO_NEXUS
         return ok(null)
       },
     },
 
-    'hoverCard:load': {
+    'glance:load': {
       kind: 'envelope',
       fn: () => {
         if (sessionRoot() === null) return NO_NEXUS
-        return ok(readValue<HoverCardSize>('hoverCard'))
+        return ok(readValue<GlanceSize>('glancePane'))
       },
     },
 
-    'hoverCard:save': {
+    'glance:save': {
       kind: 'envelope',
       fn: (size: unknown) => {
         if (adopting()) return BUSY
-        if (!isCardSize(size)) return fail('operation-failed', 'A card size needs finite w and h.')
-        if (!writeValue('hoverCard', { w: size.w, h: size.h })) return NO_NEXUS
+        if (!isGlanceSize(size))
+          return fail('operation-failed', 'A card size needs finite w and h.')
+        if (!writeValue('glancePane', { w: size.w, h: size.h })) return NO_NEXUS
         return ok(null)
       },
     },

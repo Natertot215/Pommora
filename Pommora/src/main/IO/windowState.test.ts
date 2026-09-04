@@ -2,13 +2,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { EMPTY_PREVIEWS, type PreviewsFile } from '@shared/types'
+import { EMPTY_WINDOWS, type WindowsFile } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
-import { readPreviewsState, sanitizePreviews, writePreviewsState } from './previewState'
+import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'previews-'))
+  root = await mkdtemp(join(tmpdir(), 'windows-'))
   openSessionDb(root)
 })
 afterEach(async () => {
@@ -16,7 +16,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const file: PreviewsFile = {
+const file: WindowsFile = {
   navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }], activeIndex: 0 },
   origins: {
     p1: { tabs: [{ target: { kind: 'page', id: 'p2' } }], activeIndex: 0 },
@@ -24,37 +24,37 @@ const file: PreviewsFile = {
   open: { flavor: 'page', originId: 'p1' },
 }
 
-describe('readPreviewsState', () => {
+describe('readWindowsState', () => {
   it('reads the empty shape before anything is written', () => {
-    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
+    expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 
   it('round-trips the nav set, the per-origin sets and the open pointer', () => {
-    writePreviewsState(file)
-    expect(readPreviewsState()).toEqual(file)
+    writeWindowsState(file)
+    expect(readWindowsState()).toEqual(file)
   })
 
   it('a rewrite replaces the row', () => {
-    writePreviewsState(file)
-    writePreviewsState(EMPTY_PREVIEWS)
-    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
+    writeWindowsState(file)
+    writeWindowsState(EMPTY_WINDOWS)
+    expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 
   it('reads the empty shape with no database open', () => {
-    writePreviewsState(file)
+    writeWindowsState(file)
     closeSessionDb()
-    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
+    expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 })
 
-describe('sanitizePreviews', () => {
-  it('refuses a payload that is not a previews file', () => {
-    expect(sanitizePreviews(null)).toBeNull()
-    expect(sanitizePreviews({ navSet: null })).toBeNull()
+describe('sanitizeWindows', () => {
+  it('refuses a payload that is not a windows file', () => {
+    expect(sanitizeWindows(null)).toBeNull()
+    expect(sanitizeWindows({ navSet: null })).toBeNull()
   })
 
   it('strips display fields and drops refs of no storable kind', () => {
-    const clean = sanitizePreviews({
+    const clean = sanitizeWindows({
       navSet: {
         tabs: [
           { target: { kind: 'navwindow' } },

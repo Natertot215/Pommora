@@ -1,11 +1,11 @@
-import type { PreviewTabTarget } from '@shared/types'
+import type { WindowTabTarget } from '@shared/types'
 import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 
 export interface PreviewTab {
   id: string
-  target: PreviewTabTarget
+  target: WindowTabTarget
 }
 
 export interface PreviewState {
@@ -17,7 +17,7 @@ export interface PreviewState {
   activeTabId: string
 }
 
-const targetPageId = (t: PreviewTabTarget): string | null => (t.kind === 'page' ? t.id : null)
+const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
 export function openTabIn(
   p: PreviewState,
@@ -60,7 +60,7 @@ export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
  *  reference per state; the nav flavor's map tab is no page. */
 export function deriveTarget(
   p: PreviewState | null,
-): Extract<PreviewTabTarget, { kind: 'page' }> | null {
+): Extract<WindowTabTarget, { kind: 'page' }> | null {
   if (!p) return null
   const active = p.tabs.find((t) => t.id === p.activeTabId)
   return active?.target.kind === 'page' ? active.target : null

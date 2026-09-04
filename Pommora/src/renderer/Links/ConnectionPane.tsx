@@ -5,12 +5,12 @@ import { PickerMenu, type PickerDirection } from '@renderer/DesignSystem/Pickers
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/Editor/folding'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
-import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
+import { WEB_PARTITION, type GlanceSize } from '@shared/types'
 import { resolveOnlyConnections } from '../treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Store/tabState'
 import { useSession } from '../store'
 import { PageTile } from '../SurfacePM/PageTile'
-import { CARD_MIN, hoverPaneSize, seedHoverCardSize, setHoverCardSize } from './hoverPaneSize'
+import { CARD_MIN, hoverPaneSize, seedGlanceSize, setGlanceSize } from './hoverPaneSize'
 import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './panePresenter'
 import './connection-pane.css'
 
@@ -101,7 +101,7 @@ export function hoverWebsite(url: string, el: Element): void {
 export function ConnectionPane(): React.JSX.Element {
   const [hovered, setHovered] = useState<Hovered | null>(null)
   const [size, setSize] = useState(hoverPaneSize)
-  useEffect(seedHoverCardSize, [])
+  useEffect(seedGlanceSize, [])
   const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   // State, not a ref: the pane's portal lands a beat after the open render (exit-presence mounts
@@ -123,7 +123,7 @@ export function ConnectionPane(): React.JSX.Element {
   const held = hovered ?? heldRef.current
 
   // The ceiling, live: viewport width, and the vertical band on the pane's side of the link.
-  const maxSize = (): HoverCardSize => {
+  const maxSize = (): GlanceSize => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
     const link = hoveredRef.current?.el.isConnected
       ? hoveredRef.current.el.getBoundingClientRect()
@@ -187,7 +187,7 @@ export function ConnectionPane(): React.JSX.Element {
           // drag near a cramped link would silently ratchet the universal height down to that
           // link's band-clamped render.
           const stored = hoverPaneSize()
-          setHoverCardSize({
+          setGlanceSize({
             w: axes.x ? shownRef.current.w : stored.w,
             h: axes.y ? shownRef.current.h : stored.h,
           })

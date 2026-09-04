@@ -33,7 +33,7 @@ let root: Root
 beforeEach(() => {
   useSession.setState({ activeTabId: 'tab-1' })
   stubNexus({
-    hoverCard: {
+    glance: {
       load: async () => ({ ok: true, value: null }),
       save: async () => ({ ok: true, value: null }),
     },

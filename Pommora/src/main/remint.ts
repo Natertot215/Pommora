@@ -13,7 +13,7 @@ import { readKey, writeKey } from './Database/localState'
 import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from './IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, readFrontmatterFields } from './IO/pageFile'
-import { readPreviewsState, writePreviewsState } from './IO/previewState'
+import { readWindowsState, writeWindowsState } from './IO/windowState'
 import { SIDECAR_FILENAME } from './paths'
 import type { Baseline, Projection } from './record'
 
@@ -155,12 +155,12 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
     const moved = active === null ? undefined : viewIds.get(active)
     if (moved) writeKey('activeView', fresh, moved)
     if (target.kind === 'space') copyBlockDocRow(target.id, fresh)
-    const previews = readPreviewsState()
-    const origin = previews.origins[target.id]
+    const windows = readWindowsState()
+    const origin = windows.origins[target.id]
     if (origin)
-      writePreviewsState({
-        ...previews,
-        origins: { ...previews.origins, [fresh]: structuredClone(origin) },
+      writeWindowsState({
+        ...windows,
+        origins: { ...windows.origins, [fresh]: structuredClone(origin) },
       })
   } catch (e) {
     console.error('remint: device-row copy failed; the copy starts on default chrome:', errText(e))

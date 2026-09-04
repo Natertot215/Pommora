@@ -6,7 +6,7 @@ import { blockHostKey } from '@shared/blocks'
 import { isUlidShaped } from '@shared/identity'
 import type { EntityRecord } from '@shared/record'
 import { readKey, writeKey } from './Database/localState'
-import { readPreviewsState, writePreviewsState } from './IO/previewState'
+import { readWindowsState, writeWindowsState } from './IO/windowState'
 import { readBaseline, runOpenRecord } from './record'
 import type { Baseline } from './record'
 import { adjudicate } from './remint'
@@ -176,7 +176,7 @@ describe('the re-mint writes', () => {
     writeKey('headingCols', PAGE, [0])
     writeKey('aliases', PAGE, ['the notes'])
     writeKey('headingIcon', PAGE, true)
-    writePreviewsState({
+    writeWindowsState({
       navSet: null,
       origins: { [PAGE]: { tabs: [{ target: { kind: 'page', id: PAGE } }], activeIndex: 0 } },
       open: null,
@@ -201,9 +201,9 @@ describe('the re-mint writes', () => {
     expect(readKey('headingCols', fresh)).toEqual([0])
     expect(readKey('aliases', fresh)).toEqual(['the notes'])
     expect(readKey('headingIcon', fresh)).toBe(true)
-    const previews = readPreviewsState()
-    expect(previews.origins[PAGE]).toBeDefined()
-    expect(previews.origins[fresh]).toBeDefined()
+    const windows = readWindowsState()
+    expect(windows.origins[PAGE]).toBeDefined()
+    expect(windows.origins[fresh]).toBeDefined()
 
     // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off
     // disk, through admission, into the projection — not through the in-memory fix-up.

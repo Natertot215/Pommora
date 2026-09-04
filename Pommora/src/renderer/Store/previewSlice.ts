@@ -1,7 +1,7 @@
 import {
-  EMPTY_PREVIEWS,
-  type PreviewSetRecord,
-  type PreviewsFile,
+  EMPTY_WINDOWS,
+  type WindowSetRecord,
+  type WindowsFile,
   type SelectTarget,
   toNavRef,
 } from '@shared/types'
@@ -24,7 +24,7 @@ export type PreviewTarget = { id: string; path: string }
 
 export interface PreviewSlice {
   preview: PreviewState | null
-  previewsFile: PreviewsFile
+  previewsFile: WindowsFile
   previewSlide: { dir: 'back' | 'fwd'; seq: number } | null
   previewExit: 'dismiss' | 'engulf' | 'morph'
   openPreview: (target: PreviewTarget) => void
@@ -59,7 +59,7 @@ const PER_NEXUS = {
   navOpen: false,
   preview: null,
   historyTarget: null,
-  previewsFile: EMPTY_PREVIEWS,
+  previewsFile: EMPTY_WINDOWS,
   previewSlide: null,
 } satisfies Partial<PreviewSlice>
 
@@ -76,7 +76,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
 
   // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by
   // the stored (page-only) order.
-  const toPreviewRecord = (p: PreviewState): PreviewSetRecord => {
+  const toPreviewRecord = (p: PreviewState): WindowSetRecord => {
     const pages = p.tabs.filter(
       (t): t is PreviewTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
     )
@@ -89,9 +89,9 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
     }
   }
 
-  const savePreviewsFile = (file: PreviewsFile): void => {
+  const saveWindowsFile = (file: WindowsFile): void => {
     set({ previewsFile: file })
-    void (window as { nexus?: typeof window.nexus }).nexus?.previews
+    void (window as { nexus?: typeof window.nexus }).nexus?.windows
       ?.save(file)
       .catch(() => undefined)
   }
@@ -117,11 +117,11 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
     } else {
       file = { ...file, open: null }
     }
-    savePreviewsFile(file)
+    saveWindowsFile(file)
   }
 
   const reconcileRecord = (
-    rec: PreviewSetRecord | null | undefined,
+    rec: WindowSetRecord | null | undefined,
   ): { tabs: PreviewTab[]; activeTab: PreviewTab | null } => {
     if (!rec) return { tabs: [], activeTab: null }
     const tree = get().tree
@@ -196,7 +196,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
       set({ preview, previewExit: morphing ? 'morph' : 'dismiss' })
       mirrorPreviews()
     },
-    setNavOverride: (on) => savePreviewsFile({ ...get().previewsFile, navOverride: on }),
+    setNavOverride: (on) => saveWindowsFile({ ...get().previewsFile, navOverride: on }),
     openPreviewTab: (target) => {
       const cur = get().preview
       if (!cur) {
@@ -307,7 +307,7 @@ export const createPreviewSlice: Slice<PreviewSlice> = (set, get) => {
       if (dead.length > 0) {
         const origins = { ...file.origins }
         for (const id of dead) delete origins[id]
-        savePreviewsFile({ ...file, origins })
+        saveWindowsFile({ ...file, origins })
       }
     },
 
