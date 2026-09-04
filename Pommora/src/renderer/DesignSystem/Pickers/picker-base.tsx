@@ -56,6 +56,32 @@ const POS_KEYS = ['top', 'bottom', 'right', 'left', 'origin', 'centered'] as con
 const samePos = (a: Pos | null, b: Pos): boolean =>
   a !== null && POS_KEYS.every((k) => a[k] === b[k])
 
+function PaneMorph({ children }: { children: ReactNode }): React.JSX.Element {
+  const outer = useRef<HTMLDivElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
+  const [armed, setArmed] = useState(false)
+  useLayoutEffect(() => {
+    const o = outer.current
+    const i = inner.current
+    if (!o || !i) return
+    const size = (): void => {
+      o.style.height = `${i.offsetHeight}px`
+    }
+    size()
+    const ro = new ResizeObserver(size)
+    ro.observe(i)
+    return () => ro.disconnect()
+  }, [])
+  useEffect(() => setArmed(true), [])
+  return (
+    <div ref={outer} className={cx(s.paneMorph, armed && s.paneMorphArmed)}>
+      <div ref={inner} className={s.paneMorphBody}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function PickerMenu({
   children,
   open,
@@ -155,8 +181,8 @@ export function PickerMenu({
   }, [mounted])
 
   useLayoutEffect(() => {
-    // Freeze the pane's position through the Bloom-out: once closing, a detached or moved trigger
-    // must not re-measure to zeros and snap the fading pane away.
+    // Freeze the pane's position through the Bloom-out: once `open` drops, a detached or moved
+    // trigger must not re-measure to zeros and snap the fading pane away.
     if (!selfManaged || !mounted || open !== true) return
     const point =
       anchorX !== undefined && anchorY !== undefined
@@ -404,32 +430,6 @@ export function PickerMenu({
         document.body,
       )}
     </>
-  )
-}
-
-function PaneMorph({ children }: { children: ReactNode }): React.JSX.Element {
-  const outer = useRef<HTMLDivElement>(null)
-  const inner = useRef<HTMLDivElement>(null)
-  const [armed, setArmed] = useState(false)
-  useLayoutEffect(() => {
-    const o = outer.current
-    const i = inner.current
-    if (!o || !i) return
-    const size = (): void => {
-      o.style.height = `${i.offsetHeight}px`
-    }
-    size()
-    const ro = new ResizeObserver(size)
-    ro.observe(i)
-    return () => ro.disconnect()
-  }, [])
-  useEffect(() => setArmed(true), [])
-  return (
-    <div ref={outer} className={cx(s.paneMorph, armed && s.paneMorphArmed)}>
-      <div ref={inner} className={s.paneMorphBody}>
-        {children}
-      </div>
-    </div>
   )
 }
 
