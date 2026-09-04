@@ -215,10 +215,10 @@
   z-index: 4;
 }
 .window-panel-right-overlay-resize {
-  right: calc(var(--window-panel-inset) + var(--window-panel-r-w) - 4px);
+  right: calc(var(--window-panel-inset) + var(--window-panel-r-w) - 5px);
 }
 .window-panel-left-overlay-resize {
-  left: calc(var(--window-panel-inset) + var(--window-panel-l-w) - 4px);
+  left: calc(var(--window-panel-inset) + var(--window-panel-l-w) - 5px);
 }
 
 .window-panel-left-inflow,
@@ -231,8 +231,11 @@
 .window-panel-right-inflow {
   --pane-w: var(--window-panel-r-w);
 }
-.window-panel-left-inflow-resize,
-.window-panel-right-inflow-resize {
+/* The inflow strip is the gap column between panel and body; the doubled class takes the band's
+   own placement back off whatever order the sheets land in. */
+.resize-strip.window-panel-left-inflow-resize,
+.resize-strip.window-panel-right-inflow-resize {
+  position: static;
   width: var(--window-panel-inset);
   flex-shrink: 0;
 }

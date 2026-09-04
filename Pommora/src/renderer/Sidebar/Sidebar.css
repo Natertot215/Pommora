@@ -187,7 +187,7 @@
 .sidebar-resize {
   top: var(--app-inset);
   bottom: var(--app-inset);
-  left: calc(var(--app-inset) + var(--sidebar-width) - 4px);
+  left: calc(var(--app-inset) + var(--sidebar-width) - 5px);
   z-index: var(--z-sidebar-resize);
 }
 

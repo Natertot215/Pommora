@@ -1,11 +1,7 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from './store'
+import { INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './Store/chromeSlice'
+import { useResizeFrame } from '@renderer/Interactions/ResizeFrame'
 import { Surface } from '@renderer/DesignSystem/Glass/glass-pane'
 import { paneSlide } from '@renderer/Animation'
 import { Sidebar } from './Sidebar/Sidebar'
@@ -64,38 +60,21 @@ export function App(): React.JSX.Element {
 
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  const [resizing, setResizing] = useState(false)
-  const drag = useRef({ active: false, startX: 0, startW: 0 })
-  const onResizeDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    drag.current = { active: true, startX: e.clientX, startW: sidebarWidth }
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setResizing(true)
-  }
-  const onResizeMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!drag.current.active) return
-    setSidebarWidth(drag.current.startW + (e.clientX - drag.current.startX))
-  }
-  const onResizeUp = (): void => {
-    drag.current.active = false
-    setResizing(false)
-    persistPaneWidths()
-  }
-
-  const inspectorDrag = useRef({ active: false, startX: 0, startW: 0 })
-  const onInspectorResizeDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    inspectorDrag.current = { active: true, startX: e.clientX, startW: inspectorWidth }
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setResizing(true)
-  }
-  const onInspectorResizeMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!inspectorDrag.current.active) return
-    setInspectorWidth(inspectorDrag.current.startW - (e.clientX - inspectorDrag.current.startX))
-  }
-  const onInspectorResizeUp = (): void => {
-    inspectorDrag.current.active = false
-    setResizing(false)
-    persistPaneWidths()
-  }
+  const sidebarFrame = useResizeFrame({
+    rect: { w: sidebarWidth },
+    min: { w: SIDEBAR_WIDTH.min },
+    max: { w: SIDEBAR_WIDTH.max },
+    equilateral: true,
+    onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setSidebarWidth(next.w)),
+  })
+  const inspectorFrame = useResizeFrame({
+    rect: { w: inspectorWidth },
+    min: { w: INSPECTOR_WIDTH.min },
+    max: { w: INSPECTOR_WIDTH.max },
+    equilateral: true,
+    onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setInspectorWidth(next.w)),
+  })
+  const resizing = sidebarFrame.active !== null || inspectorFrame.active !== null
 
   useEffect(() => {
     void load()
@@ -276,12 +255,8 @@ export function App(): React.JSX.Element {
       {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
       {!sidebarHidden && (
         <div
-          className="sidebar-resize"
-          onPointerDown={onResizeDown}
-          onPointerMove={onResizeMove}
-          onPointerUp={onResizeUp}
-          onPointerCancel={onResizeUp}
-          onLostPointerCapture={onResizeUp}
+          className="resize-strip sidebar-resize"
+          onPointerDown={sidebarFrame.start('e')}
           aria-hidden="true"
         />
       )}
@@ -307,12 +282,8 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <GlancePane />}
       {status === 'ready' && inspectorOpen && (
         <div
-          className="inspector-resize"
-          onPointerDown={onInspectorResizeDown}
-          onPointerMove={onInspectorResizeMove}
-          onPointerUp={onInspectorResizeUp}
-          onPointerCancel={onInspectorResizeUp}
-          onLostPointerCapture={onInspectorResizeUp}
+          className="resize-strip inspector-resize"
+          onPointerDown={inspectorFrame.start('w')}
           aria-hidden="true"
         />
       )}

@@ -364,7 +364,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Keyboard     | `keyboardNext` · `onActivateClick` · `onActivateKey` · `announce` | Arrow stepping, Enter/Space activation, live-region announcements. |
 | OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
-| Floating     | `useFloatingWindow` · `FloatingResizeCorners` · `floating-window.css` · `resize-strip.css` | Move and resize for any floating surface. |
+| Resize frame | `useResizeFrame` · `onScreen` · `resize-frame.css`     | Drag-to-size and drag-to-move for any box: the handles, the strips, and the outline tint. |
 | Reveal bar   | `useRevealNear` · `reveal-bar.css`                      | A control shown as the pointer nears an edge.          |
 | Held         | `useHeld`                                               | A value that lingers through an exit.                  |
 

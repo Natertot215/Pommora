@@ -177,7 +177,7 @@ const TileShell = memo(
         {EDGE_ZONES.map(({ zone, edges }) => (
           <div
             key={zone}
-            className={`spm-edge spm-edge-${zone}`}
+            className={`spm-edge resize-edge resize-edge-${zone}`}
             onPointerDown={(e) => onEdgeDown(id, edges, e)}
           />
         ))}

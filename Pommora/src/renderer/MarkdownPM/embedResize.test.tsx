@@ -46,8 +46,8 @@ describe('persisted tile heights', () => {
 
   it('the resize handle renders only where heights can persist', async () => {
     const view = await mount(hosted)
-    expect(view.dom.querySelector('.mdpm-embed-resize')).not.toBeNull()
+    expect(view.dom.querySelector('.resize-edge-s')).not.toBeNull()
     const bare = await mount({ initialBody: '![[Alpha]]', connections: conn })
-    expect(bare.dom.querySelector('.mdpm-embed-resize')).toBeNull()
+    expect(bare.dom.querySelector('.resize-edge-s')).toBeNull()
   })
 })
