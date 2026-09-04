@@ -78,8 +78,7 @@ export const viewport = style({
   overflow: 'hidden',
   transition: `height ${duration.base} ${easing.baseEase}`,
 })
-/* Top-aligned so each month grid keeps its own height: the viewport's set height (not the taller
-   neighbor) decides the pane, and it eases on the slide's own beat so the two land together. */
+/* Top-aligned so each month grid keeps its own height rather than the taller neighbor's. */
 export const track = style({ display: 'flex', width: '200%', alignItems: 'flex-start' })
 export const trackLeft = style({
   animation: `${slideLeft} var(--duration-base) var(--ease-base) both`,
@@ -114,7 +113,7 @@ export const pill = style({
   zIndex: -1,
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
-export const pillToday = style({ boxShadow: `inset 0 0 0 var(--width-100) ` })
+export const pillToday = style({ boxShadow: 'inset 0 0 0 var(--width-100)' })
 export const pillSelected = style({ background: `${endpointFill} !important` })
 export const daySelected = style({ fontWeight: font.weight.semibold })
 const band = (inset: string): StyleRule => ({
