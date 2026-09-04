@@ -594,6 +594,20 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 
 ### Closeout
 
+**Delivery Claim** (commits `6992b60f c54a2c57 e26a0095 97ac9438 6f7cb913 70afe9da 3c1010d4 2ef7e752 99acb80b` + the comment-pass commit):
+
+1. Requirement 1 → Task 5 (`70afe9da`, renamed to `glanceAction.ts` in `3c1010d4`): `GLANCE_DWELL = { link }`, `armGlance/cancelGlance/closeGlance/setGlancePresenter/watchAnchor`, `GlanceTarget`; the file imports nothing; an anchor under `[data-glance]` never arms.
+2. Requirement 2 → Task 6 (`3c1010d4`, `99acb80b`): `GlancePane.tsx` on PickerMenu, page and site flavors, resize strips, linger, anchor watch, site cover + wheel, size through `glance:load/save`, page resolved inside the pane, focus recorded on capture and restored through the host editor's own view.
+3. Requirement 3 → Task 6: `glanceWarmSeam`, id-keyed, `GLANCE_WARM_CAP` LRU, `fenceWarm`-fenced, fed to `PageTile`; the tab cache and window cache untouched.
+4. Requirement 4 → Task 7 (`3c1010d4`): one `glance` hook (`glanceLink`); `hoverIntent` gone; the two pre-gate cancels gone; `connectionHover.test.tsx` asserts the bloom fires through the real four-handler editor.
+5. Requirement 5 → Tasks 1–3 (`6992b60f c54a2c57 e26a0095 97ac9438`): every identifier, channel, preload namespace, local_state key, and action string renamed; labels, hints, sidecar values, settings.json keys, and the do-not-rename list untouched.
+6. Requirement 6 → Task 4 (`6f7cb913`): three helpers in `Actions/`, git-moved, bodies unchanged.
+7. Requirement 7 → Tasks 8–9 (`3c1010d4`, `2ef7e752`): `Links/` gone; twelve docs, both guidelines, the Codebase Map, RendererRework, the comment ledgers, and the stale MarkdownPM comment rewritten.
+
+Acceptance, observed over CDP on NexusOS: main-editor connection glance ✓ · website glance ✓ · Page Window tab glance ✓ · pane stays through a content-view scroll ✓ · in-pane scroll on `.cm-scroller` ✓ · Escape closes ✓ · re-glance restores scroll (402 → 402) ✓ · focus hand-back after a selection drag, no scroll jump ✓ (after the Gate 3 fix) · table-cell and dashboard-tile hosts: unit-covered, no live data · "Open Preview" from the native menu: not CDP-drivable, action-string tests cover the route · edit-then-re-glance fence: unit-covered, mutation avoided.
+
+No new dependency. No mechanism duplicated: one seam, one dismiss, one warm store (the pattern of `tileWarmSeam`), one dwell table. Nothing left with nothing to vary: `hoverIntent`, `panePresenter`, `hoverPaneSize`, the per-table intent, the three cell hover props are gone. Nothing added to a high-frequency path beyond what stood: the anchor watch's capture-phase scroll listener exists only while a glance is open, as before.
+
 ---
 
 ## Completion Criteria

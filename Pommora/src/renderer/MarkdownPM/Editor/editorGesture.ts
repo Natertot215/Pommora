@@ -12,7 +12,7 @@ import {
 import { Overlay, setShade } from './dragChrome'
 
 // Only one editor gesture is live app-wide, but the cleanup plugin is mounted in every editor
-// (a page can run several — embed tile, hover card, preview window), so the handle carries the
+// (a page can run several — embed tile, glance, Page Window), so the handle carries the
 // view that started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
 

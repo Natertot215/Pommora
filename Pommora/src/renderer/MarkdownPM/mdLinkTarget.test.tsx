@@ -321,7 +321,7 @@ describe('an alias reveals what it hides', () => {
   })
 })
 
-// A valid external link owes the website hover preview on the same dwell. Both gates are pinned to
+// A valid external link owes the website glance on the same dwell. Both gates are pinned to
 // the one exported class constant, so the decorator and the arming selector cannot drift apart.
 describe('a website link previews live', () => {
   it('the decorator marks the link with the class the hover gate reads', async () => {

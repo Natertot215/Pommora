@@ -79,7 +79,7 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 4 — `persist()` Under Accepted Silence · one session · net ≈ 0
 
-- [ ] **One `persist()` helper wraps the fire-and-forget family** — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `blocks.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `hoverCard.save`, `nav.write`, `tabs.save`, and the remaining sixteen sites — discarding failures deliberately, with the accepted-silence ruling stated once at the helper.
+- [ ] **One `persist()` helper wraps the fire-and-forget family** — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `blocks.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `glance.save`, `nav.write`, `tabs.save`, and the remaining sixteen sites — discarding failures deliberately, with the accepted-silence ruling stated once at the helper.
 
 **Verification:** gates; grep confirms no bare `void window.nexus.*` persisted-chrome call remains outside the helper.
 **Retires:** ContextPM Debt "Fire-and-forget writes have no seam." (The silence Open Call already left ContextPM with its ruling.)
@@ -88,7 +88,7 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 - [x] **Session one — every open page has a slot.** `pageStatus`/`pageDetail`/`pageError`/`liveBody` become `pages: Record<pageId, PageSlot>` — keyed by page, since a page is one document however many tabs point at it and a page id survives pin/unpin where a tab id does not; `pageFrozen` derives from `selection` lagging the active tab, which is the pause-on-change and the reason `selection` stays a field. Deletes `captureOutgoingDetail` and its ordering constraint (the capture rides `PageView`'s unmount seam under a warm generation), `useHosts`' target-guessing, `PageView`'s `detail` prop, and the Subfield's `scope` mode (both hosts drive one `page` prop; the preview keeps its local body because `PageEmbed` loads through the path cache, not the store).
 - [x] **Session two — the file splits into domain slices** composing one store (nexus, navigation — tabs + pages + selection + pins, because `select` and the pin gestures write across them — preview + browser + nav window, chrome, config, rename fence, id-keyed caches). `store.test.tsx` is the integration contract; tests for what the re-key created land with the split.
-- [x] **`pinnedTabs` keeps one writer** (`setPinned`, identity-preserving) rather than becoming a selector — deriving it walks the tree and its readers are hot; `previewTarget` is `previewTargetOf`, reading the active preview tab's stored target through `deriveTarget`.
+- [x] **`pinnedTabs` keeps one writer** (`setPinned`, identity-preserving) rather than becoming a selector — deriving it walks the tree and its readers are hot; `previewTarget` is `windowTargetOf`, reading the active preview tab's stored target through `deriveTarget`.
 
 **Verification:** gates + new slice tests; app open — tab switch with a dirty editor (edits survive), cold swap, parked tab with a playing web tile survives a flip, preview open beside a different active page, pin/unpin, restore on relaunch.
 **Retires:** ContextPM Boring Work "Per-tab page state is modelled as global singletons" and "The store split."

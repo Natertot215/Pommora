@@ -13,7 +13,7 @@ export type CitationSubject = 'marker' | 'citation'
 
 export interface CitationMenuContext {
   subject: CitationSubject
-  /** A read-only surface — an embed tile at rest, a hover card — offers what it can still do and
+  /** A read-only surface — an embed tile at rest, a glance — offers what it can still do and
    *  nothing that would write. */
   editable: boolean
 }

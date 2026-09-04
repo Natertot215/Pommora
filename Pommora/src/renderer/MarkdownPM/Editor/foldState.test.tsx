@@ -275,7 +275,7 @@ describe('a heading stops where the citations section starts', () => {
 })
 
 // The chevron class and the heading gesture separate. `md-foldable` meant four things at once:
-// draw a chevron, gate the heading drag, answer the grip menu's hit-test, and be the hover card's
+// draw a chevron, gate the heading drag, answer the grip menu's hit-test, and be the glance's
 // click-to-fold target. A non-heading anchor wearing it inherits all four, and the third fails
 // silently — the heading menu bails on a line holding no heading, opening nothing at all.
 
@@ -388,7 +388,7 @@ describe('the citations divider draws where it can and folds nothing itself', ()
   })
 
   // The reason the press has no fold of its own: a write that never touched this editor moves its
-  // section anyway — which is what carries the footer's control, the floating preview and a hover card.
+  // section anyway — which is what carries the footer's control, the Page Window and a glance.
   it('a write from anywhere else moves the section too', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     await act(async () => {

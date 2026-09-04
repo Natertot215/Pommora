@@ -90,7 +90,7 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
 export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
-    // A hover preview over a marker is a Prospect, so nothing here ever arms a dwell.
+    // A glance over a marker is a Prospect, so nothing here ever arms a dwell.
     armable: () => false,
     hitAt: citeHitAt,
     follow: (hit, view, event) => () => {
