@@ -1,6 +1,6 @@
 ## CalendarPicker Delegation — Implementation Plan
 
-> **Status:** ratified — in execution (go 09-03-2026) · Spec: `CalendarPicker Delegation.md` (the decision log; its §5 carries Nathan's rulings of 09-03-2026) · Execute tasks in order.
+> **Status:** closed 09-04-2026 · Spec: `CalendarPicker Delegation.md` (the decision log; its §5 carries Nathan's rulings of 09-03-2026) · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Paths are relative to `Pommora/`.
 
 **Goal**
@@ -424,11 +424,11 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 - [x] **Phase 1** — PickerMenu · base `b561f10b`
   - [x] Task 1 — the close render gates on `open` · `f66cf8ab`
   - [x] Task 2 — `morph` opt-in · `43f87590` (+ `46efc7d8` simplification)
-- [ ] **Phase 2** — CalendarPicker · base `46efc7d8`
+- [x] **Phase 2** — CalendarPicker · base `46efc7d8`
   - [x] Task 3 — two root PickerMenus · `ecc20fe5`
   - [x] Task 4 — SizeMorph goes, the calendar owns its height changes · `b313ae08`
-  - [ ] Task 4 — hosts opt in, SizeMorph goes · `<commit>`
-  - [x] Task 5 — delete the `closing` prop · (this commit)
+  - [x] Task 5 — delete the `closing` prop · `41cb479a`
+  - [x] Gate 2 folds — `7754b058` (simplification), `c457d17f` (45px list), `bcadb531` (attack fold), `dc9326c9` (simplification rerun + comment pass)
 
 ### Rulings
 
@@ -451,9 +451,10 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 
 - **Nested backdrop z-order** (decision log F2): `backdrop` at `stack.top.menu` so DOM order sorts nesting; would delete OptionEditPopup's capture listener. Needs Nathan's ruling on the swallowed click.
 - **CardPickerHost** passes `anchorX` plus a live `triggerRef`; after Task 1 the exit no longer re-places, so the `triggerRef` may be dispensable for that mount.(sweep on closeout)
-- **DesignSystemPM.md:302** still names the deleted `PointMenu`.
 
 ### Closeout
+
+**Closed 09-04-2026.** Gate 1: simplifier (a block move, one test helper) and code review (three Unproven notes, filed above). Gate 2: simplifier reordered CalendarPicker into one spine and lifted its module-level helpers; code review found nothing reachable (two pre-existing cosmetic notes: a month jump mid-slide, the drag ref's reliance on pointer capture); the attack review's three Lows were folded (`bcadb531`); the simplifier rerun trimmed the guards to `open` alone (`dc9326c9`); the manual comment pass removed one test comment. Neutral verifier's adjudication of the Delivery Claim follows in the report. Dead-vocabulary sweep: every retired token at 0 against control `PickerMenu` → 116. Delta over this plan's paths, tests excluded: raw numstat **+295 −387 = −92**, of which the peer's lines are picker-base `+9 −5` and TableView `+6 −7`; this plan alone ≈ +280 −375 = −95, and with comments and blank lines stripped ≈ **−102**. The whole-tree gates were red during execution on the peer session's in-flight files and green on this plan's paths throughout; at closeout (`dc9326c9`) `typecheck`, `test`, `lint`, and `build:showcase` are all green tree-wide, the peer's stash is gone, and no worktree exists. The neutral verifier held every assertion of the Delivery Claim, with two wordings corrected here: the retired-token sweep is the Dead Vocabulary list (not `useHeld`/`useExitPresence`, which live on elsewhere), and the changes of hands also include End Date closing an open Month/Year dropdown and the dropped scroll-dismiss. RendererRework's §2/§3 edits rode the peer's commit `a3ce42eb` through the auto-stage hook, and its Settled-5 line left in `e7e3bd17` ahead of the prop's deletion in `41cb479a`. The dev instance on 9333 predates this session's driving and was left running.
 
 **Live drive, 09-04-2026, over CDP on 9333** (the iteration window mounted CalendarPicker behind two buttons: a `range={false}` mount opening downward mid-window, a `range` mount opening near the bottom edge; scaffolding reverted at closeout; 14 screenshots in the session scratchpad):
 
@@ -464,7 +465,7 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 - Nav from February 2026 (4 rows) to March (5 rows): pane height sampled 274→278→288→294→298→300 across ~280ms, the viewport's computed `transition: height 0.28s`.
 - Range mount near the bottom: End Date on left the height at 274 (the row swaps content); Use Time on revealed the second time row (274→308, 34→37 buttons). The pane had decided `down` at open (it fit at 274) and grew past the viewport bottom (1050 vs 1027) — pre-existing behavior of the once-per-open flip decision, identical under SizeMorph; noted for Nathan, not changed.
 - End Date path (Nathan's ask, driven on the `range` mount): End Date on filled the second date field with a placeholder; picking Feb 12 set both fields (`2026-02-01`, `2026-02-12`) and painted the 10-cell band; Use Time on revealed the second time row (274→308) with start 9:00 AM and end 5:00 PM; the end-hour segment opened its dropdown above itself with the current hour checked, and a pick landed; End Date off cleared the end field and the band and the pane returned to one row (276).
-- Code-only delta over the range, tests excluded, this plan's paths only: **+283 −377 = −94**.
+- Code-only delta is stated once, in the Closeout entry.
 ---
 
 ## Completion Criteria
@@ -493,17 +494,17 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running over CDP, clause by clause.
-- [ ] No PickerMenu mount outside the five hosts and FieldPicker appears in the diff.
-- [ ] Net code delta negative, comments and tests excluded.
+- [x] Every numbered requirement traces to a landed task.
+- [x] The acceptance criterion observed running over CDP, clause by clause.
+- [x] No PickerMenu mount outside this plan's paths appears in the diff (no host changed at all after the morph was withdrawn).
+- [x] Net code delta negative, comments and tests excluded.
 
 **The passes**
 
-- [ ] Simplification + comment pass over the whole range, not only per phase.
-- [ ] Simplification → code review over the full implementation, in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
-- [ ] Attack review over the full range; every finding fixed or ruled.
+- [x] Simplification + comment pass over the whole range, not only per phase.
+- [x] Simplification → code review over the full implementation, in that order.
+- [x] Delivery Claim written, then checked by a neutral verifier against the decision log.
+- [x] Attack review over the full range; every finding fixed or ruled.
 
 **The user's own pass**
 
@@ -512,8 +513,8 @@ Everything else is the standard below.
 
 **The record**
 
-- [ ] Made False rewritten in the falsifying commits.
-- [ ] Dead Vocabulary sweep at zero against its control (113).
-- [ ] RendererRework §2 row removed; Sequenced After carried to §3.
+- [x] Made False rewritten in the falsifying commits.
+- [x] Dead Vocabulary sweep at zero against its control (116 at closeout).
+- [x] RendererRework §2 row removed; Sequenced After carried to §3.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way · what each screenshot showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded.
