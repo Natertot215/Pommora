@@ -1,5 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
+import { clamp } from '@shared/clamp'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
 import type { ConnEditAction } from '@shared/connMenu'
 import { useSession } from '../../store'
@@ -77,7 +78,7 @@ export function commitAliasOnEnter(view: EditorView): boolean {
 /** The line holding `at` and the offset into it. Every gesture below reads through this because each
  *  spends an offset computed a turn earlier, which the document may since have shrunk past. */
 function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
-  const pos = Math.min(Math.max(at, 0), state.doc.length)
+  const pos = clamp(at, 0, state.doc.length)
   const line = state.doc.lineAt(pos)
   return { line, rel: pos - line.from }
 }

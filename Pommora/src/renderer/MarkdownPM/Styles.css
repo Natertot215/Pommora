@@ -820,7 +820,6 @@
   --cb-gap: var(--md-box-gap);
   --box-gap: var(--cb-gap);
   --box-pad: 6px;
-  --tok-tint: var(--tint-primary);
   font-family: var(--font-mono);
   font-size: var(--cb-size);
   padding-left: calc(var(--cb-inset) + var(--cb-pad));
@@ -829,7 +828,7 @@
 }
 
 .mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
-  color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary));
+  color: color-mix(in srgb, var(--tok-solid) var(--tint-primary), var(--label-primary));
 }
 .mdpm-editor .md-cb .tok-kw {
   --tok-solid: var(--solid-purple);
