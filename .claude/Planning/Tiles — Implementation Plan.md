@@ -1,6 +1,6 @@
 ## Tiles — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Base: `043ee930`.
 
 **Goal**
@@ -727,7 +727,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: `MAX_INSPECTOR_TABS` and `INSPECTOR_STATE_KEY` are declared unread — a reserved contract Nathan asked for, exempt from the reachability razor.
 - 09-04-2026, Claude: a Space folder copied while the app runs renders with the source's view-config ids until the next open re-mints them — accepted; the open-time pass is the one remint, and a `full-refresh` does not re-mint (attack finding 8).
 - 09-04-2026, Claude: `tiles:get` for a host whose folder is gone answers the empty doc, as the row did; the walk navigates away on its own (attack finding 17).
-- 09-04-2026, Claude (Nathan to confirm): when a live-reload push meets pending local work, the local write goes to disk first and disk is then read — a completed drag never silently reverts. The alternative (disk wins, the pending save cancelled) was ruled out because it discards the user's own last action.
+- 09-04-2026, Nathan (ratified with the plan): when a live-reload push meets pending local work, the local write goes to disk first and disk is then read — a completed drag never silently reverts. The alternative (disk wins, the pending save cancelled) was ruled out because it discards the user's own last action.
 - 09-04-2026, Claude: a corrupt `_tiles.json` is adjudicated by the writer under the lock, never by a read; the read shows the host empty, the next save quarantines and lands.
 - 09-04-2026, Claude: the simplification round's twenty findings folded (blocks-key timing, rmwJsonStrict, dir-first primitives, the copy arm in main, static menu rows, the inline zoom variable, listTileHosts-driven migration, counts).
 
