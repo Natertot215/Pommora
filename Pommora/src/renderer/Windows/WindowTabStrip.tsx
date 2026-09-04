@@ -9,6 +9,7 @@ import { text } from '@renderer/DesignSystem/Tokens'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/navResolve'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
+import { useHeld } from '@renderer/Interactions/useHeld'
 import { useSession } from '../store'
 import type { PreviewTab } from './windowTabs'
 import '../Tabs/tab-base.css'
@@ -82,8 +83,7 @@ export function WindowTabStrip({
   const titlePresence = useExitPresence(!showStrip)
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the
   // live node would swap text mid-collapse without this hold.
-  const heldTitle = useRef(title)
-  if (!showStrip) heldTitle.current = title
+  const heldTitle = useHeld(title, !showStrip)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -103,7 +103,7 @@ export function WindowTabStrip({
             titlePresence.closing && 'is-collapsing',
           )}
         >
-          {titlePresence.closing ? heldTitle.current : title}
+          {heldTitle}
         </div>
       )}
       <div className="window-tabwrap tabs-compact">
