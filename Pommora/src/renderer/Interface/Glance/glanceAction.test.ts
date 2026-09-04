@@ -8,12 +8,13 @@ import {
   closeGlance,
   setGlancePresenter,
   watchAnchor,
-} from './glance-action'
+  type GlanceRequest,
+} from './glanceAction'
 
 const page = { kind: 'page', id: 'p1', path: 'Notes/A.md' } as const
 const site = { kind: 'site', url: 'https://example.com' } as const
 
-let present: ReturnType<typeof vi.fn>
+let present: ReturnType<typeof vi.fn<(next: GlanceRequest | null) => void>>
 let el: HTMLElement
 
 beforeEach(() => {
@@ -33,8 +34,8 @@ afterEach(() => {
 
 describe('the dwell', () => {
   it('fires once after the named dwell', () => {
-    armGlance(page, el, 'connection')
-    vi.advanceTimersByTime(GLANCE_DWELL.connection - 1)
+    armGlance(page, el, 'link')
+    vi.advanceTimersByTime(GLANCE_DWELL.link - 1)
     expect(present).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
     expect(present).toHaveBeenCalledTimes(1)
@@ -42,33 +43,33 @@ describe('the dwell', () => {
   })
 
   it('a re-arm replaces the pending one and fires with the latest target', () => {
-    armGlance(page, el, 'connection')
-    vi.advanceTimersByTime(GLANCE_DWELL.connection / 2)
-    armGlance(site, el, 'connection')
-    vi.advanceTimersByTime(GLANCE_DWELL.connection)
+    armGlance(page, el, 'link')
+    vi.advanceTimersByTime(GLANCE_DWELL.link / 2)
+    armGlance(site, el, 'link')
+    vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).toHaveBeenCalledTimes(1)
     expect(present).toHaveBeenCalledWith({ target: site, el })
   })
 
   it('cancel prevents the fire', () => {
-    armGlance(page, el, 'connection')
+    armGlance(page, el, 'link')
     cancelGlance()
-    vi.advanceTimersByTime(GLANCE_DWELL.connection)
+    vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).not.toHaveBeenCalled()
   })
 
   it('close clears a pending dwell and presents null', () => {
-    armGlance(page, el, 'connection')
+    armGlance(page, el, 'link')
     closeGlance()
-    vi.advanceTimersByTime(GLANCE_DWELL.connection)
+    vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).toHaveBeenCalledTimes(1)
     expect(present).toHaveBeenCalledWith(null)
   })
 
   it('an arm with no presenter is a no-op', () => {
     setGlancePresenter(null)
-    armGlance(page, el, 'connection')
-    expect(() => vi.advanceTimersByTime(GLANCE_DWELL.connection)).not.toThrow()
+    armGlance(page, el, 'link')
+    expect(() => vi.advanceTimersByTime(GLANCE_DWELL.link)).not.toThrow()
     expect(present).not.toHaveBeenCalled()
   })
 
@@ -77,8 +78,8 @@ describe('the dwell', () => {
     body.setAttribute(GLANCE_BODY_ATTR, '')
     body.appendChild(el)
     document.body.appendChild(body)
-    armGlance(page, el, 'connection')
-    vi.advanceTimersByTime(GLANCE_DWELL.connection)
+    armGlance(page, el, 'link')
+    vi.advanceTimersByTime(GLANCE_DWELL.link)
     expect(present).not.toHaveBeenCalled()
   })
 })

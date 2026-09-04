@@ -69,7 +69,7 @@ function connHitAt(
 export function connectionClicks(getApi: GetApi): Extension {
   return pointerHandlers<ConnHit>({
     hoverGate: '.md-connection-resolved',
-    armable: () => getApi()?.hover !== undefined,
+    armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => connHitAt(getApi(), view, event),
     follow: ({ page }, _view, event) => {
       const api = getApi()
@@ -77,8 +77,10 @@ export function connectionClicks(getApi: GetApi): Extension {
       return () => openPage(api, page, event.metaKey)
     },
     dwell: ({ page }, el) => {
-      const hover = getApi()?.hover
-      return page && hover ? () => hover(page, el) : null
+      const glance = getApi()?.glance
+      return page && glance
+        ? () => glance({ kind: 'page', id: page.id, path: page.path }, el)
+        : null
     },
     menu: ({ hit, page }, view) => {
       const menu = getApi()?.menu

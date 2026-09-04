@@ -1,116 +1,122 @@
-/* No overflow here: the pane's clip-path bounds the visuals and the page-tile owns the scroll,
-   while the resize strips straddle this box's edge — clipping would leave the visible border
-   inert under the pointer. */
-.conn-hover-body {
+/* No overflow here: the pane's clip-path bounds the visuals and the editor's scroller owns the
+   scroll, while the resize strips straddle this box's edge — clipping would leave the visible
+   border inert under the pointer. */
+.glance-body {
   position: relative;
 }
 
 /* The shield sits above the web guest in stacking order, so pointer events land on the host
    pane until `.is-lifted` fades it away to reveal the site. */
-.conn-hover-web,
-.conn-hover-web-shield {
+.glance-web,
+.glance-web-shield {
   position: absolute;
   inset: -4px;
   border-radius: var(--app-radius);
 }
-.conn-hover-web {
+.glance-web {
   display: flex;
   overflow: hidden;
 }
-.conn-hover-web-shield {
+.glance-web-shield {
   background: var(--surface-primary);
   transition: opacity var(--duration-base) var(--ease-base);
 }
-.conn-hover-web-shield.is-lifted {
+.glance-web-shield.is-lifted {
   opacity: 0;
 }
 
-.conn-hover-body .page-tile {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* Grip menus, fold chevrons, and gutter actions are inactive here, so the gutter lane reserves
-     nothing. */
+/* The scroller scrolls, not the tile, so the warm seam's scroll capture reads the element that
+   actually moved. Grip menus, fold chevrons, and gutter actions are inactive here, so the gutter
+   lane reserves nothing. */
+.glance-body .page-tile {
   --rail-inset: 0px;
 }
-/* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
+.glance-body .page-tile .cm-scroller {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat CM6's runtime overflow rule. */
+  overflow-x: hidden !important;
+  /* biome-ignore lint/complexity/noImportantStyles: as above. */
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+/* KNOB — the pane's interior inset: no vertical padding (scroll-only chrome earns none),
    symmetric sides. Text selects (read-only), so the I-beam stands. */
-.conn-hover-body .page-tile .mdpm-editor .cm-content {
+.glance-body .page-tile .mdpm-editor .cm-content {
   padding: 0 calc(14px * var(--page-detail-scale));
 }
-/* No chevron in the card — with the caret disabled, clicking the heading itself is the fold
+/* No chevron in the pane — with the caret disabled, clicking the heading itself is the fold
    toggle. */
-.conn-hover-body .mdpm-editor .cm-line.md-foldable::before {
+.glance-body .mdpm-editor .cm-line.md-foldable::before {
   display: none;
 }
-.conn-hover-body .mdpm-editor .cm-line.md-foldable {
+.glance-body .mdpm-editor .cm-line.md-foldable {
   cursor: pointer;
 }
 
 /* Both transitions run together: a border-color easing in beside an edge that snapped is what
    flashed the stroke white for a frame. */
-[data-picker-portal] div:has(.conn-hover-body) {
+[data-picker-portal] div:has(.glance-body) {
   transition:
     border-color var(--duration-base) var(--ease-base),
     box-shadow var(--duration-base) var(--ease-base);
 }
-[data-picker-portal] div:has([class^="conn-hover-resize-"]:hover),
-[data-picker-portal] div:has(.conn-hover-body.is-resizing) {
+[data-picker-portal] div:has([class^="glance-resize-"]:hover),
+[data-picker-portal] div:has(.glance-body.is-resizing) {
   --glass-outline: var(--accent-stroke-hot);
 }
 
 /* Each strip is a thin band along one side; on a flipped-up pane the free horizontal edge and its
    two corners mirror to the TOP, since the bottom edge is the anchored one. Corners render after
    the edges, so they win the overlap. */
-[class^="conn-hover-resize-"] {
+[class^="glance-resize-"] {
   position: absolute;
   z-index: 2;
 }
-.conn-hover-resize-e,
-.conn-hover-resize-w {
+.glance-resize-e,
+.glance-resize-w {
   top: 10px;
   bottom: 10px;
   width: 10px;
   cursor: ew-resize;
 }
-.conn-hover-resize-s,
-.conn-hover-resize-n {
+.glance-resize-s,
+.glance-resize-n {
   left: 10px;
   right: 10px;
   height: 10px;
   cursor: ns-resize;
 }
-.conn-hover-resize-se,
-.conn-hover-resize-ne,
-.conn-hover-resize-sw,
-.conn-hover-resize-nw {
+.glance-resize-se,
+.glance-resize-ne,
+.glance-resize-sw,
+.glance-resize-nw {
   width: 16px;
   height: 16px;
 }
-.conn-hover-resize-e,
-.conn-hover-resize-se,
-.conn-hover-resize-ne {
+.glance-resize-e,
+.glance-resize-se,
+.glance-resize-ne {
   right: -6px;
 }
-.conn-hover-resize-w,
-.conn-hover-resize-sw,
-.conn-hover-resize-nw {
+.glance-resize-w,
+.glance-resize-sw,
+.glance-resize-nw {
   left: -6px;
 }
-.conn-hover-resize-s,
-.conn-hover-resize-se,
-.conn-hover-resize-sw {
+.glance-resize-s,
+.glance-resize-se,
+.glance-resize-sw {
   bottom: -6px;
 }
-.conn-hover-resize-n,
-.conn-hover-resize-ne,
-.conn-hover-resize-nw {
+.glance-resize-n,
+.glance-resize-ne,
+.glance-resize-nw {
   top: -6px;
 }
-.conn-hover-resize-se,
-.conn-hover-resize-nw {
+.glance-resize-se,
+.glance-resize-nw {
   cursor: nwse-resize;
 }
-.conn-hover-resize-ne,
-.conn-hover-resize-sw {
+.glance-resize-ne,
+.glance-resize-sw {
   cursor: nesw-resize;
 }

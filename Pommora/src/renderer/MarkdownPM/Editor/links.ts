@@ -64,35 +64,33 @@ export function followTarget(
   return () => openWebLink(url)
 }
 
-/** What a dwell over a markdown link blooms — the page card for a target naming a page, the live
- *  site card for a web address. The attach gate refuses anything but http(s), so a mailto: arms
- *  nothing rather than a blank card. */
+/** What a dwell over a markdown link arms — a page glance for a target naming a page, a live site
+ *  glance for a web address. The attach gate refuses anything but http(s), so a mailto: arms
+ *  nothing rather than a blank pane. */
 export function dwellTarget(
   target: MdTarget,
   url: string,
   api: ConnectionsApi | undefined,
   el: Element,
 ): (() => void) | null {
-  if (!api || target.kind === 'invalid') return null
+  const glance = api?.glance
+  if (!glance || target.kind === 'invalid') return null
   if (target.kind === 'page') {
-    const page = target.page
-    return api.hover ? () => api.hover?.(page, el) : null
+    const { id, path } = target.page
+    return () => glance({ kind: 'page', id, path }, el)
   }
   const web = normalizeLinkUrl(url)
-  return api.hoverSite && hasWebScheme(web) ? () => api.hoverSite?.(web, el) : null
+  return hasWebScheme(web) ? () => glance({ kind: 'site', url: web }, el) : null
 }
 
 // Follow a markdown link on a plain single-click, on the shared pointer path. A link naming a page
-// is drawn as a connection and raises the same hover preview — the connection handler can't do it,
-// because its hit-test reads wikiLink tokens and this is a `link`.
+// is drawn as a connection and raises the same glance — the connection handler can't do it, because
+// its hit-test reads wikiLink tokens and this is a `link`.
 export function markdownLinkClicks(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
     hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
-    armable: () => {
-      const api = getApi()
-      return api?.hover !== undefined || api?.hoverSite !== undefined
-    },
+    armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => linkUnder(view, getApi, event),
     follow: (hit, _view, event) =>
       hit.onText ? followTarget(hit.target, hit.url, getApi(), event.metaKey) : null,

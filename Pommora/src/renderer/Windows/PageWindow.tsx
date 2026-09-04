@@ -8,9 +8,8 @@ import { PageTile } from '../SurfacePM/PageTile'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { CitationsToggle } from '../Interface/Subfield/CitationsToggle'
 import type { SubfieldPage } from '../Interface/Subfield/subfieldItems'
-import type { ConnectionsApi } from '../MarkdownPM/Connections'
+import { type ConnectionsApi, glanceLink } from '../MarkdownPM/Connections'
 import { showConnectionMenu } from '../Actions/connectionMenu'
-import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { getContentViewRect } from '../Interface/ContentView'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { pageIndexOf, resolveIndexOf, trailOf } from '../treeIndex'
@@ -117,8 +116,7 @@ function PageWindowBody({
       open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover: hoverConnection,
-      hoverSite: hoverWebsite,
+      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, openWindowTab, select])
