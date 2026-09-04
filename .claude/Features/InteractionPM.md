@@ -4,7 +4,7 @@ The named motions and the interaction primitives, built on the duration ladder a
 
 ### Motion Tokens
 
-Every permanent transition reads `DesignSystem/Animation/motion.ts` — `duration.fast/menu/base/slow` and `easing.baseEase/baseSnap`, bridged to CSS as `--duration-*`, `--ease-base`, and `--ease-snap`. The Bloom curve in `animations.css.ts` is the one named curve outside the token set: the open-and-close curve both Bloom rungs share. Debounces and zero-delay cleanups are not motion and never take a token.
+Every permanent transition reads `Animation/motion.ts` — `duration.fast/menu/base/slow` and `easing.baseEase/baseSnap`, bridged to CSS as `--duration-*`, `--ease-base`, and `--ease-snap`. The Bloom curve in `animations.css.ts` is the one named curve outside the token set: the open-and-close curve both Bloom rungs share. Debounces and zero-delay cleanups are not motion and never take a token.
 
 ### Named Animations
 
@@ -24,11 +24,11 @@ The page banner and title zone slides up under the toolbar on scroll: a scroll-t
 
 #### II. Floating Windows
 
-Every in-app window opens and closes on the `windowIn` / `windowOut` scale-fade in `DesignSystem/Animation`, on the `fast` token, its exit held by `useExitPresence`. The confirmation window takes the same pair, its scrim fading alongside on the same duration. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` in `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A window moves by a press on its bare surfaces: the shell itself, the body row, the side panel, and the title-bar band spanning the toolbar clearance its host reserves — the NavWindow and Settings put their own controls at the top, reserve none, and move by their inset ring instead. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
+Every in-app window opens and closes on the `windowIn` / `windowOut` scale-fade in `Animation`, on the `fast` token, its exit held by `useExitPresence`. The confirmation window takes the same pair, its scrim fading alongside on the same duration. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` in `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A window moves by a press on its bare surfaces: the shell itself, the body row, the side panel, and the title-bar band spanning the toolbar clearance its host reserves — the NavWindow and Settings put their own controls at the top, reserve none, and move by their inset ring instead. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
 
 ### Primitives
 
-The interaction layer in `DesignSystem/Interactions/` and `Animation/`: content-agnostic pointer, scroll, and motion primitives that fields and labels depend down into.
+The interaction layer in `Interactions/` and `Animation/`: content-agnostic pointer, scroll, and motion primitives that fields and labels depend down into.
 
 **The `--io` progress.** One registered `@property --io` (0 closed, 1 open) transitions once on `--duration-base` and drives the inspector's moving parts in lockstep: the inspector slide, the toolbar trio's swallow as the pill rides the pane's edge, and the trio's glass void. `.shell.is-resizing` sets transitions off for 1:1 cursor tracking during an edge drag, the sidebar collapse is a sibling slide on the same token, and a floating window parks a leading pane on the mirrored `--io-l`.
 
@@ -62,7 +62,7 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 
 The overflow-fade mechanism behind every capped label: a label truncates at rest and scrolls under the pointer to reveal its full text, its hidden edge fading into the surface. Three registered properties, two axis classes, and three modifiers; `--over-scroll-fade` is non-inheriting, so the knob sits on the element carrying the class. An axis class carries the fade, `over-scroll-cap` adds a capped-label box beneath it, and a label that can't hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
 
-**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/OverScroll.tsx` · `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/over-scroll.css`
+**SOURCE:** `Pommora/src/renderer/Interactions/OverScroll/OverScroll.tsx` · `Pommora/src/renderer/Interactions/OverScroll/over-scroll.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ The overflow-fade mechanism behind every capped label: a label truncates at rest
 
 The hover-revealed remove ×, with the label-tail melt as an option: hovering a chip's right third reveals the × while the label's tail blurs into the fill beneath it.
 
-**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/HoverRemove.tsx` · `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/hover-remove.css.ts`
+**SOURCE:** `Pommora/src/renderer/Interactions/HoverRemove/HoverRemove.tsx` · `Pommora/src/renderer/Interactions/HoverRemove/hover-remove.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
