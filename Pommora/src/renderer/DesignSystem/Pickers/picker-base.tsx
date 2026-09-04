@@ -107,7 +107,7 @@ export function PickerMenu({
     },
     [],
   )
-  const body = useHeld(children, !closing)
+  const body = useHeld(children, open !== false)
 
   const paneRef = useRef<HTMLDivElement>(null)
   const glassRef = useRef<HTMLDivElement>(null)
@@ -149,7 +149,7 @@ export function PickerMenu({
   useLayoutEffect(() => {
     // Freeze the pane's position through the Bloom-out: once closing, a detached or moved trigger
     // must not re-measure to zeros and snap the fading pane away.
-    if (!selfManaged || !mounted || closing) return
+    if (!selfManaged || !mounted || open !== true) return
     const point =
       anchorX !== undefined && anchorY !== undefined
         ? {
@@ -241,7 +241,7 @@ export function PickerMenu({
     selfManaged,
     mounted,
     triggerRef,
-    closing,
+    open,
     origin,
     direction,
     anchorX,
