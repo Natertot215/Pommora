@@ -11,6 +11,7 @@ import {
 import { titleOf } from '@shared/connections'
 import { linkActionText, linkHalves } from '../Editor/linkFormat'
 import { wikiAuthorTarget } from '../Editor/linkEdit'
+import { cancelGlance, closeGlance } from '@renderer/Interface/Glance/glanceAction'
 import { dwellTarget, followTarget } from '../Editor/links'
 import { useSession } from '../../store'
 import { CITE_GLYPH } from '../Editor/citationPointer'
@@ -151,9 +152,6 @@ function StaticCellImpl({
   onActivate,
   onCommit,
   onSelect,
-  onHoverArm,
-  onHoverLeave,
-  onHoverEnd,
   onCite,
 }: {
   text: string
@@ -168,14 +166,6 @@ function StaticCellImpl({
   onCommit: (text: string) => void
   /** Enter the cell with `range` selected, for the actions that put you in position to retype. */
   onSelect: (range: [number, number]) => void
-  /** The table's one hover intent — a delay shared across every cell, so two cells can never have
-   *  one armed at once. */
-  onHoverArm: (bloom: () => void) => void
-  /** The pointer left the link: cancel what is armed, but leave an open card alone — it sits in the
-   *  gap beside the link, so reaching it means leaving the link first. */
-  onHoverLeave: () => void
-  /** A gesture replaced the pointer's meaning: cancel what is armed AND dismiss what is open. */
-  onHoverEnd: () => void
   /** Go to the citation a marker binds to. The table's, because the citation lives in the page
    *  around the cell rather than in the cell's own text. */
   onCite?: (label: string) => void
@@ -255,20 +245,21 @@ function StaticCellImpl({
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
-        // The pair every gesture that replaces the pointer's meaning owes it.
-        onHoverEnd()
+        // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed
+        // AND dismiss what is open.
+        closeGlance()
         openMenu(e)
       }}
       onMouseOver={(e) => {
-        onHoverLeave()
         const found = linkAt(e)
-        const bloom = found && dwellTarget(found.target, found.url, connections?.(), found.el)
-        if (bloom) onHoverArm(bloom)
+        found && dwellTarget(found.target, found.url, connections?.(), found.el)?.()
       }}
-      onMouseOut={onHoverLeave}
+      // The pointer left the link: cancel what is armed, but leave an open pane alone — it sits in
+      // the gap beside the link, so reaching it means leaving the link first.
+      onMouseOut={cancelGlance}
       onClick={(e) => {
         if (e.button !== 0) return
-        onHoverEnd()
+        closeGlance()
         const go = claimCite(e) ?? claimLink(e)
         if (go) return go()
         // A press that dragged out a selection leaves it standing — the highlight IS what it asked

@@ -11,7 +11,7 @@ import {
   type ViewPickerItem,
 } from '@shared/blocks'
 import { GLIDE_FEEL } from '@renderer/Animation/feel'
-import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import { type ConnPage, type ConnectionsApi, glanceLink } from '@renderer/MarkdownPM/Connections'
 import {
   containersByPathOf,
   pageIndexOf,
@@ -19,7 +19,6 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
-import { hoverConnection, hoverWebsite } from '@renderer/Links/ConnectionPane'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/Core/ops'
 import { getTile } from '@renderer/SurfacePM/Core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
@@ -138,8 +137,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover: hoverConnection,
-      hoverSite: hoverWebsite,
+      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, select, openWindow, openInWindow])

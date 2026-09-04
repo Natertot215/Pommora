@@ -12,7 +12,7 @@ export interface GlanceRequest {
 }
 
 /** KNOB — one dwell per host kind; a host names its row. */
-export const GLANCE_DWELL = { connection: 1000 } as const
+export const GLANCE_DWELL = { link: 1000 } as const
 export type GlanceDwell = keyof typeof GLANCE_DWELL
 
 /** The pane's own body carries this attribute; an anchor inside it never arms. */
