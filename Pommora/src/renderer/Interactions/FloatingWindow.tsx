@@ -24,7 +24,7 @@ interface Geo {
 }
 
 // Geometry survives each window's exit-presence unmount, keyed per window id — never a bare
-// module singleton (multiple simultaneous windows need geometry slots that don't share one slot).
+// module singleton, which simultaneous windows would have to share.
 const geoStore = new Map<string, Geo>()
 
 export function useFloatingWindow(

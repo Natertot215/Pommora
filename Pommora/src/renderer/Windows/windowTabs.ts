@@ -20,40 +20,41 @@ export interface WindowState {
 const targetPageId = (t: WindowTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
 export function openTabIn(
-  p: WindowState,
+  win: WindowState,
   makeId: () => string,
   target: { id: string; path: string },
 ): WindowState {
-  const existing = p.tabs.find((t) => targetPageId(t.target) === target.id)
+  const existing = win.tabs.find((t) => targetPageId(t.target) === target.id)
   if (existing) {
-    return existing.id === p.activeTabId ? p : { ...p, activeTabId: existing.id }
+    return existing.id === win.activeTabId ? win : { ...win, activeTabId: existing.id }
   }
   const tab: WindowTab = { id: makeId(), target: { kind: 'page', ...target } }
-  return { ...p, tabs: [...p.tabs, tab], activeTabId: tab.id }
+  return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
 }
 
 /** The map sentinel is immovable AND un-landable — it holds slot 1. */
-export function reorderTabIn(p: WindowState, activeId: string, overId: string): WindowState {
-  const from = p.tabs.findIndex((t) => t.id === activeId)
-  const to = p.tabs.findIndex((t) => t.id === overId)
-  if (from === -1 || to === -1 || from === to) return p
-  if (p.tabs[from].target.kind === 'navwindow' || p.tabs[to].target.kind === 'navwindow') return p
-  return { ...p, tabs: moveItem(p.tabs, from, to) }
+export function reorderTabIn(win: WindowState, activeId: string, overId: string): WindowState {
+  const from = win.tabs.findIndex((t) => t.id === activeId)
+  const to = win.tabs.findIndex((t) => t.id === overId)
+  if (from === -1 || to === -1 || from === to) return win
+  if (win.tabs[from].target.kind === 'navwindow' || win.tabs[to].target.kind === 'navwindow')
+    return win
+  return { ...win, tabs: moveItem(win.tabs, from, to) }
 }
 
-export function closeTabIn(p: WindowState, id: string): WindowState | null {
-  const idx = p.tabs.findIndex((t) => t.id === id)
-  if (idx === -1) return p
-  if (p.tabs[idx].target.kind === 'navwindow') return p // the map tab is perma-pinned
-  const tabs = p.tabs.filter((t) => t.id !== id)
+export function closeTabIn(win: WindowState, id: string): WindowState | null {
+  const idx = win.tabs.findIndex((t) => t.id === id)
+  if (idx === -1) return win
+  if (win.tabs[idx].target.kind === 'navwindow') return win // the map tab is perma-pinned
+  const tabs = win.tabs.filter((t) => t.id !== id)
   if (tabs.length === 0) return null
-  const activeTabId = p.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : p.activeTabId
+  const activeTabId = win.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : win.activeTabId
   const firstPage = tabs.find((t) => targetPageId(t.target) !== null)
-  const closedOrigin = targetPageId(p.tabs[idx].target) === p.originId
+  const closedOrigin = targetPageId(win.tabs[idx].target) === win.originId
   const originId =
-    closedOrigin && firstPage ? (targetPageId(firstPage.target) as string) : p.originId
-  if (!firstPage && p.flavor === 'page') return null
-  return { ...p, tabs, activeTabId, originId }
+    closedOrigin && firstPage ? (targetPageId(firstPage.target) as string) : win.originId
+  if (!firstPage && win.flavor === 'page') return null
+  return { ...win, tabs, activeTabId, originId }
 }
 
 /** The page the window is showing — the active tab's own target, so a subscriber sees one

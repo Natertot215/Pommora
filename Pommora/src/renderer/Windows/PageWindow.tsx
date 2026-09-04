@@ -80,11 +80,11 @@ function PageWindowBody({
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  const [windowBody, setWindowBody] = useState('')
+  const [bodyText, setBodyText] = useState('')
   const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
   useEffect(() => {
-    setWindowBody('')
+    setBodyText('')
     clearTimeout(statsTimer.current)
   }, [target.path])
   useEffect(
@@ -93,18 +93,18 @@ function PageWindowBody({
     },
     [],
   )
-  const onWindowBody = (b: string): void => {
+  const onBodyText = (b: string): void => {
     clearTimeout(statsTimer.current)
     if (seededPath.current !== target.path) {
       seededPath.current = target.path
-      setWindowBody(b)
+      setBodyText(b)
       return
     }
-    statsTimer.current = setTimeout(() => setWindowBody(b), STATS_DEBOUNCE_MS)
+    statsTimer.current = setTimeout(() => setBodyText(b), STATS_DEBOUNCE_MS)
   }
   const page = useMemo<SubfieldPage>(
-    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: windowBody }),
-    [target.id, target.path, windowBody],
+    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: bodyText }),
+    [target.id, target.path, bodyText],
   )
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
@@ -226,7 +226,7 @@ function PageWindowBody({
           editing={editing}
           onBeginEdit={() => setEditing(true)}
           connections={connections}
-          onBody={onWindowBody}
+          onBody={onBodyText}
           warm={warmSeam}
         />
       </div>

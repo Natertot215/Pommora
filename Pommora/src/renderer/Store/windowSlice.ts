@@ -73,15 +73,15 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by
   // the stored (page-only) order.
-  const toWindowRecord = (p: WindowState): WindowSetRecord => {
-    const pages = p.tabs.filter(
+  const toWindowRecord = (win: WindowState): WindowSetRecord => {
+    const pages = win.tabs.filter(
       (t): t is WindowTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
     )
     return {
       tabs: pages.map((t) => ({ target: toNavRef(t.target) })),
       activeIndex: Math.max(
         0,
-        pages.findIndex((t) => t.id === p.activeTabId),
+        pages.findIndex((t) => t.id === win.activeTabId),
       ),
     }
   }
@@ -95,21 +95,21 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const mirrorWindows = (retire?: string): void => {
     const s = get()
-    const p = s.pageWindow
+    const win = s.pageWindow
     let file = s.windowsFile
-    if (retire && retire !== p?.originId) {
+    if (retire && retire !== win?.originId) {
       const { [retire]: _dropped, ...origins } = file.origins
       file = { ...file, origins }
     }
-    if (p) {
-      const rec = toWindowRecord(p)
+    if (win) {
+      const rec = toWindowRecord(win)
       file =
-        p.flavor === 'nav'
-          ? { ...file, navSet: rec, open: { flavor: 'nav', originId: p.originId } }
+        win.flavor === 'nav'
+          ? { ...file, navSet: rec, open: { flavor: 'nav', originId: win.originId } }
           : {
               ...file,
-              origins: { ...file.origins, [p.originId]: rec },
-              open: { flavor: 'page', originId: p.originId },
+              origins: { ...file.origins, [win.originId]: rec },
+              open: { flavor: 'page', originId: win.originId },
             }
     } else {
       file = { ...file, open: null }
@@ -163,7 +163,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         restored.length > 0
           ? restored
           : [{ id: makeTabId(), target: { kind: 'page' as const, ...target } }]
-      const pageWindow: WindowState = {
+      const next: WindowState = {
         flavor: 'page',
         originId: target.id,
         tabs,
@@ -171,7 +171,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }
       clearWindowCache()
       // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
-      set({ pageWindow, navOpen: false, windowExit: 'dismiss' })
+      set({ pageWindow: next, navOpen: false, windowExit: 'dismiss' })
       mirrorWindows()
     },
     openNavWindow: () => {
@@ -183,14 +183,14 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       if (morphing) stashWindowMorph()
       const { tabs: pages } = reconcileRecord(get().windowsFile.navSet)
       const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }
-      const pageWindow: WindowState = {
+      const next: WindowState = {
         flavor: 'nav',
         originId: 'navwindow',
         tabs: [sentinel, ...pages],
         activeTabId: sentinel.id,
       }
       clearWindowCache()
-      set({ pageWindow, windowExit: morphing ? 'morph' : 'dismiss' })
+      set({ pageWindow: next, windowExit: morphing ? 'morph' : 'dismiss' })
       mirrorWindows()
     },
     setNavOverride: (on) => saveWindowsFile({ ...get().windowsFile, navOverride: on }),
