@@ -36,7 +36,6 @@ axes deliberately obey different physics:
 | `core/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
 | `core/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
 | `core/codec.ts` | Persistence codec — decoding repairs (renormalize, collapse, dedupe) rather than rejects |
-| `sensors/pointerDrag.ts` | One-shot pointer-capture drag primitive (PommoraDND vocabulary) |
 | `SurfaceView.tsx` | The React surface — gestures, preview, settle, placement tint |
 | `SurfaceLab.tsx` | Dev harness (demo + stress layouts) |
 

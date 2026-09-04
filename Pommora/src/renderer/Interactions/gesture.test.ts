@@ -157,6 +157,28 @@ describe('gesture skeleton hardening', () => {
     unrelated.remove()
   })
 
+  it('Escape aborts an active drag and the next begin succeeds', () => {
+    const onAbort = vi.fn()
+    const onDrop = vi.fn()
+    gesture.beginPointerGesture(spec({ onAbort, onDrop }))
+    move(20, 20)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(onAbort).toHaveBeenCalledOnce()
+    firePointer(window, 'pointerup')
+    expect(onDrop).not.toHaveBeenCalled()
+    expect(gesture.beginPointerGesture(spec({}))).not.toBeNull()
+  })
+
+  it('pointercancel aborts an active drag', () => {
+    const onAbort = vi.fn()
+    const onDrop = vi.fn()
+    gesture.beginPointerGesture(spec({ onAbort, onDrop }))
+    move(20, 20)
+    firePointer(window, 'pointercancel')
+    expect(onAbort).toHaveBeenCalledOnce()
+    expect(onDrop).not.toHaveBeenCalled()
+  })
+
   it('teardown runs before onAbort on every abort path — per-gesture state consumed by onAbort must not be cleared in teardown', () => {
     const calls: string[] = []
     gesture.beginPointerGesture(

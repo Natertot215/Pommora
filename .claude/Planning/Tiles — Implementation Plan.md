@@ -242,11 +242,11 @@ const begin = usePointerGesture()   // one per SurfaceView; both handlers share 
 
 **Verify — automated**
 
-- [ ] Red first: the two new `gesture.test.ts` cases fail against nothing? They pass today (the engine already does this) — so they are ported as coverage, not red-green; say so in the commit. The red-green here is `SurfaceView`'s own: a `TileGrid.test.tsx` case that presses an edge, moves 30px on `window`, releases, and expects `onLayoutChange` once with the stretched height. Red before (the sensor listens on the element, not `window`), green after.
-- [ ] `rg -F "startPointerDrag" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] `rg -F "Sensors" src` → 0.
-- [ ] CDP count: with the dev app open on a Space, wrap `onDragMove` in a counter (instrumentation, removed before commit, grep-verified) and drag an edge across ~60 frames; the count per `requestAnimationFrame` tick must be ≤ 1.2 on average. If it isn't, `PointerGestureSpec` gains `coalesce?: boolean` and the engine's one `onDragMove` dispatch (`gesture.ts:124-129`) gates on a frame — one definition every consumer can take; record the number in Deviations.
-- [ ] Full gate green.
+- [x] Red first: the two new `gesture.test.ts` cases fail against nothing? They pass today (the engine already does this) — so they are ported as coverage, not red-green; say so in the commit. The red-green here is `SurfaceView`'s own: a `TileGrid.test.tsx` case that presses an edge, moves 30px on `window`, releases, and expects `onLayoutChange` once with the stretched height. Red before (the sensor listens on the element, not `window`), green after.
+- [x] `rg -F "startPointerDrag" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] `rg -F "Sensors" src` → 0.
+- [x] CDP count: with the dev app open on a Space, wrap `onDragMove` in a counter (instrumentation, removed before commit, grep-verified) and drag an edge across ~60 frames; the count per `requestAnimationFrame` tick must be ≤ 1.2 on average. If it isn't, `PointerGestureSpec` gains `coalesce?: boolean` and the engine's one `onDragMove` dispatch (`gesture.ts:124-129`) gates on a frame — one definition every consumer can take; record the number in Deviations.
+- [x] Full gate green.
 
 **Verify — user**
 
@@ -734,6 +734,9 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Task 2: the grid's red-green case lives in `SurfaceView.test.tsx` beside its subject (the plan named `TileGrid.test.tsx`); Task 3's move renames it with the file. The engine's two ported cases pass against the engine as it stood, as the plan predicted.
+- Task 2, the CDP count: a 60-move edge drag on the homepage grid (moves dispatched every 16ms) fired `onDragMove` 60 times over ~119 rAF ticks on the 120Hz panel — 0.50 per frame, 1.00 per move; three runs identical. Under the 1.2 bar; `coalesce` is not added. The homepage layout was snapshotted before and restored byte-identical after.
 
 ### Lessons
 
