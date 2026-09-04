@@ -364,8 +364,6 @@ describe('PickerMenu auto-centering', () => {
   })
 })
 
-// The close render: `closing` turns true one passive effect after `open` turns false, so anything
-// gated on it acts a render late — the hold and the placement freeze both gate on `open`.
 describe('PickerMenu close render', () => {
   const PANE_H = 300
   const realRect = Element.prototype.getBoundingClientRect
