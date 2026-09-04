@@ -321,12 +321,6 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
 | RenamableLabel | `RenamableLabel` | The inline-rename swap. |
 
-#### Side Pane
-
-| Title      | Export                       | What it is                                                                                                                                                                                                                   |
-| ---------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SidePane   | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`.                                                                                                                                                                                 |
-
 ### Menus
 
 `Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.

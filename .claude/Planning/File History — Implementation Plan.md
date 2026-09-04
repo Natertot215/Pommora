@@ -478,7 +478,7 @@ export function historyRowModel(rows: SnapshotRow[], checked: ReadonlySet<number
 // src/renderer/Windows/PageHistoryWindow.tsx (new) + page-history-window.css (new)
 export function PageHistoryWindow(): React.JSX.Element | null
 // useExitPresence over historyTarget · WindowBase id="page-history", title=<NavTrail segments={ancestryOf(tree, {kind:'page', id})} selected/>,
-//   no onScan/actions/footer · right={{ windowId: 'page-history-list', bounds: WINDOW_BASE_INSPECTOR, mode: 'overlay', open: true }}
+//   no onScan/actions/footer · right={{ windowId: 'page-history-list', bounds: WINDOW_BASE_PANEL, mode: 'overlay', open: true }}
 // state: rows · checked: Set<ts> · lastChecked · highlighted; refresh() on open and after every action
 // body: <MarkdownEditor key={`${path}:${shown ?? 'current'}`} initialBody readOnly onChange={() => {}} connections={resolveOnly} embedAncestors={['page-history', path]} />
 //   resolveOnly as ConnectionPane.tsx:288 builds it — without connections, embeds render as raw text

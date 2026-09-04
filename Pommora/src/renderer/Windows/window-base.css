@@ -152,10 +152,17 @@
   position: relative;
   flex: 1;
   min-width: 0;
-  align-self: stretch;
+  /* The toolbar strip is zero-height; the tab row anchors to the top and stands its own height so it
+     does not collapse. Its empty space stays click-through (the toolbar's pointer-events: none) so the
+     window still drags there — only the tabs themselves (tab-base.css) opt back in. */
+  align-self: flex-start;
+  height: var(--window-toolbar-h);
   display: flex;
   align-items: center;
-  padding-right: var(--window-title-squeeze, 0px);
+  /* KNOB — clear the floating lead (scan) and trailing (inspector + close) clusters; the squeeze
+     rides on top to stop the row at an open pane's leading edge. */
+  padding-left: calc(var(--window-panel-inset) + 22px);
+  padding-right: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
 }
 .page-window-crumbs {
   min-width: 0;

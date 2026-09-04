@@ -41,7 +41,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Actions                          | • The verbs — selection, pageMenuActions, nativeMenus, Commands, RenamableTitle, destinationTree
 ├── // DesignSystem                     | • The pieces of the design system
 │   ├── // Pickers                      | • The picker family — picker-base is the most-composed primitive in the system
-│   ├── // Buttons · // Controls · // Fields · // SidePane
+│   ├── // Buttons · // Controls · // Fields
 │   ├── // Interactions
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Glass                        | • The material — glass-base, -pane, -surface, -window, -control
@@ -111,10 +111,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 - [ ] **`Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Interface/` absorbing `Sidebar/`.** *Why:* the same window's chrome, read by the same InterfacePM; one top-level folder disappears. *Status:* awaiting ruling (§3.2).
-
-#### Boundaries
-
-- [ ] **The side slot** — `SidePane` is the sliding slot every Window mounts; the main window's sidebar and inspector do not. The overlay park and the in-flow reflow are one motion, `Animation/PaneSlide.css.ts`, consumed by the inspector and the windows; the `--io` / `--io-l` driver stays a home per host (`styles.css`, `window-base.css`) so the toolbar swallow and the content gutter read the same interpolation, and the `Sidebar` keeps its own static slide. What's left: the main window mounts `SidePane` for both slots; `InspectorPane` and `WindowInspector` (same frontmatter surface, different chrome) reconcile — one component or one name over two, measured by shared chrome; the `Sidebar`'s slide folds onto `PaneSlide`; the store's `closePreview` / `settingsOpen` names follow the windows they open. *Why:* one motion, one owner. *Status:* ruled; the motion unified, the SidePane-mount and reconcile parked; **the one behavior change in the vocabulary.**
 
 #### Tokens & Geometry
 
