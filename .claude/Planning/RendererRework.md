@@ -39,15 +39,16 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Assets                           | • NEW — assetUrl + the crop-aware AssetImage, out of the design system
 ├── // Cards                            | • The card chassis the gallery and CardView wear
 ├── // Actions                          | • The verbs — selection, pageMenuActions, nativeMenus, Commands, RenamableTitle, destinationTree
+├── // Animation                        | • Motion tokens, the feel, the enter/exit primitives, paneSlide — out of the design system
+├── // Interactions                     | • The pointer, scroll, and drag layer — out of the design system
+│   └── reorderModel.ts                 | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 ├── // DesignSystem                     | • The pieces of the design system
 │   ├── // Pickers                      | • The picker family — picker-base is the most-composed primitive in the system
 │   ├── // Buttons · // Controls · // Fields
-│   ├── // Interactions
-│   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Glass                        | • The material — glass-base, -pane, -surface, -window, -control
 │   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -disclosure, -anchor, frame-slide, frame-growth; menu-index
 │   ├── // Tokens                       | • Color, type, geometry, the bridge; accent + personalization
-│   └── …                               | • Animation, Elements, Labels, Symbols, Util
+│   └── …                               | • Elements, Labels, Symbols, Util
 ├── // Frames                           | • The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, property, settings
 ├── // Interface                        | • The main window's chrome and its routed pane
 │   ├── // Subfield                     | • The subfield; Banner and the title sheets sit flat in Interface/
@@ -123,6 +124,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **The floating identity label** — embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element, or NavTrail absorbing the webpage case. *Status:* audit decides whether the three share enough chrome.
 - [ ] **Menu rows with horizontal property values** — multi-value rows land their values tight against the label; a pane-width-relative max-width for the value side has been tried and reverted several times. *Status:* audit decides (a known issue carried from ContextPM).
 - [ ] **`{ minWidth: 96, height: 24 }`** written byte-identically in `PropertyPicker.tsx:123` and `CardAddPicker.tsx:118` — one class. *Status:* ruled.
+- [ ] **CalendarPicker delegates its dropdowns to `PickerMenu`** — the month, year, and time menus hand-roll the anchored-dropdown lifecycle (a local `PortalMenu` + `rectOf`, two `useExitPresence`, a three-mode dismiss effect) that `PickerMenu`'s own `open` / `onDismiss` / `anchorX` already is; delegating drops ~60–80 lines and removes Settled 5's two `closing` callers. `SizeMorph` is a separate hand-roll (one of ~15 `ResizeObserver` sites) wanting a shared height-morph primitive minted first. *Why:* R2/DRY. *Status:* ruled — the cheap folds (the held menus onto `useHeld`, the render gate) landed; this is the deferred proper look. Behavior: the dropdowns' positioning, dismissal, and exit change hands — verify live.
 
 #### Styling
 
