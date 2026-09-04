@@ -397,12 +397,12 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 
 **Verify — automated**
 
-- [ ] `rg -F "closingProp" src` → 0. Control: `rg -F "exitClosing" src` → ≥ 3.
-- [ ] Full gate green; showcase builds (manual-mode `<PickerMenu solid>` in ComponentsLeaf).
+- [x] `rg -F "closingProp" src` → 0. Control: `rg -F "exitClosing" src` → ≥ 3.
+- [x] Full gate green; showcase builds (manual-mode `<PickerMenu solid>` in ComponentsLeaf).
 
 **Verify — user**
 
-- [ ] (none)
+- [x] (none)
 
 #### Gate 2 — CalendarPicker, three dropdowns, one morph
 
@@ -426,9 +426,9 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
   - [x] Task 2 — `morph` opt-in · `43f87590` (+ `46efc7d8` simplification)
 - [ ] **Phase 2** — CalendarPicker · base `46efc7d8`
   - [x] Task 3 — two root PickerMenus · `ecc20fe5`
-  - [x] Task 4 — SizeMorph goes, the calendar owns its height changes · (this commit)
+  - [x] Task 4 — SizeMorph goes, the calendar owns its height changes · `b313ae08`
   - [ ] Task 4 — hosts opt in, SizeMorph goes · `<commit>`
-  - [ ] Task 5 — delete the `closing` prop · `<commit>`
+  - [x] Task 5 — delete the `closing` prop · (this commit)
 
 ### Rulings
 

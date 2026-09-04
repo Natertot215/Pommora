@@ -61,7 +61,6 @@ export function PickerMenu({
   open,
   onDismiss,
   triggerRef,
-  closing: closingProp = false,
   solid = false,
   glass = 'surface',
   direction = 'down',
@@ -83,7 +82,6 @@ export function PickerMenu({
   open?: boolean
   onDismiss?: () => void
   triggerRef?: RefObject<Element | null>
-  closing?: boolean
   solid?: boolean
   glass?: 'surface' | 'pane'
   direction?: PickerDirection
@@ -103,13 +101,13 @@ export function PickerMenu({
 }): React.JSX.Element | null {
   const selfManaged = open !== undefined
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
-  const closing = selfManaged ? exitClosing : closingProp
+  const closing = selfManaged && exitClosing
   useEffect(() => {
     if (!selfManaged || !mounted) return
     return markPickerOpen()
   }, [selfManaged, mounted])
   const liveRef = useRef(false)
-  liveRef.current = selfManaged ? (open ?? false) || exitClosing : closingProp
+  liveRef.current = selfManaged && ((open ?? false) || exitClosing)
   useEffect(
     () => () => {
       if (import.meta.env.DEV && liveRef.current)
