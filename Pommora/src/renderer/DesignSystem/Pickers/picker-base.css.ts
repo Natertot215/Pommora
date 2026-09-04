@@ -57,7 +57,7 @@ const CHOSEN_MARK = { color: 'var(--accent)', flex: 'none' } as const
 
 export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
 
-export const backdrop = style({ position: 'fixed', inset: 0, zIndex: stack.top.menuBackdrop })
+export const shield = style({ position: 'fixed', inset: 0, zIndex: stack.top.menu })
 
 /** KNOB — the pane's corner radius. `MenuSurface` is the one shell that still wears a beak; this one
  *  is a plain rounded rect, so its gutter is even on all four sides and needs no directional twin. */

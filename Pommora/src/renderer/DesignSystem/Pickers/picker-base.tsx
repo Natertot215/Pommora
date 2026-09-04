@@ -13,7 +13,7 @@ import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { useHeld } from '@renderer/Interactions/useHeld'
 import { GlassPane, GlassSurface, GlassWindow } from '@renderer/DesignSystem/Glass'
 import { MenuScrollFrame } from '@renderer/DesignSystem/Menus/menu-row'
-import { markPickerOpen } from '@renderer/Interactions/useDismiss'
+import { SHIELD_ATTR, useDismissal } from '@renderer/Interactions/dismissalStack'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { MENU_GAP as GAP } from '@renderer/DesignSystem/Menus/menu-anchor'
@@ -106,10 +106,14 @@ export function PickerMenu({
   const selfManaged = open !== undefined
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
   const closing = selfManaged && exitClosing
-  useEffect(() => {
-    if (!selfManaged || !mounted || !modal) return
-    return markPickerOpen()
-  }, [selfManaged, mounted, modal])
+  const paneRef = useRef<HTMLDivElement>(null)
+  const markerRef = useRef<HTMLSpanElement>(null)
+  const drawsShield = useDismissal(selfManaged && mounted && modal, closing, {
+    layer: () => paneRef.current,
+    trigger: () => triggerRef?.current ?? markerRef.current?.parentElement ?? null,
+    dismiss: onDismiss,
+    shield: onDismiss !== undefined,
+  })
   const liveRef = useRef(false)
   liveRef.current = open === true || closing
   useEffect(
@@ -123,9 +127,7 @@ export function PickerMenu({
   )
   const body = useHeld(children, open !== false)
 
-  const paneRef = useRef<HTMLDivElement>(null)
   const glassRef = useRef<HTMLDivElement>(null)
-  const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPosState] = useState<Pos | null>(null)
   const setPos = (next: Pos): void => setPosState((prev) => (samePos(prev, next) ? prev : next))
   const [effDir, setEffDir] = useState<PickerDirection>(direction)
@@ -258,23 +260,6 @@ export function PickerMenu({
     onDirection,
   ])
 
-  useEffect(() => {
-    if (!onDismiss || open !== true || closing) return
-    const onKey = (e: KeyboardEvent): void => {
-      // A field that handled its own Escape marks the press — the same stand-down contract
-      // useDismiss honors, so abandoning a rename never takes the pane holding it.
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      // One Escape peels one pane. A stacked pane may be a SIBLING of the one it hangs off (whose
-      // listener then registers first), so the DOM order of the live panes decides, not effect order.
-      const live = document.querySelectorAll('[data-picker-live]')
-      if (live.length > 0 && live[live.length - 1] !== paneRef.current) return
-      e.preventDefault()
-      onDismiss()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onDismiss, open, closing])
-
   const managed = selfManaged && manageFocus
   const focusReturn = useRef<HTMLElement | null>(null)
   const tookFocus = useRef(false)
@@ -364,14 +349,14 @@ export function PickerMenu({
       <span ref={markerRef} aria-hidden style={{ display: 'none' }} />
       {createPortal(
         <>
-          {onDismiss && !closing ? (
-            // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-catching backdrop — Escape is the keyboard dismissal
+          {drawsShield && !closing ? (
+            // biome-ignore lint/a11y/noStaticElementInteractions: a shield, not a control
             <div
-              className={s.backdrop}
+              className={s.shield}
               data-picker-portal
+              {...{ [SHIELD_ATTR]: '' }}
               onPointerDown={stopPointerBubble}
               onContextMenu={stopContextBubble}
-              onClick={onDismiss}
             />
           ) : null}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
@@ -379,7 +364,6 @@ export function PickerMenu({
             ref={paneRef}
             className={s.layer}
             data-picker-portal
-            data-picker-live={onDismiss && !closing ? '' : undefined}
             tabIndex={managed ? -1 : undefined}
             onPointerDown={stopPointerBubble}
             onContextMenu={stopContextBubble}

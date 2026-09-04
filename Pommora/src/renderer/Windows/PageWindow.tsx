@@ -28,15 +28,11 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
-import { contextOptionsFor } from '@renderer/Properties/contextOptions'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
+import { PropertyValueEditors } from '@renderer/Properties/Assignment/PropertyValueEditors'
 import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'
-import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import { linkEditText, urlValueFromEdit } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
-import { TextPicker } from '@renderer/DesignSystem/Pickers/TextPicker'
-import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
-import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
 import { resolveFieldValue } from '@renderer/Properties/value'
 import { fetchPageDetail, readPageDetail } from '../Store/tabState'
 import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/usePropertyRows'
@@ -238,7 +234,6 @@ function PageWindowBody({
 
 export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
-  const tree = useSession((s) => s.tree)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
@@ -347,15 +342,6 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
     if (action === 'value:clear' || action === 'value:remove')
       emptyRow(id, action === 'value:clear')
   }
-  const rawLinkOf = (id: string): string => {
-    const v = resolveFieldValue(row, id, schema)
-    return v.kind === 'url' ? v.value : ''
-  }
-  const editingDef =
-    editing &&
-    (schema.find((d) => d.id === editing.id) ??
-      (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
-
   return (
     <div className="page-window-insp">
       <div className="page-window-insp-rows over-scroll">
@@ -506,49 +492,16 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
             </PickerRow>
           ))}
       </PickerMenu>
-      {editing?.mode === 'rename' && (
-        <TextPicker
-          open
-          triggerRef={triggerRef}
-          value={linkAlias(rawLinkOf(editing.id)) ?? ''}
-          accent={solidColorCss(schema.find((d) => d.id === editing.id)?.link_color)}
-          onCommit={(alias) => {
-            commitValue(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
-            setEditing(null)
-          }}
-          onDismiss={() => setEditing(null)}
-        />
-      )}
-      {editingDef && editing?.mode === 'picker' && (
-        <PropertyPicker
-          def={editingDef}
-          current={resolveFieldValue(row, editing.id, schema)}
-          open
-          triggerRef={triggerRef}
-          {...(editingDef.type === 'context' && tree
-            ? { contextOptions: contextOptionsFor(editing.id, tree) }
-            : {})}
-          onCommit={(v) => {
-            if (isContextRow(editing.id))
-              commitContext(editing.id, v?.kind === 'context' ? v.value : [])
-            else commitValue(editing.id, v)
-          }}
-          onDismiss={() => setEditing(null)}
-        />
-      )}
-      <PickerMenu
-        solid
-        open={editing?.mode === 'date'}
-        onDismiss={() => setEditing(null)}
+      <PropertyValueEditors
+        editing={editing}
+        onDone={() => setEditing(null)}
         triggerRef={triggerRef}
-      >
-        {editing?.mode === 'date' && (
-          <DatetimeValuePicker
-            value={resolveFieldValue(row, editing.id, schema)}
-            onCommit={(v) => commitValue(editing.id, v)}
-          />
-        )}
-      </PickerMenu>
+        row={row}
+        schema={schema}
+        isContextRow={isContextRow}
+        commitValue={commitValue}
+        commitContext={commitContext}
+      />
     </div>
   )
 }

@@ -9,15 +9,11 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
-import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import { linkEditText, urlValueFromEdit } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
-import { TextPicker } from '@renderer/DesignSystem/Pickers/TextPicker'
-import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { contextOptionsFor } from '@renderer/Properties/contextOptions'
 import { resolveFieldValue } from '@renderer/Properties/value'
 import { PropertyEditor } from '@renderer/Properties/Assignment/PropertyEditor'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Assignment/PropertyPicker'
-import { DatetimeValuePicker } from '@renderer/Properties/Assignment/DatetimeValuePicker'
+import { PropertyValueEditors } from '@renderer/Properties/Assignment/PropertyValueEditors'
 import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'
 import { side } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { usePropertyRows, type Editing } from '@renderer/Properties/Assignment/usePropertyRows'
@@ -148,15 +144,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     </div>
   )
   if (!ctx || !row || !fm) return frame(null)
-
-  const rawLinkOf = (id: string): string => {
-    const v = resolveFieldValue(row, id, schema)
-    return v.kind === 'url' ? v.value : ''
-  }
-  const editingDef =
-    editing &&
-    (schema.find((d) => d.id === editing.id) ??
-      (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
@@ -291,49 +278,16 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
           </PickerRow>
         ))}
       </PickerMenu>
-      {editing?.mode === 'rename' && (
-        <TextPicker
-          open
-          triggerRef={triggerRef}
-          value={linkAlias(rawLinkOf(editing.id)) ?? ''}
-          accent={solidColorCss(schema.find((d) => d.id === editing.id)?.link_color)}
-          onCommit={(alias) => {
-            commitValue(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
-            setEditing(null)
-          }}
-          onDismiss={() => setEditing(null)}
-        />
-      )}
-      {editingDef && editing?.mode === 'picker' && (
-        <PropertyPicker
-          def={editingDef}
-          current={resolveFieldValue(row, editing.id, schema)}
-          open
-          triggerRef={triggerRef}
-          {...(editingDef.type === 'context' && tree
-            ? { contextOptions: contextOptionsFor(editing.id, tree) }
-            : {})}
-          onCommit={(v) => {
-            if (isContextRow(editing.id))
-              commitContext(editing.id, v?.kind === 'context' ? v.value : [])
-            else commitValue(editing.id, v)
-          }}
-          onDismiss={() => setEditing(null)}
-        />
-      )}
-      <PickerMenu
-        solid
-        open={editing?.mode === 'date'}
-        onDismiss={() => setEditing(null)}
+      <PropertyValueEditors
+        editing={editing}
+        onDone={() => setEditing(null)}
         triggerRef={triggerRef}
-      >
-        {editing?.mode === 'date' && (
-          <DatetimeValuePicker
-            value={resolveFieldValue(row, editing.id, schema)}
-            onCommit={(v) => commitValue(editing.id, v)}
-          />
-        )}
-      </PickerMenu>
+        row={row}
+        schema={schema}
+        isContextRow={isContextRow}
+        commitValue={commitValue}
+        commitContext={commitContext}
+      />
     </>,
   )
 }

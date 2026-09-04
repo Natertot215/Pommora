@@ -25,10 +25,10 @@ const DROPDOWN_MAX_HEIGHT = 136
  *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
 const TITLE_PAD_X = '2px'
 
-type Anchor = { x: number; y: number; h: number }
+type Anchor = { x: number; y: number; h: number; el: HTMLElement }
 const anchorOf = (el: HTMLElement): Anchor => {
   const r = el.getBoundingClientRect()
-  return { x: r.left + r.width / 2, y: r.top, h: r.height }
+  return { x: r.left + r.width / 2, y: r.top, h: r.height, el }
 }
 
 // Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
@@ -136,17 +136,16 @@ export function CalendarPicker({
     [],
   )
 
-  const closeMenus = (): void => {
-    setMenu(null)
-    setTimeMenu(null)
-  }
+  const menuTrigger = useRef<HTMLElement | null>(null)
+  menuTrigger.current = menu?.at.el ?? null
+  const timeMenuTrigger = useRef<HTMLElement | null>(null)
+  timeMenuTrigger.current = timeMenu?.at.el ?? null
   const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
   const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
     which === 'start' ? setStartMin : setEndMin
 
   const nav = (dir: 1 | -1): void => {
     if (slide) return
-    closeMenus()
     setSlide({ dir, from: cursor })
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1))
   }
@@ -353,7 +352,6 @@ export function CalendarPicker({
         className={s.timeSeg}
         onClick={(e) => {
           if (e.detail > 1) return
-          setMenu(null)
           setTimeMenu(
             timeMenu?.which === which && timeMenu.part === part
               ? null
@@ -405,7 +403,6 @@ export function CalendarPicker({
   const toggleTitleMenu =
     (kind: 'month' | 'year') =>
     (e: React.MouseEvent<HTMLButtonElement>): void => {
-      setTimeMenu(null)
       setMenu(menu?.kind === kind ? null : { kind, at: anchorOf(e.currentTarget) })
     }
   const monthRows = (): React.JSX.Element[] =>
@@ -556,7 +553,6 @@ export function CalendarPicker({
               setEndOn(v)
               if (!v) setEnd(null)
               setSegEdit(null)
-              closeMenus()
             }}
           />
         </div>
@@ -569,7 +565,6 @@ export function CalendarPicker({
           onChange={(v) => {
             setTimeOn(v)
             setSegEdit(null)
-            closeMenus()
           }}
         />
       </div>
@@ -577,6 +572,7 @@ export function CalendarPicker({
         solid
         open={menu !== null}
         onDismiss={() => setMenu(null)}
+        triggerRef={menuTrigger}
         anchorX={menu?.at.x}
         anchorY={menu?.at.y}
         anchorHeight={menu?.at.h}
@@ -591,6 +587,7 @@ export function CalendarPicker({
         direction="up"
         open={timeMenu !== null}
         onDismiss={() => setTimeMenu(null)}
+        triggerRef={timeMenuTrigger}
         anchorX={timeMenu?.at.x}
         anchorY={timeMenu?.at.y}
         anchorHeight={timeMenu?.at.h}
