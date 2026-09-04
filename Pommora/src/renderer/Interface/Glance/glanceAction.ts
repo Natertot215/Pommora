@@ -64,7 +64,7 @@ export interface AnchorWatch {
  *  connected check lands behind that update on a double frame rather than synchronously. */
 export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
   let raf = 0
-  const checkGone = (): void => {
+  const onShift = (): void => {
     watch.onMoved()
     if (raf) return
     raf = requestAnimationFrame(() =>
@@ -80,14 +80,14 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
       watch.onEscape()
       return
     }
-    checkGone()
+    onShift()
   }
-  window.addEventListener('scroll', checkGone, true)
+  window.addEventListener('scroll', onShift, true)
   window.addEventListener('keydown', onKey)
   window.addEventListener('resize', watch.onMoved)
   return () => {
     if (raf) cancelAnimationFrame(raf)
-    window.removeEventListener('scroll', checkGone, true)
+    window.removeEventListener('scroll', onShift, true)
     window.removeEventListener('keydown', onKey)
     window.removeEventListener('resize', watch.onMoved)
   }
