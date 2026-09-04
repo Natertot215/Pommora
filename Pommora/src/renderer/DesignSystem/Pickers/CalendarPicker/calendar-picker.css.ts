@@ -42,7 +42,7 @@ export const menuList = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
-  minWidth: '56px',
+  minWidth: '45px',
 })
 export const optionRow = style({
   flex: 1,
