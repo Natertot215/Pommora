@@ -21,6 +21,10 @@ const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 /** KNOB — the dropdown list's ceiling. */
 const DROPDOWN_MAX_HEIGHT = 136
 
+/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two
+ *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
+const TITLE_PAD_X = '2px'
+
 type Anchor = { x: number; y: number; h: number }
 const anchorOf = (el: HTMLElement): Anchor => {
   const r = el.getBoundingClientRect()
@@ -31,9 +35,15 @@ const anchorOf = (el: HTMLElement): Anchor => {
 // formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
-/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two
- *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
-const TITLE_PAD_X = '2px'
+const dataKey = (el: Element | null | undefined): string | null =>
+  el?.closest('[data-k]')?.getAttribute('data-k') ?? null
+
+const monthName = (m: number): string =>
+  new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
+
+const optionRow = (label: string | number): React.JSX.Element => (
+  <span className={s.optionRow}>{label}</span>
+)
 
 export function CalendarPicker({
   formatDateValue,
@@ -53,6 +63,7 @@ export function CalendarPicker({
   const todayKey = keyOf(now)
   const init = value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : null
   const initHasTime = init?.includes('T') ?? false
+
   const [cursor, setCursor] = useState(() => {
     const seed = init ? new Date(`${init.slice(0, 10)}T00:00:00`) : now
     return new Date(seed.getFullYear(), seed.getMonth(), 1)
@@ -62,33 +73,36 @@ export function CalendarPicker({
   const [end, setEnd] = useState<string | null>(null)
   const [endOn, setEndOn] = useState(false)
   const [timeOn, setTimeOn] = useState(initHasTime)
+  const [startMin, setStartMin] = useState(
+    initHasTime && init ? Number(init.slice(11, 13)) * 60 + Number(init.slice(14, 16)) : 9 * 60,
+  )
+  const [endMin, setEndMin] = useState(17 * 60)
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; at: Anchor } | null>(null)
   const [timeMenu, setTimeMenu] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     at: Anchor
   } | null>(null)
-  const closeMenus = (): void => {
-    setMenu(null)
-    setTimeMenu(null)
-  }
   const [segEdit, setSegEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     draft: string
   } | null>(null)
+
   const drag = useRef<{ which: 'start' | 'end'; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
-  const [startMin, setStartMin] = useState(
-    initHasTime && init ? Number(init.slice(11, 13)) * 60 + Number(init.slice(14, 16)) : 9 * 60,
-  )
-  const [endMin, setEndMin] = useState(17 * 60)
+  const swipe = useRef(0)
+  const swipeCooldown = useRef(false)
+  const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
   const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingEmit = useRef<string | null | undefined>(undefined)
   const initial = useRef({ start, timeOn, startMin })
   const armed = useRef(false)
+
+  const year = cursor.getFullYear()
+
   useEffect(() => {
     if (!onChangeRef.current) return
     if (
@@ -121,6 +135,11 @@ export function CalendarPicker({
     },
     [],
   )
+
+  const closeMenus = (): void => {
+    setMenu(null)
+    setTimeMenu(null)
+  }
   const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
   const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
     which === 'start' ? setStartMin : setEndMin
@@ -130,6 +149,10 @@ export function CalendarPicker({
     closeMenus()
     setSlide({ dir, from: cursor })
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1))
+  }
+  const jump = (y: number, m: number): void => {
+    setCursor(new Date(y, m, 1))
+    setMenu(null)
   }
 
   const pick = (k: string): void => {
@@ -151,9 +174,6 @@ export function CalendarPicker({
     }
   }
 
-  const swipe = useRef(0)
-  const swipeCooldown = useRef(false)
-  const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const onGridWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
     clearTimeout(swipeIdle.current)
@@ -171,12 +191,9 @@ export function CalendarPicker({
     }
   }
 
-  const keyAtPoint = (x: number, y: number): string | null =>
-    document.elementFromPoint(x, y)?.closest('[data-k]')?.getAttribute('data-k') ?? null
-
   const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     suppressClick.current = false
-    const k = (e.target as HTMLElement).closest('[data-k]')?.getAttribute('data-k')
+    const k = dataKey(e.target as Element)
     if (!k) return
     if (k === start) drag.current = { which: 'start', moved: false }
     else if (k === end) drag.current = { which: 'end', moved: false }
@@ -185,7 +202,7 @@ export function CalendarPicker({
   const onGridPointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
     const d = drag.current
     if (!d) return
-    const k = keyAtPoint(e.clientX, e.clientY)
+    const k = dataKey(document.elementFromPoint(e.clientX, e.clientY))
     if (!k || k === (d.which === 'start' ? start : end)) return
     if (k === (d.which === 'start' ? end : start)) return
     d.moved = true
@@ -271,6 +288,15 @@ export function CalendarPicker({
     )
   }
 
+  const hourShown = (mins: number): number =>
+    twelve ? ((Math.floor(mins / 60) + 11) % 12) + 1 : Math.floor(mins / 60)
+  const hourToMins = (v: number, mins: number): number =>
+    (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
+  const minuteToMins = (v: number, mins: number): number => Math.floor(mins / 60) * 60 + v
+  const hourText = (v: number): string => (twelve ? String(v) : pad(v))
+  const segText = (part: 'h' | 'm', mins: number): string =>
+    part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)
+
   const dateField = (
     k: string | null,
     label: string,
@@ -283,26 +309,7 @@ export function CalendarPicker({
       </OverScroll>
     </div>
   )
-  const hourShown = (mins: number): number =>
-    twelve ? ((Math.floor(mins / 60) + 11) % 12) + 1 : Math.floor(mins / 60)
-  const hourToMins = (v: number, mins: number): number =>
-    (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
-  const hourText = (v: number): string => (twelve ? String(v) : pad(v))
 
-  const timeRows = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element[] => {
-    const mins = minsOf(which)
-    const setMins = setMinsFor(which)
-    const current = part === 'h' ? hourShown(mins) : mins % 60
-    const choose = (v: number): void => {
-      setMins(part === 'h' ? hourToMins(v, mins) : Math.floor(mins / 60) * 60 + v)
-      setTimeMenu(null)
-    }
-    return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
-      <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
-        {optionRow(part === 'h' ? hourText(v) : pad(v))}
-      </PickerRow>
-    ))
-  }
   const segCommit = (): void => {
     if (!segEdit) return
     const v = Number(segEdit.draft)
@@ -312,7 +319,7 @@ export function CalendarPicker({
       if (segEdit.part === 'h') {
         const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
         setMins(hourToMins(clamped, mins))
-      } else setMins(Math.floor(mins / 60) * 60 + Math.min(v, 59))
+      } else setMins(minuteToMins(Math.min(v, 59), mins))
     }
     setSegEdit(null)
   }
@@ -322,7 +329,7 @@ export function CalendarPicker({
         key={`${which}-${part}-edit`}
         className={s.timeSegInput}
         value={segEdit.draft}
-        placeholder={part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
+        placeholder={segText(part, mins)}
         // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
         autoFocus
         spellCheck={false}
@@ -358,7 +365,7 @@ export function CalendarPicker({
           setSegEdit({ which, part, draft: '' })
         }}
       >
-        {part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
+        {segText(part, mins)}
       </button>
     )
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
@@ -395,20 +402,12 @@ export function CalendarPicker({
     </div>
   )
 
-  const prevMonth = slide?.from ?? cursor
-  const year = cursor.getFullYear()
-  const gridHeight = rowsFor(cursor) * 24 + (rowsFor(cursor) - 1) * 2 + 2
-  const jump = (y: number, m: number): void => {
-    setCursor(new Date(y, m, 1))
-    setMenu(null)
-  }
-  const yearChoices = Array.from({ length: 21 }, (_, i) => year - 10 + i)
-  const monthName = (m: number): string =>
-    new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
-
-  const optionRow = (label: string | number): React.JSX.Element => (
-    <span className={s.optionRow}>{label}</span>
-  )
+  const toggleTitleMenu =
+    (kind: 'month' | 'year') =>
+    (e: React.MouseEvent<HTMLButtonElement>): void => {
+      setTimeMenu(null)
+      setMenu(menu?.kind === kind ? null : { kind, at: anchorOf(e.currentTarget) })
+    }
   const monthRows = (): React.JSX.Element[] =>
     Array.from({ length: 12 }, (_, m) => (
       <PickerRow
@@ -420,11 +419,32 @@ export function CalendarPicker({
       </PickerRow>
     ))
   const yearRows = (): React.JSX.Element[] =>
-    yearChoices.map((y) => (
+    Array.from({ length: 21 }, (_, i) => year - 10 + i).map((y) => (
       <PickerRow key={y} selected={y === year} onClick={() => jump(y, cursor.getMonth())}>
         {optionRow(y)}
       </PickerRow>
     ))
+  const timeRows = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element[] => {
+    const mins = minsOf(which)
+    const setMins = setMinsFor(which)
+    const current = part === 'h' ? hourShown(mins) : mins % 60
+    const choose = (v: number): void => {
+      setMins(part === 'h' ? hourToMins(v, mins) : minuteToMins(v, mins))
+      setTimeMenu(null)
+    }
+    return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
+      <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
+        {optionRow(part === 'h' ? hourText(v) : pad(v))}
+      </PickerRow>
+    ))
+  }
+
+  const prevMonth = slide?.from ?? cursor
+  const gridRows = rowsFor(cursor)
+  const gridHeight = gridRows * 24 + (gridRows - 1) * 2 + 2
+  const condensed = {
+    withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
+  }
 
   return (
     <div className={s.root}>
@@ -434,25 +454,15 @@ export function CalendarPicker({
             size="button-inline"
             paddingX={TITLE_PAD_X}
             className={s.titleBtn}
-            onClick={(e) => {
-              setTimeMenu(null)
-              setMenu(
-                menu?.kind === 'month' ? null : { kind: 'month', at: anchorOf(e.currentTarget) },
-              )
-            }}
+            onClick={toggleTitleMenu('month')}
           >
-            {cursor.toLocaleDateString('en-US', { month: 'long' })}
+            {monthName(cursor.getMonth())}
           </Button>
           <Button
             size="button-inline"
             paddingX={TITLE_PAD_X}
             className={s.titleBtn}
-            onClick={(e) => {
-              setTimeMenu(null)
-              setMenu(
-                menu?.kind === 'year' ? null : { kind: 'year', at: anchorOf(e.currentTarget) },
-              )
-            }}
+            onClick={toggleTitleMenu('year')}
           >
             {year}
           </Button>
@@ -518,33 +528,25 @@ export function CalendarPicker({
       </div>
       <div className={s.divider} />
       <div className={s.fields}>
-        {(() => {
-          if (endOn) {
-            const condensed = {
-              withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
-            }
-            return (
-              <>
-                <div className={s.fieldRow}>
-                  {dateField(start, 'start', condensed)}
-                  {dateField(end, 'end', condensed)}
-                </div>
-                <Reveal open={timeOn} fill>
-                  <div className={cx(s.fieldRow, s.fieldRowStacked)}>
-                    {timeField(start ? startMin : null, 'start-t', 'start')}
-                    {timeField(end ? endMin : null, 'end-t', 'end')}
-                  </div>
-                </Reveal>
-              </>
-            )
-          }
-          return (
+        {endOn ? (
+          <>
             <div className={s.fieldRow}>
-              {dateField(start, 'date')}
-              {timeOn && timeField(start ? startMin : null, 'time', 'start')}
+              {dateField(start, 'start', condensed)}
+              {dateField(end, 'end', condensed)}
             </div>
-          )
-        })()}
+            <Reveal open={timeOn} fill>
+              <div className={cx(s.fieldRow, s.fieldRowStacked)}>
+                {timeField(start ? startMin : null, 'start-t', 'start')}
+                {timeField(end ? endMin : null, 'end-t', 'end')}
+              </div>
+            </Reveal>
+          </>
+        ) : (
+          <div className={s.fieldRow}>
+            {dateField(start, 'date')}
+            {timeOn && timeField(start ? startMin : null, 'time', 'start')}
+          </div>
+        )}
       </div>
       {range && (
         <div className={rowBox}>
