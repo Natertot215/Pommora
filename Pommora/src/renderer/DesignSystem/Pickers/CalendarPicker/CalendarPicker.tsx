@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { clamp } from '@shared/clamp'
 import { PickerMenu, PickerRow } from '../picker-base'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
@@ -403,7 +404,7 @@ export function CalendarPicker({
       const mins = minsOf(segEdit.which)
       const setMins = setMinsFor(segEdit.which)
       if (segEdit.part === 'h') {
-        const clamped = twelve ? Math.min(Math.max(v, 1), 12) : Math.min(v, 23)
+        const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
         setMins(hourToMins(clamped, mins))
       } else setMins(Math.floor(mins / 60) * 60 + Math.min(v, 59))
     }
