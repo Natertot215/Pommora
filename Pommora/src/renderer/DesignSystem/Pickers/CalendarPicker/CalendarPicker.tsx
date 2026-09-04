@@ -4,6 +4,7 @@ import { Reveal } from '@renderer/Animation/Reveal'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { OverScroll } from '@renderer/Interactions/OverScroll'
 import { clamp } from '@shared/clamp'
 import { PickerMenu, PickerRow } from '../picker-base'
@@ -89,8 +90,7 @@ export function CalendarPicker({
     draft: string
   } | null>(null)
 
-  const drag = useRef<{ which: 'start' | 'end'; moved: boolean } | null>(null)
-  const suppressClick = useRef(false)
+  const begin = usePointerGesture()
   const swipe = useRef(0)
   const swipeCooldown = useRef(false)
   const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -190,46 +190,47 @@ export function CalendarPicker({
     }
   }
 
+  // A zero-move press never captures, so the day button's own click carries the pick.
   const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
-    suppressClick.current = false
     const k = dataKey(e.target as Element)
-    if (!k) return
-    if (k === start) drag.current = { which: 'start', moved: false }
-    else if (k === end) drag.current = { which: 'end', moved: false }
-    if (drag.current) e.currentTarget.setPointerCapture(e.pointerId)
-  }
-  const onGridPointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
-    const d = drag.current
-    if (!d) return
-    const k = dataKey(document.elementFromPoint(e.clientX, e.clientY))
-    if (!k || k === (d.which === 'start' ? start : end)) return
-    if (k === (d.which === 'start' ? end : start)) return
-    d.moved = true
-    if (d.which === 'start') {
-      if (end !== null && k > end) {
-        setStart(end)
-        setEnd(k)
-        d.which = 'end'
-      } else setStart(k)
-    } else if (start !== null && k < start) {
-      setEnd(start)
-      setStart(k)
-      d.which = 'start'
-    } else setEnd(k)
-  }
-  const onGridPointerUp = (): void => {
-    const d = drag.current
-    drag.current = null
-    if (!d) return
-    if (d.moved) {
-      suppressClick.current = true
-      return
-    }
-    const k = d.which === 'start' ? start : end
-    if (k) {
-      suppressClick.current = true
-      pick(k)
-    }
+    if (!k || (k !== start && k !== end)) return
+    const from = { start, end }
+    const d = { start, end, which: k === start ? 'start' : 'end', moved: false }
+    begin({
+      el: e.currentTarget,
+      event: e,
+      activation: 0,
+      capture: true,
+      swallowActiveEscape: true,
+      onActivate: () => true,
+      onDragMove: (ev) => {
+        const at = dataKey(document.elementFromPoint(ev.clientX, ev.clientY))
+        if (!at || at === d.start || at === d.end) return
+        d.moved = true
+        if (d.which === 'start') {
+          if (d.end !== null && at > d.end) {
+            d.start = d.end
+            d.end = at
+            d.which = 'end'
+          } else d.start = at
+        } else if (d.start !== null && at < d.start) {
+          d.end = d.start
+          d.start = at
+          d.which = 'start'
+        } else d.end = at
+        setStart(d.start)
+        setEnd(d.end)
+      },
+      // The engine swallows the click after any activated release, so a wobble that never left
+      // the cell still has to pick here.
+      onDrop: () => {
+        if (!d.moved) pick(k)
+      },
+      onAbort: () => {
+        setStart(from.start)
+        setEnd(from.end)
+      },
+    })
   }
 
   const rowsFor = (month: Date): number => {
@@ -258,13 +259,7 @@ export function CalendarPicker({
               key={k}
               data-k={k}
               className={cx(s.day, d.getMonth() !== m && s.dayOut, sel && s.daySelected)}
-              onClick={() => {
-                if (suppressClick.current) {
-                  suppressClick.current = false
-                  return
-                }
-                pick(k)
-              }}
+              onClick={() => pick(k)}
             >
               {sel && ranged && (
                 <span className={cx(s.pill, k === start ? s.bandUnderStart : s.bandUnderEnd)} />
@@ -502,9 +497,6 @@ export function CalendarPicker({
           )}
           onAnimationEnd={() => setSlide(null)}
           onPointerDown={onGridPointerDown}
-          onPointerMove={onGridPointerMove}
-          onPointerUp={onGridPointerUp}
-          onPointerCancel={onGridPointerUp}
         >
           {slide ? (
             slide.dir === 1 ? (

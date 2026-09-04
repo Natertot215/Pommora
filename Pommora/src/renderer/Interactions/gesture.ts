@@ -139,9 +139,8 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
       },
       cancel: (ev?: PointerEvent) => {
         if (ev && ev.pointerId !== e.pointerId) return
-        const wasActive = g.active
         detach(g)
-        if (wasActive) spec.onAbort?.()
+        spec.onAbort?.()
       },
       key: (ev: KeyboardEvent) => {
         if (ev.key !== 'Escape') return
