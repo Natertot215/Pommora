@@ -5,6 +5,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useEffect, useRef } from 'react'
 import { PickerMenu } from './picker-base'
+import { paneMorph } from './picker-base.css'
 import { TextPicker } from './TextPicker/TextPicker'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -437,5 +438,32 @@ describe('PickerMenu close render', () => {
     await render(<Anchored open at={{ x: 400, y: 100 }} direction="up" />)
     expect(layer().style.top).toBe(`${120 + 6}px`)
     expect(layer().style.bottom).toBe('')
+  })
+})
+
+describe('PickerMenu morph', () => {
+  function Morphing({ morph }: { morph?: boolean }): React.JSX.Element {
+    const ref = useRef<HTMLButtonElement>(null)
+    return (
+      <>
+        <button ref={ref} type="button" data-id="trigger">
+          Trigger
+        </button>
+        <PickerMenu open onDismiss={() => {}} triggerRef={ref} {...(morph ? { morph } : {})}>
+          <span data-id="body">BODY</span>
+        </PickerMenu>
+      </>
+    )
+  }
+  const wrapped = (): Element | null => find('body').closest(`.${paneMorph}`)
+
+  it('wraps the body in the morph when opted in', async () => {
+    await render(<Morphing morph />)
+    expect(wrapped()).not.toBeNull()
+  })
+
+  it('renders no morph by default', async () => {
+    await render(<Morphing />)
+    expect(wrapped()).toBeNull()
   })
 })

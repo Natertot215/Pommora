@@ -197,14 +197,14 @@ export const paneMorphBody = style({ display: 'flex', flexDirection: 'column' })
 
 **Verify — automated**
 
-- [ ] Red first: a test renders a self-managed PickerMenu with `morph` and asserts the body's closest `[data-picker-portal]` contains an element whose class list includes the `paneMorph` class; a second asserts the default renders none (import the class names from `./picker-base.css`). Expect two failures. Then green.
-- [ ] `rg -F "paneMorph" src` → ≥ 6. Control: `rg -F "MenuScrollFrame" src/renderer/DesignSystem/Pickers/picker-base.tsx` → 2.
-- [ ] Full gate green; 3947 tests.
-- [ ] `DesignSystemPM.md:302` PickerMenu row names the opt-in height morph and its one constraint: not for a pane whose content animates its own height (Reveal, FrameSlide).
+- [x] Red first: a test renders a self-managed PickerMenu with `morph` and asserts the body's closest `[data-picker-portal]` contains an element whose class list includes the `paneMorph` class; a second asserts the default renders none (import the class names from `./picker-base.css`). Expect two failures. Then green.
+- [x] `rg -F "paneMorph" src` → ≥ 6. Control: `rg -F "MenuScrollFrame" src/renderer/DesignSystem/Pickers/picker-base.tsx` → 2.
+- [x] Full gate green; 3947 tests.
+- [x] `DesignSystemPM.md:302` PickerMenu row names the opt-in height morph and its one constraint: not for a pane whose content animates its own height (Reveal, FrameSlide).
 
 **Verify — user**
 
-- [ ] (surfaces in Task 4)
+- [x] (surfaces in Task 4)
 
 #### Gate 1 — PickerMenu, no caller moved
 
