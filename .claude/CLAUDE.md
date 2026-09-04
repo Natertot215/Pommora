@@ -75,7 +75,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │   ├── [ContextsPM.md]              | • The organization layer, its registry, and Context identity
 │   │   ├── [DesignSystemPM.md]          | • The design system — the one-look ledger of tokens, materials, and components
 │   │   ├── [InteractionPM.md]           | • The named motions and the interaction primitives
-│   │   ├── [InterfacePM.md]             | • The shell's surfaces — toolbar, sidebar, subfield, floating windows, hover pane
+│   │   ├── [InterfacePM.md]             | • The shell's surfaces — toolbar, sidebar, subfield, floating windows, the glance pane
 │   │   ├── [MarkdownPM.md]              | • The in-house Markdown editor on a CodeMirror 6 substrate
 │   │   ├── [NavigationPM.md]            | • The navigation layer, tabs, per-tab history, and NavView
 │   │   ├── [NexusRecordPM.md]           | • Provenance and the deletion record in .trash
@@ -85,7 +85,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │   ├── [SurfacePM.md]               | • The dashboard layer of draggable tiles, and the embed framework
 │   │   ├── [SymbolsPM.md]               | • The curated semantic icon registry
 │   │   ├── [ViewTypesPM.md]             | • Saved presentations of a Collection — the pipeline and each view type
-│   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
+│   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, glances
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
@@ -108,7 +108,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │   │   ├── result.ts                | • The Result envelope IPC returns instead of throwing
 │   │   │   └── schemas.ts               | • The zod schemas the on-disk format validates against
 │   │   └── // renderer                  | • The React renderer — it never touches Node
-│   │       ├── // Actions               | • Renderer glue — selection, page/native menus, commands, destination tree, renamable title
+│   │       ├── // Actions               | • Renderer glue — selection, page/native/link menus, link resolution, external-link routing, commands, destination tree, renamable title
 │   │       ├── // Animation             | • Motion tokens, the feel, and the enter/exit primitives
 │   │       ├── // Assets                | • The asset layer — nexus-asset URL resolution and the crop-aware image
 │   │       ├── // Blocks                | • Tile content for the dashboard layer
@@ -117,7 +117,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │       ├── // Frames                | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
 │   │       ├── // Interactions          | • PommoraDND and the pointer/scroll layer
 │   │       ├── // Interface             | • The main pane — routed views, inspector, subfield, banner
-│   │       ├── // Links                 | • Everything that happens to a link — the hover pane, the link menu, resolution
+│   │       │   └── // Glance            | • The glance pane and its seam — the hover surface any anchor can raise
 │   │       ├── // MarkdownPM            | • The editor — parser, tokens, decorations, input, tables
 │   │       ├── // Navigation            | • Tabs, history, breadcrumbs, search
 │   │       ├── // Properties            | • The property layer — value resolution, the editing surface, the panes
@@ -143,7 +143,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 │   │       │   ├── // Menus             | • The menu recipe — shell, rows, frame chassis, the frame slide
 │   │       │   ├── // Symbols           | • The curated icon registry — the primary glyph source
 │   │       │   └── // Util              | • Runtime helpers — cx, clamp, pad, moveItem
-│   │       ├── // Store                 | • The store's seven slices — nexus, navigation, preview, chrome, config, rename, cache
+│   │       ├── // Store                 | • The store's seven slices — nexus, navigation, window, chrome, config, rename, cache
 │   │       ├── App.tsx                  | • The shell — three panes and the routed surface
 │   │       └── store.ts                 | • The composition root — one `useSession` over the slices, and the React hooks
 ```

@@ -1,6 +1,6 @@
 ## Webview
 
-Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live hover previews for website links. Every web surface is an Electron webview guest under one main-process governor, `src/main/webGuests.ts`, which owns what an attach is allowed to be, which session guests live on, where their popups go, and how they track the host's zoom; no surface carries rules of its own. Exactly three renderer components mount a guest — the webpage tile, the browser window, and the hover pane — all on the shared partition.
+Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live glances for website links. Every web surface is an Electron webview guest under one main-process governor, `src/main/webGuests.ts`, which owns what an attach is allowed to be, which session guests live on, where their popups go, and how they track the host's zoom; no surface carries rules of its own. Exactly three renderer components mount a guest — the webpage tile, the browser window, and the glance pane — all on the shared partition.
 
 ### Webpage Embeds
 
@@ -24,9 +24,9 @@ Every web surface shares one persistent session partition per machine: sign in t
 
 The **Web Window** (`Windows/WebWindow.tsx`), the in-app browser, is a flavor of the floating window chassis: back and forward glyphs lead the toolbar, the centered title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared partition owns the whole body. It is a singleton like the Page Window — a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from — and its geometry persists on its own window id.
 
-### Website Hover Previews
+### Website Glances
 
-Dwelling on a website link raises the shared hover pane as a live render of the site. The pane's guest allows no popups and takes no clicks — a glance surface by contract — but it reads past its first screen: the wheel is handed down to the guest through main, since the covering shield holds the pointer on the pane's behalf.
+Dwelling on a website link raises the shared glance pane as a live render of the site. The pane's guest allows no popups and takes no clicks — a glance surface by contract — but it reads past its first screen: the wheel is handed down to the guest through main, since the covering shield holds the pointer on the pane's behalf.
 
 ---
 

@@ -6,7 +6,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
-- **Vocabulary:** Five words name the surfaces. A **Window** is a floating window; a **Pane** is a surface floating over another — the sidebar, the inspector, the side slots, the hover pane, the autocomplete; a **Menu** is a surface hung off a trigger; a **Frame** is one page inside a Menu's or Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, the Settings categories; a **Picker** chooses a value.
+- **Vocabulary:** Five words name the surfaces. A **Window** is a floating window; a **Pane** is a surface floating over another — the sidebar, the inspector, the side slots, the glance pane, the autocomplete; a **Menu** is a surface hung off a trigger; a **Frame** is one page inside a Menu's or Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, the Settings categories; a **Picker** chooses a value.
 1. 
 2. 
 3. 
@@ -206,7 +206,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title         | Export                                        | What it is                                                              |
 | ------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
-| GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the hover pane, the autocomplete). |
+| GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the glance pane, the autocomplete). |
 | Surface       | `Surface`                                     | GlassPane as the app root, the floating overlay over the main view.     |
 | GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface, and opt-in `notch` for the beaked dropdown geometry. |
 | GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The surface carrying the 90% `--bg-window` body — every floating window and the image picker. |

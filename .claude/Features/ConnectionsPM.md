@@ -24,9 +24,9 @@ Because a connection's identity is its title, renaming a page rewrites every bod
 
 ### Rendering
 
-A connection renders as inline text in the connection color (the **Internal Link Color** setting), never as a chip, with its brackets hidden until the caret enters it. Revealed, an aliased connection shows both halves — the target marked as a target, the alias as prose — with a link glyph between them that takes the connection color when the target resolves and reads muted when it doesn't. A connection being typed takes the color from its first character, so it never reads as prose while a title is being written. A markdown link that names a page uses the same color, leads to the same place, and shows the same hover pane; one that names a website keeps the external-link treatment (External Link Color); and one that names neither keeps the broken-link treatment.
+A connection renders as inline text in the connection color (the **Internal Link Color** setting), never as a chip, with its brackets hidden until the caret enters it. Revealed, an aliased connection shows both halves — the target marked as a target, the alias as prose — with a link glyph between them that takes the connection color when the target resolves and reads muted when it doesn't. A connection being typed takes the color from its first character, so it never reads as prose while a title is being written. A markdown link that names a page uses the same color, leads to the same place, and shows the same glance pane; one that names a website keeps the external-link treatment (External Link Color); and one that names neither keeps the broken-link treatment.
 
-Clicking a connection opens the page, routed by **Open Connections In Preview** — the active tab by default, the Page Window when the setting is on, and ⌘-click always takes the other route. Resting on a resolved connection raises the hover pane with a read-only render of the target. Ambiguous links keep the bracket treatment in a muted tone; a phantom is inert and reads either muted with its syntax showing or as plain prose, per **Display Unresolved Links As Plain Syntax**, which applies to page prose only — cells and other fields stay muted.
+Clicking a connection opens the page, routed by **Open Connections In Preview** — the active tab by default, the Page Window when the setting is on, and ⌘-click always takes the other route. Resting on a resolved connection raises the glance pane with a read-only render of the target. Ambiguous links keep the bracket treatment in a muted tone; a phantom is inert and reads either muted with its syntax showing or as plain prose, per **Display Unresolved Links As Plain Syntax**, which applies to page prose only — cells and other fields stay muted.
 
 ### The Link Menu
 
@@ -41,7 +41,7 @@ Right-clicking any link, wherever it sits, opens one native menu built from one 
 | **Close, in the editor** | — | Remove Link (keeps the label as prose) · Delete |
 | **Close, in a property cell** | Clear (· Remove on a card, dropping the property from the view) | Clear (· Remove) |
 
-A read-only surface — a hover pane, an embedded page at rest — offers the opens and Copy Link. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
+A read-only surface — a glance pane, an embedded page at rest — offers the opens and Copy Link. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
 
 ### Autocomplete
 
