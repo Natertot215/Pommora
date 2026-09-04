@@ -13,7 +13,7 @@ import { clockOf, formatDate, nexusDateFormat } from '@renderer/Properties/Assig
 import { restoreSnapshot } from '../Interface/restoreSnapshot'
 import { fetchPageDetail } from '../Store/tabState'
 import { livePagePath, resolveOnlyConnections, trailOf } from '../treeIndex'
-import { useEmbedScale, useSession, type PreviewTarget } from '../store'
+import { useEmbedScale, useSession, type WindowTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from './window-base'
 import '../Navigation/nav-list.css'
@@ -34,7 +34,7 @@ function PageHistoryBody({
   target,
   closing,
 }: {
-  target: PreviewTarget
+  target: WindowTarget
   closing: boolean
 }): React.JSX.Element {
   const closeHistory = useSession((s) => s.closeHistory)

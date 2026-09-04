@@ -10,12 +10,12 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
   pages: new Map(Object.entries(pages)),
 })
 
-describe('reconcilePreview', () => {
+describe('reconcileWindow', () => {
   it('keeps the history window while the tree holds its page, and closes it once the page is gone', () => {
     useSession.setState({ historyTarget: { id: 'a', path: 'Notes/a.md' } })
-    useSession.getState().reconcilePreview(indexOf({ a: 'Notes/a.md' }))
+    useSession.getState().reconcileWindow(indexOf({ a: 'Notes/a.md' }))
     expect(useSession.getState().historyTarget).toEqual({ id: 'a', path: 'Notes/a.md' })
-    useSession.getState().reconcilePreview(indexOf({}))
+    useSession.getState().reconcileWindow(indexOf({}))
     expect(useSession.getState().historyTarget).toBeNull()
   })
 })

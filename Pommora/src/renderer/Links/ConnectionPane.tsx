@@ -245,8 +245,8 @@ export function ConnectionPane(): React.JSX.Element {
   // pane over the destination. Conservative on purpose: closing is always safe for a hover.
   const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
-  const preview = useSession((s) => s.preview)
-  useEffect(() => closeActiveHoverCard(), [selection, activeTabId, preview])
+  const pageWindow = useSession((s) => s.pageWindow)
+  useEffect(() => closeActiveHoverCard(), [selection, activeTabId, pageWindow])
 
   // The guest's own lifecycle, for the pane's whole life — a crash after load closes too. Closing
   // goes through `present` so a queued retarget beat can never re-open over the closure.

@@ -524,7 +524,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     triggerElRef.current = e.currentTarget as HTMLElement
     if (col.kind === 'title') {
       // The ONLY navigate: row-click narrowed to the title cell; row background is a no-op.
-      // A page-preview Collection routes to the floating preview instead; ⌘-click is always
+      // A page-preview Collection routes to the Page Window instead; ⌘-click is always
       // the explicit full-page bypass, to a new tab.
       e.stopPropagation()
       const owner =
@@ -533,7 +533,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           : findCollectionForSet(useSession.getState().tree, source.id)
       if (owner?.openIn === 'page-preview') {
         if (e.metaKey) void select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
-        else useSession.getState().openPreview({ id: row.id, path: row.path })
+        else useSession.getState().openWindow({ id: row.id, path: row.path })
       } else void select({ kind: 'page', id: row.id, path: row.path })
       return
     }
@@ -866,8 +866,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       )
     )
       return
-    if (action === 'title:preview')
-      useSession.getState().openPreview({ id: row.id, path: row.path })
+    if (action === 'title:preview') useSession.getState().openWindow({ id: row.id, path: row.path })
     else if (action === 'title:newtab')
       void useSession
         .getState()

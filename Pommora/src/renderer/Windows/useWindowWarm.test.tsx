@@ -24,7 +24,7 @@ beforeEach(() => {
   clearCache()
   clearWindowCache()
   useSession.setState({
-    preview: {
+    pageWindow: {
       flavor: 'page',
       originId: 'a',
       tabs: [{ id: 'tab1', target: { kind: 'page', id: 'a', path: 'Notes/a.md' } }],

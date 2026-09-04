@@ -202,12 +202,12 @@ describe('a connection opens its page the two ways every page menu offers', () =
   })
 
   it('Open Preview floats it instead', async () => {
-    const openPreview = vi.fn()
-    useSession.setState({ openPreview })
+    const openWindow = vi.fn()
+    useSession.setState({ openWindow })
     connMenu.mockResolvedValue('title:preview')
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
-    expect(openPreview).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
+    expect(openWindow).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
   })
 })
 

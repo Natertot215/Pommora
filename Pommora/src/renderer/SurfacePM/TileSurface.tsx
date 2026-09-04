@@ -124,17 +124,17 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
   const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
-  const openPreview = useSession((s) => s.openPreview)
+  const openWindow = useSession((s) => s.openWindow)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
-  const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
+  const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
     return {
       ...idx,
       open: (page) =>
-        openInPreview
-          ? openPreview({ id: page.id, path: page.path })
+        openInWindow
+          ? openWindow({ id: page.id, path: page.path })
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
@@ -142,7 +142,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
       hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
-  }, [tree, select, openPreview, openInPreview])
+  }, [tree, select, openWindow, openInWindow])
 
   useEffect(() => {
     if (!editingId) return
