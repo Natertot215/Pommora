@@ -299,7 +299,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title | Export | What it is |
 | ------------- | -------------------- | ------------------------------------------------------------------- |
-| PickerMenu | `PickerMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap, and an opt-in height morph (`morph`) that eases the pane between content heights on the base beat; not for a pane whose content animates its own height (a Reveal, a FrameSlide). |
+| PickerMenu | `PickerMenu` · `PickerRow` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. |
 | CalendarPicker | `CalendarPicker` | Date and time selection. |
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
