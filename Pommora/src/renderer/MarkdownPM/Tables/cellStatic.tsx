@@ -194,7 +194,7 @@ function StaticCellImpl({
    *  Returns what following it does, so the click can spend the same claim it made. */
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey)
+    const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey, found.el)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
