@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { findScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import { DEFAULT_FEEL, type Feel } from '@renderer/Animation/feel'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { SETTLE_FALLBACK } from '@renderer/Interactions/shared'
 import { TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { findTile } from './Core/model'
@@ -17,7 +18,6 @@ import {
 } from './Core/ops'
 import { computeGeometry, type Rect, type SurfaceGeometry } from './Core/rects'
 import { snapAxis, xCandidates, yCandidates } from './Core/snap'
-import { startPointerDrag } from './Sensors/pointerDrag'
 import '@renderer/SurfacePM/block-tile-base.css'
 import './tile-surface.css'
 
@@ -223,6 +223,7 @@ export function SurfaceView({
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
   const [settle, setSettle] = useState<Settle | null>(null)
   const [resizingId, setResizingId] = useState<string | null>(null)
+  const begin = usePointerGesture()
 
   // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition
   // would lag the pane. `tracking` holds until the observer goes quiet.
@@ -317,158 +318,152 @@ export function SurfaceView({
   const withoutOwn = (candidates: number[], start: number): number[] =>
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
-  const onEdgeDown = useCallback((id: string, edges: Edge[], e: React.PointerEvent) => {
-    if (e.button !== 0 || isTileStaticRef.current?.(id)) return
-    e.preventDefault()
-    e.stopPropagation()
-    const pending = takePendingSettle()
-    const { minTilePx: minT, snapPx: snap } = live.current
-    const origin = pending ?? live.current.layout
-    const host = hostRef.current
-    const g =
-      pending && host
-        ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
-        : live.current.originGeometry
-    const ownRect = g.tiles.get(id)
-    if (!ownRect) return
-    const extents = new Map(g.dividers.map((d) => [refKey(d.ref), d.extentPx]))
-    const dividerX = new Map(g.dividers.map((d) => [refKey(d.ref), d.x]))
-    const snapX = xCandidates(g)
-    const snapY = yCandidates(g)
-    // South edges STRETCH — exactly one tile grows. North edges negotiate the stacked boundary
-    // above; east/west move the row splitter. Each action's candidates are own-edge-filtered so
-    // its delta can magnetize to OTHER blocks' edges.
-    type Action =
-      | { edge: Edge; kind: 'stretch'; start: number; cands: number[] }
-      | { edge: Edge; kind: 'divider'; ref: DividerRef; start: number; cands: number[] }
-      | { edge: Edge; kind: 'stack'; ref: DividerRef; start: number; cands: number[] }
-      | { edge: Edge; kind: 'bandpair'; above: number; start: number; cands: number[] }
-    const actions: Action[] = []
-    for (const edge of edges) {
-      if (edge === 's') {
-        const start = ownRect.y + ownRect.h
-        actions.push({ edge, kind: 'stretch', start, cands: withoutOwn(snapY, start) })
-        continue
-      }
-      const boundary = resolveEdge(origin, id, edge)
-      if (!boundary) continue
-      if (boundary.kind === 'bandpair') {
-        const start = ownRect.y
+  const onEdgeDown = useCallback(
+    (id: string, edges: Edge[], e: React.PointerEvent) => {
+      if (e.button !== 0 || isTileStaticRef.current?.(id)) return
+      e.preventDefault()
+      e.stopPropagation()
+      const pending = takePendingSettle()
+      const { minTilePx: minT, snapPx: snap } = live.current
+      const origin = pending ?? live.current.layout
+      const host = hostRef.current
+      const g =
+        pending && host
+          ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
+          : live.current.originGeometry
+      const ownRect = g.tiles.get(id)
+      if (!ownRect) return
+      const extents = new Map(g.dividers.map((d) => [refKey(d.ref), d.extentPx]))
+      const dividerX = new Map(g.dividers.map((d) => [refKey(d.ref), d.x]))
+      const snapX = xCandidates(g)
+      const snapY = yCandidates(g)
+      // South edges STRETCH — exactly one tile grows. North edges negotiate the stacked boundary
+      // above; east/west move the row splitter. Each action's candidates are own-edge-filtered so
+      // its delta can magnetize to OTHER blocks' edges.
+      type Action =
+        | { edge: Edge; kind: 'stretch'; start: number; cands: number[] }
+        | { edge: Edge; kind: 'divider'; ref: DividerRef; start: number; cands: number[] }
+        | { edge: Edge; kind: 'stack'; ref: DividerRef; start: number; cands: number[] }
+        | { edge: Edge; kind: 'bandpair'; above: number; start: number; cands: number[] }
+      const actions: Action[] = []
+      for (const edge of edges) {
+        if (edge === 's') {
+          const start = ownRect.y + ownRect.h
+          actions.push({ edge, kind: 'stretch', start, cands: withoutOwn(snapY, start) })
+          continue
+        }
+        const boundary = resolveEdge(origin, id, edge)
+        if (!boundary) continue
+        if (boundary.kind === 'bandpair') {
+          const start = ownRect.y
+          actions.push({
+            edge,
+            kind: 'bandpair',
+            above: boundary.above,
+            start,
+            cands: withoutOwn(snapY, start),
+          })
+          continue
+        }
+        const start =
+          boundary.kind === 'divider'
+            ? (dividerX.get(refKey(boundary.ref)) ?? ownRect.x)
+            : ownRect.y
+        const axis = boundary.kind === 'divider' ? snapX : snapY
         actions.push({
           edge,
-          kind: 'bandpair',
-          above: boundary.above,
+          kind: boundary.kind,
+          ref: boundary.ref,
           start,
-          cands: withoutOwn(snapY, start),
+          cands: withoutOwn(axis, start),
         })
-        continue
       }
-      const start =
-        boundary.kind === 'divider' ? (dividerX.get(refKey(boundary.ref)) ?? ownRect.x) : ownRect.y
-      const axis = boundary.kind === 'divider' ? snapX : snapY
-      actions.push({
-        edge,
-        kind: boundary.kind,
-        ref: boundary.ref,
-        start,
-        cands: withoutOwn(axis, start),
+      if (actions.length === 0) return
+
+      let latest: SurfaceLayout = origin
+      const sx = e.clientX
+      const sy = e.clientY
+      const started = begin({
+        el: e.currentTarget as HTMLElement,
+        event: e,
+        activation: 0,
+        capture: true,
+        swallowActiveEscape: true,
+        onActivate: () => true,
+        onDragMove: (ev) => {
+          const dx = ev.clientX - sx
+          const dy = ev.clientY - sy
+          latest = actions.reduce((acc, action) => {
+            const raw = action.kind === 'divider' ? dx : dy
+            const delta = snapAxis(action.start + raw, action.cands, snap) - action.start
+            if (action.kind === 'stretch') return stretchTileHeight(acc, id, delta, minT)
+            if (action.kind === 'stack') return resizeStackPair(acc, action.ref, delta, minT)
+            if (action.kind === 'bandpair') return resizeBandPair(acc, action.above, delta, minT)
+            const extent = extents.get(refKey(action.ref)) ?? 0
+            return resizeDivider(acc, action.ref, delta, extent, minT)
+          }, origin)
+          setDraft(latest)
+        },
+        onDrop: () => {
+          if (latest !== origin) onLayoutChangeRef.current(latest)
+        },
+        teardown: () => {
+          setResizingId(null)
+          setDraft(null)
+        },
       })
-    }
-    if (actions.length === 0) return
+      if (started) setResizingId(id)
+    },
+    [begin],
+  )
 
-    setResizingId(id)
-    let latest: SurfaceLayout = origin
-    startPointerDrag(e, {
-      threshold: 0,
-      onMove: (dx, dy) => {
-        latest = actions.reduce((acc, action) => {
-          const raw = action.kind === 'divider' ? dx : dy
-          const delta = snapAxis(action.start + raw, action.cands, snap) - action.start
-          if (action.kind === 'stretch') return stretchTileHeight(acc, id, delta, minT)
-          if (action.kind === 'stack') return resizeStackPair(acc, action.ref, delta, minT)
-          if (action.kind === 'bandpair') return resizeBandPair(acc, action.above, delta, minT)
-          const extent = extents.get(refKey(action.ref)) ?? 0
-          return resizeDivider(acc, action.ref, delta, extent, minT)
-        }, origin)
-        setDraft(latest)
-      },
-      onEnd: (commitDrag) => {
-        setResizingId(null)
-        setDraft(null)
-        if (commitDrag && latest !== origin) onLayoutChangeRef.current(latest)
-      },
-    })
-  }, [])
+  const onHandleDown = useCallback(
+    (id: string, e: React.PointerEvent) => {
+      if (e.button !== 0 || isTileStaticRef.current?.(id)) return
+      e.preventDefault()
+      e.stopPropagation()
+      const pending = takePendingSettle()
+      const zone = live.current.bandZonePx
+      const origin = pending ?? live.current.layout
+      const host = hostRef.current
+      if (!host) return
+      const g = pending
+        ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
+        : live.current.originGeometry
+      const rect = g.tiles.get(id)
+      if (!rect) return
+      const downBox = host.getBoundingClientRect()
+      // The grab offset is frozen at the down event — recomputing it per move would
+      // cancel the pointer delta and pin the lifted block to its origin.
+      const grab = {
+        x: e.clientX - downBox.left - rect.x,
+        y: e.clientY - downBox.top - rect.y,
+      }
+      // Reads the REAL scroll ancestor's delta (the host never scrolls itself) — cheap per move, no
+      // forced layout, and it folds our own autoscroll back into the pointer math.
+      const scroller = findScroller(host, 'xy')
+      const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
+      let latest: SurfaceLayout = origin
+      let target: DropTarget = null
+      let moved = false
+      const lastPoint = { x: e.clientX, y: e.clientY }
+      let stopScroll: (() => void) | null = null
 
-  const onHandleDown = useCallback((id: string, e: React.PointerEvent) => {
-    if (e.button !== 0 || isTileStaticRef.current?.(id)) return
-    e.preventDefault()
-    e.stopPropagation()
-    const pending = takePendingSettle()
-    const zone = live.current.bandZonePx
-    const origin = pending ?? live.current.layout
-    const host = hostRef.current
-    if (!host) return
-    const g = pending
-      ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
-      : live.current.originGeometry
-    const rect = g.tiles.get(id)
-    if (!rect) return
-    const downBox = host.getBoundingClientRect()
-    // The grab offset is frozen at the down event — recomputing it per move would
-    // cancel the pointer delta and pin the lifted block to its origin.
-    const grab = {
-      x: e.clientX - downBox.left - rect.x,
-      y: e.clientY - downBox.top - rect.y,
-    }
-    // Reads the REAL scroll ancestor's delta (the host never scrolls itself) — cheap per move, no
-    // forced layout, and it folds our own autoscroll back into the pointer math.
-    const scroller = findScroller(host, 'xy')
-    const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
-    let latest: SurfaceLayout = origin
-    let target: DropTarget = null
-    let moved = false
-    const lastPoint = { x: e.clientX, y: e.clientY }
-    let stopScroll: (() => void) | null = null
+      // Called on every pointer move AND on every auto-scrolled frame (via onScrolled) so a
+      // held-still drag near an edge keeps re-targeting as content flows past.
+      const resolve = (clientX: number, clientY: number): void => {
+        const dsx = (scroller?.scrollLeft ?? 0) - scroll0.x
+        const dsy = (scroller?.scrollTop ?? 0) - scroll0.y
+        const px = clientX - downBox.left + dsx
+        const py = clientY - downBox.top + dsy
+        setTileDrag({ id, lift: { x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h } })
+        target = hitTest(g, origin, id, px, py, zone, target)
+        latest = applyTarget(origin, id, target)
+        setDraft(latest === origin ? null : latest)
+      }
 
-    // Called on every pointer move AND on every auto-scrolled frame (via onScrolled) so a
-    // held-still drag near an edge keeps re-targeting as content flows past.
-    const resolve = (clientX: number, clientY: number): void => {
-      const dsx = (scroller?.scrollLeft ?? 0) - scroll0.x
-      const dsy = (scroller?.scrollTop ?? 0) - scroll0.y
-      const px = clientX - downBox.left + dsx
-      const py = clientY - downBox.top + dsy
-      setTileDrag({ id, lift: { x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h } })
-      target = hitTest(g, origin, id, px, py, zone, target)
-      latest = applyTarget(origin, id, target)
-      setDraft(latest === origin ? null : latest)
-    }
-
-    startPointerDrag(e, {
-      onMove: (_dx, _dy, ev) => {
-        moved = true
-        lastPoint.x = ev.clientX
-        lastPoint.y = ev.clientY
-        // The instance-scoped stopper (not the global) is what onEnd calls, so no teardown can
-        // cross drags.
-        if (!stopScroll && scroller) {
-          stopScroll = startAutoScroll({
-            getPoint: () => lastPoint,
-            scroller,
-            dragEl: host,
-            axis: 'xy',
-            onScrolled: () => resolve(lastPoint.x, lastPoint.y),
-          })
-        }
-        resolve(ev.clientX, ev.clientY)
-      },
-      onEnd: (commitDrag) => {
-        stopScroll?.()
-        const decided = commitDrag && target && latest !== origin ? latest : null
-        // An unarmed click never moved anything — a settle here would only flash
-        // the lifted styling and stall a pointless commit pass on the timer.
-        if (!moved && !decided) return
-        // Settle into the decided slot (the final layout's rect), or back home.
+      // Settle into the decided slot (the final layout's rect), or back home.
+      const settle = (decided: SurfaceLayout | null): void => {
         const finalGeometry = decided
           ? computeGeometry(decided, Math.max(0, host.clientWidth), live.current.gap)
           : g
@@ -478,9 +473,40 @@ export function SurfaceView({
         const s: Settle = { id, to, next: decided }
         settleRef.current = s
         setSettle(s)
-      },
-    })
-  }, [])
+      }
+
+      begin({
+        el: e.currentTarget as HTMLElement,
+        event: e,
+        capture: true,
+        swallowActiveEscape: true,
+        onActivate: () => true,
+        onDragMove: (ev) => {
+          moved = true
+          lastPoint.x = ev.clientX
+          lastPoint.y = ev.clientY
+          // The instance-scoped stopper (not the global) is what teardown calls, so no teardown can
+          // cross drags.
+          if (!stopScroll && scroller) {
+            stopScroll = startAutoScroll({
+              getPoint: () => lastPoint,
+              scroller,
+              dragEl: host,
+              axis: 'xy',
+              onScrolled: () => resolve(lastPoint.x, lastPoint.y),
+            })
+          }
+          resolve(ev.clientX, ev.clientY)
+        },
+        onDrop: () => settle(target && latest !== origin ? latest : null),
+        onAbort: () => {
+          if (moved) settle(null)
+        },
+        teardown: () => stopScroll?.(),
+      })
+    },
+    [begin],
+  )
 
   const dragId = tileDrag?.id ?? settle?.id ?? null
   const interacting = resizingId !== null || tracking
@@ -523,10 +549,9 @@ export function SurfaceView({
       style={{ height: geometry.totalHeight + bottomPadPx }}
       onContextMenu={onSurfaceContextMenu}
     >
-      {/* Tiles render in STABLE id order, never tree order — a mid-drag preview
-          reorders the tree, and letting React move the keyed DOM nodes to match
-          silently releases pointer capture (the pointerup never lands → zombie
-          gesture, stuck floating tile). Position is absolute; DOM order is moot. */}
+      {/* Tiles render in STABLE id order, never tree order — a mid-drag preview reorders the
+          tree, and React moving the keyed DOM nodes to match would remount every reflowing tile
+          mid-transition. Position is absolute; DOM order is moot. */}
       {[...geometry.tiles.entries()]
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([id, rect]) => {
