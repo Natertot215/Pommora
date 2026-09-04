@@ -1,0 +1,45 @@
+## Mobile Companion & Pommora Sync — Planning Brief
+
+The post-compact prompt for the session that writes the implementation plan. Everything below was settled on 09-04-2026 in the brainstorm that produced the decision log; the log and its research annex are the spec, and this brief is the operating context around them.
+
+```
+Invoke /writing-plans-v2 and write the implementation plan for "Mobile Companion & Pommora Sync". Standard agents only (Explore, general-purpose, build-breaking-agent, code-simplifier, comment-killer-agent); never the Workflow tool. Verification and synthesis agents are capped at two per scope, and research fans out only when a question genuinely needs it. The plan is the deliverable of this session; no implementation code before Nathan ratifies it.
+
+SPEC INPUT (read whole, in this order)
+1. //.claude//Planning//Mobile Companion & Pommora Sync — Decision Log.md — the contract. Every entry is [confirmed] or [assumed]; assumed entries are mechanism Nathan delegated, build them as written unless the code contradicts them, and record any divergence under Deviations. Sections: A Product Frame, B Engine Seam, C Sync Model, D Mobile Host And Shell, E Toolchain, F Protocol, G Server, H Desktop Integration, I Phone Flow, J Sweep, K Reconciliation (docs that go false), L Cross-Device Coverage, Core, Prospects, Out of Scope, Considered & Rejected, Lessons.
+2. //.claude//Planning//Mobile Companion & Pommora Sync — Research.md — sixteen researched questions with citations; re-ground load-bearing protocol and Capacitor claims here rather than from memory.
+3. //.claude//CLAUDE.md, //.claude//ContextPM.md, //.claude//Features//ArchitecturePM.md, //.claude//Guidelines//Development-Environment.md and Dependencies.md, //.claude//references//History-Format.md and Context-Format.md.
+
+THE GOAL
+Nathan ends with the Pommora companion on his iPhone (a paid developer account assumed for the install; the iOS 26.5 Simulator gates every step first), Obsidian Sync switched off, and ~/NexusOS on the Mac and the phone's Files-visible copy (On My iPhone › Pommora › NexusOS) being the same files: an edit on either open device reaches the other within seconds over the server's change feed, deletions and .trash bundles cross, a device closed during the other's edits catches up on reopen, and page history is cross-device through server-retained versions. The desktop folder never moves. Pommora Sync is Pommora's own self-hostable, end-to-end-encrypted server; Obsidian Sync is prior art only.
+
+ARCHITECTURE, IN ONE PARAGRAPH
+The read-and-page-write chain leaves src/main for a host-neutral src/engine behind one filesystem seam (B-2 names the moving set and the seam's operations; main binds Node, the phone binds Capacitor; the engine's own tsconfig carries no Node types). Pommora/Mobile holds the Capacitor 8 iOS project (SPM, no CocoaPods) with its own Vite entry that installs window.nexus before rendering; App.tsx is untouched and a MobileApp composes the phone shell with a floating bottom bar (Collections, Spaces = Contexts mode, Agenda placeholder, Tabs, Navigation, Settings; tap behavior deferred, simplest reading is a sheet). Pommora/Sync is one Node 24.15+ process on built-ins (node:http, node:sqlite, node:crypto), one SQLite file, shipped as one Docker container with a DATA_DIR env. The sync model lives in src/engine/Sync: whole-file items, a monotonic per-vault sequence that is also each item's version, tombstones, cursor persisted per page after apply, store refused on version inequality with the server's record returned, most-recent-wins by envelope mtime with device-id tie-break and losers retained as versions, E2E with a random vault key wrapped by a PBKDF2-SHA256 key (600k+ iterations, NFKC password), HKDF subkeys, HMAC path tokens, AES-256-GCM with AAD binding version, key id, item id, and mtime. Desktop client in main; phone client in the host; Settings › General gains Account and Sync sections.
+
+FINDINGS ALREADY FOLDED (do not rediscover; build them)
+- The desktop push trigger hooks recordWrite in IO/writeEcho.ts, because the watcher skips the app's own writes by design.
+- A landing restores the envelope mtime on desktop (rewritePreservingTimes pattern); the phone reads Last Modified from its sync record.
+- The seam has writeText (echo-recording) and applyRemote (raw, no echo); the apply never routes through rmwJsonStrict or rewritePageSerialized (non-reentrant lock).
+- loadValues splits at its corpus boundary; fileLock, writeEcho, governedWrite, indexSeed, valuesChanged stay in main.
+- Manifest = every non-hidden entry plus .nexus and .trash, minus nexus.db/versions.db and their WAL/SHM; .obsidian, .git, .claude, .unsorted, .DS_Store stay home.
+- Retention days live in plaintext in the vault info record; the server prunes. The info record's wrapped key is a list.
+- The phone applies per item and patches its tree (watchPatch's classification), never a full re-walk per feed message.
+- Connect lists only vaults whose id matches nexus.json; Create against an existing id becomes Connect.
+- Path tokens hash preserved case; collision detection folds case; a pull landing two items on one folded path is refused.
+- F-8 states the engine's own path rule; pathSafety.resolveUnderRoot is not reused (it realpaths and requires existence).
+- Sync is always pull, then stat-walk detect, then push; the phone has no watcher.
+- The iOS project carries one small Swift plugin for atomic writes; Keychain via @aparajita/capacitor-secure-storage; state as JSON under Library; Preferences only for tiny values; live reload at http://localhost:5173 with strictPort, never a LAN IP (kills crypto.subtle); no ATS keys; CORS reflecting capacitor://localhost with preflight handling.
+
+V0 SCOPE ON THE PHONE (A-7): read the tree, open a page, edit the body, create a page, open and switch tabs, sign in, connect, sync. Every other mutation refuses through the shared Result envelope; menu channels answer null. MarkdownPM ships as-is. Deletions, renames, moves, properties cross TO the phone; performing them ON the phone is a Prospect.
+
+PLAN SHAPE (writing-plans-v2 decides, but these are known)
+Phases roughly: engine seam (behavior-preserving refactor with a carried baseline: npm run typecheck, npm run test, npm run lint, npm run build all green before and after, counts unmoved); bridge grouping to shared and asset-scheme injection; Pommora/Sync server with tests; sync client in the engine with pure-logic tests (manifest diff, conflict rule, cursor, crypto round trip); desktop integration (write-funnel hook, apply path, Settings rows, feed subscription); Pommora/Mobile project, host, shell, Simulator boot; end-to-end acceptance on the Simulator against localhost; the device path documented (bundle id, team signing, TestFlight or ad-hoc) as a Declared Stop gated on the account; docs reconciliation per section K (MobilePM.md, SyncPM.md new; ArchitecturePM, PRD, FrameworkPM, ConfigurationPM, Dependencies, Development-Environment, NexusRecordPM, CLAUDE.md hard rule restated). Shapes: refactor (engine), additive (everything else), migration (none on disk), user-visible (Settings rows, bottom bar), live-data (NexusOS is Nathan's real vault; test against a copy). Gates: npm run typecheck (grows typecheck:engine, typecheck:mobile, typecheck:sync), npm run test, npm run lint (excludes Mobile/ios and Mobile/dist), npm run build; exit codes read directly, never piped. Simulator verification: Safari Web Inspector plus xcrun simctl screenshots and simctl get_app_container; CDP does not reach WKWebView.
+
+TOOLCHAIN STATE (checked 09-04-2026): Xcode 26.6, Node 24.15, iOS 26.5 Simulator runtime installed, no CocoaPods, zero signing identities, no paid Apple Developer account. node:sqlite and Web Crypto confirmed unflagged in Node 24.15. crypto.subtle confirmed on the Simulator at capacitor://localhost.
+
+TREE STATE: a parallel session is moving block documents from nexus.db to sidecar files; re-derive their location before planning anything that touches them. Pommora/src/renderer/Interface/Glance/GlancePane.tsx and nav-view.css are dirty from another session: never touch, stage explicit paths only, never whole-tree git operations. The .claude auto-stage hook pre-stages doc edits; commit them along.
+
+NATHAN'S RULES FOR THIS ARC: push back with conviction; ask before any design or interaction decision (bottom bar behavior is deferred, do not design it); no keyboard shortcuts without sign-off; KNOB and (Nathan's call) markers survive; comments only for a why; Title-Case UI labels; never claim a feature's state in a comment; report +/- line counts after significant changes; simplification before review; "done with concerns" is unfinished work; commit as soon as a gate is green.
+
+OUTPUT: one plan document at //.claude//Planning//Mobile Companion & Pommora Sync — Implementation Plan.md to the skill's structure, committed, then the simplicity pass and one build-breaking review of the plan (plan-attack mode, findings verified against code before folding), then present for ratification. Stop there.
+```
