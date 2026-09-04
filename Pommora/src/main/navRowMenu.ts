@@ -18,7 +18,7 @@ export function popNavRowMenu(
         label: openLabel(ctx.alreadyOpen),
         click: pick('open-new-tab'),
       })
-    if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-preview') })
+    if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-window') })
     if (items.length > 0) items.push({ type: 'separator' })
     // A recent is a stored ref, addressable only once the renderer has minted a live path
     // against the tree.

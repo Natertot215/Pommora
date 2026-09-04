@@ -866,7 +866,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       )
     )
       return
-    if (action === 'title:preview') useSession.getState().openWindow({ id: row.id, path: row.path })
+    if (action === 'title:window') useSession.getState().openWindow({ id: row.id, path: row.path })
     else if (action === 'title:newtab')
       void useSession
         .getState()

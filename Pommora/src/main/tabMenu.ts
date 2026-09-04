@@ -10,11 +10,11 @@ import { pinLabel } from '@shared/toggleLabels'
 export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<TabMenuAction | null> {
   return popReturningMenu<TabMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []
-    // A page in a tab can still be opened in the floating preview — the same reach its row has
+    // A page in a tab can still be opened in the Page Window — the same reach its row has
     // in the sidebar, so being open somewhere doesn't cost you the gesture.
     if (ctx.isPage)
       items.push(
-        { label: 'Open Preview', click: pick('preview') },
+        { label: 'Open Preview', click: pick('window') },
         { type: 'separator' },
         ...rowTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx),
         { type: 'separator' },

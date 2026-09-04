@@ -10,7 +10,7 @@ const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string][] =>
 describe('a link naming a page', () => {
   it('offers the same actions in the editor and in a property cell, the ending aside', () => {
     expect(rows()).toEqual([
-      ['Open Preview', 'title:preview'],
+      ['Open Preview', 'title:window'],
       ['Open New Tab', 'title:newtab'],
       ['Add Title', 'rename'],
       ['Edit Link', 'editLink'],
@@ -35,12 +35,12 @@ describe('a link naming a page', () => {
   it('drops each open item where that surface already shows the page', () => {
     const actions = (ctx: Partial<ConnMenuContext>): string[] => rows(ctx).map(([, a]) => a)
     expect(actions({ open: 'detail' })).not.toContain('title:newtab')
-    expect(actions({ open: 'detail' })).toContain('title:preview')
-    expect(actions({ previewing: true })).not.toContain('title:preview')
-    expect(actions({ previewing: true })).toContain('title:newtab')
+    expect(actions({ open: 'detail' })).toContain('title:window')
+    expect(actions({ windowed: true })).not.toContain('title:window')
+    expect(actions({ windowed: true })).toContain('title:newtab')
     // Showing in both leaves nowhere left to open it.
-    const both = actions({ open: 'detail', previewing: true })
-    expect(both).not.toContain('title:preview')
+    const both = actions({ open: 'detail', windowed: true })
+    expect(both).not.toContain('title:window')
     expect(both).not.toContain('title:newtab')
     expect(both[0]).toBe('rename')
   })
@@ -56,14 +56,14 @@ describe('a link naming an address', () => {
 
   it('opens into either browser, and says which is which', () => {
     expect(ext().slice(0, 2)).toEqual([
-      ['Open Preview', 'link:preview'],
+      ['Open Preview', 'link:window'],
       ['Open Browser', 'link:browser'],
     ])
   })
 
   it('the editor keeps the address among the items that rewrite the link', () => {
     expect(ext()).toEqual([
-      ['Open Preview', 'link:preview'],
+      ['Open Preview', 'link:window'],
       ['Open Browser', 'link:browser'],
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
@@ -76,7 +76,7 @@ describe('a link naming an address', () => {
 
   it('a cell copies the address alongside the opens, and can only empty its value', () => {
     expect(ext({ surface: 'cell' })).toEqual([
-      ['Open Preview', 'link:preview'],
+      ['Open Preview', 'link:window'],
       ['Open Browser', 'link:browser'],
       ['Copy Link', 'title:copylink'],
       ['Rename', 'rename'],
@@ -92,7 +92,7 @@ describe('a link naming an address', () => {
 
   it('a read-only surface is offered the address and nothing that rewrites the link', () => {
     expect(ext({ editable: false })).toEqual([
-      ['Open Preview', 'link:preview'],
+      ['Open Preview', 'link:window'],
       ['Open Browser', 'link:browser'],
       ['Copy Link', 'title:copylink'],
     ])
@@ -118,7 +118,7 @@ describe('a link naming an address', () => {
       editable: true,
       hasAlias: false,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
     expect(model.map((r) => r.action)).not.toContain('title:history')
   })

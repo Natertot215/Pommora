@@ -12,7 +12,7 @@ export interface ConnMenuContext {
   hasAlias: boolean
   external?: boolean
   open?: 'closed' | 'tab' | 'detail'
-  previewing?: boolean
+  windowed?: boolean
   hideable?: boolean
 }
 
@@ -20,10 +20,10 @@ export type ConnSurface = 'editor' | 'cell'
 export type ConnEditAction = 'rename' | 'editLink'
 export type ConnCellAction = 'link:clear' | 'link:hide'
 export type ConnCellApply = (action: ConnCellAction) => void
-export type ConnOpenAction = Extract<PageMetaAction, 'title:preview' | 'title:newtab'>
+export type ConnOpenAction = Extract<PageMetaAction, 'title:window' | 'title:newtab'>
 
 export const CONN_OPEN_ACTIONS = [
-  'title:preview',
+  'title:window',
   'title:newtab',
 ] as const satisfies readonly ConnOpenAction[]
 
@@ -34,10 +34,10 @@ const CONN_COPY_ACTIONS = [
   'title:copypath',
 ] as const satisfies readonly ConnCopyAction[]
 
-export type ConnSiteAction = 'link:preview' | 'link:browser'
+export type ConnSiteAction = 'link:window' | 'link:browser'
 
 export const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
-  { label: 'Open Preview', action: 'link:preview' },
+  { label: 'Open Preview', action: 'link:window' },
   { label: 'Open Browser', action: 'link:browser' },
 ]
 
@@ -96,7 +96,7 @@ export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[
   const copyLink = pageMetaMenuSubset(['title:copylink'])
 
   if (ctx.external) {
-    const opens = CONN_SITE_ROWS.filter((r) => !(r.action === 'link:preview' && ctx.previewing))
+    const opens = CONN_SITE_ROWS.filter((r) => !(r.action === 'link:window' && ctx.windowed))
     if (ctx.surface === 'cell') return [...opens, ...copyLink, ...authoring, ...closingRows(ctx)]
     return [
       ...opens,
@@ -123,7 +123,7 @@ export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[
   const opens = pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.open === 'tab').filter(
     (r) =>
       !(r.action === 'title:newtab' && ctx.open === 'detail') &&
-      !(r.action === 'title:preview' && ctx.previewing),
+      !(r.action === 'title:window' && ctx.windowed),
   )
   return [
     ...opens,

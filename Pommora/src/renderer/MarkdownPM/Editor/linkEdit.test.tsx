@@ -52,7 +52,7 @@ describe('the connection menu knows its span and its surface', () => {
       editable: true,
       hasAlias: false,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
   })
 
@@ -65,7 +65,7 @@ describe('the connection menu knows its span and its surface', () => {
       editable: true,
       hasAlias: true,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
   })
 
@@ -77,7 +77,7 @@ describe('the connection menu knows its span and its surface', () => {
       editable: true,
       hasAlias: false,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
   })
 
@@ -107,7 +107,7 @@ describe('the connection menu knows its span and its surface', () => {
       editable: false,
       hasAlias: false,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
   })
 })
@@ -204,7 +204,7 @@ describe('a connection opens its page the two ways every page menu offers', () =
   it('Open Preview floats it instead', async () => {
     const openWindow = vi.fn()
     useSession.setState({ openWindow })
-    connMenu.mockResolvedValue('title:preview')
+    connMenu.mockResolvedValue('title:window')
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
     expect(openWindow).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
