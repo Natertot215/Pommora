@@ -558,7 +558,7 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 ### Rulings
 
 - R-6 (Nathan, 09-04, mid-closeout): the glance and the autocomplete take the window glass; PickerMenu gains `glass="window"` (GlassWindow, the tier that holds its own content legible), chosen over `solid` (GlassSurface's menu-over-menu fill).
-- R-7 (Claude, closeout, disclosed): the attack's F4 — a website link inside a glance follows on click while page links are inert — is left as is and raised to Nathan as a design question; F6 — one Escape both exits a tile's edit and closes a glance — accepted as one-click-recoverable.
+- R-7 (Nathan, 09-04): a website link inside a glance is inert like a page link — nothing inside a glance follows; the rule lives in `followTarget`, the one resolver the body, the wikilink, the citation marker, and the resting cell all read. F6 — one Escape both exits a tile's edit and closes a glance — accepted as one-click-recoverable.
 - R-5 (Nathan, 09-04, mid-run): the seam file is camelCase `glanceAction.ts`. The connection and web dwells unify as one `link` row in `GLANCE_DWELL`; the hook is `glanceLink`.
 - R-1 (Nathan, 09-03, pre-execution): the seam file is `glanceAction.ts`; the dwell knob lives there as a per-host table (`GLANCE_DWELL`), and hosts name their row. The anchor watch that keeps a glance standing while the content view scrolls also lives in the seam. Local_state key `hoverCard` → `glancePane` (IPC stays `glance:*`).
 - R-2 (Claude, pre-execution, disclosed): the seam self-guards against an anchor inside the pane's body via a `data-glance` attribute, so the no-recursion guarantee no longer rests on `resolveOnlyConnections` alone.
@@ -597,7 +597,6 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 ### Sequenced After
 
 - Non-editor glance hosts (sidebar rows, tabs, view rows, PropertyPanel values).
-- Whether a website link inside a glance should follow on click (attack F4) — Nathan's call.
 - Blur-close for the glance on ⌘-Tab, if wanted.
 - `main/remint.ts` never drops the old origin key when copying a window set.
 

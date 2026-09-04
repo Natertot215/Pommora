@@ -1,7 +1,8 @@
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { tokenize } from '../Tokens'
-import { openPage, type ConnectionsApi, type ConnPage } from '../Connections'
+import type { ConnectionsApi, ConnPage } from '../Connections'
+import { followTarget } from './links'
 import { applyLinkAction } from './linkEdit'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 
@@ -71,11 +72,10 @@ export function connectionClicks(getApi: GetApi): Extension {
     hoverGate: '.md-connection-resolved',
     armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => connHitAt(getApi(), view, event),
-    follow: ({ page }, _view, event) => {
-      const api = getApi()
-      if (!page || !api) return null
-      return () => openPage(api, page, event.metaKey)
-    },
+    follow: ({ page }, _view, event) =>
+      page
+        ? followTarget({ kind: 'page', page }, '', getApi(), event.metaKey, event.target as Element)
+        : null,
     dwell: ({ page }, el) => {
       const glance = getApi()?.glance
       return page && glance

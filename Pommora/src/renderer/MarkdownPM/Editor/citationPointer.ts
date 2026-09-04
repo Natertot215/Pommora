@@ -3,7 +3,7 @@
 // of that. The jump itself is `travelTo`; this only supplies a target.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { openPage, resolveMdTarget, type ConnectionsApi } from '../Connections'
+import { resolveMdTarget, type ConnectionsApi } from '../Connections'
 import { type MarkerRef, citationFor, lineEndOf, markersFor } from '../Detect'
 import { linkTarget, tokenize } from '../Tokens'
 import { docScan, docString, perDoc } from './docCache'
@@ -95,9 +95,14 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     hitAt: citeHitAt,
     follow: (hit, view, event) => () => {
       const api = getApi()
+      const el = event.target as Element
       if (hit.lone?.kind === 'connection' && api) {
         const res = api.resolve(hit.lone.title)
-        if (res.status === 'resolved' && res.page) return openPage(api, res.page, event.metaKey)
+        const go =
+          res.status === 'resolved' && res.page
+            ? followTarget({ kind: 'page', page: res.page }, '', api, event.metaKey, el)
+            : null
+        if (go) return go()
       }
       if (hit.lone?.kind === 'link') {
         const go = followTarget(
@@ -105,6 +110,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
           hit.lone.url,
           api,
           event.metaKey,
+          el,
         )
         if (go) return go()
       }
