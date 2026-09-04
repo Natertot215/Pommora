@@ -181,18 +181,18 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 
 Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own. **Control** and **Subline** are renamed for what they drive here.
 
-| Style       | Token             | Size / Line     | Character                                            |
-| ----------- | ----------------- | --------------- | ---------------------------------------------------- |
-| Title Large  | `text.titleLarge`  | `28px` / `32px` | container title — over an editor banner              |
+| Style        | Token              | Size / Line     | Character                                            |
+| ------------ | ------------------ | --------------- | ---------------------------------------------------- |
+| Title Large  | `text.titleLarge`  | `28px` / `32px` | Container title — over an editor banner              |
 | Title Medium | `text.titleMedium` | `24px` / `28px` | container title — the bare page header               |
 | Title Small  | `text.titleSmall`  | `20px` / `24px` | container title — over a Banner cover                |
-| Headline    | `text.headline`   | `15px` / `20px` | the smallest heading step; the one 15px style        |
-| Body        | `text.body`       | `13px` / `16px` | the standard content size; carries the row primitive |
-| Callout     | `text.callout`    | `12px` / `15px` | a step under body — headers and ancillary labels     |
-| Control     | `text.control`    | `12px` / `15px` | chips and control chrome                             |
-| Caption     | `text.caption`    | `11px` / `14px` | the secondary line under a title                     |
-| Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
-| Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
+| Headline     | `text.headline`    | `15px` / `20px` | the smallest heading step; the one 15px style        |
+| Body         | `text.body`        | `13px` / `16px` | The standard content size; carries the row primitive |
+| Callout      | `text.callout`     | `12px` / `15px` | A step under body — headers and ancillary labels     |
+| Control      | `text.control`     | `12px` / `15px` | Labels and control chrome                            |
+| Caption      | `text.caption`     | `11px` / `14px` | The secondary line under a title                     |
+| Footnote     | `text.footnote`    | `10px` / `13px` | Small details or accessories                         |
+| Subline      | `text.subline`     | `10px` / `12px` | Footnote’ssize on a tighter line box                 |
 
 Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 

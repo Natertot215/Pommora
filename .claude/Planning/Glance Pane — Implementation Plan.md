@@ -1,6 +1,6 @@
 ## Glance Pane — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: [[Glance Pane — Decision Log]] · Execute tasks in order.
+> **Status:** closed 09-04-2026 · Spec: [[Glance Pane — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -547,7 +547,7 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
   - [x] Gate 1 cleanup (simplifier's rename residue) · `97ac9438`
 - [x] **Phase 2** — Re-homing
   - [x] Task 4 — Helpers to Actions/ · `6f7cb913`
-- [ ] **Phase 3** — The Glance
+- [x] **Phase 3** — The Glance · Gate 3 cleanup `99acb80b`, comment pass `cf2ba0fe`
   - [x] Task 5 — The seam · `70afe9da` (renamed to `glanceAction.ts` in the Task 6–8 commit)
   - [x] Task 6 — GlancePane · (with 7 and 8)
   - [x] Task 7 — MarkdownPM calls the seam · (with 6 and 8)
@@ -557,6 +557,8 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 
 ### Rulings
 
+- R-6 (Nathan, 09-04, mid-closeout): the glance and the autocomplete take the window glass; PickerMenu gains `glass="window"` (GlassWindow, the tier that holds its own content legible), chosen over `solid` (GlassSurface's menu-over-menu fill).
+- R-7 (Claude, closeout, disclosed): the attack's F4 — a website link inside a glance follows on click while page links are inert — is left as is and raised to Nathan as a design question; F6 — one Escape both exits a tile's edit and closes a glance — accepted as one-click-recoverable.
 - R-5 (Nathan, 09-04, mid-run): the seam file is camelCase `glanceAction.ts`. The connection and web dwells unify as one `link` row in `GLANCE_DWELL`; the hook is `glanceLink`.
 - R-1 (Nathan, 09-03, pre-execution): the seam file is `glanceAction.ts`; the dwell knob lives there as a per-host table (`GLANCE_DWELL`), and hosts name their row. The anchor watch that keeps a glance standing while the content view scrolls also lives in the seam. Local_state key `hoverCard` → `glancePane` (IPC stays `glance:*`).
 - R-2 (Claude, pre-execution, disclosed): the seam self-guards against an anchor inside the pane's body via a `data-glance` attribute, so the no-recursion guarantee no longer rests on `resolveOnlyConnections` alone.
@@ -573,6 +575,7 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 
 ### Deviations
 
+- Closeout attack (build-breaking-agent, implementation mode): zero arc-introduced regressions; six inherited fragilities, four fixed in `a25d7e8f` — the pane registered as a modal picker and froze every `useDismiss` outside-click/Escape in the app while open (PickerMenu gains `modal={false}`); a drag on a capped axis ratcheted the stored size down; the size seed latched on a failed load and survived a nexus switch (now per nexus, with a supersession token from the simplifier rerun); a table inside a glanced page closed the pane on click or right-click, and a read-only tile's static cell mounted a live cell editor (the widget hands the table a live `readOnly` read; the closes skip the glance's own body through `insideGlance`). The neutral verifier read every requirement MET with one doc residue (`ArchitecturePM` naming `PreviewSlice`) and three stale comments, fixed in `37fa4c59`. Live after the folds: the site glance painted the LeBow page behind its cover within ~8 s; the east-edge and corner drags resized and persisted (260×120 → 320×120 → 280×170).
 - Gate 3 review findings, all fixed in the cleanup commit: every close now routes through one `dismiss` that cancels a queued retarget beat and supersedes an in-flight cold fetch (a dismissed pane could otherwise reopen a frame later, or when the fetch landed); the press-record moved to `onMouseDownCapture` (CM focuses its own content during the native mousedown); `GLANCE_DEFAULT` is exported so the size test stops pinning the KNOB. Simplifier residue folded: `markResizing`, `dismiss`, `onShift`, `LINK_SELECTOR` hoist, `??` consistency in `cellStatic`. Focus hand-back re-verified live after the fix: caret returns to the main editor with no scroll jump.
 - Gate 3 live walkthrough (CDP, dev instance relaunched with `--remote-debugging-port=9333`, NexusOS data): website glance opens on a markdown link (`glance-site.png`), and its cover never lifted within the resolve deadline for a slow external site, then closed — the pre-existing contract; connection glance opens over a wikilink in the main editor (`glance-connection.png`), stays open while the content view scrolls under it, scrolls inside on `.cm-scroller` (tile stays 0), closes on Escape, and re-glances at the same scroll (402 → 402: the warm store, live); the Page Window host glances a connection inside its tab (`glance-window.png`). Not driven live: a table-cell link and a dashboard-tile link, since no NexusOS page holds a resolved connection inside a table cell or a Surface tile (unit coverage in `cellLinks.test.tsx` and the shared pointer path stands in); "Open Preview" from the native link menu, since native menus are not CDP-drivable; the "edit then re-glance" fence, since it mutates a real page (unit-covered). The focus hand-back FAILED live: CodeMirror focuses its own content inside the native mousedown before React's bubble-phase `onMouseDown` runs, so the "focus already inside the pane" guard trips and nothing is recorded. Fix: record on `onMouseDownCapture`.
 - Tasks 6, 7, and 8 landed in one commit: the tree cannot be green between them (App and MarkdownPM import the pane and the seam), and a red intermediate commit was worse than a wider one.
@@ -586,9 +589,15 @@ Invoke `/closeout` over the whole arc: the Delivery Claim, the neutral verifier 
 
 ### Lessons
 
+- CodeMirror focuses its content inside the native mousedown; "who had focus before this press" is read on the capture phase.
+- A shared timer under N handlers turns every defensive pre-gate cancel into a killer; audit the cancels.
+- A self-managed PickerMenu is modal by default; a glance surface must opt out or it freezes the app's dismissals.
+- jsdom has no layout: scroll restore is a seam unit test plus a live check.
+- Never `git stash` a tree a parallel session is editing; filter its paths out of gate output instead.
 ### Sequenced After
 
 - Non-editor glance hosts (sidebar rows, tabs, view rows, PropertyPanel values).
+- Whether a website link inside a glance should follow on click (attack F4) — Nathan's call.
 - Blur-close for the glance on ⌘-Tab, if wanted.
 - `main/remint.ts` never drops the old origin key when copying a window set.
 
@@ -636,16 +645,16 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running, clause by clause, over CDP.
-- [ ] The Links/ folder does not exist; `Interface/Glance/` holds exactly `GlancePane.tsx`, `glanceAction.ts`, `glance-pane.css`, and their tests.
+- [x] Every numbered requirement traces to a landed task.
+- [x] The acceptance criterion observed running over CDP, with two host clauses unit-covered rather than driven (table cell, dashboard tile), the native Open Preview covered by the action-string tests, and the fence clause unit-covered to avoid mutating a real page.
+- [x] The Links/ folder does not exist; `Interface/Glance/` holds exactly `GlancePane.tsx`, `glanceAction.ts`, `glance-pane.css`, and their tests.
 
 **The passes**
 
-- [ ] Simplification and the comment pass over the whole range.
-- [ ] Simplification → code review over the full implementation in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
-- [ ] Every finding from every pass fixed, or carrying a defensible ruling.
+- [x] Simplification and the comment pass over the whole range (and rerun over the folds).
+- [x] Simplification → code review over the full implementation in that order.
+- [x] Delivery Claim written, then checked by a neutral verifier against the decision log.
+- [x] Every finding from every pass fixed, or carrying a defensible ruling (R-7).
 
 **The user's own pass**
 
@@ -655,9 +664,9 @@ Everything else is the standard below.
 
 **The record**
 
-- [ ] Documents made false rewritten in the commits that falsified them.
-- [ ] The closing sweep at zero against its control.
-- [ ] Context and Handoff rewritten; no History entry (ruled).
-- [ ] Lessons routed to `.claude/Guidelines`; successor work named in Sequenced After.
+- [x] Documents made false rewritten in the commits that falsified them.
+- [x] The closing sweep at zero against its control (`PickerMenu` → 116).
+- [x] Context and Handoff rewritten; no History entry (ruled).
+- [x] Lessons routed (two lines in ContextPM's Important Information; the rest in the Log's Lessons); successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · what each screenshot showed · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
