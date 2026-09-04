@@ -1,6 +1,6 @@
 // One owner for the guest-webview story: what an attach is allowed to be, which session guests
 // live on, where their popups go, and how they track the host's zoom. Every embed surface —
-// tiles, the in-app browser, hover cards — attaches under these rules; none carries its own.
+// tiles, the in-app browser, glances — attaches under these rules; none carries its own.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
 import { hasWebScheme, isHttpLink } from '@shared/links'

@@ -545,7 +545,7 @@ export function MarkdownTable({
         connections={connections}
         onCite={onCite}
         onActivate={(coords, sweep) => {
-          // Activation swaps the cell into its editor — a pending or open hover preview over the
+          // Activation swaps the cell into its editor — a pending or open glance over the
           // cell must not hang above the editing seat.
           closeGlance()
           caretCoords.current = coords

@@ -29,7 +29,7 @@ interface PointerSpec<H extends PointerTarget> {
    *  hard rule). */
   hoverGate: string
   /** Whether a dwell could bloom anything at all on this surface — asked before the class gate, so a
-   *  host that offers no preview (a read-only embed, the hover preview's own editor) pays neither the
+   *  host that offers no glance (a read-only embed, the glance's own editor) pays neither the
    *  layout read nor the tokenize. */
   armable: () => boolean
   hitAt: (view: EditorView, event: MouseEvent) => H | null
@@ -54,7 +54,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
   // from "I just clicked it" on its own.
   let editingOnPress = false
   // Cancelling once isn't enough: a native menu takes the pointer away and hands it back over the
-  // same link, and that re-entry is a fresh mouseover that would bloom a preview behind the menu.
+  // same link, and that re-entry is a fresh mouseover that would bloom a glance behind the menu.
   let actedOnLink = false
   /** The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed, and
    *  dismiss what is already open. */
