@@ -36,12 +36,11 @@ export interface ChromeSlice {
   resetChrome: () => void
 }
 
-const SIDEBAR_MIN = 180
-const SIDEBAR_MAX = 380
+export const SIDEBAR_WIDTH = { min: 180, max: 380 }
 const SIDEBAR_DEFAULT = 240
 const SIDEBAR_WIDTH_KEY = 'pommora.sidebarWidth'
 const clampSidebar = (w: number): number =>
-  Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, Math.round(w)))
+  Math.max(SIDEBAR_WIDTH.min, Math.min(SIDEBAR_WIDTH.max, Math.round(w)))
 function readStoredSidebarWidth(): number {
   try {
     const n = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY))
@@ -51,12 +50,11 @@ function readStoredSidebarWidth(): number {
   }
 }
 
-const INSPECTOR_MIN = 240
-const INSPECTOR_MAX = 420
+export const INSPECTOR_WIDTH = { min: 240, max: 420 }
 const INSPECTOR_DEFAULT = 300
 const INSPECTOR_WIDTH_KEY = 'pommora.inspectorWidth'
 const clampInspector = (w: number): number =>
-  Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, Math.round(w)))
+  Math.max(INSPECTOR_WIDTH.min, Math.min(INSPECTOR_WIDTH.max, Math.round(w)))
 function readStoredInspectorWidth(): number {
   try {
     const n = Number(localStorage.getItem(INSPECTOR_WIDTH_KEY))

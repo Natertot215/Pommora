@@ -1,0 +1,77 @@
+/* The frame's handles: invisible bands straddling the edges of the positioned box they sit in,
+   corners over the bands. A strip is the same band seated by its host, which supplies only where
+   it hangs and its z-index. */
+.resize-edge,
+.resize-strip {
+  position: absolute;
+  -webkit-app-region: no-drag;
+}
+.resize-edge {
+  z-index: 2;
+}
+.resize-strip {
+  width: 10px;
+  cursor: col-resize;
+}
+.resize-edge-n,
+.resize-edge-s {
+  left: 12px;
+  right: 12px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.resize-edge-e,
+.resize-edge-w {
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.resize-edge-ne,
+.resize-edge-nw,
+.resize-edge-se,
+.resize-edge-sw {
+  width: 16px;
+  height: 16px;
+  z-index: 3;
+}
+.resize-edge-n,
+.resize-edge-ne,
+.resize-edge-nw {
+  top: -5px;
+}
+.resize-edge-s,
+.resize-edge-se,
+.resize-edge-sw {
+  bottom: -5px;
+}
+.resize-edge-e,
+.resize-edge-ne,
+.resize-edge-se {
+  right: -5px;
+}
+.resize-edge-w,
+.resize-edge-nw,
+.resize-edge-sw {
+  left: -5px;
+}
+.resize-edge-nw,
+.resize-edge-se {
+  cursor: nwse-resize;
+}
+.resize-edge-ne,
+.resize-edge-sw {
+  cursor: nesw-resize;
+}
+
+/* An outlined frame's chassis eases its stroke to accent while a handle is hovered or held; both
+   properties ease together, or a stroke easing beside an edge that snapped flashes white. */
+:has(> .resize-outlined) {
+  transition:
+    border-color var(--duration-base) var(--ease-base),
+    box-shadow var(--duration-base) var(--ease-base);
+}
+:has(> .resize-outlined:hover),
+:has(> .resize-outlined.is-active) {
+  --glass-outline: var(--accent-stroke-hot);
+}

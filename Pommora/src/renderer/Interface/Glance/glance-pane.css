@@ -1,6 +1,5 @@
 /* No overflow here: the pane's clip-path bounds the visuals and the editor's scroller owns the
-   scroll, while the resize strips straddle this box's edge — clipping would leave the visible
-   border inert under the pointer. */
+   scroll. */
 .glance-body {
   position: relative;
 }
@@ -50,73 +49,4 @@
 }
 .glance-body .mdpm-editor .cm-line.md-foldable {
   cursor: pointer;
-}
-
-/* Both transitions run together: a border-color easing in beside an edge that snapped is what
-   flashed the stroke white for a frame. */
-[data-picker-portal] div:has(.glance-body) {
-  transition:
-    border-color var(--duration-base) var(--ease-base),
-    box-shadow var(--duration-base) var(--ease-base);
-}
-[data-picker-portal] div:has([class^="glance-resize-"]:hover),
-[data-picker-portal] div:has(.glance-body.is-resizing) {
-  --glass-outline: var(--accent-stroke-hot);
-}
-
-/* Each strip is a thin band along one side; on a flipped-up pane the free horizontal edge and its
-   two corners mirror to the TOP, since the bottom edge is the anchored one. Corners render after
-   the edges, so they win the overlap. */
-[class^="glance-resize-"] {
-  position: absolute;
-  z-index: 2;
-}
-.glance-resize-e,
-.glance-resize-w {
-  top: 10px;
-  bottom: 10px;
-  width: 10px;
-  cursor: ew-resize;
-}
-.glance-resize-s,
-.glance-resize-n {
-  left: 10px;
-  right: 10px;
-  height: 10px;
-  cursor: ns-resize;
-}
-.glance-resize-se,
-.glance-resize-ne,
-.glance-resize-sw,
-.glance-resize-nw {
-  width: 16px;
-  height: 16px;
-}
-.glance-resize-e,
-.glance-resize-se,
-.glance-resize-ne {
-  right: -6px;
-}
-.glance-resize-w,
-.glance-resize-sw,
-.glance-resize-nw {
-  left: -6px;
-}
-.glance-resize-s,
-.glance-resize-se,
-.glance-resize-sw {
-  bottom: -6px;
-}
-.glance-resize-n,
-.glance-resize-ne,
-.glance-resize-nw {
-  top: -6px;
-}
-.glance-resize-se,
-.glance-resize-nw {
-  cursor: nwse-resize;
-}
-.glance-resize-ne,
-.glance-resize-sw {
-  cursor: nesw-resize;
 }

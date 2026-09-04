@@ -7,14 +7,14 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/Interactions/OverScroll'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase } from './window-base'
-import type { FloatingBounds } from '@renderer/Interactions/FloatingWindow'
+import type { WindowBounds } from './window-base'
 import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
 import { useHeldPresence } from '@renderer/Animation/useExitPresence'
 import { useSession } from '../store'
 import './web-window.css'
 
-const BOUNDS: FloatingBounds = { minW: 480, minH: 360, defW: 1000, defH: 700 }
+const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
 
 /** The direct summon of the floating browser, knob-independent by contract. */
 export function openInAppBrowser(url: string): void {
