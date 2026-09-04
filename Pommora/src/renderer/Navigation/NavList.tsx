@@ -59,7 +59,7 @@ export function NavRowMenu({
           case 'open-new-tab':
             onOpenNewTab?.(target)
             break
-          case 'open-preview':
+          case 'open-window':
             if (target.kind === 'page' && st.tree) {
               const livePage = liveTarget(reconcileIndexOf(st.tree), target)
               if (livePage?.kind !== 'page') break

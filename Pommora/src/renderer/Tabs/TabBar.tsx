@@ -156,7 +156,7 @@ function TabBarBody({
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
       else if (!isPage) return
-      else if (action === 'preview') openWindow({ id: target.id, path: target.path })
+      else if (action === 'window') openWindow({ id: target.id, path: target.path })
       else if (action) runPageSendAction(action, target)
     }
 

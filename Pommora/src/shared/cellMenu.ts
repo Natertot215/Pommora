@@ -130,7 +130,7 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
     case 'title':
       return {
         items: pageMetaMenuItems(ctx.alreadyOpen, {
-          preview: true,
+          window: true,
           newPages: 'pair',
           move: offersMove(ctx),
           clipboard: true,

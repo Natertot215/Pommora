@@ -96,7 +96,7 @@ export async function showContextMenu(
     if (action.startsWith('move:'))
       return run({ op: 'movePage', path: target.path, newParentPath: action.slice(5) })
     switch (action as PageMetaAction) {
-      case 'title:preview':
+      case 'title:window':
         return push(win, 'open-in-window', target)
       case 'title:newtab':
         return push(win, 'open-in-new-tab', target)
@@ -139,7 +139,7 @@ export async function showContextMenu(
     items.push(
       ...rowTemplate(
         pageMetaMenuItems(target.alreadyOpen, {
-          preview: true,
+          window: true,
           newPages: 'pair',
           move: offersMove(target),
           clipboard: true,
