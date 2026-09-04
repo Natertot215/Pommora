@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { GlassSurface } from '../Glass'
 import { cx } from '../Util/cx'
-import { menuBloom, menuBloomClosing } from '../Animation/animations.css'
+import { menuBloom, menuBloomClosing } from '@renderer/Animation/animations.css'
 import * as s from './menu-surface.css'
 
 /** A menu's glass — the beaked surface tier, its notch pointing up at the trigger that opened it. */

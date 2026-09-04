@@ -10,7 +10,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@shared/blocks'
-import { GLIDE_FEEL } from '@renderer/DesignSystem/Animation/feel'
+import { GLIDE_FEEL } from '@renderer/Animation/feel'
 import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import {
   containersByPathOf,
@@ -30,7 +30,7 @@ import { tileMenuModel } from '@shared/tileMenu'
 import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
 import { askRemoveTile } from '@renderer/Windows/confirmations'
 import { notifyRemovedTile } from '@renderer/Interface/notifications'
-import { useHeld } from '@renderer/DesignSystem/Interactions/useHeld'
+import { useHeld } from '@renderer/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'

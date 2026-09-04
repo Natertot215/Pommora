@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
-import { duration, easing } from '@renderer/DesignSystem/Animation'
+import { duration, easing } from '@renderer/Animation'
 import {
   accessoryButton,
   flushAffordance,

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cx } from '../../Util/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import './over-scroll.css'
 
 /** The capped-label class run — a plain stylesheet, since a `style([])` cannot compose a mask. */

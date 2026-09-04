@@ -1,5 +1,5 @@
 import { GlassPane } from '@renderer/DesignSystem/Glass'
-import { paneSlide } from '@renderer/DesignSystem/Animation'
+import { paneSlide } from '@renderer/Animation'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './inspector-pane.css'
 

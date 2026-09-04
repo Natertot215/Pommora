@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { DISCLOSURE_INDENT } from '@renderer/DesignSystem/Tokens/size.css'
-import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { nearestByTop, useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 import { titleFromPath } from '@shared/connections'
 import type { FolderPlacement } from '@shared/types'
 import type { MutateRequest } from '@shared/mutate'

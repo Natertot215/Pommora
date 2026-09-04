@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Segmented, type Segment } from '../Buttons'
-import { useDismiss } from '../Interactions/useDismiss'
-import { useExitPresence } from '../Animation/useExitPresence'
+import { useDismiss } from '@renderer/Interactions/useDismiss'
+import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { MenuSurface } from './menu-surface'
 
 /** A trigger button with a pane hanging under it: the open state, the outside-dismiss, and the

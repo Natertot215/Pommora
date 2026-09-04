@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 
 // The one reorder implementation under both option editors — `useOptionReorder` adapts it to a flat
 // list. A drag can reorder within a group OR cross into another group (including an empty one); on

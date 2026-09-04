@@ -1,8 +1,8 @@
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
-import { cx } from '../Util/cx'
-import { GHOST_FROST, frostStyle } from '../Glass/glass-base'
-import { text } from '../Tokens/typography.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { GHOST_FROST, frostStyle } from '@renderer/DesignSystem/Glass/glass-base'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 
 /** Portaled to body so it paints ABOVE any pane frost — without it, a drag's only visual is the
  *  source row dimmed in place, which melts into the glass and reads as "dragging behind the pane." */

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { SortableZone, useDragItem, type DragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { SortableZone, useDragItem, type DragItem } from '@renderer/Interactions/drag'
 import {
   CardBody,
   CardDropSlot,
@@ -18,7 +18,7 @@ import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
 import './nav-gallery.css'
-import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import { onActivateKey } from '@renderer/Interactions/activate'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { assetUrl } from '@renderer/Assets/assetUrl'
 

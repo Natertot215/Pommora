@@ -3,7 +3,7 @@ import { Zone, useDropSlot, useZoneItem } from './engine'
 import './drop-chrome.css'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
 import type { DragItem, DragNotify, Modifier } from './shared'
-import { moveItem } from '../Util/moveItem'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 // The drag seam. Surfaces import ONLY from here — the engine lives behind it.
 

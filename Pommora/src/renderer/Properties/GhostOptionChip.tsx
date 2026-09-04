@@ -2,12 +2,12 @@
 // the property editors' member of the hover-ghost family, riding the same anchor mechanism the
 // table's New Page row does — only the thing being created differs.
 import { useRef } from 'react'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { Reveal } from '@renderer/Animation/Reveal'
 import {
   GHOST_DWELL_MS,
   useGhostAnchor,
   type GhostAnchor,
-} from '@renderer/DesignSystem/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostAnchor'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { base, EditableInput } from '@renderer/DesignSystem/Fields'
 import * as s from '../Frames/frames.css'

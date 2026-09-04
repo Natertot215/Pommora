@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 

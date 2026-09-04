@@ -25,7 +25,7 @@ import {
   WidgetType,
 } from '@codemirror/view'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { clamp } from '@shared/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'

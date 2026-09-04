@@ -11,7 +11,7 @@ import { PickerMenu } from '../picker-base'
 import { SearchField } from '@renderer/DesignSystem/Fields'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { lucideGlyph, searchIcons, type IconEntry } from '@renderer/DesignSystem/Symbols/allSymbols'
-import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { reorder, SortableZone, useDragItem } from '@renderer/Interactions/drag'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './icon-picker.css'
 

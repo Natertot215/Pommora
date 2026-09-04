@@ -23,7 +23,7 @@ import {
   MenuScrollFrame,
 } from '@renderer/DesignSystem/Menus'
 import { titleInput as rowInput, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { reorder, SortableZone, useDragItem } from '@renderer/Interactions/drag'
 import { optionRing, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'

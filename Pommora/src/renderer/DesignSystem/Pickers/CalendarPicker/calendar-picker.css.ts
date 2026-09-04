@@ -1,6 +1,6 @@
 import { globalStyle, keyframes, style, type StyleRule } from '@vanilla-extract/css'
 import { vars } from '@renderer/DesignSystem/Tokens/color.css'
-import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
+import { duration, easing } from '@renderer/Animation/motion'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
 import { base } from '@renderer/DesignSystem/Fields/fields.css'

@@ -4,8 +4,8 @@ import { Button } from '../Buttons'
 import { Icon, type IconName } from '../Symbols'
 import * as s from './menu-base.css'
 import { cx } from '../Util/cx'
-import { overScrollEllipsis } from '../Interactions/OverScroll'
-import { onActivateClick } from '../Interactions/activate'
+import { overScrollEllipsis } from '@renderer/Interactions/OverScroll'
+import { onActivateClick } from '@renderer/Interactions/activate'
 import { segment } from '../Elements/Segment/segment.css'
 
 const BAR_GLYPH = 12 // KNOB

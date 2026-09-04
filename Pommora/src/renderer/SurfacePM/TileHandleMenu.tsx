@@ -29,7 +29,7 @@ import {
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollEllipsis } from '@renderer/Interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './tileZoom'
 import * as s from './handle-menu.css'
 

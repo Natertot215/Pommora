@@ -1,5 +1,5 @@
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import type { ColumnAlign } from '@shared/views'
 
 /** One column header: the whole cell is the grab surface for the smooth-shift reorder (`dragging`

@@ -34,7 +34,7 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import { titleInput, actionRow } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { Reveal, duration, useEntrance } from '@renderer/DesignSystem/Animation'
+import { Reveal, duration, useEntrance } from '@renderer/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { InlineEditHeader } from './InlineEditHeader'

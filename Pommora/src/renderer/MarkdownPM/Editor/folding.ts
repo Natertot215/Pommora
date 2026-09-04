@@ -8,7 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { duration, ms } from '@renderer/DesignSystem/Animation'
+import { duration, ms } from '@renderer/Animation'
 import { docScan } from './docCache'
 import { headingSections } from './headingScan'
 import { createBlockDragGesture } from './blockDrag'

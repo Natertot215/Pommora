@@ -1,5 +1,5 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
-import { titleReveal } from '@renderer/DesignSystem/Animation/animations.css'
+import { titleReveal } from '@renderer/Animation/animations.css'
 import { type ButtonSize, text, tintAt, vars } from '@renderer/DesignSystem/Tokens'
 
 const c = vars.color

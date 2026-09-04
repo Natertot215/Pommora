@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { stack } from '../Tokens/stack'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { DEFAULT_FEEL } from '../Animation/feel'
 import { announce } from './a11y'
 import { findScroller, startAutoScroll } from './autoscroll'
