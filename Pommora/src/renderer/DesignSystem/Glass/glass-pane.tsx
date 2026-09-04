@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { paneMaterial } from './glass-base'
 
 /** A Pane's glass — the sidebar, the inspector, a floating window's side slots, and the surfaces
@@ -19,6 +20,12 @@ export function GlassPane({
 }
 
 /** The app's root glass — the one surface everything else floats over. */
-export function Surface({ children }: { children: ReactNode }): React.JSX.Element {
-  return <GlassPane className="surface-glass">{children}</GlassPane>
+export function Surface({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}): React.JSX.Element {
+  return <GlassPane className={cx('surface-glass', className)}>{children}</GlassPane>
 }
