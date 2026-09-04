@@ -21,6 +21,7 @@ import { AccessoryButton } from '@renderer/DesignSystem/Menus/menu-row'
 import { BrowseButton, InputField } from '@renderer/DesignSystem/Fields'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
+import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import * as s from './image-picker.css'
 
@@ -102,14 +103,8 @@ export function ImagePicker({
     }
   }, [value, pendingValue])
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && !e.defaultPrevented) onCancel()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onCancel])
+  const panelRef = useRef<HTMLDivElement>(null)
+  useDismissal(open, false, { layer: () => panelRef.current, dismiss: onCancel })
 
   // React registers wheel passively at the root, so the zoom wheel is a native non-passive listener.
   useEffect(() => {
@@ -232,17 +227,14 @@ export function ImagePicker({
   )
 
   return createPortal(
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events (which bubble the React tree into whatever opened the picker: a card's click-to-open, right-click menu, or drag handle) and dismisses on an outside click; Escape is the keyboard dismissal.
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events (which bubble the React tree into whatever opened the picker: a card's click-to-open, right-click menu, or drag handle); the dismissal stack owns the outside press and Escape.
     <div
       className={s.backdrop}
       onPointerDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation()
-        if (e.target === e.currentTarget) onCancel()
-      }}
+      onClick={(e) => e.stopPropagation()}
     >
-      <GlassWindow className={s.panel}>
+      <GlassWindow ref={panelRef} className={s.panel}>
         <div
           ref={frameRef}
           className={viewportClass}

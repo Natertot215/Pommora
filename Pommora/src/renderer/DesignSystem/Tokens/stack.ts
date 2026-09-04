@@ -27,8 +27,7 @@ export const stack = {
   top: {
     dropPreview: 999, // one step under the ghost being dragged
     floating: 1000,
-    menuBackdrop: 1099, // the transparent dismiss catcher one step under a portalled menu
-    menu: 1100,
+    menu: 1100, // a portalled popup and, before it in DOM order, the shield the base popup draws
     caret: 2147483647, // over every layer, deliberately unbeatable
   },
 } as const

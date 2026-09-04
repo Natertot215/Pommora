@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
-import { backdrop } from '@renderer/DesignSystem/Pickers/picker-base.css'
+import { shield } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { useSession } from '../store'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -64,12 +64,14 @@ describe('ExcludedDirectoriesRow', () => {
     expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('dismisses on an outside click through the backdrop', async () => {
+  it('dismisses on an outside press against the shield', async () => {
     await render(['Archive'])
     await act(async () => manageButton().click())
-    const back = document.querySelector<HTMLElement>(`.${backdrop}`)
+    const back = document.querySelector<HTMLElement>(`.${shield}`)
     expect(back).not.toBeNull()
-    await act(async () => back?.click())
+    await act(async () =>
+      back?.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true })),
+    )
     expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
@@ -78,7 +80,7 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => manageButton().click())
     expect(addButton()).toBeDefined()
     await act(async () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
     expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })

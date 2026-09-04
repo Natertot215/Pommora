@@ -4,7 +4,7 @@ import { useSession } from '@renderer/store'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { useHeldPresence, windowIn, windowOut } from '@renderer/Animation'
-import { markPickerOpen } from '@renderer/Interactions/useDismiss'
+import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './confirmation-window.css'
 
@@ -20,21 +20,18 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   const defaultRef = useRef(false)
   defaultRef.current = pending?.req.defaultsToCancel === true
 
+  useDismissal(active !== null, false, {
+    layer: () => panelRef.current,
+    dismiss: () => settleRef.current?.(false),
+  })
   useEffect(() => {
-    if (!active) return
-    panelRef.current?.focus()
-    return markPickerOpen()
+    if (active) panelRef.current?.focus()
   }, [active])
 
   useEffect(() => {
     if (!active) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        settleRef.current?.(false)
-        return
-      }
       // A focused button answers through its own activation; taking Enter here too would answer
       // twice. The panel itself holding focus is the resting state, and does take it.
       const onButton =
@@ -56,16 +53,13 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   const closing = shown.closing
 
   return createPortal(
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events and cancels on an outside click; Escape is the keyboard dismissal.
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events; the dismissal stack owns the outside press and Escape.
     <div
       className={cx(s.backdrop, closing && s.backdropClosing)}
       inert={closing}
       onPointerDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation()
-        if (e.target === e.currentTarget) settle(false)
-      }}
+      onClick={(e) => e.stopPropagation()}
     >
       <GlassWindow
         ref={panelRef}

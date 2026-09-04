@@ -257,7 +257,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Components
 
-`Components/` — grouped as the ledger reads. `useDismiss.ts` is the shared outside-click helper at the root, beside `AssetImage`, the one element that draws a stored image, through its crop when one exists; `imageAspect.ts` (`aspectFor`, `useImageAspect`) is its measured-aspect cache.
+`Components/` — grouped as the ledger reads. `Interactions/dismissalStack.ts` is the one seat for outside-press and Escape dismissal: every modal popup — a PickerMenu pane, a toolbar dropdown, a confirmation, the image editor — registers in opening order; a press outside every layer collapses the whole stack, a press on a lower layer closes only what stands above it and still reaches its target, and Escape peels the topmost. The base PickerMenu alone draws the shield over the app beneath. Beside it sits `AssetImage`, the one element that draws a stored image, through its crop when one exists; `imageAspect.ts` (`aspectFor`, `useImageAspect`) is its measured-aspect cache.
 
 #### Controls
 

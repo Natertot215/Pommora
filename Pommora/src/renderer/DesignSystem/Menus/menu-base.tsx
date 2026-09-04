@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Segmented, type Segment } from '../Buttons'
-import { useDismiss } from '@renderer/Interactions/useDismiss'
+import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { MenuSurface } from './menu-surface'
 
@@ -41,7 +41,11 @@ export function MenuDropdown({
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
-  useDismiss(wrapRef, () => setOpen(false), open, dismissOnOutside)
+  useDismissal(open, false, {
+    layer: () => wrapRef.current,
+    dismiss: () => setOpen(false),
+    outsidePress: dismissOnOutside,
+  })
   const pane = useExitPresence(open)
 
   // The pane is centered on the button, so the room to that button's right counts twice. Measured from

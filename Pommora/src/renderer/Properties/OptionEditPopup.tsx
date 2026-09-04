@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useRef, useState, type RefObject } from 'react'
 import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { ColorGrid } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
@@ -45,18 +45,6 @@ export function OptionEditPopup({
 }): React.JSX.Element {
   const iconRef = useRef<HTMLButtonElement>(null)
   const [iconOpen, setIconOpen] = useState(false)
-  useEffect(() => {
-    if (!iconOpen) return
-    // Escape is picker-base's (it peels the topmost pane). This catches a press landing on the
-    // popup's own body, which the IconPicker's backdrop sits UNDER and so never sees.
-    const onDown = (e: PointerEvent): void => {
-      const portals = document.querySelectorAll('[data-picker-portal]')
-      const pane = portals[portals.length - 1]
-      if (pane && !pane.contains(e.target as Node)) setIconOpen(false)
-    }
-    document.addEventListener('pointerdown', onDown, true)
-    return () => document.removeEventListener('pointerdown', onDown, true)
-  }, [iconOpen])
   return (
     <>
       {/* manageFocus off: opening is inspection, not an edit — neither field takes focus until

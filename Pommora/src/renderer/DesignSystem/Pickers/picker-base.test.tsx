@@ -190,6 +190,95 @@ describe('PickerMenu focus contract', () => {
     expect(dismissed).toEqual(['inner', 'outer'])
   })
 
+  it('a press on the pane beneath closes the stacked pane and still reaches its target', async () => {
+    const log: string[] = []
+    function Nested(): React.JSX.Element {
+      const outerRef = useRef<HTMLButtonElement>(null)
+      const innerRef = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={outerRef} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+            <button ref={innerRef} type="button" data-id="first">
+              First
+            </button>
+            <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
+              Last
+            </button>
+          </PickerMenu>
+          <PickerMenu open onDismiss={() => log.push('inner')} triggerRef={innerRef}>
+            <button type="button" data-id="nested">
+              Nested
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    const press = async (el: Element): Promise<void> => {
+      await act(async () => {
+        el.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+      })
+    }
+    await render(<Nested />)
+    await press(find('last'))
+    expect(log).toEqual(['inner', 'press:last'])
+    await press(find('first'))
+    expect(log).toEqual(['inner', 'press:last'])
+    await press(document.body)
+    expect(log).toEqual(['inner', 'press:last', 'inner', 'outer'])
+  })
+
+  it('a pane nothing dismisses draws no shield', async () => {
+    function Host(): React.JSX.Element {
+      const ref = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={ref} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open triggerRef={ref}>
+            <button type="button" data-id="first">
+              First
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    await render(<Host />)
+    expect(document.querySelectorAll('[data-picker-portal]').length).toBe(1)
+  })
+
+  it('only the base pane draws the shield', async () => {
+    function Nested(): React.JSX.Element {
+      const outerRef = useRef<HTMLButtonElement>(null)
+      const innerRef = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={outerRef} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open onDismiss={() => {}} triggerRef={outerRef}>
+            <button ref={innerRef} type="button" data-id="first">
+              First
+            </button>
+          </PickerMenu>
+          <PickerMenu open onDismiss={() => {}} triggerRef={innerRef}>
+            <button type="button" data-id="nested">
+              Nested
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    await render(<Nested />)
+    const portals = document.querySelectorAll('[data-picker-portal]')
+    expect(portals.length).toBe(3)
+    expect(portals[0].contains(find('first'))).toBe(false)
+    expect(portals[1].contains(find('first'))).toBe(true)
+  })
+
   it('yields to a child that focuses itself', async () => {
     function SelfFocusing(): React.JSX.Element {
       const input = useRef<HTMLInputElement>(null)

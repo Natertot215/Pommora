@@ -9,7 +9,7 @@ import { linkDomain } from '@shared/links'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
-import { useDismiss } from '@renderer/Interactions/useDismiss'
+import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { useSession } from '../store'
 import { openWebLink } from '../Actions/openWebLink'
 import { webGuestRetention } from './webRetention'
@@ -173,8 +173,10 @@ export function WebTile({
     } catch {}
   }, [tabInactive, pauseOnTabSwitch, loaded])
 
-  // The shared hook also shields the open Edit Link picker, whose portal renders outside this tree.
-  useDismiss(rootRef, () => setEngaged(false), engaged)
+  useDismissal(engaged, false, {
+    layer: () => rootRef.current,
+    dismiss: () => setEngaged(false),
+  })
 
   useEffect(() => {
     const wv = ref.current
