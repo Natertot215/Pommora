@@ -15,8 +15,8 @@ import type {
   PageDetail,
   Personalization,
   PickFileOptions,
-  HoverCardSize,
-  PreviewsFile,
+  GlanceSize,
+  WindowsFile,
   SubfieldConfig,
   PageValues,
   StoredTabSet,
@@ -255,15 +255,15 @@ export interface Asks {
   }
   'theme:systemAccent': { args: []; reply: string | null }
 
-  // Navigation / tabs / previews / thumbnails
+  // Navigation / tabs / windows / thumbnails
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
   'tabs:load': { args: []; reply: Result<StoredTabSet | null> }
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
-  'previews:load': { args: []; reply: Result<PreviewsFile> }
-  'previews:save': { args: [file: PreviewsFile]; reply: Result<null> }
-  'hoverCard:load': { args: []; reply: Result<HoverCardSize | null> }
-  'hoverCard:save': { args: [size: HoverCardSize]; reply: Result<null> }
+  'windows:load': { args: []; reply: Result<WindowsFile> }
+  'windows:save': { args: [file: WindowsFile]; reply: Result<null> }
+  'glance:load': { args: []; reply: Result<GlanceSize | null> }
+  'glance:save': { args: [size: GlanceSize]; reply: Result<null> }
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
 
@@ -378,7 +378,7 @@ export interface Pushes {
   'open-in-new-tab': ContextTarget
   // Delete asks in the renderer, so the native menu hands the target back rather than acting.
   'confirm-delete': ContextTarget
-  'open-in-preview': ContextTarget
+  'open-in-window': ContextTarget
   'open-history': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
   'assets:changed': AssetMap

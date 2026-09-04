@@ -97,7 +97,7 @@ export async function showContextMenu(
       return run({ op: 'movePage', path: target.path, newParentPath: action.slice(5) })
     switch (action as PageMetaAction) {
       case 'title:preview':
-        return push(win, 'open-in-preview', target)
+        return push(win, 'open-in-window', target)
       case 'title:newtab':
         return push(win, 'open-in-new-tab', target)
       case 'title:rename':

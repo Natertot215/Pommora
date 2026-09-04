@@ -185,7 +185,7 @@ export interface Personalization {
   nativeHighlight?: boolean
   /** Absent = `outlined`. */
   pickerSelection?: PickerSelection
-  /** Wiki-link clicks open the Page Preview window instead of navigating; ⌘-click takes the
+  /** Wiki-link clicks open the Page Window instead of navigating; ⌘-click takes the
    *  other route. Absent = navigate. */
   connectionsOpenInPreview?: boolean
   /** How a link that leads nowhere reads. Absent = dimmed, its syntax showing; true renders it
@@ -496,7 +496,7 @@ export type TabTarget = SelectTarget | NewTabSentinel
 
 /** A page, or the NavWindow flavor's tab-1 sentinel — the gallery itself; no id/path, never
  *  warmed. */
-export type PreviewTabTarget = SelectTarget | { kind: 'navwindow' }
+export type WindowTabTarget = SelectTarget | { kind: 'navwindow' }
 
 /** Carries its OWN Back/Forward history (`navStack`/`navIndex`). `isPinned` is never stored —
  *  it's derived from the pinned refs. Only unpinned tabs persist, as bare refs; restore hydrates
@@ -517,8 +517,8 @@ export interface StoredTab {
   navIndex: number
 }
 
-/** Device-local; every card opens at it. */
-export interface HoverCardSize {
+/** Device-local; every glance opens at it. */
+export interface GlanceSize {
   w: number
   h: number
 }
@@ -531,25 +531,25 @@ export interface StoredTabSet {
 /** Bare refs only — ids are session-local and re-minted at restore; `activeIndex` points into
  *  `tabs` by strip order. The NavWindow's gallery sentinel never persists — opening the nav
  *  flavor re-seeds it as tab 1. */
-export interface PreviewSetRecord {
+export interface WindowSetRecord {
   tabs: { target: NavRef }[]
   activeIndex: number
 }
 
 /** One device-local row: the NavWindow flavor's one set, the per-origin sets keyed by origin
- *  page id (re-keyed on re-parent), and which preview was open (recorded for the map; launch
+ *  page id (re-keyed on re-parent), and which window was open (recorded for the map; launch
  *  never auto-summons). */
-export interface PreviewsFile {
-  navSet: PreviewSetRecord | null
-  origins: Record<string, PreviewSetRecord>
+export interface WindowsFile {
+  navSet: WindowSetRecord | null
+  origins: Record<string, WindowSetRecord>
   open: { flavor: 'page' | 'nav'; originId: string } | null
   /** "Open Preview" from NavWindow rows opens a tab in THIS window instead of the floating
-   *  preview. Absent = on (the default: the override wins). */
+   *  window. Absent = on (the default: the override wins). */
   navOverride?: boolean
 }
 
 /** Shared so main's reader and the renderer's reset can't drift into two different "empty". */
-export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
+export const EMPTY_WINDOWS: WindowsFile = { navSet: null, origins: {}, open: null }
 
 /** A content-view rectangle (DIP, viewport-relative) the renderer measures for a thumbnail
  *  capture. */

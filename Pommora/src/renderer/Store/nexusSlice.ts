@@ -120,12 +120,12 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             if (get().activeTabId === '') {
               // Disk leads only here and on the external-edit push; navigation is never re-read
               // mid-session, so a just-made change can't roll back.
-              const [read, previews, stored] = await Promise.all([
+              const [read, windows, stored] = await Promise.all([
                 window.nexus.nav.read().catch(() => null),
-                window.nexus.previews?.load().catch(() => null),
+                window.nexus.windows?.load().catch(() => null),
                 window.nexus.tabs.load().catch(() => null),
               ])
-              if (previews?.ok) set({ previewsFile: previews.value })
+              if (windows?.ok) set({ previewsFile: windows.value })
               get().restoreNavigation(
                 read?.ok ? read.value : null,
                 stored?.ok ? stored.value : null,

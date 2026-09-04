@@ -1,4 +1,4 @@
-// The open nexus's database handle. Operational state — folds, view selection, tabs, previews,
+// The open nexus's database handle. Operational state — folds, view selection, tabs, windows,
 // recents — lives here, opened on nexus open and closed on switch or quit. Best-effort: a null
 // handle means every operational store no-ops and the session runs without persisted chrome.
 
