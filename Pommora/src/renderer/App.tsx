@@ -128,7 +128,7 @@ export function App(): React.JSX.Element {
 
   const openPreview = useSession((s) => s.openPreview)
   useEffect(() => {
-    return window.nexus.onOpenInPreview((target) => {
+    return window.nexus.onOpenInWindow((target) => {
       if (target.id) openPreview({ id: target.id, path: target.path })
     })
   }, [openPreview])

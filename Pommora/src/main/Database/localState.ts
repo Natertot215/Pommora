@@ -21,13 +21,13 @@ export type Scope =
   | 'linkTitle'
   | 'blockDoc'
   | 'tabs'
-  | 'previews'
+  | 'windows'
   | 'recents'
   | 'record'
-  | 'hoverCard'
+  | 'glancePane'
   | 'devicePrefs'
 
-/** The key a whole-scope singleton stores under — tabs, previews and recents are always read and
+/** The key a whole-scope singleton stores under — tabs, windows and recents are always read and
  *  written whole, so a row per entry would buy nothing. */
 const SINGLETON = ''
 
