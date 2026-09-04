@@ -18,7 +18,7 @@ import {
 } from './size.css'
 import { CONN_LINK_MASK, FOLD_CHEVRON_MASK, GRIP_GLYPH } from '../Symbols/masks'
 import { mixAt, tintAt, TINT_STEPS } from './tint'
-import { duration, easing } from '../Animation/motion'
+import { duration, easing } from '@renderer/Animation/motion'
 import { stack } from './stack'
 
 const CHECKBOX_BASE = 'var(--checkbox-base, var(--accent))'

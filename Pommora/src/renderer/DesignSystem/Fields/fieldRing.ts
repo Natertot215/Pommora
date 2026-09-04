@@ -1,5 +1,5 @@
 // A plain module, NOT `.css.ts`: vanilla-extract only lets a stylesheet export plain values, so a helper that BUILDS a declaration lives beside the stylesheet rather than inside it — `.css.ts` files still import from here freely; the restriction is only on what a stylesheet exports.
-import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
+import { duration, easing } from '@renderer/Animation/motion'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 
 /** KNOB — a menu ROW's ring weight. Selection and keyboard focus both paint at this width and differ

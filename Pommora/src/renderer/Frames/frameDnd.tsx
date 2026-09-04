@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import {
   type PaneDrop,

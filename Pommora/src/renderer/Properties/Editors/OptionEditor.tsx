@@ -17,8 +17,8 @@ import {
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from '../GhostOptionChip'
-import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
-import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { Reveal, useEntrance } from '@renderer/Animation'
+import { DropLine } from '@renderer/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useOptionReorder } from '../useOptionReorder'
 import * as s from '../../Frames/frames.css'

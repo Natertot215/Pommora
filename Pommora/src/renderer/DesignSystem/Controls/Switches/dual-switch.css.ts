@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
-import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
+import { duration, easing } from '@renderer/Animation/motion'
 
 const c = colorVars.color
 const ease = `${duration.fast} ${easing.baseEase}` // one motion source for the whole switch

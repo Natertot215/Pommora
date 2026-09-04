@@ -3,16 +3,16 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
-import { windowIn, windowOut } from '@renderer/DesignSystem/Animation'
+import { useRevealNear } from '@renderer/Interactions/revealBar'
+import { windowIn, windowOut } from '@renderer/Animation'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
   type FloatingBounds,
-} from '@renderer/DesignSystem/Interactions/FloatingWindow'
+} from '@renderer/Interactions/FloatingWindow'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
-import '@renderer/DesignSystem/Animation/toolbar-slide.css'
+import '@renderer/Animation/toolbar-slide.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 

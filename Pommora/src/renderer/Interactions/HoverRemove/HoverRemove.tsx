@@ -1,5 +1,5 @@
-import { Icon } from '../../Symbols'
-import { cx } from '../../Util/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollHost, overScrollUnmasked } from '../OverScroll'
 import * as s from './hover-remove.css'
 

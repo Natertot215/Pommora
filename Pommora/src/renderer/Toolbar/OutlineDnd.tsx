@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { nearestByTop, useInsertionDrag } from '@renderer/DesignSystem/Interactions/insertionDrag'
+import { nearestByTop, useInsertionDrag } from '@renderer/Interactions/insertionDrag'
 import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/Editor/folding'
 import { moveHeadingSection } from '../Interface/pageEditor'
 

@@ -12,11 +12,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import { parentOf } from '@shared/treePatch'
-import {
-  findScroller,
-  SEEK_GLIDE,
-  scrollGlide,
-} from '@renderer/DesignSystem/Interactions/autoscroll'
+import { findScroller, SEEK_GLIDE, scrollGlide } from '@renderer/Interactions/autoscroll'
 import { useSession } from '../store'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { filterSeeds } from './Pipeline/creationSeeds'

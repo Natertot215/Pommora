@@ -32,7 +32,7 @@ import {
   SortableZone,
   useDragItem,
   useGroupedDragItem,
-} from '@renderer/DesignSystem/Interactions/drag'
+} from '@renderer/Interactions/drag'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { assetUrl } from '@renderer/Assets/assetUrl'
 import { useSession } from '../../store'
@@ -52,8 +52,8 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/DesignSystem/Interactions/ghostAnchor'
-import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
+} from '@renderer/Interactions/ghostAnchor'
+import { DEFAULT_FEEL } from '@renderer/Animation/feel'
 import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { groupKeyToValue } from '../TableView/reassign'

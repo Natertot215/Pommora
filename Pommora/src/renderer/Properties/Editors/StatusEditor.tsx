@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
-import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { DropLine } from '@renderer/Interactions/DropLine'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addStatusOption,

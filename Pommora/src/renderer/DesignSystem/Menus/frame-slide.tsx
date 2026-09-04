@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { cx } from '../Util/cx'
-import { duration, ms } from '../Animation'
-import { useExitPresence } from '../Animation/useExitPresence'
+import { duration, ms } from '@renderer/Animation'
+import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import * as s from './frame-slide.css'
 
 // The slide runs on `base`; a close holds the detail mounted exactly that long (below) so it slides

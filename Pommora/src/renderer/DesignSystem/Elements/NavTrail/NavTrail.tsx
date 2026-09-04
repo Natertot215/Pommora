@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { OverScroll } from '../../Interactions/OverScroll'
+import { OverScroll } from '@renderer/Interactions/OverScroll'
 import { Icon } from '../../Symbols'
 import type { IconSize } from '../../Tokens/size.css'
 import { cx } from '../../Util/cx'

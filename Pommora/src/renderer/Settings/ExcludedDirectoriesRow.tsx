@@ -3,7 +3,7 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { PathField } from '@renderer/DesignSystem/Fields'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
-import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
+import { Reveal, useEntrance } from '@renderer/Animation'
 import { useSession } from '../store'
 import * as x from './exclusion-rows.css'
 

@@ -12,7 +12,7 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase } from '@renderer/Windows/window-base'
-import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
+import type { FloatingBounds } from '@renderer/Interactions/FloatingWindow'
 import type { WindowPanelBounds } from '@renderer/Windows/window-panel'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { stepsWith, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
@@ -48,7 +48,7 @@ import {
   type TimeFormatSetting,
 } from '@shared/types'
 import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/columnStyles'
-import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'

@@ -21,7 +21,7 @@ import { AccessoryButton } from '@renderer/DesignSystem/Menus/menu-row'
 import { BrowseButton, InputField } from '@renderer/DesignSystem/Fields'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
-import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { usePointerGesture } from '@renderer/Interactions/gesture'
 import * as s from './image-picker.css'
 
 const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)

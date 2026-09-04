@@ -1,6 +1,6 @@
 import type { SidebarMode } from '@shared/types'
 import { Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
-import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { reorder, SortableZone, useDragItem } from '@renderer/Interactions/drag'
 import { useSession } from '../store'
 import { NexusPhoto } from './NexusPhoto'
 import './Sidebar.css'

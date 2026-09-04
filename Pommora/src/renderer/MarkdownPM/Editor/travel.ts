@@ -1,7 +1,7 @@
 // Going somewhere in an editor, opening whatever conceals it. An editor capability rather than a
 // page-surface one, so every surface that mounts an editor can want it.
 import type { EditorView } from '@codemirror/view'
-import { SEEK_GLIDE, scrollGlide } from '@renderer/DesignSystem/Interactions/autoscroll'
+import { SEEK_GLIDE, scrollGlide } from '@renderer/Interactions/autoscroll'
 import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'
 
 // Fallback inset, used only where the page header hasn't published its height yet.

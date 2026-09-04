@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Icon } from '../Symbols'
 import { cx } from '../Util/cx'
-import { Reveal } from '../Animation/Reveal'
+import { Reveal } from '@renderer/Animation/Reveal'
 import { MenuItem } from './menu-row'
 import { PickerRow } from '../Pickers/picker-base'
 import { side } from './menu-base.css'

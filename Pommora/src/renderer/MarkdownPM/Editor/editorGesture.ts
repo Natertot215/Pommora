@@ -3,12 +3,12 @@
 // is the abort for that; include it in every extension array that starts a gesture.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
+import { resolveScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import {
   beginPointerGesture,
   type GestureHandle,
   type PointerGestureSpec,
-} from '@renderer/DesignSystem/Interactions/gesture'
+} from '@renderer/Interactions/gesture'
 import { Overlay, setShade } from './dragChrome'
 
 // Only one editor gesture is live app-wide, but the cleanup plugin is mounted in every editor

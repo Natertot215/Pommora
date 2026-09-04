@@ -17,7 +17,7 @@
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
-  /* Inputs to the shared --toolbar-slide swallow (DesignSystem/Animation/toolbar-slide.css). */
+  /* Inputs to the shared --toolbar-slide swallow (Animation/toolbar-slide.css). */
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */

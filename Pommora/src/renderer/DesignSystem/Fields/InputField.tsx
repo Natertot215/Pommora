@@ -1,7 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react'
 import * as s from './fields.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import { onActivateKey } from '@renderer/Interactions/activate'
 import { RenamableLabel } from './RenamableLabel'
 
 export interface FieldEdit {

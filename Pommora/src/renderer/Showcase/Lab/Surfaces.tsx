@@ -6,8 +6,8 @@ import {
   reorder,
   arraySwap,
   type Row,
-} from '@renderer/DesignSystem/Interactions/drag'
-import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+} from '@renderer/Interactions/drag'
+import { onActivateKey } from '@renderer/Interactions/activate'
 
 const mk = (labels: string[], p = ''): Row[] =>
   labels.map((l, i) => ({ id: `${p}${i}-${l}`, label: l }))
