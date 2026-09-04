@@ -206,10 +206,10 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title         | Export                                        | What it is                                                              |
 | ------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
-| GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the glance pane, the autocomplete). |
+| GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, and the side slots. |
 | Surface       | `Surface`                                     | GlassPane as the app root, the floating overlay over the main view.     |
 | GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface, and opt-in `notch` for the beaked dropdown geometry. |
-| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The surface carrying the 90% `--bg-window` body — every floating window and the image picker. |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The surface carrying the 90% `--bg-window` body — every floating window and the image picker. The glance pane and the autocomplete take it too, through PickerMenu's `window` glass. |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
 | Beak geometry | `notchGeometry` · `BEAK_RADIUS`               | The opt-in notched outline `GlassSurface`'s `notch` clips and strokes.   |
