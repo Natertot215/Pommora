@@ -187,10 +187,10 @@ function EmbedResizeHandle({ view, span, targetId }: { view: EditorView; span: H
 
 **Verify — automated**
 
-- [ ] Red first: a `ResizeFrame.test.tsx` case where `rect` is a function returning a different height on each press; expect the second drag to start from the second value. Fails on the type before the change. Then green.
-- [ ] `embedResize.test.tsx` gains one case: pointerdown on `.resize-edge-s`, `pointermove` +40 on `window`, `pointerup`; expect `span.style.height` = start + 40 rounded and `saveHeights` called once with an integer. Ported as coverage, not red-green: it passes today too, since the handle already listens on `window`.
-- [ ] `rg -F "is-resizing-tile" src` → 0. Control: `rg -F "tile-chassis-body" src | wc -l` → 4.
-- [ ] Full gate green.
+- [x] Red first: a `ResizeFrame.test.tsx` case where `rect` is a function returning a different height on each press; expect the second drag to start from the second value. Fails on the type before the change. Then green.
+- [x] `embedResize.test.tsx` gains one case: pointerdown on `.resize-edge-s`, `pointermove` +40 on `window`, `pointerup`; expect `span.style.height` = start + 40 rounded and `saveHeights` called once with an integer. Ported as coverage, not red-green: it passes today too, since the handle already listens on `window`.
+- [x] `rg -F "is-resizing-tile" src` → 0. Control: `rg -F "tile-chassis-body" src | wc -l` → 4.
+- [x] Full gate green.
 
 **Verify — user**
 

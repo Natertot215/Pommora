@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { embedField, setEmbedHeights } from '@renderer/MarkdownPM/Editor/embedWidget'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@renderer/Testing/pointerHarness'
 
 stubEditorBridge()
+stubPointerCapture()
 afterEach(cleanupEditor)
 
 const conn: ConnectionsApi = {
@@ -49,5 +51,20 @@ describe('persisted tile heights', () => {
     expect(view.dom.querySelector('.resize-edge-s')).not.toBeNull()
     const bare = await mount({ initialBody: '![[Alpha]]', connections: conn })
     expect(bare.dom.querySelector('.resize-edge-s')).toBeNull()
+  })
+
+  it('a drag on the handle sizes the tile from its measured height and persists one integer', async () => {
+    const save = vi.fn()
+    const view = await mount({ ...hosted, embedHeights: { load: async () => ({}), save } })
+    const span = view.dom.querySelector('.mdpm-embed-tile') as HTMLElement
+    stubRect(span, { top: 0, bottom: 480.4 })
+    const handle = span.querySelector('.resize-edge-s') as HTMLElement
+    firePointer(handle, 'pointerdown', { x: 0, y: 0 })
+    firePointer(window, 'pointermove', { x: 0, y: 40 })
+    expect(span.style.height).toBe('520.4px')
+    firePointer(window, 'pointerup')
+    expect(span.style.height).toBe('520px')
+    expect(save).toHaveBeenCalledOnce()
+    expect(save).toHaveBeenCalledWith({ p1: 520 })
   })
 })
