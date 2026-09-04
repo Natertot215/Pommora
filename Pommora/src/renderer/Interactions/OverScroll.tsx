@@ -2,18 +2,14 @@ import type { ReactNode } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './over-scroll.css'
 
-/** The capped-label class run — a plain stylesheet, since a `style([])` cannot compose a mask. */
 const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
-/** Truncating with an ellipsis instead of a fade; the leading edge still dissolves what scrolled
- *  off the start where a surface names a width. */
 export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
 
 /** The cap without any mask, for a box whose DESCENDANTS must keep painting: a mask erases
  *  everything under it, and the removable chip stacks pre-masked twins inside its label. */
 export const overScrollUnmasked = 'over-scroll-cap over-scroll-ellipsis'
 
-/** Marks the ancestor a capped label takes its hover from. */
 export const overScrollHost = 'over-scroll-host'
 
 /**
@@ -34,7 +30,6 @@ function capUnder(target: EventTarget | null): HTMLElement | null {
   return null
 }
 
-/** The cap the pointer is on, so leaving it can return it. */
 let held: HTMLElement | null = null
 
 function hold(cap: HTMLElement | null): void {
@@ -100,11 +95,6 @@ function slideScrollBack(scroller: HTMLElement): void {
   requestAnimationFrame(tick)
 }
 
-/**
- * Overflowing content ECLIPSES — a fade at whichever edge hides content, never a hard cutoff, and
- * only while content genuinely overflows. No JS measurement, so resizes, edits and zoom re-resolve
- * on their own. The consumer's class owns display/gap/width.
- */
 export function OverScroll({
   children,
   className,

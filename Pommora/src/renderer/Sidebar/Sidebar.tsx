@@ -13,7 +13,7 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostCreate'
 import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { contextDirRel } from '@shared/nexusPaths'

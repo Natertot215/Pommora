@@ -52,7 +52,7 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostCreate'
 import { DEFAULT_FEEL } from '@renderer/Animation/feel'
 import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { useStyleFor } from '@renderer/Tables/columnStyles'

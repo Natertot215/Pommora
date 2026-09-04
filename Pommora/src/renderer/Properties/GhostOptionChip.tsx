@@ -7,7 +7,7 @@ import {
   GHOST_DWELL_MS,
   useGhostAnchor,
   type GhostAnchor,
-} from '@renderer/Interactions/ghostAnchor'
+} from '@renderer/Interactions/ghostCreate'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { base, EditableInput } from '@renderer/DesignSystem/Fields'
 import * as s from '../Frames/frames.css'

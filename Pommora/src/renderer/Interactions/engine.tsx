@@ -28,8 +28,6 @@ import {
   type Modifier,
 } from './shared'
 
-// The single-zone drag engine — replaces dnd-kit behind the seam for every standalone surface.
-
 // Mutable drag scratch — read inside pointer/rAF/keydown callbacks without stale closures. Every
 // lift installs a WHOLE fresh scratch over `blankDrag()`, so a press and a keyboard lift each state
 // only what they actually know; nothing survives from the gesture before it.
@@ -97,14 +95,10 @@ export type ZoneProps = DragNotify & {
   canReorder?: (activeId: string, overId: string) => boolean | Promise<boolean>
   disabled?: boolean
   axis?: 'x' | 'y'
-  /** Clamp the lifted item within the viewport (`window`) or the list's own extent (`parent`). */
   bounds?: 'parent' | 'window'
   modifiers?: Modifier[]
-  /** Exchange the active + over items instead of shifting the gap. Commit with `arraySwap`. */
   swap?: boolean
-  /** ARIA role for each item's handle; default 'button'. Pass null to omit it entirely. */
   itemRole?: string | null
-  /** Human label for screen-reader announcements (defaults to the id). */
   getItemLabel?: (id: string) => string
   children: ReactNode
 }
@@ -155,8 +149,6 @@ export function Zone({
     else els.current.delete(id)
   }
 
-  // Measure every item's rect once. Returns null if any item is unregistered (e.g. a virtualized
-  // row not yet mounted) — the caller aborts the drag cleanly rather than crashing.
   const measure = (): Box[] | null => {
     const out: Box[] = []
     for (const id of idsRef.current) {
@@ -182,7 +174,6 @@ export function Zone({
     return { x, y }
   }
 
-  // Shared by onMove and the auto-scroll loop.
   const track = (cx: number, cy: number): void => {
     const d = drag.current
     if (!d.active) return
@@ -190,7 +181,6 @@ export function Zone({
       ? { x: d.scroller.scrollLeft - d.scroll0X, y: d.scroller.scrollTop - d.scroll0Y }
       : { x: 0, y: 0 }
     const { x: dx, y: dy } = constrain(cx - d.startX, cy - d.startY)
-    // Closest-center with the container's scroll delta folded in; strict `<` + in-order = DOM-order tie-break.
     const px = d.rects[d.activeIdx].cx + dx + comp.x
     const py = d.rects[d.activeIdx].cy + dy + comp.y
     let best = d.over
@@ -244,9 +234,6 @@ export function Zone({
       requestAnimationFrame(() => {
         if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
       })
-      // The module owns the scroll loop; on each scrolled frame it re-runs `track` off the last point.
-      // The engine folds the scroller's delta into `track`'s collision math (see `comp`), so it
-      // passes the SAME scroller explicitly.
       if (d.scroller) {
         stopScroll.current = startAutoScroll({
           getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
@@ -272,9 +259,7 @@ export function Zone({
       d.el.removeEventListener('pointercancel', d.handlers.cancel)
       try {
         d.el.releasePointerCapture(d.pid)
-      } catch {
-        // pointer already released
-      }
+      } catch {}
     }
     d.handlers = null
     if (d.kdown) {
@@ -310,8 +295,6 @@ export function Zone({
     window.setTimeout(finish, feel.duration + SETTLE_FALLBACK)
   }
 
-  // Decide-then-animate, shared by pointer drop and keyboard drop. `kbdEl` is the element to
-  // restore focus to — non-null only when the drop came from the keyboard.
   const resolveDrop = (
     over: number,
     activeIdx: number,
@@ -323,7 +306,6 @@ export function Zone({
       settle(ok ? over : activeIdx, () => {
         if (ok) cbRef.current.onReorder?.(activeId2, overId)
         notifyRef.current.onDragEnd?.({ activeId: activeId2, overId: ok ? overId : null })
-        // The words are for every drop; the focus restore is the keyboard's alone.
         const label = labelOf(activeId2)
         announce(
           ok
@@ -379,9 +361,7 @@ export function Zone({
     }
     try {
       el.setPointerCapture(e.pointerId)
-    } catch {
-      // capture unavailable — listeners on the element still work for in-bounds drags
-    }
+    } catch {}
     el.addEventListener('pointermove', handlers.move)
     el.addEventListener('pointerup', handlers.up)
     el.addEventListener('pointercancel', handlers.cancel)
@@ -445,7 +425,6 @@ export function Zone({
     announce(`Picked up ${labelOf(id)}. Item ${activeIdx + 1} of ${measured.length}.`)
   }
 
-  // Unmount mid-drag: pull listeners + stop the auto-scroll loop so nothing dangles on a detached node.
   useEffect(() => () => detach(), [])
   useEffect(() => ensureInstructions(), [])
 
@@ -465,8 +444,6 @@ export function Zone({
       begin,
       liftKeyboard,
     }),
-    // begin/liftKeyboard close over `disabled`, so recreating them each render is intentional — not
-    // memoized, since identity churn here is fine. Pointer delta deliberately NOT here (see track).
     [ids, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>
@@ -489,7 +466,6 @@ export function reflow(rects: Box[], overIndex: number, activeIdx: number, index
   return moveItem(rects, overIndex, activeIdx)[index] ?? rects[index]
 }
 
-/** The box the lifted item will land in, for a surface that wants to paint the slot. */
 export function useDropSlot(): Box | null {
   const ctx = useContext(ZoneCtx)
   if (ctx?.dropState !== 'dragging') return null
@@ -533,7 +509,6 @@ export function useZoneItem(id: string): DragItem {
       if (index === overIndex)
         transform = `translate3d(${px(rects[activeIdx].left - rects[index].left)}, ${px(rects[activeIdx].top - rects[index].top)}, 0)`
     } else {
-      // Shift mode: everyone shifts to open/close the gap, computed by reflow (list/row/grid).
       const t = reflow(rects, overIndex, activeIdx, index)
       transform = `translate3d(${px(t.left - rects[index].left)}, ${px(t.top - rects[index].top)}, 0)`
     }
@@ -568,7 +543,6 @@ export function useZoneItem(id: string): DragItem {
       tabIndex: disabled ? -1 : 0,
       'aria-roledescription': 'sortable',
       'aria-describedby': INSTRUCTIONS_ID,
-      // aria-pressed only on button-role items (dnd-kit gates it the same way — invalid on a roleless <tr>).
       'aria-pressed': itemRole != null && isDragging ? true : undefined,
       'aria-disabled': disabled || undefined,
     },

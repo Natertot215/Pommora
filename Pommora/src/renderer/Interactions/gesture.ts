@@ -1,8 +1,3 @@
-// The one pointer-gesture lifecycle: a pending→active state machine gated on ACTIVATION travel,
-// the window listener trio + Esc, deferred pointer capture, and mirrored teardown. This module
-// owns exactly that skeleton — geometry models, snapshots, autoscroll, and drop chrome stay with
-// the caller, wired through the hooks below.
-
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 import { ACTIVATION, suppressNextClick } from './shared'
 import { beginDragDisclose, endDragDisclose } from './dragDisclose'
@@ -12,31 +7,18 @@ export type PointerGestureSpec = {
   /** React's synthetic press or a native one — a CodeMirror extension has no synthetic event to
    *  hand over, and the skeleton reads only the fields both carry. */
   event: ReactPointerEvent | PointerEvent
-  /** Travel (px) before the press becomes a drag. */
   activation?: number
-  /** Off for window-listener-only surfaces — otherwise capture defers to activation. */
   capture?: boolean
-  /** Crossing the activation threshold: snapshot geometry, bind per-drag listeners, start
-   *  autoscroll. Return false to abort (e.g. the subject vanished) — teardown runs, no drop. */
   onActivate: (e: PointerEvent) => boolean | undefined
   onDragMove: (e: PointerEvent) => void
-  /** Release after activation — commit here. The skeleton has already swallowed the click. */
   onDrop: () => void
   /** Release BEFORE activation — the press was a click, not a drag. A cancel is not a tap, so
    *  pointercancel, Escape, blur and a lost release all still route to `onAbort`. */
   onTap?: () => void
-  /** The gesture ended without a drop: pointercancel, Escape, blur, a lost release, an
-   *  activation abort, or a throwing callback. */
   onAbort?: () => void
-  /** Runs on EVERY end — drop, abort, or sub-threshold tap — before onDrop/onAbort. The place to
-   *  stop autoscroll, remove per-drag listeners, and end drag-disclose. */
   teardown?: () => void
-  /** Bound capture-phase on window for the ACTIVE gesture only. When `scrollTarget` is given,
-   *  only a scroll that can move that element's subtree gets through. */
   onWindowScroll?: (e: Event) => void
   scrollTarget?: () => Element | null
-  /** A collapsed disclosure group springs open on dwell while the gesture lives; the callback
-   *  re-snapshots the surface's drop geometry once the opened group's rows have shifted. */
   onDisclose?: () => void
   /** Bind Escape in the capture phase and swallow it while ACTIVE — for a surface living inside a
    *  dismissable host whose own Escape must not fire mid-drag. */
@@ -76,9 +58,7 @@ function detach(g: LiveGesture): void {
   })
   try {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
-  } catch {
-    // never captured / already released
-  }
+  } catch {}
   if (g.spec.onDisclose) endDragDisclose()
   // The lock clears even when a teardown throws — a stranded `live` refuses every future drag.
   try {
@@ -126,9 +106,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
           if (spec.capture !== false) {
             try {
               spec.el.setPointerCapture(e.pointerId)
-            } catch {
-              // capture unavailable — window listeners still drive the drag
-            }
+            } catch {}
           }
           g.active = true
           let ok: boolean | undefined

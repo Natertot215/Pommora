@@ -356,7 +356,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
 | Drag engine  | `SortableZone` · `DragGroup` · `GroupZone` · `useDragItem` · `useGroupedDragItem` · `reorder` · `arraySwap` | The in-house DND. |
 | Zone engine  | `Zone` · `useZoneItem` · `reflow`                       | The layout engine beneath the sortable zone (`engine.tsx`). |
-| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
+| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, and the glass drag chip. |
 | Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
 | Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |

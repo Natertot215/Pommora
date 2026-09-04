@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useBannerMenu } from './useBannerMenu'
-import { GhostSuppress } from '@renderer/Interactions/ghostAnchor'
+import { GhostSuppress } from '@renderer/Interactions/ghostCreate'
 import { useSession } from '../store'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

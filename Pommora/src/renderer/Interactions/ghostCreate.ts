@@ -1,7 +1,3 @@
-// The hover-ghost mechanism, one home for every view: dwell arms it, grace paces the close on a
-// leave, entering the ghost reverses an exit in flight, and suppression stands it down while a
-// menu or editor owns the pointer. The effect belongs to each consumer; the hook holds one anchor.
-
 import { createContext, useEffect, useRef, useState } from 'react'
 
 // The dwell before a ghost extends — ONE value across every view's ghost; grace is per-view
@@ -28,8 +24,6 @@ export interface GhostAnchorOptions {
   /** Re-read at the dwell timer's fire time — a suppressor arriving mid-dwell (a cell editor,
    *  a naming session) must not leave a ghost armed to snap in the instant it closes. */
   suppressed: () => boolean
-  /** Entering an anchor its zone admits reads as travel TOWARD the ghost: it holds for holdMs,
-   *  then the rested-on anchor's own dwell arms. Cards pass the ghost's own grid row. */
   travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
@@ -43,14 +37,10 @@ export interface GhostAnchor {
   /** Claims the anchor for a create and unmounts the ghost in the same act — the real row
    *  takes its seat, so a fast double-click can't create twice. */
   take: () => string | null
-  /** The exit finished — the consumer's motion (a Reveal collapse, a FLIP release) drives this;
-   *  the watchdog beat is the fallback when the motion never gets to report. */
   closed: () => void
   /** Synchronous full clear, no exit motion — the anchor left the pipeline, the view changed
    *  mode, or a pointer went down (a drag must never measure a grid the ghost still occupies). */
   clear: (anchorId?: string) => void
-  /** Wraps a menu pop that resolves on dismissal: the ghost stands down and stays unarmed
-   *  while any wrapped menu owns the pointer (pops can overlap). */
   suppressWrap: <T>(menu: () => Promise<T>) => Promise<T>
 }
 
@@ -61,8 +51,6 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   const optsRef = useRef(opts)
   optsRef.current = opts
 
-  // Handlers build once and read live state through the refs above — stable identities are
-  // the hook's contract, so no consumer re-stabilizes them with its own ref + memo scaffold.
   const [handlers] = useState(() => {
     const timers: { dwell: number | null; grace: number | null; exit: number | null } = {
       dwell: null,
@@ -70,7 +58,6 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       exit: null,
     }
     let menusOpen = 0
-    // Nothing arms while a suppressor or a wrapped menu owns the pointer.
     const blocked = (): boolean => optsRef.current.suppressed() || menusOpen > 0
     const clearTimer = (key: keyof typeof timers): void => {
       const t = timers[key]
@@ -110,8 +97,6 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       const hold = optsRef.current.travelHold
       const g = ghostRef.current
       if (hold && g && g.anchorId !== id && hold.inZone(id)) {
-        // Travel territory: the ghost holds (an exit in flight reverses), and the hold expires
-        // into the normal law — the ghost closes and this anchor's own dwell arms.
         clearTimer('exit')
         setGhost((cur) => (cur?.closing ? { ...cur, closing: false } : cur))
         timers.grace = window.setTimeout(() => {
@@ -122,16 +107,12 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       }
       if (g?.anchorId === id && g.closing) clearTimer('exit')
       setGhost((cur) => {
-        // Returning to the anchor mid-exit reverses the collapse instead of re-dwelling.
         if (cur?.anchorId === id) return cur.closing ? { anchorId: id, closing: false } : cur
-        // The grace serves the travel INTO the ghost — a ghost anchored elsewhere closes now.
         if (cur) return { ...cur, closing: true }
         return cur
       })
       armDwell(id)
     }
-    // Entering the ghost cancels a pending close and reverses an exit already in flight;
-    // leaving gets the same grace the anchor's leave gets.
     const onGhostEnter = (): void => {
       clearTimer('grace')
       clearTimer('exit')
