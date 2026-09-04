@@ -731,7 +731,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - The inspector: the tab strip, the reserved Collection and Pages tabs, custom tabs under `.nexus/inspector/<id>/`, a `state-leaf` watcher arm the moment `state.json`'s `inspector` key gains a writer (every change to that file is a full re-walk today).
 - A Collection host's tile bodies: a Collection folder is corpus, so `<ulid>.md` there is adopted as a page; bodies for a corpus host go in a `_`-prefixed folder the walk already refuses. Recorded so the first Collection tab doesn't learn it the hard way.
 - Panel kinds (properties, backlinks over `mentions`, list), webpage as a surface kind: one shared entry and one renderer entry each.
-- Markdown tile bodies (`<ulid>.md`) are unwatched under both host kinds by construction, so a sync delivers a new layout with old text until ⌘R; live body reload is the sync arc's, with a clock on both sides of "most recent wins" — the phrase needs one before mobile builds on it.
+- Markdown tile bodies (`<ulid>.md`) sync with `.nexus/` like everything else there, but the app does not watch them under either host kind, so a synced body shows its old text until ⌘R while the layout beside it reloads live. Live body reload is one watcher arm plus a `replaceBody`-style push, the same mechanism the page editor's external-edit reload needs; it rides that arc.
 - Retiring `tilesMigrate.ts` and the `blockDoc` scope once every device has opened the Nexus on this build — the lift is a one-time job and leaves no code behind (`b370e5c0`'s precedent).
 
 ### Closeout
