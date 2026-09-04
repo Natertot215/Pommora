@@ -407,7 +407,7 @@ export function GlancePane(): React.JSX.Element {
 
   return (
     <PickerMenu
-      glass="pane"
+      glass="window"
       open={shown !== null}
       triggerRef={anchorRef}
       manageFocus={false}

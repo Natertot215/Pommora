@@ -53,7 +53,7 @@ export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
   /** Optional right-click hook — the host pops the native context menu for the link. */
   menu?: (target: ConnMenuTarget) => void
-  /** ⌘-click takes the OTHER route from `open` (preview ⇄ new tab); absent = ⌘ ignored. */
+  /** ⌘-click takes the OTHER route from `open` (window ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
   /** Fired on a resolved connection or a valid external link with its live element; its presence
    *  is what makes a surface armable, so a read-only body that must never glance simply omits it. */

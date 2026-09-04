@@ -23,7 +23,7 @@ export const docString = perDoc((doc) => doc.toString())
 
 /** One derivation per text, for a caller that holds the string rather than the version — the
  *  Subfield's counter beside the editor. Holds a few texts rather than one because more than one
- *  page can be on screen (main pane + floating preview), and a single slot would let their renders
+ *  page can be on screen (main pane + Page Window), and a single slot would let their renders
  *  evict each other into recomputing on every call. */
 const TEXT_SLOTS = 4
 export function perText<T>(derive: (text: string) => T): (text: string) => T {

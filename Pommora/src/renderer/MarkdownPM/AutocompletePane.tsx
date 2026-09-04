@@ -116,7 +116,7 @@ export function AutocompletePane({
     // alias. The × guards itself on POINTERDOWN, a different event, so the mousedown checks for it —
     // without that the press meant to forget a suggestion accepts it instead.
     <PickerMenu
-      glass="pane"
+      glass="window"
       open={live}
       anchorX={v.caretX}
       anchorY={v.caretTop}
