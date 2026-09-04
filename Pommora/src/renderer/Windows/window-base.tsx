@@ -4,6 +4,7 @@ import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
+import { windowIn, windowOut } from '@renderer/DesignSystem/Animation'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
@@ -50,7 +51,7 @@ export interface WindowBaseProps {
   children: ReactNode
 }
 
-const DRAG_SURFACES = '.window, .window-toolbar, .window-row'
+const DRAG_SURFACES = '.window, .window-drag, .window-row, .window-panel'
 
 export function WindowBase({
   id,
@@ -148,6 +149,7 @@ export function WindowBase({
         hasFooter && footerOpen && 'is-footer-open',
         hasFooter && reveal.near && 'is-footer-near',
         hasFooter && reveal.nearLead && 'is-footer-near-lead',
+        closing ? windowOut : windowIn,
         closing && 'closing',
       )}
       style={
@@ -164,6 +166,7 @@ export function WindowBase({
       onMouseMove={hasFooter ? reveal.onMouseMove : undefined}
       onMouseLeave={hasFooter ? reveal.onMouseLeave : undefined}
     >
+      <div className="window-drag" aria-hidden="true" />
       <div className="window-toolbar">
         <div className="window-actions window-actions-lead">
           {onScan && (

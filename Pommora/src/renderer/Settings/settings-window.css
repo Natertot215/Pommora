@@ -1,5 +1,8 @@
 .settings-window {
   padding: var(--app-inset);
+  /* As the NavWindow: each frame owns its own top — the Trash surface opens on a search row — so
+     this window carries no title-bar band. */
+  --window-toolbar-h: 0px;
 }
 
 .settings-rail-list {

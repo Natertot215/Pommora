@@ -3,10 +3,9 @@
    front-matter inspector's rows. */
 
 /* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is
-   suppressed and the class only makes the exiting window inert. */
+   suppressed — the window leaves inert on the shared close motion's own pointer-events. */
 .window.closing.page-window.engulfing {
   animation: none;
-  pointer-events: none;
 }
 /* The nav-swap exit: the NavWindow FLIPs from this window's stashed rect, so the outgoing preview vanishes at once — the nav carries the whole motion. */
 .window.closing.page-window.morphing {
@@ -39,7 +38,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: var(--window-panel-top) 4px 4px;
+  padding: 0 4px 4px;
 }
 .page-window-insp-group {
   display: flex;
@@ -90,9 +89,14 @@
 }
 
 /* The Page History window: the same shell, the snapshots listed in the right slot. */
-.page-history-list {
-  padding-top: var(--window-panel-top);
-}
 .page-history-row {
-  --row-pad-trail: 0px;
+  --row-pad-trail: 2px;
+}
+/* A snapshot is a record, not a writing surface: the text stays selectable, but no caret ever seats
+   in it and the pointer keeps its arrow. */
+.page-history-page .mdpm-caret-layer {
+  display: none;
+}
+.page-history-page .cm-editor .cm-scroller .cm-content {
+  cursor: default;
 }
