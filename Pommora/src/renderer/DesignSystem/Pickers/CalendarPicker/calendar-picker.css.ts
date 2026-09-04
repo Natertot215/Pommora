@@ -1,11 +1,10 @@
-import { globalStyle, keyframes, style, type StyleRule } from '@vanilla-extract/css'
+import { keyframes, style, type StyleRule } from '@vanilla-extract/css'
 import { vars } from '@renderer/DesignSystem/Tokens/color.css'
 import { duration, easing } from '@renderer/Animation/motion'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
 import { base } from '@renderer/DesignSystem/Fields/fields.css'
 import { segment } from '@renderer/DesignSystem/Elements/Segment/segment.css'
-import { stack } from '@renderer/DesignSystem/Tokens/stack'
 
 const c = vars.color
 const endpointFill = tintAt('var(--accent)', 'secondary')
@@ -42,16 +41,11 @@ export const nav = style({
 export const navSegment = style([segment, { width: '1px', height: '12px' }])
 export const navBtn = style({ width: '24px', color: c.label.secondary })
 
-export const ddWrap = style({ display: 'contents' })
-globalStyle(`${ddWrap} > div`, { zIndex: stack.top.menuOverlay, pointerEvents: 'auto' })
 export const menuList = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
   minWidth: '56px',
-  maxHeight: '136px',
-  overflowY: 'auto',
-  scrollbarWidth: 'none',
 })
 export const optionRow = style({
   flex: 1,
