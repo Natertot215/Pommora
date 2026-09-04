@@ -8,14 +8,12 @@
   border-radius: var(--app-radius);
   overflow: hidden;
   -webkit-app-region: drag;
-  transition: transform var(--duration-base) var(--ease-base);
+  /* The left twin of the inspector: it slides on the shared paneSlide left-overlay (App.tsx),
+     driven by the shell's --io-l; the parked transform and its timing live in pane-slide.css.ts. */
+  --pane-inset: var(--app-inset);
 }
 .shell.sidebar-hidden .surface-glass {
-  transform: translateX(calc(-100% - var(--app-inset) - var(--park-clearance)));
   pointer-events: none;
-}
-.shell.is-resizing .surface-glass {
-  transition: none;
 }
 
 .surface-glass {

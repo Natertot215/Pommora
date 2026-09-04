@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { useSession } from './store'
 import { Surface } from '@renderer/DesignSystem/Glass/glass-pane'
+import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { ContentView } from './Interface/ContentView'
@@ -245,7 +246,7 @@ export function App(): React.JSX.Element {
       <main className="content-pane">
         <ContentView />
       </main>
-      <Surface>
+      <Surface className={paneSlide({ side: 'left', mode: 'overlay' })}>
         {status === 'ready' && tree && <Ribbon />}
         <Button
           size="button-large"
