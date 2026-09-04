@@ -20,9 +20,6 @@ const hairline = { height: 'var(--width-100)', background: c.border.base } as co
 
 export const root = style({ width: '215px', textAlign: 'left' })
 
-export const morph = style({ overflow: 'hidden' })
-export const morphAnimated = style({ transition: `height ${duration.base} ${easing.baseEase}` })
-
 export const head = style({ display: 'flex', alignItems: 'center', padding: '2px 4px 6px' })
 export const headDivider = style({ ...hairline, margin: `0 ${GUTTER} 6px` })
 export const titleGroup = style({ flex: 1, display: 'flex', gap: '1px' })
@@ -77,10 +74,12 @@ const slideRight = keyframes({
   from: { transform: 'translateX(-50%)' },
   to: { transform: 'translateX(0)' },
 })
-export const viewport = style({ overflow: 'hidden' })
-/* Top-aligned so each month grid keeps its own height — the viewport's computed height (not the
-   taller neighbor) decides the pane, and SizeMorph animates the change WITH the slide (one beat,
-   the FrameSlide contract: the horizontal move and the resize land together). */
+export const viewport = style({
+  overflow: 'hidden',
+  transition: `height ${duration.base} ${easing.baseEase}`,
+})
+/* Top-aligned so each month grid keeps its own height: the viewport's set height (not the taller
+   neighbor) decides the pane, and it eases on the slide's own beat so the two land together. */
 export const track = style({ display: 'flex', width: '200%', alignItems: 'flex-start' })
 export const trackLeft = style({
   animation: `${slideLeft} var(--duration-base) var(--ease-base) both`,
@@ -140,11 +139,11 @@ export const divider = style({ ...hairline, margin: `7px ${GUTTER} 8px` })
 export const fields = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '6px',
   padding: `0 ${GUTTER}`,
   marginBottom: '8px',
 })
 export const fieldRow = style({ display: 'flex', gap: '6px' })
+export const fieldRowStacked = style({ paddingTop: '6px' })
 export const field = style({
   flex: 1,
   minWidth: 0,

@@ -6,7 +6,7 @@ import { formatDate } from './formatValue'
 
 /** The shared datetime editing surface: owns the value↔ISO mapping, the date_format remap, and
  *  the reactive time format so no call site rebuilds them. The caller owns the mount + dismissal
- *  (a PickerMenu or a pane row). */
+ *  (a PickerMenu). */
 export function DatetimeValuePicker({
   value,
   dateFormat,

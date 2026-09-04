@@ -4,7 +4,6 @@ import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { menuAnchor } from '@renderer/DesignSystem/Menus/menu-anchor'
 import { FIELD_RING_VAR, fieldRing, ROW_RING } from '@renderer/DesignSystem/Fields/fieldRing'
 import { item, menuCompact } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { duration, easing } from '@renderer/Animation/motion'
 
 const c = colorVars.color
 
@@ -79,12 +78,6 @@ export const surface = style({
   flexDirection: 'column',
   gap: '0px',
 })
-
-export const paneMorph = style({ overflow: 'hidden' })
-export const paneMorphArmed = style({
-  transition: `height ${duration.base} ${easing.baseEase}`,
-})
-export const paneMorphBody = style({ display: 'flex', flexDirection: 'column' })
 
 export const option = style([
   item,
