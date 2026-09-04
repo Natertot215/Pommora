@@ -160,7 +160,7 @@ function EmbedResizeHandle({
 }): React.JSX.Element {
   const beginGesture = usePointerGesture()
   return createElement('div', {
-    className: 'mdpm-embed-resize',
+    className: 'resize-edge resize-edge-s',
     onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return
       e.preventDefault()

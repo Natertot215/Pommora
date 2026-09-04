@@ -1,8 +1,8 @@
-import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { GlassPane } from '@renderer/DesignSystem/Glass'
 import { paneSlide } from '@renderer/Animation'
-import { clamp } from '@shared/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
+import { useResizeFrame } from '@renderer/Interactions/ResizeFrame'
 import './window-panel.css'
 
 // The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host
@@ -51,30 +51,20 @@ export function WindowPanel({
     onWidthChange?.(width)
   }, [width, onWidthChange])
 
-  const startResize = (e: ReactPointerEvent<HTMLElement>): void => {
-    e.preventDefault()
-    const el = e.currentTarget
-    const pid = e.pointerId
-    el.setPointerCapture(pid)
-    const s = { x: e.clientX, w: widths.get(windowId) ?? width }
-    onResizingChange?.(true)
-    const move = (ev: PointerEvent): void => {
-      const dx = ev.clientX - s.x
-      const w = clamp(side === 'left' ? s.w + dx : s.w - dx, bounds.min, bounds.max)
-      widths.set(windowId, w)
-      setWidth(w)
-    }
-    const end = (): void => {
-      if (el.hasPointerCapture(pid)) el.releasePointerCapture(pid)
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', end)
-      el.removeEventListener('pointercancel', end)
-      onResizingChange?.(false)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', end)
-    el.addEventListener('pointercancel', end)
-  }
+  const frame = useResizeFrame({
+    rect: { w: width },
+    min: { w: bounds.min },
+    max: { w: bounds.max },
+    equilateral: true,
+    onChange: (next) => {
+      widths.set(windowId, next.w)
+      setWidth(next.w)
+    },
+  })
+  const resizing = frame.active !== null
+  useLayoutEffect(() => {
+    onResizingChange?.(resizing)
+  }, [resizing, onResizingChange])
 
   return (
     <>
@@ -92,8 +82,8 @@ export function WindowPanel({
       </GlassPane>
       {open && (
         <div
-          className={cx('window-panel-resize', `window-panel-${side}-${mode}-resize`)}
-          onPointerDown={startResize}
+          className={cx('resize-strip', `window-panel-${side}-${mode}-resize`)}
+          onPointerDown={frame.start(side === 'left' ? 'e' : 'w')}
           aria-hidden="true"
         />
       )}

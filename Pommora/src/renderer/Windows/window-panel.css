@@ -7,8 +7,3 @@
   padding: var(--surface-inset);
   border-radius: var(--app-radius);
 }
-
-.window-panel-resize {
-  cursor: col-resize;
-  -webkit-app-region: no-drag;
-}

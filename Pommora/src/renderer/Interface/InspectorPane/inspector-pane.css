@@ -24,6 +24,6 @@
 .inspector-resize {
   top: var(--app-inset);
   bottom: var(--app-inset);
-  right: calc(var(--app-inset) + var(--inspector-width) - 4px);
+  right: calc(var(--app-inset) + var(--inspector-width) - 5px);
   z-index: var(--z-inspector-resize);
 }

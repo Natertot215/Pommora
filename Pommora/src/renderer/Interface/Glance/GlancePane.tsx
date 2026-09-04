@@ -4,7 +4,7 @@ import { PickerMenu, type PickerDirection } from '@renderer/DesignSystem/Pickers
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/Editor/folding'
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
-import { usePointerGesture } from '@renderer/Interactions/gesture'
+import { useResizeFrame, type ResizeEdge } from '@renderer/Interactions/ResizeFrame'
 import { WEB_PARTITION, type GlanceSize } from '@shared/types'
 import { resolveOnlyConnections } from '../../treeIndex'
 import { fenceWarm, fetchPageDetail, readPageDetail } from '../../Store/tabState'
@@ -34,6 +34,10 @@ const GLANCE_WARM_CAP = 8
 // A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
 // render inert, while no real page path can ever collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
+// Both sides, plus the horizontal edge away from the anchor and its corners — a flipped-up pane
+// grows upward from its anchored bottom edge.
+const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
+const EDGES_UP: readonly ResizeEdge[] = ['e', 'w', 'n', 'ne', 'nw']
 
 const clampSize = (s: GlanceSize): GlanceSize => ({
   w: Math.max(GLANCE_MIN.w, Math.round(s.w)),
@@ -177,70 +181,26 @@ export function GlancePane(): React.JSX.Element {
   if (shown) liveRef.current = live
   const box = liveRef.current
 
-  // Free-edge resize: both sides, plus the one horizontal edge away from the anchor and its corners
-  // — a flipped-up pane grows upward from its anchored bottom edge.
-  const resizingRef = useRef(false)
   const selectingRef = useRef(false)
-  const [resizing, setResizing] = useState(false)
-  // The ref is what the leave lifecycle's own closure reads; the state is what paints.
-  const markResizing = (on: boolean): void => {
-    resizingRef.current = on
-    setResizing(on)
-  }
-  const begin = usePointerGesture()
-  // Signed axes: +1 pulls the east/south edge, -1 the west/north one — the pane is centered on
-  // its anchor, so either side's drag just grows the same remembered size.
-  const startResize =
-    (axes: { x?: 1 | -1; y?: 1 | -1 }) =>
-    (e: React.PointerEvent): void => {
-      if (e.button !== 0) return
-      const start = { ...liveRef.current }
-      const sx = e.clientX
-      const sy = e.clientY
-      begin({
-        el: e.currentTarget as HTMLElement,
-        event: e,
-        activation: 0,
-        capture: true,
-        swallowActiveEscape: true,
-        onActivate: () => {
-          markResizing(true)
-          return true
-        },
-        onDragMove: (ev) => {
-          const cap = maxSize()
-          setSize({
-            w: axes.x
-              ? Math.min(cap.w, Math.max(GLANCE_MIN.w, start.w + axes.x * (ev.clientX - sx)))
-              : start.w,
-            h: axes.y
-              ? Math.min(cap.h, Math.max(GLANCE_MIN.h, start.h + axes.y * (ev.clientY - sy)))
-              : start.h,
-          })
-        },
-        onDrop: () => {
-          markResizing(false)
-          // Only the dragged axes persist — the other rides the stored value, and a dragged axis that
-          // ended pinned at a cramped anchor's cap keeps the stored value too, or either drag would
-          // silently ratchet the universal size down to that anchor's band-clamped render.
-          const stored = glanceSize()
-          const cap = maxSize()
-          const persist = (axis: 'w' | 'h'): number => {
-            const live = liveRef.current[axis]
-            const pinnedAtCap = live >= cap[axis] && stored[axis] > cap[axis]
-            return pinnedAtCap ? stored[axis] : live
-          }
-          setGlanceSize({
-            w: axes.x ? persist('w') : stored.w,
-            h: axes.y ? persist('h') : stored.h,
-          })
-        },
-        onAbort: () => {
-          markResizing(false)
-          setSize(start)
-        },
-      })
-    }
+  const frame = useResizeFrame({
+    rect: box,
+    min: GLANCE_MIN,
+    max: maxSize,
+    equilateral: true,
+    outlined: true,
+    onChange: (next, phase) => {
+      setSize(next)
+      if (phase !== 'drop') return
+      // An axis that ended pinned at a cramped anchor's cap keeps the stored value, or the drag
+      // would silently ratchet the universal size down to that anchor's band-clamped render.
+      const stored = glanceSize()
+      const cap = maxSize()
+      const keep = (axis: 'w' | 'h'): number =>
+        next[axis] >= cap[axis] && stored[axis] > cap[axis] ? stored[axis] : next[axis]
+      setGlanceSize({ w: keep('w'), h: keep('h') })
+    },
+  })
+  const resizing = frame.active !== null
 
   useEffect(() => {
     const show = (next: GlanceRequest): void => {
@@ -381,7 +341,7 @@ export function GlancePane(): React.JSX.Element {
       // mid-gesture. The selection flag lives only while the button is down, so a swallowed release
       // heals on the next move.
       if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
-      if (resizingRef.current || selectingRef.current) {
+      if (resizing || selectingRef.current) {
         clearGrace()
         dropBoxes()
         return
@@ -403,7 +363,7 @@ export function GlancePane(): React.JSX.Element {
       unwatch()
       window.removeEventListener('mousemove', onMove)
     }
-  }, [shown, graceMs, dismiss])
+  }, [shown, graceMs, dismiss, resizing])
 
   const page = held?.target.kind === 'page' ? held.target : null
   const warmSeam = useMemo(
@@ -426,7 +386,7 @@ export function GlancePane(): React.JSX.Element {
       <div
         ref={cardRef}
         {...{ [GLANCE_BODY_ATTR]: '' }}
-        className={`glance-body${resizing ? ' is-resizing' : ''}`}
+        className="glance-body"
         style={{ width: box.w, height: box.h }}
         // A press starts a read-only text selection whose drag routinely overshoots the pane, so
         // the leave lifecycle stands down until the release. Focus is recorded on the capture phase
@@ -487,21 +447,8 @@ export function GlancePane(): React.JSX.Element {
             />
           </>
         )}
-        <div className="glance-resize-e" onPointerDown={startResize({ x: 1 })} />
-        <div className="glance-resize-w" onPointerDown={startResize({ x: -1 })} />
-        <div
-          className={`glance-resize-${dir === 'up' ? 'n' : 's'}`}
-          onPointerDown={startResize({ y: dir === 'up' ? -1 : 1 })}
-        />
-        <div
-          className={`glance-resize-${dir === 'up' ? 'ne' : 'se'}`}
-          onPointerDown={startResize({ x: 1, y: dir === 'up' ? -1 : 1 })}
-        />
-        <div
-          className={`glance-resize-${dir === 'up' ? 'nw' : 'sw'}`}
-          onPointerDown={startResize({ x: -1, y: dir === 'up' ? -1 : 1 })}
-        />
       </div>
+      {frame.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
     </PickerMenu>
   )
 }

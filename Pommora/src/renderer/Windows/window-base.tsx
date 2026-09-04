@@ -6,17 +6,35 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useRevealNear } from '@renderer/Interactions/revealBar'
 import { windowIn, windowOut } from '@renderer/Animation'
 import {
-  FloatingResizeCorners,
-  useFloatingWindow,
-  type FloatingBounds,
-} from '@renderer/Interactions/FloatingWindow'
+  CORNERS,
+  onScreen,
+  useResizeFrame,
+  type Rect,
+  type Size,
+} from '@renderer/Interactions/ResizeFrame'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
 import '@renderer/Animation/toolbar-slide.css'
 
-const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
+export interface WindowBounds {
+  min: Size
+  def: Size
+}
+
+const BOUNDS: WindowBounds = { min: { w: 360, h: 280 }, def: { w: 850, h: 600 } }
 
 export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, def: 260, max: 420 }
+
+// A window's size outlives its exit-presence unmount, per window id; it reopens centered.
+const sizes = new Map<string, Size>()
+const opening = (id: string, bounds: WindowBounds): Rect => {
+  const s = sizes.get(id) ?? bounds.def
+  return onScreen({
+    ...s,
+    x: Math.round((window.innerWidth - s.w) / 2),
+    y: Math.round((window.innerHeight - s.h) / 3),
+  })
+}
 
 export interface WindowBasePanel {
   windowId: string
@@ -32,7 +50,7 @@ export interface WindowBaseProps {
   closing: boolean
   onClose: () => void
   onEscape?: () => void
-  bounds?: FloatingBounds
+  bounds?: WindowBounds
   dragSurfaces?: string
   ariaLabel: string
   className?: string
@@ -77,7 +95,25 @@ export function WindowBase({
   children,
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
-  const { style: winStyle, onWindowDown, startDrag } = useFloatingWindow(id, bounds, surfaces)
+  const [geo, setGeo] = useState(() => opening(id, bounds))
+  useEffect(() => {
+    const onResize = (): void => setGeo(onScreen)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const frame = useResizeFrame({
+    rect: geo,
+    min: bounds.min,
+    onChange: (next) => {
+      sizes.set(id, { w: next.w, h: next.h })
+      setGeo(next)
+    },
+  })
+  // Window-move is reserved to the bare surfaces (the allow-list) — anything else owns its
+  // pointer, so row/reorder captures are never stolen mid-press.
+  const onWindowDown = (e: React.PointerEvent<HTMLElement>): void => {
+    if ((e.target as HTMLElement).matches(surfaces)) frame.start('move')(e)
+  }
 
   // Seeded from the persisted slot so the first painted frame already carries the restored width.
   const [leftW, setLeftW] = useState(() =>
@@ -97,7 +133,7 @@ export function WindowBase({
   const remeasure = reveal.remeasure
   useEffect(() => {
     remeasure()
-  }, [remeasure, winStyle, leftOpen, rightOpen, leftW, rightW])
+  }, [remeasure, geo, leftOpen, rightOpen, leftW, rightW])
 
   const dismiss = onEscape ?? onClose
   const escapeRef = useRef(dismiss)
@@ -154,7 +190,10 @@ export function WindowBase({
       )}
       style={
         {
-          ...winStyle,
+          left: geo.x,
+          top: geo.y,
+          width: geo.w,
+          height: geo.h,
           ...(left && { '--window-panel-l-w': `${leftW}px` }),
           ...(right && { '--window-panel-r-w': `${rightW}px` }),
           ...style,
@@ -204,7 +243,7 @@ export function WindowBase({
       )}
       {left?.mode === 'overlay' && panel(left, 'left')}
       {right?.mode === 'overlay' && panel(right, 'right')}
-      <FloatingResizeCorners startDrag={startDrag} />
+      {frame.edges(CORNERS)}
     </GlassWindow>
   )
 }
