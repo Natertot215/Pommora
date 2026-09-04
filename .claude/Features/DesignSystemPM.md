@@ -184,8 +184,8 @@ Inter, variable. `text.<style>.<variant>` composes size and line height from the
 | Style        | Token              | Size / Line     | Character                                            |
 | ------------ | ------------------ | --------------- | ---------------------------------------------------- |
 | Title Large  | `text.titleLarge`  | `28px` / `32px` | Container title — over an editor banner              |
-| Title Medium | `text.titleMedium` | `24px` / `28px` | container title — the bare page header               |
-| Title Small  | `text.titleSmall`  | `20px` / `24px` | Comtainer title — over a Banner cover                |
+| Title Medium | `text.titleMedium` | `24px` / `28px` | Container title — the bare page header               |
+| Title Small  | `text.titleSmall`  | `20px` / `24px` | Container title — over a Banner cover                |
 | Headline     | `text.headline`    | `15px` / `20px` | The smallest heading step; the one 15px style        |
 | Body         | `text.body`        | `13px` / `16px` | The standard content size; carries the row primitive |
 | Callout      | `text.callout`     | `12px` / `15px` | A step under body — headers and ancillary labels     |
