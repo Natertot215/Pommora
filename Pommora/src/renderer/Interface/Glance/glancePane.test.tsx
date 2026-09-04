@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
+import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
 import { armGlance, closeGlance, setGlancePresenter } from './glanceAction'
 import { cachePageDetail, dropPageDetail } from '../../Store/tabState'
 import { useSession } from '../../store'
@@ -204,14 +204,14 @@ describe('focus on close', () => {
 
 describe('the size accessor', () => {
   it('an absent row keeps the default', () => {
-    expect(glanceSize()).toEqual({ w: 260, h: 120 })
+    expect(glanceSize()).toEqual(GLANCE_DEFAULT)
   })
 
   it('a set clamps, rounds, and writes through', () => {
     setGlanceSize({ w: 300.6, h: 12 })
     expect(glanceSize()).toEqual({ w: 301, h: 100 })
     expect(glanceStore.save).toHaveBeenCalledWith({ w: 301, h: 100 })
-    setGlanceSize({ w: 260, h: 120 })
+    setGlanceSize(GLANCE_DEFAULT)
   })
 })
 

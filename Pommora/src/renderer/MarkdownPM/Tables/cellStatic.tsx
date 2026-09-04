@@ -134,6 +134,8 @@ export function renderCellContent(
   return out
 }
 
+const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
+
 /** The token the pointer is on, as its span in the cell's text — read off the element the renderer
  *  stamped rather than hit-tested, since a resting cell has no editor to ask. */
 function linkSpanAt(target: EventTarget | null): [number, number] | null {
@@ -142,8 +144,6 @@ function linkSpanAt(target: EventTarget | null): [number, number] | null {
   if (raw?.length !== 2) return null
   return [Number(raw[0]), Number(raw[1])]
 }
-
-const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
 
 function StaticCellImpl({
   text,
@@ -252,7 +252,7 @@ function StaticCellImpl({
       }}
       onMouseOver={(e) => {
         const found = linkAt(e)
-        found && dwellTarget(found.target, found.url, connections?.(), found.el)?.()
+        if (found) dwellTarget(found.target, found.url, connections?.(), found.el)?.()
       }}
       // The pointer left the link: cancel what is armed, but leave an open pane alone — it sits in
       // the gap beside the link, so reaching it means leaving the link first.
@@ -294,7 +294,7 @@ function StaticCellImpl({
         // A press bound for a link or a footnote is claimed HERE, so the browser never starts a
         // selection under it. Every other press is the browser's to run: the cell rests until the
         // click, so a drag that begins in one cell highlights across as many as it reaches.
-        if (e.button === 0) claimCite(e) || claimLink(e)
+        if (e.button === 0) claimCite(e) ?? claimLink(e)
       }}
     >
       {renderCellContent(text, connections, ordinalOf)}
