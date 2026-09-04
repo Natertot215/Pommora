@@ -23,7 +23,7 @@
 - [x] Every requirement traces to a landed task; the plan's Progress carries the hashes.
 - [x] The acceptance walkthrough observed over CDP where the data allowed, with the three unit-covered clauses named.
 - [x] Simplification, comment pass, code review, and attack ran per gate; every finding folded or ruled in the plan's Log.
-- [x] Docs, guidelines, the Codebase Map, RendererRework, and the comment ledgers rewritten; the closing sweep at zero against its control.
+- [x] Docs, guidelines, the Codebase Map, and the comment ledgers rewritten; the closing sweep at zero against its control.
 - [x] Handoff and Context rewritten; no History entry, by ruling.
 - [ ] Nathan's own pass: the glance in the running app (now on the window glass), the Page Window routes, and InterfacePM's Glance Pane section.
 
@@ -33,7 +33,6 @@
 - Non-editor glance hosts — sidebar rows, tabs, view rows, PropertyPanel values — are the arc's Prospect: a host supplies an element and a dwell row, and the seam does the rest.
 - Blur-close for the glance on ⌘-Tab, if wanted; none exists today.
 - `main/remint.ts` never drops the old origin key when copying a window set (pre-existing).
-- The RendererRework's R2 example now reads `Actions/connectionMenu`; `Core/` still does not exist.
 
 #### Feedback
 
@@ -76,7 +75,7 @@
 
 **FILES MODIFIED**
 
-- .claude: CLAUDE.md · ContextPM.md · HandoffPM.md · Planning/RendererRework.md · Planning/Codebase-Cleanup-Checklist.md · scripts/comment-baseline.json · comment-units.json · comment-ledger.mjs
+- .claude: CLAUDE.md · ContextPM.md · HandoffPM.md · scripts/comment-baseline.json · comment-units.json · comment-ledger.mjs
 - .claude/Features: ArchitecturePM · ConfigurationPM · ConnectionsPM · DesignSystemPM · InteractionPM · InterfacePM · MarkdownPM · SurfacePM · WebviewPM; Guidelines: Editor-Internals · Web-Guests
 - Pommora/src/shared: types.ts · bridge.ts · links.ts · citationMenu.ts · pageMenu.ts · connMenu.ts · cellMenu.ts · navRowMenu.ts · tabMenu.ts and their tests
 - Pommora/src/main: index.ts · contextMenu.ts · navRowMenu.ts · tabMenu.ts · remint.ts · sessionDb.ts · webGuests.ts · Database/localState.ts; preload/index.ts
