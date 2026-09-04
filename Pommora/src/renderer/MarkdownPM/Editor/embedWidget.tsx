@@ -76,7 +76,7 @@ export const setEmbedHeights = StateEffect.define<Record<string, number>>()
 /** Replaces the persisted tile Scale factors (target page id / url → factor), the heights' twin. */
 export const setEmbedZooms = StateEffect.define<Record<string, number>>()
 
-/** Persistence callbacks the host page supplies; absent (preview, blocks) hides the resize handle. */
+/** Persistence callbacks the host page supplies; absent (glance, blocks) hides the resize handle. */
 export interface EmbedHeightsApi {
   load: () => Promise<Record<string, number>>
   save: (heights: Record<string, number>) => void
