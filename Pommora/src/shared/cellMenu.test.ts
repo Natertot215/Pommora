@@ -6,7 +6,7 @@ describe('cellMenuModel', () => {
   it('title: Open Preview + stateful Open lead + Rename + Edit Icon + New Page pair + the send block + separator-gated Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
-      ['Open Preview', 'title:preview'],
+      ['Open Preview', 'title:window'],
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Edit Icon', 'title:icon'],

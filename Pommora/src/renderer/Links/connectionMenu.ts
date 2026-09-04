@@ -35,7 +35,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
     }
     void window.nexus.connMenu(ctx).then((action) => {
       if (action === null) return
-      if (action === 'link:preview') openInAppBrowser(target.url)
+      if (action === 'link:window') openInAppBrowser(target.url)
       else if (action === 'link:browser') void window.nexus.openExternal(target.url)
       else if (action === 'title:copylink') void window.nexus.writeClipboard(target.url)
       else if (isConnCellAction(action)) target.onCell?.(action)
@@ -58,13 +58,13 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         : isOpenInTabs(tabs, pinned, ref)
           ? 'tab'
           : 'closed',
-    previewing: deriveTarget(pageWindow)?.id === page.id,
+    windowed: deriveTarget(pageWindow)?.id === page.id,
   }
   void window.nexus.connMenu(ctx).then((action) => {
     switch (action) {
       case null:
         return
-      case 'title:preview':
+      case 'title:window':
         useSession.getState().openWindow({ id: page.id, path: page.path })
         return
       case 'title:newtab':

@@ -13,14 +13,14 @@ describe('the page menu', () => {
     expect(bare).not.toContain('title:copylink')
     expect(bare).not.toContain('title:reveal')
     const full = pageMetaMenuItems(false, {
-      preview: true,
+      window: true,
       newPages: 'pair',
       clipboard: true,
       history: true,
       reveal: true,
     })
     expect(full.map((i) => i.action)).toEqual([
-      'title:preview',
+      'title:window',
       'title:newtab',
       'title:rename',
       'title:icon',

@@ -21,7 +21,7 @@ export function pagePathText(nexusRelativePath: string): string {
 }
 
 export type PageMetaAction =
-  | 'title:preview'
+  | 'title:window'
   | 'title:newtab'
   | 'title:rename'
   | 'title:icon'
@@ -97,7 +97,7 @@ export function pageMetaMenuItems(
   // Below path — a grid has no above. `clipboard`/`reveal` are separate since copying a page's link
   // or path needs nothing but the page, where revealing it needs the filesystem underneath.
   opts: {
-    preview?: boolean
+    window?: boolean
     newPages?: 'pair' | 'single'
     move?: boolean
     clipboard?: boolean
@@ -106,7 +106,7 @@ export function pageMetaMenuItems(
   } = {},
 ): ActionItem<PageMetaAction>[] {
   return [
-    ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
+    ...(opts.window ? [{ label: 'Open Preview', action: 'title:window' as const }] : []),
     { label: openLabel(alreadyOpen), action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Edit Icon', action: 'title:icon' },
@@ -150,7 +150,7 @@ export function pageMetaMenuSubset<A extends PageMetaAction>(
   alreadyOpen?: boolean,
 ): ActionItem<A>[] {
   const kept = pageMetaMenuItems(alreadyOpen, {
-    preview: true,
+    window: true,
     newPages: 'pair',
     move: true,
     clipboard: true,

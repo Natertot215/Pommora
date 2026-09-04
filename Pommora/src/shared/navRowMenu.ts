@@ -16,7 +16,7 @@ export interface NavRowMenuContext extends PageMoveContext {
 
 export type NavRowMenuAction =
   | 'open-new-tab'
-  | 'open-preview'
+  | 'open-window'
   | 'pin'
   | 'unpin'
   | 'favorite'

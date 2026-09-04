@@ -142,7 +142,7 @@ describe('a markdown link’s menu follows what its target names', () => {
       editable: false,
       hasAlias: false,
       open: 'closed',
-      previewing: false,
+      windowed: false,
     })
     expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
   })
