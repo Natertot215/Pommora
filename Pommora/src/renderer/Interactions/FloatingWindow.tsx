@@ -44,8 +44,6 @@ export function useFloatingWindow(
   const g = stored
   const [, force] = useState(0)
 
-  // Always opens centered — size persists across opens, position doesn't. Re-clamps on window
-  // resize so the chrome never strands off-screen.
   useEffect(() => {
     g.w = Math.min(g.w, window.innerWidth)
     g.h = Math.min(g.h, window.innerHeight)

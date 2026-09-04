@@ -1,9 +1,5 @@
 import type { CSSProperties } from 'react'
 
-// Shared vocabulary between the single-zone engine (engine.tsx) and the cross-list engine
-// (group.tsx) — they model genuinely different interactions (in-place transform vs portal
-// overlay), so their drag-state and commit machinery stay separate; only primitives hoist here.
-
 export type Box = {
   left: number
   top: number
@@ -35,15 +31,9 @@ export type DragItem = {
 export const ACTIVATION = 5 // px the pointer must travel before a drag starts (vs. a click)
 // The inset's one source is the size tokens — the CSS side reads it as `--drop-line-inset`.
 export { DROP_LINE_INSET } from '@renderer/DesignSystem/Tokens/size.css'
-/** The cursor offset every floating drag chip hangs at (the sidebar's grab-point ghost is the
- *  deliberate exception). */
 export const GHOST_OFFSET = { x: 12, y: 8 }
-/** The editable-text core no drag may start from — surfaces compose `button` etc. on top where
- *  they deliberately block more. */
 export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
 
-/** Swallow the click that fires right after a committed drag, so the drop doesn't also trigger
- *  the surface's click action. One capture-phase, once-only guard. */
 export function suppressNextClick(): void {
   const swallow = (e: MouseEvent): void => {
     e.stopPropagation()

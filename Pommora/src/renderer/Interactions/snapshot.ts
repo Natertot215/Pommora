@@ -7,12 +7,9 @@
 import { useRef, useState } from 'react'
 
 export function useDragSnapshot<T>(take: () => T | null): {
-  /** The current snapshot — re-taken when dirty or empty. A null take (a ref not yet attached)
-   *  is returned but never cached, so the next get retries. */
   get: () => T | null
   markDirty: () => void
   isDirty: () => boolean
-  /** Drop the snapshot entirely — the gesture ended. */
   reset: () => void
 } {
   const takeRef = useRef(take)
