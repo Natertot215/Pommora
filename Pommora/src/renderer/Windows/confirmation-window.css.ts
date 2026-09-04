@@ -1,4 +1,5 @@
-import { style } from '@vanilla-extract/css'
+import { keyframes, style } from '@vanilla-extract/css'
+import { duration, easing } from '@renderer/DesignSystem/Animation/motion'
 import { text, vars } from '@renderer/DesignSystem/Tokens'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 
@@ -9,6 +10,12 @@ export const MAX_W = 460
 export const MIN_H = 132
 export const MAX_H = 260
 
+const scrimIn = keyframes({ from: { opacity: 0 } })
+const scrimOut = keyframes({ to: { opacity: 0 } })
+
+// The scrim rides the panel's own window motion so the two arrive and leave together.
+const scrim = `${duration.fast} ${easing.baseEase}`
+
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
@@ -17,6 +24,11 @@ export const backdrop = style({
   alignItems: 'center',
   justifyContent: 'center',
   background: c.state.muted,
+  animation: `${scrimIn} ${scrim}`,
+})
+
+export const backdropClosing = style({
+  animation: `${scrimOut} ${scrim} forwards`,
 })
 
 export const panel = style({

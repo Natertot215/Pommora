@@ -1,5 +1,5 @@
-import { globalKeyframes, style } from '@vanilla-extract/css'
-import { duration } from './motion'
+import { globalKeyframes, keyframes, style } from '@vanilla-extract/css'
+import { duration, easing } from './motion'
 
 // The Bloom curve — Pommora-native, Apple-inspired. The one special-cased named curve (not a token).
 const BLOOM = 'cubic-bezier(0.30, 0.75, 0, 1)'
@@ -40,3 +40,17 @@ export const bloomClose = style({
 
 // Title reveal — the ViewMenu's labeled title sliding in/out as Show/Hide Title toggles.
 export const titleReveal = `${duration.menu} ${BLOOM}`
+
+// The window transformation — a floating window scales up into place and withdraws on close. The
+// confirmation modal takes the same motion, so the shell and the question read as one family.
+const windowInFrames = keyframes({ from: { opacity: 0, transform: 'scale(0.95)' } })
+const windowOutFrames = keyframes({ to: { opacity: 0, transform: 'scale(0.85)' } })
+
+export const windowIn = style({
+  animation: `${windowInFrames} ${duration.fast} ${easing.baseEase}`,
+})
+
+export const windowOut = style({
+  animation: `${windowOutFrames} ${duration.fast} ${easing.baseEase} forwards`,
+  pointerEvents: 'none',
+})

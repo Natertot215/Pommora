@@ -1,5 +1,8 @@
 .navwindow {
   padding: var(--app-inset);
+  /* No reserved toolbar clearance here — the tab row and the search field own the top of this
+     window, so it carries no title-bar band. It still moves by its inset ring. */
+  --window-toolbar-h: 0px;
 }
 
 .navwindow .window-actions-flow {

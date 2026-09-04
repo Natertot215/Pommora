@@ -10,4 +10,6 @@ export {
   menuBloomClosing,
   bloomOpen,
   titleReveal,
+  windowIn,
+  windowOut,
 } from './animations.css'
