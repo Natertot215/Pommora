@@ -28,8 +28,6 @@
   display: flex;
   align-items: center;
   padding-left: var(--row-width-standard);
-  /* The trailing clearance past the inspector + close pair (with the pane squeeze) is the shell's
-     one definition; only the map tab's lead differs, so this row overrides just the left. */
   padding-right: var(--window-tab-clear-r);
   transition:
     height var(--duration-base) var(--ease-base),
