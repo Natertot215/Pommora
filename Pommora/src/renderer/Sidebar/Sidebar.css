@@ -201,9 +201,7 @@
 
 /* Inline rename styling is the menu system's flush titleInput (dimensionally identical to the
    title text it replaces — the caret alone marks edit mode); `.row-title-input` remains as the
-   query hook only. While the input is mounted, its title box must lay out as a flex row with the
-   ellipsis off: an atomic inline input that overflows an ellipsizing box is elided from paint
-   entirely (the invisible-rename-field bug), so the input takes the remaining track instead. */
+   query hook only.*/
 .row .over-scroll-ellipsis:has(.row-title-input),
 .row .over-scroll-ellipsis > span:has(.row-title-input) {
   display: flex;
@@ -232,10 +230,7 @@
 
 /* "Hide Chevrons" personalization (class on <html>): the leading chevron slot collapses to a tunable
    gutter. KNOB: --chevron-gutter (default 0 = flush with the section header; the glyph is clipped by
-   overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush — bump it for
-   breathing room). Matched by the data-drop-outline / data-drop-outline-spacer hook the slot holds — the look is the
-   design system's hashed class, so this rule keys on the attribute instead. The Saved strip (no chevron
-   slot) is untouched. The header row still toggles on click. */
+   overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush — bump it for breathing room).*/
 .hide-chevrons .row > span:has(> [data-drop-outline]),
 .hide-chevrons .row > span:has(> [data-drop-outline-spacer]) {
   --chevron-gutter: 2px;
@@ -263,9 +258,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   background: transparent;
   color: var(--label-tertiary);
   cursor: pointer;

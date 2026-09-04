@@ -26,7 +26,7 @@
 - [x] History PM-125, Context, the guideline lines, the plan's Closeout and Delivery Claim committed.
 - [x] The throwaway pages, their bundles, their rows, the scratch nexus, and the gate files gone; the dev instance relaunched on NexusOS at the final main.
 - [x] The secondary review: cohesion, simplicity, correctness, duplication, stability, debt, the tests, and a final regression pass — folded, gated, pushed.
-- [ ] Nathan's own pass: the window against his mock on a real page; the Days unit; the File History section under ArchitecturePM.
+- [x] Nathan's own pass: the window against his mock on a real page; the Days unit; the File History section under ArchitecturePM.
 
 #### Next Session
 

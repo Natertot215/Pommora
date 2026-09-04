@@ -106,7 +106,7 @@ export function WindowTabStrip({
           {titlePresence.closing ? heldTitle.current : title}
         </div>
       )}
-      <div className="page-window-tabwrap tabs-compact">
+      <div className="window-tabwrap tabs-compact">
         {showStrip && (
           <div className="tab-scroll over-scroll-x" ref={scrollRef}>
             {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}

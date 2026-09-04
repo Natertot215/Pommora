@@ -28,14 +28,15 @@
   display: flex;
   align-items: center;
   padding-left: var(--row-width-standard);
-  /* KNOB — clearance past settings + X, plus the squeeze that stops the row at an open pane's leading edge; without the second term the tabs run under the pane. */
-  padding-right: calc(var(--app-inset) + 56px + var(--window-title-squeeze, 0px));
+  /* The trailing clearance past the inspector + close pair (with the pane squeeze) is the shell's
+     one definition; only the map tab's lead differs, so this row overrides just the left. */
+  padding-right: var(--window-tab-clear-r);
   transition:
     height var(--duration-base) var(--ease-base),
     padding-left var(--duration-base) var(--ease-base);
 }
 .navwindow.is-page-tab .navwindow-tabs {
-  padding-left: calc(var(--app-inset) + 22px); /* KNOB — clearance past the scan glyph */
+  padding-left: var(--window-tab-clear-l); /* KNOB — clearance past the scan glyph */
 }
 .navwindow-tabs.has-tabs {
   height: var(--navwindow-tabs-h);
