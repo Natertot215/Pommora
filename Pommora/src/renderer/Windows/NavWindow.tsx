@@ -13,7 +13,7 @@ import { showConnectionMenu } from '../Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
-import { previewTargetOf, useSession } from '../store'
+import { windowTargetOf, useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
 import { WindowActions } from './WindowActions'
@@ -64,7 +64,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // An open sourced from a live page preview FLIPs from its stashed rect; the css intro is
+  // An open sourced from a live Page Window FLIPs from its stashed rect; the css intro is
   // canceled pre-paint so only one motion plays.
   const rootRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -97,8 +97,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  const preview = useSession((s) => s.preview)
-  const pageTarget = useSession((s) => (s.preview?.flavor === 'nav' ? previewTargetOf(s) : null))
+  const pageWindow = useSession((s) => s.pageWindow)
+  const pageTarget = useSession((s) => (s.pageWindow?.flavor === 'nav' ? windowTargetOf(s) : null))
   // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
     if (!pageTarget) {
@@ -107,7 +107,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     }
   }, [pageTarget])
 
-  const openPreviewTab = useSession((s) => s.openPreviewTab)
+  const openWindowTab = useSession((s) => s.openWindowTab)
   const select = useSession((s) => s.select)
   const openNewTab = useSession((s) => s.openNewTab)
   const setNavViewMode = useSession((s) => s.setNavViewMode)
@@ -122,7 +122,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
-  const hasTabs = preview?.flavor === 'nav' && preview.tabs.length > 1
+  const hasTabs = pageWindow?.flavor === 'nav' && pageWindow.tabs.length > 1
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const [editing, setEditing] = useState(false)
@@ -134,14 +134,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     const idx = pageIndexOf(tree)
     return {
       ...idx,
-      open: (page) => openPreviewTab({ id: page.id, path: page.path }),
+      open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
       hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
-  }, [tree, openPreviewTab, select])
+  }, [tree, openWindowTab, select])
 
   return (
     <WindowBase
@@ -184,7 +184,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         ),
       }}
       right={{
-        windowId: 'preview-inspector',
+        windowId: 'window-inspector',
         bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,

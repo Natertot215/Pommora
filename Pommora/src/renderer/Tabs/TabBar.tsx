@@ -77,7 +77,7 @@ function TabBarBody({
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
   const closeTab = useSession((s) => s.closeTab)
-  const openPreview = useSession((s) => s.openPreview)
+  const openWindow = useSession((s) => s.openWindow)
   const pinTab = useSession((s) => s.pinTab)
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
@@ -156,7 +156,7 @@ function TabBarBody({
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
       else if (!isPage) return
-      else if (action === 'preview') openPreview({ id: target.id, path: target.path })
+      else if (action === 'preview') openWindow({ id: target.id, path: target.path })
       else if (action) runPageSendAction(action, target)
     }
 

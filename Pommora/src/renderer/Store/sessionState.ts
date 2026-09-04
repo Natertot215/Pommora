@@ -4,7 +4,7 @@ import type { ChromeSlice } from './chromeSlice'
 import type { ConfigSlice } from './configSlice'
 import type { NavigationSlice } from './navigationSlice'
 import type { NexusSlice } from './nexusSlice'
-import type { PreviewSlice } from './previewSlice'
+import type { WindowSlice } from './windowSlice'
 import type { RenameSlice } from './renameSlice'
 
 /** The renderer's one shared room: every slice sees the whole state, so features react to each
@@ -12,7 +12,7 @@ import type { RenameSlice } from './renameSlice'
  *  another slice it asks for through that slice's actions. */
 export type SessionState = NexusSlice &
   NavigationSlice &
-  PreviewSlice &
+  WindowSlice &
   ChromeSlice &
   ConfigSlice &
   RenameSlice &

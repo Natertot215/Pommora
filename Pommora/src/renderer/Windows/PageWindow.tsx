@@ -14,7 +14,7 @@ import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { getContentViewRect } from '../Interface/ContentView'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { pageIndexOf, resolveIndexOf, trailOf } from '../treeIndex'
-import { previewTargetOf, useEmbedScale, useSession, type PreviewTarget } from '../store'
+import { windowTargetOf, useEmbedScale, useSession, type WindowTarget } from '../store'
 import { WindowActions } from './WindowActions'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
@@ -57,8 +57,8 @@ const STATS_DEBOUNCE_MS = 120
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 export function PageWindow(): React.JSX.Element | null {
-  const open = useSession((s) => s.preview?.flavor === 'page')
-  const target = useSession(previewTargetOf)
+  const open = useSession((s) => s.pageWindow?.flavor === 'page')
+  const target = useSession(windowTargetOf)
   const shown = useHeldPresence(target, open)
   if (!shown) return null
   return <PageWindowBody target={shown.held} closing={shown.closing} />
@@ -68,10 +68,10 @@ function PageWindowBody({
   target,
   closing,
 }: {
-  target: PreviewTarget
+  target: WindowTarget
   closing: boolean
 }): React.JSX.Element {
-  const closePreview = useSession((s) => s.closePreview)
+  const closeWindow = useSession((s) => s.closeWindow)
   const embedScale = useEmbedScale()
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
@@ -80,11 +80,11 @@ function PageWindowBody({
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  const [previewBody, setPreviewBody] = useState('')
+  const [windowBody, setWindowBody] = useState('')
   const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
   useEffect(() => {
-    setPreviewBody('')
+    setWindowBody('')
     clearTimeout(statsTimer.current)
   }, [target.path])
   useEffect(
@@ -93,50 +93,50 @@ function PageWindowBody({
     },
     [],
   )
-  const onPreviewBody = (b: string): void => {
+  const onWindowBody = (b: string): void => {
     clearTimeout(statsTimer.current)
     if (seededPath.current !== target.path) {
       seededPath.current = target.path
-      setPreviewBody(b)
+      setWindowBody(b)
       return
     }
-    statsTimer.current = setTimeout(() => setPreviewBody(b), STATS_DEBOUNCE_MS)
+    statsTimer.current = setTimeout(() => setWindowBody(b), STATS_DEBOUNCE_MS)
   }
   const page = useMemo<SubfieldPage>(
-    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: previewBody }),
-    [target.id, target.path, previewBody],
+    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: windowBody }),
+    [target.id, target.path, windowBody],
   )
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  const openPreviewTab = useSession((s) => s.openPreviewTab)
+  const openWindowTab = useSession((s) => s.openWindowTab)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
     return {
       ...idx,
-      open: (page) => openPreviewTab({ id: page.id, path: page.path }),
+      open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
       hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
-  }, [tree, openPreviewTab, select])
+  }, [tree, openWindowTab, select])
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 
-  const previewSlide = useSession((s) => s.previewSlide)
+  const windowSlide = useSession((s) => s.windowSlide)
   const bodyRef = useRef<HTMLDivElement>(null)
   const prevPath = useRef(target.path)
   const playedSeq = useRef(0)
   useEffect(() => {
     const swapped = prevPath.current !== target.path
     prevPath.current = target.path
-    if (!swapped || !previewSlide || previewSlide.seq === playedSeq.current) return
-    playedSeq.current = previewSlide.seq
-    const x = previewSlide.dir === 'back' ? -SLIDE_PX : SLIDE_PX
+    if (!swapped || !windowSlide || windowSlide.seq === playedSeq.current) return
+    playedSeq.current = windowSlide.seq
+    const x = windowSlide.dir === 'back' ? -SLIDE_PX : SLIDE_PX
     const timing = { duration: ms(duration.fast), easing: easing.baseEase }
     bodyRef.current?.animate(
       [
@@ -149,20 +149,20 @@ function PageWindowBody({
       rootRef.current
         ?.querySelector('.page-window-inspector')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
-  }, [target.path, previewSlide, inspectorOpen])
+  }, [target.path, windowSlide, inspectorOpen])
 
   const warmSeam = useWindowWarm(bodyRef, target.path)
 
   const promote = (): void => {
-    closePreview('engulf')
+    closeWindow('engulf')
     void select({ kind: 'page', id: target.id, path: target.path })
   }
 
   // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime
   // values); the css .engulfing class only suppresses the default scale-out.
-  const exitReason = useSession((s) => s.previewExit)
+  const exitReason = useSession((s) => s.windowExit)
   useEffect(() => {
-    if (!closing || useSession.getState().previewExit !== 'engulf') return
+    if (!closing || useSession.getState().windowExit !== 'engulf') return
     const el = rootRef.current
     const to = getContentViewRect()
     if (!el || !to) return
@@ -183,12 +183,12 @@ function PageWindowBody({
 
   return (
     <WindowBase
-      id="page-preview"
+      id="page-window"
       rootRef={rootRef}
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}
-      onClose={() => closePreview()}
-      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
+      onClose={() => closeWindow()}
+      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
       style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
@@ -206,7 +206,7 @@ function PageWindowBody({
         />
       }
       right={{
-        windowId: 'preview-inspector',
+        windowId: 'window-inspector',
         bounds: WINDOW_BASE_PANEL,
         mode: 'overlay',
         open: inspectorOpen,
@@ -226,7 +226,7 @@ function PageWindowBody({
           editing={editing}
           onBeginEdit={() => setEditing(true)}
           connections={connections}
-          onBody={onPreviewBody}
+          onBody={onWindowBody}
           warm={warmSeam}
         />
       </div>
@@ -238,7 +238,7 @@ function PageWindowBody({
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
 // re-paths the open tab on rename.
 
-export function PagePanel({ target }: { target: PreviewTarget }): React.JSX.Element {
+export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
   const tree = useSession((s) => s.tree)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)

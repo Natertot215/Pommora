@@ -7,7 +7,7 @@ import { AddBannerButton } from '../Interface/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/DetailTitleHeader'
 
 /** What the header draws, passed as one object rather than five props so a host — page view, floating
- *  preview, embedded tile — hands over the page it's showing. Never read from the store: a preview
+ *  window, embedded tile — hands over the page it's showing. Never read from the store: a window
  *  window draws a page that is not the active one. */
 export interface HeaderPage {
   path: string

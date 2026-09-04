@@ -50,9 +50,9 @@ export function PageView({
   const mutate = useSession((s) => s.mutate)
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
-  const openPreview = useSession((s) => s.openPreview)
+  const openWindow = useSession((s) => s.openWindow)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
-  const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
+  const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const setPageBody = useSession((s) => s.setPageBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingLive = useRef<[string, string] | null>(null)
@@ -108,8 +108,8 @@ export function PageView({
     return {
       ...idx,
       open: (page) =>
-        openInPreview
-          ? openPreview({ id: page.id, path: page.path })
+        openInWindow
+          ? openWindow({ id: page.id, path: page.path })
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
@@ -117,7 +117,7 @@ export function PageView({
       hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
-  }, [tree, select, openPreview, openInPreview])
+  }, [tree, select, openWindow, openInWindow])
 
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown
   // path flushes there, so a pending write survives without per-host flush machinery.

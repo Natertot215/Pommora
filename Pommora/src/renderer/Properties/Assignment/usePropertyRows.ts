@@ -19,14 +19,14 @@ import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
-// preview's inspector — for resolving a page into rows and writing a value back. Every write here
+// window's inspector — for resolving a page into rows and writing a value back. Every write here
 // goes through the same primitives the table and cards use, so this is a shape over them rather
 // than a second way to write.
 
 export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 
 /** The page this surface is about. The two hosts find it differently — one reads the open page, the
- *  other resolves a preview target — so it arrives already found. */
+ *  other resolves a window target — so it arrives already found. */
 export interface PropertyRowsPage {
   id: string
   title: string

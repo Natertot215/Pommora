@@ -45,7 +45,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     devicePrefsLoaded = false
     const s = get()
     s.resetNavigation()
-    s.resetPreview()
+    s.resetWindow()
     s.resetChrome()
     s.resetCaches()
   }
@@ -54,7 +54,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     try {
       // Close before the root can flip, even if the adopt is then canceled — data safety
       // beats window persistence.
-      set({ navOpen: false, preview: null })
+      set({ navOpen: false, pageWindow: null })
       // Awaited so main binds the old root: a debounce or an embed's exit flush landing after
       // the flip would otherwise bind the new nexus and overwrite a same-path file there.
       await flushAllPageSaves()
@@ -125,7 +125,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 window.nexus.windows?.load().catch(() => null),
                 window.nexus.tabs.load().catch(() => null),
               ])
-              if (windows?.ok) set({ previewsFile: windows.value })
+              if (windows?.ok) set({ windowsFile: windows.value })
               get().restoreNavigation(
                 read?.ok ? read.value : null,
                 stored?.ok ? stored.value : null,
@@ -154,7 +154,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
-      get().reconcilePreview(index)
+      get().reconcileWindow(index)
       // Read from the module cache, not an awaited IPC call — a round-trip here would gate the
       // whole reconcile behind it. Each pass refreshes the cache fire-and-forget.
       if (systemAccentCache === undefined) systemAccentCache = await window.nexus.systemAccent()

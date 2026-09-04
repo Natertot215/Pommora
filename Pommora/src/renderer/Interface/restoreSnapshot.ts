@@ -1,11 +1,11 @@
 import { fail, ok, type Result } from '@shared/result'
 import { flushPageSave } from './pageFlush'
 import { livePagePath } from '../treeIndex'
-import { useSession, type PreviewTarget } from '../store'
+import { useSession, type WindowTarget } from '../store'
 
 /** Restore's renderer half: land the page's pending save at its live path, ask main to write the
  *  snapshot's body, then replace the body in every open copy of the page. */
-export async function restoreSnapshot(target: PreviewTarget, ts: number): Promise<Result<null>> {
+export async function restoreSnapshot(target: WindowTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
   const live = livePagePath(tree, target)
   await flushPageSave(live)

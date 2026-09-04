@@ -126,12 +126,12 @@ export function App(): React.JSX.Element {
 
   useEffect(() => window.nexus.onConfirmDelete((target) => void confirmDelete(target)), [])
 
-  const openPreview = useSession((s) => s.openPreview)
+  const openWindow = useSession((s) => s.openWindow)
   useEffect(() => {
     return window.nexus.onOpenInWindow((target) => {
-      if (target.id) openPreview({ id: target.id, path: target.path })
+      if (target.id) openWindow({ id: target.id, path: target.path })
     })
-  }, [openPreview])
+  }, [openWindow])
 
   const openHistory = useSession((s) => s.openHistory)
   useEffect(() => {
@@ -168,7 +168,7 @@ export function App(): React.JSX.Element {
           break
         case 'new-tab': {
           const s = useSession.getState()
-          const p = s.preview
+          const p = s.pageWindow
           const active =
             p?.flavor === 'page' ? p.tabs.find((t) => t.id === p.activeTabId) : undefined
           if (active && active.target.kind === 'page') {
@@ -176,7 +176,7 @@ export function App(): React.JSX.Element {
               { kind: 'page', id: active.target.id, path: active.target.path },
               { newTab: true },
             )
-            s.closePreviewTab(active.id, 'engulf')
+            s.closeWindowTab(active.id, 'engulf')
           } else openNewTab()
           break
         }
