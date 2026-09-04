@@ -85,8 +85,7 @@ const COL_SHIFT_HYSTERESIS = 25
 const GHOST_GRACE_MS = 0
 
 /** The datetime cell's picker shell: PickerMenu portals off the cell (escaping the table's overflow
- *  clip) and self-dismisses via its own backdrop. The calendar's [data-calmenu] sub-menus portal
- *  ABOVE that backdrop (z-index), so their option clicks fall through to the menu, never the dismiss. */
+ *  clip) and self-dismisses via its own backdrop. */
 function DatetimeCellPicker({
   open,
   triggerRef,

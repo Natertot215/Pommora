@@ -65,13 +65,13 @@ Every app host passes `range={false}` (`DatetimeValuePicker.tsx:23`, `FilterFram
 
 **Made False**
 
-| Doc | The specific claim | What makes it false | Task |
-| --- | --- | --- | --- |
-| `DesignSystemPM.md:302` | PickerMenu row's capability list | `morph` is a capability | 2 |
-| `DatetimeValuePicker.tsx:7-9` | "(a PickerMenu or a pane row)" | five PickerMenu hosts, no pane row | 4 |
-| `calendar-picker.css.ts:87-89` | "SizeMorph animates the change WITH the slide (one beat, the FrameSlide contract…)" | SizeMorph is gone; the host's `morph` eases on `base` | 4 |
-| `stack.ts` `menuOverlay` comment | "a portalled host that has to clear a menu AND its backdrop" | the step is deleted | 4 |
-| `RendererRework.md:126` | the CalendarPicker checklist row | the row landed | closeout |
+| Doc                              | The specific claim                                                                  | What makes it false                                   | Task     |
+| -------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------- | -------- |
+| `DesignSystemPM.md:302`          | PickerMenu row's capability list                                                    | `morph` is a capability                               | 2        |
+| `DatetimeValuePicker.tsx:7-9`    | "(a PickerMenu or a pane row)"                                                      | five PickerMenu hosts, no pane row                    | 4        |
+| `calendar-picker.css.ts:87-89`   | "SizeMorph animates the change WITH the slide (one beat, the FrameSlide contract…)" | SizeMorph is gone; the host's `morph` eases on `base` | 4        |
+| `stack.ts` `menuOverlay` comment | "a portalled host that has to clear a menu AND its backdrop"                        | the step is deleted                                   | 4        |
+| `RendererRework.md:126`          | the CalendarPicker checklist row                                                    | the row landed                                        | closeout |
 
 **Dead Vocabulary**
 
@@ -310,11 +310,11 @@ export const menuList = style({ display: 'flex', flexDirection: 'column', gap: '
 
 **Verify — automated**
 
-- [ ] `rg -F "PortalMenu" src` → 0 · `rg -F "data-calmenu" src` → 0 · `rg -F "ddWrap" src` → 0 · `rg -F "menuPresence" src` → 0 · `rg -F "lastTimeMenu" src` → 0 · `rg -F "TriggerRect" src` → 0 · `rg -F "createPortal" src/renderer/DesignSystem/Pickers/CalendarPicker` → 0. Control: `rg -F "anchorOf" src` → ≥ 3.
-- [ ] `rg -F "closeMenus" src/renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker.tsx` → 4 (definition, nav, two switches).
-- [ ] `npm run lint` output read in full: no `noUnusedImports` warning in the two files.
-- [ ] Full gate green.
-- [ ] Code-only delta for the file reported at the gate (target ≈ −70 before Task 4).
+- [x] `rg -F "PortalMenu" src` → 0 · `rg -F "data-calmenu" src` → 0 · `rg -F "ddWrap" src` → 0 · `rg -F "menuPresence" src` → 0 · `rg -F "lastTimeMenu" src` → 0 · `rg -F "TriggerRect" src` → 0 · `rg -F "createPortal" src/renderer/DesignSystem/Pickers/CalendarPicker` → 0. Control: `rg -F "anchorOf" src` → ≥ 3.
+- [x] `rg -F "closeMenus" src/renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker.tsx` → 4 (definition, nav, two switches).
+- [x] `npm run lint` output read in full: no `noUnusedImports` warning in the two files.
+- [x] Full gate green.
+- [x] Code-only delta for the file reported at the gate (target ≈ −70 before Task 4).
 
 **Verify — user** (each in TableView, then once each in PageWindow and FilterFrame)
 
@@ -426,11 +426,11 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 
 ### Progress
 
-- [ ] **Phase 1** — PickerMenu · base `b561f10b`
-  - [ ] Task 1 — the close render gates on `open` · `<commit>`
-  - [ ] Task 2 — `morph` opt-in · `<commit>`
-- [ ] **Phase 2** — CalendarPicker · base `<commit>`
-  - [ ] Task 3 — two root PickerMenus · `<commit>`
+- [x] **Phase 1** — PickerMenu · base `b561f10b`
+  - [x] Task 1 — the close render gates on `open` · `f66cf8ab`
+  - [x] Task 2 — `morph` opt-in · `43f87590` (+ `46efc7d8` simplification)
+- [ ] **Phase 2** — CalendarPicker · base `46efc7d8`
+  - [x] Task 3 — two root PickerMenus · (this commit)
   - [ ] Task 4 — hosts opt in, SizeMorph goes · `<commit>`
   - [ ] Task 5 — delete the `closing` prop · `<commit>`
 
