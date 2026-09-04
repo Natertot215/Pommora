@@ -168,7 +168,11 @@ describe('ImagePicker', () => {
         onSave={() => {}}
       />,
     )
-    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
+    await act(async () =>
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      ),
+    )
     expect(onCancel).toHaveBeenCalled()
   })
 
@@ -188,7 +192,9 @@ describe('ImagePicker', () => {
     const prevent = (e: Event): void => e.preventDefault()
     window.addEventListener('keydown', prevent, { capture: true })
     await act(async () =>
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      ),
     )
     window.removeEventListener('keydown', prevent, { capture: true })
     expect(onCancel).not.toHaveBeenCalled()

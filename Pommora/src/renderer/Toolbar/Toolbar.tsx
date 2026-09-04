@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Segmented, type Segment } from '@renderer/DesignSystem/Buttons'
-import { useDismiss } from '@renderer/Interactions/useDismiss'
+import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewMenu } from './ViewMenu'
 import { SpaceMenu } from './SpaceMenu'
@@ -27,7 +27,10 @@ export function Toolbar({
   const [panel, setPanel] = useState<TrioPanel | null>(null)
   const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
-  useDismiss(trioRef, () => setPanel(null), panel !== null)
+  useDismissal(panel !== null, false, {
+    layer: () => trioRef.current,
+    dismiss: () => setPanel(null),
+  })
   const navP = useExitPresence(panel === 'navigation')
   const settingsP = useExitPresence(panel === 'settings')
 
