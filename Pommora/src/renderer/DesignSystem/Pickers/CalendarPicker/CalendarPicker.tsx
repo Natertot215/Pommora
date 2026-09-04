@@ -8,6 +8,7 @@ import { OverScroll } from '@renderer/Interactions/OverScroll'
 import { clamp } from '@shared/clamp'
 import { PickerMenu, PickerRow } from '../picker-base'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
+import { useHeld } from '@renderer/Interactions/useHeld'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { pad } from '@renderer/DesignSystem/Util/pad'
@@ -115,10 +116,8 @@ export function CalendarPicker({
   } | null>(null)
   const menuPresence = useExitPresence(menu !== null)
   const timeMenuPresence = useExitPresence(timeMenu !== null)
-  const lastMenu = useRef(menu)
-  if (menu) lastMenu.current = menu
-  const lastTimeMenu = useRef(timeMenu)
-  if (timeMenu) lastTimeMenu.current = timeMenu
+  const lastMenu = useHeld(menu, menu !== null)
+  const lastTimeMenu = useHeld(timeMenu, timeMenu !== null)
   const [segEdit, setSegEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
@@ -368,7 +367,7 @@ export function CalendarPicker({
   const hourText = (v: number): string => (twelve ? String(v) : pad(v))
 
   const timeOptions = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element | null => {
-    if (!timeMenuPresence.mounted || !lastTimeMenu.current) return null
+    if (!timeMenuPresence.mounted || !lastTimeMenu) return null
     const mins = minsOf(which)
     const setMins = setMinsFor(which)
     const current = part === 'h' ? hourShown(mins) : mins % 60
@@ -377,7 +376,7 @@ export function CalendarPicker({
       setTimeMenu(null)
     }
     return (
-      <PortalMenu rect={lastTimeMenu.current.rect}>
+      <PortalMenu rect={lastTimeMenu.rect}>
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
         <span
           className={s.ddWrap}
@@ -450,8 +449,8 @@ export function CalendarPicker({
       >
         {part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
         {timeMenuPresence.mounted &&
-          lastTimeMenu.current?.which === which &&
-          lastTimeMenu.current.part === part &&
+          lastTimeMenu?.which === which &&
+          lastTimeMenu.part === part &&
           timeOptions(which, part)}
       </button>
     )
@@ -504,8 +503,8 @@ export function CalendarPicker({
     <span className={s.optionRow}>{label}</span>
   )
   const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
-    menuPresence.mounted && lastMenu.current ? (
-      <PortalMenu rect={lastMenu.current.rect}>
+    menuPresence.mounted && lastMenu ? (
+      <PortalMenu rect={lastMenu.rect}>
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
         <span
           className={s.ddWrap}
@@ -555,7 +554,7 @@ export function CalendarPicker({
               }
             >
               {cursor.toLocaleDateString('en-US', { month: 'long' })}
-              {menu?.kind === 'month' && selectionMenu('month')}
+              {lastMenu?.kind === 'month' && selectionMenu('month')}
             </Button>
             <Button
               size="button-inline"
@@ -568,7 +567,7 @@ export function CalendarPicker({
               }
             >
               {year}
-              {menu?.kind === 'year' && selectionMenu('year')}
+              {lastMenu?.kind === 'year' && selectionMenu('year')}
             </Button>
           </span>
           <span className={s.nav}>
