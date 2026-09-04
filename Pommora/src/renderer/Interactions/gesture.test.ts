@@ -108,15 +108,15 @@ describe('gesture skeleton hardening', () => {
     expect(onDrop).toHaveBeenCalledOnce()
   })
 
-  it('a window blur cancels: a pending press detaches silently, an active drag aborts', () => {
+  it('a window blur cancels: a pending press and an active drag both abort, and the next begin succeeds', () => {
     const onAbort = vi.fn()
     gesture.beginPointerGesture(spec({ onAbort }))
     window.dispatchEvent(new Event('blur'))
-    expect(onAbort).not.toHaveBeenCalled()
+    expect(onAbort).toHaveBeenCalledOnce()
     expect(gesture.beginPointerGesture(spec({ onAbort }))).not.toBeNull()
     move(20, 20)
     window.dispatchEvent(new Event('blur'))
-    expect(onAbort).toHaveBeenCalledOnce()
+    expect(onAbort).toHaveBeenCalledTimes(2)
   })
 
   it('a move with no buttons held aborts — the release was missed', () => {
