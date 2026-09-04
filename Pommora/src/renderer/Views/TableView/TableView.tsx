@@ -67,7 +67,7 @@ import {
 import { useCellSweep } from '@renderer/Tables/cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { openWebLink } from '@renderer/Links/openWebLink'
+import { openWebLink } from '@renderer/Actions/openWebLink'
 import {
   linkAlias,
   linkEditText,
@@ -75,8 +75,8 @@ import {
   urlValueFromEdit,
   urlValueFromRename,
 } from '@shared/linkValue'
-import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
-import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
+import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Actions/connectionMenu'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
