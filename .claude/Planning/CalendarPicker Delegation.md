@@ -161,5 +161,5 @@ For the record, the only default-on shape that survives F3: PickerMenu wraps `bo
 2. **Nested backdrop z-order (F2):** not ruled; left as is, filed in the plan's Sequenced After.
 3. **`origin`:** `auto`.
 4. **`manageFocus`:** not ruled; the default (true) stands.
-5. **Beat:** `fast`, applied to the morph's transition. The 5↔6-week grid resize on a month nav lands 100ms before the slide (both were `base` under SizeMorph); flagged in the go-ahead ping.
+5. **Beat:** `base`, applied to the morph's transition (ruled `fast` first, changed to `base` at the go, so the grid resize and the month slide stay on one beat).
 6. **Scroll-dismiss:** dropped.

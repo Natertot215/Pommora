@@ -1,6 +1,6 @@
 ## CalendarPicker Delegation — Implementation Plan
 
-> **Status:** reviewed (simplification + attack rounds folded), awaiting Nathan's go · Spec: `CalendarPicker Delegation.md` (the decision log; its §5 carries Nathan's rulings of 09-03-2026) · Execute tasks in order.
+> **Status:** ratified — in execution (go 09-03-2026) · Spec: `CalendarPicker Delegation.md` (the decision log; its §5 carries Nathan's rulings of 09-03-2026) · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Paths are relative to `Pommora/`.
 
 **Goal**
@@ -12,7 +12,7 @@ The shape was settled by the decision log: delegation rides PickerMenu's existin
 **Requirements**
 
 1. PickerMenu's close render holds: children captured from the last open render, and the placement effect does not re-run once `open` is false (`closing` is one effect late for both).
-2. PickerMenu gains `morph?: boolean` (default `false`): the pane's height eases between content heights on `duration.fast`, armed after first paint, height written to the element rather than through state, the pane's position re-computed only when its values change.
+2. PickerMenu gains `morph?: boolean` (default `false`): the pane's height eases between content heights on `duration.base`, armed after first paint, height written to the element rather than through state, the pane's position re-computed only when its values change.
 3. CalendarPicker's month/year dropdown and its time dropdown are two root-mounted, self-managed PickerMenus anchored to the frozen click-time point, `origin` at `auto`, `manageFocus` at its default, list capped through `maxHeight`.
 4. CalendarPicker's `PortalMenu`, `rectOf`/`TriggerRect`, both `useExitPresence`, both `useHeld`, the three-mode dismiss effect, `SizeMorph`, `ddWrap`, and `stack.top.menuOverlay` are deleted; the five PickerMenu hosts of CalendarPicker pass `morph`.
 5. PickerMenu's `closing` prop is deleted after its last caller is gone; manual mode (`open` undefined) survives for the showcase.
@@ -69,7 +69,7 @@ Every app host passes `range={false}` (`DatetimeValuePicker.tsx:23`, `FilterFram
 | --- | --- | --- | --- |
 | `DesignSystemPM.md:302` | PickerMenu row's capability list | `morph` is a capability | 2 |
 | `DatetimeValuePicker.tsx:7-9` | "(a PickerMenu or a pane row)" | five PickerMenu hosts, no pane row | 4 |
-| `calendar-picker.css.ts:87-89` | "SizeMorph animates the change WITH the slide (one beat, the FrameSlide contract…)" | SizeMorph is gone; the host's `morph` eases on `fast` | 4 |
+| `calendar-picker.css.ts:87-89` | "SizeMorph animates the change WITH the slide (one beat, the FrameSlide contract…)" | SizeMorph is gone; the host's `morph` eases on `base` | 4 |
 | `stack.ts` `menuOverlay` comment | "a portalled host that has to clear a menu AND its backdrop" | the step is deleted | 4 |
 | `RendererRework.md:126` | the CalendarPicker checklist row | the row landed | closeout |
 
@@ -187,7 +187,7 @@ function PaneMorph({ children }: { children: ReactNode }): React.JSX.Element {
 // src/renderer/DesignSystem/Pickers/picker-base.css.ts
 import { duration, easing } from '@renderer/Animation/motion'
 export const paneMorph = style({ overflow: 'hidden' })
-export const paneMorphArmed = style({ transition: `height ${duration.fast} ${easing.baseEase}` })
+export const paneMorphArmed = style({ transition: `height ${duration.base} ${easing.baseEase}` })
 export const paneMorphBody = style({ display: 'flex', flexDirection: 'column' })
 ```
 
@@ -370,7 +370,7 @@ menuOverlay: 1200, // a portalled host that has to clear a menu AND its backdrop
 
 **Verify — user**
 
-- [ ] Navigate from a 5-week month to a 6-week month (TableView datetime cell): the grid slides and the pane grows; the grow lands ~100ms before the slide (ruled `fast`; the slide is `base`).
+- [ ] Navigate from a 5-week month to a 6-week month (TableView datetime cell): the grid slides and the pane grows; the grow and the slide land together (both `base`).
 - [ ] Toggle Use Time: the pane's bottom edge either holds or eases; it never snaps.
 - [ ] The morph reads correctly with the pane flipped upward.
 - [ ] The showcase CalendarPicker (plain div host) snaps; accepted under the ruling.
@@ -436,7 +436,7 @@ liveRef.current = selfManaged && ((open ?? false) || exitClosing)
 
 ### Rulings
 
-- 09-03-2026, Nathan: opt-in `morph` over the recommended content-owned Reveal · `origin` auto · morph beat `fast` · scroll-dismiss dropped · no History, no Handoff · net code delta negative · iteration window available for driving. Unruled, defaults taken by Claude: `manageFocus` default; nested-backdrop z-order untouched; the morph helper stays private to `picker-base.tsx`; the seg input's Escape gains `preventDefault` (pre-existing: it dismissed the calendar too); the switches close the Month/Year dropdown.
+- 09-03-2026, Nathan: opt-in `morph` over the recommended content-owned Reveal · `origin` auto · morph beat `base` (first ruled `fast`, changed at the go) · the final shape of `picker-base.tsx` and `CalendarPicker.tsx` must read legibly with clear structure · scroll-dismiss dropped · no History, no Handoff · net code delta negative · iteration window available for driving. Unruled, defaults taken by Claude: `manageFocus` default; nested-backdrop z-order untouched; the morph helper stays private to `picker-base.tsx`; the seg input's Escape gains `preventDefault` (pre-existing: it dismissed the calendar too); the switches close the Month/Year dropdown.
 
 ### Open Against Later Tasks
 
@@ -496,7 +496,7 @@ Everything else is the standard below.
 **The user's own pass**
 
 - [ ] Tasks 1, 3, 4 **Verify — user** lists, in TableView, PageWindow, FilterFrame, and the showcase.
-- [ ] In-flight: the `fast` morph landing ahead of the `base` slide on a 5↔6-week nav; the outside click peeling only the dropdown; the dropdown taking focus; Use Time closing the Month/Year dropdown; one dropdown at a time; the seg Escape no longer dismissing the calendar; the morph's app-visible work being the grid only (every app host is `range={false}`).
+- [ ] In-flight: the outside click peeling only the dropdown; the dropdown taking focus; Use Time closing the Month/Year dropdown; one dropdown at a time; the seg Escape no longer dismissing the calendar; the morph's app-visible work being the grid only (every app host is `range={false}`).
 
 **The record**
 
