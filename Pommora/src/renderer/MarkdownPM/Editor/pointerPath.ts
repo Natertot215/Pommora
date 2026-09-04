@@ -1,30 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { closeActiveHoverCard } from '@renderer/Links/panePresenter'
+import { cancelGlance, closeGlance } from '@renderer/Interface/Glance/glanceAction'
 import { seatAtNearerEdge } from './caretSeat'
-
-/** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
- *  rather than restating it: a test that hard-codes the number goes red the moment it's tuned. */
-export const CONN_HOVER_INTENT_MS = 1000
-
-/** One pending hover intent — re-arming replaces it, cancel is idempotent. Shared by the editor's
- *  own handlers and the table's resting-cell trigger, so the delay stays one fact. */
-export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => void } {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  const cancel = (): void => {
-    if (timer) {
-      clearTimeout(timer)
-      timer = null
-    }
-  }
-  return {
-    arm: (fire) => {
-      cancel()
-      timer = setTimeout(fire, CONN_HOVER_INTENT_MS)
-    },
-    cancel,
-  }
-}
 
 /** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
  *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
@@ -60,7 +37,7 @@ interface PointerSpec<H extends PointerTarget> {
    *  claimed exactly when there is something to follow, so a token that leads nowhere seats a caret
    *  the way any other text does and its click can reach no opener. */
   follow: (hit: H, view: EditorView, event: MouseEvent) => (() => void) | null
-  /** What a dwell blooms, or null for nothing. */
+  /** What a dwell arms, or null for nothing. */
   dwell: (hit: H, el: Element) => (() => void) | null
   /** What a right press offers, or null for nothing. */
   menu: (hit: H, view: EditorView) => (() => void) | null
@@ -69,9 +46,10 @@ interface PointerSpec<H extends PointerTarget> {
 /** The pointer handlers every link-shaped construct wears. The wikilink and the markdown link differ
  *  only in what they find and where it leads; the gesture grammar over it is one. */
 export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): Extension {
-  // Armed on mouseover of a drawn link, canceled the moment the pointer leaves it (mouseout fires
-  // per CM6 text span; re-entry re-arms fresh).
-  const intent = hoverIntent()
+  // The dwell is the seam's, armed on mouseover of a drawn link and canceled the moment the pointer
+  // leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh). Never cancel before the
+  // gate: four of these handlers share one editor, and a pre-gate cancel from the ones that arm
+  // nothing would kill the dwell the one that does just started.
   // CM seats the caret on mousedown, so the click handler can no longer tell "I was editing this"
   // from "I just clicked it" on its own.
   let editingOnPress = false
@@ -81,7 +59,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
   /** The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed, and
    *  dismiss what is already open. */
   const consume = (): void => {
-    intent.cancel()
+    cancelGlance()
     actedOnLink = true
   }
   return EditorView.domEventHandlers({
@@ -116,7 +94,6 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       return true
     },
     mouseover(event, view) {
-      intent.cancel()
       if (!spec.armable()) return false
       // Cheap class gate next: only a drawn link warrants the layout read + tokenize below.
       const el = (event.target as HTMLElement).closest?.(spec.hoverGate)
@@ -125,12 +102,11 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       // A link the caret is already inside is open for editing, and no dwell should carry you away
       // from what you're typing.
       if (!hit || caretInside(view, hit.range)) return false
-      const bloom = spec.dwell(hit, el)
-      if (bloom) intent.arm(bloom)
+      spec.dwell(hit, el)?.()
       return false
     },
     mouseout() {
-      intent.cancel()
+      cancelGlance()
       actedOnLink = false
       return false
     },
@@ -159,10 +135,10 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       const pop = spec.menu(hit, view)
       if (!pop) return false
       event.preventDefault()
-      // Only a press that actually pops a menu dismisses the pane — a hover preview mounts a real
-      // editor carrying this same path, and its links arm no menu, so an unconditional close there
-      // would shut the preview the gesture was aimed inside.
-      closeActiveHoverCard()
+      // Only a press that actually pops a menu dismisses the pane — a glance mounts a real editor
+      // carrying this same path, and its links arm no menu, so an unconditional close there would
+      // shut the glance the gesture was aimed inside.
+      closeGlance()
       pop()
       return true
     },

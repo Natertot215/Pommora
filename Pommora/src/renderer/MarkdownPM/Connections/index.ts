@@ -1,6 +1,7 @@
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 import type { ConnCellApply, ConnEditAction, ConnSurface, ConnUrlAction } from '@shared/connMenu'
 import { isValidLink, targetTitle } from '@shared/links'
+import { armGlance, type GlanceTarget } from '@renderer/Interface/Glance/glanceAction'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
  *  function, so acting on the result needs a way back into the editor instance clicked — `apply`
@@ -54,12 +55,14 @@ export interface ConnectionsApi extends PageIndex {
   menu?: (target: ConnMenuTarget) => void
   /** ⌘-click takes the OTHER route from `open` (preview ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
-  /** Fired after the hover-intent delay on a resolved connection, with the link's live element —
-   *  the consumer measures it (and detects detachment) itself. */
-  hover?: (page: ConnPage, el: Element) => void
-  /** Fired after the same dwell on a valid external link — the website hover preview's entry. */
-  hoverSite?: (url: string, el: Element) => void
+  /** Fired on a resolved connection or a valid external link with its live element; its presence
+   *  is what makes a surface armable, so a read-only body that must never glance simply omits it. */
+  glance?: (target: GlanceTarget, el: Element) => void
 }
+
+/** The glance hook every host wires — one link dwell for connections and web addresses alike. */
+export const glanceLink: NonNullable<ConnectionsApi['glance']> = (target, el) =>
+  armGlance(target, el, 'link')
 
 /** What a markdown link's target turns out to name. One resolver behind the click path and both
  *  renderers, so a link can never be colored as one thing and act as another. */

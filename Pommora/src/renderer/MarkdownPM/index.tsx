@@ -324,8 +324,8 @@ export function MarkdownEditor({
       aliasOnLeave(() => connectionsRef.current),
       linkRest,
       linkTyping,
-      // Close the connection pane when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
-      // editor has the same handler; without it the glass pane floats over unrelated UI.
+      // Close the autocomplete when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
+      // editor has the same handler; without it the pane floats over unrelated UI.
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
@@ -370,7 +370,7 @@ export function MarkdownEditor({
 
         // Read-only mounts never autocomplete: a click seating the caret inside a rendered
         // [[Title]] would otherwise pop the picker over a surface that can't accept an edit —
-        // a locked embed, or the hover preview gazing at its own links.
+        // a locked embed, or the glance gazing at its own links.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly)
           detectConnectionQuery(u.view, setAc, true)
       }),

@@ -2,14 +2,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
-import { CONN_HOVER_INTENT_MS } from '@renderer/MarkdownPM/Editor/pointerPath'
+import { buildPageIndex, glanceLink, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import {
+  GLANCE_DWELL,
+  cancelGlance,
+  setGlancePresenter,
+} from '@renderer/Interface/Glance/glanceAction'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 // Derived from the dwell rather than restated: these tests are about arm/cancel ordering, and
 // hard-coded milliseconds turn a tuned knob into a red suite.
-const PAST_DWELL = CONN_HOVER_INTENT_MS + 50
-const MID_DWELL = Math.floor(CONN_HOVER_INTENT_MS / 2)
+const PAST_DWELL = GLANCE_DWELL.link + 50
+const MID_DWELL = Math.floor(GLANCE_DWELL.link / 2)
 
 class ResizeObserverStub {
   observe(): void {}
@@ -19,25 +23,31 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 stubEditorBridge()
+// The real hook against the real seam, with only the pane's presenter stubbed: what these tests
+// assert is that the dwell FIRES through the editor's whole pointer path — four pointer handlers
+// share one editor, and only the one that armed may decide whether it survives.
+const present = vi.fn()
 beforeEach(() => {
   vi.useFakeTimers()
-  hover.mockClear()
+  present.mockClear()
+  setGlancePresenter(present)
 })
 afterEach(async () => {
+  cancelGlance()
+  setGlancePresenter(null)
   vi.useRealTimers()
   await cleanupEditor()
 })
 
-const hover = vi.fn()
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
-  hover,
+  glance: glanceLink,
 }
 
 // jsdom draws no layout, so posAtCoords can't hit-test — pin it inside the displayed title. It has
 // to be the content span, not the token's start: the edges beside the syntax are left to caret
-// placement, so a pin at 0 would suppress the very hover these tests assert.
+// placement, so a pin at 0 would suppress the very dwell these tests assert.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
   const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
@@ -50,13 +60,18 @@ const over = (span: HTMLElement): void => {
   span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
 }
 
-describe('the hover intent', () => {
-  it('fires after the delay with the link element in hand', async () => {
+describe('the connection dwell', () => {
+  it('fires exactly once after the delay with the link element in hand', async () => {
     const { span } = await mountLink()
     over(span)
+    vi.advanceTimersByTime(MID_DWELL)
+    expect(present).not.toHaveBeenCalled()
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).toHaveBeenCalledTimes(1)
-    expect(hover.mock.calls[0][1]).toBe(span)
+    expect(present).toHaveBeenCalledTimes(1)
+    expect(present).toHaveBeenCalledWith({
+      target: { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
+      el: span,
+    })
   })
 
   it('a click inside the window consumes it — nothing fires afterward', async () => {
@@ -65,7 +80,7 @@ describe('the hover intent', () => {
     vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).not.toHaveBeenCalled()
+    expect(present).not.toHaveBeenCalled()
   })
 
   it('a context-menu inside the window consumes it the same way', async () => {
@@ -74,7 +89,7 @@ describe('the hover intent', () => {
     vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).not.toHaveBeenCalled()
+    expect(present).not.toHaveBeenCalled()
   })
 
   // A native menu hands the pointer back over the same link, and that re-entry is a fresh mouseover.
@@ -83,7 +98,7 @@ describe('the hover intent', () => {
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     over(span)
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).not.toHaveBeenCalled()
+    expect(present).not.toHaveBeenCalled()
   })
 
   it('leaving the link clears that, so a later dwell works', async () => {
@@ -92,7 +107,7 @@ describe('the hover intent', () => {
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
     over(span)
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).toHaveBeenCalledTimes(1)
+    expect(present).toHaveBeenCalledTimes(1)
   })
 
   it('mouseout cancels; re-entry re-arms fresh', async () => {
@@ -101,10 +116,20 @@ describe('the hover intent', () => {
     vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).not.toHaveBeenCalled()
+    expect(present).not.toHaveBeenCalled()
     over(span)
     vi.advanceTimersByTime(PAST_DWELL)
-    expect(hover).toHaveBeenCalledTimes(1)
+    expect(present).toHaveBeenCalledTimes(1)
+  })
+
+  it('a body without the hook arms nothing — the glance never glances itself', async () => {
+    const { glance: _omitted, ...bare } = conn
+    const view = await mountEditor({ initialBody: '[[Alpha]]', connections: bare })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
+    over(span)
+    vi.advanceTimersByTime(PAST_DWELL)
+    expect(present).not.toHaveBeenCalled()
   })
 })
 

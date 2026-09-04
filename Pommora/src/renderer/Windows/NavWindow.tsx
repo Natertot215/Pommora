@@ -8,9 +8,8 @@ import { SearchField } from '@renderer/DesignSystem/Fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { PageTile } from '../SurfacePM/PageTile'
-import type { ConnectionsApi } from '../MarkdownPM/Connections'
+import { type ConnectionsApi, glanceLink } from '../MarkdownPM/Connections'
 import { showConnectionMenu } from '../Actions/connectionMenu'
-import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { windowTargetOf, useSession } from '../store'
@@ -137,8 +136,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover: hoverConnection,
-      hoverSite: hoverWebsite,
+      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, openWindowTab, select])

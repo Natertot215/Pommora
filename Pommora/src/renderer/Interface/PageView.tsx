@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
-import type { ConnectionsApi } from '../MarkdownPM/Connections'
+import { type ConnectionsApi, glanceLink } from '../MarkdownPM/Connections'
 import { nativeEditorMenu } from '../MarkdownPM/Editor/menu'
 import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Actions/connectionMenu'
-import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import { navKey } from '../Navigation/navRecents'
@@ -113,8 +112,7 @@ export function PageView({
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover: hoverConnection,
-      hoverSite: hoverWebsite,
+      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, select, openWindow, openInWindow])

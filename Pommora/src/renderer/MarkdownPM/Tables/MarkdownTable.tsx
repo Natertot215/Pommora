@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { closeActiveHoverCard } from '@renderer/Links/panePresenter'
+import { closeGlance } from '@renderer/Interface/Glance/glanceAction'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -16,7 +16,6 @@ import { foldLabel } from '../Detect'
 import { clamp } from '@shared/clamp'
 import { nextCell, type NavDir } from './navigate'
 import type { ConnectionsApi } from '../Connections'
-import { hoverIntent } from '../Editor/pointerPath'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -146,18 +145,6 @@ export function MarkdownTable({
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
-
-  // One hover intent for the whole table, handed to every resting cell — the same delay the
-  // editor's own links use, and one arming at a time across the grid. A cell that has become an
-  // editor carries its own.
-  const intent = useMemo(hoverIntent, [])
-  useEffect(() => intent.cancel, [intent])
-  /** Whatever the hover was about to show, or is showing, goes away — the pair every gesture that
-   *  replaces the pointer's meaning owes it. */
-  const dismissHoverCard = (): void => {
-    intent.cancel()
-    closeActiveHoverCard()
-  }
 
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A live gesture reads geometry through this ref — a mid-drag re-measure must reach it, and a
@@ -560,7 +547,7 @@ export function MarkdownTable({
         onActivate={(coords, sweep) => {
           // Activation swaps the cell into its editor — a pending or open hover preview over the
           // cell must not hang above the editing seat.
-          dismissHoverCard()
+          closeGlance()
           caretCoords.current = coords
           initialSelect.current = null
           sweepFrom.current = sweep ?? null
@@ -575,15 +562,12 @@ export function MarkdownTable({
           onSettled?.()
         }}
         onSelect={(range) => {
-          dismissHoverCard()
+          closeGlance()
           caretCoords.current = null
           initialSelect.current = range
           sweepFrom.current = null
           setActive({ row, col })
         }}
-        onHoverArm={intent.arm}
-        onHoverLeave={intent.cancel}
-        onHoverEnd={dismissHoverCard}
       />
     )
   }
@@ -619,7 +603,7 @@ export function MarkdownTable({
       ref={wrapRef}
       // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
-      onContextMenuCapture={dismissHoverCard}
+      onContextMenuCapture={closeGlance}
       onMouseOver={trackHover}
       onMouseLeave={() => {
         setHover(null)

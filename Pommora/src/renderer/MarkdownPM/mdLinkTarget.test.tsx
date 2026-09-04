@@ -5,7 +5,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@shared/links'
 import { autocompleteQuery, commitEdit } from './autocomplete'
 import { activeTokenIndices, tokenize } from './Tokens'
-import { CONN_HOVER_INTENT_MS } from './Editor/pointerPath'
 import { MD_LINK_CLASS } from './Editor/decorations'
 import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './Connections'
 import { renderCellContent } from './Tables/cellStatic'
@@ -227,43 +226,25 @@ describe('a connection takes its color as it is typed', () => {
   })
 })
 
-// A markdown link naming a page is drawn as a connection, so it owes the same hover preview. A table
-// cell already raised one for it; the body did not, because the connection handler's hit-test reads
-// wikiLink tokens and this is a `link`.
-describe('an internal markdown link previews like a connection', () => {
-  it('arms the hover on the drawn link', async () => {
-    const hover = vi.fn()
+// A markdown link naming a page is drawn as a connection, so it owes the same glance. A table cell
+// already raised one for it; the body did not, because the connection handler's hit-test reads
+// wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
+describe('an internal markdown link glances like a connection', () => {
+  it('arms the page glance on the drawn link', async () => {
+    const glance = vi.fn()
     const view = await mountEditor({
       initialBody: `see [the notes](${encodeLinkTarget('Work Notes')}) end`,
-      connections: { ...conn, hover },
+      connections: { ...conn, glance },
     })
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
     const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
     span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
-    })
-    expect(hover).toHaveBeenCalled()
-  })
-
-  it('and lets it go when the pointer leaves before the dwell', async () => {
-    const hover = vi.fn()
-    const view = await mountEditor({
-      initialBody: `see [the notes](${encodeLinkTarget('Work Notes')}) end`,
-      connections: { ...conn, hover },
-    })
-    await act(async () => view.focus())
-    view.dispatch({ selection: { anchor: 0 } })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
-    const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
-    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
-    span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
-    })
-    expect(hover).not.toHaveBeenCalled()
+    expect(glance).toHaveBeenCalledWith(
+      { kind: 'page', id: 'p1', path: 'Notes/Work Notes.md' },
+      span,
+    )
   })
 })
 
@@ -353,22 +334,18 @@ describe('a website link previews live', () => {
     expect(span.textContent).toBe('GitHub')
   })
 
-  it('arms the website hover on the drawn link, never the page one', async () => {
-    const hover = vi.fn()
-    const hoverSite = vi.fn()
+  it('arms the website glance on the drawn link, never the page one', async () => {
+    const glance = vi.fn()
     const view = await mountEditor({
       initialBody: 'see [GitHub](https://github.com) end',
-      connections: { ...conn, hover, hoverSite },
+      connections: { ...conn, glance },
     })
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
     const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
     span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
-    })
-    expect(hoverSite).toHaveBeenCalledWith('https://github.com', span)
-    expect(hover).not.toHaveBeenCalled()
+    expect(glance).toHaveBeenCalledTimes(1)
+    expect(glance).toHaveBeenCalledWith({ kind: 'site', url: 'https://github.com' }, span)
   })
 })

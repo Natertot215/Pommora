@@ -1,37 +1,91 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ConnPage } from '@renderer/MarkdownPM/Connections'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import { PickerMenu, type PickerDirection } from '@renderer/DesignSystem/Pickers/picker-base'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/Editor/folding'
+import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { WEB_PARTITION, type GlanceSize } from '@shared/types'
-import { resolveOnlyConnections } from '../treeIndex'
-import { fetchPageDetail, readPageDetail } from '../Store/tabState'
-import { useSession } from '../store'
-import { PageTile } from '../SurfacePM/PageTile'
-import { CARD_MIN, hoverPaneSize, seedGlanceSize, setGlanceSize } from './hoverPaneSize'
-import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './panePresenter'
-import './connection-pane.css'
+import { resolveOnlyConnections } from '../../treeIndex'
+import { fenceWarm, fetchPageDetail, readPageDetail } from '../../Store/tabState'
+import { useSession } from '../../store'
+import { PageTile } from '../../SurfacePM/PageTile'
+import {
+  GLANCE_BODY_ATTR,
+  type GlanceRequest,
+  setGlancePresenter,
+  watchAnchor,
+} from './glanceAction'
+import './glance-pane.css'
 
-export { closeActiveHoverCard }
+// Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click
+// or pull focus out of its host. A deliberate press inside the pane (selecting its text) is the one
+// exception, and the close hands focus back to whatever held it. Mounted once at app level; every
+// host reaches it through the seam.
 
-// Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat the
-// next click or pull focus out of the editor. A deliberate press inside the pane (selecting its
-// text) is the one exception, and the close hands focus back to the link's editor. Mounted once at
-// app level; every host reaches it through `hoverConnection`.
-
-// The size knobs and their persistence live in hoverPaneSize.ts — the ceiling is never a knob:
-// width caps at the viewport, height at the band actually available on the pane's side.
+// KNOB — the default and floor sizes. The ceiling is never a knob: width caps at the viewport,
+// height at the band actually available on the pane's side.
+const GLANCE_DEFAULT: GlanceSize = { w: 260, h: 120 }
+const GLANCE_MIN: GlanceSize = { w: 180, h: 100 }
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200
-
 const RECT_SLOP = 6
+// KNOB — how many glanced pages keep their editor state and scroll between opens.
+const GLANCE_WARM_CAP = 8
 // A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
-// render inert (a hover preview must never put a third page's editor behind a click), while no real
-// page path can ever collide with it in the cycle guard.
-const HOVER_ANCESTORS = ['hover-card'] as const
+// render inert, while no real page path can ever collide with it in the cycle guard.
+const GLANCE_ANCESTORS = ['glance'] as const
+
+const clampSize = (s: GlanceSize): GlanceSize => ({
+  w: Math.max(GLANCE_MIN.w, Math.round(s.w)),
+  h: Math.max(GLANCE_MIN.h, Math.round(s.h)),
+})
+
+// One universal size — every glance opens at it, resizing any updates it for all, persisted
+// per-machine. The accessor clamps on read (a stored value from before a bounds change must not
+// reopen out of bounds) and writes through on set.
+let sizeCache: GlanceSize | null = null
+let sizeSeeded = false
+
+function seedGlanceSize(): void {
+  if (sizeSeeded) return
+  sizeSeeded = true
+  void window.nexus.glance.load().then((r) => {
+    if (r.ok && r.value) sizeCache = clampSize(r.value)
+  })
+}
+
+export function glanceSize(): GlanceSize {
+  return sizeCache ?? GLANCE_DEFAULT
+}
+
+export function setGlanceSize(next: GlanceSize): void {
+  sizeCache = clampSize(next)
+  void window.nexus.glance.save(sizeCache)
+}
+
+// The glance's own warmth, keyed by page id and bounded — never the tab cache or the window
+// cache. The fence drops an entry whose doc no longer matches the fresh body.
+const warm = new Map<string, { editorState: unknown; scrollTop: number }>()
+
+export function glanceWarmSeam(id: string, path: string): WarmSeam {
+  return {
+    restore: () => {
+      const kept = fenceWarm(warm.get(id), readPageDetail(path)?.body)
+      if (!kept) warm.delete(id)
+      return kept
+    },
+    capture: (state) => {
+      warm.delete(id)
+      warm.set(id, state)
+      for (const key of warm.keys()) {
+        if (warm.size <= GLANCE_WARM_CAP) break
+        warm.delete(key)
+      }
+    },
+  }
+}
 
 const inRect = (r: DOMRect, x: number, y: number): boolean =>
   x >= r.left - RECT_SLOP &&
@@ -39,11 +93,8 @@ const inRect = (r: DOMRect, x: number, y: number): boolean =>
   y >= r.top - RECT_SLOP &&
   y <= r.bottom + RECT_SLOP
 
-export type Hovered =
-  | { kind: 'page'; page: ConnPage; el: Element }
-  | { kind: 'site'; url: string; el: Element }
-
-const keyOf = (h: Hovered): string => (h.kind === 'page' ? `p:${h.page.id}` : `s:${h.url}`)
+const keyOf = (r: GlanceRequest): string =>
+  r.target.kind === 'page' ? `p:${r.target.id}` : `s:${r.target.url}`
 
 /** What the guest element answers with once attached — the handle the replayed wheel is aimed at. */
 type ScrollableGuest = HTMLElement & { getWebContentsId?: () => number }
@@ -66,41 +117,9 @@ function scrollGuest(
   }
 }
 
-// Supersession token for the cold-page fetch: only the newest hover's resolve may open.
-let pendingFetch = 0
-
-/** The ConnectionsApi.hover entry every host wires. A call before the pane mounts is a no-op —
- *  and so is one whose element already left the DOM: the intent timer outlives its editor (no
- *  mouseout fires when navigation tears the node out under a resting pointer), and a pane must
- *  never open anchored to nothing.
- *
- *  The body is resolved BEFORE the pane opens: a warm page blooms with content in hand, a cold
- *  one blooms only once its fetch lands — still under the pointer (`:hover` — a flick-away or a
- *  mid-fetch teardown can't match) — and a failed open blooms nothing at all. */
-export function hoverConnection(page: ConnPage, el: Element): void {
-  if (!el.isConnected) return
-  if (readPageDetail(page.path)) {
-    presentHoverCard({ kind: 'page', page, el })
-    return
-  }
-  const token = ++pendingFetch
-  void fetchPageDetail(page.path).then((detail) => {
-    if (token !== pendingFetch || !detail) return
-    if (el.matches(':hover')) presentHoverCard({ kind: 'page', page, el })
-  })
-}
-
-/** The website flavor's entry — the same dwell, a live site instead of a page. */
-export function hoverWebsite(url: string, el: Element): void {
-  if (!el.isConnected) return
-  // Superseding any in-flight cold-page fetch — its late resolve must not steal this pane.
-  ++pendingFetch
-  presentHoverCard({ kind: 'site', url, el })
-}
-
-export function ConnectionPane(): React.JSX.Element {
-  const [hovered, setHovered] = useState<Hovered | null>(null)
-  const [size, setSize] = useState(hoverPaneSize)
+export function GlancePane(): React.JSX.Element {
+  const [shown, setShownState] = useState<GlanceRequest | null>(null)
+  const [size, setSize] = useState(glanceSize)
   useEffect(seedGlanceSize, [])
   const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
@@ -113,49 +132,48 @@ export function ConnectionPane(): React.JSX.Element {
   // (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load instead.
   const [siteReady, setSiteReady] = useState(false)
   const anchorRef = useRef<Element | null>(null)
-  const hoveredRef = useRef(hovered)
-  anchorRef.current = hovered?.el ?? null
-  hoveredRef.current = hovered
-  // The Bloom-out rides the last real target (PageWindow's `held` pattern): the body keeps its
-  // content and the size stays frozen through the exit, and the next open supersedes the hold.
-  const heldRef = useRef(hovered)
-  if (hovered) heldRef.current = hovered
-  const held = hovered ?? heldRef.current
+  const shownRef = useRef(shown)
+  anchorRef.current = shown?.el ?? null
+  shownRef.current = shown
+  // The Bloom-out rides the last real target: the body keeps its content and the size stays frozen
+  // through the exit, and the next open supersedes the hold.
+  const heldRef = useRef(shown)
+  if (shown) heldRef.current = shown
+  const held = shown ?? heldRef.current
 
-  // The ceiling, live: viewport width, and the vertical band on the pane's side of the link.
+  // The ceiling, live: viewport width, and the vertical band on the pane's side of the anchor.
   const maxSize = (): GlanceSize => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
-    const link = hoveredRef.current?.el.isConnected
-      ? hoveredRef.current.el.getBoundingClientRect()
+    const link = shownRef.current?.el.isConnected
+      ? shownRef.current.el.getBoundingClientRect()
       : null
     if (!link) return { w, h: window.innerHeight - 2 * VIEWPORT_MARGIN }
     const band =
       dir === 'up'
         ? link.top - ANCHOR_GAP - VIEWPORT_MARGIN
         : window.innerHeight - link.bottom - ANCHOR_GAP - VIEWPORT_MARGIN
-    return { w, h: Math.max(CARD_MIN.h, band) }
+    return { w, h: Math.max(GLANCE_MIN.h, band) }
   }
   const max = maxSize()
   const live = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
-  const shownRef = useRef(live)
-  if (hovered) shownRef.current = live
-  const shown = shownRef.current
+  const liveRef = useRef(live)
+  if (shown) liveRef.current = live
+  const box = liveRef.current
 
   // Free-edge resize on the tile gesture skeleton: the right edge always, plus the pane's one free
   // horizontal edge and its corner — bottom for a down pane, top for a flipped-up pane, whose
   // bottom edge is the anchored one and whose height grows upward from it.
-  // The ref gates the leave lifecycle per-event; the state drives the accent-stroke class.
   const resizingRef = useRef(false)
   const selectingRef = useRef(false)
   const [resizing, setResizing] = useState(false)
   const begin = usePointerGesture()
   // Signed axes: +1 pulls the east/south edge, -1 the west/north one — the pane is centered on
-  // its link, so either side's drag just grows the same remembered size.
+  // its anchor, so either side's drag just grows the same remembered size.
   const startResize =
     (axes: { x?: 1 | -1; y?: 1 | -1 }) =>
     (e: React.PointerEvent): void => {
       if (e.button !== 0) return
-      const start = { ...shownRef.current }
+      const start = { ...liveRef.current }
       const sx = e.clientX
       const sy = e.clientY
       begin({
@@ -173,10 +191,10 @@ export function ConnectionPane(): React.JSX.Element {
           const cap = maxSize()
           setSize({
             w: axes.x
-              ? Math.min(cap.w, Math.max(CARD_MIN.w, start.w + axes.x * (ev.clientX - sx)))
+              ? Math.min(cap.w, Math.max(GLANCE_MIN.w, start.w + axes.x * (ev.clientX - sx)))
               : start.w,
             h: axes.y
-              ? Math.min(cap.h, Math.max(CARD_MIN.h, start.h + axes.y * (ev.clientY - sy)))
+              ? Math.min(cap.h, Math.max(GLANCE_MIN.h, start.h + axes.y * (ev.clientY - sy)))
               : start.h,
           })
         },
@@ -184,12 +202,12 @@ export function ConnectionPane(): React.JSX.Element {
           resizingRef.current = false
           setResizing(false)
           // Only the dragged axes persist — the other rides the stored value, or a width-only
-          // drag near a cramped link would silently ratchet the universal height down to that
-          // link's band-clamped render.
-          const stored = hoverPaneSize()
+          // drag near a cramped anchor would silently ratchet the universal height down to that
+          // anchor's band-clamped render.
+          const stored = glanceSize()
           setGlanceSize({
-            w: axes.x ? shownRef.current.w : stored.w,
-            h: axes.y ? shownRef.current.h : stored.h,
+            w: axes.x ? liveRef.current.w : stored.w,
+            h: axes.y ? liveRef.current.h : stored.h,
           })
         },
         onAbort: () => {
@@ -200,95 +218,122 @@ export function ConnectionPane(): React.JSX.Element {
       })
     }
 
+  // Supersession token for the cold-page fetch: only the newest request's resolve may open.
+  const pendingFetch = useRef(0)
   const retargetRaf = useRef(0)
   useEffect(() => {
-    setHoverCardPresenter((next) => {
+    const show = (next: GlanceRequest | null): void => {
       // A close or a newer target always beats a queued retarget — an uncanceled beat would
       // re-open the pane right after the navigation that closed it.
       if (retargetRaf.current) {
         cancelAnimationFrame(retargetRaf.current)
         retargetRaf.current = 0
       }
-      const cur = hoveredRef.current
-      // A re-present of the SAME target is free — re-dwelling a link must not reset the site
+      const cur = shownRef.current
+      // A re-present of the SAME target is free — re-dwelling an anchor must not reset the site
       // cover or re-arm the resolve deadline over an already-painted guest.
       if (next && cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
       // Readiness follows the GUEST, not the presenter: it resets only when the rendered site
       // actually changes, so a same-url retarget (the guest survives on its key) stays lifted.
-      const freshGuest = next?.kind === 'site' && !(cur?.kind === 'site' && cur.url === next.url)
+      const freshGuest =
+        next?.target.kind === 'site' &&
+        !(cur?.target.kind === 'site' && cur.target.url === next.target.url)
       // Retarget routes through a closed beat: PickerMenu re-decides its flip only on open=false,
-      // and the Bloom replays at the new link. A different ELEMENT for the same page retargets
+      // and the Bloom replays at the new anchor. A different ELEMENT for the same page retargets
       // too — placement captured the old node, so an in-place swap would leave the pane frozen
-      // over the first link.
+      // over the first anchor.
       if (next && cur) {
-        setHovered(null)
+        setShownState(null)
         retargetRaf.current = requestAnimationFrame(() => {
           retargetRaf.current = 0
           if (freshGuest) setSiteReady(false)
-          setHovered(next)
+          setShownState(next)
         })
         return
       }
       if (next) {
         if (freshGuest) setSiteReady(false)
-        setSize(hoverPaneSize()) // every open adopts the current universal size
+        setSize(glanceSize())
       }
-      setHovered(next)
+      setShownState(next)
+    }
+    // The body is resolved BEFORE the pane opens: a warm page blooms with content in hand, a cold
+    // one blooms only once its fetch lands — still under the pointer — and a failed open blooms
+    // nothing at all. An anchor already out of the DOM opens nothing: the dwell outlives its
+    // editor when navigation tears the node out under a resting pointer.
+    setGlancePresenter((next) => {
+      if (next === null) {
+        show(null)
+        return
+      }
+      if (!next.el.isConnected) return
+      const token = ++pendingFetch.current
+      if (next.target.kind === 'site' || readPageDetail(next.target.path)) {
+        show(next)
+        return
+      }
+      void fetchPageDetail(next.target.path).then((detail) => {
+        if (token !== pendingFetch.current || !detail) return
+        if (next.el.isConnected && next.el.matches(':hover')) show(next)
+      })
     })
     return () => {
-      setHoverCardPresenter(null)
+      setGlancePresenter(null)
       if (retargetRaf.current) cancelAnimationFrame(retargetRaf.current)
     }
   }, [])
 
   // Any navigation closes the pane — a click that leaves the page must not strand a lingering
-  // pane over the destination. Conservative on purpose: closing is always safe for a hover.
+  // pane over the destination. Conservative on purpose: closing is always safe for a glance.
   const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
   const pageWindow = useSession((s) => s.pageWindow)
-  useEffect(() => closeActiveHoverCard(), [selection, activeTabId, pageWindow])
+  useEffect(() => setShownState(null), [selection, activeTabId, pageWindow])
 
-  // The guest's own lifecycle, for the pane's whole life — a crash after load closes too. Closing
-  // goes through `present` so a queued retarget beat can never re-open over the closure.
+  // The guest's own lifecycle, for the pane's whole life — a crash after load closes too.
   useEffect(() => {
-    if (hovered?.kind !== 'site' || !siteEl) return
+    if (shown?.target.kind !== 'site' || !siteEl) return
     const onLoad = (): void => setSiteReady(true)
+    const close = (): void => setShownState(null)
     const onFail = (e: Event): void => {
       // Subframe failures are the site's own business; -3 is the abort every redirect fires.
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
-      if (d.isMainFrame !== false && d.errorCode !== -3) closeActiveHoverCard()
+      if (d.isMainFrame !== false && d.errorCode !== -3) close()
     }
     siteEl.addEventListener('did-finish-load', onLoad)
     siteEl.addEventListener('did-fail-load', onFail)
-    siteEl.addEventListener('render-process-gone', closeActiveHoverCard)
+    siteEl.addEventListener('render-process-gone', close)
     return () => {
       siteEl.removeEventListener('did-finish-load', onLoad)
       siteEl.removeEventListener('did-fail-load', onFail)
-      siteEl.removeEventListener('render-process-gone', closeActiveHoverCard)
+      siteEl.removeEventListener('render-process-gone', close)
     }
-  }, [hovered, siteEl])
+  }, [shown, siteEl])
 
   // The resolve deadline, measured from the open — a site that hasn't painted by then closes.
   useEffect(() => {
-    if (hovered?.kind !== 'site' || siteReady) return
-    const deadline = setTimeout(() => presentHoverCard(null), LINK_RESOLVE_TIMEOUT_MS)
+    if (shown?.target.kind !== 'site' || siteReady) return
+    const deadline = setTimeout(() => setShownState(null), LINK_RESOLVE_TIMEOUT_MS)
     return () => clearTimeout(deadline)
-  }, [hovered, siteReady])
+  }, [shown, siteReady])
 
   // The linger: None (absent) keeps the short pointer-travel grace; a set duration holds the
-  // pane open that long after the pointer leaves link and pane, re-entry cancelling the countdown
-  // — the same timer, only its length changes.
+  // pane open that long after the pointer leaves anchor and pane, re-entry cancelling the
+  // countdown — the same timer, only its length changes.
   const linger = useSession((s) => s.personalization.hoverPreviewLinger)
   const graceMs = linger !== undefined ? linger * 1000 : LEAVE_GRACE_MS
 
-  // Resolve-only: the body's links style correctly but arm nothing — no hover (a pane must not
-  // hover its own contents), no menu, no bypass, and `open` deliberately inert (clicks inside
-  // the pane do nothing).
+  // Resolve-only: the body's links style correctly but arm nothing — no glance (the seam refuses
+  // the pane's own body regardless), no menu, no bypass, and `open` deliberately inert.
   const tree = useSession((s) => s.tree)
   const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
 
+  // Recorded on the press that takes focus, so the close can hand it back to whoever held it — an
+  // editor through its own view (which keeps the caret and scroll), anything else through the DOM.
+  const focusBefore = useRef<Element | null>(null)
+
   useEffect(() => {
-    if (!hovered) return
+    if (!shown) return
     let grace: ReturnType<typeof setTimeout> | null = null
     const clearGrace = (): void => {
       if (grace) {
@@ -297,13 +342,14 @@ export function ConnectionPane(): React.JSX.Element {
       }
     }
     const close = (): void => {
-      // A press in the preview took focus with it — hand it back to the editor the link lives
-      // in, or the caret is stranded on <body> when the pane goes.
       if (cardRef.current?.contains(document.activeElement)) {
-        const host = hovered.el.closest('.cm-editor')
-        if (host) EditorView.findFromDOM(host as HTMLElement)?.focus()
+        const before = focusBefore.current
+        const host = before?.closest('.cm-editor')
+        const view = host ? EditorView.findFromDOM(host as HTMLElement) : null
+        if (view) view.focus()
+        else (before as HTMLElement | null)?.focus?.()
       }
-      setHovered(null)
+      setShownState(null)
     }
     // Both boxes hold still between scrolls, keystrokes, window resizes, and pane resizes — so they
     // are measured once and dropped on exactly those, rather than re-read on every pointer move.
@@ -313,8 +359,6 @@ export function ConnectionPane(): React.JSX.Element {
       linkBox = null
       cardBox = null
     }
-    // The link element is the anchor; once it leaves the DOM (scrolled out of CM's viewport, or a
-    // rebuild the same-target refresh didn't heal) there is nothing to point at.
     const onMove = (e: MouseEvent): void => {
       // A live resize or selection drag suspends the whole leave lifecycle — either routinely
       // exits the pane, and the grace re-arms naturally on the first movement after the release.
@@ -324,83 +368,64 @@ export function ConnectionPane(): React.JSX.Element {
       if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
       if (resizingRef.current || selectingRef.current) {
         clearGrace()
-        dropBoxes() // a resize moves the pane's own edges
+        dropBoxes()
         return
       }
-      if (!hovered.el.isConnected) {
+      if (!shown.el.isConnected) {
         close()
         return
       }
-      linkBox ??= hovered.el.getBoundingClientRect()
+      linkBox ??= shown.el.getBoundingClientRect()
       cardBox ??= cardRef.current?.getBoundingClientRect() ?? null
       const overCard = cardBox ? inRect(cardBox, e.clientX, e.clientY) : false
       if (overCard || inRect(linkBox, e.clientX, e.clientY)) clearGrace()
       else if (!grace) grace = setTimeout(close, graceMs)
     }
-    // CM6 replaces or prunes decoration nodes in its own scheduled update AFTER the triggering
-    // event (a scroll burst, a keystroke's rebuild), so a synchronous check reads the element as
-    // still connected and nothing re-runs it. The double rAF lands the check behind CM's update
-    // (the codebase's async-heights timing).
-    let raf = 0
-    const checkDetached = (): void => {
-      dropBoxes()
-      if (raf) return
-      raf = requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          raf = 0
-          if (!hovered.el.isConnected) close()
-        }),
-      )
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.preventDefault() // the house contract — window closers skip a handled Escape
-        close()
-        return
-      }
-      // Any other key can rebuild decorations under a resting pointer (typing, arrows) — the
-      // swap strands the anchor with no mouse or scroll event to notice.
-      checkDetached()
-    }
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('scroll', checkDetached, true)
-    window.addEventListener('keydown', onKey)
-    window.addEventListener('resize', dropBoxes)
+    const unwatch = watchAnchor(shown.el, { onGone: close, onEscape: close, onMoved: dropBoxes })
     return () => {
       clearGrace()
-      if (raf) cancelAnimationFrame(raf)
+      unwatch()
       window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('scroll', checkDetached, true)
-      window.removeEventListener('keydown', onKey)
-      window.removeEventListener('resize', dropBoxes)
     }
-  }, [hovered, graceMs])
+  }, [shown, graceMs])
+
+  const page = held?.target.kind === 'page' ? held.target : null
+  const warmSeam = useMemo(
+    () => (page ? glanceWarmSeam(page.id, page.path) : undefined),
+    [page?.id, page?.path],
+  )
 
   return (
     <PickerMenu
       glass="pane"
-      open={hovered !== null}
+      open={shown !== null}
       triggerRef={anchorRef}
       manageFocus={false}
       origin="center"
       onDirection={setDir}
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a hover affordance */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
       <div
         ref={cardRef}
-        className={`conn-hover-body${resizing ? ' is-resizing' : ''}`}
-        style={{ width: shown.w, height: shown.h }}
-        // A press in the preview starts a text selection (read-only — the change filter drops any
+        {...{ [GLANCE_BODY_ATTR]: '' }}
+        className={`glance-body${resizing ? ' is-resizing' : ''}`}
+        style={{ width: box.w, height: box.h }}
+        // A press in the pane starts a text selection (read-only — the change filter drops any
         // edit), and a selection drag routinely overshoots the pane's box, so the leave lifecycle
         // stands down until the release. The flag clears off the live button state in onMove — a
         // release that never reaches this window (a native drag's drop, a mid-press ⌘Tab) must not
-        // wedge the pane open.
+        // wedge the pane open. Focus is recorded only on the press that takes it: a second press
+        // inside the pane would otherwise record the pane's own editor.
         onMouseDown={(e) => {
-          if (e.button === 0) selectingRef.current = true
+          if (e.button !== 0) return
+          selectingRef.current = true
+          if (!cardRef.current?.contains(document.activeElement))
+            focusBefore.current = document.activeElement
         }}
-        // The glance surface is not a drag source — a press on an existing highlight would
-        // otherwise start a native drag whose drop lands the text in the live host page.
+        // The glance is not a drag source — a press on an existing highlight would otherwise
+        // start a native drag whose drop lands the text in the live host page.
         onDragStartCapture={(e) => e.preventDefault()}
         // A heading click IS the fold toggle — the chevron stays hidden here and the whole line
         // becomes the affordance, through the same fold logic. A press that dragged out a
@@ -413,54 +438,55 @@ export function ConnectionPane(): React.JSX.Element {
           if (line && view) toggleFoldAt(view, view.posAtDOM(line))
         }}
       >
-        {held?.kind === 'page' && (
+        {page && (
           <PageTile
-            key={held.page.path}
-            path={held.page.path}
+            key={page.path}
+            path={page.path}
             editing={false}
             onBeginEdit={() => {}}
             locked
             connections={resolveOnly}
-            ancestors={HOVER_ANCESTORS}
+            warm={warmSeam}
+            ancestors={GLANCE_ANCESTORS}
           />
         )}
-        {held?.kind === 'site' && (
+        {held?.target.kind === 'site' && (
           <>
             <webview
-              key={held.url}
+              key={held.target.url}
               ref={attachSiteEl}
-              src={held.url}
+              src={held.target.url}
               partition={WEB_PARTITION}
-              // No allowpopups, unlike the tile and browser guests: a glance surface takes no
+              // No allowpopups, unlike the tile and browser guests: a glance takes no
               // interaction, so a popup has nowhere honest to come from.
-              className="conn-hover-web"
+              className="glance-web"
             />
             {/* The shield is both the loading face and the pointer owner: opaque until the site
                 paints, transparent after — and always above the guest, so the pane's mousemove
                 leave lifecycle keeps running while the pointer rests on it. The wheel is the one
-                gesture it passes down, so a glance surface reads past its own first screen without
+                gesture it passes down, so a glance reads past its own first screen without
                 becoming interactive. */}
             <div
-              className={`conn-hover-web-shield${siteReady ? ' is-lifted' : ''}`}
+              className={`glance-web-shield${siteReady ? ' is-lifted' : ''}`}
               onWheel={(e) => {
-                const box = e.currentTarget.getBoundingClientRect()
-                scrollGuest(siteEl, e.clientX - box.left, e.clientY - box.top, e.deltaX, e.deltaY)
+                const rect = e.currentTarget.getBoundingClientRect()
+                scrollGuest(siteEl, e.clientX - rect.left, e.clientY - rect.top, e.deltaX, e.deltaY)
               }}
             />
           </>
         )}
-        <div className="conn-hover-resize-e" onPointerDown={startResize({ x: 1 })} />
-        <div className="conn-hover-resize-w" onPointerDown={startResize({ x: -1 })} />
+        <div className="glance-resize-e" onPointerDown={startResize({ x: 1 })} />
+        <div className="glance-resize-w" onPointerDown={startResize({ x: -1 })} />
         <div
-          className={`conn-hover-resize-${dir === 'up' ? 'n' : 's'}`}
+          className={`glance-resize-${dir === 'up' ? 'n' : 's'}`}
           onPointerDown={startResize({ y: dir === 'up' ? -1 : 1 })}
         />
         <div
-          className={`conn-hover-resize-${dir === 'up' ? 'ne' : 'se'}`}
+          className={`glance-resize-${dir === 'up' ? 'ne' : 'se'}`}
           onPointerDown={startResize({ x: 1, y: dir === 'up' ? -1 : 1 })}
         />
         <div
-          className={`conn-hover-resize-${dir === 'up' ? 'nw' : 'sw'}`}
+          className={`glance-resize-${dir === 'up' ? 'nw' : 'sw'}`}
           onPointerDown={startResize({ x: -1, y: dir === 'up' ? -1 : 1 })}
         />
       </div>
