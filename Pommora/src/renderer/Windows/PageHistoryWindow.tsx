@@ -17,6 +17,7 @@ import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from './window-base'
 import '../Navigation/nav-list.css'
+import '../SurfacePM/block-tile-base.css'
 import './page-window.css'
 
 // A non-path host chain: embeds inside a snapshot render inert, and no page path can collide with it.
@@ -206,7 +207,11 @@ function PageHistoryBody({
       onClose={closeHistory}
       onEscape={closeHistory}
       ariaLabel="File History"
-      title={<NavTrail segments={trail} selected className="page-window-crumbs" />}
+      title={
+        <div className="window-toolbar-title">
+          <NavTrail segments={trail} selected className="page-window-crumbs" />
+        </div>
+      }
       right={{
         windowId: 'page-history-list',
         bounds: WINDOW_BASE_PANEL,
@@ -220,15 +225,17 @@ function PageHistoryBody({
         style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       >
         {body !== null && (
-          <MarkdownEditor
-            initialBody={body}
-            onChange={() => {}}
-            readOnly
-            connections={resolveOnly}
-            embedAncestors={[HISTORY_ANCESTOR, livePath]}
-            zoom={embedZoom(embedScale)}
-            edgeFade
-          />
+          <div className="page-tile page-history-page">
+            <MarkdownEditor
+              initialBody={body}
+              onChange={() => {}}
+              readOnly
+              connections={resolveOnly}
+              embedAncestors={[HISTORY_ANCESTOR, livePath]}
+              zoom={embedZoom(embedScale)}
+              edgeFade
+            />
+          </div>
         )}
       </div>
     </WindowBase>

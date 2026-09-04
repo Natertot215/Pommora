@@ -389,6 +389,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Snap      | `easing.baseSnap` · `--ease-snap`         | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride. |
 | Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs. |
 | Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs. |
+| Window    | `windowIn` · `windowOut`                  | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too. |
 | Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
 | PaneSlide | `paneSlide`                               | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode. |
 | Exit      | `useExitPresence` · `useHeldPresence`     | Keeps a surface mounted through its close; the held form also keeps the value it was showing. |

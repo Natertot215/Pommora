@@ -9,12 +9,11 @@
   border-radius: var(--app-radius);
   /* The window CLIPS: a parked panel must never peek past the glass edge. */
   overflow: hidden;
-  animation: window-in var(--duration-fast) var(--ease-base);
 
   --window-toolbar-h: 36px; /* KNOB — toolbar strip height */
   /* KNOB — the ring the panels hold from the window edges. */
   --window-panel-inset: var(--app-inset);
-  /* KNOB — the one clearance a panel's content holds below its top edge; hosts override per panel. */
+  /* KNOB — the clearance an overlay panel holds above its content, added to the panel's own inset. */
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
@@ -44,21 +43,18 @@
 .window.is-panel-left-open {
   --io-l: 1;
 }
-.window.closing {
-  animation: window-out var(--duration-fast) var(--ease-base) forwards;
-  pointer-events: none;
-}
-@keyframes window-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-@keyframes window-out {
-  to {
-    opacity: 0;
-    transform: scale(0.85);
-  }
+/* The title-bar band. The toolbar strip itself is zero-height and transparent, so the move gesture
+   has no surface to land on — this one spans the top. It comes before the toolbar in the DOM, so
+   `z-index: 0` puts it over the body's flow without outranking anything drawn above: the toolbar's
+   own clusters and title sit at the same level and come later in the DOM, and the panels and the
+   resize corners rank higher outright. */
+.window-drag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: var(--window-toolbar-h);
 }
 
 /* The window's one toolbar: a zero-height strip whose lead/trail action clusters float over the
@@ -127,6 +123,9 @@
   align-items: center;
   height: 20px;
   max-width: 60%;
+  /* The strip is click-through; an interactive title (the web link) opts back in. A label title
+     (.page-window-title) keeps its own pointer-events: none. */
+  pointer-events: auto;
 }
 
 .page-window-title {
@@ -169,9 +168,12 @@
   min-height: 0;
 }
 
-.window-panel-right-overlay,
-.window-panel-left-overlay {
+.window-panel.window-panel-right-overlay,
+.window-panel.window-panel-left-overlay {
   position: absolute;
+  /* The content's top clearance is the PANEL's padding, not its column's — so the empty strip above
+     the first row is the panel itself, and the window's move gesture lands there. */
+  padding-top: calc(var(--surface-inset) + var(--window-panel-top));
   top: var(--window-panel-inset);
   bottom: var(--window-panel-inset);
   z-index: 2;

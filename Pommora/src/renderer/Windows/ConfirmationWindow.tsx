@@ -3,11 +3,17 @@ import { createPortal } from 'react-dom'
 import { useSession } from '@renderer/store'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
+import { useHeldPresence, windowIn, windowOut } from '@renderer/DesignSystem/Animation'
 import { markPickerOpen } from '@renderer/DesignSystem/Interactions/useDismiss'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './confirmation-window.css'
 
 export function ConfirmationWindow(): React.JSX.Element | null {
   const pending = useSession((st) => st.pendingConfirm)
+  const shown = useHeldPresence(pending)
+  // The held value only once the panel is actually in the DOM — the presence hook mounts a render
+  // late, so keying the effects on `pending` would focus a panel that does not exist yet.
+  const active = shown && !shown.closing ? shown.held : null
   const panelRef = useRef<HTMLDivElement>(null)
   const settleRef = useRef(pending?.settle)
   settleRef.current = pending?.settle
@@ -15,13 +21,13 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   defaultRef.current = pending?.req.defaultsToCancel === true
 
   useEffect(() => {
-    if (!pending) return
+    if (!active) return
     panelRef.current?.focus()
     return markPickerOpen()
-  }, [pending])
+  }, [active])
 
   useEffect(() => {
-    if (!pending) return
+    if (!active) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return
       if (e.key === 'Escape') {
@@ -43,15 +49,17 @@ export function ConfirmationWindow(): React.JSX.Element | null {
     // stops pointers, and the editor behind it would otherwise take Return for a newline.
     document.addEventListener('keydown', onKey, true)
     return () => document.removeEventListener('keydown', onKey, true)
-  }, [pending])
+  }, [active])
 
-  if (!pending) return null
-  const { req, settle } = pending
+  if (!shown) return null
+  const { req, settle } = shown.held
+  const closing = shown.closing
 
   return createPortal(
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events and cancels on an outside click; Escape is the keyboard dismissal.
     <div
-      className={s.backdrop}
+      className={cx(s.backdrop, closing && s.backdropClosing)}
+      inert={closing}
       onPointerDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
       onClick={(e) => {
@@ -61,7 +69,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
     >
       <GlassWindow
         ref={panelRef}
-        className={s.panel}
+        className={cx(s.panel, closing ? windowOut : windowIn)}
         role="alertdialog"
         aria-modal="true"
         aria-label={req.message}
