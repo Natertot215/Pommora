@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom'
 import { bloomOpen, bloomClose } from '@renderer/Animation/animations.css'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { useHeld } from '@renderer/Interactions/useHeld'
-import { GlassPane, GlassSurface } from '@renderer/DesignSystem/Glass'
+import { GlassPane, GlassSurface, GlassWindow } from '@renderer/DesignSystem/Glass'
 import { MenuScrollFrame } from '@renderer/DesignSystem/Menus/menu-row'
 import { markPickerOpen } from '@renderer/Interactions/useDismiss'
 import { Icon } from '@renderer/DesignSystem/Symbols'
@@ -83,7 +83,7 @@ export function PickerMenu({
   onDismiss?: () => void
   triggerRef?: RefObject<Element | null>
   solid?: boolean
-  glass?: 'surface' | 'pane'
+  glass?: 'surface' | 'pane' | 'window'
   direction?: PickerDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
   anchorX?: number
@@ -317,7 +317,7 @@ export function PickerMenu({
   }
 
   const up = effDir === 'up'
-  const Shell = glass === 'pane' ? GlassPane : GlassSurface
+  const Shell = { surface: GlassSurface, pane: GlassPane, window: GlassWindow }[glass]
   const pane = (
     <Shell
       ref={glassRef}
