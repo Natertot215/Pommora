@@ -362,3 +362,80 @@ describe('PickerMenu auto-centering', () => {
     expect(layer().style.right).not.toBe('')
   })
 })
+
+// The close render: `closing` turns true one passive effect after `open` turns false, so anything
+// gated on it acts a render late — the hold and the placement freeze both gate on `open`.
+describe('PickerMenu close render', () => {
+  const PANE_H = 300
+  const realRect = Element.prototype.getBoundingClientRect
+  const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+  const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = (): DOMRect =>
+      ({ left: 20, right: 60, top: 500, bottom: 520, width: 40, height: 20 }) as DOMRect
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get: () => 200,
+    })
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => PANE_H,
+    })
+  })
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = realRect
+    if (realWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realWidth)
+    if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
+  })
+
+  function Anchored({
+    open,
+    at,
+    direction,
+  }: {
+    open: boolean
+    at: { x: number; y: number } | null
+    direction?: 'up' | 'down'
+  }): React.JSX.Element {
+    return (
+      <PickerMenu
+        open={open}
+        onDismiss={() => {}}
+        anchorX={at?.x}
+        anchorY={at?.y}
+        anchorHeight={at ? 20 : undefined}
+        {...(direction ? { direction } : {})}
+      >
+        {open ? <span data-id="body">BODY</span> : null}
+      </PickerMenu>
+    )
+  }
+  const layer = (): HTMLElement =>
+    document
+      .querySelector('[data-picker-portal]:not([class*="backdrop"]) [data-id="body"]')
+      ?.closest('[data-picker-portal]') as HTMLElement
+
+  it('holds children a caller nulls in the closing tick', async () => {
+    await render(<Anchored open at={{ x: 400, y: 300 }} />)
+    await render(<Anchored open={false} at={null} />)
+    expect(document.querySelectorAll('[data-picker-portal]').length).toBeGreaterThan(0)
+    expect(document.querySelector('[data-id="body"]')?.textContent).toBe('BODY')
+  })
+
+  it('holds its place when the anchor is nulled in the closing tick', async () => {
+    await render(<Anchored open at={{ x: 400, y: 300 }} />)
+    const { left, top } = layer().style
+    expect(top).toBe(`${320 + 6}px`)
+    await render(<Anchored open={false} at={null} />)
+    expect(layer().style.left).toBe(left)
+    expect(layer().style.top).toBe(top)
+  })
+
+  it('still decides the flip against a measured pane', async () => {
+    await render(<Anchored open={false} at={null} direction="up" />)
+    await render(<Anchored open at={{ x: 400, y: 100 }} direction="up" />)
+    expect(layer().style.top).toBe(`${120 + 6}px`)
+    expect(layer().style.bottom).toBe('')
+  })
+})

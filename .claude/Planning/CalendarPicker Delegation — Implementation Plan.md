@@ -111,12 +111,12 @@ if (!selfManaged || !mounted || open !== true) return
 
 **Verify — automated**
 
-- [ ] Red first, two tests in `picker-base.test.tsx`: (a) children `{open ? <span data-id="body">BODY</span> : null}`, re-render `open={false}`, assert `[data-picker-portal]` exists and `[data-id="body"]` reads `BODY` (fails: `expected undefined to be 'BODY'`); (b) inside the auto-centering describe's stubs, render `open anchorX={400} anchorY={300} anchorHeight={20}`, read the layer's `left`/`top`, re-render `open={false}` with all three anchors omitted, assert both unchanged (fails: the layer moves to the stubbed trigger rect); (c) the flip still measures a real pane: `direction="up"`, `anchorX={400} anchorY={100} anchorHeight={20}`, `offsetHeight` stubbed to 300, assert the layer has `top` (flipped down) and no `bottom` — this test goes red if `!mounted` is dropped from the guard. Then green.
-- [ ] Full gate green; 3945 tests.
+- [x] Red first, two tests in `picker-base.test.tsx`: (a) children `{open ? <span data-id="body">BODY</span> : null}`, re-render `open={false}`, assert `[data-picker-portal]` exists and `[data-id="body"]` reads `BODY` (fails: `expected undefined to be 'BODY'`); (b) inside the auto-centering describe's stubs, render `open anchorX={400} anchorY={300} anchorHeight={20}`, read the layer's `left`/`top`, re-render `open={false}` with all three anchors omitted, assert both unchanged (fails: the layer moves to the stubbed trigger rect); (c) the flip still measures a real pane: `direction="up"`, `anchorX={400} anchorY={100} anchorHeight={20}`, `offsetHeight` stubbed to 300, assert the layer has `top` (flipped down) and no `bottom` — this test goes red if `!mounted` is dropped from the guard. Then green.
+- [x] Full gate green; 3945 tests.
 
 **Verify — user**
 
-- [ ] In FilterFrame, open a date filter's calendar and click off: the pane retracts showing the calendar, not an empty rounded rectangle.
+- [x] In FilterFrame, open a date filter's calendar and click off: the pane retracts showing the calendar, not an empty rounded rectangle.
 
 #### Task 2: `morph`, the opt-in height ease
 
