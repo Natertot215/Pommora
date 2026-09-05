@@ -14,7 +14,7 @@ import {
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
 import { useSession } from '../store'
-import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
+import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import { InlineEditHeader } from './InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { LayoutToggles } from './LayoutToggles'
@@ -59,8 +59,6 @@ const scrubCardScale = (v: number, viewId: string): void => {
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks
 // the tallest content (title + grid + four frame rows + the pinned footing), so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
-// KNOB — the frame slider's floors (matches the SettingsFrame sibling): a blank Group/Filter/Sort
-// frame reserves this square instead of collapsing to a bare header strip mid-slide.
 const LEAF_MIN_WIDTH = 225
 const LEAF_MIN_HEIGHT = 245
 

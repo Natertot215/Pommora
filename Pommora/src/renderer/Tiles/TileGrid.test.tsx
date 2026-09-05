@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@renderer/Testing/pointerHarness'
 import { getTile, tileIds } from './Core/model'
 import { insertBand } from './Core/ops'
-import { SurfaceView } from './SurfaceView'
+import { SurfaceView } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()

@@ -495,7 +495,7 @@ export function MarkdownTable({
         if (!onResize(next)) setResize(null)
       },
       onAbort: () => setResize(null),
-      activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
+      activation: 0, // a resize arms on the first move, the grid-edge precedent
     })
   }
 

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { NexusTree } from '@shared/types'
-import { TileSurface } from '@renderer/SurfacePM/TileSurface'
+import { TileSurface } from '@renderer/Tiles/TileHost'
 import { InterfaceScaffold } from './InterfaceScaffold'
 import { findSpace } from './scope'
 

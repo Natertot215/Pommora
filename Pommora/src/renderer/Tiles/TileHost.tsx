@@ -19,9 +19,9 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
-import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/Core/ops'
-import { getTile } from '@renderer/SurfacePM/Core/model'
-import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
+import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/Tiles/Core/ops'
+import { getTile } from '@renderer/Tiles/Core/model'
+import { SurfaceView, type BackdropTarget } from '@renderer/Tiles/TileGrid'
 import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
@@ -34,12 +34,12 @@ import { findCollection, findCollectionForSet, findSet } from '@renderer/Interfa
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { ZOOM_STEPS, zoomStep } from './tileZoom'
-import { MarkdownTile } from './MarkdownTile'
+import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { TileHandleMenu } from './TileHandleMenu'
-import { ViewTile } from './ViewTile'
-import { PageTile } from './PageTile'
+import { ViewTile } from './Surfaces/ViewTile'
+import { PageTile } from './Surfaces/PageTile'
 import { useTileDoc } from './useTileDoc'
-import './block-tile-base.css'
+import './tile-base.css'
 
 function pagePickerItems(
   tree: NexusTree,
@@ -144,7 +144,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
 
   useEffect(() => {
     if (!editingId) return
-    // Capture phase — a gesture handler's stopPropagation (SurfacePM's handles/edges) must not
+    // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not
     // swallow the click-out.
     const onDown = (e: PointerEvent): void => {
       if (!(e.target as Element | null)?.closest?.('.spm-tile.is-editing-tile')) setEditingId(null)

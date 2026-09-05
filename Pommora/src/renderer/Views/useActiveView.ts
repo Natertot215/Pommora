@@ -2,7 +2,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { useSession } from '../store'
-import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
+import { useViewTileScope } from '@renderer/Tiles/ViewTileScope'
 import { pickView } from './Pipeline/pickView'
 
 export function useActiveView(

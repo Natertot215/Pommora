@@ -1,4 +1,4 @@
-// The host-agnostic contract a BlockHost carries: a SurfacePM layout tree under `layout`,
+// The host-agnostic contract a BlockHost carries: a tile layout tree under `layout`,
 // tagged-union tile payloads under `blocks`, and the host lock under `blocks_locked`. Entries ride
 // RAW through reads and writes so foreign or future tile types survive rewrites; `knownBlock` is
 // the read lens typing the entries this build understands.

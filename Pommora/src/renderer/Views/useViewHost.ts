@@ -13,7 +13,7 @@ import type { ColumnStyle } from '@shared/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@shared/views'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import { useSession } from '../store'
-import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
+import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,

@@ -34,7 +34,7 @@ import { toggleValue } from '@renderer/Properties/Assignment/PropertyPicker'
 import { CheckboxGlyph } from '@renderer/Properties/Assignment/checkboxLook'
 import { onActivateKey } from '@renderer/Interactions/activate'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { useSaveView } from '../SurfacePM/ViewTileScope'
+import { useSaveView } from '../Tiles/ViewTileScope'
 import { PickerControl, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { optionsOf } from './GroupFrame'
 import {
