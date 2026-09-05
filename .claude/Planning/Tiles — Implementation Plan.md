@@ -500,13 +500,13 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
 
 #### Gate 3 — one recipe
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Every Now count re-run against its control.
-- [ ] Simplification and review dispatched against `<gate-2 head>..HEAD`.
-- [ ] Every concern fixed, or carrying an explicit user ruling.
-- [ ] [[TilesPM]]'s Tile Types section rewritten to describe the recipe.
-- [ ] Progress hashes filled in. Not a declared stop.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Every Now count re-run against its control.
+- [x] Simplification and review dispatched against `59bf6fdc..HEAD`.
+- [x] Every concern fixed, or carrying an explicit user ruling.
+- [x] [[TilesPM]]'s Tile Types section rewritten to describe the recipe.
+- [x] Progress hashes filled in. Not a declared stop.
 
 ---
 
@@ -703,15 +703,15 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Progress
 
-- [x] **Phase 1** — One engine · base `043ee930` · gate head `60076016`
+- [x] **Phase 1** — One engine · base `043ee930` · gate head `15fbcc1f`
   - [x] Task 1 — The embed tile's handle on the frame · `97c820f4`
   - [x] Task 2 — The grid on the engine · `e411d814`
-- [x] **Phase 2** — Tiles/ · gate head `d3abe045`
-  - [x] Task 3 — The move · `6196f915`
-  - [x] Task 4 — The vocabulary · `2544b2be`
-- [ ] **Phase 3** — The recipe
-  - [x] Task 5 — The shared table · `b1fa7769`
-  - [x] Task 6 — The renderer table · `eb2ce5a1`
+- [x] **Phase 2** — Tiles/ · gate head `59bf6fdc`
+  - [x] Task 3 — The move · `d05db560`
+  - [x] Task 4 — The vocabulary · `f376ea7a`
+- [x] **Phase 3** — The recipe · gate head `GATE3`
+  - [x] Task 5 — The shared table · `6a715876`
+  - [x] Task 6 — The renderer table · `0dc65e48`
 - [ ] **Phase 4** — The document in the Nexus
   - [ ] Task 7 — `_tiles.json` · ``
   - [ ] Task 8 — Live reload · ``
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Gate 3: `knownTile` no longer keeps its own union — `knownEntry` is built from the three `TILE_KINDS` schemas, each typed to its kind through the mapped table, so the parse authority and the recipe are one definition (the attack showed a fourth kind added to both tables compiled clean and still parsed to null). `copyEntry` is tested through its own dispatcher. The plan's Task 5 sentence "knownTile keeps its explicit z.union" is retired by this.
 - Task 6: `TileSurface.sourceInfo` returns the `ConnPage` itself rather than a four-field copy of it — the two menu sites read title, icon, path, and id off it, which is the page record. The crossing test compares the menu model's link rows against `TILE_KINDS` per kind (the presenter renders from the same rows by construction; `TileHandleMenu` itself mounts a PickerMenu and is not rendered in jsdom). The host mount test runs tree-less: markdown mounts its editor; page, view, and the foreign kind hold space.
 - Task 5: the kind-branch sweep reads 0 across `shared/` and `main/` after this task; the ten renderer sites in `TileHost.tsx` and `TileHandleMenu.tsx` are Task 6's Now list and fall there — the plan's Task 5 box claimed the whole tree a task early. `contextWrite.test.ts:99` asserts the four seeded types by value rather than through a kind comparison. `copyEntry(raw)` in `main/tiles.ts` is the one dispatcher over `TILE_COPY`; `duplicateTile` and `remint`'s copy both call it.
 - Gate 2: `'Unknown tile host.'` stands at three sites after Task 4; Task 7's routing of `tiles:get`/`tiles:save` through `tileHostAnd` brings it to one, where that task's box counts it. The comment ledgers had the four `blocks`→`tiles` keys and the two deleted `Sensors/` keys corrected by hand; files newer than the baseline rev carry no key, as every file added since that rev already does. The peer session's unformatted edit to `tile-grid.css` was formatted in place so the lint gate could run; its content is untouched.
@@ -753,6 +754,8 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Task 2, the CDP count: a 60-move edge drag on the homepage grid (moves dispatched every 16ms) fired `onDragMove` 60 times over ~119 rAF ticks on the 120Hz panel — 0.50 per frame, 1.00 per move; three runs identical. Under the 1.2 bar; `coalesce` is not added. The homepage layout was snapshotted before and restored byte-identical after.
 
 ### Lessons
+
+- A hash stamped into the plan before an `--amend` records the commit the amend replaced. Stamp after the last rewrite, or commit the stamp separately — five Progress hashes (Task 3–6, the Gate 2 head) were re-derived from the log at Gate 3.
 
 ### Sequenced After
 
