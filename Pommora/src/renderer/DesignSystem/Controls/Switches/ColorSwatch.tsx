@@ -21,13 +21,9 @@ export function ColorSwatch({
   label: string
   selected: LabelColorName
   css: string
-  /** Offer the grey row. Withheld by default for the reason the picker documents; a surface that
-   *  resolves a cell through the chip recipe rather than painting it raw can take it. */
   greyscale?: boolean
   onPick: (color: string | undefined) => void
 }): React.JSX.Element {
-  // Painted raw, a grey cell sinks into the pane at its dark end — why that row is withheld from
-  // surfaces that paint directly.
   const cell = selected.startsWith('grey-') ? cellPaint(selected as CellKey) : null
   const [open, setOpen] = useState(false)
   const chipRef = useRef<HTMLButtonElement>(null)

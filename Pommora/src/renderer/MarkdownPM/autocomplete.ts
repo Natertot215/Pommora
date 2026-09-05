@@ -77,8 +77,6 @@ export function autocompleteQuery(
     // ends exactly where the closer begins.
     if (rel >= s.title[0] && rel <= s.title[1])
       return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
-    // The alias half offers what the page named by the title has been called before, and accepting
-    // one replaces the alias alone. The title rides along as the key those suggestions are found by.
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
       return {
         query: line.slice(s.alias[0], s.alias[1]),
@@ -172,20 +170,13 @@ export function connectionInsert(
 
 export interface CommitEdit {
   changes: { from: number; to: number; insert: string }[]
-  /** Whether the caret was left inside a freshly opened alias, which is a link still being written
-   *  rather than one just finished. */
   opensAlias?: boolean
-  /** Where the caret lands. Every form leaves it resting rather than selecting: a link renders as
-   *  the text it shows, so selecting that text highlights the whole link. */
   anchor: number
 }
 
 /** The edit accepting `row` makes, as data. Pure so the rules below can be read and tested without
  *  an editor: what each form writes, and where each form leaves the caret, is the whole behavior of
- *  the picker and the part a coordinate-less harness otherwise can't reach.
- *
- *  `keepAlias` is the alias a retargeted link should carry over, already decided by the caller's
- *  setting. */
+ *  the picker and the part a coordinate-less harness otherwise can't reach.*/
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
@@ -207,13 +198,6 @@ export function commitEdit(
   if (ac.form === 'alias')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {
-    // Naming the target finishes only half the link: a markdown link's display text is free, where a
-    // connection's IS its target. An empty label takes the page's own title so the link has
-    // something to show; a label already written — ⌘K over a selection — is the author's.
-    //
-    // Either way the caret leaves the link rather than selecting inside it. A markdown link renders
-    // as its label alone, so selecting that label highlights everything the link shows, and picking
-    // a page reads as though it had selected the whole thing.
     const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
     // The label is markdown, not plain text: an unescaped `]` ends it early and the whole link
@@ -224,9 +208,6 @@ export function commitEdit(
       anchor: caret + label.length + 1,
     }
   }
-  // The caret lands on the closer and the link reads as finished there — that being the one caret
-  // position which leaves a connection rendered (see `activeTokenIndices`). Nothing is written to
-  // move the caret off it, so accepting a suggestion adds the link and not a character more.
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
 }
 
