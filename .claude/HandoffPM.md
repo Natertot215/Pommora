@@ -39,7 +39,7 @@
 
 #### Session Pointers
 
-- The spec and the plan: `.claude/Planning/Tiles — Decision Log.md`, `.claude/Planning/Tiles — Implementation Plan.md` (Progress, Rulings incl. the four Gate blocks, Deviations, Lessons, Sequenced After, the Delivery Claim under Closeout, Completion Criteria).
+- The spec and the plan: `.claude/Planning/TilesV2-Spec.md` (the standing spec; the decision log's rulings live there), `.claude/Planning/Tiles — Implementation Plan.md` (Progress, Rulings incl. the four Gate blocks, Deviations, Lessons, Sequenced After, the Delivery Claim under Closeout, Completion Criteria).
 - The tile system: `Pommora/src/renderer/Tiles/` (`TileGrid.tsx`, `TileHost.tsx`, `tileKinds.tsx`, `useTileDoc.ts`, `Surfaces/`); the contract `Pommora/src/shared/tiles.ts`; main's `tiles.ts`, `tileDoc.ts`, `tilesMigrate.ts`; the watcher arm in `watcher.ts` / `watchPatch.ts`.
 - The scratch Nexus and the CDP driver in the session scratchpad: `ScratchNexus/`, `cdp.js` (`probe` / `eval` / `drag` / `reload`); the pre-migration `nexus.db.before-tiles-migration` copy sits beside them.
 
