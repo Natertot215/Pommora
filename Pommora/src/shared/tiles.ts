@@ -166,14 +166,17 @@ const knownEntry = z.union([markdownEntry, pageEntry, viewEntry])
 
 export type TileType = TileEntry['type']
 
+/** Which picker a link row drills into; `'none'` renders the row refused. */
+export type TileMenuSource = 'pages' | 'views' | 'none'
+
 /** What a kind declares once; the host, the menus, and main's lifecycle read it here. */
 export interface TileKind {
   schema: z.ZodType<TileEntry>
   /** The kind owns a `<id>.md` beside the document: minted empty, trashed on remove or convert,
    *  copied on duplicate, walked by the rename heal. */
   fileBacked: boolean
-  /** The handle menu's link rows, in order; `source: 'none'` renders the row refused. */
-  menuRows: ReadonlyArray<{ label: string; source: 'pages' | 'views' | 'none' }>
+  /** The handle menu's link rows, in order. */
+  menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
 }
 
 export const TILE_KINDS: Record<TileType, TileKind> = {
@@ -189,7 +192,8 @@ export const TILE_KINDS: Record<TileType, TileKind> = {
   view: { schema: viewEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'none' }] },
 }
 
-/** The entry a freshly minted tile of a kind starts as. */
+/** The entry a freshly minted tile starts as — complete for a markdown tile, whose kind is its
+ *  only field. */
 export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
 
 /** One node of a native returning drill menu (renderer-built — main has no tree).
