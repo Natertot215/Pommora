@@ -4,7 +4,7 @@ Pommora's composable dashboard layer. Any **tile host** — an entity that owns 
 
 ### The Tile Document
 
-Each host's document is one row in `nexus.db`, keyed by host and modeled by the shared contract in `src/shared/tiles.ts`: the `layout` (a stack of bands, each a split tree of rows and columns with tiles as leaves), the entries, and the host lock. Every entry is a reference to something that lives elsewhere, so the document creates nothing a Nexus would miss. An entry this build doesn't recognize, a dead page reference, or a layout leaf whose entry is gone holds its space until the user removes the tile, and the tree operations renormalize ratios and collapse single-child splits on every mutation, so the layout never needs repair.
+Each host's document is `_tiles.json` in the host's own folder — `.nexus/homepage/` for the Homepage, the Space folder for a Space — beside the markdown tile bodies, modeled by the shared contract in `src/shared/tiles.ts`: the `layout` (a stack of bands, each a split tree of rows and columns with tiles as leaves), the `tiles` entries, and the host lock. Every entry is a reference to something that lives elsewhere, so the document creates nothing a Nexus would miss. An entry this build doesn't recognize, or a foreign key on one it does, rides through every read and write untouched and renders inert. The file has one writer, a read-modify-write under its own lock; a corrupt file reads as the empty document, and the next write moves the bytes aside under a `.bad-` name before it lands. The host's sidecar (`homepage.json`, `_space.json`) never carries the document.
 
 Width and height obey different rules. A row's ratios always sum to one, so resizing a tile sideways is a splitter negotiation with its neighbor and a row always fills the surface; a tile's height is absolute pixels, so stretching one never deforms a neighbor, columns flow independently, and ragged row ends are legal while trapped holes are impossible.
 
@@ -34,7 +34,7 @@ Resize is window-style on the tile's edges and corners: south stretches the tile
 
 ### Storage + Host Rules
 
-The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. Markdown-tile bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched.
+The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. Markdown-tile bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched. A copied Space folder carries its document; the open-time re-mint gives the copy's view tiles fresh config ids along with its sidecar.
 
 ---
 
