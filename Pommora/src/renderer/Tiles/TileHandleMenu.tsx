@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { lockLabel } from '@shared/toggleLabels'
 import {
@@ -77,28 +77,20 @@ function DrillLevel({
           ) : undefined
         }
       >
-        {bodyNodes.map((n, i) =>
-          n.submenu ? (
+        {bodyNodes.map((n, i) => {
+          const off = n.submenu ? n.submenu.length === 0 : n.pick === undefined
+          return (
             <MenuItem
               key={`${n.label}-${String(i)}`}
-              className={n.submenu.length === 0 ? rowDisabled : undefined}
+              className={off ? rowDisabled : undefined}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
-              trailing={chevron}
-              onClick={() => setOpenIdx(i)}
+              trailing={n.submenu && !off ? chevron : undefined}
+              onClick={off ? undefined : n.submenu ? () => setOpenIdx(i) : () => resolve(n.pick)}
             >
               {n.label}
             </MenuItem>
-          ) : (
-            <MenuItem
-              key={`${n.label}-${String(i)}`}
-              className={n.pick === undefined ? rowDisabled : undefined}
-              leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
-              onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
-            >
-              {n.label}
-            </MenuItem>
-          ),
-        )}
+          )
+        })}
       </MenuScrollFrame>
     </div>
   )
@@ -137,9 +129,8 @@ export function TileHandleMenu({
   onRemove,
   onToggleLock,
   onOpenPage,
-  zoom,
   onSetZoom,
-  containerLocked = false,
+  containerLocked,
 }: {
   open: boolean
   entry: TileEntry
@@ -156,15 +147,21 @@ export function TileHandleMenu({
   onRemove: () => void
   onToggleLock: () => void
   onOpenPage: () => void
-  zoom?: number
-  onSetZoom?: (factor: number) => void
-  containerLocked?: boolean
+  onSetZoom: (factor: number) => void
+  containerLocked: boolean
 }): React.JSX.Element {
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
   const [scaleOpen, setScaleOpen] = useState(false)
+  // The menu stays mounted through its retract (it holds what it draws), so each open starts at the root.
+  useEffect(() => {
+    if (open) {
+      setPane('root')
+      setScaleOpen(false)
+    }
+  }, [open])
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
   const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
-  const currentStep = zoomStep(zoom)
+  const currentStep = zoomStep(entry.zoom)
   const locked = (entry.locked ?? false) || containerLocked
   const rowMute = locked ? rowDisabled : undefined
   const act = (fn: () => void) => () => {
@@ -218,21 +215,21 @@ export function TileHandleMenu({
             )}
           </button>
         )}
-        {rows.map((row) => (
-          <MenuItem
-            key={row.label}
-            className={cx(row.source === 'none' && rowDisabled, rowMute)}
-            leading={<Icon name="link" size={GLYPH} />}
-            trailing={chevron}
-            onClick={
-              locked || row.source === 'none'
-                ? undefined
-                : () => setPane(row.source === 'pages' ? 'page' : 'view')
-            }
-          >
-            {row.label}
-          </MenuItem>
-        ))}
+        {rows.map((row) => {
+          const items = row.source === 'pages' ? pageItems : row.source === 'views' ? viewItems : []
+          const off = locked || items.length === 0
+          return (
+            <MenuItem
+              key={row.label}
+              className={cx(items.length === 0 && rowDisabled, rowMute)}
+              leading={<Icon name="link" size={GLYPH} />}
+              trailing={chevron}
+              onClick={off ? undefined : () => setPane(row.source === 'pages' ? 'page' : 'view')}
+            >
+              {row.label}
+            </MenuItem>
+          )
+        })}
         <MenuItem
           className={rowMute}
           leading={<Icon name="palette" size={GLYPH} />}
@@ -331,7 +328,7 @@ export function TileHandleMenu({
               ring
               align="start"
               selected={currentStep.factor === st.factor}
-              onClick={() => onSetZoom?.(st.factor)}
+              onClick={() => onSetZoom(st.factor)}
             >
               {st.label}
             </PickerRow>
