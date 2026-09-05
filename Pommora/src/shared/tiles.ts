@@ -164,6 +164,34 @@ const viewEntry = z.looseObject({
 })
 const knownEntry = z.union([markdownEntry, pageEntry, viewEntry])
 
+export type TileType = TileEntry['type']
+
+/** What a kind declares once; the host, the menus, and main's lifecycle read it here. */
+export interface TileKind {
+  schema: z.ZodType<TileEntry>
+  /** The kind owns a `<id>.md` beside the document: minted empty, trashed on remove or convert,
+   *  copied on duplicate, walked by the rename heal. */
+  fileBacked: boolean
+  /** The handle menu's link rows, in order; `source: 'none'` renders the row refused. */
+  menuRows: ReadonlyArray<{ label: string; source: 'pages' | 'views' | 'none' }>
+}
+
+export const TILE_KINDS: Record<TileType, TileKind> = {
+  markdown: {
+    schema: markdownEntry,
+    fileBacked: true,
+    menuRows: [
+      { label: 'Link View', source: 'views' },
+      { label: 'Link Page', source: 'pages' },
+    ],
+  },
+  page: { schema: pageEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'pages' }] },
+  view: { schema: viewEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'none' }] },
+}
+
+/** The entry a freshly minted tile of a kind starts as. */
+export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
+
 /** One node of a native returning drill menu (renderer-built — main has no tree).
  *  A node with `pick` resolves the menu; a node with `submenu` drills. */
 export interface DrillPickItem<T> {

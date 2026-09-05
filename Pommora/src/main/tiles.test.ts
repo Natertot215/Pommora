@@ -14,6 +14,7 @@ import {
   readMarkdownTile,
   removeTile,
   rewriteTileConnections,
+  TILE_COPY,
   writeTileDoc,
   writeMarkdownTile,
 } from './tiles'
@@ -201,5 +202,22 @@ describe('rewriteTileConnections', () => {
     await writeMarkdownTile(root, HOST, id, 'see [[Other]]')
     await rewriteTileConnections(root, 'Target', 'Renamed')
     expect(await readMarkdownTile(root, HOST, id)).toBe('see [[Other]]')
+  })
+})
+
+describe('the copy arm', () => {
+  it("re-mints a view entry's config ids and keeps its foreign keys; other kinds have no arm", () => {
+    const raw = {
+      id: 'v',
+      type: 'view',
+      alien: 1,
+      views: [{ source_id: 's', config: { id: 'old' } }],
+    }
+    const copy = TILE_COPY.view?.(raw) as typeof raw
+    expect(copy.alien).toBe(1)
+    expect(copy.views[0].config.id).not.toBe('old')
+    expect(raw.views[0].config.id).toBe('old')
+    expect(TILE_COPY.markdown).toBeUndefined()
+    expect(TILE_COPY.page).toBeUndefined()
   })
 })

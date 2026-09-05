@@ -8,7 +8,7 @@ import { ID_KEY } from '@shared/identity'
 import { isPlainObject } from '@shared/propertyValue'
 import type { EntityRecord, RecordKind } from '@shared/record'
 import { errText } from '@shared/result'
-import { remintConfigIds } from './tiles'
+import { copyEntry } from './tiles'
 import { readKey, writeKey } from './Database/localState'
 import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from './IO/atomicWrite'
@@ -176,13 +176,7 @@ function copyTileDoc(oldId: string, fresh: string): void {
     tileHostKey({ kind: 'space', id: oldId }),
   )
   if (doc === null) return
-  const blocks = Array.isArray(doc.blocks)
-    ? doc.blocks.map((b) =>
-        isPlainObject(b) && b.type === 'view' && Array.isArray(b.views)
-          ? { ...b, views: remintConfigIds(b.views) }
-          : b,
-      )
-    : doc.blocks
+  const blocks = Array.isArray(doc.blocks) ? doc.blocks.map(copyEntry) : doc.blocks
   writeKey('blockDoc', tileHostKey({ kind: 'space', id: fresh }), { ...doc, blocks })
 }
 

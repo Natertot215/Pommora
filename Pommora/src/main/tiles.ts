@@ -11,12 +11,16 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
-  tileHostKey,
   knownTile,
+  mintSeed,
+  TILE_KINDS,
   type TileDoc,
   type TileDocPatch,
   type TileHostRef,
+  type TileType,
+  tileHostKey,
 } from '@shared/tiles'
+import { isPlainObject } from '@shared/propertyValue'
 import { readKey, writeKey } from './Database/localState'
 import { normalizeTitle } from '@shared/connections'
 import { mentionsTitle } from './Connections/scan'
@@ -96,7 +100,7 @@ export async function createMarkdownTile(root: string, host: TileHostRef): Promi
   const id = newId()
   await mkdir(await hostDir(root, host), { recursive: true })
   await atomicWriteFile(await tileFilePath(root, host, id), '')
-  setTiles(host, (blocks) => [...blocks, { id, type: 'markdown' }])
+  setTiles(host, (blocks) => [...blocks, mintSeed('markdown', id)])
   return id
 }
 
@@ -109,7 +113,7 @@ export async function removeTile(root: string, host: TileHostRef, tileId: string
     blocks.filter((b) => {
       const entry = knownTile(b)
       if (entry?.id !== tileId) return true
-      if (entry.type === 'markdown') wasMarkdown = true
+      if (TILE_KINDS[entry.type].fileBacked) wasMarkdown = true
       return false
     }),
   )
@@ -139,7 +143,7 @@ async function flipTile(
     blocks.map((b) => {
       const entry = knownTile(b)
       if (entry?.id !== tileId) return b
-      if (entry.type === 'markdown') wasMarkdown = true
+      if (TILE_KINDS[entry.type].fileBacked) wasMarkdown = true
       return { ...(b as Record<string, unknown>), ...patch }
     }),
   )
@@ -168,6 +172,19 @@ export function remintConfigIds(views: unknown[]): unknown[] {
   })
 }
 
+/** What a kind must rewrite when its raw entry is copied — raw in, raw out; a kind with no arm
+ *  and an unknown kind pass through. */
+export const TILE_COPY: Partial<
+  Record<TileType, (raw: Record<string, unknown>) => Record<string, unknown>>
+> = {
+  view: (raw) => (Array.isArray(raw.views) ? { ...raw, views: remintConfigIds(raw.views) } : raw),
+}
+
+export function copyEntry(raw: unknown): unknown {
+  if (!isPlainObject(raw) || typeof raw.type !== 'string') return raw
+  return (TILE_COPY[raw.type as TileType] ?? ((r) => r))(raw)
+}
+
 /** Link View: the entry becomes a view embed carrying the COPIED config(s), each re-minted. */
 export async function convertTileToView(
   root: string,
@@ -192,15 +209,12 @@ export async function duplicateTile(
   const entry = src ? knownTile(src) : null
   if (!src || !entry) return null
   const id = newId()
-  if (entry.type === 'markdown') {
+  if (TILE_KINDS[entry.type].fileBacked) {
     const body = (await readMarkdownTile(root, host, tileId)) ?? ''
     await mkdir(await hostDir(root, host), { recursive: true })
     await atomicWriteFile(await tileFilePath(root, host, id), body)
   }
-  let copy: Record<string, unknown> = { ...(src as Record<string, unknown>), id }
-  if (entry.type === 'view' && Array.isArray(copy.views)) {
-    copy = { ...copy, views: remintConfigIds(copy.views as unknown[]) }
-  }
+  const copy = copyEntry({ ...(src as Record<string, unknown>), id })
   setTiles(host, (blocks) => [...blocks, copy])
   return id
 }
@@ -250,7 +264,7 @@ async function markdownTileFiles(root: string): Promise<{ id: string; file: stri
   for (const { host, dir } of await listTileHosts(root)) {
     for (const b of readTileDoc(host).blocks) {
       const entry = knownTile(b)
-      if (entry?.type !== 'markdown') continue
+      if (!entry || !TILE_KINDS[entry.type].fileBacked) continue
       out.push({ id: entry.id, file: join(dir, `${entry.id}.md`) })
     }
   }
