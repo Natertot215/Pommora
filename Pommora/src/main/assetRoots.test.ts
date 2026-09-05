@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
 import { isAssetPath } from './IO/navigationFile'
 

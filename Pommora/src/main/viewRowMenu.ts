@@ -1,5 +1,9 @@
 import type { BrowserWindow } from 'electron'
-import { type ViewRowAction, type ViewRowMenuContext, viewRowMenuItems } from '@shared/viewRowMenu'
+import {
+  type ViewRowAction,
+  type ViewRowMenuContext,
+  viewRowMenuItems,
+} from '@pommora/core/Actions/viewRowMenu'
 import { popModelMenu } from './rowMenu'
 
 /** A saved view row's right-click menu — the model's rows, nothing else. */

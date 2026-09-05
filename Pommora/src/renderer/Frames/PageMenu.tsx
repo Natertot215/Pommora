@@ -16,7 +16,7 @@ import { InlineEditHeader } from './InlineEditHeader'
 import { PageProperties } from '../Properties/PageProperties'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { ICON } from './frames.css'
-import { pageLinkText } from '@shared/pageMenu'
+import { pageLinkText } from '@pommora/core/Actions/pageMenu'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 

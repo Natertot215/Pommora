@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
-import { clamp } from '@shared/clamp'
 import { shadowLiftVar, shadowStandardVar } from '../Tokens/color.css'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 /** The Pommora glass recipe — a clear, slightly-dimmed blur with a glassy edge: a crisp top specular, hairline inner ring, and soft light pooling at the lower rim — made parametric so each tier is the same recipe at its own dim and fill. Layout (size / position / radius) is the consumer's. */
 export interface FrostParams {

@@ -2,7 +2,7 @@
 // accessors resolving a Context id → title/singular/icon and a Space id → title/icon/color, so
 // both render identically everywhere by construction. Pure: no fs, no React.
 
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 
 export interface ContextIdentity {

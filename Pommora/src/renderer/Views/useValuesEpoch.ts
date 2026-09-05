@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import type { PageFrontmatter } from '@shared/schemas'
-import type { PageValues } from '@shared/types'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { PageValues } from '@pommora/core/Views/viewRow'
 import { useSession } from '../store'
 
 // `write` is the mutate the override waits on; null once it landed.

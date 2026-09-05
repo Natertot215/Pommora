@@ -4,7 +4,7 @@
 
 import { getLiveTree } from './liveTree'
 import { relPosix } from './paths'
-import type { NexusTree, ValueChange } from '@shared/types'
+import type { NexusTree, ValueChange } from '@pommora/core/Nexus/tree'
 
 export const containerOf = (rel: string): string =>
   rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : ''

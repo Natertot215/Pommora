@@ -71,18 +71,28 @@ import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
 import { readWatchScope, updateCrops, updateSettings } from './settings'
 import { newId } from './ids'
-import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
+import { mintDefaultView, VIEW_ID_PREFIX } from '@pommora/core/Views/views'
 import { ok, fail, errText, NO_NEXUS, type Result } from '@pommora/core/Contract/result'
-import { NEW_PAGE_SLOT, type MutateReply, type MutateRequest } from '@shared/mutate'
-import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
-import type { TrashMode } from '@shared/types'
+import {
+  NEW_PAGE_SLOT,
+  type MutateReply,
+  type MutateRequest,
+} from '@pommora/core/Pages/mutateRequest'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { TrashMode } from '@pommora/core/Trash/trashRow'
 import { readRegistry } from './IO/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
-import { HTTP_URL, NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'
-import { clampZoom } from '@shared/cropGeometry'
-import { connectionText, embeddableTitle } from '@shared/connections'
-import { ASSET_MIME } from '@shared/assetMime'
+import {
+  NON_CORPUS_TOP,
+  TRASH_DIR,
+  assetSubRoot,
+  cropKeyFor,
+} from '@pommora/core/Locations/nexusPaths'
+import { WEB_ADDRESS } from '@pommora/core/Locations/url'
+import { clampZoom } from '@pommora/core/Assets/cropGeometry'
+import { connectionText, embeddableTitle } from '@pommora/core/Connections/connections'
+import { ASSET_MIME } from '@pommora/desktop/Platform/assetMime'
 import { neverWatched } from './exclusion'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
@@ -247,7 +257,9 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
 
 // An http(s) source is stored by reference — the same value a web-address banner already carries.
 const adoptImageSource = (root: string, source: string): Promise<Result<string>> =>
-  HTTP_URL.test(source) ? Promise.resolve(ok(source)) : adoptFile(root, source, { allow: 'image' })
+  WEB_ADDRESS.test(source)
+    ? Promise.resolve(ok(source))
+    : adoptFile(root, source, { allow: 'image' })
 
 async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateReply> {
   switch (req.op) {

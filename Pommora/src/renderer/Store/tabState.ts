@@ -4,7 +4,7 @@
 // scheduler so a returning tile always seeds on the newest body.
 import { useSyncExternalStore } from 'react'
 import { capSet } from '@renderer/DesignSystem/Util/capMap'
-import type { PageDetail } from '@shared/types'
+import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 
 export interface CacheEntry {
   /** `EditorState.toJSON({ history: historyField })` payload — opaque here, parsed only by the seam. */

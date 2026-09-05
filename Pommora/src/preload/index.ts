@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
-import type { Personalization } from '../shared/types'
+import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { Result } from '@pommora/core/Contract/result'
 
 // Every dialer derives from the bridge map — the channel key is the only thing written here, and

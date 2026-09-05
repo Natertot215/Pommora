@@ -16,7 +16,7 @@
     "package": "npm run package -w Pommora",
     "showcase": "npm run dev -w Showcase",
     "build:showcase": "npm run build -w Showcase",
-    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Pommora/tsconfig.node.json && tsc -p Pommora/tsconfig.web.json",
+    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Desktop/tsconfig.node.json && tsc -p Pommora/tsconfig.node.json && tsc -p Pommora/tsconfig.web.json",
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",

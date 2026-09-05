@@ -1,9 +1,10 @@
 // Resolved cell + group-header text for the table render: option VALUES become their schema
 // label, Context ULIDs become Context titles — so no raw id ever reaches screen.
 
-import { type PropertyDefinition, statusOptions } from '@shared/properties'
-import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
-import type { SavedView } from '@shared/views'
+import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
+import type { SavedView } from '@pommora/core/Views/views'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 
 /** A select/status option for a stored value, via the column's schema def — undefined if the column

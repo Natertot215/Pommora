@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { SCALE_STEPS } from '@shared/types'
+import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
 
 export const DEFAULT_ZOOM = 1
 

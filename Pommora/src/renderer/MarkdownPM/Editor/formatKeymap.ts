@@ -4,7 +4,7 @@ import {
   FORMAT_CHORDS,
   type FormatChordAction,
   keyBindingFor,
-} from '@shared/editorMenu'
+} from '@pommora/core/Actions/editorMenu'
 import { applyEditorAction } from './menu'
 
 // Formatting shortcuts reuse the same transforms the context menu dispatches (one source of truth).

@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
 import type { TableModel } from './model'
 import { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@shared/connMenu'
+import type { ConnUrlAction } from '@pommora/core/Actions/connMenu'
 import {
   buildPageIndex,
   type ConnectionsApi,

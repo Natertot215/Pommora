@@ -6,7 +6,7 @@ import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join, relative } from 'node:path'
 import { assetMatcher, excludedMatcher, type WatchScope } from '../exclusion'
-import { NON_CORPUS_TOP } from '@shared/nexusPaths'
+import { NON_CORPUS_TOP } from '@pommora/core/Locations/nexusPaths'
 
 /** Whether a name is Markdown. Case-INSENSITIVE and stated once: a walk that admits `.MD` while
  *  the sweeps skip it leaves a page that renders but never gets rewritten. */

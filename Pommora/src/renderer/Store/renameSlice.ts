@@ -1,10 +1,14 @@
-import { DEFAULT_NEW_NAME, type MutableKind, type RenameHost } from '@shared/mutate'
-import { contextDirRel } from '@shared/nexusPaths'
-import { normalizePropertyName } from '@shared/properties'
+import {
+  DEFAULT_NEW_NAME,
+  type MutableKind,
+  type RenameHost,
+} from '@pommora/core/Pages/mutateRequest'
+import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
+import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { orderWithSlot } from '../Views/creationOrder'
 import { findContainer, parentPathOf } from '../Interface/scope'
 import type { Slice } from './sessionState'
-import type { ValueChange, ValuesEpoch } from '@shared/types'
+import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
 
 interface RenameClaim {
   token: number

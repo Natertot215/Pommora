@@ -3,8 +3,9 @@
 // tiles, the in-app browser, glances — attaches under these rules; none carries its own.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
-import { hasWebScheme, isHttpLink } from '@shared/links'
-import { WEB_PARTITION, WEB_ZOOM_DEFAULT } from '@shared/types'
+import { hasWebScheme, isHttpLink } from '@pommora/core/Connections/links'
+import { WEB_PARTITION } from '@pommora/core/Web/partition'
+import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
 import { push } from './ipc'
 
 /** The sign-in host whose server-side detection additionally trips on the Chrome token; requests

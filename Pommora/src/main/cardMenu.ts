@@ -1,5 +1,9 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import { cardMenuModel, type CardMenuAction, type CardMenuContext } from '@shared/cardMenu'
+import {
+  cardMenuModel,
+  type CardMenuAction,
+  type CardMenuContext,
+} from '@pommora/core/Actions/cardMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 

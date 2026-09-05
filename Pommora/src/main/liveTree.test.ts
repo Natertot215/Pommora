@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { pathExists } from './IO/atomicWrite'

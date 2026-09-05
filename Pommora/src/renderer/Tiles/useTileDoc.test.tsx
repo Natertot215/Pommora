@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { TileHostRef } from '@shared/tiles'
+import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { insertBand } from './Core/ops'
 import { tileIds } from './Core/model'
 import { type TileDocSession, useTileDoc } from './useTileDoc'

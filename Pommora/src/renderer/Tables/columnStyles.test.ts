@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { styleFor } from './columnStyles'
-import type { PropertyDefinition } from '@shared/properties'
-import { savedView, type SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { savedView, type SavedView } from '@pommora/core/Views/views'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },

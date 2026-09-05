@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { NEW_PAGE_SLOT } from '@shared/mutate'
+import { NEW_PAGE_SLOT } from '@pommora/core/Pages/mutateRequest'
 import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeSorter, resolveManualOrder } from './Pipeline/sort'
-import type { ViewRow } from '@shared/types'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
 
 describe('orderWithSlot', () => {
   it('appends for a band-add and splices beside an anchor', () => {

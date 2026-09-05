@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { SavedView } from '@shared/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import { saveView, reorderViews, deleteView } from './views'
 
 let folder: string

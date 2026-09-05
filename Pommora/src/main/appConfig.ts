@@ -3,7 +3,7 @@
 
 import { join } from 'node:path'
 import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
-import { DEFAULT_TRASH_MODE, type TrashMode } from '@shared/types'
+import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow'
 
 export interface AppConfig {
   lastNexusPath?: string

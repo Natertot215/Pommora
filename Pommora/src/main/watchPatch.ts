@@ -4,7 +4,13 @@
 // because they shape the tree rather than sit in it — only leaf fields patch.
 
 import { join } from 'node:path'
-import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
+import type {
+  CollectionNode,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+} from '@pommora/core/Nexus/tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from './assetMap'
 import { assetMatcher, excludedMatcher, hiddenName, sameScope, type WatchScope } from './exclusion'
@@ -25,7 +31,7 @@ import {
   nexusConfig,
   relPosix,
 } from './paths'
-import type { TileHostRef } from '@shared/tiles'
+import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import {
   parseViews,
   readCropLeaves,
@@ -38,7 +44,7 @@ import {
   scopeOf,
   type SettingsLeaves,
 } from './readNexus'
-import { coerceOpenIn, coerceViewButton } from '@shared/schemas'
+import { coerceOpenIn, coerceViewButton } from '@pommora/core/Nexus/schemas'
 import {
   makeCollectionNode,
   makeSetNode,
@@ -47,8 +53,8 @@ import {
   removeNodeInTree,
   type TreeEntity,
   updateNodeInTree,
-} from '@shared/treePatch'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
+} from '@pommora/core/Nexus/treePatch'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@pommora/core/Locations/nexusPaths'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 

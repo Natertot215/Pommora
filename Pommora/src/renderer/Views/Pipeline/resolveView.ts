@@ -3,9 +3,9 @@
 // so a future context-dashboard embed reuses this verbatim with its own stored SavedView + a target
 // ref. Never couple the view to its container or read `views[]` here. Pure: no fs, no React.
 
-import type { PropertyDefinition } from '@shared/properties'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
-import { isLocationFsOrder, type SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
+import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
 import {

@@ -2,9 +2,8 @@ import {
   EMPTY_WINDOWS,
   type WindowSetRecord,
   type WindowsFile,
-  type SelectTarget,
-  toNavRef,
-} from '@shared/types'
+} from '@pommora/core/Interface/Windows/windowRecord'
+import { type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
 import { type ReconcileIndex, reconcileWith } from '@renderer/Actions/selection'
 import { reconcileIndexOf } from '../treeIndex'
 import { liveTarget, makeTabId } from '../Tabs/tabsModel'

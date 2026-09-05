@@ -4,7 +4,7 @@
 // PARENT from the band below the line — the router compares it against the dragged band's current
 // parent to pick reorder vs reparent (a flat array alone can never lift a child past its parent).
 
-import type { ResolvedGroup } from '@shared/types'
+import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import { type MeasuredRow, nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 
 export interface Band {

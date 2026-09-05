@@ -1,9 +1,9 @@
 // The nexus-asset:// URL for a Nexus-relative image path, served by the main process on desktop.
 // One definition so a non-Electron host (mobile WebView) can swap the scheme in a single place.
 
-import { normalizeTitle, parseConnectionText } from '@shared/connections'
-import { WEB_ADDRESS } from '@shared/nexusPaths'
-import type { AssetMap } from '@shared/types'
+import { normalizeTitle, parseConnectionText } from '@pommora/core/Connections/connections'
+import { HAS_SCHEME } from '@pommora/core/Locations/url'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
 
 // Per segment, not `encodeURI` over the whole path: that helper leaves `#` and `?` alone, so a
 // file named `Draft #2.png` would truncate at the fragment and 404.
@@ -24,7 +24,7 @@ export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
   if (!raw) return { kind: 'unresolved' }
   const named = namedAsset(raw, map)
   if (named) return named
-  if (WEB_ADDRESS.test(raw)) return { kind: 'external', url: raw }
+  if (HAS_SCHEME.test(raw)) return { kind: 'external', url: raw }
   return { kind: 'asset', rel: raw }
 }
 

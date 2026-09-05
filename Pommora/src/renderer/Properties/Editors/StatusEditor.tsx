@@ -10,8 +10,8 @@ import {
   setStatusOptionAppearance,
   setStatusOptionIcon,
   fallbackTitle,
-} from '@shared/optionModel'
-import type { StatusGroup } from '@shared/properties'
+} from '@pommora/core/Properties/optionModel'
+import type { StatusGroup } from '@pommora/core/Properties/properties'
 import { askClearOption, askRemoveOption } from '@renderer/Windows/confirmations'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {

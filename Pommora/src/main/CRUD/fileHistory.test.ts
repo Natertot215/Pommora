@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Result } from '@pommora/core/Contract/result'
-import { HISTORY_INTERVAL } from '@shared/types'
+import { HISTORY_INTERVAL } from '@pommora/core/Settings/personalization'
 import { dropLiveTree, refreshTree } from '../liveTree'
 import { closeSessionDb, openSessionDb, sessionVersionsDb } from '../sessionDb'
 import { listSnapshots, readSnapshot } from '../Database/versionsDb'

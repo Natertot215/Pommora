@@ -5,11 +5,11 @@ import {
   type ConnCellAction,
   type ConnEditAction,
   type ConnMenuContext,
-} from '@shared/connMenu'
-import { isValidLink } from '@shared/links'
-import { readLink } from '@shared/linkValue'
+} from '@pommora/core/Actions/connMenu'
+import { isValidLink } from '@pommora/core/Connections/links'
+import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
-import { pageLinkText, pagePathText } from '@shared/pageMenu'
+import { pageLinkText, pagePathText } from '@pommora/core/Actions/pageMenu'
 import { openInAppBrowser } from '../Windows/WebWindow'
 import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../Tabs/tabsModel'

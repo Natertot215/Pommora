@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RAMP_FAMILIES, RAMP_STEPS, SPECTRUM } from '@shared/theme'
+import { RAMP_FAMILIES, RAMP_STEPS, SPECTRUM } from '@pommora/uix/Theme/theme'
 import { labelColorFor } from './colorMap'
 import { ANCHOR_CELLS } from './ramp'
 

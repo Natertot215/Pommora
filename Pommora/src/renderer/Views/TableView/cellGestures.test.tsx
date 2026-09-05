@@ -2,14 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { PropertyDefinition } from '@shared/properties'
-import type { CollectionNode } from '@shared/types'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { useSession } from '../../store'
 import { PropertyPicker } from '@renderer/Properties/Assignment/PropertyPicker'
 import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 import { valuesReply } from '@renderer/Testing/pageValues'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -474,7 +474,7 @@ describe('open actions + row-click narrowing', () => {
 
 describe('PropertyPicker (direct mount) — seed values', () => {
   it('a seed status def shows its option values (values show regardless of name)', async () => {
-    const { defaultStatusSeed } = await import('@shared/properties')
+    const { defaultStatusSeed } = await import('@pommora/core/Properties/properties')
     const seedDef: PropertyDefinition = {
       id: 'prop_seed',
       name: 'Status',

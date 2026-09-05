@@ -14,7 +14,7 @@ import { createPage, updatePageProperty } from './page'
 import { pathExists } from '../IO/atomicWrite'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 let root: string
 beforeEach(async () => {

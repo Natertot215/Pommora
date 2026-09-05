@@ -4,7 +4,7 @@ import { shape, tinted } from '@renderer/DesignSystem/Labels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { SortableZone, useDragItem, reorder } from '@renderer/Interactions/drag'
 import { applyAccent, readCssAccentColor } from '@renderer/DesignSystem/Tokens/accent'
-import { SOLID_COLORS, type AccentSetting } from '@shared/types'
+import { SOLID_COLORS, type AccentSetting } from '@pommora/uix/Theme/colorSetting'
 import { accentValue } from '@renderer/DesignSystem/Tokens/accent'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 

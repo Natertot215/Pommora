@@ -1,4 +1,4 @@
-import type { CollectionNode, SetNode } from '@shared/types'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@renderer/DesignSystem/Menus'
 import { iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'

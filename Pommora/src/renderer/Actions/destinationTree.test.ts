@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CollectionNode, NexusTree } from '@shared/types'
+import type { CollectionNode, NexusTree } from '@pommora/core/Nexus/tree'
 import { containerTargets, contextTargets } from '@renderer/Actions/destinationTree'
 
 const collections = [

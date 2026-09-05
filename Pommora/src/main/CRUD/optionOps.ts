@@ -14,18 +14,18 @@ import { serializeSchemaOp } from './schemaChain'
 import { sweepAdmits } from './util'
 import { replacePageValue, stripPageValue } from './pageValue'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
-import type { Adoption } from '@shared/propertyValue'
+import type { Adoption } from '@pommora/core/Properties/propertyValue'
 import {
   renameOption as renameInArray,
   renameStatusOption as renameStatusInArray,
   type Option,
-} from '@shared/optionModel'
+} from '@pommora/core/Properties/optionModel'
 import {
   hasSelectOptions,
   type PropertyDefinition,
   type PropertyType,
   type StatusGroup,
-} from '@shared/properties'
+} from '@pommora/core/Properties/properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
 /** Applies to Select / Multi-Select only — rejected up front rather than left to the write. */

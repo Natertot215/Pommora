@@ -1,16 +1,21 @@
 import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
 import { useContext, useRef, useState } from 'react'
-import type { ResolvedColumn, ViewRow } from '@shared/types'
-import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { ColumnStyle } from '@shared/columnStyles'
-import { cellMenuContextFor } from '@shared/cellMenu'
-import { parseStyleAction } from '@shared/columnMenu'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import { cellMenuContextFor } from '@pommora/core/Actions/cellMenu'
+import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { GhostSuppress } from '@renderer/Interactions/ghostCreate'
 import { Cell } from '@renderer/Properties/Assignment/Cell'
-import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import {
+  linkAlias,
+  linkEditText,
+  urlValueFromEdit,
+  urlValueFromRename,
+} from '@pommora/core/Connections/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Actions/connectionMenu'
 import { parseEditorValue } from '@renderer/Properties/Assignment/cardValueInput'

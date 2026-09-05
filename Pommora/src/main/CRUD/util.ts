@@ -1,9 +1,9 @@
 // The one home for the small primitives every CRUD mutation needs, so they aren't
 // re-implemented per file.
 
-import { invalidBasename } from '@shared/contexts'
+import { invalidBasename } from '@pommora/core/Properties/contexts'
 import { hiddenName } from '../exclusion'
-import { admitContentFile } from '@shared/identity'
+import { admitContentFile } from '@pommora/core/Nexus/identityMark'
 import { frontmatterWritable, readFrontmatterFields } from '../IO/pageFile'
 
 export { pathExists } from '../IO/atomicWrite'

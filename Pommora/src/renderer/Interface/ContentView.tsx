@@ -11,8 +11,8 @@ import { PageView } from './PageView'
 import { NavView } from './NavView'
 import { Subfield } from './Subfield/Subfield'
 import type { SubfieldPage } from './Subfield/subfieldItems'
-import { footerLabel } from '@shared/toggleLabels'
-import { TAB_CACHE } from '@shared/types'
+import { footerLabel } from '@pommora/core/Actions/toggleLabels'
+import { TAB_CACHE } from '@pommora/core/Settings/personalization'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 
 function DetailView(): React.JSX.Element | null {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PageDetail } from '@shared/types'
+import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import {
   bumpBodyEpoch,
   captureCache,

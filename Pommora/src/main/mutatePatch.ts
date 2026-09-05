@@ -3,8 +3,8 @@
 // disk re-read through the walk's own readers — and the caller pushes when the tree object
 // moved. A write with no patch degrades to one verification walk, never a silently stale tree.
 
-import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import type { BannerOwnerKind, MutableKind, MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import {
   insertCreatedInTree,
   parentOf,
@@ -16,7 +16,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
   reorderTopInTree,
-} from '@shared/treePatch'
+} from '@pommora/core/Nexus/treePatch'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from './IO/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
@@ -31,7 +31,7 @@ import {
   patchSpaceOrderFromDisk,
   patchTopOrderFromDisk,
 } from './watchPatch'
-import { CONTEXTS_DIR_REL } from '@shared/nexusPaths'
+import { CONTEXTS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 
 export interface MutateOutcome {
   created?: { id: string; path: string }

@@ -5,8 +5,8 @@ import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 import { useSession } from '@renderer/store'
-import type { GripMenuAction, GripMenuContext } from '@shared/gripMenu'
-import type { NexusTree } from '@shared/types'
+import type { GripMenuAction, GripMenuContext } from '@pommora/core/Actions/gripMenu'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 
 const calls: GripMenuContext[] = []
 let nextPick: GripMenuAction | null = null

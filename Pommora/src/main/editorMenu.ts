@@ -10,15 +10,15 @@ import type {
   WebContents,
 } from 'electron'
 import {
-  acceleratorFor,
   EDITOR_ACTION_PREFIX,
   type FormatChordAction,
   type FormatState,
   INSERT_LINK_ACTION,
-} from '@shared/editorMenu'
-import { HEADING_LEVELS } from '@shared/gripMenu'
-import { isValidLink } from '@shared/links'
-import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/pasteAsMenu'
+} from '@pommora/core/Actions/editorMenu'
+import { acceleratorFor } from '@pommora/desktop/Actions/accelerators'
+import { HEADING_LEVELS } from '@pommora/core/Actions/gripMenu'
+import { isValidLink } from '@pommora/core/Connections/links'
+import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 
 let lastState: FormatState | null = null
 export function setFormatState(s: FormatState): void {

@@ -1,5 +1,5 @@
 import type { IconName } from '@renderer/DesignSystem/Symbols'
-import type { PropertyDefinition, StatusGroupId } from '@shared/properties'
+import type { PropertyDefinition, StatusGroupId } from '@pommora/core/Properties/properties'
 
 const STATUS_GROUP_GLYPH: Record<string, IconName> = {
   upcoming: 'circle-dashed',

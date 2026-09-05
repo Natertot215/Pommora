@@ -2,8 +2,8 @@
 // `buildIndex` flattens the tree into everything commit + the indicator need; `nextOrder`
 // computes a sibling group's new order after a drop.
 
-import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
-import { contextDirRel } from '@shared/nexusPaths'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
 
 export type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
 export type Entry = {

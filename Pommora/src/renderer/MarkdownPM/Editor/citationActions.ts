@@ -10,8 +10,8 @@ import {
   Facet,
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import type { CitationMenuAction } from '@shared/citationMenu'
-import { isInsideInlineCode } from '@shared/markdownCode'
+import type { CitationMenuAction } from '@pommora/core/Actions/citationMenu'
+import { isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
 import { useSession } from '../../store'
 import { citationFor, markerEndingAt, markersFor } from '../Detect'
 import { focusRange } from './caretSeat'

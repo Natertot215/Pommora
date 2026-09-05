@@ -4,10 +4,10 @@
 
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import { parseContextKey } from '@shared/contexts'
-import { ID_KEY } from '@shared/identity'
+import { parseContextKey } from '@pommora/core/Properties/contexts'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { ok, type Result } from '@pommora/core/Contract/result'
-import type { ClearReport } from '@shared/types'
+import type { ClearReport } from '@pommora/core/Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
 import { assetMatcher, rootSegs } from './exclusion'
 import { isMarkdownFile, listEntries } from './IO/walk'

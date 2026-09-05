@@ -1,7 +1,11 @@
 import { useCallback } from 'react'
-import { defaultStyleFor, type ColumnStyle, type DateFormat } from '@shared/columnStyles'
-import type { PropertyDefinition } from '@shared/properties'
-import type { SavedView } from '@shared/views'
+import {
+  defaultStyleFor,
+  type ColumnStyle,
+  type DateFormat,
+} from '@pommora/core/Properties/columnStyles'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
 import { declaredType } from '@renderer/Properties/value'
 import { useSession } from '@renderer/store'
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections } from './rewrite'
 import { mentionsTitle } from './scan'
-import { normalizeTitle, pageEmbedPattern } from '@shared/connections'
+import { normalizeTitle, pageEmbedPattern } from '@pommora/core/Connections/connections'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {

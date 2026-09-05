@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
-import type { ResolvedColumn, ViewRow } from '@shared/types'
-import type { SavedView } from '@shared/views'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import type { SavedView } from '@pommora/core/Views/views'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import {
   type AddEntry,

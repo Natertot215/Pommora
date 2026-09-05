@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { ResolvedGroup } from '@shared/types'
+import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import { orderGroups } from './bandOrder'
 
 const sg = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({

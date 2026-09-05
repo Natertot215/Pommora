@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
-import type { CollectionNode, SetNode } from '@shared/types'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
-import type { SavedView } from '@shared/views'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import {
+  type PropertyDefinition,
+  RESERVED_PROPERTY_ID,
+  STAMP_TYPE,
+} from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { resolveColumns } from '@renderer/Views/Pipeline/columns'

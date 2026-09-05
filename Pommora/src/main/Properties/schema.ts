@@ -6,7 +6,7 @@ import {
   isReservedPropertyId,
   KEY_REFUSAL,
   type PropertyDefinition,
-} from '@shared/properties'
+} from '@pommora/core/Properties/properties'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 
 /** A property name in the context of a schema: unique case-insensitively, excluding the def

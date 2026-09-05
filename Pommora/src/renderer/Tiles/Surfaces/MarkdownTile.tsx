@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TileHostRef } from '@shared/tiles'
+import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'

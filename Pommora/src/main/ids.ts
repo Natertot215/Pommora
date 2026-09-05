@@ -5,7 +5,7 @@
 
 import { createHash } from 'node:crypto'
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
-import { type ContentKind, isUlidShaped, markId } from '@shared/identity'
+import { type ContentKind, isUlidShaped, markId } from '@pommora/core/Nexus/identityMark'
 
 const nextUlid = monotonicFactory()
 

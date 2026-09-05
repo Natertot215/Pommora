@@ -5,8 +5,8 @@ import {
   coerceScale,
   embedZoom,
   viewEmbedZoom,
-} from '@shared/types'
-import type { CellKey } from '@shared/theme'
+} from '@pommora/core/Settings/personalization'
+import type { CellKey } from '@pommora/uix/Theme/theme'
 import { labelColorFor } from './colorMap'
 import { cellColor, cellPaint } from './ramp'
 

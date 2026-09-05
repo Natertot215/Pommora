@@ -12,13 +12,13 @@
   },
   "include": [
     "main.ts",
-    "Bridge/**",
-    "Platform/**",
-    "Store/**",
-    "FileWatch/**",
-    "Actions/**",
+    "Bridge/**/*",
+    "Platform/**/*",
+    "Store/**/*",
+    "FileWatch/**/*",
+    "Actions/**/*",
     "Web/**/*.ts",
-    "Capture/**",
-    "Config/**"
+    "Capture/**/*",
+    "Config/**/*"
   ]
 }

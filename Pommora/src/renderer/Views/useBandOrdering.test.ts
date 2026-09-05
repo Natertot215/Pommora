@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SavedView } from '@shared/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import type { Band } from './bandDndModel'
 import { bandReorderPatch, groupingKeyOf } from './useBandOrdering'
 

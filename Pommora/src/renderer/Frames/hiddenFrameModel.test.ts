@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
-import type { SavedView } from '@shared/views'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
 import type { FrameRow } from './frameDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenFrameModel'
 

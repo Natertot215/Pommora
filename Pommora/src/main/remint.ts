@@ -3,9 +3,9 @@
 // and every other claimant takes a fresh id plus duplicated device-local rows.
 
 import { join } from 'node:path'
-import { ID_KEY } from '@shared/identity'
-import { isPlainObject } from '@shared/propertyValue'
-import type { EntityRecord, RecordKind } from '@shared/record'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import type { EntityRecord, RecordKind } from '@pommora/core/Nexus/record'
 import { errText } from '@pommora/core/Contract/result'
 import { copyEntry } from './tiles'
 import { writeTileDocAt } from './tileDoc'

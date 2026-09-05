@@ -6,18 +6,13 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
-    resolve: { alias: { '@shared': resolve('src/shared') } },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
-    resolve: { alias: { '@shared': resolve('src/shared') } },
   },
   renderer: {
     resolve: {
-      alias: {
-        '@shared': resolve('src/shared'),
-        '@renderer': resolve('src/renderer'),
-      },
+      alias: { '@renderer': resolve('src/renderer') },
     },
     plugins: [react(), vanillaExtractPlugin()],
     // Preview worktree only (uncommitted): node_modules is a symlink to the main

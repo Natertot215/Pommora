@@ -1,12 +1,12 @@
 // The frame owns the filter slot wholesale for the shapes it writes; anything it can't faithfully
 // represent decodes as `locked` rather than being silently flattened.
 
-import type { PropertyDefinition } from '@shared/properties'
-import { RESERVED_PROPERTY_ID } from '@shared/properties'
-import type { FilterGroup, FilterRule, MatchMode } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
+import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/views'
 
 export type { MatchMode }
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { Icon } from '@renderer/DesignSystem/Symbols'
 import { contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { declaredType } from '@renderer/Properties/value'

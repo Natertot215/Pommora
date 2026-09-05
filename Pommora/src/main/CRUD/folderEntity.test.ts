@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
-import { baseSidecar, pageCollectionSidecar } from '@shared/schemas'
+import { baseSidecar, pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 import { isUlid } from '../ids'
 
 let root: string

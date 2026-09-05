@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,

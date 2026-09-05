@@ -3,9 +3,9 @@
 // negatives, presence ops, and metadata rules (title, dates) derive nothing: metadata is never
 // changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
-import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
-import type { FilterGroup, FilterRule } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
 import { FILTER_OPS } from './filter'
 
 function ruleSeed(rule: FilterRule, schema: PropertyDefinition[]): PropertyValue | null {

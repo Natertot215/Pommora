@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import type { CollectionNode, SetNode } from '@shared/types'
-import { DEFAULT_VIEW_ID, type SavedView } from '@shared/views'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import { DEFAULT_VIEW_ID, type SavedView } from '@pommora/core/Views/views'
 import { askDeleteView } from '@renderer/Windows/confirmations'
 import { notifyDeleted, notifyError, restoreView } from '@renderer/Interface/notifications'
 import { Icon } from '@renderer/DesignSystem/Symbols'

@@ -1,4 +1,4 @@
-import { stableStringify } from '@shared/stableJson'
+import { stableStringify } from '@pommora/core/IO/stableJson'
 import { ok } from '@pommora/core/Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'

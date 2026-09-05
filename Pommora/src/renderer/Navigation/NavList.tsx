@@ -5,7 +5,7 @@ import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { overlay, rowDragging } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
-import type { NavRef, SelectTarget } from '@shared/types'
+import type { NavRef, SelectTarget } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../store'
 import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { isOpenInTabs, liveTarget } from '../Tabs/tabsModel'
@@ -14,7 +14,7 @@ import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import './nav-list.css'
-import { pinLabel } from '@shared/toggleLabels'
+import { pinLabel } from '@pommora/core/Actions/toggleLabels'
 
 export function NavRowMenu({
   item,

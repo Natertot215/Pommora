@@ -1,5 +1,5 @@
 import { useRef, useState, type RefObject } from 'react'
-import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
+import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { ColorGrid } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
 import { PickerControl, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'

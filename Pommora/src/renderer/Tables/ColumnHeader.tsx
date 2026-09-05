@@ -1,6 +1,6 @@
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
-import type { ColumnAlign } from '@shared/views'
+import type { ColumnAlign } from '@pommora/core/Views/views'
 
 /** One column header: the whole cell is the grab surface for the smooth-shift reorder (`dragging`
  *  applies the ghost veil + solid band, `transform` slides it with the cursor) plus a right-edge resize

@@ -8,9 +8,9 @@ import {
 } from 'react'
 import { DISCLOSURE_INDENT } from '@renderer/DesignSystem/Tokens/size.css'
 import { nearestByTop, useInsertionDrag } from '@renderer/Interactions/insertionDrag'
-import { titleFromPath } from '@shared/connections'
-import type { FolderPlacement } from '@shared/types'
-import type { MutateRequest } from '@shared/mutate'
+import { titleFromPath } from '@pommora/core/Connections/connections'
+import type { FolderPlacement } from '@pommora/core/Settings/personalization'
+import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
 import {
   nextOrder,
   setContainerOf,

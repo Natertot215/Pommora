@@ -18,7 +18,7 @@ import {
   lineEndAt,
   type Edit,
 } from '../Input'
-import { aliasSpanAt } from '@shared/connections'
+import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { commitAliasOnEnter } from './linkEdit'
 import { embedTileRanges } from './embedWidget'
 import type { DocScan } from '../Decorations/intent'

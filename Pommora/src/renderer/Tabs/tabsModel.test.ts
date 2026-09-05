@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { NavRef, NexusTree, SelectTarget, Tab } from '@shared/types'
+import type { NavRef, SelectTarget, Tab } from '@pommora/core/Navigation/navRef'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { reconcileIndexOf } from '../treeIndex'
 import {
   activeUnpinnedTab,

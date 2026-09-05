@@ -2,9 +2,9 @@
 // a live page by path, and the trash's Restore ▸, which files a returning one by id — so the two
 // menus can never disagree about what the nexus will hold.
 
-import type { MoveTarget } from '@shared/pageMenu'
-import { contextDirRel } from '@shared/nexusPaths'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import type { MoveTarget } from '@pommora/core/Actions/pageMenu'
+import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
+import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 
 /** Every Collection and the Sets nested under it, in tree order. The matrix is the write path's:
  *  a page or Set lands in a container and nowhere else. */

@@ -1,6 +1,6 @@
-import type { SelectionState } from '@shared/types'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { Button } from '@renderer/DesignSystem/Buttons'
-import { containerCreators } from '@shared/mutate'
+import { containerCreators } from '@pommora/core/Pages/mutateRequest'
 import { type PageTarget, useSession } from '../../store'
 import { findCollection } from '../scope'
 import { pageStats } from './subfieldStats'

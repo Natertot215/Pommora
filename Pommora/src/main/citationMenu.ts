@@ -3,7 +3,7 @@ import {
   citationMenuModel,
   type CitationMenuAction,
   type CitationMenuContext,
-} from '@shared/citationMenu'
+} from '@pommora/core/Actions/citationMenu'
 import { popModelMenu } from './rowMenu'
 
 // The footnote right-click menu: main pops the shared model at the cursor and resolves the chosen

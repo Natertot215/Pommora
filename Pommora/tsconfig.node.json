@@ -8,18 +8,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@shared/*": ["./src/shared/*"],
       "@pommora/core/*": ["../Core/*"],
-      "@pommora/uix/*": ["../UIX/*"]
+      "@pommora/uix/*": ["../UIX/*"],
+      "@pommora/desktop/*": ["../Desktop/*"]
     },
     "types": ["node"],
     "noEmit": true
   },
-  "include": [
-    "src/main/**/*",
-    "src/preload/**/*",
-    "src/shared/**/*",
-    "electron.vite.config.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["src/main/**/*", "src/preload/**/*", "electron.vite.config.ts", "vitest.config.ts"]
 }

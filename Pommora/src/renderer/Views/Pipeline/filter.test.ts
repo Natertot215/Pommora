@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { ID_KEY } from '@shared/identity'
-import type { ViewRow } from '@shared/types'
-import type { FilterGroup } from '@shared/views'
-import type { PropertyDefinition } from '@shared/properties'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { FilterGroup } from '@pommora/core/Views/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { applyFilter, FILTER_OPS } from './filter'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 

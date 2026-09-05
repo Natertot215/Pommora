@@ -3,7 +3,7 @@
 // that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a
 // walk whose slot was dropped or superseded installs nothing.
 
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { pathExists } from './IO/atomicWrite'
 import { readNexus } from './readNexus'
 

@@ -1,5 +1,5 @@
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { SavedView } from '@shared/views'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { SavedView } from '@pommora/core/Views/views'
 import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import { switchRows, type SwitchEntry } from './switchRows'

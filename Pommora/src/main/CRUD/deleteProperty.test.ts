@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,8 +13,8 @@ import { readFrontmatterFields } from '../IO/pageFile'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { readRecord } from '../provenance'
 import { readSidecar } from '../sidecarIO'
-import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 /** The writer takes a definition, and the registry's copy is the ONLY one that addresses the same
  *  key the strip path resolves — a def invented here would write somewhere no cascade ever looks. */

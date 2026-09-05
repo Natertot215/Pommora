@@ -8,7 +8,7 @@ import {
   type AutocompleteQuery,
 } from './autocomplete'
 import { docString } from './Editor/docCache'
-import { normalizeTitle, pageLinkPattern } from '@shared/connections'
+import { normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
 import { useSession } from '../store'
 import { restedOnLink } from './Editor/linkGestures'
 

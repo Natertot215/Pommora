@@ -1,5 +1,6 @@
-import type { NexusTree, SelectionState } from '@shared/types'
-import { titleFromPath } from '@shared/connections'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import type { SelectTarget } from '../../store'
 import { ancestryOf, type TrailNode } from '../../treeIndex'

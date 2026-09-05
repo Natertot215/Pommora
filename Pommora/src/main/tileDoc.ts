@@ -1,5 +1,5 @@
 import { mkdir, rename } from 'node:fs/promises'
-import type { TileDoc } from '@shared/tiles'
+import type { TileDoc } from '@pommora/core/Tiles/tiles'
 import { errText, fail, ok, type Result } from '@pommora/core/Contract/result'
 import { newId } from './ids'
 import { readJsonStrict, rmwJsonStrict } from './IO/atomicWrite'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { blockDeleteSpan, embedPickTree } from './gripMenu'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 
 describe('blockDeleteSpan', () => {
   const del = (doc: string, from: number, to: number): string => {

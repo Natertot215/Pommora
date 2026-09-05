@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -12,8 +12,8 @@ import { createPage, updatePageProperty } from './page'
 import { readSidecar } from '../sidecarIO'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { readFrontmatterFields } from '../IO/pageFile'
-import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 let root: string
 let folder: string

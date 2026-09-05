@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateName, validateDefinition, validateOptionValues } from './schema'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 const def = (
   over: Partial<PropertyDefinition> & {

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../store'
 import { reconcileIndexOf, resolveIndexOf, searchEntriesOf } from '../treeIndex'
 import { liveTarget } from '../Tabs/tabsModel'

@@ -1,16 +1,20 @@
 import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { UNGROUPED } from '@shared/types'
+import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import { patchOverride } from '../useValuesEpoch'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
-import type { ColumnStyle } from '@shared/columnStyles'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { confirmDelete } from '@renderer/Windows/confirmations'
-import { type CellMenuContext, cellMenuContextFor } from '@shared/cellMenu'
-import { parseStyleAction } from '@shared/columnMenu'
-import type { ColumnAlign, SavedView } from '@shared/views'
-import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import { parentOf } from '@shared/treePatch'
-import type { PropertyDefinition } from '@shared/properties'
+import { type CellMenuContext, cellMenuContextFor } from '@pommora/core/Actions/cellMenu'
+import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
+import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
+import {
+  applyValueAtRoot,
+  isBlankValue,
+  type PropertyValue,
+} from '@pommora/core/Properties/propertyValue'
+import { parentOf } from '@pommora/core/Nexus/treePatch'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { ContextOption } from '@renderer/Properties/contextOptions'
 import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
@@ -74,7 +78,7 @@ import {
   urlClickTarget,
   urlValueFromEdit,
   urlValueFromRename,
-} from '@shared/linkValue'
+} from '@pommora/core/Connections/linkValue'
 import { resolveTitle, validateLink } from '@renderer/Actions/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Actions/connectionMenu'
 

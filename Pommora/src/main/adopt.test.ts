@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { mkdtemp, rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,7 +7,7 @@ import { stampAdopted } from './adopt'
 import { readSidecar } from './sidecarIO'
 import { readFrontmatterFields } from './IO/pageFile'
 import { isUlid, idTime } from './ids'
-import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
+import { pageCollectionSidecar, pageSetSidecar } from '@pommora/core/Nexus/schemas'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from './paths'
 
 let root: string

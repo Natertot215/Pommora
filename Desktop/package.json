@@ -2,6 +2,16 @@
   "name": "@pommora/desktop",
   "private": true,
   "main": "./out/main/index.js",
+  "exports": {
+    "./*": {
+      "types": [
+        "./*.ts",
+        "./*.tsx",
+        "./*"
+      ],
+      "default": "./*"
+    }
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

@@ -11,13 +11,13 @@ import { rewritePageSerialized } from '../IO/atomicWrite'
 import { sweepAdmitsBody } from './util'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections, rewriteFrontmatterConnections } from '../Connections/rewrite'
-import { normalizeTitle } from '@shared/connections'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { ok, type Result } from '@pommora/core/Contract/result'
 import { queryMentions } from '../Database/contentIndex'
 import { frontmatterValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
 import { noteValueWrite } from '../valuesChanged'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { isRegisteredPropertyName, propertyNames } from '@shared/properties'
+import { isRegisteredPropertyName, propertyNames } from '@pommora/core/Properties/properties'
 
 /** The caller renames the target's own file and reverts that rename if this throws. */
 export async function renameCascade(

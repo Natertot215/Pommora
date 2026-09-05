@@ -2,7 +2,7 @@ import { tokenize } from '../Tokens'
 import { parseListMarker, headingParts } from '../Detect'
 import { isQuoteToggleable, splitPrefix } from '../Input/format'
 import { lineStartAt, lineEndAt } from '../Input'
-import type { FormatState } from '@shared/editorMenu'
+import type { FormatState } from '@pommora/core/Actions/editorMenu'
 
 export type { FormatState }
 

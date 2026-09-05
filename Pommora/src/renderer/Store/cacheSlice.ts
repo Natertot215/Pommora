@@ -1,7 +1,7 @@
-import { tileHostKey, type TileHostRef } from '@shared/tiles'
+import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 import type { Result } from '@pommora/core/Contract/result'
-import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
-import { stabilize } from '@shared/treeStabilize'
+import { type AssetMap, EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
+import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import type { Slice } from './sessionState'
 
 export interface CacheSlice {

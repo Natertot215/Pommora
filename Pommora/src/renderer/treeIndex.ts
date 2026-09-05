@@ -8,15 +8,9 @@
 // listed, so title resolution can still answer "ambiguous". The keyed projections collapse
 // duplicates last-wins.
 
-import type { EntityRecord } from '@shared/record'
-import {
-  type NavRef,
-  type NexusTree,
-  type PageNode,
-  type SelectTarget,
-  type SetNode,
-  toNavRef,
-} from '@shared/types'
+import type { EntityRecord } from '@pommora/core/Nexus/record'
+import { type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
+import type { NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { NO_TRAIL, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import {

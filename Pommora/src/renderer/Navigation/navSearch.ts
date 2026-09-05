@@ -2,7 +2,7 @@
 // deferred Prospect resting on a SQLite FTS layer. The index carries a ready-to-select NavRef per
 // hit and is memoized per tree; filterNav is pure and re-runs per keystroke.
 
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 
 export interface SearchEntry {
   key: string

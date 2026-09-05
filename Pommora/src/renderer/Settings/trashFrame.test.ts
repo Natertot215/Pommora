@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { TrashRow } from '@shared/types'
+import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { countPhrase, filterRows } from './TrashFrame'
 
 const row = (over: Partial<TrashRow>): TrashRow => ({

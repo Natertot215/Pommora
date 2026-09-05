@@ -2,15 +2,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { PropertyDefinition } from '@shared/properties'
-import type { CollectionNode, SetNode } from '@shared/types'
-import { LOCATION_SORT, type SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { ViewHost } from './ViewHost'
 import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 import { pageValues } from '@renderer/Testing/pageValues'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

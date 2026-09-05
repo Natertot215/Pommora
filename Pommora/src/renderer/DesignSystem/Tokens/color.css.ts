@@ -1,5 +1,5 @@
 import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
-import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@shared/theme'
+import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@pommora/uix/Theme/theme'
 import { tintAt } from './tint'
 
 // Primitives — the base system palette. Grey/white/black are the single source for
@@ -32,7 +32,7 @@ const derived = createGlobalTheme(':root', {
       secondary: tintAt(white, 65),
       tertiary: tintAt(white, 35),
     },
-    // The app substrate — the base background's single source: @shared/theme WINDOW_BG, so the Electron window + this token never drift.
+    // The app substrate — the base background's single source: @pommora/uix/Theme/theme WINDOW_BG, so the Electron window + this token never drift.
     background: {
       window: WINDOW_BG,
     },

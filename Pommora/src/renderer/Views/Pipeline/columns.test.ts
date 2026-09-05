@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import fixture from '@shared/__fixtures__/collection-with-status.json'
-import registry from '@shared/__fixtures__/registry.json'
-import { savedView, type SavedView } from '@shared/views'
-import { propertyDefinition, type PropertyDefinition } from '@shared/properties'
+import fixture from '@pommora/core/Views/fixtures/collection-with-status.json'
+import registry from '@pommora/core/Views/fixtures/registry.json'
+import { savedView, type SavedView } from '@pommora/core/Views/views'
+import { propertyDefinition, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import { resolveColumns } from './columns'
 
 const schema: PropertyDefinition[] = [

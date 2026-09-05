@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { parseConnectionText } from '@shared/connections'
-import type { AssetMap } from '@shared/types'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
 import { assetUrl, resolveAssetUrl, resolveAssetValue, resolveFileValue } from './assetUrl'
 
 const map: AssetMap = {

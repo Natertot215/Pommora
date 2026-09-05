@@ -1,7 +1,7 @@
 // The one Context → pickable-Spaces mapping (table cell pickers, the FilterFrame's chip
 // fields). Spaces list in their per-Context sidebar order; every option carries the Space's
 // color + icon so a picker chip renders identically to a cell chip. Pure: no fs, no React.
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { spacesByIdOf } from './contextIdentity'
 
 export interface ContextOption {

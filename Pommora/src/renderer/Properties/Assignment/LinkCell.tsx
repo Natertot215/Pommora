@@ -1,11 +1,15 @@
 import { useEffect } from 'react'
-import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '@shared/properties'
-import type { ColumnLook } from '@shared/columnStyles'
-import { isHttpLink } from '@shared/links'
+import {
+  DEFAULT_LINK_DISPLAY,
+  isLinkDisplay,
+  type PropertyDefinition,
+} from '@pommora/core/Properties/properties'
+import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import { isHttpLink } from '@pommora/core/Connections/links'
 import { useSession } from '@renderer/store'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { OverScroll } from '@renderer/Interactions/OverScroll'
-import { linkDisplayText, readLink, type LinkTarget } from '@shared/linkValue'
+import { linkDisplayText, readLink, type LinkTarget } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { openWebLink } from '@renderer/Actions/openWebLink'

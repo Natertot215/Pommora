@@ -1,8 +1,8 @@
 // Pure recents-stream logic for the Navigation layer. Storage is a plain MRU list of bare refs
 // (newest first) — durable pins and favorites are their own arrays in navigation.json.
 
-import { toNavRef } from '@shared/types'
-import type { NavRef, SelectTarget } from '@shared/types'
+import { toNavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef, SelectTarget } from '@pommora/core/Navigation/navRef'
 import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 /** Generous default history depth (deep history + a tunable cap, not a tight ~50). */

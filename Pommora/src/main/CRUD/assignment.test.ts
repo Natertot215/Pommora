@@ -6,8 +6,8 @@ import { assignProperty, reorderAssignment, collectionFolders } from './assignme
 import { dropLiveTree } from '../liveTree'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
-import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 let root: string
 let notes: string

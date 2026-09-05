@@ -6,32 +6,33 @@
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
-import { admitContentFile } from '@shared/identity'
+import { admitContentFile } from '@pommora/core/Nexus/identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
+import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colorSetting'
 import type {
-  AccentSetting,
   CollectionNode,
   ContextGroup,
   NexusTree,
   PageNode,
   SetNode,
   SpaceNode,
-  ColorSetting,
+} from '@pommora/core/Nexus/tree'
+import type {
   EntityIconKind,
   FolderPlacement,
   Personalization,
   SidebarMode,
-} from '@shared/types'
+} from '@pommora/core/Settings/personalization'
 import {
   contextsRegistry as contextsRegistrySchema,
   parseContextKey,
   type ContextsRegistry,
-} from '@shared/contexts'
-import { resolveContextKeys } from '@shared/contextResolve'
-import { DATE_FORMATS } from '@shared/columnStyles'
+} from '@pommora/core/Properties/contexts'
+import { resolveContextKeys } from '@pommora/core/Properties/contextResolve'
+import { DATE_FORMATS } from '@pommora/core/Properties/columnStyles'
+import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colorSetting'
+import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import {
-  DEFAULT_ACCENT,
-  DEFAULT_COMMANDS,
   EMBED_SCALE_DEFAULT,
   ENTITY_ICON_KINDS,
   WEB_ZOOM_DEFAULT,
@@ -45,12 +46,17 @@ import {
   coerceScale,
   coerceInterfaceScale,
   EDITOR_SCALE_DEFAULT,
-} from '@shared/types'
-import { isColorKey } from '@shared/theme'
-import { savedView, type SavedView } from '@shared/views'
-import { type Crop, coerceOpenIn, coerceViewButton, cropsFile } from '@shared/schemas'
-import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
-import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
+} from '@pommora/core/Settings/personalization'
+import { isColorKey } from '@pommora/uix/Theme/theme'
+import { savedView, type SavedView } from '@pommora/core/Views/views'
+import { type Crop, coerceOpenIn, coerceViewButton, cropsFile } from '@pommora/core/Nexus/schemas'
+import { LINK_DISPLAYS, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import {
+  makeCollectionNode,
+  makePageNode,
+  makeSetNode,
+  makeSpaceNode,
+} from '@pommora/core/Nexus/treePatch'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './IO/atomicWrite'
 import { isContentFile, listEntries } from './IO/walk'
@@ -72,7 +78,7 @@ import {
   CONTEXTS_REGISTRY_REL,
   NON_CORPUS_TOP,
   spaceDirRel,
-} from '@shared/nexusPaths'
+} from '@pommora/core/Locations/nexusPaths'
 
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'

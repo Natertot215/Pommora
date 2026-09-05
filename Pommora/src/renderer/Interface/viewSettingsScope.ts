@@ -1,4 +1,4 @@
-import type { SelectionState } from '@shared/types'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 
 /** Maps the current selection to a Settings-menu scope; SettingsMenu switches on this to
  *  pick its frame. Adding a future surface's frame is a new case here + a switch arm there. */

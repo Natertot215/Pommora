@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { ThumbRect } from '@shared/types'
+import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { pageBody, shownPage, useSession } from '../store'
 import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'

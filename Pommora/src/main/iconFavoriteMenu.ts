@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import type { IconFavoriteMenuAction } from '@shared/identityMenus'
+import type { IconFavoriteMenuAction } from '@pommora/core/Actions/identityMenus'
 import { popReturningMenu } from './returningMenu'
 
 /** The icon picker's right-click menu — a single Favorite/Remove toggle. Resolves 'toggle' on click,

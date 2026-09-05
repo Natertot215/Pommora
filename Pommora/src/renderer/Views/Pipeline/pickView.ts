@@ -2,9 +2,9 @@
 // schema governs this container, and which of its saved views is showing. Pure, and deliberately
 // outside any renderer: both are read by Cards, by the Visibility pane, and by the view router.
 
-import type { PropertyDefinition } from '@shared/properties'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import { mintDefaultView, type SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
+import { mintDefaultView, type SavedView } from '@pommora/core/Views/views'
 
 /** A Collection uses its own schema; a Set inherits its ancestor Collection's (schema lives only on
  *  the Collection). [] when the owning Collection can't be found. */

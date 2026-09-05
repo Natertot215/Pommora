@@ -1,4 +1,4 @@
-import type { ColumnStyle } from '@shared/columnStyles'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 
 /** Fold style overrides per-KEY into the saved record — style entries are objects, so an
  *  entry-level spread would wipe a column's saved sibling keys (a time_format override must

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { lockLabel } from '@shared/toggleLabels'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { useAssetUrl, useSession } from '../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
 import { Button } from '@renderer/DesignSystem/Buttons'
@@ -10,7 +10,7 @@ import { MenuFooting, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { FooterLockButton } from '@renderer/DesignSystem/Menus'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useNexusIcon } from '@renderer/Utilities/useNexusIcon'
-import { tileHostKey, type TileHostRef } from '@shared/tiles'
+import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 
 import * as s from './frames.css'
 

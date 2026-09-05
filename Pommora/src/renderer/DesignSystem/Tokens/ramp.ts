@@ -7,7 +7,7 @@ import {
   type CellKey,
   type RampFamily,
   type RampStep,
-} from '@shared/theme'
+} from '@pommora/uix/Theme/theme'
 
 export { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type RampFamily, type RampStep }
 import { vars as colorVars } from './color.css'

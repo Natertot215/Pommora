@@ -7,15 +7,15 @@ import { resolveScroller, startAutoScroll } from '@renderer/Interactions/autoscr
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { closeGlance, insideGlance } from '@renderer/Interface/Glance/glanceAction'
 import type { Align, TableModel } from './model'
-import type { TableMenuContext } from '@shared/tableMenu'
+import type { TableMenuContext } from '@pommora/core/Actions/tableMenu'
 import { CellEditor } from './CellEditor'
 import { StaticCell } from './cellStatic'
 import { cellToDisplay, cellToSource } from './codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from './clipboard'
 import { foldLabel } from '../Detect'
-import { clamp } from '@shared/clamp'
 import { nextCell, type NavDir } from './navigate'
 import type { ConnectionsApi } from '../Connections'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
