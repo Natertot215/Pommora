@@ -712,11 +712,11 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - [x] **Phase 3** — The recipe · gate head `57a46fc9`
   - [x] Task 5 — The shared table · `6a715876`
   - [x] Task 6 — The renderer table · `0dc65e48`
-- [ ] **Phase 4** — The document in the Nexus
-  - [x] Task 7 — `_tiles.json` · (stamped at Gate 4)
-  - [x] Task 8 — Live reload · (stamped at Gate 4)
-  - [x] Task 9 — The migration · (stamped at Gate 4)
-  - [x] Task 10 — The reserved key · (stamped at Gate 4)
+- [x] **Phase 4** — The document in the Nexus · gate head `97cf4f55`
+  - [x] Task 7 — `_tiles.json` · `c674ef5f`
+  - [x] Task 8 — Live reload · `c5600368`
+  - [x] Task 9 — The migration · `50d86e59`
+  - [x] Task 10 — The reserved key · `a5baaa74`
 
 ### Rulings
 
