@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "main.ts",
+    "Bridge/**",
+    "Platform/**",
+    "Store/**",
+    "FileWatch/**",
+    "Actions/**",
+    "Web/**/*.ts",
+    "Capture/**",
+    "Config/**"
+  ]
+}

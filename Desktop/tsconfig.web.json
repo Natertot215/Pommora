@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ES2022",
@@ -10,13 +9,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@shared/*": ["./src/shared/*"],
-      "@renderer/*": ["./src/renderer/*"],
-      "@pommora/core/*": ["../Core/*"],
-      "@pommora/uix/*": ["../UIX/*"]
-    },
     "noEmit": true
   },
-  "include": ["src/renderer/**/*", "src/shared/**/*", "src/preload/index.d.ts"]
+  "include": ["Renderer/**"]
 }

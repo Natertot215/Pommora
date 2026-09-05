@@ -1994,6 +1994,9 @@ serveBridge(
   },
 )
 
+const userDataOverride = process.env.POMMORA_USERDATA
+if (userDataOverride) app.setPath('userData', userDataOverride)
+
 // Every write lock in this process is module state, so a second process on the same nexus
 // would share none of it and race every write with no coordination. One instance is a
 // correctness boundary, not a convenience — multi-window stays reachable, a second process

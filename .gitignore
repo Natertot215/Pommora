@@ -11,6 +11,13 @@
 # React / Node
 node_modules/
 dist/
+out/
+release/
+coverage/
+.vite/
+*.tsbuildinfo
+*.env
+**/build/_dots.png
 
 # Pommora — per-nexus app-internal config
 # Skipped from any git-tracked folder used as a dev test nexus

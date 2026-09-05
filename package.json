@@ -1,0 +1,34 @@
+{
+  "name": "pommora",
+  "private": true,
+  "workspaces": [
+    "UIX",
+    "Core",
+    "Desktop",
+    "Mobile",
+    "Sync",
+    "Showcase",
+    "Pommora"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w Pommora",
+    "build": "npm run build -w Pommora",
+    "package": "npm run package -w Pommora",
+    "showcase": "npm run dev -w Showcase",
+    "build:showcase": "npm run build -w Showcase",
+    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Pommora/tsconfig.node.json && tsc -p Pommora/tsconfig.web.json",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "check": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^25.9.3",
+    "@vanilla-extract/vite-plugin": "^5.2.2",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
