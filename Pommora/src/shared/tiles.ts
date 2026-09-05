@@ -162,24 +162,22 @@ const viewEntry = z.looseObject({
   locked: lockedField,
   zoom: zoomField,
 })
-const knownEntry = z.union([markdownEntry, pageEntry, viewEntry])
-
 export type TileType = TileEntry['type']
 
 /** Which picker a link row drills into; `'none'` renders the row refused. */
 export type TileMenuSource = 'pages' | 'views' | 'none'
 
 /** What a kind declares once; the host, the menus, and main's lifecycle read it here. */
-export interface TileKind {
-  schema: z.ZodType<TileEntry>
-  /** The kind owns a `<id>.md` beside the document: minted empty, trashed on remove or convert,
-   *  copied on duplicate, walked by the rename heal. */
+export interface TileKind<E extends TileEntry = TileEntry> {
+  schema: z.ZodType<E>
+  /** The kind owns a `<id>.md` beside the document: trashed on remove or convert, copied on
+   *  duplicate, walked by the rename heal. */
   fileBacked: boolean
   /** The handle menu's link rows, in order. */
   menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
 }
 
-export const TILE_KINDS: Record<TileType, TileKind> = {
+export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: T }>> } = {
   markdown: {
     schema: markdownEntry,
     fileBacked: true,
@@ -191,6 +189,12 @@ export const TILE_KINDS: Record<TileType, TileKind> = {
   page: { schema: pageEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'pages' }] },
   view: { schema: viewEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'none' }] },
 }
+
+const knownEntry = z.union([
+  TILE_KINDS.markdown.schema,
+  TILE_KINDS.page.schema,
+  TILE_KINDS.view.schema,
+] satisfies { [T in TileType]: z.ZodType<Extract<TileEntry, { type: T }>> }[TileType][])
 
 /** The entry a freshly minted tile starts as — complete for a markdown tile, whose kind is its
  *  only field. */

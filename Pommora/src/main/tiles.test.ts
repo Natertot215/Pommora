@@ -13,6 +13,7 @@ import {
   readTileDoc,
   readMarkdownTile,
   removeTile,
+  copyEntry,
   rewriteTileConnections,
   TILE_COPY,
   writeTileDoc,
@@ -219,5 +220,18 @@ describe('the copy arm', () => {
     expect(raw.views[0].config.id).toBe('old')
     expect(TILE_COPY.markdown).toBeUndefined()
     expect(TILE_COPY.page).toBeUndefined()
+  })
+
+  it("copyEntry dispatches by the entry's own kind and passes everything else through", () => {
+    const view = { id: 'v', type: 'view', views: [{ config: { id: 'old' } }] }
+    expect((copyEntry(view) as typeof view).views[0].config.id).not.toBe('old')
+    for (const raw of [
+      null,
+      7,
+      { id: 'm', type: 'markdown' },
+      { id: 'x', type: 'toString' },
+      { id: 'y', type: '__proto__' },
+    ])
+      expect(copyEntry(raw)).toBe(raw)
   })
 })
