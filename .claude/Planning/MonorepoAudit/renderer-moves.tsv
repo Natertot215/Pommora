@@ -287,7 +287,7 @@ Pommora/src/renderer/Navigation/nav-list.css	Core/Navigation/nav-list.css
 Pommora/src/renderer/Navigation/navRecents.ts	Core/Navigation/navRecents.ts
 Pommora/src/renderer/Navigation/navResolve.ts	Core/Navigation/navResolve.ts
 Pommora/src/renderer/Navigation/navSearch.ts	Core/Navigation/navSearch.ts
-Pommora/src/renderer/Navigation/testTree.ts	Core/Testing/fixtures/testTree.ts
+Pommora/src/renderer/Navigation/testTree.ts	Core/Navigation/testTree.ts
 Pommora/src/renderer/Navigation/thumbMarkers.ts	Core/Navigation/thumbMarkers.ts
 Pommora/src/renderer/Navigation/useNavData.ts	Core/Navigation/useNavData.ts
 Pommora/src/renderer/Navigation/useNavThumbnails.ts	Core/Navigation/useNavThumbnails.ts
@@ -337,11 +337,11 @@ Pommora/src/renderer/Properties/value.ts	Core/Properties/value.ts
 Pommora/src/renderer/Settings/AssetDirectoryRow.tsx	Core/Settings/AssetDirectoryRow.tsx
 Pommora/src/renderer/Settings/ClearActionRow.tsx	Core/Settings/ClearActionRow.tsx
 Pommora/src/renderer/Settings/ExcludedDirectoriesRow.tsx	Core/Settings/ExcludedDirectoriesRow.tsx
-Pommora/src/renderer/Settings/IconPicker.tsx	UIX/Pickers/IconPicker/bound.tsx	renamed per plan
+Pommora/src/renderer/Settings/IconPicker.tsx	Core/Assets/IconPicker.tsx
 Pommora/src/renderer/Settings/SettingsWindow.tsx	Core/Settings/SettingsWindow.tsx	SETTINGS_WIN/RAIL → UIX/Windows/bounds.ts
 Pommora/src/renderer/Settings/TrashFrame.tsx	Core/Trash/TrashFrame.tsx
 Pommora/src/renderer/Settings/exclusion-rows.css.ts	Core/Settings/exclusion-rows.css.ts
-Pommora/src/renderer/Settings/iconFavorites.ts	UIX/Pickers/IconPicker/iconFavorites.ts
+Pommora/src/renderer/Settings/iconFavorites.ts	Core/Assets/iconFavorites.ts
 Pommora/src/renderer/Settings/settings-window.css	Core/Settings/settings-window.css
 Pommora/src/renderer/Settings/trash-frame.css	Core/Trash/trash-frame.css
 Pommora/src/renderer/Showcase/Leaves/ButtonsLeaf.tsx	Showcase/Leaves/ButtonsLeaf.tsx
@@ -400,11 +400,11 @@ Pommora/src/renderer/Tables/tableDnd.tsx	UIX/Interactions/tableDnd.tsx
 Pommora/src/renderer/Tabs/TabBar.tsx	Core/Navigation/TabBar.tsx
 Pommora/src/renderer/Tabs/tab-base.css	Core/Navigation/tab-base.css
 Pommora/src/renderer/Tabs/tabsModel.ts	Core/Navigation/tabsModel.ts
-Pommora/src/renderer/Testing/editorHarness.ts	Core/Testing/editorHarness.ts
-Pommora/src/renderer/Testing/pageValues.ts	Core/Testing/pageValues.ts
-Pommora/src/renderer/Testing/pointerHarness.ts	Core/Testing/pointerHarness.ts
-Pommora/src/renderer/Testing/propsAtRoot.ts	Core/Testing/propsAtRoot.ts
-Pommora/src/renderer/Testing/setup.ts	Core/Testing/setup.ts
+Pommora/src/renderer/Testing/editorHarness.ts	Core/MarkdownPM/editorHarness.ts
+Pommora/src/renderer/Testing/pageValues.ts	Core/Views/pageValues.ts
+Pommora/src/renderer/Testing/pointerHarness.ts	UIX/Interactions/pointerHarness.ts
+Pommora/src/renderer/Testing/propsAtRoot.ts	Core/Views/propsAtRoot.ts
+Pommora/src/renderer/Testing/setup.ts	Core/vitest.setup.ts
 Pommora/src/renderer/Tiles/Core/codec.ts	Core/Tiles/layout/codec.ts
 Pommora/src/renderer/Tiles/Core/edges.ts	Core/Tiles/layout/edges.ts
 Pommora/src/renderer/Tiles/Core/hitTest.ts	Core/Tiles/layout/hitTest.ts

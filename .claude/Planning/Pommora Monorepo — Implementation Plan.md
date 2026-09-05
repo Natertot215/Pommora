@@ -26,7 +26,7 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 11. Docs reconciled per H-6: 199 path citations and 120 bare folder names swept; ArchitecturePM split into a Core map and a Desktop doc; Features tagged; 38 stale claims corrected; CLAUDE.md Hard Rules restated; the Mobile plan's Task 0 and Phase 8 marked superseded with a path table. (H)
 12. Names per A-9: Interface, Locations, FileWatch, Platform, Actions/Menus/Actions, SidePane, no Primitives, MarkdownPM unchanged.
 
-**Acceptance — the whole thing working:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` are green; the built desktop app opens a scratch copy of NexusOS, renders the tree, opens a page, saves an edit; `find Core UIX Desktop -name '*.ts*' | xargs grep -l "from 'electron"` lists only files under `Desktop/`; `grep -rl "from '@pommora/core" UIX` → exactly `UIX/Pickers/IconPicker/iconFavorites.ts`; the test count is 321 files / 4,006 tests minus only the tests whose subjects the kill list removed, each named in the Log; the net line delta is negative.
+**Acceptance — the whole thing working:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` are green; the built desktop app opens a scratch copy of NexusOS, renders the tree, opens a page, saves an edit; `find Core UIX Desktop -name '*.ts*' | xargs grep -l "from 'electron"` lists only files under `Desktop/`; `grep -rl "from '@pommora/core" UIX` → 0; the test count is 321 files / 4,006 tests minus only the tests whose subjects the kill list removed, each named in the Log; the net line delta is negative.
 
 **Forced By**
 
@@ -92,6 +92,7 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 - `window.nexus.` in `Core` outside `Core/Platform` → 0. Control: in `Core/Platform` → ≥ 1.
 - `Pommora/src` in `.claude` excluding `Planning/MonorepoAudit`, `Planning/*Mobile*`, `Sessions`, `HistoryPM.md` → 0. Control: `Core/` in `ArchitecturePM.md` → ≥ 5.
 - `DesignSystem/`, `renderer/Interface`, `renderer/Actions`, `renderer/Utilities`, `src/shared` in `.claude/Features` → 0. Control: `UIX/Menus` in `DesignSystemPM.md` → ≥ 1.
+- `flavor` (case-insensitive, `navFlavor` included) → 0 across `Core UIX Desktop .claude/Features`; the identifier and the stored `open.flavor` key become `kind` at Task 10 (ruling 09-05-2026). Control: `rg -F "kind: 'nav'" Core/Interface/Windows` → ≥ 1.
 - `assetMigrate`, `sidecarMode`, `INVENTED`, `vite.config.app`, `dist-app`, `react-markdown`, `pngjs` → 0 across the repo excluding `.claude/Planning/MonorepoAudit` and `HistoryPM.md`. Control: `rmwJsonStrict` → ≥ 3.
 - `'view-button-menu'`, `'cell-menu'`, `'card-menu'` and the other 23 retired menu channel names (A05 §1 inventory) → 0 in `Core Desktop`. Control: `'row-menu'` → ≥ 3.
 
@@ -243,7 +244,7 @@ Every importer rewritten to the new file (Haiku; the compiler enumerates). The 1
 
 **Then the rest of shared.** `Pommora/src/shared/` 86 remaining files (52 non-test modules + tests + `__fixtures__`), destinations per A06 §1 and §3.
 
-**Becomes** — `git mv` per this table; tests travel with subjects; `__fixtures__` → `Core/Testing/fixtures/`:
+**Becomes** — `git mv` per this table; tests travel with subjects; `__fixtures__` → `Core/Views/fixtures/` (its two JSON inputs are read only by Views tests):
 
 ```
 Core/Contract         (done in Task 2)
@@ -344,17 +345,16 @@ UIX/Theme Animations Interactions Buttons Labels Controls Fields Elements Glass 
 Core/Session          store.ts → Session/store.ts, treeIndex (+ Interface/scope.ts merged), sessionState, nexusSlice, configSlice (+ setAssetDirectory/setExclusions), cacheSlice, renameSlice → mutationSlice.ts, chromeSlice's neutral half, tabState's detail half → pageDetailCache.ts, selection, destinationTree, Interface/pageFlush + Tiles/pageTileWrite → saveScheduler.ts, Tokens/personalization.ts
 Core/Interface        App.tsx, ContentView, InterfaceScaffold, InspectorPane → SidePane/, Subfield/, NotificationLabel + notifications, ConfirmationWindow + confirmations, Glance/ (page branch, glanceAction, glanceLink from MarkdownPM/Connections), Sidebar/, Toolbar/ (Toolbar, ToolbarTrio, NavMenu, SettingsMenu), Windows/ (PageWindow minus PagePanel, NavWindow, PageHistoryWindow, WindowTabStrip, useWindowWarm, windowMorph, windowTabs, windowCache, windowSlice), layoutSlice (chromeSlice's layout half), Banner/DetailTitleHeader/AddBannerButton/useBannerMenu → Interface/Header/, viewSettingsScope, Animation/paneSlide + toolbar-slide.css, Interactions/revealBar, styles.css (shell half), the menu presenter (Task 13 adds)
 Core/Pages            PageView, pageEditor, Frames/PageMenu, MarkdownPM/PageHeader, restoreSnapshot
-Core/Navigation       Navigation/* (minus testTree → Core/Testing/fixtures), Tabs/*, navigationSlice, tabState's warm half → warmTabs.ts, NavView + nav-view.css
+Core/Navigation       Navigation/* (testTree included), Tabs/*, navigationSlice, tabState's warm half → warmTabs.ts, NavView + nav-view.css
 Core/Views            Views/*, Frames/{Filter,Group,Sort,Layout,Hidden,Settings}Frame + LayoutToggles, CardsOptions, ViewItemMenu, switchRows, filterModel, hiddenFrameModel, viewIcon, Toolbar/ViewMenu + ViewFrame, Tables/{ColumnHeader,cellSweep,columnWidths,columnReorder,columnAlign,columnStyles}, Tiles/ViewTileScope, Properties/Assignment/valueUndo + cardValueInput's card half, notifications.restoreView
 Core/Properties       Properties/* re-nested Cells/ Pickers/ Page/ Schema/ (PropertyFrame joins Schema/), Actions/linkResolve
 Core/Tiles            TileHost, TileHandleMenu, tileKinds, useTileDoc, tileZoom, Surfaces/ whole (MarkdownTile, ViewTile, PageTile, WebTile + webRetention; every tile kind), tile-base.css whole, Interface/SpaceView, HomepageView, Frames/SettingsScaffold → HomepageSettings.tsx, Toolbar/SpaceMenu, Tiles/Core/* → Tiles/layout/
 Core/MarkdownPM       MarkdownPM/* re-nested per A09 §6 (Model/, Render/, Guards/, Gestures/, Links/, Citations/, Embeds/, Menus/, Widgets/, Autocomplete/, Tables/); Toolbar/OutlineMenu + OutlineDnd + outlineTree, Tiles/tileCache, Subfield/subfieldStats, Interactions/useKeepInView
-Core/Assets           Assets/*, Pickers/ImagePicker, Utilities/EntityIcon, useNexusIcon, Symbols entity-icon policy (:192-208), store.useAssetUrl
+Core/Assets           Assets/*, Pickers/ImagePicker, Utilities/EntityIcon, useNexusIcon, Settings/IconPicker + iconFavorites (the bound picker; the unbound one is UIX's), Symbols entity-icon policy (:192-208), store.useAssetUrl
 Core/Utilities        DesignSystem/Util/{capMap,checkSet,moveItem,pad}, Utilities/iteration-window (+ css)
-UIX/Pickers/IconPicker  Settings/IconPicker → bound.tsx, Settings/iconFavorites → iconFavorites.ts, beside the unbound picker; the one UIX file that imports Core, by ruling
 Core/Settings         Settings/SettingsWindow, TrashFrame → Core/Trash/TrashFrame.tsx, AssetDirectoryRow, ExcludedDirectoriesRow, ClearActionRow, css; SETTINGS_WIN/SETTINGS_RAIL → UIX/Windows/bounds.ts
 Core/Platform         Assets/assetUrl's scheme line, App.tsx:83–173 → useBridgeSubscriptions.ts, Actions/nativeMenus, openWebLink
-Core/Testing          Testing/*, Navigation/testTree
+No Core/Testing (ruling 09-05-2026: the folder collapses; each harness lives with what it exercises): Testing/editorHarness → Core/MarkdownPM/editorHarness.ts; Testing/pointerHarness → UIX/Interactions/pointerHarness.ts (nine importing folders, a gesture harness); Testing/pageValues + propsAtRoot → Core/Views/; Testing/setup → Core/vitest.setup.ts (the Core project's `setupFiles`)
 Core/Interactions?    no — Actions/commands → UIX/Interactions/commands.ts; Sidebar/sidebarDndModel's generic half → UIX/Interactions/reorderModel.ts; Tables/tableDnd, Frames/frameDnd + model → UIX/Interactions
 Desktop/Web           Windows/WebWindow + css, Glance site branch (L108–122, 267–273, 412–430 as a WebSurface implementation), glance-pane.css .glance-web*
 Desktop/Renderer      main.tsx, index.html, env.d.ts, styles.css drag-region lines (:106-132, 160), the six -webkit-app-region rules, nativeEditorMenu (MarkdownPM/Editor/menu.ts:27-32)
@@ -369,7 +369,7 @@ Files that dissolve into siblings in this move (no logic change): `Cards/Card.ts
 
 - [ ] `renderer-moves.tsv` line count equals the renderer's non-test file count at Task 5's start; every destination folder is in B-3, C-1, or D-1.
 - [ ] `test ! -d Pommora/src/renderer`; `rg -F "@renderer/" Core UIX Desktop Showcase` → 0. Control: `rg -F "@pommora/uix/" Core` → ≥ 100.
-- [ ] `rg -l "from '@pommora/core" UIX` → exactly `UIX/Pickers/IconPicker/iconFavorites.ts`. Control: `rg -l "from '@pommora/uix" Core` → ≥ 100.
+- [ ] `rg -l "from '@pommora/core" UIX` → 0. Control: `rg -l "from '@pommora/uix" Core` → ≥ 100.
 - [ ] `rg -l "useSession\|window\.nexus" UIX` — run as two commands: `rg -l "useSession" UIX` → 0 and `rg -l "window.nexus" UIX` → 0. Control: `rg -l "useSession" Core/Session` → ≥ 5.
 - [ ] Full gate green; 321 / 4,006 (tests moved with subjects; the Desktop vitest project now covers `Pommora/src/main` only).
 
@@ -535,7 +535,8 @@ Core/Views/pipeline/ host/ bands/ Table/ Cards/ Settings/         (A11 §6 tree)
 Core/Properties/Cells/ Pickers/ Page/ Schema/ + value.ts formatValue.ts contextIdentity.ts contextOptions.ts resolveContext.ts at root
   Core/Properties/Page/PagePropertyRows.tsx ({ page, variant: 'page' | 'panel' }) replaces PageProperties + PagePanel; page-properties.css.ts is the one sheet
 Core/Tiles/layout/ (the pure engine; HYSTERESIS a parameter) + host files at root
-Core/Interface/Sidebar/ Toolbar/ SidePane/ Subfield/ Windows/ Header/ Glance/ Notifications/ Confirm/
+Core/Interface/Sidebar/ Toolbar/ SidePane/ Subfield/ Windows/ Header/ Glance
+  Windows/: `flavor` → `kind` everywhere (the `'page' | 'nav'` discriminant, `navFlavor` → `navKind`, the stored `open.flavor` key; 47 sites in 16 files, the compiler enumerates; the windows record is device-local, no migration)/ Notifications/ Confirm/
 Core/Session/treeIndex.ts — gains containersByPath, buildIndex projections; sidebarDndModel.buildIndex and destinationTree read it
 ```
 
@@ -791,8 +792,8 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
   - [x] Task 0 — Baseline and scratch Nexus (launch check moved to Task 1)
   - [x] Task 1 — Root, workspaces, spike · `ebed2f3a`
 - [ ] **Phase 1** — shared dissolves
-  - [ ] Task 2 — Contract and dialer type
-  - [ ] Task 3 — shared dissolves, types.ts first
+  - [x] Task 2 — Contract and dialer type · `df7cde74`
+  - [x] Task 3 — shared dissolves, types.ts first · `30b897c9`
 - [ ] **Phase 2** — Engine out of Electron
   - [ ] Task 4 — Pure engine domains move
   - [ ] Task 5 — Renderer into Core and UIX
@@ -817,9 +818,11 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
 
 ### Rulings
 
+- 09-05-2026 (Nathan): `Core/Testing` collapses. Harnesses live beside what they exercise (editor harness in MarkdownPM, pointer harness in UIX/Interactions, the two Views helpers in Views, `testTree` back in Navigation), the two JSON fixtures in `Core/Views/fixtures/`, and the vitest setup file at Core's root as `vitest.setup.ts`.
+- 09-05-2026 (Nathan): `flavor` leaves the codebase as a word for a variant; `kind` replaces it (Nathan offered Layout, Type, or anything else; `kind` is what the codebase already says for tiles and entities). Executed at Task 10 with the Windows settle; swept at Gate 5.
 - 09-05-2026 (Nathan): The comment ledgers stay; Task 18 repoints them rather than deleting them. Their working-tree deletion earlier today was Nathan's own and is restored.
 - 09-05-2026 (Nathan): Verification is one smoke launch per gate that touched runtime code; hand walks, screenshot sets, and per-family right-click lists dropped. Reviews attack the implementation, not whether the app works.
-- 09-05-2026 (Nathan): The icon-picker binding (`Settings/IconPicker` + `iconFavorites`) lives in `UIX/Pickers/IconPicker` beside the picker it binds and may import Core; it is the one UIX file allowed to, and the UIX guard names it. `Core/Utilities` exists as a folder for what the user never invokes: the four kit data helpers and the iteration window. The commands the user does invoke (`DEFAULT_COMMANDS`: toggle-ribbon, toggle-nav, paste-inverse) are `Core/Actions/commands.ts`; the chord matcher is a keyboard mechanism and stays `UIX/Interactions/commands.ts`. Icon files other than the picker binding stay in `Core/Assets`.
+- 09-05-2026 (Nathan, then reversed the same day on Claude's objection): the icon-picker binding stays in Core (`Core/Assets`, beside the entity-icon policy); UIX imports nothing from Core, no exceptions. `Core/Utilities` exists as a folder for what the user never invokes: the four kit data helpers and the iteration window. The commands the user does invoke (`DEFAULT_COMMANDS`: toggle-ribbon, toggle-nav, paste-inverse) are `Core/Actions/commands.ts`; the chord matcher is a keyboard mechanism and stays `UIX/Interactions/commands.ts`. Icon files other than the picker binding stay in `Core/Assets`.
 - 09-05-2026 (Nathan): Fable implements Tasks 6, 8, 13, 14 and authors Task 5's `renderer-moves.tsv` (Haiku still executes it). Every other task keeps its Opus or Haiku assignment.
 - 09-05-2026 (Nathan): Every tile kind lives in `Core/Tiles/Surfaces` (Page and Web tiles included); the tile calls its domain's actions (Pages' save and open, Web's link open and title fetch) rather than moving to the domain. The web tile stays `<webview>` end to end, so the `webview` JSX intrinsic is declared in Core and a phone host simply never mounts that kind.
 - 09-05-2026 (Nathan): Connections never holds Glances; glance is Interface's (or Windows'). Every open item in the decision log; cosmetic drift accepted where it unifies or fixes and would not be noticed; no visual confirmation required of the agents, Nathan verifies at his desk; models Haiku for mechanical, Opus for judgment, Fable supervises; the comment, scope, and naming constraints as written in Global Constraints; work in place, `.claude/` undisturbed.
@@ -828,6 +831,8 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
 
 ### Deviations
 
+- Task 3: Desktop became a gated workspace early (its own vitest project, `tsc -p Desktop/tsconfig.node.json` in the root typecheck, an `exports` map) because `editorMenu.test.ts` moved there whole. `WEB_PARTITION` is `Core/Web/partition.ts` (three of four readers are Core surfaces; ruled at commit). `PickFileOptions` sits in `Core/Contract/bridge.ts`; `WINDOW_BG` in `UIX/Theme/theme.ts`; the interface-scale setting in `Core/Settings/personalization.ts` with only the Electron zoom mapping left in Desktop. `clamp` restored as `Core/Utilities/clamp.ts` after inlining read worse at 28 sites. The two JSON fixtures live in `Core/Views/fixtures/` (inlining would triplicate a 37-line registry). Five of the 13 zero-importer exports stay exported because the split put their one consumer across a file boundary. `personalization.ts` (75) and `tree.ts` (34) carry `types.ts`'s field docs above the twenty-line cap; trimmed at Task 10 with the defaults moved to the Settings Features doc.
+- Task 2: `LegacyApi` counts 3, the third being dialer.ts's own import. `composite` dropped from Pommora's two tsconfigs (TS6307 across the workspace boundary; nothing runs `tsc -b`). `tsconfig.web.json` includes `../Core/Platform/dialer.ts` explicitly until Task 5 gives the renderer a Core import. `Core/Contract/bridge.ts` reaches back into `Pommora/src/shared` for 24 type imports until Task 3 moves them.
 - Task 1: the `exports` map is `{ "./*": { "types": ["./*.ts", "./*.tsx", "./*"], "default": "./*" } }`; the bare array form typechecks but Vite takes only the first fallback and resolves no `.tsx`, which the spike caught. Three of the six "dead" dependencies (`@codemirror/lang-json`, `lang-yaml`, `legacy-modes`) are live through dynamic `import()` in `codeHighlight.ts` and stay; only `pngjs`, `react-markdown`, `remark-gfm` left. `biome.json` excludes `.claude/` (root-run Biome pulled the harness scripts into scope). `TileLab.tsx` is a Showcase leaf, not Lab, and stays. The gate's launch seeds `pommora.json` in the scratch userData instead of driving the chooser, after a System Events keystroke missed and the chooser opened `~/NexusOS/Assets` as a Nexus root; the minted `.nexus/` and seeded folders there were removed and the real Nexus' content is untouched.
 
 - Task 0: the second-instance launch needs `app.setPath('userData', process.env.POMMORA_USERDATA)`, which the code lacks; the two-line seam lands in Task 1 (it moves with `main/index.ts` at Task 8 as a permanent dev affordance) and the launch check runs in Task 1's spike. Baseline recorded at `~/Pommora-Scratch/baseline/`: typecheck 0, 321/4,006, 1,019 lint files, build green, loc total 69,704, 16 atlas tables, 1,102 tracked files. Scratch Nexus at `~/Pommora-Scratch/NexusOS` (60 MB, no `.git`, no device databases).
@@ -873,7 +878,7 @@ Everything else is the standard below.
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion's greps and counts run; one smoke launch.
 - [ ] `test ! -d Pommora`; six workspaces; `Showcase` builds.
-- [ ] `rg -l "from 'electron" Core UIX` → 0; `rg -l "@pommora/core" UIX` → exactly the icon-favorites binding.
+- [ ] `rg -l "from 'electron" Core UIX` → 0; `rg -l "@pommora/core" UIX` → 0.
 
 **The passes**
 
