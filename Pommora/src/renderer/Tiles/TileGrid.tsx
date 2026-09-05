@@ -234,6 +234,8 @@ export function TileGrid({
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
   const [settle, setSettle] = useState<Settle | null>(null)
   const [resizingId, setResizingId] = useState<string | null>(null)
+  // A handle press owns the layout from the press, before the lift: the drag reads what was there.
+  const [pressedId, setPressedId] = useState<string | null>(null)
   const begin = usePointerGesture()
 
   // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition
@@ -486,7 +488,7 @@ export function TileGrid({
         setSettle(s)
       }
 
-      begin({
+      const started = begin({
         el: e.currentTarget,
         event: e,
         capture: true,
@@ -513,13 +515,17 @@ export function TileGrid({
         onAbort: () => {
           if (moved) settleInto(null)
         },
-        teardown: () => stopScroll?.(),
+        teardown: () => {
+          stopScroll?.()
+          setPressedId(null)
+        },
       })
+      if (started) setPressedId(id)
     },
     [begin],
   )
 
-  const busy = resizingId !== null || tileDrag !== null || settle !== null
+  const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
   useEffect(() => {
     onBusyChange?.(busy)
     return () => onBusyChange?.(false)
