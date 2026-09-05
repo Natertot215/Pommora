@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
-import type { Asks, Pushes, Tells } from '@shared/bridge'
-import type { Personalization } from '@shared/types'
-import type { Result } from '@shared/result'
+import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
+import type { Personalization } from '../shared/types'
+import type { Result } from '@pommora/core/Contract/result'
 
 // Every dialer derives from the bridge map — the channel key is the only thing written here, and
 // its signature flows from `Asks`. A typo'd or drifted channel is a compile error, never a dead line.
@@ -28,8 +28,12 @@ const on =
   }
 
 // The ONLY API the renderer can see. Narrow read surface; no fs, no Node. The grouping below is
-// the renderer-facing shape; the wire truth lives in @shared/bridge.
+// the renderer-facing shape; the wire truth lives in @pommora/core/Contract/bridge.
 const api = {
+  ask: <K extends keyof Asks>(k: K, ...args: Asks[K]['args']): Promise<Asks[K]['reply']> =>
+    ask(k)(...args),
+  tell: <K extends keyof Tells>(k: K, ...args: Tells[K]): void => tell(k)(...args),
+  on: <K extends keyof Pushes>(k: K, cb: (p: Pushes[K]) => void): (() => void) => on(k)(cb),
   state: ask('nexus:state'),
   choose: ask('nexus:choose'),
   // Resolve a dropped folder's path here (the renderer can't) and send only the path to main.
@@ -193,4 +197,4 @@ const api = {
 
 contextBridge.exposeInMainWorld('nexus', api)
 
-export type NexusApi = typeof api
+export type LegacyApi = typeof api

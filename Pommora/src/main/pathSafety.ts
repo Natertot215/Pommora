@@ -6,7 +6,7 @@
 
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { realpath } from 'node:fs/promises'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 
 /** True when `rel` (a `path.relative` result) climbs out of its base. */
 function escapes(rel: string): boolean {

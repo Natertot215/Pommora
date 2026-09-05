@@ -13,7 +13,7 @@ import {
   type StatusGroup,
 } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
-import type { Result } from '@shared/result'
+import type { Result } from '@pommora/core/Contract/result'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { useActiveView } from '@renderer/Views/useActiveView'

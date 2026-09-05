@@ -8,7 +8,7 @@
 // array is a genuine empty result it may trust. Writers log and continue on failure; the
 // open-time seed reconciles whatever they missed.
 
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { sessionDb } from '../sessionDb'
 import type { Db } from './driver'
 

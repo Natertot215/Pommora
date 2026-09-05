@@ -7,7 +7,7 @@ import {
   KEY_REFUSAL,
   type PropertyDefinition,
 } from '@shared/properties'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 
 /** A property name in the context of a schema: unique case-insensitively, excluding the def
  *  identified by `excludeId` (for rename). Empty and reserved-prefix names are refused before

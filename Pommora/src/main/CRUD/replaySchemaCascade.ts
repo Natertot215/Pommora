@@ -3,7 +3,7 @@
 // by id, and clear on every other state. Never throws past itself: a failed heal logs, leaves the
 // record, and the next open retries — an open is never blocked.
 
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'

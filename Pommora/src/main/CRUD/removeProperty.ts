@@ -20,7 +20,7 @@ import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepAdmits } from './util'
-import { ok, type Result } from '@shared/result'
+import { ok, type Result } from '@pommora/core/Contract/result'
 
 export function removeProperty(
   root: string,

@@ -2,7 +2,7 @@
 // recents — lives here, opened on nexus open and closed on switch or quit. Best-effort: a null
 // handle means every operational store no-ops and the session runs without persisted chrome.
 
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { openNexusDb } from './Database/open'
 import { openVersionsDb } from './Database/versionsDb'
 import type { Db } from './Database/driver'

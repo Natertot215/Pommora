@@ -1,4 +1,4 @@
-import { ok } from '@shared/result'
+import { ok } from '@pommora/core/Contract/result'
 import { chmod, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

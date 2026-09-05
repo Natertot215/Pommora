@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'
 import { fileStamp } from '../IO/atomicWrite'
 import { nexusDir } from '../paths'

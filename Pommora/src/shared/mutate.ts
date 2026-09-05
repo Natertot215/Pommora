@@ -2,7 +2,7 @@
 // resolves them under the session root); entities are addressed by path, never by a
 // renderer-supplied absolute path. Kept out of types.ts so it can import the data-layer shape.
 
-import type { Result } from './result'
+import type { Result } from '@pommora/core/Contract/result'
 import type { PageMoveContext } from './pageMenu'
 import type { PropertyValue } from './propertyValue'
 import type { Crop } from './schemas'

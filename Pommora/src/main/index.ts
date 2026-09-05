@@ -24,8 +24,16 @@ import type {
 } from '@shared/types'
 import { type DevicePrefs, packDevicePrefs } from '@shared/devicePrefs'
 import { isPlainObject } from '@shared/propertyValue'
-import { caught, errText, fail, ok, type Result } from '@shared/result'
-import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
+import {
+  BUSY,
+  caught,
+  errText,
+  fail,
+  NO_NEXUS,
+  ok,
+  type Result,
+} from '@pommora/core/Contract/result'
+import { push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'

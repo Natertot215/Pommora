@@ -5,7 +5,7 @@
 
 import { readFile, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, sep } from 'node:path'
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { extractMentions, frontmatterMentions } from './Connections/scan'
 import { sweepAdmitsBody } from './CRUD/util'
 import {
