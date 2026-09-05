@@ -6,30 +6,30 @@
 import { z } from 'zod'
 import type { ViewButton, ViewStyle } from './types'
 
-export interface RawTile {
+interface RawTile {
   kind: 'tile'
   id: string
   h: number
 }
 
-export interface RawRow {
+interface RawRow {
   kind: 'row'
   ratios: number[]
   children: Array<RawTile | RawRow | RawColumn>
 }
 
-export interface RawColumn {
+interface RawColumn {
   kind: 'column'
   children: Array<RawTile | RawRow | RawColumn>
 }
 
-export const rawTileSchema: z.ZodType<RawTile> = z.object({
+const rawTileSchema: z.ZodType<RawTile> = z.object({
   kind: z.literal('tile'),
   id: z.string().min(1),
   h: z.number(),
 })
 
-export const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
+const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
   z.object({
     kind: z.literal('row'),
     ratios: z.array(z.number()),
@@ -37,7 +37,7 @@ export const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
   }),
 )
 
-export const rawColumnSchema: z.ZodType<RawColumn> = z.lazy(() =>
+const rawColumnSchema: z.ZodType<RawColumn> = z.lazy(() =>
   z.object({
     kind: z.literal('column'),
     children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(1),
@@ -75,7 +75,7 @@ export type TileStyle = 'bordered' | 'borderless'
 const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
 
 /** Markdown tile: body lives in `<id>.md` inside the host's own folder. */
-export interface MarkdownTileEntry {
+interface MarkdownTileEntry {
   id: string
   type: 'markdown'
   style?: TileStyle
@@ -85,7 +85,7 @@ export interface MarkdownTileEntry {
 
 /** Page embed: a scrollable, editable window onto the real page. `banner` /
  *  `title` are the chrome toggles (absent = shown). */
-export interface PageTileEntry {
+interface PageTileEntry {
   id: string
   type: 'page'
   page_id: string
@@ -125,24 +125,25 @@ export interface ViewTileEntry {
 
 export type TileEntry = MarkdownTileEntry | PageTileEntry | ViewTileEntry
 
-const lockedField = z.boolean().optional().catch(undefined)
+const boolField = z.boolean().optional().catch(undefined)
 const zoomField = z.number().positive().optional().catch(undefined)
-const markdownEntry = z.looseObject({
+/** The chassis every kind carries: identity plus the frame the host draws around it. */
+const chassisFields = {
   id: z.string().min(1),
-  type: z.literal('markdown'),
   style: styleField,
-  locked: lockedField,
+  locked: boolField,
   zoom: zoomField,
+}
+const markdownEntry = z.looseObject({
+  ...chassisFields,
+  type: z.literal('markdown'),
 })
 const pageEntry = z.looseObject({
-  id: z.string().min(1),
+  ...chassisFields,
   type: z.literal('page'),
   page_id: z.string().min(1),
-  style: styleField,
-  banner: z.boolean().optional().catch(undefined),
-  title: z.boolean().optional().catch(undefined),
-  locked: lockedField,
-  zoom: zoomField,
+  banner: boolField,
+  title: boolField,
 })
 // Elements are looseObjects too — a strict element shape would strip nested foreign keys.
 const embeddedView = z.looseObject({
@@ -150,27 +151,24 @@ const embeddedView = z.looseObject({
   config: z.unknown().optional(), // zod 4 treats a bare unknown() key as required
 })
 const viewEntry = z.looseObject({
-  id: z.string().min(1),
+  ...chassisFields,
   type: z.literal('view'),
   views: z.array(embeddedView).min(1),
   active: z.number().int().nonnegative().optional().catch(undefined),
-  style: styleField,
   display_title: z.string().optional().catch(undefined),
-  title: z.boolean().optional().catch(undefined),
-  icon: z.boolean().optional().catch(undefined),
+  title: boolField,
+  icon: boolField,
   title_level: z.number().int().min(1).max(6).optional().catch(undefined),
   view_button: z.enum(['icon', 'labeled']).optional().catch(undefined),
   view_style: z.enum(['dropdown', 'toolbar']).optional().catch(undefined),
-  locked: lockedField,
-  zoom: zoomField,
 })
 export type TileType = TileEntry['type']
 
 /** Which picker a link row drills into; `'none'` renders the row refused. */
-export type TileMenuSource = 'pages' | 'views' | 'none'
+type TileMenuSource = 'pages' | 'views' | 'none'
 
 /** What a kind declares once; the host, the menus, and main's lifecycle read it here. */
-export interface TileKind<E extends TileEntry = TileEntry> {
+interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
   /** The kind owns a `<id>.md` beside the document: trashed on remove or convert, copied on
    *  duplicate, walked by the rename heal. */
@@ -192,11 +190,8 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
   view: { schema: viewEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'none' }] },
 }
 
-const knownEntry = z.union([
-  TILE_KINDS.markdown.schema,
-  TILE_KINDS.page.schema,
-  TILE_KINDS.view.schema,
-] satisfies { [T in TileType]: z.ZodType<Extract<TileEntry, { type: T }>> }[TileType][])
+type EntrySchemas = [z.ZodType<TileEntry>, z.ZodType<TileEntry>, ...z.ZodType<TileEntry>[]]
+const knownEntry = z.union(Object.values(TILE_KINDS).map((k) => k.schema) as EntrySchemas)
 
 /** The tabs the inspector may hold beyond the reserved ones. */
 export const MAX_INSPECTOR_TABS = 6

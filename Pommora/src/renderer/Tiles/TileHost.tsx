@@ -31,7 +31,7 @@ import { notifyRemovedTile } from '@renderer/Interface/notifications'
 import { useHeld } from '@renderer/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/scope'
 import { mintDefaultView } from '@shared/views'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
 import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
 import {
   inertTile,
@@ -47,7 +47,7 @@ function pagePickerItems(
   tree: NexusTree,
   defaultIcons?: Partial<Record<EntityIconKind, string>>,
 ): PagePickerItem[] {
-  const pageItem = (p: { id: string; title: string; icon?: string }): PagePickerItem => ({
+  const pageItem = (p: PageNode): PagePickerItem => ({
     label: p.title,
     icon: entityIcon('page', p.icon, defaultIcons),
     pick: p.id,
@@ -175,17 +175,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     }
   }, [editingId])
 
-  // Order is load-bearing: suppress the tile's editor flush, layout first
-  // (invisible orphan beats a dead box on a crash), then the entry + file.
-  const removeTile = useCallback(
-    (id: string) => {
-      removing.current.add(id)
-      setEditingId((cur) => (cur === id ? null : cur))
-      commitLayout((cur) => removeLeaf(cur, id))
-      void window.nexus.tiles.removeTile(host, id).then(refreshEntries)
-    },
-    [commitLayout, refreshEntries, host],
-  )
   const suppressFlush = useCallback((id: string) => removing.current.has(id), [])
 
   const applyPagePick = useCallback(
@@ -232,6 +221,8 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the
   // dismissal that cleared it — otherwise React tears the pane out before it can retract.
   const menu = useHeld(handleMenu, handleMenu !== null)
+  // Held with the anchor: a delete with confirmation waived drops the entry inside the retract.
+  const menuTile = useHeld(handleMenu ? entries.get(handleMenu.id) : undefined, handleMenu !== null)
   // Every per-entry edit walks the RAW list, so foreign fields survive whatever it rewrites.
   const mutateEntry = useCallback<MutateEntry>(
     (id, fn) => {
@@ -266,19 +257,25 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     (id: string) => {
       void askRemoveTile().then((ok) => {
         if (!ok) return
-        removeTile(id)
+        // Order is load-bearing: suppress the tile's editor flush, layout first
+        // (invisible orphan beats a dead box on a crash), then the entry + file.
+        removing.current.add(id)
+        setEditingId((cur) => (cur === id ? null : cur))
+        commitLayout((cur) => removeLeaf(cur, id))
+        void window.nexus.tiles.removeTile(host, id).then(refreshEntries)
         notifyRemovedTile()
       })
     },
-    [removeTile],
+    [commitLayout, refreshEntries, host],
   )
 
   const tileClassName = useCallback(
     (id: string) => {
+      const entry = entries.get(id)
       const classes = [
-        entries.get(id)?.style === 'borderless' ? 'is-borderless' : null,
+        entry?.style === 'borderless' ? 'is-borderless' : null,
         editingId === id ? 'is-editing-tile' : null,
-        entries.get(id)?.locked ? 'is-locked' : null,
+        entry?.locked ? 'is-locked' : null,
         handleMenu?.id === id ? 'handle-pinned' : null, // the open picker's anchor stays shown
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
@@ -332,23 +329,16 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   if (!ready) return null
   // Resolved off the shared id→page map — never a per-embed walk.
-  const menuEntry = handleMenu ? entries.get(handleMenu.id) : undefined
-  const menuPage = menuEntry && tileSourceInfo(menuEntry, pagesById)
-  const menuPageInfo = menuPage
-    ? {
-        title: menuPage.title,
-        icon: entityIcon('page', menuPage.icon, defaultIcons),
-      }
-    : undefined
-  const menuLoc = menuPage
-    ? containersByPath.get(menuPage.path.split('/').slice(0, -1).join('/'))
-    : undefined
-  const menuLocInfo = menuLoc
-    ? {
-        title: menuLoc.title,
-        icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
-      }
-    : undefined
+  const menuPage = menuTile && tileSourceInfo(menuTile, pagesById)
+  const menuPageInfo = menuPage && {
+    title: menuPage.title,
+    icon: entityIcon('page', menuPage.icon, defaultIcons),
+  }
+  const menuLoc = menuPage && containersByPath.get(menuPage.path.split('/').slice(0, -1).join('/'))
+  const menuLocInfo = menuLoc && {
+    title: menuLoc.title,
+    icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
+  }
   // Assigned rather than called: the gesture handler is memoized against the preference alone, so
   // it must reach the current build through a ref rather than closing over this render's tiles.
   popNativeMenu.current = (id, el) => {
@@ -397,10 +387,10 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
       />
-      {menu && entries.get(menu.id) && tree && (
+      {menu && menuTile && tree && (
         <TileHandleMenu
           open={handleMenu !== null}
-          entry={entries.get(menu.id) as TileEntry}
+          entry={menuTile}
           anchor={menu.el}
           pageItems={pagePickerItems(tree, defaultIcons)}
           viewItems={viewPickerItems(tree, defaultIcons)}
@@ -416,7 +406,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
           onOpenPage={() =>
             menuPage && select({ kind: 'page', id: menuPage.id, path: menuPage.path })
           }
-          zoom={menuEntry?.zoom}
           onSetZoom={(factor) => setTileZoom(menu.id, factor)}
           containerLocked={hostLocked}
         />

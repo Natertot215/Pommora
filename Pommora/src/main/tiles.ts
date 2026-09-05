@@ -22,16 +22,19 @@ import { atomicWriteFile, pathExists, trashFileFlat } from './IO/atomicWrite'
 import { serializeOnFile } from './IO/fileLock'
 import { loadContextWorld } from './CRUD/contextWrite'
 import { getLiveTree } from './liveTree'
-import { tileHostDir } from './paths'
+import { tileFilePath, tileHostDir } from './paths'
+export { tileFilePath }
 
-/** A Space host's folder, answered by the live tree; the world load covers the pre-walk moment
- *  and an unconfirmed Space. Unknown or unresolvable ids throw; the IPC envelope catches. */
-async function spaceHostDir(root: string, id: string): Promise<string> {
-  const held = getLiveTree()
-  if (held?.nexus.rootPath === root) {
-    for (const g of held.contexts) {
-      const space = g.spaces.find((s) => s.id === id)
-      if (space) {
+/** Where a host keeps its document and bodies; null when the host no longer resolves. A Space is
+ *  answered by the live tree; the world load covers the pre-walk moment and an unconfirmed Space. */
+export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
+  if (host.kind === 'homepage') return tileHostDir(root)
+  try {
+    const held = getLiveTree()
+    if (held?.nexus.rootPath === root) {
+      for (const g of held.contexts) {
+        const space = g.spaces.find((s) => s.id === host.id)
+        if (!space) continue
         // Mid-cascade the tree still spells the folder a rename just moved — a stale entry
         // falls through to the fresh world load.
         const dir = join(root, space.path)
@@ -39,25 +42,12 @@ async function spaceHostDir(root: string, id: string): Promise<string> {
         break
       }
     }
-  }
-  const world = await loadContextWorld(root)
-  if (!world.ok) throw new Error(world.error.message)
-  const ref = world.value.spaceById.get(id)
-  if (!ref) throw new Error('Unknown Space.')
-  return ref.dir
-}
-
-/** Where a host keeps its document and bodies; null when the host no longer resolves. */
-export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
-  if (host.kind === 'homepage') return tileHostDir(root)
-  try {
-    return await spaceHostDir(root, host.id)
+    const world = await loadContextWorld(root)
+    return world.ok ? (world.value.spaceById.get(host.id)?.dir ?? null) : null
   } catch {
     return null
   }
 }
-
-export const tileFilePath = (dir: string, tileId: string): string => join(dir, `${tileId}.md`)
 
 /** Replace the entries through the given updater, leaving layout and lock alone. */
 const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<null>> =>
@@ -74,17 +64,22 @@ export async function createMarkdownTile(dir: string): Promise<string> {
   return id
 }
 
-/** Drop a tile's entry; a markdown tile's backing `.md` goes to `.trash`. Foreign
- *  entries are never touched. The renderer splices the layout leaf FIRST — if this
- *  op is what fails, the leftover is an entry-less invisible orphan, never a dead box. */
-export async function removeTile(root: string, dir: string, tileId: string): Promise<void> {
+/** Rewrite one tile's RAW entry — `null` drops it — and trash a file-backed tile's body, since
+ *  both leaving the document and ceasing to be markdown end that file's life. Foreign entries are
+ *  never touched: the caller's patch spreads over the raw value so its keys and chrome survive. */
+async function reviseTile(
+  root: string,
+  dir: string,
+  tileId: string,
+  patch: Record<string, unknown> | null,
+): Promise<void> {
   let wasFileBacked = false
   await setTiles(dir, (tiles) =>
-    tiles.filter((b) => {
+    tiles.flatMap((b) => {
       const entry = knownTile(b)
-      if (entry?.id !== tileId) return true
+      if (entry?.id !== tileId) return [b]
       if (TILE_KINDS[entry.type].fileBacked) wasFileBacked = true
-      return false
+      return patch ? [{ ...(b as Record<string, unknown>), ...patch }] : []
     }),
   )
   if (wasFileBacked) await trashTileFile(root, dir, tileId)
@@ -99,41 +94,27 @@ async function trashTileFile(root: string, dir: string, tileId: string): Promise
   })
 }
 
-/** Linking IS the one conversion (markdown → embed): the RAW entry spreads so
- *  foreign keys + chrome survive, the backing `.md` trashes recoverably,
- *  and the embedded source is never touched. */
-async function flipTile(
-  root: string,
-  dir: string,
-  tileId: string,
-  patch: Record<string, unknown>,
-): Promise<void> {
-  let wasFileBacked = false
-  await setTiles(dir, (tiles) =>
-    tiles.map((b) => {
-      const entry = knownTile(b)
-      if (entry?.id !== tileId) return b
-      if (TILE_KINDS[entry.type].fileBacked) wasFileBacked = true
-      return { ...(b as Record<string, unknown>), ...patch }
-    }),
-  )
-  if (wasFileBacked) await trashTileFile(root, dir, tileId)
+/** The renderer splices the layout leaf FIRST — if this op is what fails, the leftover is an
+ *  entry-less invisible orphan, never a dead box. */
+export async function removeTile(root: string, dir: string, tileId: string): Promise<void> {
+  await reviseTile(root, dir, tileId, null)
 }
 
+/** Linking IS the one conversion (markdown → embed); the embedded source is never touched. */
 export async function convertTileToPage(
   root: string,
   dir: string,
   tileId: string,
   pageId: string,
 ): Promise<void> {
-  await flipTile(root, dir, tileId, { type: 'page', page_id: pageId })
+  await reviseTile(root, dir, tileId, { type: 'page', page_id: pageId })
 }
 
 /** Re-mint each view config's payload-local `id` as a fresh ULID. The source view's id and
  *  the DEFAULT_VIEW_ID sentinel are live keys OUTSIDE the payload — preserving one would
  *  silently re-couple a copied/"detached" snapshot to its source, so every copy re-mints.
  *  Takes ONE tile's `views` array, never a whole tile doc. */
-export function remintConfigIds(views: unknown[]): unknown[] {
+function remintConfigIds(views: unknown[]): unknown[] {
   return views.map((v) => {
     if (typeof v !== 'object' || v === null) return v
     const el = v as Record<string, unknown>
@@ -165,7 +146,7 @@ export async function convertTileToView(
   tileId: string,
   views: unknown[],
 ): Promise<void> {
-  await flipTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 })
+  await reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 })
 }
 
 /** Duplicate a tile: the RAW entry copies under a fresh id (foreign fields + chrome
@@ -202,7 +183,7 @@ export async function writeMarkdownTile(dir: string, tileId: string, body: strin
   await serializeOnFile(file, () => atomicWriteFile(file, body))
 }
 
-export async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
+async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
   const homepage: TileHostRef = { kind: 'homepage' }
   const hosts: { host: TileHostRef; dir: string }[] = [{ host: homepage, dir: tileHostDir(root) }]
   try {
