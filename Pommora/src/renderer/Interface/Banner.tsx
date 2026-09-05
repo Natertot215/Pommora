@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { MutableKind } from '@shared/mutate'
+import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
 import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useAssetUrl, useSession } from '../store'

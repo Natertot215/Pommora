@@ -3,7 +3,11 @@
 // file (its own per-file lock, NOT the global schema-op chain — nesting a schema op there
 // would deadlock).
 
-import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
+import {
+  contextsRegistry,
+  seededRegistry,
+  type ContextsRegistry,
+} from '@pommora/core/Properties/contexts'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { readJsonStrict, rmwJsonStrict, writeJson } from './IO/atomicWrite'
 import { newId } from './ids'

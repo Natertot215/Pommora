@@ -6,9 +6,9 @@
 // The span is resolved before the ask and the pick applied on the promise; the hot flag is cleared
 // by hand after a delete, since no mousemove fires under a modal native menu.
 import { EditorView } from '@codemirror/view'
-import { pageEmbedText } from '@shared/connections'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import type { GripMenuContext, PickNode, ZoomOption } from '@shared/gripMenu'
+import { pageEmbedText } from '@pommora/core/Connections/connections'
+import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
+import type { GripMenuContext, PickNode, ZoomOption } from '@pommora/core/Actions/gripMenu'
 import { useSession } from '../../store'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Detect'
@@ -19,7 +19,7 @@ import { embeddable } from './embedRanges'
 import { HEADING_FOLD_LINE } from './folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from './embedWidget'
 import { focusRange } from './caretSeat'
-import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
+import { webpageEmbedUrlSpan } from '@pommora/core/Web/webpageEmbed'
 
 /** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip
  *  flag read this one list. */

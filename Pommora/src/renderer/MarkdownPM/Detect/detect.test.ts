@@ -16,7 +16,7 @@ import {
   scanFencedCode,
   splitWithOffsets,
 } from './index'
-import { pageLinkPattern } from '@shared/connections'
+import { pageLinkPattern } from '@pommora/core/Connections/connections'
 
 describe('thematic break (HR)', () => {
   it('treats ---, ***, ___ as HR; rejects too-short / list lines', () => {
@@ -126,7 +126,7 @@ describe('inline matchers (verbatim regexes)', () => {
     expect(m?.[1]).toBe('t')
     expect(m?.[2]).toBe('http://u')
   })
-  it('wikilink detection reuses @shared/connections (title-only, excludes ![[ ]])', () => {
+  it('wikilink detection reuses Core/Connections (title-only, excludes ![[ ]])', () => {
     expect([...'[[Page]]'.matchAll(pageLinkPattern())].map((m) => m[1])).toEqual(['Page'])
     expect([...'![[img]]'.matchAll(pageLinkPattern())]).toHaveLength(0)
   })

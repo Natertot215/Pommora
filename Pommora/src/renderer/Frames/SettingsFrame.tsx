@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { coerceScale, type OpenIn, SCALE_STEPS } from '@shared/types'
+import { coerceScale, SCALE_STEPS } from '@pommora/core/Settings/personalization'
+import type { OpenIn } from '@pommora/core/Views/viewRow'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { trailOf } from '../treeIndex'
@@ -34,7 +35,7 @@ import {
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewTileScope } from '@renderer/Tiles/ViewTileScope'
-import { lockLabel } from '@shared/toggleLabels'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 
 type FrameId =
   | 'configuration'

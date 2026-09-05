@@ -1,5 +1,5 @@
 import type { Token, TokenKind } from '../Tokens'
-import { codeMaskOf, isInsideInlineCode } from '@shared/markdownCode'
+import { codeMaskOf, isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
 import {
   isThematicBreakLine,
   isHeadingLine,

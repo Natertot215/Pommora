@@ -40,7 +40,7 @@ import { encodeColumn, encodeRect, serializeOutline, type TablePayload } from '.
 import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from './model'
 import type { ConnectionsApi } from '../Connections'
-import type { TableMenuAction, TableMenuContext } from '@shared/tableMenu'
+import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
 
 type ConnGetter = () => ConnectionsApi | undefined
 // The connections getter reaches each cell's nested editor through a facet, so `[[…]]` render styled and

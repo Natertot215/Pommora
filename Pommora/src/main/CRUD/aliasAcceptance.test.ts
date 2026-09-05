@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameCascade } from './cascade'
-import { encodeLinkTarget } from '@shared/links'
+import { encodeLinkTarget } from '@pommora/core/Connections/links'
 
 // A body carrying every form a connection can take survives a real rename against real files on
 // disk. Per-task suites prove each piece; this proves they still agree all at once.

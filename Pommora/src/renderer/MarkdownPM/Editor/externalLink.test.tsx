@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@shared/connMenu'
+import type { ConnMenuAction } from '@pommora/core/Actions/connMenu'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'

@@ -6,8 +6,9 @@ import {
   groupLabel,
   optionLabel,
 } from '@renderer/Properties/Assignment/cellResolve'
-import { EMPTY_ASSET_MAP, UNGROUPED, type CollectionNode, type ResolvedGroup } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
+import { EMPTY_ASSET_MAP, type CollectionNode } from '@pommora/core/Nexus/tree'
+import { UNGROUPED, type ResolvedGroup } from '@pommora/core/Views/viewRow'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 
 const schema: PropertyDefinition[] = [

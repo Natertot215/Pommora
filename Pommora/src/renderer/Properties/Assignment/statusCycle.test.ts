@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { statusGroupOf } from './statusCycle'
 
 const def: PropertyDefinition = {

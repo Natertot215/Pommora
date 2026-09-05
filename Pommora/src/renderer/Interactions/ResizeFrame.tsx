@@ -1,8 +1,8 @@
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { clamp } from '@shared/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { usePointerGesture } from './gesture'
 import './resize-frame.css'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 export type ResizeGrip = ResizeEdge | 'move'

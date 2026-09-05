@@ -1,8 +1,8 @@
 // Per-container non-view settings CRUD — the sidecar's open_in / view_button. open_in is
 // collection-owned; a Set write is refused.
 
-import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
-import type { OpenIn, ViewButton } from '@shared/types'
+import { pageCollectionSidecar, pageSetSidecar } from '@pommora/core/Nexus/schemas'
+import type { OpenIn, ViewButton } from '@pommora/core/Views/viewRow'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 

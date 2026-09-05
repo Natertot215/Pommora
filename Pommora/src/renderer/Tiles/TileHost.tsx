@@ -9,7 +9,7 @@ import {
   type PagePickerItem,
   type ViewPick,
   type ViewPickerItem,
-} from '@shared/tiles'
+} from '@pommora/core/Tiles/tiles'
 import { type ConnPage, type ConnectionsApi, glanceLink } from '@renderer/MarkdownPM/Connections'
 import {
   containersByPathOf,
@@ -22,16 +22,16 @@ import { attachBelow, insertBand, removeLeaf } from './Core/ops'
 import { getTile } from './Core/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
-import type { EntityIconKind } from '@shared/types'
+import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '@renderer/store'
-import { tileMenuModel } from '@shared/tileMenu'
+import { tileMenuModel } from '@pommora/core/Actions/tileMenu'
 import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
 import { askRemoveTile } from '@renderer/Windows/confirmations'
 import { notifyRemovedTile } from '@renderer/Interface/notifications'
 import { useHeld } from '@renderer/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/scope'
-import { mintDefaultView } from '@shared/views'
-import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
+import { mintDefaultView } from '@pommora/core/Views/views'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
 import {
   inertTile,

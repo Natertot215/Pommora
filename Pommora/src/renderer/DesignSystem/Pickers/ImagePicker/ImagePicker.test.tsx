@@ -2,9 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { AssetMap, NexusTree } from '@shared/types'
-import type { Crop } from '@shared/schemas'
-import { DEFAULT_CROP } from '@shared/cropGeometry'
+import type { AssetMap, NexusTree } from '@pommora/core/Nexus/tree'
+import type { Crop } from '@pommora/core/Nexus/schemas'
+import { DEFAULT_CROP } from '@pommora/core/Assets/cropGeometry'
 import { useSession } from '@renderer/store'
 import { ImagePicker } from './ImagePicker'
 

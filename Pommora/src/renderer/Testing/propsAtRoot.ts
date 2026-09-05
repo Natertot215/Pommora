@@ -1,4 +1,4 @@
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 export const propsAtRoot = (
   props: Record<string, unknown>,

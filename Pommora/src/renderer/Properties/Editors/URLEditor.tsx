@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
-import type { LinkConfig, LinkDisplay } from '@shared/properties'
+import type { LinkConfig, LinkDisplay } from '@pommora/core/Properties/properties'
 import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import { LINK_FORMAT_OPTIONS } from '../linkFormat'
 import * as s from '../../Frames/frames.css'

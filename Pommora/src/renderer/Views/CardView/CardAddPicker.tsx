@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useState } from 'react'
-import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { MenuItem, MenuTopRow } from '@renderer/DesignSystem/Menus'

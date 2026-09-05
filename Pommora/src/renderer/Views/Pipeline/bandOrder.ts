@@ -3,7 +3,7 @@
 // sets trail in fs order; non-structural groups (the ungrouped tail) HOLD their slot, so the
 // view-level ungrouped_placement survives a manual band order. Pure: no fs, no React.
 
-import type { ResolvedGroup } from '@shared/types'
+import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 
 export function orderGroups(
   groups: ResolvedGroup[],

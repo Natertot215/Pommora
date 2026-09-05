@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { makeTree } from './Navigation/testTree'
 import { reconcileWith } from '@renderer/Actions/selection'
 import {

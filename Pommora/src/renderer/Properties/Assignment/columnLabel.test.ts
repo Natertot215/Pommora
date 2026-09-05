@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel, displayPropertyName } from '@renderer/Properties/Assignment/columnLabel'
 import { contextsByIdOf } from '@renderer/Properties/contextIdentity'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
@@ -21,7 +21,7 @@ describe('columnLabel', () => {
     const tree = {
       contexts: [{ def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] }],
       personalization: {},
-    } as unknown as import('@shared/types').NexusTree
+    } as unknown as import('@pommora/core/Nexus/tree').NexusTree
     const contexts = contextsByIdOf(tree)
     expect(columnLabel('ctx_areas', schema, contexts)).toBe('Areas')
     expect(columnLabel('ctx_topics', schema, contexts)).toBe('ctx_topics')

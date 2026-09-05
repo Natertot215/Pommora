@@ -31,9 +31,9 @@ import {
   type WatchEventName,
 } from './watchPatch'
 import { containerOf, pageIdIndex } from './valuesChanged'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
-import type { NexusTree, ValueChange } from '@shared/types'
-import { type TileHostRef, tileHostKey } from '@shared/tiles'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@pommora/core/Locations/nexusPaths'
+import type { NexusTree, ValueChange } from '@pommora/core/Nexus/tree'
+import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 
 const SETTLE_MS = 200
 

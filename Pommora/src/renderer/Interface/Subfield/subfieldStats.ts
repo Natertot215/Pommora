@@ -1,5 +1,5 @@
-import { markdownLinkRegex } from '@shared/links'
-import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import { markdownLinkRegex } from '@pommora/core/Connections/links'
+import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
 import { lineIndexAt, type DocScan } from '@renderer/MarkdownPM/Decorations/intent'
 import { perText, scanOf } from '@renderer/MarkdownPM/Editor/docCache'
 import {

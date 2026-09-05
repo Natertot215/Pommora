@@ -9,7 +9,7 @@ import {
   stripQuotePrefix,
   type ListMarker,
 } from '../Detect'
-import type { ListKind } from '@shared/gripMenu'
+import type { ListKind } from '@pommora/core/Actions/gripMenu'
 import { lineStartAt, lineEndAt } from './index'
 import { emptyTable } from '../Tables/model'
 import { serialize } from '../Tables/codec'

@@ -1,7 +1,7 @@
 // Pins for specific parser/editor bugs found during review — each case is a fixed break, kept
 // here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask, codeMaskOf, isInsideCode } from '@shared/markdownCode'
+import { codeMask, codeMaskOf, isInsideCode } from '@pommora/core/Connections/markdownCode'
 import { splitRow } from './Tables/codec'
 import { tokenize } from './Tokens'
 import {

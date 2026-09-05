@@ -2,7 +2,7 @@
 // user gesture and must see the tree as it stands — a page created moments ago resolves, where a
 // resolver closed over a memoized render context would still deny it.
 
-import { isCommittableLink, type ResolveTitle } from '@shared/linkValue'
+import { isCommittableLink, type ResolveTitle } from '@pommora/core/Connections/linkValue'
 import { useSession } from '../store'
 import { resolveConnection } from '../treeIndex'
 

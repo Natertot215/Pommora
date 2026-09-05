@@ -10,7 +10,7 @@ import {
   KEY_REFUSAL,
   normalizePropertyName,
   type PropertyDefinition,
-} from '@shared/properties'
+} from '@pommora/core/Properties/properties'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
 import { cascadePages } from './optionOps'

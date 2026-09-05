@@ -6,10 +6,10 @@
 // Held in memory and never persisted — nothing derived from an asset needs to survive a
 // restart, which keeps `nexus.db`'s stat gate, seed and prune out of this feature entirely.
 
-import { normalizeTitle } from '@shared/connections'
-import { stabilize } from '@shared/treeStabilize'
-import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
-import type { AssetMap } from '@shared/types'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
+import { stabilize } from '@pommora/core/Nexus/treeStabilize'
+import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@pommora/core/Locations/nexusPaths'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
 import { neverWatched, rootSegs } from './exclusion'
 import { assetsDir, relPosix } from './paths'
 import { listFilesRecursive } from './IO/walk'

@@ -2,8 +2,8 @@
 // hard-coded the same constant for opposite reasons, and two disagreeing tests is a defect
 // neither one's own tests can see.
 
-import { parseConnectionText } from '@shared/connections'
-import { ASSETS_DIR_REL, assetSubRoot } from '@shared/nexusPaths'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
+import { ASSETS_DIR_REL, assetSubRoot } from '@pommora/core/Locations/nexusPaths'
 import { normalizeSeg, rootSegs } from './exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 

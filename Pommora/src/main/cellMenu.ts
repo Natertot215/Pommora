@@ -1,5 +1,9 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import { cellMenuModel, type CellMenuAction, type CellMenuContext } from '@shared/cellMenu'
+import {
+  cellMenuModel,
+  type CellMenuAction,
+  type CellMenuContext,
+} from '@pommora/core/Actions/cellMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 import { styleSubmenu } from './styleMenu'

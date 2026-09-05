@@ -1,5 +1,5 @@
 import { isInsideWikilink } from '../Parser'
-import { aliasSpanAt } from '@shared/connections'
+import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, type DocScan } from '../Decorations/intent'
 import {
   parseListMarker,

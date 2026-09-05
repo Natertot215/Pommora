@@ -8,7 +8,7 @@ import {
   type Entry,
   type MeasuredRow,
 } from './sidebarDndModel'
-import type { CollectionNode, NexusTree } from '@shared/types'
+import type { CollectionNode, NexusTree } from '@pommora/core/Nexus/tree'
 
 // 1 Collection → (loose page P3) + Set s1 [P1, P2] → Sub-Set s2 [P5], plus two Areas (contexts).
 const collections: CollectionNode[] = [

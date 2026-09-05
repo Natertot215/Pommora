@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { GovernedWorld } from '@shared/contextResolve'
-import type { PropertyDefinition } from '@shared/properties'
+import type { GovernedWorld } from '@pommora/core/Properties/contextResolve'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { setGovernedRootKeys } from './governedWrite'
 
 let dir: string

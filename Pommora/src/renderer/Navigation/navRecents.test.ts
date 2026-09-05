@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { navKey, recordRecent, removeRecentByKey } from './navRecents'
 
 const page = (id: string): NavRef => ({ kind: 'page', id })

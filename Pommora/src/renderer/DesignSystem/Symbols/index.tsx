@@ -79,7 +79,7 @@ import {
   X,
 } from 'lucide-react'
 import { forwardRef } from 'react'
-import type { EntityIconKind } from '@shared/types'
+import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { CardsGrid, ListRounded, LockFilled, LockOutline, ProgressCheck } from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
 import { lucideGlyph } from './allSymbols'

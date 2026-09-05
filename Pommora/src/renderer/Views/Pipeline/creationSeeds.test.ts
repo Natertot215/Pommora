@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from '@shared/properties'
-import type { FilterGroup } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { FilterGroup } from '@pommora/core/Views/views'
 import { filterSeeds } from './creationSeeds'
 
 const schema: PropertyDefinition[] = [

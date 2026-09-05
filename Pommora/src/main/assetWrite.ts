@@ -3,7 +3,7 @@
 
 import { basename, extname, join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
-import { connectionText } from '@shared/connections'
+import { connectionText } from '@pommora/core/Connections/connections'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { atomicWriteBinary, pathExists } from './IO/atomicWrite'
 import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'

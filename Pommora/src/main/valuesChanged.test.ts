@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { flushValueWrites, noteValueWrite, pageIdIndex } from './valuesChanged'
 
 const held = { tree: null as NexusTree | null }

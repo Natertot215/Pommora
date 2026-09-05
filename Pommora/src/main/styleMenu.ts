@@ -1,6 +1,6 @@
 import type { MenuItemConstructorOptions } from 'electron'
-import type { StyleMenuItem } from '@shared/columnMenu'
-import { COLUMN_ALIGNS, type ColumnAlign } from '@shared/views'
+import type { StyleMenuItem } from '@pommora/core/Actions/columnMenu'
+import { COLUMN_ALIGNS, type ColumnAlign } from '@pommora/core/Views/views'
 
 type StyleAction = `style:${string}:${string}`
 

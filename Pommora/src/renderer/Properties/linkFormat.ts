@@ -1,4 +1,8 @@
-import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '@shared/properties'
+import {
+  LINK_DISPLAY_LABELS,
+  LINK_DISPLAYS,
+  type LinkDisplay,
+} from '@pommora/core/Properties/properties'
 import type { PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 
 /** The three link forms as a picker's rows — read by a URL property's own Format control and by the

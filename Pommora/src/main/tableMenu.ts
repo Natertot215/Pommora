@@ -1,5 +1,9 @@
 import type { BrowserWindow } from 'electron'
-import { type TableMenuAction, type TableMenuContext, tableMenuItems } from '@shared/tableMenu'
+import {
+  type TableMenuAction,
+  type TableMenuContext,
+  tableMenuItems,
+} from '@pommora/core/Actions/tableMenu'
 import { popModelMenu } from './rowMenu'
 
 /** The markdown table grip's right-click menu — the model's rows, nothing else. */

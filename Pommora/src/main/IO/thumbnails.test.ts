@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureIdentity } from '../identity'
-import { thumbKey, thumbRel } from '@shared/nexusPaths'
+import { thumbKey, thumbRel } from '@pommora/core/Locations/nexusPaths'
 import { evictThumbnails } from './thumbnails'
 
 describe('thumbnail keys + rel', () => {

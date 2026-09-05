@@ -10,7 +10,7 @@ import {
   setSpaceColor,
   setSpaceContext,
 } from './contextWrite'
-import { rawLayoutSchema } from '@shared/tiles'
+import { rawLayoutSchema } from '@pommora/core/Tiles/tiles'
 import { readTileDocAt } from '../tileDoc'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../paths'

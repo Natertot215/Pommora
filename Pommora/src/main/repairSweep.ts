@@ -1,7 +1,11 @@
 import { join } from 'node:path'
-import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from '@shared/contextResolve'
-import type { Adoption } from '@shared/propertyValue'
-import type { PropertyDefinition } from '@shared/properties'
+import {
+  reconcileGovernedRoot,
+  survivingChanges,
+  type GovernedWorld,
+} from '@pommora/core/Properties/contextResolve'
+import type { Adoption } from '@pommora/core/Properties/propertyValue'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { errText } from '@pommora/core/Contract/result'
 import { collectionFolderOf } from './CRUD/assignment'
 import { assignedDefs, loadContextWorld, NO_CONTEXT_WORLD } from './CRUD/contextWrite'

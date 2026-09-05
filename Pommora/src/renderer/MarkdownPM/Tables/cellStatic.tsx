@@ -8,7 +8,7 @@ import {
   type ConnMenuTarget,
   type MdTarget,
 } from '../Connections'
-import { titleOf } from '@shared/connections'
+import { titleOf } from '@pommora/core/Connections/connections'
 import { linkActionText, linkHalves } from '../Editor/linkFormat'
 import { wikiAuthorTarget } from '../Editor/linkEdit'
 import { cancelGlance, closeGlance, insideGlance } from '@renderer/Interface/Glance/glanceAction'

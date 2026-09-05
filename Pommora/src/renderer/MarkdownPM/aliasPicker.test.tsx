@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
 import { aliasRows } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
 import { buildPageIndex } from './Connections'

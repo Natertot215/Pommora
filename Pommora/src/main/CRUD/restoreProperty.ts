@@ -4,8 +4,8 @@
 // never a mandate to recreate it.
 
 import { join } from 'node:path'
-import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { readRegistry } from '../IO/propertiesRegistry'
 import type { RecordFile } from '../provenance'
@@ -15,7 +15,7 @@ import { readSidecar } from '../sidecarIO'
 import { serializeOnFile } from '../IO/fileLock'
 import { collectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
-import { isBlankValue, reconcilePropertyValue } from '@shared/propertyValue'
+import { isBlankValue, reconcilePropertyValue } from '@pommora/core/Properties/propertyValue'
 import { createProperty } from './registryProperty'
 import { serializeSchemaOp } from './schemaChain'
 

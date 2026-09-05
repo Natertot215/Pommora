@@ -3,7 +3,7 @@
 
 import { realpath, stat } from 'node:fs/promises'
 import type { AppConfig } from './appConfig'
-import { TRASH_DIR } from '@shared/nexusPaths'
+import { TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 
 let currentRoot: string | null = null
 

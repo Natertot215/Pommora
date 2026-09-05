@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readSidecar, writeSidecar } from './sidecarIO'
 import { SIDECAR_FILENAME } from './paths'
-import { pageCollectionSidecar } from '@shared/schemas'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 
 let dir: string
 beforeEach(async () => {

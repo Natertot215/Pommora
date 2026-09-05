@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { readNavigationFile, readNavigationState, writeNavigationState } from './navigationFile'
 

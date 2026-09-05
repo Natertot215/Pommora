@@ -4,10 +4,10 @@
 // restores each cached value that still conforms to the def's CURRENT type + options; the global
 // Delete purges these caches.
 
-import { contentId } from '@shared/identity'
+import { contentId } from '@pommora/core/Nexus/identityMark'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
-import { pageCollectionSidecar } from '@shared/schemas'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atomicWrite'
 import { folderCorpus, indexWrittenPage } from '../indexSeed'
@@ -15,7 +15,11 @@ import { noteValueWrite } from '../valuesChanged'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import { isBlankValue, isPlainObject, reconcilePropertyValue } from '@shared/propertyValue'
+import {
+  isBlankValue,
+  isPlainObject,
+  reconcilePropertyValue,
+} from '@pommora/core/Properties/propertyValue'
 import { updatePageProperty } from './page'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'

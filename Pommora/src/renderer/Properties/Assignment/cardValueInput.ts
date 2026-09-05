@@ -1,13 +1,18 @@
-import { type PropertyDefinition, type PropertyType, STAMP_TYPE } from '@shared/properties'
-import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
-import { isCompact, type SavedView } from '@shared/views'
+import {
+  type PropertyDefinition,
+  type PropertyType,
+  STAMP_TYPE,
+} from '@pommora/core/Properties/properties'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import { isCompact, type SavedView } from '@pommora/core/Views/views'
 import { hiddenListIds } from '@renderer/Frames/hiddenFrameModel'
 import { contextIdsOf, contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { resolveFieldValue } from '@renderer/Properties/value'
 import { columnLabel } from '@renderer/Properties/Assignment/columnLabel'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import { urlValueFromEdit } from '@shared/linkValue'
+import { urlValueFromEdit } from '@pommora/core/Connections/linkValue'
 import { resolveTitle } from '@renderer/Actions/linkResolve'
 
 /** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the

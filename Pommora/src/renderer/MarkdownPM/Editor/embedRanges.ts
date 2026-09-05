@@ -13,8 +13,12 @@ import {
   type WebpageLine,
 } from '../Detect'
 import type { TableRegion } from '../Tables/regions'
-import { embeddableTitle, normalizeTitle, type LinkStatus } from '@shared/connections'
-import type { CodeMask } from '@shared/markdownCode'
+import {
+  embeddableTitle,
+  normalizeTitle,
+  type LinkStatus,
+} from '@pommora/core/Connections/connections'
+import type { CodeMask } from '@pommora/core/Connections/markdownCode'
 
 /** The construct kinds this pass answers for. `DocScan` extends it rather than restating the
  *  members, so a fifth kind is one edit instead of two that can disagree. */

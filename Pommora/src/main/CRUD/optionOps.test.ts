@@ -20,7 +20,7 @@ import { createPage, updatePageProperty } from './page'
 import { serializeSchemaOp } from './schemaChain'
 import { serializeOnFile } from '../IO/fileLock'
 import { readRegistry } from '../IO/propertiesRegistry'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { flushValueWrites } from '../valuesChanged'
 
 let root: string

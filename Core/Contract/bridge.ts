@@ -1,88 +1,73 @@
 // A channel with no handler, a handler with no channel, or a mismatched signature is a
 // compile error here, never a runtime discovery.
-//
-// Pure types, zero runtime imports, so the sandboxed preload (whose bundle may require only
-// 'electron') consumes it freely from both tsconfig projects.
 
-import type {
-  AssetMap,
-  ClearReport,
-  NavigationState,
-  NavViewModes,
-  NexusState,
-  NexusTree,
-  OpenIn,
-  PageDetail,
-  Personalization,
-  PickFileOptions,
-  GlanceSize,
-  WindowsFile,
-  SubfieldConfig,
-  PageValues,
-  StoredTabSet,
-  ThumbRect,
-  TrashMode,
-  TrashRow,
-  ValueChange,
-  ViewButton,
-  ViewStyle,
-} from '../../Pommora/src/shared/types'
-import type { FileHistoryMenuAction } from '../../Pommora/src/shared/fileHistoryMenu'
+import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
+import type { FileHistoryMenuAction } from '../Actions/fileHistoryMenu'
 import type {
   ContextTarget,
   Creator,
   MutateReply,
   MutateRequest,
   RenameHost,
-} from '../../Pommora/src/shared/mutate'
+} from '../Pages/mutateRequest'
 import type { Result } from './result'
-import type { FormatState } from '../../Pommora/src/shared/editorMenu'
-import type { SavedView } from '../../Pommora/src/shared/views'
-import type {
-  TileDoc,
-  TileDocPatch,
-  TileHostRef,
-  EmbeddedView,
-} from '../../Pommora/src/shared/tiles'
+import type { FormatState } from '../Actions/editorMenu'
+import type { SavedView } from '../Views/views'
+import type { PageDetail } from '../Pages/pageDetail'
+import type { ClearReport, TrashMode, TrashRow } from '../Trash/trashRow'
+import type { NavigationState } from '../Navigation/navRef'
+import type { GlanceSize, StoredTabSet, WindowsFile } from '../Interface/Windows/windowRecord'
+import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
+import type { OpenIn, PageValues, ViewButton, ViewStyle } from '../Views/viewRow'
+import type { Personalization } from '../Settings/personalization'
+import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView } from '../Tiles/tiles'
 import type {
   FileConfig,
   LinkConfig,
   NumberConfig,
   PropertyDefinition,
   StatusGroup,
-} from '../../Pommora/src/shared/properties'
-import type { TableMenuAction, TableMenuContext } from '../../Pommora/src/shared/tableMenu'
-import type { GripMenuAction, GripMenuContext } from '../../Pommora/src/shared/gripMenu'
-import type { CellMenuAction, CellMenuContext } from '../../Pommora/src/shared/cellMenu'
-import type { PageMetaAction } from '../../Pommora/src/shared/pageMenu'
-import type { CardMenuAction, CardMenuContext } from '../../Pommora/src/shared/cardMenu'
-import type { CitationMenuAction, CitationMenuContext } from '../../Pommora/src/shared/citationMenu'
-import type { ConnMenuAction, ConnMenuContext } from '../../Pommora/src/shared/connMenu'
-import type { TabMenuAction, TabMenuContext } from '../../Pommora/src/shared/tabMenu'
+} from '../Properties/properties'
+import type { TableMenuAction, TableMenuContext } from '../Actions/tableMenu'
+import type { GripMenuAction, GripMenuContext } from '../Actions/gripMenu'
+import type { CellMenuAction, CellMenuContext } from '../Actions/cellMenu'
+import type { PageMetaAction } from '../Actions/pageMenu'
+import type { CardMenuAction, CardMenuContext } from '../Actions/cardMenu'
+import type { CitationMenuAction, CitationMenuContext } from '../Actions/citationMenu'
+import type { ConnMenuAction, ConnMenuContext } from '../Actions/connMenu'
+import type { TabMenuAction, TabMenuContext } from '../Actions/tabMenu'
 import type {
   TrashColumnAction,
   TrashColumnContext,
   TrashMenuAction,
   TrashMenuContext,
-} from '../../Pommora/src/shared/trashMenu'
-import type { NavRowMenuAction, NavRowMenuContext } from '../../Pommora/src/shared/navRowMenu'
-import type { PropertyMenuAction, PropertyMenuContext } from '../../Pommora/src/shared/propertyMenu'
-import type { OptionMenuAction, OptionMenuContext } from '../../Pommora/src/shared/optionMenu'
-import type { RowMenuRequest } from '../../Pommora/src/shared/menuModel'
-import type { DevicePrefs } from '../../Pommora/src/shared/devicePrefs'
-import type { ColumnMenuAction, ColumnMenuContext } from '../../Pommora/src/shared/columnMenu'
+} from '../Actions/trashMenu'
+import type { NavRowMenuAction, NavRowMenuContext } from '../Actions/navRowMenu'
+import type { PropertyMenuAction, PropertyMenuContext } from '../Actions/propertyMenu'
+import type { OptionMenuAction, OptionMenuContext } from '../Actions/optionMenu'
+import type { RowMenuRequest } from '../Actions/menuModel'
+import type { DevicePrefs } from '../Settings/devicePrefs'
+import type { ColumnMenuAction, ColumnMenuContext } from '../Actions/columnMenu'
 import type {
   EmbedAreaMenuAction,
   EmbedTitleMenuAction,
   ViewButtonMenuAction,
-} from '../../Pommora/src/shared/viewMenus'
-import type { ViewRowAction, ViewRowMenuContext } from '../../Pommora/src/shared/viewRowMenu'
+} from '../Actions/viewMenus'
+import type { ViewRowAction, ViewRowMenuContext } from '../Actions/viewRowMenu'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
   NexusIconAction,
   TitleMenuAction,
-} from '../../Pommora/src/shared/identityMenus'
+} from '../Actions/identityMenus'
+
+/** `dir` is nexus-relative like every path the renderer holds — main joins it, and a folder
+ *  that's gone missing opens at the root rather than refusing. `any` widens the filter past
+ *  images. */
+export interface PickFileOptions {
+  dir?: string
+  any?: boolean
+}
 
 /** Request/response channels (`invoke` → `handle`). `args` labels become the derived dialer's
  *  parameter names. */
@@ -103,10 +88,8 @@ export interface Asks {
     reply: Result<string | null>
   }
   'assets:setDir': { args: [dir: string]; reply: Result<string> }
-  // The whole list crosses at once, so add/remove is one write with no half-applied ordering.
   'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
   'exclusions:choose': { args: []; reply: Result<string | null> }
-  // `null` is an empty exclusion list; a report is a pass that ran.
   'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
   // The confirmation names how many folders are about to be swept, counted at the moment of asking.
   'exclusions:count': { args: []; reply: Result<number> }

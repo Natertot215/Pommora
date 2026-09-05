@@ -1,7 +1,8 @@
 // After a mutation refetch, the prior selection can be stale: the entity was deleted (its id is
 // gone) or renamed/moved (its id survives but its path changed).
 
-import type { NexusTree, SelectionState } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { reconcileIndexOf } from '@renderer/treeIndex'
 
 /** Existence + live-path lookup per entity kind — projected from the tree's records once per push. */

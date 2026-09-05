@@ -1,4 +1,4 @@
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { TileHost } from '@renderer/Tiles/TileHost'
 import { InterfaceScaffold } from './InterfaceScaffold'
 

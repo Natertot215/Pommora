@@ -2,10 +2,15 @@
 // a sample. `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename
 // reaches them without giving them a link-graph edge — one predicate answers for both syntaxes.
 
-import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
-import { markdownLinkRegex, targetTitle } from '@shared/links'
-import { readLink } from '@shared/linkValue'
-import { codeMask } from '@shared/markdownCode'
+import {
+  normalizeTitle,
+  pageEmbedPattern,
+  pageLinkPattern,
+  titleOf,
+} from '@pommora/core/Connections/connections'
+import { markdownLinkRegex, targetTitle } from '@pommora/core/Connections/links'
+import { readLink } from '@pommora/core/Connections/linkValue'
+import { codeMask } from '@pommora/core/Connections/markdownCode'
 
 /** Every normalized title this body names in any of the three syntaxes — the one parse the
  *  content index seeds from and the cascade's prefilter answers through, so a title the index

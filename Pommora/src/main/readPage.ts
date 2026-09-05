@@ -3,8 +3,8 @@
 
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { contentId } from '@shared/identity'
-import type { PageDetail } from '@shared/types'
+import { contentId } from '@pommora/core/Nexus/identityMark'
+import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { splitFrontmatter } from './readNexus'
 import { splitEnvelope } from './IO/pageFile'
 import { basenameNoMd } from './coerce'

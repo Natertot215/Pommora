@@ -17,7 +17,7 @@ import { createPage, updatePageProperty } from './page'
 import { serializeOnFile } from '../IO/fileLock'
 import { openSession, closeSession, sessionRoot } from '../session'
 import { resolveUnderRoot } from '../pathSafety'
-import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 
 /** Must carry the name the registry holds — the cascade resolves its key from there, so a
  *  divergent name would leave it rewriting a page that holds nothing. */

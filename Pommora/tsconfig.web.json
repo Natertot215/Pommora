@@ -10,12 +10,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@shared/*": ["./src/shared/*"],
       "@renderer/*": ["./src/renderer/*"],
       "@pommora/core/*": ["../Core/*"],
-      "@pommora/uix/*": ["../UIX/*"]
+      "@pommora/uix/*": ["../UIX/*"],
+      "@pommora/desktop/*": ["../Desktop/*"]
     },
     "noEmit": true
   },
-  "include": ["src/renderer/**/*", "src/shared/**/*", "../Core/Platform/dialer.ts"]
+  "include": ["src/renderer/**/*", "../Core/Platform/dialer.ts"]
 }

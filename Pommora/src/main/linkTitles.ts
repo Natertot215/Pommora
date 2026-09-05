@@ -3,7 +3,11 @@
 // in nexus.db. A title is fetched at most once per URL per session.
 import { StringDecoder } from 'node:string_decoder'
 import { net } from 'electron'
-import { isHttpLink, normalizeLinkUrl, LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
+import {
+  isHttpLink,
+  normalizeLinkUrl,
+  LINK_RESOLVE_TIMEOUT_MS,
+} from '@pommora/core/Connections/links'
 import { readScope, writeKey } from './Database/localState'
 
 /** URL → fetched page title. Regeneratable from the network, so it never leaves the device. */

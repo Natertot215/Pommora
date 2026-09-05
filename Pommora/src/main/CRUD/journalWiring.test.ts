@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   atomicWriteFile,
   rewritePageSerialized,

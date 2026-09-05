@@ -6,7 +6,7 @@ import { openSession, closeSession, sessionRoot } from './session'
 import { pathExists } from './IO/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
-import { parseConnectionText } from '@shared/connections'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
 
 let root: string
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')

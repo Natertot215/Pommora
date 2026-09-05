@@ -1,6 +1,6 @@
-import type { MutateRequest } from '@shared/mutate'
+import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
 import { caught, type PommoraError, type Result } from '@pommora/core/Contract/result'
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -11,8 +11,8 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
   reorderTopInTree,
-} from '@shared/treePatch'
-import { stabilize } from '@shared/treeStabilize'
+} from '@pommora/core/Nexus/treePatch'
+import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Tokens/accent'
 import { applyPersonalization } from '@renderer/DesignSystem/Tokens/personalization'
 import { reconcileIndexOf } from '../treeIndex'

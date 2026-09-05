@@ -2,8 +2,8 @@ import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
-import { isPlainObject } from '@shared/propertyValue'
-import { propertyDefinition, type PropertyDefinition } from '@shared/properties'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import { propertyDefinition, type PropertyDefinition } from '@pommora/core/Properties/properties'
 
 /** propId → its nexus-wide definition. The shared registry, `.nexus/properties.json`. */
 export type PropertyRegistry = Record<string, PropertyDefinition>

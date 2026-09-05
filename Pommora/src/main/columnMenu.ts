@@ -4,7 +4,7 @@ import {
   styleMenuLabel,
   type ColumnMenuAction,
   type ColumnMenuContext,
-} from '@shared/columnMenu'
+} from '@pommora/core/Actions/columnMenu'
 import { popReturningMenu } from './returningMenu'
 import { alignSubmenu, styleSubmenu } from './styleMenu'
 

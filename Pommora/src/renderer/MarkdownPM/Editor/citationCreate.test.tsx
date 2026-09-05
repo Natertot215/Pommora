@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
-import type { Personalization } from '@shared/types'
+import type { Personalization } from '@pommora/core/Settings/personalization'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/Testing/editorHarness'
 import {

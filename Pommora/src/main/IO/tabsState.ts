@@ -6,8 +6,9 @@
 // Everything stored is a bare ref — this module strips to `{kind, id}` in both directions, and
 // the renderer's restore hydrator mints paths against the live tree.
 
-import { isPlainObject } from '@shared/propertyValue'
-import { toNavRef, type NavRef, type StoredTab, type StoredTabSet } from '@shared/types'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import { toNavRef, type NavRef } from '@pommora/core/Navigation/navRef'
+import type { StoredTab, StoredTabSet } from '@pommora/core/Interface/Windows/windowRecord'
 import { readValue, writeValue } from '../Database/localState'
 
 const TAB_KINDS = new Set(['homepage', 'context', 'space', 'collection', 'set', 'page'])

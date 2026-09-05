@@ -3,11 +3,15 @@
 // order (priority = index), each criterion compared until one breaks the tie, then stable input
 // order. Pure: no fs, no React.
 
-import type { SortCriterion } from '@shared/views'
-import type { ViewRow } from '@shared/types'
-import { optionValues, type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import type { SortCriterion } from '@pommora/core/Views/views'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
+import {
+  optionValues,
+  type PropertyDefinition,
+  RESERVED_PROPERTY_ID,
+} from '@pommora/core/Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '@renderer/Properties/value'
-import { linkDisplayText } from '@shared/linkValue'
+import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 
 type SortKey = number | string
 type Less = (a: SortKey, b: SortKey) => boolean

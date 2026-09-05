@@ -1,4 +1,4 @@
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
 import type { ContextIdentity } from '@renderer/Properties/contextIdentity'
 import { useSession } from '@renderer/store'
 

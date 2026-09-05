@@ -1,4 +1,4 @@
-import type { PropertyValue } from '@shared/propertyValue'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 
 export type PickKind = 'select' | 'multiSelect' | 'context'
 

@@ -11,9 +11,11 @@ import {
   scopeOf,
   splitFrontmatter,
 } from './readNexus'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import { corpusFiles } from './IO/walk'
-import { DEFAULT_ACCENT, DEFAULT_COMMANDS, HISTORY_DAYS } from '@shared/types'
+import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colorSetting'
+import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
+import { HISTORY_DAYS } from '@pommora/core/Settings/personalization'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRP'
 const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'

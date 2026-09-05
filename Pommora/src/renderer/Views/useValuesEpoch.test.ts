@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PageFrontmatter } from '@shared/schemas'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import { patchOverride, retireSettled, type Overrides } from './useValuesEpoch'
 
 const fm = (id: string): PageFrontmatter => ({ id }) as never

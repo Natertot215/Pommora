@@ -1,10 +1,10 @@
 // The send block, renderer-side: what a surface hands over to offer it, and the actions every
 // surface answers identically. Sidebar rows are the exception — their menu runs main-side.
 
-import { titleFromPath } from '@shared/connections'
-import { pageLinkText, pagePathText, type PageMoveContext } from '@shared/pageMenu'
-import type { NexusTree } from '@shared/types'
-import { parentOf } from '@shared/treePatch'
+import { titleFromPath } from '@pommora/core/Connections/connections'
+import { pageLinkText, pagePathText, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { containerTargets } from '@renderer/Actions/destinationTree'
 import { useSession } from '@renderer/store'
 

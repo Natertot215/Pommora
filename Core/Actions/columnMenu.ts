@@ -1,0 +1,121 @@
+import {
+  COLUMN_LOOKS,
+  DATE_FORMAT_LABELS,
+  DATE_FORMATS,
+  TIME_FORMATS,
+  WEEKDAY_FORMATS,
+  type ColumnStyle,
+} from '../Properties/columnStyles'
+import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
+import type { ColumnAlign } from '../Views/views'
+
+/** The table-view column-header right-click menu: hide the column, set its text alignment,
+ *  or set a per-view display style.*/
+export type ColumnMenuAction =
+  | 'column:hide'
+  | 'column:toggle-icons'
+  | `align:${ColumnAlign}`
+  | `style:${string}:${string}`
+
+/** Menu context — the current alignment (for the checked radio) + which items apply. */
+export interface ColumnMenuContext {
+  align: ColumnAlign
+  alignable: boolean
+  hideable: boolean
+  iconsShown: boolean
+  style?: StyleMenuContext
+}
+
+/** The Style submenu's inputs: the column's declared type picks the item set; `current` is the
+ *  RESOLVED style (defaults applied) so the checked radio reflects what actually renders. */
+export interface StyleMenuContext {
+  type: PropertyType
+  current: ColumnStyle
+  barCapable?: boolean
+}
+
+/** What a type's own submenu is called. The two whose rows name a *format* say so — a url's three
+ *  link forms and a number's, which its own editor pane has always called Format — while the rest
+ *  offer looks, which is a different word for a different thing. */
+export function styleMenuLabel(type: PropertyType): string {
+  return type === 'url' || type === 'number' ? 'Format' : 'Style'
+}
+
+/** One Style submenu row — a radio keyed by the ColumnStyle field it sets. `separatorBefore`
+ *  splits the datetime menu's date radios from its time radios (Electron groups radios per
+ *  separator-bounded run, so the two groups check independently). */
+export interface StyleMenuItem {
+  label: string
+  key: keyof ColumnStyle & string
+  value: string
+  checked: boolean
+  separatorBefore?: boolean
+}
+
+/** The per-type Style items — the ONE place that knows which types are style-addressable
+ *  (context isn't: it renders one fixed chip shape, never a user-picked look).
+ *  Datetime labels are format-type NAMES, never rendered samples. */
+export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
+  const { type, current } = ctx
+  const row =
+    (key: StyleMenuItem['key'], checked: string | undefined) =>
+    (label: string, value: string, separatorBefore?: boolean): StyleMenuItem => ({
+      label,
+      key,
+      value,
+      checked: checked === value,
+      ...(separatorBefore ? { separatorBefore } : {}),
+    })
+  const look = row('look', current.look)
+  switch (type) {
+    case 'status':
+    case 'select':
+    case 'multi_select':
+      return [look('Standard', 'standard'), look('Compact', 'compact')]
+    case 'checkbox':
+      return [look('Checkbox', 'checkbox'), look('Switch', 'switch')]
+    case 'url':
+      return LINK_DISPLAYS.map((d) => look(LINK_DISPLAY_LABELS[d], d))
+    case 'number':
+      return ctx.barCapable
+        ? [look('Number', 'number'), look('Bar', 'bar')]
+        : [look('Number', 'number')]
+    case 'datetime':
+    case 'created_time':
+    case 'last_edited_time': {
+      const date = row('date_format', current.date_format)
+      const weekday = row('weekday', current.weekday)
+      const time = row('time_format', current.time_format)
+      return [
+        ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
+        weekday('Full', 'long', true),
+        weekday('Short', 'short'),
+        weekday('Hidden', 'none'),
+        time('12 Hours', 'twelveHour', true),
+        time('24 Hours', 'twentyFourHour'),
+        time('Hidden', 'none'),
+      ]
+    }
+    default:
+      return []
+  }
+}
+
+const STYLE_VALUES: Record<string, readonly string[]> = {
+  look: COLUMN_LOOKS,
+  date_format: DATE_FORMATS,
+  time_format: TIME_FORMATS,
+  weekday: WEEKDAY_FORMATS,
+}
+
+/** Decode a `style:<key>:<value>` action; null for anything else or an unknown key/value. */
+export function parseStyleAction(
+  action: string,
+): { key: keyof ColumnStyle & string; value: string } | null {
+  const m = /^style:([^:]+):(.+)$/.exec(action)
+  if (!m) return null
+  const [, key, value] = m
+  return STYLE_VALUES[key]?.includes(value)
+    ? { key: key as keyof ColumnStyle & string, value }
+    : null
+}

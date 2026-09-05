@@ -7,8 +7,8 @@ import {
   setOptionIcon,
   fallbackTitle,
   type Option,
-} from '@shared/optionModel'
-import type { PropertyType } from '@shared/properties'
+} from '@pommora/core/Properties/optionModel'
+import type { PropertyType } from '@pommora/core/Properties/properties'
 import { askClearOption, askRemoveOption } from '@renderer/Windows/confirmations'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {

@@ -1,4 +1,4 @@
-import type { WindowTabTarget } from '@shared/types'
+import type { WindowTabTarget } from '@pommora/core/Navigation/navRef'
 import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.

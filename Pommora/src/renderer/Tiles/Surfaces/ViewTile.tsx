@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ViewTileEntry } from '@shared/tiles'
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
+import type { ViewTileEntry } from '@pommora/core/Tiles/tiles'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_VIEW_ID,
   mintDefaultView,
@@ -9,7 +9,7 @@ import {
   savedView,
   type SavedView,
   type ViewState,
-} from '@shared/views'
+} from '@pommora/core/Views/views'
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { cellRing } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'

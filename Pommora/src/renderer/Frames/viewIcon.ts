@@ -1,5 +1,5 @@
 import type { IconName } from '@renderer/DesignSystem/Symbols'
-import type { ViewType } from '@shared/views'
+import type { ViewType } from '@pommora/core/Views/views'
 
 export function iconForTypeSwitch(
   currentIcon: string | undefined,

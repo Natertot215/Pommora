@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { clampWidth, minWidthFor, widthFor } from './columnWidths'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },

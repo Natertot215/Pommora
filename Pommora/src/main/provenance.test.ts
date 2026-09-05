@@ -372,20 +372,20 @@ describe('listBundles — what the trash offers', () => {
 })
 
 describe('resolveRecord — a placement with final names, or a typed refusal', () => {
-  const P = (over: Partial<import('@shared/types').PageNode> = {}) =>
+  const P = (over: Partial<import('@pommora/core/Nexus/tree').PageNode> = {}) =>
     ({
       kind: 'page',
       id: 'page-x',
       title: 'X',
       path: 'Notes/X.md',
       ...over,
-    }) as import('@shared/types').PageNode
+    }) as import('@pommora/core/Nexus/tree').PageNode
   const treeOf = (
-    contexts: import('@shared/types').ContextGroup[],
-    collections: Partial<import('@shared/types').CollectionNode>[],
-  ) => ({ contexts, collections }) as unknown as import('@shared/types').NexusTree
+    contexts: import('@pommora/core/Nexus/tree').ContextGroup[],
+    collections: Partial<import('@pommora/core/Nexus/tree').CollectionNode>[],
+  ) => ({ contexts, collections }) as unknown as import('@pommora/core/Nexus/tree').NexusTree
 
-  const journal = (over: Partial<import('@shared/types').SetNode> = {}) =>
+  const journal = (over: Partial<import('@pommora/core/Nexus/tree').SetNode> = {}) =>
     ({
       kind: 'set',
       id: 'set-daily',
@@ -394,11 +394,11 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       pages: [],
       sets: [],
       ...over,
-    }) as import('@shared/types').SetNode
+    }) as import('@pommora/core/Nexus/tree').SetNode
 
   const notes = (
-    sets: import('@shared/types').SetNode[] = [journal()],
-    pages: import('@shared/types').PageNode[] = [],
+    sets: import('@pommora/core/Nexus/tree').SetNode[] = [journal()],
+    pages: import('@pommora/core/Nexus/tree').PageNode[] = [],
   ) => ({
     kind: 'collection' as const,
     id: 'col-notes',
@@ -453,7 +453,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
               title: 'S',
               path: '.nexus/contexts/Areas/S',
               contextId: 'ctx_a',
-            } as import('@shared/types').SpaceNode,
+            } as import('@pommora/core/Nexus/tree').SpaceNode,
           ],
         },
       ],
@@ -503,7 +503,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
               title: 'Pommora',
               path: '.nexus/contexts/Ventures/Pommora',
               contextId: 'ctx_projects',
-            } as import('@shared/types').SpaceNode,
+            } as import('@pommora/core/Nexus/tree').SpaceNode,
           ],
         },
       ],

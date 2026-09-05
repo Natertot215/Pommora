@@ -6,8 +6,8 @@ import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@shared/properties'
-import type { SavedView } from '@shared/views'
+} from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
 import {
   nexusReorderIndex,
   regionScan,

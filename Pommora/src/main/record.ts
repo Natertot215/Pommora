@@ -4,10 +4,10 @@
 
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { EntityRecord } from '@shared/record'
+import type { EntityRecord } from '@pommora/core/Nexus/record'
 import { errText } from '@pommora/core/Contract/result'
-import { contextDirRel, CONTEXTS_REGISTRY_REL } from '@shared/nexusPaths'
-import type { NexusTree, PageNode, SetNode } from '@shared/types'
+import { contextDirRel, CONTEXTS_REGISTRY_REL } from '@pommora/core/Locations/nexusPaths'
+import type { NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { readKey, writeKey } from './Database/localState'
 import { isAdoptedId } from './ids'
 import { refreshTree, seedLiveTree } from './liveTree'

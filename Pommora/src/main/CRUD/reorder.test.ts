@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
-import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
+import { pageCollectionSidecar, pageSetSidecar } from '@pommora/core/Nexus/schemas'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
 
 let root: string

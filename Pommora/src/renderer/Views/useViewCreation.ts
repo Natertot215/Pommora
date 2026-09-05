@@ -3,15 +3,20 @@
 // caller opens its own naming surface over the row already real. The pipeline owns placement.
 
 import { useRef } from 'react'
-import type { CollectionNode, PageValues, SetNode, ViewRow } from '@shared/types'
-import { UNGROUPED } from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
+import { UNGROUPED } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { SetOverrides } from './useValuesEpoch'
-import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { PropertyDefinition } from '@shared/properties'
-import type { SavedView } from '@shared/views'
-import { DEFAULT_NEW_NAME } from '@shared/mutate'
-import { parentOf } from '@shared/treePatch'
+import {
+  applyValueAtRoot,
+  isBlankValue,
+  type PropertyValue,
+} from '@pommora/core/Properties/propertyValue'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
+import { DEFAULT_NEW_NAME } from '@pommora/core/Pages/mutateRequest'
+import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@renderer/Interactions/autoscroll'
 import { useSession } from '../store'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'

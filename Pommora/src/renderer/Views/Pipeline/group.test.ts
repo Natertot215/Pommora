@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ID_KEY } from '@shared/identity'
-import type { CollectionNode, PageNode, SetNode, ViewRow } from '@shared/types'
-import type { GroupConfig } from '@shared/views'
-import type { PropertyDefinition } from '@shared/properties'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { GroupConfig } from '@pommora/core/Views/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   dateBucketKey,
   flattenContainer,

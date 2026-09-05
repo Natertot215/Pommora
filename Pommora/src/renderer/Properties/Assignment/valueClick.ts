@@ -3,7 +3,7 @@
 // surface). One home for the rules that must never drift: a checkbox is true-or-absent on disk,
 // never a stored false; the option kinds open their picker; datetime opens the calendar.
 
-import type { PropertyValue } from '@shared/propertyValue'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 
 export type ValueClickAction =
   | { kind: 'commit'; value: PropertyValue | null }

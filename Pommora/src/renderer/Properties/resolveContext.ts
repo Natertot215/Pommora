@@ -1,5 +1,5 @@
-import type { AssetMap, NexusTree } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
+import type { AssetMap, NexusTree } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   type ContextIdentity,
   contextsByIdOf,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { IconName } from '@renderer/DesignSystem/Symbols'
-import type { ViewType } from '@shared/views'
+import type { ViewType } from '@pommora/core/Views/views'
 import { iconForTypeSwitch } from './viewIcon'
 
 const GLYPH: Record<ViewType, IconName> = {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
-import type { CollectionNode, SetNode } from '@shared/types'
-import { type PropertyDefinition, statusOptions } from '@shared/properties'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
 import type {
   DateGranularity,
   GroupConfig,
@@ -8,7 +8,7 @@ import type {
   SavedView,
   StructuralOrderMode,
   SubGroupConfig,
-} from '@shared/views'
+} from '@pommora/core/Views/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import {
   DisclosureRow,

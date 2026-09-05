@@ -1,5 +1,5 @@
 import { globalStyle } from '@vanilla-extract/css'
-import { DEFAULT_ACCENT } from '@shared/types'
+import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colorSetting'
 import { STATE_OPACITY, vars as colorVars } from './color.css'
 import { font } from './typography.css'
 import {

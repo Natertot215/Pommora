@@ -2,7 +2,7 @@
 // byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import { mkdtemp, rm, mkdir, writeFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

@@ -3,7 +3,7 @@ import {
   propertyMenuModel,
   type PropertyMenuAction,
   type PropertyMenuContext,
-} from '@shared/propertyMenu'
+} from '@pommora/core/Actions/propertyMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 

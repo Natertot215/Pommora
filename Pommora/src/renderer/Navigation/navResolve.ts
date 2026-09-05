@@ -4,7 +4,7 @@
 // through the display index projected from the tree's records — the gallery must never
 // re-flatten the tree per row.
 
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { navKey } from './navRecents'
 

@@ -26,17 +26,17 @@ import {
 } from '@codemirror/view'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useResizeFrame } from '@renderer/Interactions/ResizeFrame'
-import { clamp } from '@shared/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
-import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
+import { normalizeTitle, pageEmbedText, titleFromPath } from '@pommora/core/Connections/connections'
 import '@renderer/Tiles/tile-base.css'
-import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
 import { DEFAULT_ZOOM, zoomStep } from '@renderer/Tiles/tileZoom'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../Detect'
 import { claimedEmbeds } from './embedRanges'
 import { healTileScrolls, tileWarmSeam } from '@renderer/Tiles/tileCache'
 import type { ConnectionsApi } from '../Connections'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 export interface EmbedHost {
   getConn: () => ConnectionsApi | undefined

@@ -2,8 +2,8 @@
 // Every menu that is a list rather than a surface comes through here, which is what lets the same
 // model reach the OS or an in-app pane without either renderer knowing about the other.
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { ActionItem, MenuAnchor, RowMenuRequest } from '@shared/menuModel'
-import { PAGE_MOVE_ROW, type PageMoveContext } from '@shared/pageMenu'
+import type { ActionItem, MenuAnchor, RowMenuRequest } from '@pommora/core/Actions/menuModel'
+import { PAGE_MOVE_ROW, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
 /** The renderer measures in CSS pixels; `popup` places in window DIPs, and the two differ by

@@ -1,4 +1,4 @@
-import type { MutableKind, RenameHost } from '@shared/mutate'
+import type { MutableKind, RenameHost } from '@pommora/core/Pages/mutateRequest'
 import { useEffect, useState } from 'react'
 import { useSession } from '@renderer/store'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'

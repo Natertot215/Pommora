@@ -2,9 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { CollectionNode } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
-import type { SavedView } from '@shared/views'
+import type { CollectionNode } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../store'
 import { GroupFrame } from './GroupFrame'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

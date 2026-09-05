@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readPage } from './readPage'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRC'
 

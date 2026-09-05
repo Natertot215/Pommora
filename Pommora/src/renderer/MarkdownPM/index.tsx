@@ -59,7 +59,7 @@ import {
 import { formatKeymap } from './Editor/formatKeymap'
 import { embedSeatAt } from './Editor/embedInsert'
 import { readFormatState } from './Editor/formatState'
-import type { FormatState } from '@shared/editorMenu'
+import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import { AC_MAX, aliasRows, pageRow } from './autocomplete'
 import {
   useConnectionAutocomplete,

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import type { WatchScope } from '../exclusion'
 
 const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: ASSETS_DIR_REL })

@@ -33,7 +33,7 @@ import {
   type WidgetSpec,
 } from '../Decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../Connections'
-import type { LinkStatus } from '@shared/connections'
+import type { LinkStatus } from '@pommora/core/Connections/connections'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
  *  decorator and the arming selector cannot drift. */

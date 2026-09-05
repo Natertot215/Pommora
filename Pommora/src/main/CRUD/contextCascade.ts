@@ -4,8 +4,9 @@
 
 import { rename } from 'node:fs/promises'
 import { basename, join, sep } from 'node:path'
-import { contextKey, normalizeContextValue, type ContextsRegistry } from '@shared/contexts'
-import { contentId } from '@shared/identity'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
+import { contextKey, type ContextsRegistry } from '@pommora/core/Properties/contexts'
+import { contentId } from '@pommora/core/Nexus/identityMark'
 import { ok, fail, errText, type Result } from '@pommora/core/Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { pathExists, readJsonObject } from '../IO/atomicWrite'
@@ -187,8 +188,7 @@ export async function renameContextOp(
   // Case-insensitive vs OTHER groups (the filesystem is); a case-only rename of itself passes.
   if (
     reg.value.contexts.some(
-      (c) =>
-        c.id !== contextId && normalizeContextValue(c.title) === normalizeContextValue(newName),
+      (c) => c.id !== contextId && normalizeTitle(c.title) === normalizeTitle(newName),
     )
   )
     return fail('exists', `"${newName}" already exists.`)
@@ -244,7 +244,7 @@ export async function renameSpaceOp(
   const target = join(contextsDir(root), ref.contextTitle, newName)
   // A case-only rename of ITSELF hits its own folder on a case-insensitive filesystem —
   // that's the rename, not a collision.
-  const caseOnly = normalizeContextValue(ref.title) === normalizeContextValue(newName)
+  const caseOnly = normalizeTitle(ref.title) === normalizeTitle(newName)
   if (!caseOnly && (await pathExists(target))) return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = {

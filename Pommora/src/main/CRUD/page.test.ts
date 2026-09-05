@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { chmod, mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,7 +7,7 @@ import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } 
 import { splitEnvelope, assembleEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { isUlid } from '../ids'
-import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 
 /** The writer takes a definition, not an id — tests name the property and this supplies the rest.
  *  The type only has to be one the value's kind can hold; the key comes from the name. */

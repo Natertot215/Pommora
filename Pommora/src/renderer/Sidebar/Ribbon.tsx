@@ -1,4 +1,4 @@
-import type { SidebarMode } from '@shared/types'
+import type { SidebarMode } from '@pommora/core/Settings/personalization'
 import { Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { reorder, SortableZone, useDragItem } from '@renderer/Interactions/drag'
 import { useSession } from '../store'

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { alignFor, defaultAlignFor } from './columnAlign'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
-import { savedView, type SavedView } from '@shared/views'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import { savedView, type SavedView } from '@pommora/core/Views/views'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },

@@ -22,7 +22,7 @@ import {
 } from './Database/contentIndex'
 import { splitEnvelope } from './IO/pageFile'
 import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './IO/walk'
-import { NON_CORPUS_TOP } from '@shared/nexusPaths'
+import { NON_CORPUS_TOP } from '@pommora/core/Locations/nexusPaths'
 import { splitFrontmatter } from './readNexus'
 import { readWatchScope } from './settings'
 import type { Db } from './Database/driver'
