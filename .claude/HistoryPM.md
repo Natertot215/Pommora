@@ -143,8 +143,8 @@
 
 **The document:** each host's layout, entries, and lock moved from a per-machine `local_state` row to `_tiles.json` in the host's folder, beside its tile bodies, so it syncs with `.nexus/`. `main/tileDoc.ts` reads it read-only (absent or corrupt reads empty) and writes it through `rmwJsonStrict` under the file's own lock, quarantining corrupt bytes to `_tiles.json.bad-<ulid>` before a write lands; `rmwJsonStrict` gained the `onCorrupt` hook for that. The watcher names the file (the homepage folder is now descended so its document is watched while its bodies stay ignored), exempts it from write-echo suppression the way navigation is, and pushes `tiles:changed` per host off the raw batch; `useTileDoc` answers by flushing its pending save, awaiting it, re-reading, and replacing its state — identical bytes under one stable serializer (`shared/stableJson.ts`) change nothing, and a push landing mid-gesture waits for the settle. `main/tilesMigrate.ts` moved every legacy row into its file once on open, file-wins, dropping nothing when the registry fails to load; NexusOS moved 12 rows into 11 files with none divergent. `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
 
-- **Commits:** `97c820f4^..1d3d8678`
-- **Diff:** Net +165 | +1337 / −1172
+- **Commits:** `97c820f4^..924394ec`
+- **Diff:** Net +174 | +1350 / −1176
 
 #### PM-127 || The Resize Frame
 **DATE:** 09-04-2026

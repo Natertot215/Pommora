@@ -1,6 +1,6 @@
 ## Tiles — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
+> **Status:** executed — Nathan's pass pending · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Base: `043ee930`.
 
 **Goal**
@@ -782,7 +782,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Closeout
 
-**Delivery Claim** (09-04-2026, range `043ee930..0be53bf8`)
+**Delivery Claim** (09-04-2026, range `043ee930..924394ec`)
 
 1. Every drag that sizes a box or arranges a tile runs on `Interactions/gesture.ts` (the DnD engine's list drags and the tab bar's native-window drag stay where they were, by scope): the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled is not a drop.
 2. `src/renderer/Tiles/` is the tile system — `Core/`, `TileGrid.tsx`, `TileHost.tsx`, `Surfaces/`, `tile-base.css`, `tile-grid.css`, `tile-title.css` — and no identifier, channel, class, variable, user string, or Features doc in the tile system says "block"; MarkdownPM keeps the word. The zoom ramp is one inline variable set through `tileStyle`.
@@ -791,7 +791,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 5. Each host's document is `_tiles.json` in its folder, written by one locked read-modify-write that quarantines corrupt bytes; the watcher names the file and pushes `tiles:changed`, and an open host flushes its pending save, re-reads, and shows the file (identical bytes change nothing; a busy gesture holds the push). The legacy rows migrated once on open (NexusOS: 11 files from 12 rows, 0 divergent). `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
 6. The shared contract's sidecar comment, the README's stale paths, `has-live-editor`, and the seven zoom CSS rules are gone; `NEW_TILE_H` and `TILE_DEFAULT_PX` stay two constants.
 
-Gates at the head: typecheck 0, lint 0, vitest 322 files / 4005 tests. Line delta over the range, comments and tests excluded: DELTA_LINE.
+Gates at the head: typecheck 0, lint 0, vitest 322 files / 4005 tests. Line delta over the range (`043ee930..924394ec`), comments and tests excluded: +1350 / −1176, net +174; tests +1126 / −531.
 
 **Not claimed:** the Completion Criteria's user's-own-pass items; a live sync client against two machines; Showcase beyond compiling; the inspector's per-tab warmth through the tile cache's warm seam (Decision C-10), which is the inspector arc's first task. The live reload's latency was observed under a 1.5 s poll, not timed; by construction it is the watcher's 200 ms write-settle plus its 200 ms batch plus one IPC read.
 

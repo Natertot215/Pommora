@@ -12,7 +12,7 @@
 
 **Verified live over CDP, as distinct from traced:** the grid edge drag's per-frame count on the homepage (60 `onDragMove` per 60-move drag, 0.50 per rAF tick, the layout snapshotted and restored byte-identical); on a scratch Nexus, a tile minted over IPC, its `_tiles.json` hand-edited, rendered within 1.5 s on the same `.tile-host` element, a south-edge drag landing its height on disk and surviving a reload; on NexusOS, the first open with the migration logging `{ written: 11, dropped: 12, divergent: [] }`, 11 `_tiles.json` files, 0 rows, and the Homepage rendering its three tiles at the heights the Gate 1 snapshot recorded. Traced and unit-covered, not driven: the handle menus, the embed handle in a page, Escape mid-drag, the Scale ramp easing back to 1.0.
 
-**What the reviews changed.** Gate 1 found a pre-existing flaw and fixed it at the frame (a bare click on an embed strip froze an auto-height tile). Gate 3's attack found the recipe's `schema` field had no reader while `knownTile` kept a hand-written union; `knownEntry` now derives from the table. Gate 4's two reviews agreed the echo comparison used two serializers and never matched; `shared/stableJson.ts` is now the one serializer on both sides. The plan's Progress hashes were re-derived from the log after the amend pattern skewed five of them.
+**What the reviews changed.** The closeout attack found the hold-the-push rule open at both ends of a gesture (a handle press before its lift, and a reload whose reads outlast the gesture's start); both now hold. Gate 1 found a pre-existing flaw and fixed it at the frame (a bare click on an embed strip froze an auto-height tile). Gate 3's attack found the recipe's `schema` field had no reader while `knownTile` kept a hand-written union; `knownEntry` now derives from the table. Gate 4's two reviews agreed the echo comparison used two serializers and never matched; `shared/stableJson.ts` is now the one serializer on both sides. The plan's Progress hashes were re-derived from the log after the amend pattern skewed five of them.
 
 **Not this session's:** a parallel session was trimming comments across the tree throughout (about a dozen files, plus three Planning docs staged as deleted by the hook); its files were never staged here except where they also carried this arc's import rewrites, which bundled them. Two of its files were formatted in place so lint could run.
 
@@ -76,7 +76,7 @@
 
 **COMMITS**
 
-- `c53f7bce` ratified · `97c820f4` Task 1 · `e411d814` Task 2 · `69bb49f4` Gate 1 simplification · `15fbcc1f` Gate 1 · `d05db560` Task 3 · `f376ea7a` Task 4 · `4a21b5c6` Gate 2 simplification · `59bf6fdc` Gate 2 · `6a715876` Task 5 · `0dc65e48` Task 6 · `cb0ada1d` Gate 3 simplification · `57a46fc9` Gate 3 · `c674ef5f` Task 7 · `c5600368` Task 8 · `50d86e59` Task 9 · `a5baaa74` Task 10 · `83341bca` Gate 4 simplification · `97cf4f55` Gate 4 · `1d3d8678` the Delivery Claim
+- `c53f7bce` ratified · `97c820f4` Task 1 · `e411d814` Task 2 · `69bb49f4` Gate 1 simplification · `15fbcc1f` Gate 1 · `d05db560` Task 3 · `f376ea7a` Task 4 · `4a21b5c6` Gate 2 simplification · `59bf6fdc` Gate 2 · `6a715876` Task 5 · `0dc65e48` Task 6 · `cb0ada1d` Gate 3 simplification · `57a46fc9` Gate 3 · `c674ef5f` Task 7 · `c5600368` Task 8 · `50d86e59` Task 9 · `a5baaa74` Task 10 · `83341bca` Gate 4 simplification · `97cf4f55` Gate 4 · `1d3d8678` the Delivery Claim · `924394ec` the closeout attack's seam
 - The parallel session's Mobile Companion & Pommora Sync planning commits are interleaved and not this session's.
 
 #### Handoff Guidelines
