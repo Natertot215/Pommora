@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { tilePatchProblem, coerceTileHost, knownTile, rawLayoutSchema } from './tiles'
+import {
+  coerceTileHost,
+  knownTile,
+  rawLayoutSchema,
+  TILE_KINDS,
+  type TileType,
+  tilePatchProblem,
+} from './tiles'
 
 describe('knownTile', () => {
   it('types the three known entry kinds', () => {
@@ -141,5 +148,23 @@ describe('tile entry zoom field', () => {
     const e = knownTile({ id: 'c', type: 'markdown', zoom: 'big' })
     expect(e).not.toBeNull()
     expect(e?.zoom).toBeUndefined()
+  })
+})
+
+describe('the tile recipe', () => {
+  it('declares every kind once, with its file rule and its menu rows', () => {
+    const kinds: TileType[] = ['markdown', 'page', 'view']
+    for (const k of kinds)
+      expect(TILE_KINDS[k].schema.safeParse({ id: 'x', type: k }).success).toBe(k === 'markdown')
+    expect(TILE_KINDS.markdown.fileBacked).toBe(true)
+    expect(TILE_KINDS.page.fileBacked).toBe(false)
+    expect(TILE_KINDS.view.fileBacked).toBe(false)
+    expect(TILE_KINDS.markdown.menuRows).toEqual([
+      { label: 'Link View', source: 'views' },
+      { label: 'Link Page', source: 'pages' },
+    ])
+    expect(TILE_KINDS.page.menuRows).toEqual([{ label: 'Source', source: 'pages' }])
+    expect(TILE_KINDS.view.menuRows).toEqual([{ label: 'Source', source: 'none' }])
+    expect(knownTile({ id: 'x', type: 'widget' })).toBeNull()
   })
 })

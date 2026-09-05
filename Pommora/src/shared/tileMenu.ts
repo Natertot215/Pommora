@@ -7,13 +7,14 @@ import type { ZoomOption } from './gripMenu'
 // carry are simply not read: the rows, their order and their nesting survive, which is what the menu
 // actually is.
 
-import type {
-  TileEntry,
-  TileStyle,
-  DrillPickItem,
-  PagePickerItem,
-  ViewPick,
-  ViewPickerItem,
+import {
+  type DrillPickItem,
+  type PagePickerItem,
+  TILE_KINDS,
+  type TileEntry,
+  type TileStyle,
+  type ViewPick,
+  type ViewPickerItem,
 } from './tiles'
 import type { ActionItem } from './menuModel'
 import { lockLabel } from './toggleLabels'
@@ -79,30 +80,23 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
 
   // The page's own name, inert — the in-app menu's title field reads as a link, and an OS menu has
   // no equivalent, so what survives is the identity rather than the affordance.
-  if (entry.type === 'page' && ctx.pageInfo)
-    items.push({ label: ctx.pageInfo.title, action: 'tile:open', disabled: true })
+  if (ctx.pageInfo) items.push({ label: ctx.pageInfo.title, action: 'tile:open', disabled: true })
 
   const link = (label: string, rows: ActionItem<TileAction>[]): void => {
     const off = locked || rows.length === 0
     items.push({ label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) })
   }
-  if (entry.type === 'markdown') {
+  // A row with no source is shown and refused rather than dropped — the menu reads the same
+  // whichever tile it belongs to.
+  for (const row of TILE_KINDS[entry.type].menuRows)
     link(
-      'Link View',
-      drill(ctx.viewItems, (value) => ({ kind: 'view', value })),
+      row.label,
+      row.source === 'pages'
+        ? drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
+        : row.source === 'views'
+          ? drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
+          : [],
     )
-    link(
-      'Link Page',
-      drill(ctx.pageItems, (value) => ({ kind: 'page', value })),
-    )
-  } else {
-    // A view tile's source is fixed at creation, so the row is shown and refused rather than
-    // dropped — the menu reads the same whichever tile it belongs to.
-    link(
-      'Source',
-      entry.type === 'page' ? drill(ctx.pageItems, (value) => ({ kind: 'page', value })) : [],
-    )
-  }
 
   const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   items.push({

@@ -96,7 +96,7 @@ describe('createSpace', () => {
     expect(sc.blocks).toBeUndefined() // the document is a row, not the sidecar's business
     const doc = readTileDoc({ kind: 'space', id: sc.id })
     expect(doc.blocks).toHaveLength(4)
-    expect((doc.blocks as { type: string }[]).every((b) => b.type === 'markdown')).toBe(true)
+    expect((doc.blocks as { type: string }[]).map((b) => b.type)).toEqual(Array(4).fill('markdown'))
     const layout = rawLayoutSchema.parse(doc.layout)
     expect(layout.bands).toHaveLength(2)
     const files = await readdir(join(contextsDir(root), 'Projects', 'Sapphire'))

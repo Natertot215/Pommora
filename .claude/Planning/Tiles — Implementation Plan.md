@@ -437,11 +437,11 @@ export const TILE_KINDS: Record<TileType, TileKind>   // { markdown: {…, menuR
 
 **Verify — automated**
 
-- [ ] Red first: `shared/tiles.test.ts` gains: every `TileType` has a `TILE_KINDS` entry; `knownTile({ id: 'x', type: 'widget' })` → null (kept); `menuRows` per kind as listed. `main/tiles.test.ts` gains: `TILE_COPY.view` on a raw entry re-mints `views[].config.id` and preserves a foreign key. Red on the missing exports, then green.
-- [ ] `rg -n "\.type\s*[!=]==\s*'(markdown|page|view)'" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] `shared/tileMenu.test.ts` unchanged and green (the rows per kind are the crossing test between the table and the presenters).
-- [ ] `contextWrite.test.ts:99`'s literal assertion still green through the seed.
-- [ ] Full gate green.
+- [x] Red first: `shared/tiles.test.ts` gains: every `TileType` has a `TILE_KINDS` entry; `knownTile({ id: 'x', type: 'widget' })` → null (kept); `menuRows` per kind as listed. `main/tiles.test.ts` gains: `TILE_COPY.view` on a raw entry re-mints `views[].config.id` and preserves a foreign key. Red on the missing exports, then green.
+- [x] `rg -n "\.type\s*[!=]==\s*'(markdown|page|view)'" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] `shared/tileMenu.test.ts` unchanged and green (the rows per kind are the crossing test between the table and the presenters).
+- [x] `contextWrite.test.ts:99`'s literal assertion still green through the seed.
+- [x] Full gate green.
 
 **Verify — user**
 
@@ -710,7 +710,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 3 — The move · `6196f915`
   - [x] Task 4 — The vocabulary · `2544b2be`
 - [ ] **Phase 3** — The recipe
-  - [ ] Task 5 — The shared table · ``
+  - [x] Task 5 — The shared table · `b1fa7769`
   - [ ] Task 6 — The renderer table · ``
 - [ ] **Phase 4** — The document in the Nexus
   - [ ] Task 7 — `_tiles.json` · ``
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 5: the kind-branch sweep reads 0 across `shared/` and `main/` after this task; the ten renderer sites in `TileHost.tsx` and `TileHandleMenu.tsx` are Task 6's Now list and fall there — the plan's Task 5 box claimed the whole tree a task early. `contextWrite.test.ts:99` asserts the four seeded types by value rather than through a kind comparison. `copyEntry(raw)` in `main/tiles.ts` is the one dispatcher over `TILE_COPY`; `duplicateTile` and `remint`'s copy both call it.
 - Gate 2: `'Unknown tile host.'` stands at three sites after Task 4; Task 7's routing of `tiles:get`/`tiles:save` through `tileHostAnd` brings it to one, where that task's box counts it. The comment ledgers had the four `blocks`→`tiles` keys and the two deleted `Sensors/` keys corrected by hand; files newer than the baseline rev carry no key, as every file added since that rev already does. The peer session's unformatted edit to `tile-grid.css` was formatted in place so the lint gate could run; its content is untouched.
 - Task 4: three Now counts read higher than the plan by Phase 1's own additions — `spm-*` 65 (the grid test's selectors), `SurfaceLayout` 75 (`settleInto`'s parameter type), `SurfaceView` 7 (the test's import) — every one → 0 after. `'blocks must be an array.'` keeps its wording with the `blocks` key it names; both rename in Task 7. `blockMoveChanges` (MarkdownPM's list-drag export, read by `Interface/pageEditor.ts`) joins the allowlist as MarkdownPM's own word. `zoomStyle` in `tileZoom.ts` is the one writer of the inline variable: a `Map` of one style object per step, so the memoized tile sees a stable identity.
 - Task 3: `.claude/scripts/loc.py:33` lists `renderer/Tiles` beside `renderer/SurfacePM` rather than replacing it — its own rule is that a renamed folder lists both names so one map measures every commit on the branch. The one legitimate `SurfacePM` hit outside the records. The comment JSONs had their path keys rewritten in place (the baseline is a snapshot, not regenerated).
