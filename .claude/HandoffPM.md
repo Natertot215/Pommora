@@ -44,7 +44,7 @@
 #### Session Pointers
 
 - The spec and the plan: `.claude/Planning/Glance Pane — Decision Log.md`, `.claude/Planning/Glance Pane — Implementation Plan.md` (Rulings R-1 through R-5, Deviations, the Delivery Claim under Closeout).
-- The seam: `Pommora/src/renderer/Interface/Glance/glanceAction.ts`; the pane: `GlancePane.tsx`; the hook: `MarkdownPM/Connections/index.ts` (`glanceLink`); the hosts: `Interface/PageView.tsx`, `SurfacePM/TileSurface.tsx`, `Windows/PageWindow.tsx`, `Windows/NavWindow.tsx`.
+- The seam: `Pommora/src/renderer/Interface/Glance/glanceAction.ts`; the pane: `GlancePane.tsx`; the hook: `MarkdownPM/Connections/index.ts` (`glanceLink`); the hosts: `Interface/PageView.tsx`, `Tiles/TileHost.tsx`, `Windows/PageWindow.tsx`, `Windows/NavWindow.tsx`.
 - The CDP driver, throwaway, in the session scratchpad: `cdp.mjs` (`eval` / `--move` / `--down` / `--up` / `--wheel` / `--key` / `--shot`); the screenshots `glance-site.png`, `glance-connection.png`, `glance-window.png`.
 - A parallel session (the CalendarPicker delegation) committed on the same tree throughout; its files were never staged here.
 
@@ -76,10 +76,10 @@
 **FILES MODIFIED**
 
 - .claude: CLAUDE.md · ContextPM.md · HandoffPM.md · scripts/comment-baseline.json · comment-units.json · comment-ledger.mjs
-- .claude/Features: ArchitecturePM · ConfigurationPM · ConnectionsPM · DesignSystemPM · InteractionPM · InterfacePM · MarkdownPM · SurfacePM · WebviewPM; Guidelines: Editor-Internals · Web-Guests
+- .claude/Features: ArchitecturePM · ConfigurationPM · ConnectionsPM · DesignSystemPM · InteractionPM · InterfacePM · MarkdownPM · TilesPM · WebviewPM; Guidelines: Editor-Internals · Web-Guests
 - Pommora/src/shared: types.ts · bridge.ts · links.ts · citationMenu.ts · pageMenu.ts · connMenu.ts · cellMenu.ts · navRowMenu.ts · tabMenu.ts and their tests
 - Pommora/src/main: index.ts · contextMenu.ts · navRowMenu.ts · tabMenu.ts · remint.ts · sessionDb.ts · webGuests.ts · Database/localState.ts; preload/index.ts
-- Pommora/src/renderer: App.tsx · Store/nexusSlice.ts · sessionState.ts · store.ts · Interface/PageView.tsx · restoreSnapshot.ts · pageEditor.ts · SurfacePM/TileSurface.tsx · WebTile.tsx · tileCache.ts · Windows/PageWindow.tsx · NavWindow.tsx · WindowTabStrip.tsx · useWindowWarm.ts · windowTabs.ts · windowCache.ts · windowMorph.ts · page-window.css · PageHistoryWindow.tsx · Interactions/FloatingWindow.tsx · Tabs/TabBar.tsx · Navigation/NavList.tsx · Sidebar/Sidebar.tsx · Views/TableView/TableView.tsx · CardView/CardsView.tsx · CardValue.tsx · CardPickerHost.tsx · Properties/PageProperties.tsx · Assignment/LinkCell.tsx · usePropertyRows.ts · cardValueInput.ts · MarkdownPM/index.tsx · PageHeader.tsx · Connections/index.ts · Editor/pointerPath.ts · links.ts · connections.ts · folding.ts · editorGesture.ts · citationPointer.ts · Tables/MarkdownTable.tsx · cellStatic.tsx
+- Pommora/src/renderer: App.tsx · Store/nexusSlice.ts · sessionState.ts · store.ts · Interface/PageView.tsx · restoreSnapshot.ts · pageEditor.ts · Tiles/TileHost.tsx · Surfaces/WebTile.tsx · tileCache.ts · Windows/PageWindow.tsx · NavWindow.tsx · WindowTabStrip.tsx · useWindowWarm.ts · windowTabs.ts · windowCache.ts · windowMorph.ts · page-window.css · PageHistoryWindow.tsx · Interactions/FloatingWindow.tsx · Tabs/TabBar.tsx · Navigation/NavList.tsx · Sidebar/Sidebar.tsx · Views/TableView/TableView.tsx · CardView/CardsView.tsx · CardValue.tsx · CardPickerHost.tsx · Properties/PageProperties.tsx · Assignment/LinkCell.tsx · usePropertyRows.ts · cardValueInput.ts · MarkdownPM/index.tsx · PageHeader.tsx · Connections/index.ts · Editor/pointerPath.ts · links.ts · connections.ts · folding.ts · editorGesture.ts · citationPointer.ts · Tables/MarkdownTable.tsx · cellStatic.tsx
 - The matching test files beside each of the above.
 
 **COMMITS**
