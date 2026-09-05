@@ -40,7 +40,8 @@
   padding-right: 0;
 }
 
-.markdown-tile {
+/* Both portal bodies are clipped scrollers at the full tile height. */
+:is(.markdown-tile, .page-tile) {
   position: relative;
   height: 100%;
   overflow: hidden;
@@ -56,9 +57,6 @@
 }
 
 .page-tile {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
   /* The detail lane scales off --page-detail-scale (set inline by PageTile from its single Embed Scale
      setting), so the whole embed's geometry follows one variable. */
   --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));

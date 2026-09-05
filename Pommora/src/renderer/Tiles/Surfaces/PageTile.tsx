@@ -37,13 +37,6 @@ const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   cover: coverOf(detail),
 })
 
-const initialEntry = (path: string, warm: WarmSeam | undefined): EmbedEntry | null => {
-  const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
-  const cached = readPageDetail(path)
-  const slot = cached ? entryFrom(path, cached) : null
-  return typeof doc === 'string' ? { path, ...slot, body: doc } : slot
-}
-
 export function PageTile({
   path,
   editing,
@@ -68,7 +61,12 @@ export function PageTile({
   // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh
   // slot before the remounting editor reads it.
   const epoch = useBodyEpoch(path)
-  const [seed, setSeed] = useState(() => ({ epoch, entry: initialEntry(path, warm) }))
+  const [seed, setSeed] = useState(() => {
+    const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
+    const cached = readPageDetail(path)
+    const slot = cached ? entryFrom(path, cached) : null
+    return { epoch, entry: typeof doc === 'string' ? { path, ...slot, body: doc } : slot }
+  })
   if (seed.epoch !== epoch) {
     const fresh = readPageDetail(path)
     setSeed({ epoch, entry: fresh ? entryFrom(path, fresh) : null })
@@ -198,7 +196,7 @@ function EmbedBanner({
       </div>
       <ImagePicker
         open={editing}
-        value={cover ?? ''}
+        value={cover}
         shape="rect"
         boxAspect={boxAspect}
         onCancel={closeEditor}

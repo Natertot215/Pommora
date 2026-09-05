@@ -1,9 +1,7 @@
 // Drop-target resolution for tile moves: a pointer position resolves to a band
 // insertion (above the first band, on a between-band seam, or past the bottom)
 // or the hovered tile's nearest edge — never the dragged tile itself. Band zones
-// win over the tiles they straddle; `bandZonePx` is the live-tuning knob. Edge
-// picks within one tile carry PommoraDND's hysteresis: near a quadrant diagonal
-// the previous edge holds until the new one genuinely beats it, killing flicker.
+// win over the tiles they straddle; `bandZonePx` is the live-tuning knob.
 
 import { HYSTERESIS } from '@renderer/Interactions/shared'
 import type { Edge, TileLayout } from './model'

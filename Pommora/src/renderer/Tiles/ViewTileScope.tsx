@@ -35,8 +35,7 @@ export type ViewWrite =
 
 /** THE lock-write rule for a view tile, in one place: unlocked writes the whole view; a locked tile
  *  refuses a config write but still folds a state-only one (`opts.viewState`), so a refused config
- *  override can't ride in on the state it's allowed. Both the scope's `useSaveView` and the tile's own
- *  config edits route through this — the gate is defined once, not re-checked against the raw entry. */
+ *  override can't ride in on the state it's allowed.*/
 export function resolveViewWrite(
   locked: boolean,
   view: SavedView,
@@ -53,15 +52,13 @@ export function useSaveView(
   source: CollectionNode | SetNode,
 ): (view: SavedView, opts?: { viewState?: boolean }) => Promise<Result<{ id: string }>> {
   const scope = useViewTileScope()
-  if (scope) {
-    return (view, opts) => {
-      const write = resolveViewWrite(scope.locked, view, opts)
-      if (write.kind === 'refused')
-        return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
-      if (write.kind === 'state') scope.persistState(write.state)
-      else scope.persistConfig(write.view)
-      return Promise.resolve(ok({ id: view.id }))
-    }
+  return (view, opts) => {
+    if (!scope) return saveViewAdopting(source, view)
+    const write = resolveViewWrite(scope.locked, view, opts)
+    if (write.kind === 'refused')
+      return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
+    if (write.kind === 'state') scope.persistState(write.state)
+    else scope.persistConfig(write.view)
+    return Promise.resolve(ok({ id: view.id }))
   }
-  return (view) => saveViewAdopting(source, view)
 }

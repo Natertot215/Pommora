@@ -14,8 +14,7 @@ const HEAD_PAD_R = '12px'
 
 // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole
 // toolbar and dissolve at the title divider (not just under its lower half), matching the switcher's
-// full height. The fade (--over-scroll-fade below) spans the same distance so a row is fully gone by
-// the divider.
+// full height.
 const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
 
 export const tile = style({
@@ -26,9 +25,7 @@ export const tile = style({
 })
 
 /** The title row — the editable heading over the switcher; its bottom hairline is the header's
- *  ONLY divider (none under the pills, none once the title row is hidden). The row establishes
- *  markdownPM's editor font-size as the em base, so the `.md-hN` class on the title resolves its
- *  `1.2em` (etc.) to the exact px a markdownPM heading would — same code, uniform result. */
+ *  ONLY divider (none under the pills, none once the title row is hidden).*/
 export const titleRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -51,11 +48,7 @@ export const titleRow = style({
 
 /** Two-phase title hide/reveal, both phases on the segments' titleReveal timing. Hiding slides the
  *  title left THEN collapses the row's space upward; revealing opens the space THEN slides the
- *  title back in. A transition reads its delay from the DESTINATION state's rules, so each
- *  direction re-orders the phases by itself: the shown state delays the slide, the hidden state
- *  delays the collapse. The slide is a literal translate (the title-icon reveal's treatment at
- *  heading scale) — a width morph reads as motion only when the box hugs its content, and this
- *  row is flex-stretched. */
+ *  title back in. */
 export const titleSlide = style({
   display: 'flex',
   alignItems: 'center',
@@ -98,7 +91,7 @@ export const titleText = style({
 })
 
 /** The switcher row — the ActionBand segments (+ New View) leading, the config affordance trailing
- *  when the title row is hidden and this line is the whole header. */
+ *  when the title row is hidden and this line is the whole header.*/
 export const switcherRow = style([
   segmentRow,
   {
@@ -125,7 +118,7 @@ export const slideWrap = style({
 export const spacer = style({ flex: '1 1 auto' })
 
 /** The switcher's New-View "+" — hidden until the toolbar area is hovered (the group-header "+" idiom),
- *  opacity-only so the pills never reflow. Reveal rides switcherRow hover, not whole-tile. */
+ *  opacity-only so the pills never reflow.*/
 export const newViewReveal = style({
   display: 'inline-flex',
   opacity: 0,
@@ -139,74 +132,37 @@ globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 /** The dropdown-mode view list — the ViewFrame's row anatomy inside a PickerMenu. */
 export const listPane = style({ minWidth: 150 })
 
-// The table gutter (row grips + group chevrons strip) resolves from the root --rail-inset token,
-// so an embedded table shares the page lane without a host rule reaching in.
-//
-// SCROLL MODEL (edge-release): the rows scroll vertically inside the body (the header rows stay pinned
-// above it), and the default scroll-chaining releases to the page once the table bottoms out. A table
-// that fits its tile has nothing to scroll, so the wheel passes straight through to the page — only a
-// genuinely-overflowing table ever captures. Horizontal stays the table's own (.table-view overflow-x).
 export const body = style({
   flex: '1 1 auto',
   minWidth: 0,
   minHeight: 0,
   overflowX: 'hidden',
   overflowY: 'auto',
-  // Rise behind the switcher so the top scroll-fade dissolves rows AT the pill midline: the negative
-  // margin pulls the scroll box up under the pills, the matching padding keeps the first row clear of them.
   marginTop: `calc(-1 * ${FADE_RISE})`,
   paddingTop: FADE_RISE,
-  // The top scroll-fade spans the toolbar height (matches FADE_RISE), so a row dissolves fully as it
-  // rises under the transparent switcher, disappearing at the title divider.
   vars: { '--over-scroll-fade': FADE_RISE },
 })
 
-/** The embed zoom lands on the table's own token scope — the var is declared ON .table-view
- *  (Tables/table-tokens.css), so only a descendant-scoped redeclaration outranks it. The root var carries
- *  the Embed Scale setting; its fallback is the default the setting stores no key for. */
 globalStyle(`${body} .table-view, ${body} .view-empty`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
 })
 
-/** Cards ride the SAME embed-zoom seam (.cards-view reads `zoom: --zoom * --tile-zoom`), but take the
- *  BASE page-embed zoom — not the table's, whose 15/13 factor normalizes the table's 13px
- *  body. Cards have no single body-font base, so they scale like a page embed instead of inheriting the
- *  table's text-normalization; without this the card grid rendered at full content-view size in a tile. */
 globalStyle(`${body} .cards-view`, {
   vars: { '--zoom': `var(--embed-zoom, ${embedZoom(EMBED_SCALE_DEFAULT)})` },
-  // The tail seam — the last card row clears the tile's bottom edge by the seam law's shoulder,
-  // matching the view's top seam. Embed-owned: a full-page pane's inset already clears the bottom.
   paddingBottom: 'var(--band-clearance)',
 })
 
-/** The CARD GRIDS alone align to the header inset — the same line the title divider and pills
- *  run — while the disclosure bands lead in by the same gutter carve the embedded table's bands
- *  do, so both view kinds start their headings from one X. The divisions unwind the cards' zoom
- *  so each inset holds in real px at any tile zoom. */
 globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row`, {
   paddingLeft: `calc(${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
   paddingRight: `calc(${HEAD_PAD_R} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
 })
-// GLYPH parity with the embedded table's bands, not box parity: the table floats its chevron out
-// of flow (glyph flush at its 20px-real grid start), while the cards chevron is in flow ahead of
-// the glyph — so the cards lead subtracts that chevron cluster (the outline's 12px Icon + the band
-// gap), in-zoom AFTER the division; the detail lane anchor alone holds in real px.
+
 globalStyle(`${body} .cards-view .group-band-row`, {
   paddingLeft: `calc(var(--rail-inset) / (var(--zoom, 1) * var(--tile-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
 })
-
-/** Embedded tables shed the column-header band chrome — no heading fill, no divider under it;
- *  the header row reads as bare column labels over the data: the clear heading, bound the way any
- *  host tunes its heading. */
 globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
 
-/** The heading strip's leading cap (.col-header:first-child::before) marks the gutter↔Title junction, so
- *  it sits --rail-inset in — but the embed header insets at HEAD_PAD_L. Pull ONLY the cap out to the
- *  header inset so the strip's left edge lines up under the title + pills; the columns + gutter stay put.
- *  The col-header clips overflow (label truncation), so the first one lets its leading cap escape left. */
 globalStyle(`${body} .col-header:first-child`, { overflow: 'visible' })
 globalStyle(`${body} .col-header:first-child::before`, {
-  // The pseudo lives inside the grid's zoom while HEAD_PAD_L is a real-px inset — divide it out,
-  // like the cards rules above, so the cap holds the pill line at any tile zoom.
   left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1))) - var(--rail-inset))`,
 })
