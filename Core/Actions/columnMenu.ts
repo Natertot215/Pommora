@@ -10,7 +10,7 @@ import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from '../Proper
 import type { ColumnAlign } from '../Views/views'
 
 /** The table-view column-header right-click menu: hide the column, set its text alignment,
- *  or set a per-view display style.*/
+ *  or set a per-view display style. */
 export type ColumnMenuAction =
   | 'column:hide'
   | 'column:toggle-icons'

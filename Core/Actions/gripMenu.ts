@@ -38,7 +38,7 @@ export type GripMenuAction =
   | { action: 'delete' }
 
 /** The heading ladder, named once for both the editor's Format ▸ Heading submenu and the heading
- *  grip's Size submenu.*/
+ *  grip's Size submenu. */
 export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
   { level: 0, label: 'Paragraph' },
   { level: 1, label: 'Heading 1' },

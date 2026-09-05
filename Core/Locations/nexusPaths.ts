@@ -29,7 +29,7 @@ export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
 /** The asset root a file property's files land under — the configured root, or the subfolder its
  *  Directory names beneath it. An absent subfolder resolves to the root itself. Both processes
- *  compose it: main to aim the write, the renderer to aim the dialog it opens.*/
+ *  compose it: main to aim the write, the renderer to aim the dialog it opens. */
 export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
   return [assetDir, subfolder].filter(Boolean).join('/')
 }
