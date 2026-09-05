@@ -10,7 +10,6 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@shared/tiles'
-import { GLIDE_FEEL } from '@renderer/Animation/feel'
 import { type ConnPage, type ConnectionsApi, glanceLink } from '@renderer/MarkdownPM/Connections'
 import {
   containersByPathOf,
@@ -391,7 +390,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         layout={layout}
         onLayoutChange={setLayout}
         renderTile={renderTile}
-        feel={GLIDE_FEEL}
         tileClassName={tileClassName}
         tileStyle={tileStyle}
         onBusyChange={setBusy}

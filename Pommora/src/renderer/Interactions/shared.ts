@@ -42,6 +42,17 @@ export function suppressNextClick(): void {
   document.addEventListener('click', swallow, { capture: true, once: true })
   window.setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0)
 }
+/** A cancelled drag's release is still coming and must not read as a click; a new press first means
+ *  that release was lost (the cancel came from a blur). */
+export function suppressReleaseClick(): void {
+  const onUp = (): void => {
+    document.removeEventListener('pointerdown', onDown, true)
+    suppressNextClick()
+  }
+  const onDown = (): void => document.removeEventListener('pointerup', onUp)
+  document.addEventListener('pointerup', onUp, { once: true })
+  document.addEventListener('pointerdown', onDown, { capture: true, once: true })
+}
 export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch — kills flicker
 export const SETTLE_FALLBACK = 80 // ms slack past the transition for the commit fallback (paint-start delay)
 
