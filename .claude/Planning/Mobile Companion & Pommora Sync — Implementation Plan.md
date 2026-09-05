@@ -914,7 +914,7 @@ export async function syncManifest(root: string): Promise<Map<string, ManifestEn
 **Verify — automated**
 
 - [ ] Red first, over a fixture root: `.trash/X/2026__A.md.deleted/A.md` present; `Ideas/.trash/x.md` absent; `.nexus/nexus.db`, `-wal`, `-shm`, `versions.db` absent; `.obsidian/app.json`, `.git/HEAD`, `.DS_Store`, `Ideas/.DS_Store`, `node_modules/x` absent; `_pagecollection.json` present; `.nexus/assets/<id>/thumbnails/x.jpg` present; the map's iteration order is sorted. Then green.
-- [ ] Over the scratch NexusOS copy: the manifest counts 990 entries (re-derived: `find` with the same exclusions), and `syncManifest` completes under 400 ms on this machine (J-2's budget for the whole no-change sync is one second).
+- [ ] Over the scratch NexusOS copy: the manifest count equals `find` with the same exclusions (re-derived that day), and `syncManifest` completes under 400 ms on this machine (J-2's budget for the whole no-change sync is one second).
 - [ ] Full gate green.
 
 **Verify — user**
