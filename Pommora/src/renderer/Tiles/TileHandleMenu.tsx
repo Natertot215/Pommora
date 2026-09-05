@@ -36,6 +36,7 @@ import * as s from './handle-menu.css'
 
 const GLYPH = 12
 const LOC_GLYPH = 11
+const CHEVRON = <Icon name="chevron-right" size={GLYPH} />
 
 function DrillLevel({
   nodes,
@@ -54,7 +55,6 @@ function DrillLevel({
   const bodyNodes = nodes.filter((n) => !n.footer)
   const footerNodes = nodes.filter((n) => n.footer)
   const child = openIdx != null ? bodyNodes[openIdx] : null
-  const chevron = <Icon name="chevron-right" size={GLYPH} />
   const rows = (
     <div className={s.pane}>
       <MenuScrollFrame
@@ -84,7 +84,7 @@ function DrillLevel({
               key={`${n.label}-${String(i)}`}
               className={off ? rowDisabled : undefined}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
-              trailing={n.submenu && !off ? chevron : undefined}
+              trailing={n.submenu && !off ? CHEVRON : undefined}
               onClick={off ? undefined : n.submenu ? () => setOpenIdx(i) : () => resolve(n.pick)}
             >
               {n.label}
@@ -150,7 +150,7 @@ export function TileHandleMenu({
   onSetZoom: (factor: number) => void
   containerLocked: boolean
 }): React.JSX.Element {
-  const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
+  const [pane, setPane] = useState<'root' | 'style' | 'pages' | 'views'>('root')
   const [scaleOpen, setScaleOpen] = useState(false)
   // The menu stays mounted through its retract (it holds what it draws), so each open starts at the root.
   useEffect(() => {
@@ -160,15 +160,12 @@ export function TileHandleMenu({
     }
   }, [open])
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
-  const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   const currentStep = zoomStep(entry.zoom)
   const locked = (entry.locked ?? false) || containerLocked
-  const rowMute = locked ? rowDisabled : undefined
   const act = (fn: () => void) => () => {
     onClose()
     fn()
   }
-  const chevron = <Icon name="chevron-right" size={GLYPH} />
   const rows = TILE_KINDS[entry.type].menuRows
 
   const root = (
@@ -195,14 +192,7 @@ export function TileHandleMenu({
         }
       >
         {pageInfo && (
-          <button
-            type="button"
-            className={s.titleField}
-            onClick={() => {
-              onClose()
-              onOpenPage()
-            }}
-          >
+          <button type="button" className={s.titleField} onClick={act(onOpenPage)}>
             <span className={leadingRow}>
               <Icon name={pageInfo.icon} size={GLYPH} className={s.titleFieldIcon} />
               <span className={cx(s.titleFieldText, overScrollEllipsis)}>{pageInfo.title}</span>
@@ -215,31 +205,31 @@ export function TileHandleMenu({
             )}
           </button>
         )}
-        {rows.map((row) => {
-          const items = row.source === 'pages' ? pageItems : row.source === 'views' ? viewItems : []
+        {rows.map(({ label, source }) => {
+          const items = source === 'pages' ? pageItems : source === 'views' ? viewItems : []
           const off = locked || items.length === 0
           return (
             <MenuItem
-              key={row.label}
-              className={cx(items.length === 0 && rowDisabled, rowMute)}
+              key={label}
+              disabled={off}
               leading={<Icon name="link" size={GLYPH} />}
-              trailing={chevron}
-              onClick={off ? undefined : () => setPane(row.source === 'pages' ? 'page' : 'view')}
+              trailing={CHEVRON}
+              onClick={source === 'none' ? undefined : () => setPane(source)}
             >
-              {row.label}
+              {label}
             </MenuItem>
           )
         })}
         <MenuItem
-          className={rowMute}
+          disabled={locked}
           leading={<Icon name="palette" size={GLYPH} />}
-          trailing={chevron}
-          onClick={locked ? undefined : () => setPane('style')}
+          trailing={CHEVRON}
+          onClick={() => setPane('style')}
         >
           Style
         </MenuItem>
         <MenuItem
-          className={rowMute}
+          disabled={locked}
           leading={<Icon name="scaling" size={GLYPH} />}
           trailing={
             <button
@@ -257,16 +247,16 @@ export function TileHandleMenu({
         </MenuItem>
         <MenuSeparator flush />
         <MenuItem
-          className={rowMute}
+          disabled={locked}
           leading={<Icon name="copy" size={GLYPH} />}
-          onClick={locked ? undefined : act(onDuplicate)}
+          onClick={act(onDuplicate)}
         >
           Duplicate
         </MenuItem>
         <MenuItem
-          className={rowMute}
+          disabled={locked}
           leading={<Icon name="x" size={GLYPH} />}
-          onClick={locked ? undefined : act(onRemove)}
+          onClick={act(onRemove)}
         >
           Delete
         </MenuItem>
@@ -274,37 +264,31 @@ export function TileHandleMenu({
     </div>
   )
 
-  const stylePane = (
-    <div className={s.pane}>
-      <MenuTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
-      {(['bordered', 'borderless'] as const).map((v) => (
-        <PickerRow
-          key={v}
-          ring
-          align="start"
-          selected={style === v}
-          onClick={act(() => onStyle(v))}
-        >
-          {v === 'bordered' ? 'Bordered' : 'Borderless'}
-        </PickerRow>
-      ))}
-    </div>
-  )
-
-  const drillRootLabel =
-    rows.find((r) => r.source === (pane === 'page' ? 'pages' : 'views'))?.label ?? ''
   const detail =
     pane === 'style' ? (
-      stylePane
-    ) : pane === 'page' || pane === 'view' ? (
+      <div className={s.pane}>
+        <MenuTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
+        {(['bordered', 'borderless'] as const).map((v) => (
+          <PickerRow
+            key={v}
+            ring
+            align="start"
+            selected={(entry.style ?? 'bordered') === v}
+            onClick={act(() => onStyle(v))}
+          >
+            {v === 'bordered' ? 'Bordered' : 'Borderless'}
+          </PickerRow>
+        ))}
+      </div>
+    ) : pane === 'pages' || pane === 'views' ? (
       <DrillLevel
-        nodes={pane === 'page' ? pageItems : viewItems}
-        title={drillRootLabel}
+        nodes={pane === 'pages' ? pageItems : viewItems}
+        title={rows.find((r) => r.source === pane)?.label ?? ''}
         backLabel="Menu"
         onBack={() => setPane('root')}
         resolve={(v) => {
           onClose()
-          if (pane === 'page') onPickPage(v as string)
+          if (pane === 'pages') onPickPage(v as string)
           else onPickView(v as ViewPick)
         }}
       />

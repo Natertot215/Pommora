@@ -1,4 +1,5 @@
 import { stableStringify } from '@shared/stableJson'
+import { ok } from '@shared/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -7,6 +8,7 @@ import {
   atomicWriteFile,
   rewritePageSerialized,
   writeJson,
+  readJsonStrict,
   rmwJsonStrict,
   mintBundle,
   settleBundle,
@@ -65,6 +67,14 @@ describe('writeJson', () => {
     expect(text.endsWith('\n')).toBe(true)
     expect(JSON.parse(text)).toEqual(value)
     expect(text).toBe(`${stableStringify(value)}\n`)
+  })
+})
+
+describe('readJsonStrict', () => {
+  it('a leading BOM is encoding, not corruption', async () => {
+    const p = join(dir, 'bom.json')
+    await writeFile(p, '\uFEFF{"a":1}')
+    expect(await readJsonStrict(p)).toEqual(ok({ a: 1 }))
   })
 })
 

@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
+import { ok } from '@shared/result'
+import { chmod, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -130,13 +131,26 @@ describe('the document', () => {
 })
 
 describe('markdown tile lifecycle', () => {
+  it('an absent body is not-found; a body the read fails on is not an empty one', async () => {
+    const id = await createMarkdownTile(home())
+    await writeMarkdownTile(home(), id, 'prose')
+    expect((await readMarkdownTile(home(), 'x')).ok).toBe(false)
+    expect(await readMarkdownTile(home(), 'x')).toMatchObject({ error: { code: 'not-found' } })
+    await chmod(tileFilePath(home(), id), 0o000)
+    expect(await readMarkdownTile(home(), id)).toMatchObject({
+      error: { code: 'operation-failed' },
+    })
+    await chmod(tileFilePath(home(), id), 0o644)
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('prose'))
+  })
+
   it('create mints the dir + empty file + entry; the body round-trips pure (no frontmatter)', async () => {
     const id = await createMarkdownTile(home())
     expect(await pathExists(tileFilePath(home(), id))).toBe(true)
     expect(await entries()).toEqual([{ id, type: 'markdown' }])
 
     await writeMarkdownTile(home(), id, '# Hi\n\n[[Some Page]]\n')
-    expect(await readMarkdownTile(home(), id)).toBe('# Hi\n\n[[Some Page]]\n')
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('# Hi\n\n[[Some Page]]\n'))
     expect(await readFile(tileFilePath(home(), id), 'utf8')).not.toContain('---')
   })
 
@@ -144,7 +158,7 @@ describe('markdown tile lifecycle', () => {
     const id = await createMarkdownTile(spaceDir())
     expect(await pathExists(join(spaceDir(), `${id}.md`))).toBe(true)
     await writeMarkdownTile(spaceDir(), id, 'body')
-    expect(await readMarkdownTile(spaceDir(), id)).toBe('body')
+    expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('body'))
   })
 
   it('remove drops the entry and trashes the file; foreign entries survive', async () => {
@@ -191,7 +205,7 @@ describe('markdown tile lifecycle', () => {
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', alien: 1 }])
     const dupId = await duplicateTile(home(), id)
     expect(dupId).toBeTruthy()
-    expect(await readMarkdownTile(home(), dupId as string)).toBe('body text')
+    expect(await readMarkdownTile(home(), dupId as string)).toEqual(ok('body text'))
     expect((await entries()).find((b) => b.id === dupId)).toMatchObject({
       type: 'markdown',
       style: 'borderless',
@@ -226,14 +240,14 @@ describe('rewriteTileConnections', () => {
     const id = await createMarkdownTile(home())
     await writeMarkdownTile(home(), id, 'see [[Target]] and [[Other]]')
     await rewriteTileConnections(root, 'Target', 'Renamed')
-    expect(await readMarkdownTile(home(), id)).toBe('see [[Renamed]] and [[Other]]')
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Renamed]] and [[Other]]'))
   })
 
   it('leaves a body without the old title byte-identical (no needless write)', async () => {
     const id = await createMarkdownTile(home())
     await writeMarkdownTile(home(), id, 'see [[Other]]')
     await rewriteTileConnections(root, 'Target', 'Renamed')
-    expect(await readMarkdownTile(home(), id)).toBe('see [[Other]]')
+    expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Other]]'))
   })
 })
 

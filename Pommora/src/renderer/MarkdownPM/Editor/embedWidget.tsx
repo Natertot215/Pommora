@@ -128,7 +128,7 @@ function mountTile(dom: TileDom, body: ReactNode, handle: ReactNode): void {
       createElement(
         Suspense,
         { fallback: null },
-        createElement('div', { className: 'tile-chassis-body' }, body),
+        createElement('div', { className: 'tile-base-body' }, body),
       ),
       handle,
     ),
@@ -222,7 +222,7 @@ class EmbedTileWidget extends WidgetType {
 
   private renderInto(dom: TileDom, view: EditorView): void {
     dom.className = cx(
-      'mdpm-embed-tile tile-chassis',
+      'mdpm-embed-tile tile-base',
       this.editing && 'is-editing-tile',
       !this.interactive && 'is-inert',
     )
@@ -368,7 +368,7 @@ class WebpageTileWidget extends WidgetType {
   }
 
   private renderInto(dom: WebTileDom, view: EditorView): void {
-    dom.className = 'mdpm-embed-tile tile-chassis'
+    dom.className = 'mdpm-embed-tile tile-base'
     // The fit cap, applied and re-applied at render time: a tile taller than its port can never
     // be fully visible, so the stored height yields to what the port can hold. The port is the
     // tighter of the editor's own scroller and the window — scrollDOM doesn't scroll on the page

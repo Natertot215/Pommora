@@ -42,8 +42,6 @@ let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
 let batch: WatchEvent[] = []
 
-const isTileDocPath = (path: string): boolean => path.endsWith(`${sep}${TILE_DOC_FILENAME}`)
-
 /** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
  *  in the tree). */
 export function isNavPath(root: string, path: string): boolean {
@@ -113,7 +111,7 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
       // write confirms through its own channel (hot under tile gestures + embed typing). A host
       // document is exempt like navigation: a synced or hand edit landing right after the app's
       // own save must reach the open host, and the host's re-read returns what it just wrote.
-      if (!isTileDocPath(path) && isRecentWrite(path)) return
+      if (!path.endsWith(`${sep}${TILE_DOC_FILENAME}`) && isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)

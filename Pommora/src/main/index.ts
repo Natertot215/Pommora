@@ -680,6 +680,7 @@ const tileHostAnd = async (
   host: unknown,
   tileId?: unknown,
 ): Promise<Result<{ root: string; dir: string }>> => {
+  if (adopting()) return BUSY
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
   const h = coerceTileHost(host)
@@ -1486,7 +1487,6 @@ serveBridge(
     'tiles:save': {
       kind: 'envelope',
       fn: async (host: unknown, patch: unknown) => {
-        if (adopting()) return BUSY
         const ctx = await tileHostAnd(host)
         if (!ctx.ok) return ctx
         if (!patch || typeof patch !== 'object')
@@ -1525,7 +1525,7 @@ serveBridge(
         const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         const body = await readMarkdownTile(ctx.value.dir, tileId as string)
-        return body === null ? fail('not-found', 'Tile file not found.') : ok({ body })
+        return body.ok ? ok({ body: body.value }) : body
       },
     },
     'tiles:writeMarkdown': {

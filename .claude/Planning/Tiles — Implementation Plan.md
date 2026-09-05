@@ -189,7 +189,7 @@ function EmbedResizeHandle({ view, span, targetId }: { view: EditorView; span: H
 
 - [x] Red first: a `ResizeFrame.test.tsx` case where `rect` is a function returning a different height on each press; expect the second drag to start from the second value. Fails on the type before the change. Then green.
 - [x] `embedResize.test.tsx` gains one case: pointerdown on `.resize-edge-s`, `pointermove` +40 on `window`, `pointerup`; expect `span.style.height` = start + 40 rounded and `saveHeights` called once with an integer. Ported as coverage, not red-green: it passes today too, since the handle already listens on `window`.
-- [x] `rg -F "is-resizing-tile" src` → 0. Control: `rg -F "tile-chassis-body" src | wc -l` → 4.
+- [x] `rg -F "is-resizing-tile" src` → 0. Control: `rg -F "tile-base-body" src | wc -l` → 4.
 - [x] Full gate green.
 
 **Verify — user**
@@ -302,7 +302,7 @@ src/renderer/Tiles/
 ```ts
 // Every importer rewritten: @renderer/SurfacePM/X → @renderer/Tiles/X (or Tiles/Surfaces/X for the four);
 // '../SurfacePM/…' relative forms likewise, GlancePane.tsx:12 included. .claude/scripts/loc.py:33 "renderer/SurfacePM" → "renderer/Tiles"; loc.py re-run regenerates comment-baseline.json + comment-units.json.
-// Features/SurfacePM.md → Features/TilesPM.md (content rewritten in Task 4 and 7; this commit moves it and fixes paths).
+// Features/SurfacePM.md → Features/SurfacePM.md (content rewritten in Task 4 and 7; this commit moves it and fixes paths).
 ```
 
 **Assumed by:** Task 4 (identifiers), 6 (the renderer table lives in `Tiles/`), 7 (`useTileDoc` path).
@@ -388,7 +388,7 @@ export function tilePatchProblem(patch: TileDocPatch): string | null   // the ke
 - [x] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
 - [x] Simplification and review dispatched against `15fbcc1f..HEAD`.
 - [x] Every concern fixed, or carrying an explicit user ruling.
-- [x] [[TilesPM]], [[DesignSystemPM]]'s roster row, [[ContextPM]]'s `band` ride-along rewritten in this phase's commits.
+- [x] [[SurfacePM]], [[DesignSystemPM]]'s roster row, [[ContextPM]]'s `band` ride-along rewritten in this phase's commits.
 - [x] Progress hashes filled in. Not a declared stop.
 
 ---
@@ -505,7 +505,7 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
 - [x] Every Now count re-run against its control.
 - [x] Simplification and review dispatched against `59bf6fdc..HEAD`.
 - [x] Every concern fixed, or carrying an explicit user ruling.
-- [x] [[TilesPM]]'s Tile Types section rewritten to describe the recipe.
+- [x] [[SurfacePM]]'s Tile Types section rewritten to describe the recipe.
 - [x] Progress hashes filled in. Not a declared stop.
 
 ---
@@ -694,7 +694,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - [x] Simplification and review dispatched against `dcb6806e..HEAD` scoped to `src/main`, `src/shared`, `src/preload`, `Tiles/useTileDoc.ts`.
 - [x] Every concern fixed, or carrying an explicit user ruling.
 - [x] The hazard window is closed (Task 9 landed).
-- [x] [[TilesPM]]'s Storage section, [[InterfacePM]]'s inspector line, `shared/tiles.ts`'s header rewritten in this phase's commits.
+- [x] [[SurfacePM]]'s Storage section, [[InterfacePM]]'s inspector line, `shared/tiles.ts`'s header rewritten in this phase's commits.
 - [x] Progress hashes filled in. Not a declared stop.
 
 ---
@@ -754,6 +754,13 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Phase 3, Claude: `TILE_COPY` stays. The simplification pass had folded the copy arm into a `raw.type !== 'view'` check in `copyEntry`; that is the kind comparison Requirement 3 forbids outside the tables, and the table is what a kind with something to re-mint declares into. The rest of the pass held: the entry schemas share one chassis spread and one boolean field, `removeTile` and the two converts are one `reviseTile` (null drops the entry; the body is trashed after the document lands when the old entry was file-backed), the Space resolver is inline in `hostDir`, the menu model's drill is inline in its rows loop, nine symbols with no importer are unexported. Behavior was proven exact by execution: ~400 hostile records through `knownTile`, 640 menu-model cases, 17 real-disk lifecycle scenarios, all byte-identical to the prior head.
 - Phase 3, Claude: `tileFilePath` has one definition, in `main/paths.ts`; the Space seed in `contextWrite.ts` and `main/tiles.ts` both read it (the seed had rebuilt the name by hand because `tiles.ts` imports the context world from `contextWrite.ts`).
 - Phase 3, Claude: on the native-menu path a markdown tile's unsaved text flushes one React commit behind the convert IPC; the convert's own reads reach the file lock after that write lands, so the ordering has not been produced in the reverse. Recorded as the one unproven ordering in the arc.
+
+- Nathan, 09-05-2026: the closeout reduces the complexity the plan introduced; it does not add glue. Three attack findings on `useTileDoc` are therefore recorded and not built: a `_tiles.json` whose layout the codec refuses opens empty and the first gesture writes the empty layout over it with no quarantine (the corrupt-bytes arm quarantines; the schema arm cannot, since the codec is the renderer's); a move inside the 300 ms save debounce is lost to ⌘R or ⌘Q (the body writer flushes on `beforeunload`; the layout writer does not — pre-existing, the debounce predates the file); a refused `tiles:save` is silent (every result is discarded). Each is a few lines when wanted; none is the arc's.
+- Phase 4, Claude: `tileHostAnd` refuses while a nexus is adopting, so every `tiles:*` channel is gated as `tiles:save` alone had been (a homepage body flush landing mid-adopt would have written the old nexus's prose into the new one's folder); the Homepage's host is keyed on the nexus root, so a switch remounts it. `writeTileDocAt` returns `fail` for a thrown write instead of throwing through the remint, whose identity write had already landed.
+- Phase 4, Claude: one JSON decode for files another app may have written (`parseJsonText` in `IO/atomicWrite.ts`, read by the strict reader, the lenient reader, and the sidecar reader): a leading BOM is encoding, not corruption — a Windows editor's `_tiles.json` had routed into the quarantine arm, and a BOM'd sidecar had dropped the whole Space. `readMarkdownTile` keeps absent apart from unreadable, and the tile renders inert rather than empty on a read that failed (an evicted placeholder had rendered as an empty tile the next keystroke overwrote); a duplicate refuses rather than copying an empty body.
+- Phase 4, Claude: `writeTileDocAt`'s `mkdir` can resurrect a Space folder deleted between the resolver's existence check and the write, as a folder holding only `_tiles.json`. Accepted: the window is one IPC round-trip wide, and a homepage-only mkdir would put a host-kind branch in the writer.
+- Phase 4, Claude: the migration's file-wins gate is on presence, not readability — a zero-byte `_tiles.json` counts as another device's arrangement and the row is dropped. Spent on NexusOS; recorded for the migration's retirement.
+- Nathan, 09-05-2026: the tile chassis class is `tile-base` (`.tile-base`, `.tile-base-body`), named for its file. The Features doc is [[SurfacePM]] — surfaces are the doc's subject and Tiles are a section of it — so the arc's "SurfacePM → 0 in .claude" check is retired; `SurfacePM` names the doc and the record, never a module.
 
 ### Open Against Later Tasks
 

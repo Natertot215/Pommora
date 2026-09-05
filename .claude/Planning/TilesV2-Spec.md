@@ -1,6 +1,6 @@
 ## TilesV2 — Spec
 
-> **Status:** standing spec · Built by [[Tiles — Implementation Plan]] (PM-128) · Described in [[TilesPM]]
+> **Status:** standing spec · Built by [[Tiles — Implementation Plan]] (PM-128) · Described in [[SurfacePM]]
 
 Tiles is one core Pommora system beside Views, Pages, Properties, and Connections: in-app windows, floating panes, and picker menus size through one box primitive, while Space and Homepage grids, MarkdownPM embeds, and the inspector's tabs share one tile mechanism. The Tiles arc built the substrate and stopped. This page holds the decisions that shaped it and what it promises to the work that comes after — the inspector, the panel kinds, the corpus hosts, the docked-window shape — so each of those arcs starts from the seams as they stand rather than re-deriving them.
 
@@ -71,7 +71,7 @@ The document left the identity sidecar in July 2026 to retire a whole-file lost 
 - **Panels as docked windows.** Each inspector panel a `WindowBase` docked to the right edge, so window and panel are one thing sized by one primitive and docking is a clamp; move, undock, and a footer come free. The cost is that the shell's inspector is a `paneSlide` on `--io` with a content clearance the whole interface reads, and windows deliberately redeclare `--io` so the shell's cannot leak in. Sound once panels exist.
 - **The shell as a WindowBase shape.** Sidebar and inspector as the shell's left and right panels, unifying `paneSlide`, the strips, `--io`, and width persistence under one owner. The deepest collapse on offer; it touches every consumer of the two clearance variables.
 - **PickerMenu resizing** needs no plumbing: a centered picker resizes by mounting the frame's handles as its children.
-- Tile conversions both ways, the background Insert menu, embed banners, widget tiles, auto-grow markdown tiles, layout undo, root-level hosts — [[TilesPM]]'s own Pending and Prospects.
+- Tile conversions both ways, the background Insert menu, embed banners, widget tiles, auto-grow markdown tiles, layout undo, root-level hosts — [[SurfacePM]]'s own Pending and Prospects.
 
 ### Rejected
 

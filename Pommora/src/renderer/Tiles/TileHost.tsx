@@ -119,6 +119,14 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const removing = useRef(new Set<string>())
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const pickers = useMemo(
+    () =>
+      tree && {
+        pageItems: pagePickerItems(tree, defaultIcons),
+        viewItems: viewPickerItems(tree, defaultIcons),
+      },
+    [tree, defaultIcons],
+  )
   const select = useSession((s) => s.select)
   // The store is the cross-subtree source — settings surfaces toggle this from elsewhere.
   const hostLocked = useSession((s) => s.hostLocks[tileHostKey(host)] ?? false)
@@ -343,13 +351,12 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   // it must reach the current build through a ref rather than closing over this render's tiles.
   popNativeMenu.current = (id, el) => {
     const entry = entries.get(id)
-    if (!entry || !tree) return
+    if (!entry || !pickers) return
     const page = tileSourceInfo(entry, pagesById)
     const { items, picks } = tileMenuModel({
       entry,
       pageInfo: page && { title: page.title },
-      pageItems: pagePickerItems(tree, defaultIcons),
-      viewItems: viewPickerItems(tree, defaultIcons),
+      ...pickers,
       zoomSteps: ZOOM_STEPS,
       currentFactor: zoomStep(entry.zoom).factor,
       locked: (entry.locked ?? false) || hostLocked,
@@ -387,13 +394,12 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
       />
-      {menu && menuTile && tree && (
+      {menu && menuTile && pickers && (
         <TileHandleMenu
           open={handleMenu !== null}
           entry={menuTile}
           anchor={menu.el}
-          pageItems={pagePickerItems(tree, defaultIcons)}
-          viewItems={viewPickerItems(tree, defaultIcons)}
+          {...pickers}
           pageInfo={menuPageInfo}
           location={menuLocInfo}
           onClose={() => setHandleMenu(null)}

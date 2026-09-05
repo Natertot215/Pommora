@@ -16,7 +16,7 @@ export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.El
         headingIconHidden: tree?.homepage.headingIconHidden,
       }}
     >
-      <TileHost host={HOMEPAGE_HOST} />
+      <TileHost key={tree?.nexus.rootPath} host={HOMEPAGE_HOST} />
     </InterfaceScaffold>
   )
 }
