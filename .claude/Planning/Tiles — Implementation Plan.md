@@ -778,6 +778,19 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Closeout
 
+**Delivery Claim** (09-04-2026, range `043ee930..0be53bf8`)
+
+1. Every drag that sizes or moves something runs on `Interactions/gesture.ts`: the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled is not a drop.
+2. `src/renderer/Tiles/` is the tile system — `Core/`, `TileGrid.tsx`, `TileHost.tsx`, `Surfaces/`, `tile-base.css`, `tile-grid.css`, `tile-title.css` — and no identifier, channel, class, variable, user string, or Features doc in the tile system says "block"; MarkdownPM keeps the word. The zoom ramp is one inline variable set through `tileStyle`.
+3. A tile kind is declared in `TILE_KINDS` (shared: schema, `fileBacked`, `menuRows`), `TILE_SURFACES` (renderer: render, `sourceInfo`), and, when it has something to re-mint, `TILE_COPY` (main); `knownTile` parses through the table's own schemas; the host's render, both menu presenters, the menu model, the Space seed, and main's lifecycle read the tables; no `.type === '<kind>'` comparison survives in `src`.
+4. `TileHostRef` enumerates the homepage and Spaces; a host is a folder; a new member is the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier.
+5. Each host's document is `_tiles.json` in its folder, written by one locked read-modify-write that quarantines corrupt bytes; the watcher names the file and pushes `tiles:changed`, and an open host flushes its pending save, re-reads, and shows the file (identical bytes change nothing; a busy gesture holds the push). The legacy rows migrated once on open (NexusOS: 11 files from 12 rows, 0 divergent). `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
+6. The shared contract's sidecar comment, the README's stale paths, `has-live-editor`, and the seven zoom CSS rules are gone; `NEW_TILE_H` and `TILE_DEFAULT_PX` stay two constants.
+
+Gates at the head: typecheck 0, lint 0, vitest 322 files / 4003 tests. Line delta over the range, comments and tests excluded: +1337 / −1172, net +165; tests +1088 / −531.
+
+**Not claimed:** the Completion Criteria's user's-own-pass items; a live sync client against two machines; Showcase beyond compiling.
+
 ---
 
 ## Completion Criteria
