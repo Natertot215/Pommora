@@ -3,13 +3,14 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { BrowserWindow } from 'electron'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
 import { push } from './ipc'
-import { sessionRoot } from './session'
-import { ignoredUnder, startWatcher, stopWatcher } from './watcher'
+import { sessionRoot } from '@pommora/core/Nexus/session'
+import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
+import { startWatcher, stopWatcher } from './watcher'
 
 vi.mock('./ipc', () => ({ push: vi.fn() }))
-vi.mock('./session', () => ({ sessionRoot: vi.fn() }))
+vi.mock('@pommora/core/Nexus/session', () => ({ sessionRoot: vi.fn() }))
 
 type Handler = (path: string) => void
 const handlers = new Map<string, Handler>()
