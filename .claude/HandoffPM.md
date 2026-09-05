@@ -61,7 +61,7 @@
 
 - Pommora/src/renderer/SurfacePM/ → Tiles/ (SurfaceView.tsx → TileGrid.tsx · TileSurface.tsx → TileHost.tsx · tile-surface.css → tile-grid.css · block-tile-base.css → tile-base.css · block-title.css → tile-title.css · SurfaceLab.tsx → TileLab.tsx · the four bodies + webRetention + view-tile.css → Surfaces/)
 - Pommora/src/shared/blocks.ts → tiles.ts (+test); Pommora/src/main/blocks.ts → tiles.ts (+test)
-- .claude/Features/SurfacePM.md → TilesPM.md
+- .claude/Features/SurfacePM.md → SurfacePM.md
 
 **FILES REMOVED**
 
@@ -69,7 +69,7 @@
 
 **FILES MODIFIED**
 
-- .claude: ContextPM.md · HandoffPM.md · HistoryPM.md · FrameworkPM.md · scripts/loc.py · comment-baseline.json · comment-units.json; Features: InteractionPM · InterfacePM · MarkdownPM · DesignSystemPM · PommoraDND · WebviewPM · TilesPM
+- .claude: ContextPM.md · HandoffPM.md · HistoryPM.md · FrameworkPM.md · scripts/loc.py · comment-baseline.json · comment-units.json; Features: InteractionPM · InterfacePM · MarkdownPM · DesignSystemPM · PommoraDND · WebviewPM · SurfacePM
 - Pommora/src/shared: tiles.ts · tileMenu.ts · bridge.ts · types.ts · viewMenus.ts; preload/index.ts
 - Pommora/src/main: index.ts · tiles.ts · remint.ts · paths.ts · watcher.ts · watchPatch.ts · mutate.ts · IO/atomicWrite.ts · CRUD/contextWrite.ts and their tests
 - Pommora/src/renderer: Interactions/ResizeFrame.tsx · gesture.test.ts; MarkdownPM/Editor/embedWidget.tsx · Styles.css · embedResize.test.tsx; Tiles/* (every file, by the move and rename); the twenty-odd importers of the old module path; Interface/Interface.css · scope.ts · notifications.ts; Windows/confirmations.ts; Settings/SettingsWindow.tsx; Views/TableView + CardView css
