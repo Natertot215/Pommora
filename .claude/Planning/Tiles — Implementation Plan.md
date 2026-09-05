@@ -679,8 +679,8 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 **Verify — automated**
 
-- [ ] `rg -F "MAX_INSPECTOR_TABS" src` → 1 and `rg -F "INSPECTOR_STATE_KEY" src` → 1 (declared, unread; a ratified reservation, recorded in Rulings).
-- [ ] Full gate green.
+- [x] `rg -F "MAX_INSPECTOR_TABS" src` → 1 and `rg -F "INSPECTOR_STATE_KEY" src` → 1 (declared, unread; a ratified reservation, recorded in Rulings).
+- [x] Full gate green.
 
 **Verify — user**
 
@@ -716,7 +716,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 7 — `_tiles.json` · (stamped at Gate 4)
   - [x] Task 8 — Live reload · (stamped at Gate 4)
   - [x] Task 9 — The migration · (stamped at Gate 4)
-  - [ ] Task 10 — The reserved key · ``
+  - [x] Task 10 — The reserved key · (stamped at Gate 4)
 
 ### Rulings
 

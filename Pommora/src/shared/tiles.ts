@@ -198,6 +198,13 @@ const knownEntry = z.union([
   TILE_KINDS.view.schema,
 ] satisfies { [T in TileType]: z.ZodType<Extract<TileEntry, { type: T }>> }[TileType][])
 
+/** The tabs the inspector may hold beyond the reserved ones. */
+export const MAX_INSPECTOR_TABS = 6
+
+/** The `inspector` key of `.nexus/state.json` is reserved for user-made tabs, each a tile host
+ *  under `.nexus/inspector/<id>/`; nothing reads or writes it yet. */
+export const INSPECTOR_STATE_KEY = 'inspector'
+
 /** The entry a freshly minted tile starts as — complete for a markdown tile, whose kind is its
  *  only field. */
 export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
