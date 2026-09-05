@@ -113,9 +113,9 @@ const TileShell = memo(
     resizing: boolean
     extraClass?: string
     renderTile: (id: string, rect: Rect) => React.ReactNode
-    onHandleDown: (id: string, e: React.PointerEvent) => void
+    onHandleDown: (id: string, e: React.PointerEvent<HTMLElement>) => void
     onHandleMenu?: (id: string, e: React.MouseEvent) => void
-    onEdgeDown: (id: string, edges: Edge[], e: React.PointerEvent) => void
+    onEdgeDown: (id: string, edges: Edge[], e: React.PointerEvent<HTMLElement>) => void
     onSettled: (id: string) => void
   }) {
     const transition =
@@ -319,7 +319,7 @@ export function SurfaceView({
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
   const onEdgeDown = useCallback(
-    (id: string, edges: Edge[], e: React.PointerEvent) => {
+    (id: string, edges: Edge[], e: React.PointerEvent<HTMLElement>) => {
       if (e.button !== 0 || isTileStaticRef.current?.(id)) return
       e.preventDefault()
       e.stopPropagation()
@@ -384,7 +384,7 @@ export function SurfaceView({
       const sx = e.clientX
       const sy = e.clientY
       const started = begin({
-        el: e.currentTarget as HTMLElement,
+        el: e.currentTarget,
         event: e,
         activation: 0,
         capture: true,
@@ -418,7 +418,7 @@ export function SurfaceView({
   )
 
   const onHandleDown = useCallback(
-    (id: string, e: React.PointerEvent) => {
+    (id: string, e: React.PointerEvent<HTMLElement>) => {
       if (e.button !== 0 || isTileStaticRef.current?.(id)) return
       e.preventDefault()
       e.stopPropagation()
@@ -463,7 +463,7 @@ export function SurfaceView({
       }
 
       // Settle into the decided slot (the final layout's rect), or back home.
-      const settle = (decided: SurfaceLayout | null): void => {
+      const settleInto = (decided: SurfaceLayout | null): void => {
         const finalGeometry = decided
           ? computeGeometry(decided, Math.max(0, host.clientWidth), live.current.gap)
           : g
@@ -476,7 +476,7 @@ export function SurfaceView({
       }
 
       begin({
-        el: e.currentTarget as HTMLElement,
+        el: e.currentTarget,
         event: e,
         capture: true,
         swallowActiveEscape: true,
@@ -498,9 +498,9 @@ export function SurfaceView({
           }
           resolve(ev.clientX, ev.clientY)
         },
-        onDrop: () => settle(target && latest !== origin ? latest : null),
+        onDrop: () => settleInto(target && latest !== origin ? latest : null),
         onAbort: () => {
-          if (moved) settle(null)
+          if (moved) settleInto(null)
         },
         teardown: () => stopScroll?.(),
       })
