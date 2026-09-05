@@ -79,7 +79,7 @@ A markdown link naming a website raises the same pane as a live, non-interactive
 
 #### Pending
 
-- **The inspector pane** — reserved; its design pass is pending.
+- **The inspector pane** — reserved; its design pass is pending. Its nexus-wide configuration has a reserved `inspector` key in `.nexus/state.json` and a cap of six user-made tabs (`MAX_INSPECTOR_TABS` in `src/shared/tiles.ts`); nothing reads or writes them yet.
 - **The NavMenu** — the toolbar Navigation button's menu is a blank placeholder; its content is undecided.
 - **User sections** — an "Add Heading" entry in the Collections create menu, with drag-a-Collection-into-a-section.
 - **Always-on ribbon** — a ribbon that survives the sidebar collapsing.
