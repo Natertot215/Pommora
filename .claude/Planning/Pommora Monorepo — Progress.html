@@ -1,0 +1,163 @@
+<title>Monorepo Run Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f6f5f1;--panel:#ffffff;--ink:#1f2430;--muted:#6b7080;--line:#e2e0d8;
+  --done:#2f7d4f;--done-bg:#e6f2ea;--run:#b26a00;--run-bg:#fbf0dc;--blocked:#b3261e;--blocked-bg:#f9e4e2;
+  --pend:#8a8f9c;--pend-bg:#eeeee9;--accent:#4a5fc1;--accent-bg:#e8ebf8;--code-bg:#f0efe9;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#171a21;--panel:#1f232d;--ink:#e6e7ec;--muted:#9aa0ae;--line:#2e3340;
+  --done:#6cc08a;--done-bg:#1d3327;--run:#e2a44a;--run-bg:#3a2d17;--blocked:#ef7f78;--blocked-bg:#3d2020;
+  --pend:#8a8f9c;--pend-bg:#262a34;--accent:#8e9ee8;--accent-bg:#252b45;--code-bg:#14171e;
+}}
+:root[data-theme="dark"]{
+  --ground:#171a21;--panel:#1f232d;--ink:#e6e7ec;--muted:#9aa0ae;--line:#2e3340;
+  --done:#6cc08a;--done-bg:#1d3327;--run:#e2a44a;--run-bg:#3a2d17;--blocked:#ef7f78;--blocked-bg:#3d2020;
+  --pend:#8a8f9c;--pend-bg:#262a34;--accent:#8e9ee8;--accent-bg:#252b45;--code-bg:#14171e;
+}
+body{background:var(--ground);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,sans-serif;margin:0}
+main{max-width:920px;margin:0 auto;padding:32px 20px 64px;display:grid;gap:24px}
+h2,h3{margin:0;text-wrap:balance}
+h2{font-size:24px;font-weight:600}
+h3{font-size:15px;font-weight:600}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{display:grid;gap:8px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:2px}
+.stat b{font-size:22px;font-weight:600}
+.stat span{color:var(--muted);font-size:13px}
+.bar{height:6px;background:var(--pend-bg);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--done)}
+.phase{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.phase>header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.phase>header small{color:var(--muted)}
+.task{display:grid;grid-template-columns:110px 1fr auto;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);align-items:start}
+.task:last-child{border-bottom:0}
+.task .num{color:var(--muted);font-size:13px}
+.task .note{color:var(--muted);font-size:13px;margin-top:2px}
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.done{color:var(--done);background:var(--done-bg)}.running{color:var(--run);background:var(--run-bg)}
+.blocked{color:var(--blocked);background:var(--blocked-bg)}.pending{color:var(--pend);background:var(--pend-bg)}
+.gate{color:var(--accent);background:var(--accent-bg)}
+.hash{font-size:12px;color:var(--muted)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0;font-size:12.5px;line-height:1.5;overflow-x:auto;white-space:pre}
+.log{display:grid;gap:10px}
+.entry{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.entry:first-of-type{border-top:0}
+.entry time{color:var(--muted);font-size:13px}
+a{color:var(--accent)}
+@media (max-width:600px){.task{grid-template-columns:1fr auto}.task .num{grid-column:1/-1}.entry{grid-template-columns:1fr}}
+</style>
+<main>
+<header>
+  <div class="eyebrow">Pommora · PM-129 · plan ratified 09-05-2026</div>
+  <h2>Monorepo Run Board</h2>
+  <div id="updated" class="hash mono"></div>
+</header>
+<section class="strip" id="strip"></section>
+<div class="bar"><i id="fill"></i></div>
+<section id="phases" style="display:grid;gap:16px"></section>
+<section>
+  <h3>Gate output</h3>
+  <p class="note" style="color:var(--muted);font-size:13px;margin:4px 0 12px">Real exit codes and summary lines, pasted as they came back. A gate with no block has not run.</p>
+  <div id="gates" style="display:grid;gap:12px"></div>
+</section>
+<section>
+  <h3>Rulings and deviations</h3>
+  <div id="log" class="log" style="margin-top:8px"></div>
+</section>
+<section>
+  <h3>Pages</h3>
+  <ul style="margin:8px 0 0;padding-left:20px;font-size:14px">
+    <li><a href="https://claude.ai/code/artifact/7fa1eea6-9f18-43cc-9a4e-418e0d3b7164">Pommora Monorepo</a> — the tree, mapping, rulings, final shape</li>
+    <li><a href="https://claude.ai/code/artifact/48dcd4fc-90cb-4cb3-9048-42703a9ec21e">The Pommora Audit</a> — the long-form distillation</li>
+  </ul>
+</section>
+</main>
+<script>
+const DATA = {
+  updated: "09-05-2026 19:10 PT",
+  base: "7941edec",
+  baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
+  phases: [
+    { name: "Phase 0", title: "Baseline, scratch, spike", tasks: [
+      { n: 0, title: "Baseline and scratch Nexus", state: "done", hash: "", note: "Baseline at ~/Pommora-Scratch/baseline; scratch copy of NexusOS; launch check moved into Task 1." },
+      { n: 1, title: "Root, workspaces, tooling spike", state: "done", hash: "ebed2f3a", note: "Spike caught a wrong exports map (Vite reads only the first fallback); fixed with a types/default split. Three CodeMirror packs kept: live via dynamic import. Net −579 lines." },
+    ], gate: { name: "Gate 0", state: "done" } },
+    { name: "Phase 1", title: "shared dissolves", tasks: [
+      { n: 2, title: "Contract and dialer type", state: "running", note: "Opus." },
+      { n: 3, title: "shared dissolves, types.ts first", state: "pending" },
+    ], gate: { name: "Gate 1", state: "pending" } },
+    { name: "Phase 2", title: "The engine out of Electron", tasks: [
+      { n: 4, title: "Pure engine domains move whole", state: "pending" },
+      { n: 5, title: "Renderer into Core and UIX", state: "pending", note: "Fable authors the move table, Haiku executes. Every tile kind lands in Core/Tiles/Surfaces (ruling 09-05-2026)." },
+      { n: 6, title: "Platform seam", state: "pending", note: "Fable." },
+      { n: 7, title: "Dialer replaces the api object", state: "pending" },
+      { n: 8, title: "main/index.ts splits by domain", state: "pending", note: "Fable." },
+      { n: 9, title: "Dispatcher bodies and the one sweep", state: "pending" },
+    ], gate: { name: "Gate 2", state: "pending", note: "One smoke launch." } },
+    { name: "Phase 3", title: "Filing inside the domains", tasks: [
+      { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "pending" },
+      { n: 11, title: "MarkdownPM re-nests; the model separates", state: "pending" },
+      { n: 12, title: "UIX settles at its root; motion has one definition", state: "pending" },
+    ], gate: { name: "Gate 3", state: "pending", note: "One smoke launch." } },
+    { name: "Phase 4", title: "The two layers", tasks: [
+      { n: 13, title: "Every list menu on one path", state: "pending", note: "Fable." },
+      { n: 14, title: "The editor takes its host", state: "pending", note: "Fable." },
+    ], gate: { name: "Gate 4", state: "pending" } },
+    { name: "Phase 5", title: "Removals, fixes, docs", tasks: [
+      { n: 15, title: "Kill list at high confidence", state: "pending" },
+      { n: 16, title: "The two write-path bugs", state: "pending" },
+      { n: 17, title: "Showcase severed", state: "pending" },
+      { n: 18, title: "Harness scripts", state: "pending", note: "Every script repointed; the comment ledgers stay." },
+      { n: 19, title: "Docs path sweep and stale claims", state: "pending" },
+      { n: 20, title: "Rules, Architecture split, Mobile plan", state: "pending" },
+    ], gate: { name: "Gate 5", state: "pending" } },
+    { name: "Closeout", title: "Delivery Claim, verifier, attack, History, report", tasks: [
+      { n: "—", title: "Delivery Claim → neutral verifier → attack → Nathan's own pass", state: "pending" },
+    ] },
+  ],
+  gates: [
+    { name: "Gate 0 · Task 1", text: "npm run typecheck: exit 0\nnpm run lint: exit 0 · 1,027 files\nnpm run test: exit 0 · 321 files / 4,006 tests\nnpm run build: exit 0\nbuilt app on scratch Nexus: {status: open, root: ~/Pommora-Scratch/NexusOS, collections: 7}" },
+    { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
+  ],
+  log: [
+    { when: "09-05-2026", text: "The comment ledgers stay and are repointed at Task 18. Task 5's move table is being authored in parallel with Task 1." },
+    { when: "09-05-2026", text: "Verification is one smoke launch per gate that touched runtime code. Hand walks, screenshot sets, and per-family right-click lists dropped. Reviews attack the implementation, not whether the app works." },
+    { when: "09-05-2026", text: "The icon-picker binding lives in UIX/Pickers/IconPicker and may import Core (the one UIX file allowed to). Core/Utilities stays as a folder for what the user never invokes: the data helpers and the iteration window. The user's commands (toggle-ribbon, paste-inverse) are Core/Actions'. Icon files other than the picker binding stay in Core/Assets." },
+    { when: "09-05-2026", text: "Fable implements Tasks 6, 8, 13, 14 and authors Task 5's move table; the rest stay Opus or Haiku." },
+    { when: "09-05-2026", text: "Every tile kind lives in Core/Tiles/Surfaces, Page and Web tiles included; a tile calls its domain's actions rather than moving there. B-6 in the decision log." },
+    { when: "09-05-2026", text: "Connections never holds Glances; glance is Interface's. TileGrid's UIX folder is Canvas. Comments none by default, twenty-line cap; variable names unchanged; Haiku for mechanical sweeps, Opus for judgment and reviews." },
+    { when: "09-05-2026", text: "Deviation, Task 0: the POMMORA_USERDATA seam the second-instance launch needs lands in Task 1 as a two-line app.setPath call." },
+  ],
+};
+
+const label = { done: "done", running: "running", blocked: "blocked", pending: "pending" };
+const all = DATA.phases.flatMap(p => p.tasks).filter(t => typeof t.n === "number");
+const done = all.filter(t => t.state === "done").length;
+const running = all.find(t => t.state === "running");
+const blocked = all.filter(t => t.state === "blocked").length;
+document.getElementById("updated").textContent = `updated ${DATA.updated} · base ${DATA.base}`;
+document.getElementById("fill").style.width = `${(done / all.length) * 100}%`;
+document.getElementById("strip").innerHTML = [
+  [`${done} / ${all.length}`, "tasks done"],
+  [running ? `Task ${running.n}` : blocked ? "blocked" : "idle", running ? "running now" : "state"],
+  [DATA.baseline.tests, "baseline tests"],
+  [DATA.baseline.loc, "baseline lines"],
+].map(([b, s]) => `<div class="stat"><b class="mono">${b}</b><span>${s}</span></div>`).join("");
+document.getElementById("phases").innerHTML = DATA.phases.map(p => `
+  <article class="phase">
+    <header><h3>${p.name} <span style="color:var(--muted);font-weight:400">· ${p.title}</span></h3>
+      ${p.gate ? `<small><span class="chip ${p.gate.state === "done" ? "done" : "gate"}">${p.gate.name} · ${label[p.gate.state]}</span>${p.gate.note ? ` ${p.gate.note}` : ""}</small>` : ""}</header>
+    ${p.tasks.map(t => `
+      <div class="task">
+        <div class="num mono">Task ${t.n}${t.hash ? ` <span class="hash">${t.hash}</span>` : ""}</div>
+        <div><div>${t.title}</div>${t.note ? `<div class="note">${t.note}</div>` : ""}</div>
+        <span class="chip ${t.state}">${label[t.state]}</span>
+      </div>`).join("")}
+  </article>`).join("");
+document.getElementById("gates").innerHTML = DATA.gates.map(g => `<div><div class="eyebrow" style="margin-bottom:6px">${g.name}</div><pre class="mono">${g.text}</pre></div>`).join("");
+document.getElementById("log").innerHTML = DATA.log.map(e => `<div class="entry"><time class="mono">${e.when}</time><div>${e.text}</div></div>`).join("");
+</script>

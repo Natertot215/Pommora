@@ -26,7 +26,7 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 11. Docs reconciled per H-6: 199 path citations and 120 bare folder names swept; ArchitecturePM split into a Core map and a Desktop doc; Features tagged; 38 stale claims corrected; CLAUDE.md Hard Rules restated; the Mobile plan's Task 0 and Phase 8 marked superseded with a path table. (H)
 12. Names per A-9: Interface, Locations, FileWatch, Platform, Actions/Menus/Actions, SidePane, no Primitives, MarkdownPM unchanged.
 
-**Acceptance — the whole thing working:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` are green; the built desktop app opens a scratch copy of NexusOS, renders the tree, opens a page, edits and saves a body, right-clicks a page row, a table cell, a tile, and the sidebar and gets the same menus as before (native and in-app both), drags a tile, opens the Page Window, Nav Window, Page History, and Settings, changes a setting and sees it apply; `find Core UIX Desktop -name '*.ts*' | xargs grep -l "from 'electron"` lists only files under `Desktop/`; `grep -rl "from '@pommora/core" UIX` → 0; the test count is 321 files / 4,006 tests minus only the tests whose subjects the kill list removed, each named in the Log; the net line delta is negative.
+**Acceptance — the whole thing working:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` are green; the built desktop app opens a scratch copy of NexusOS, renders the tree, opens a page, saves an edit; `find Core UIX Desktop -name '*.ts*' | xargs grep -l "from 'electron"` lists only files under `Desktop/`; `grep -rl "from '@pommora/core" UIX` → exactly `UIX/Pickers/IconPicker/iconFavorites.ts`; the test count is 321 files / 4,006 tests minus only the tests whose subjects the kill list removed, each named in the Log; the net line delta is negative.
 
 **Forced By**
 
@@ -39,7 +39,7 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 - All 130 handlers sit in one literal in `main/index.ts` (A04 §3) → a phone cannot spread what it serves until Task 8 splits it; the split precedes the in-process binding sketch.
 - 16 of 26 poppers already call `sharedModel(ctx)` and the in-app `useNativeMenus` path exists (A05 §2, A04 §5e) → Task 13 collapses onto `row-menu` rather than inventing a chassis.
 - Two primitives call `sessionRoot()` (`journalSlot.ts:37`, `governedWrite.ts:38`) → a journal for a non-open root can never be cleared; Task 9 threads the root.
-- Sidecar files have four write paths, one unlocked (`remint.ts:113-128`), and `homepage.json` bypasses `updateNexusConfig` at five sites (A20 §4) → Task 13 fixes both under the lock.
+- Sidecar files have four write paths, one unlocked (`remint.ts:113-128`), and `homepage.json` bypasses `updateNexusConfig` at five sites (A20 §4) → Task 16 fixes both under the lock.
 - No users exist (Nathan, F-3) → every compatibility path for old on-disk shapes is deletable; no migration task.
 
 **Inherited Reasoning:** The Mobile plan's Task 0 (folders-only) is a phone-first sequencing choice, not a placement, and its `TreeHolder` indirection exists only because `liveTree.ts` was left in main; both superseded (A-3). The plan's Task 35 declarative api table is rejected; deleting the api object saves 205 lines against it (A-7). Engine-versus-interface as the workspace axis was rejected by Nathan because it put Views, Properties, and Tiles in two workspaces at once (A-8). A rewrite is rejected: it loses behavior no one can enumerate (A-2). The `assetMigrate` and raw-mode paths were listed low-confidence by the audit; Nathan ruled them out on the no-users fact (F-3).
@@ -55,19 +55,20 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 
 **Environment:** Plan directory `// Planning`. Spec input: the decision log. Explorer: general-purpose read-only (the audits stand in). Code reviewer and attack reviewer: `build-breaking-agent` (project-designated) on Opus; simplification: `code-simplifier` on Opus. No comment-cleanup agent by ruling. Implementers: Opus for judgment tasks, Haiku for mechanical sweeps (each task names its model). Gate commands read from `package.json` and re-read after Task 1 rewrites it: `npm run typecheck`, `npm run test`, `npm run lint`, `npm run build`, run from the root, exit codes read directly. Rules directory: `// Guidelines`. No Workflow tooling; standard agents, one implementer on the tree at a time.
 
-**Shapes:** refactor (baseline invariant: 321 test files / 4,006 tests / 1,019 lint files / `npm run build` green, carried through Phases 1–4 unchanged except where a task names a test it moves or deletes) · removal (Phase 5 inventory per F-2 with the never-delete list below) · fix (Task 13's two write-path bugs, each with a sibling sweep and a red test) · user-visible in effect only (no new UI; every menu family re-verified by hand).
+**Shapes:** refactor (baseline invariant: 321 test files / 4,006 tests / 1,019 lint files / `npm run build` green, carried through Phases 1–4 unchanged except where a task names a test it moves or deletes) · removal (Phase 5 inventory per F-2 with the never-delete list below) · fix (Task 16's two write-path bugs, each with a sibling sweep and a red test) · user-visible in effect only (no new UI; every menu family re-verified by hand).
 
 **Global Constraints (every task inherits these):**
 
 - Gates from the repo root, chained with `&&`, exit codes read directly, never piped: `npm run typecheck && npm run test && npm run lint && npm run build`. A gate's file counts are read from its own summary line.
+- **Verification:** the four gate commands are the proof. Behavior is checked once per gate that touched runtime code, as one smoke launch (open the scratch Nexus, render the tree, open a page, save an edit, kill it); no hand walks, no screenshot sets, no clicking through behavior the compiler and the tests already hold. Reviews attack the implementation (the seam, duplication, dead paths, a move that left an owner behind), never whether the app works.
 - **Comments:** none by default; a hard cap of twenty comment lines per file; a comment carries only a why the code cannot state. No comment names a value its own declaration holds. No "moved from", "was", "formerly", "TODO", or build-status text anywhere.
 - **Scope:** a task's file list is its whole scope. No "while I'm here." No new abstraction, helper, wrapper, or type unless a task's Becomes names it. Ten lines beat a hundred; a task that grows beyond its Becomes stops and reports rather than continuing.
 - **Names:** variable and function names stay as they are. The only identifier renames are the eleven same-name collisions A20 §1 lists and the file-level renames A-9 rules; each is logged under Rulings. When a file is renamed or split, its exports read coherently with the new file name.
 - **Moves are `git mv`,** never delete-and-create, so history follows. Stage explicit paths; never `git add -A` or a directory. No `git stash`, `checkout .`, `clean`, or `reset` on the shared tree. One tree-touching implementer at a time; confirm the tree is still before dispatching the next.
 - **Imports:** cross-workspace by package name (`@pommora/uix/...`, `@pommora/core/...`); inside a workspace, relative. No `paths` aliases survive Task 1.
-- **The never-delete list:** anything under `.claude/` except the four harness scripts Task 15 rewrites; `Pommora/build/` (moves to `Desktop/build/`); every test whose subject survives; `Showcase/` (moves, compiles); the `TilesV2-Spec` and both Mobile plan documents.
+- **The never-delete list:** anything under `.claude/` except the four harness scripts Task 18 rewrites; `Pommora/build/` (moves to `Desktop/build/`); every test whose subject survives; `Showcase/` (moves, compiles); the `TilesV2-Spec` and both Mobile plan documents.
 - Out of scope everywhere: Mobile and Sync implementation; touch handling; any change to on-disk Nexus format; any menu's contents; Showcase beyond compiling; History entry until closeout.
-- Live app: kill and relaunch freely; open only the scratch Nexus at `~/Pommora-Scratch/NexusOS` with `POMMORA_USERDATA=~/Pommora-Scratch/userData`; never the real `~/NexusOS`.
+- Live app: kill and relaunch freely; open only the scratch Nexus at `~/Pommora-Scratch/NexusOS` with `POMMORA_USERDATA=~/Pommora-Scratch/userData`, whose `pommora.json` is seeded with the scratch path so the app restores it and no chooser is ever driven; never the real `~/NexusOS`.
 
 **Made False**
 
@@ -80,9 +81,9 @@ The desktop app is the same app afterward. Cosmetic drift is accepted only where
 | `Development-Environment` | "CommonJS main/preload… `require('electron')` fails on ESM" | preload stays CJS for the sandbox; the ESM claim is a transpiler caveat | 20 |
 | `Mobile Companion — Implementation Plan` | Task 0's layout and Phase 8's 2,900-line move | superseded; path table appended | 20 |
 | `Mobile Companion — Decision Log` | A-6 open; K-1's restatement; "list-menu generalization" as Prospect | A-6 decided; H-1; C-6 inside this plan | 20 |
-| every Features doc | `Pommora/src`, `src/main|renderer|shared`, `renderer/<Folder>/` citations (199 + 120 bare) | the new tree | 19 |
-| `DesignSystemPM` | spine mirrors `DesignSystem/` subfolders; `Components/` heading | UIX root categories | 20 |
-| `PommoraPRD` | `PageID`/`TaskID`/`EventID` keys; `(Projects):` syntax | retired per `identity.ts:5`; corrected | 20 |
+| every Features doc | `Pommora/src`, `src/main|renderer|shared`, `renderer/<Folder>/` citations (199 + 120 bare) | the new tree | 19 || 19 |
+| `DesignSystemPM` | spine mirrors `DesignSystem/` subfolders; `Components/` heading | UIX root categories | 19 |
+| `PommoraPRD` | `PageID`/`TaskID`/`EventID` keys; `(Projects):` syntax | retired per `identity.ts:5`; corrected | 19 |
 
 **Dead Vocabulary**
 
@@ -144,9 +145,9 @@ vitest.config.ts                   { test: { projects: ["UIX","Core","./Pommora/
 tsconfig.json                      { "files": [], "references": [{path:"UIX"},{path:"Core"},{path:"Desktop/tsconfig.node.json"},{path:"Desktop/tsconfig.web.json"}] }  — editor navigation only
 vercel.json                        installCommand "npm install", buildCommand "npm run build:showcase", outputDirectory "Showcase/dist"
 .gitignore                         root's + Pommora/.gitignore's entries; dist-app/ dropped; node_modules/ at any depth
-UIX/package.json                   { "name": "@pommora/uix", "private": true, "exports": { "./*": ["./*.ts", "./*.tsx", "./*"] }, "dependencies": { react, react-dom, lucide-react, @tabler/icons-react, @vanilla-extract/css, @samasante/liquid-glass, @tanstack/react-virtual, @fontsource-variable/inter } }
+UIX/package.json                   { "name": "@pommora/uix", "private": true, "exports": { "./*": { "types": ["./*.ts", "./*.tsx", "./*"], "default": "./*" } }, "dependencies": { react, react-dom, lucide-react, @tabler/icons-react, @vanilla-extract/css, @samasante/liquid-glass, @tanstack/react-virtual, @fontsource-variable/inter } }
 UIX/tsconfig.json                  { compilerOptions: { module ESNext, moduleResolution Bundler, target ES2022, lib [ES2022, DOM, DOM.Iterable], jsx react-jsx, strict, noEmit, types [] }, include ["**/*"], exclude ["node_modules"] }
-Core/package.json                  { "name": "@pommora/core", "private": true, "exports": { "./*": ["./*.ts", "./*.tsx", "./*"] }, "dependencies": { zod, yaml, ulidx, zustand, @codemirror/*, react, react-dom, mdast-util-from-markdown, mdast-util-gfm, micromark-extension-gfm }, "devDependencies": { "@pommora/uix": "*" } }
+Core/package.json                  { "name": "@pommora/core", "private": true, "exports": { "./*": { "types": ["./*.ts", "./*.tsx", "./*"], "default": "./*" } }, "dependencies": { zod, yaml, ulidx, zustand, @codemirror/*, react, react-dom, mdast-util-from-markdown, mdast-util-gfm, micromark-extension-gfm }, "devDependencies": { "@pommora/uix": "*" } }
 Core/tsconfig.json                 as UIX's plus "types": ["node"] is NOT set; Node types reach Core only through Core/Platform's interfaces
 Desktop/package.json               { "name": "@pommora/desktop", "private": true, "main": "./out/main/index.js", scripts dev/build/start/package as today, "dependencies": { electron-updater? no — electron, chokidar, write-file-atomic }, "devDependencies": { "@pommora/core": "*", "@pommora/uix": "*", electron, electron-vite, electron-builder, vite, @types/react, @types/react-dom, @types/write-file-atomic } }
 Desktop/electron.vite.config.ts    written at Task 8 with explicit inputs (main: Desktop/main.ts · preload: Desktop/Bridge/preload.ts · renderer: Desktop/Renderer/index.html), no externalizeDepsPlugin, plugins [react(), vanillaExtractPlugin()]; Pommora/electron.vite.config.ts stays the app's build until then. The spike uses a throwaway Desktop/electron.vite.config.ts whose inputs are the probe entries, deleted with the probe
@@ -156,7 +157,7 @@ Mobile/package.json                { "name": "@pommora/mobile", "private": true 
 Sync/package.json                  { "name": "@pommora/sync", "private": true }   Sync/tsconfig.json: lib ["ES2022"] only — no DOM
 Showcase/package.json              { "name": "@pommora/showcase", "private": true, scripts dev/build, "devDependencies": { "@pommora/uix": "*", vite, react plugins } }
 Removed:                           Pommora/vite.config.app.ts, dist-app/, dev:app/build:app scripts, Pommora/vercel.json, root node_modules/, release/, out/, dist/, *.tsbuildinfo, interactions.html + Showcase/Lab/ whole (the iteration lab; its drag options and TileLab go with it), Pommora/node_modules (reinstalled at root)
-Removed deps:                      pngjs, react-markdown, remark-gfm, @codemirror/lang-json, @codemirror/lang-yaml, @codemirror/legacy-modes
+Removed deps:                      pngjs, react-markdown, remark-gfm (the three CodeMirror language packs are live through 38 dynamic imports in codeHighlight.ts and stay)
 electron-builder.yml               moved to Desktop/ at Task 8; the better-sqlite3 provisions at :9-12,27-28 removed at Task 1 in place
 ```
 
@@ -230,7 +231,7 @@ declare global { interface Window { nexus: Dialer & LegacyApi } }   // LegacyApi
 
 ```
 Core/Nexus/tree.ts             lines 304–453: NodeKind, tree nodes, NexusTree, NexusState, AssetMap, ValueChange, ValuesEpoch, PickFileOptions → PickFileOptions goes to Desktop/Config/types.ts instead
-Core/Settings/personalization.ts  lines 43–302: Personalization, every *_STEPS, coerce*, clampInt, DEFAULT_COMMANDS, HISTORY_*, TAB_*; WEB_PARTITION → Desktop/Web/partition.ts; interfaceScaleZoom/INTERFACE_SCALE_* → Desktop/Config
+Core/Settings/personalization.ts  lines 43–302: Personalization, every *_STEPS, coerce*, clampInt, HISTORY_*, TAB_*; DEFAULT_COMMANDS → Core/Actions/commands.ts (the user's commands; the chord matcher stays UIX/Interactions); WEB_PARTITION → Desktop/Web/partition.ts; interfaceScaleZoom/INTERFACE_SCALE_* → Desktop/Config
 Core/Trash/trashRow.ts         lines 57–82 + 652–654: TrashCrumb, ClearReport, TrashRow, TrashMode, DEFAULT_TRASH_MODE
 Core/Navigation/navRef.ts      lines 455–499 (NavRef, toNavRef, NavigationState, SelectionState, SelectTarget, Tab, TabTarget, NewTabSentinel, WindowTabTarget); StoredTab/StoredTabSet/WindowSetRecord/WindowsFile/EMPTY_WINDOWS/GlanceSize → Core/Interface/Windows/windowRecord.ts
 Core/Interface/chrome.ts       lines 554–583: ThumbRect, SubfieldConfig, NavViewMode(s)
@@ -332,33 +333,35 @@ Raw mode (`sidecarMode === false`) removed across its eight files (A02 §2) in t
 
 **Requirement:** 3, 6, 12
 
-**Why:** The interface halves join their engine halves; the kit becomes UIX; every drawer dissolves. `git mv` by the tables in A07 §8–9, A11 §6–7, A13 §7–8, A15 §8–9 with the log's rulings applied (Interface not Shell; Content dissolved into Interface + Pages; Tiles a Core domain; Settings and Assets top-level; Navigation absorbs Tabs; slices with their domain; UIX categories at root).
+**Why:** The interface halves join their engine halves; the kit becomes UIX; every drawer dissolves. `git mv` by the tables in A07 §8–9, A11 §6–7, A13 §7–8, A15 §8–9 with the log's rulings applied (Interface not Shell; Content dissolved into Interface + Pages; Tiles a Core domain holding every tile kind, the page and web tiles included; Settings and Assets top-level; Navigation absorbs Tabs; slices with their domain; UIX categories at root).
 
 **Now** — `Pommora/src/renderer/` 25 folders + 12 root files (A07 §1, A11 §1, A13 §1, A15 §1).
 
-**Becomes** — Opus authors the exact file table from the four audits into `.claude/Planning/MonorepoAudit/renderer-moves.tsv` (source → destination, one line per file, every file accounted for: `wc -l` equals `git ls-files Pommora/src/renderer | grep -v test | wc -l`), Nathan-visible before execution; Haiku executes it. Destination folders:
+**Becomes** — Fable authors the exact file table from the four audits into `.claude/Planning/MonorepoAudit/renderer-moves.tsv` (source → destination, one line per file, every file accounted for: `wc -l` equals `git ls-files Pommora/src/renderer | grep -v test | wc -l`), Nathan-visible before execution; Haiku executes it. Destination folders:
 
 ```
-UIX/Theme Animations Interactions Buttons Labels Controls Fields Elements Glass Menus Pickers Symbols Windows Cards TileGrid Table Caret
+UIX/Theme Animations Interactions Buttons Labels Controls Fields Elements Glass Menus Pickers Symbols Windows Cards Canvas Table Caret
 Core/Session          store.ts → Session/store.ts, treeIndex (+ Interface/scope.ts merged), sessionState, nexusSlice, configSlice (+ setAssetDirectory/setExclusions), cacheSlice, renameSlice → mutationSlice.ts, chromeSlice's neutral half, tabState's detail half → pageDetailCache.ts, selection, destinationTree, Interface/pageFlush + Tiles/pageTileWrite → saveScheduler.ts, Tokens/personalization.ts
 Core/Interface        App.tsx, ContentView, InterfaceScaffold, InspectorPane → SidePane/, Subfield/, NotificationLabel + notifications, ConfirmationWindow + confirmations, Glance/ (page branch, glanceAction, glanceLink from MarkdownPM/Connections), Sidebar/, Toolbar/ (Toolbar, ToolbarTrio, NavMenu, SettingsMenu), Windows/ (PageWindow minus PagePanel, NavWindow, PageHistoryWindow, WindowTabStrip, useWindowWarm, windowMorph, windowTabs, windowCache, windowSlice), layoutSlice (chromeSlice's layout half), Banner/DetailTitleHeader/AddBannerButton/useBannerMenu → Interface/Header/, viewSettingsScope, Animation/paneSlide + toolbar-slide.css, Interactions/revealBar, styles.css (shell half), the menu presenter (Task 13 adds)
-Core/Pages            PageView, pageEditor, Tiles/Surfaces/PageTile, Frames/PageMenu, MarkdownPM/PageHeader, restoreSnapshot
+Core/Pages            PageView, pageEditor, Frames/PageMenu, MarkdownPM/PageHeader, restoreSnapshot
 Core/Navigation       Navigation/* (minus testTree → Core/Testing/fixtures), Tabs/*, navigationSlice, tabState's warm half → warmTabs.ts, NavView + nav-view.css
 Core/Views            Views/*, Frames/{Filter,Group,Sort,Layout,Hidden,Settings}Frame + LayoutToggles, CardsOptions, ViewItemMenu, switchRows, filterModel, hiddenFrameModel, viewIcon, Toolbar/ViewMenu + ViewFrame, Tables/{ColumnHeader,cellSweep,columnWidths,columnReorder,columnAlign,columnStyles}, Tiles/ViewTileScope, Properties/Assignment/valueUndo + cardValueInput's card half, notifications.restoreView
 Core/Properties       Properties/* re-nested Cells/ Pickers/ Page/ Schema/ (PropertyFrame joins Schema/), Actions/linkResolve
-Core/Tiles            TileHost, TileHandleMenu, tileKinds, useTileDoc, tileZoom, Surfaces/MarkdownTile, ViewTile, Interface/SpaceView, HomepageView, Frames/SettingsScaffold → HomepageSettings.tsx, Toolbar/SpaceMenu, Tiles/Core/* → Tiles/layout/
+Core/Tiles            TileHost, TileHandleMenu, tileKinds, useTileDoc, tileZoom, Surfaces/ whole (MarkdownTile, ViewTile, PageTile, WebTile + webRetention; every tile kind), tile-base.css whole, Interface/SpaceView, HomepageView, Frames/SettingsScaffold → HomepageSettings.tsx, Toolbar/SpaceMenu, Tiles/Core/* → Tiles/layout/
 Core/MarkdownPM       MarkdownPM/* re-nested per A09 §6 (Model/, Render/, Guards/, Gestures/, Links/, Citations/, Embeds/, Menus/, Widgets/, Autocomplete/, Tables/); Toolbar/OutlineMenu + OutlineDnd + outlineTree, Tiles/tileCache, Subfield/subfieldStats, Interactions/useKeepInView
-Core/Assets           Assets/*, Pickers/ImagePicker, Utilities/EntityIcon, useNexusIcon, Settings/IconPicker + iconFavorites, Symbols entity-icon policy (:192-208), store.useAssetUrl
+Core/Assets           Assets/*, Pickers/ImagePicker, Utilities/EntityIcon, useNexusIcon, Symbols entity-icon policy (:192-208), store.useAssetUrl
+Core/Utilities        DesignSystem/Util/{capMap,checkSet,moveItem,pad}, Utilities/iteration-window (+ css)
+UIX/Pickers/IconPicker  Settings/IconPicker → bound.tsx, Settings/iconFavorites → iconFavorites.ts, beside the unbound picker; the one UIX file that imports Core, by ruling
 Core/Settings         Settings/SettingsWindow, TrashFrame → Core/Trash/TrashFrame.tsx, AssetDirectoryRow, ExcludedDirectoriesRow, ClearActionRow, css; SETTINGS_WIN/SETTINGS_RAIL → UIX/Windows/bounds.ts
 Core/Platform         Assets/assetUrl's scheme line, App.tsx:83–173 → useBridgeSubscriptions.ts, Actions/nativeMenus, openWebLink
 Core/Testing          Testing/*, Navigation/testTree
 Core/Interactions?    no — Actions/commands → UIX/Interactions/commands.ts; Sidebar/sidebarDndModel's generic half → UIX/Interactions/reorderModel.ts; Tables/tableDnd, Frames/frameDnd + model → UIX/Interactions
-Desktop/Web           Tiles/Surfaces/WebTile + webRetention, Windows/WebWindow + css, Glance site branch (L108–122, 267–273, 412–430 as a WebSurface implementation), tile-base.css:146-161, glance-pane.css .glance-web*
+Desktop/Web           Windows/WebWindow + css, Glance site branch (L108–122, 267–273, 412–430 as a WebSurface implementation), glance-pane.css .glance-web*
 Desktop/Renderer      main.tsx, index.html, env.d.ts, styles.css drag-region lines (:106-132, 160), the six -webkit-app-region rules, nativeEditorMenu (MarkdownPM/Editor/menu.ts:27-32)
 Showcase/             Showcase/* + design-system.html + vite.config.ts
 ```
 
-Files that dissolve into siblings in this move (no logic change): `Cards/Card.tsx` + `cards.css` → `UIX/Cards/`; `Tables/Table.css` + `table-tokens.css` → `UIX/Table/`; `Frames/InlineEditHeader` + header styles → `UIX/Menus/`; `Utilities/iteration-window` → `Core/Interface/Windows/IterationWindow.tsx`; `nativeCaret.ts` + `Carets.css` + `text-selection.css` → `UIX/Caret/`; `DesignSystem/Util/{capMap,checkSet,moveItem,pad}` → `Core/Nexus/util/`? no → `Core/Testing`? no → **`Core/Session/util/`** (their importers are Session, Navigation, Views); `Util/cx` → `UIX/Theme/cx.ts`; `Glass/glass-pane.tsx` `Surface` → `Core/Interface/InterfaceScaffold`.
+Files that dissolve into siblings in this move (no logic change): `Cards/Card.tsx` + `cards.css` → `UIX/Cards/`; `Tables/Table.css` + `table-tokens.css` → `UIX/Table/`; `Frames/InlineEditHeader` + header styles → `UIX/Menus/`; `Utilities/iteration-window` → `Core/Utilities/IterationWindow.tsx`; `nativeCaret.ts` + `Carets.css` + `text-selection.css` → `UIX/Caret/`; `DesignSystem/Util/{capMap,checkSet,moveItem,pad}` → `Core/Utilities/`; `Util/cx` → `UIX/Theme/cx.ts`; `Glass/glass-pane.tsx` `Surface` → `Core/Interface/InterfaceScaffold`.
 
 **Assumed by:** Tasks 6–20.
 
@@ -366,7 +369,7 @@ Files that dissolve into siblings in this move (no logic change): `Cards/Card.ts
 
 - [ ] `renderer-moves.tsv` line count equals the renderer's non-test file count at Task 5's start; every destination folder is in B-3, C-1, or D-1.
 - [ ] `test ! -d Pommora/src/renderer`; `rg -F "@renderer/" Core UIX Desktop Showcase` → 0. Control: `rg -F "@pommora/uix/" Core` → ≥ 100.
-- [ ] `rg -l "from '@pommora/core" UIX` → 0. Control: `rg -l "from '@pommora/uix" Core` → ≥ 100.
+- [ ] `rg -l "from '@pommora/core" UIX` → exactly `UIX/Pickers/IconPicker/iconFavorites.ts`. Control: `rg -l "from '@pommora/uix" Core` → ≥ 100.
 - [ ] `rg -l "useSession\|window\.nexus" UIX` — run as two commands: `rg -l "useSession" UIX` → 0 and `rg -l "window.nexus" UIX` → 0. Control: `rg -l "useSession" Core/Session` → ≥ 5.
 - [ ] Full gate green; 321 / 4,006 (tests moved with subjects; the Desktop vitest project now covers `Pommora/src/main` only).
 
@@ -421,7 +424,7 @@ export function machine(): Machine   // throws "no platform installed" before in
 - [ ] `rg -l "from 'node:" Core` → 0. Control: `rg -l "from 'node:" Desktop` → ≥ 8. `rg -l "AsyncLocalStorage" Core` → 0; `Desktop/Platform/nodeMachine.ts` → 1.
 - [ ] `rg -F "Buffer\." Core` → 0. Control: `rg -F "TextEncoder" Core` → ≥ 1.
 - [ ] Red-green: `Core/Platform/machine.test.ts` with an in-memory `Machine` fake runs the walk, a page write, a sweep with mtime preservation, and a lock re-entry; fails before `installMachine` exists.
-- [ ] Full gate green; the built app opens the scratch Nexus, edits a body, saves (file mtime observed changed; `Last Modified` in the tree updated), a property sweep preserves page mtime (observed).
+- [ ] Full gate green; one smoke launch; a property sweep's `utimes` call covered by its existing test.
 
 **Verify — user** *(none.)*
 
@@ -475,7 +478,7 @@ export type Handlers = { [K in keyof Asks]: (ctx: HostContext, ...args: Asks[K][
 
 - [ ] `wc -l Desktop/main.ts` ≤ 400. `rg -F "ipcMain.handle" Desktop` → 1 site (the loop). Control: `rg -F "'nexus:state'" Core/Nexus/handlers.ts` → 1.
 - [ ] `rg -F "BrowserWindow" Core` → 0. Control: `rg -F "BrowserWindow" Desktop/main.ts` → ≥ 1.
-- [ ] Full gate green; hand walk of Gate 2.
+- [ ] Full gate green.
 
 **Verify — user** *(none.)*
 
@@ -510,7 +513,7 @@ export type Handlers = { [K in keyof Asks]: (ctx: HostContext, ...args: Asks[K][
 
 - [ ] Gates green; test count as recorded at Task 4.
 - [ ] `test ! -d Pommora`; the Desktop vitest project points at `Desktop/**`.
-- [ ] Hand walk against the scratch Nexus: open, page edit and save, property edit, rename a page (link cascade observed in a linking page), delete to trash and restore, right-click sidebar / page / cell / tile / tab (native on, then off), drag a tile, Page Window, Nav Window, Page History restore, Settings toggle applies, an external edit with `echo >>` reaches the open tree.
+- [ ] One smoke launch: the built app opens the scratch Nexus, renders the tree, opens a page, saves an edit; killed.
 - [ ] Simplification then review against `<base>..HEAD`; concerns fixed or ruled.
 
 ---
@@ -576,13 +579,13 @@ Core/Session/treeIndex.ts — gains containersByPath, buildIndex projections; si
 
 - [ ] `rg -F "getComputedStyle" UIX/Elements/OverScroll.tsx` → 0 (it reads the token, not the DOM). Control: `rg -F "duration.base" UIX` → ≥ 2.
 - [ ] `rg -c "function useHeld\b" UIX` → 1 and `useHeldPresence` still defined once. `rg -F "paneMaterial" UIX` → the export only, defined as the frost call.
-- [ ] Full gate green; a drag in the sidebar, a card drag, a table row drag, and a resize each observed working.
+- [ ] Full gate green; the drag providers' existing tests pass under the one provider.
 
 **Verify — user** *(none.)*
 
 #### Gate 3 — every surface matches before
 
-- [ ] Gates green. Hand walk of Gate 2 repeated; screenshots of Sidebar, a Table view, a Cards view, a Page with tiles, the Homepage board, Settings, the Page Window compared to the Task 0 set.
+- [ ] Gates green; one smoke launch: the built app opens the scratch Nexus, renders the tree, opens a page, saves an edit; killed.
 - [ ] Simplification then review against `<base>..HEAD`.
 
 ---
@@ -613,7 +616,7 @@ Core/Session/treeIndex.ts — gains containersByPath, buildIndex projections; si
 - [ ] Every `Asks` key ending in `-menu` or `:menu` in `Core/Contract/bridge.ts` is `'row-menu'` alone; any other survivor is named in Rulings with the reason it resists. Control: `rg -F "'row-menu'" Desktop/Bridge` → ≥ 1.
 - [ ] `ls Desktop/Actions` → rowMenu.ts, returningMenu.ts, editorMenu.ts, appMenu.ts, accelerators.ts (+ tests). `rg -F "buildFromTemplate" Desktop` → ≤ 4 files.
 - [ ] Every model has a test (the 14 existing + one per new model); `rg -l "Menu.test" Core/Actions | wc -l` ≥ 22.
-- [ ] Full gate green; every menu family right-clicked with native menus off (in-app) and on (native): sidebar container, page row, table cell, column header, card, tile handle, tab, nav row, trash row, property row, option, connection, citation, grip, view button, embed title, icon favorite, banner, title, history.
+- [ ] Full gate green; one menu opened through each presenter (one native, one in-app) over CDP; the rest is the compiler's, since every family is one `row-menu` call.
 
 **Verify — user** *(none — Nathan's own pass at closeout.)*
 
@@ -681,7 +684,7 @@ The never-delete list holds; `VIEW_TYPES`' four unbuilt entries and the inert pi
 
 **Verify — user** *(none.)*
 
-#### Task 13: The two write-path bugs
+#### Task 16: The two write-path bugs
 
 **Requirement:** 9
 
@@ -699,7 +702,7 @@ The never-delete list holds; `VIEW_TYPES`' four unbuilt entries and the inert pi
 
 **Verify — user** *(none.)*
 
-#### Task 14: Showcase severed
+#### Task 17: Showcase severed
 
 **Requirement:** 1
 
@@ -715,24 +718,25 @@ The never-delete list holds; `VIEW_TYPES`' four unbuilt entries and the inert pi
 
 **Verify — user** *(none.)*
 
-#### Task 15: The harness scripts
+#### Task 18: The harness scripts
 
 **Requirement:** 11
 
-**Why:** `loc.py` and `check-atlas.mjs` read the old root; the comment ledgers already fail verify and retire.
+**Why:** every harness script reads the old root; each is repointed and none retires (Nathan's ruling 09-05-2026: the comment ledgers stay). The comment manifest is what excludes comments from the closeout delta and what proves the twenty-line cap.
 
 **Now** — `loc.py:23 SRC = "Pommora/src"` + AREAS map with six dead prefixes + `:64` skips `"testing"`; `check-atlas.mjs:19-21,33-40`; `comment-ledger.mjs`, `comment-manifest.mjs` (`../../Pommora/node_modules/typescript`, `:87` pins 88); `.claude/hooks/republish-ledger.mjs` calls the ledger; `settings.json` PostToolUse hook; `settings.local.json:6-9` four dead `cp` permissions; `.claude/scripts/README.md`.
 
-**Becomes** — `loc.py` walks `Core UIX Desktop Showcase`, area = `<workspace>/<first folder>`, series keyed so `loc-history.json` continues (a `renamed_from` map for the old areas); `check-atlas.mjs` reads `UIX/`; `comment-ledger.mjs`, `comment-manifest.mjs`, `comment-baseline.json`, `comment-units.json`, `Line-Ledger.html`, `hooks/republish-ledger.mjs` deleted; `settings.json` hook entry removed; README rewritten; the four permissions removed.
+**Becomes** — `loc.py` walks `Core UIX Desktop Showcase`, area = `<workspace>/<first folder>`, series keyed so `loc-history.json` continues (a `renamed_from` map for the old areas); `check-atlas.mjs` reads `UIX/`; `comment-ledger.mjs` and `comment-manifest.mjs` resolve TypeScript from the root `node_modules` and walk the three workspaces, the pin at `:87` lifted to the installed major; `comment-baseline.json` re-snapshotted at Gate 5's base and `comment-units.json` regenerated; `Line-Ledger.html` and `hooks/republish-ledger.mjs` unchanged beyond the paths they read; README rewritten for the new roots; the four dead permissions removed.
 
 **Verify — automated**
 
 - [ ] `python3 .claude/scripts/loc.py` runs and prints per-area lines. `node .claude/scripts/check-atlas.mjs` → "16 atlas tables checked" or the new count with the reason logged.
+- [ ] `node .claude/scripts/comment-manifest.mjs` runs and reports per-file comment lines for `Core UIX Desktop`; no file above twenty. `node .claude/scripts/comment-ledger.mjs --verify` exits 0 against the fresh baseline.
 - [ ] `rg -F "Pommora/" .claude/scripts .claude/hooks .claude/settings.json` → 0. Control: `rg -F "UIX/" .claude/scripts/check-atlas.mjs` → ≥ 1.
 
 **Verify — user** *(none.)*
 
-#### Task 13: The docs path sweep and stale claims
+#### Task 19: The docs path sweep and stale claims
 
 **Requirement:** 11
 
@@ -751,7 +755,7 @@ Path table (every doc reads through it): `Pommora/src/main/<x>` → `Core/<domai
 
 **Verify — user** *(none.)*
 
-#### Task 14: The rules, the Architecture split, the Mobile plan
+#### Task 20: The rules, the Architecture split, the Mobile plan
 
 **Requirement:** 11
 
@@ -781,9 +785,11 @@ Path table (every doc reads through it): `Pommora/src/main/<x>` → `Core/<domai
 
 ### Progress
 
+The run board at `// Planning // Pommora Monorepo — Progress.html` is republished to https://claude.ai/code/artifact/7c901e31-31ae-47e0-83e5-03b437eaa681 after every task and gate; its `DATA` block is the one place state is edited.
+
 - [ ] **Phase 0** — Baseline, scratch, spike · base `7941edec`
   - [x] Task 0 — Baseline and scratch Nexus (launch check moved to Task 1)
-  - [ ] Task 1 — Root, workspaces, spike
+  - [x] Task 1 — Root, workspaces, spike · `ebed2f3a`
 - [ ] **Phase 1** — shared dissolves
   - [ ] Task 2 — Contract and dialer type
   - [ ] Task 3 — shared dissolves, types.ts first
@@ -803,19 +809,26 @@ Path table (every doc reads through it): `Pommora/src/main/<x>` → `Core/<domai
   - [ ] Task 14 — Editor host
 - [ ] **Phase 5** — Removals, fixes, docs
   - [ ] Task 15 — Kill list
-  - [ ] Task 13 — Write-path bugs
-  - [ ] Task 14 — Showcase severed
-  - [ ] Task 15 — Harness scripts
-  - [ ] Task 13 — Docs sweep
-  - [ ] Task 14 — Rules, Architecture split, Mobile plan
+  - [ ] Task 16 — Write-path bugs
+  - [ ] Task 17 — Showcase severed
+  - [ ] Task 18 — Harness scripts
+  - [ ] Task 19 — Docs sweep
+  - [ ] Task 20 — Rules, Architecture split, Mobile plan
 
 ### Rulings
 
+- 09-05-2026 (Nathan): The comment ledgers stay; Task 18 repoints them rather than deleting them. Their working-tree deletion earlier today was Nathan's own and is restored.
+- 09-05-2026 (Nathan): Verification is one smoke launch per gate that touched runtime code; hand walks, screenshot sets, and per-family right-click lists dropped. Reviews attack the implementation, not whether the app works.
+- 09-05-2026 (Nathan): The icon-picker binding (`Settings/IconPicker` + `iconFavorites`) lives in `UIX/Pickers/IconPicker` beside the picker it binds and may import Core; it is the one UIX file allowed to, and the UIX guard names it. `Core/Utilities` exists as a folder for what the user never invokes: the four kit data helpers and the iteration window. The commands the user does invoke (`DEFAULT_COMMANDS`: toggle-ribbon, toggle-nav, paste-inverse) are `Core/Actions/commands.ts`; the chord matcher is a keyboard mechanism and stays `UIX/Interactions/commands.ts`. Icon files other than the picker binding stay in `Core/Assets`.
+- 09-05-2026 (Nathan): Fable implements Tasks 6, 8, 13, 14 and authors Task 5's `renderer-moves.tsv` (Haiku still executes it). Every other task keeps its Opus or Haiku assignment.
+- 09-05-2026 (Nathan): Every tile kind lives in `Core/Tiles/Surfaces` (Page and Web tiles included); the tile calls its domain's actions (Pages' save and open, Web's link open and title fetch) rather than moving to the domain. The web tile stays `<webview>` end to end, so the `webview` JSX intrinsic is declared in Core and a phone host simply never mounts that kind.
 - 09-05-2026 (Nathan): Connections never holds Glances; glance is Interface's (or Windows'). Every open item in the decision log; cosmetic drift accepted where it unifies or fixes and would not be noticed; no visual confirmation required of the agents, Nathan verifies at his desk; models Haiku for mechanical, Opus for judgment, Fable supervises; the comment, scope, and naming constraints as written in Global Constraints; work in place, `.claude/` undisturbed.
 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- Task 1: the `exports` map is `{ "./*": { "types": ["./*.ts", "./*.tsx", "./*"], "default": "./*" } }`; the bare array form typechecks but Vite takes only the first fallback and resolves no `.tsx`, which the spike caught. Three of the six "dead" dependencies (`@codemirror/lang-json`, `lang-yaml`, `legacy-modes`) are live through dynamic `import()` in `codeHighlight.ts` and stay; only `pngjs`, `react-markdown`, `remark-gfm` left. `biome.json` excludes `.claude/` (root-run Biome pulled the harness scripts into scope). `TileLab.tsx` is a Showcase leaf, not Lab, and stays. The gate's launch seeds `pommora.json` in the scratch userData instead of driving the chooser, after a System Events keystroke missed and the chooser opened `~/NexusOS/Assets` as a Nexus root; the minted `.nexus/` and seeded folders there were removed and the real Nexus' content is untouched.
 
 - Task 0: the second-instance launch needs `app.setPath('userData', process.env.POMMORA_USERDATA)`, which the code lacks; the two-line seam lands in Task 1 (it moves with `main/index.ts` at Task 8 as a permanent dev affordance) and the launch check runs in Task 1's spike. Baseline recorded at `~/Pommora-Scratch/baseline/`: typecheck 0, 321/4,006, 1,019 lint files, build green, loc total 69,704, 16 atlas tables, 1,102 tracked files. Scratch Nexus at `~/Pommora-Scratch/NexusOS` (60 MB, no `.git`, no device databases).
 
@@ -837,11 +850,11 @@ Path table (every doc reads through it): `Pommora/src/main/<x>` → `Core/<domai
 
 ```
 Execute Pommora Monorepo — Implementation Plan. Live, Nathan at his desk; no stops except the hard stops (a gate red twice, a behavior unverifiable, a decision the log lacks, any new visible UI).
-Live-verify: Nathan's own walk at Gate 5.
-Screenshots: Gate 3's comparison set only.
+Live-verify: one smoke launch per gate that touched runtime code; Nathan's own pass at the end.
+Screenshots: none.
 Pings: at each gate and at completion.
 Record: History arc "PM-129 || The Monorepo" at closeout.
-Also: Haiku for mechanical sweeps, Opus for judgment and reviews; no comment-cleanup agents; comments none by default, twenty-line cap; variable names unchanged.
+Also: Haiku for mechanical sweeps, Opus for judgment and reviews, Fable for the five must-be-right-first-time tasks (Task 5's move table, Task 6 the Platform seam, Task 8 the index.ts split, Task 13 the menu collapse, Task 14 the editor host; ruled 09-05-2026); no comment-cleanup agents; comments none by default, twenty-line cap; variable names unchanged.
 Everything else is the standard below.
 ```
 
@@ -858,13 +871,13 @@ Everything else is the standard below.
 **The deliverable**
 
 - [ ] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running, clause by clause.
+- [ ] The acceptance criterion's greps and counts run; one smoke launch.
 - [ ] `test ! -d Pommora`; six workspaces; `Showcase` builds.
-- [ ] `rg -l "from 'electron" Core UIX` → 0; `rg -l "@pommora/core" UIX` → 0.
+- [ ] `rg -l "from 'electron" Core UIX` → 0; `rg -l "@pommora/core" UIX` → exactly the icon-favorites binding.
 
 **The passes**
 
-- [ ] Simplification → code review → att over the full implementation in that order.
+- [ ] Simplification → code review → attack over the full implementation in that order, each aimed at the implementation.
 - [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
 - [ ] Every finding from every pass fixed, or carrying a defensible ruling.
 
