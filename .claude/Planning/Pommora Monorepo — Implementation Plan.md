@@ -381,7 +381,7 @@ Files that dissolve into siblings in this move (no logic change): `Cards/Card.ts
 
 **Why:** Core stops importing Node directly; every fs, lock, and hash reach goes through one interface Desktop implements, with the five primitives the Mobile plan missed.
 
-**Now** — `rg -l "from 'node:" Core` → the Task 4 list (~40 files); `IO/fileLock.ts` uses `AsyncLocalStorage`; `ids.ts:64` `createHash`; `paths.ts:11` `sep`; `utimes` at every sweep; `realpath` at five sites (`mutate.ts:11`, `pathSafety.ts:41-42`, three more per A01 §3); `birthtimeMs` at two; `Buffer` in six files.
+**Now** — `rg -l "from 'node:" Core` → the Task 4 list (123 files); `Core/Store/{driver,open,schema,localState,versionsDb,sessionDb}` and `Core/Index/contentIndex.ts` hold the SQLite bodies whole (Task 4's deferral; this task splits them: interfaces in `Core/Platform`, bodies in `Desktop/Store`, `Core/Store` removed); `IO/fileLock.ts` uses `AsyncLocalStorage`; `ids.ts:64` `createHash`; `paths.ts:11` `sep`; `utimes` at every sweep; `realpath` at five sites (`mutate.ts:11`, `pathSafety.ts:41-42`, three more per A01 §3); `birthtimeMs` at two; `Buffer` in six files.
 
 **Becomes**
 
@@ -786,7 +786,7 @@ Path table (every doc reads through it): `Pommora/src/main/<x>` → `Core/<domai
 
 ### Progress
 
-The run board at `// Planning // Pommora Monorepo — Progress.html` is republished to https://claude.ai/code/artifact/7c901e31-31ae-47e0-83e5-03b437eaa681 after every task and gate; its `DATA` block is the one place state is edited.
+The run board at `// Planning // Pommora Monorepo — Progress.html` is republished to https://claude.ai/code/artifact/7c901e31-31ae-47e0-83e5-03b437eaa681 after every task and gate; its `DATA` block is the one place state is edited. Its code-line series comes from `~/Pommora-Scratch/codelines.py <hash...>` (TS and CSS under the app source, minus tests, shims, configs, Showcase, comments, blanks), run at every landed commit.
 
 - [ ] **Phase 0** — Baseline, scratch, spike · base `7941edec`
   - [x] Task 0 — Baseline and scratch Nexus (launch check moved to Task 1)
@@ -795,7 +795,7 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
   - [x] Task 2 — Contract and dialer type · `df7cde74`
   - [x] Task 3 — shared dissolves, types.ts first · `30b897c9`
 - [ ] **Phase 2** — Engine out of Electron
-  - [ ] Task 4 — Pure engine domains move
+  - [x] Task 4 — Pure engine domains move · `e004a49a`
   - [ ] Task 5 — Renderer into Core and UIX
   - [ ] Task 6 — Platform seam
   - [ ] Task 7 — Dialer replaces api
@@ -833,6 +833,7 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
 
 ### Deviations
 
+- Task 4: net −702. The SQLite stores (`driver`, `open`, `schema`, `localState`, `versionsDb`, `sessionDb`) and `contentIndex` moved whole into `Core/Store` and `Core/Index` rather than splitting interface from SQL body: five Core domains read them, and splitting before the Platform seam exists would have made every one a Core→Desktop import. Task 6 owns the split (the key-value, content-index, and snapshot interfaces in `Core/Platform`, the SQLite bodies to `Desktop/Store`, `Core/Store` gone). `webGuests.ts` stays in `main` until Task 8 (it calls `ipc.ts`'s `push`). `assetMime.ts` is `Core/Assets`' (a MIME table `mutate.ts` reads). Two basename collisions with Task 3's contracts forced `tilesFile.ts` and `viewsFile.ts`. Raw mode's one live branch survives as an optional `adopting` flag on `FolderKindContext`, set only by `stampAdopted`. Tests: 321 → 320 files, 4,006 → 3,986 (assetMigrate's 13, raw mode's 3, the bare-Record reader's 3, `ExistState`'s 1). Ten files carry comment volume above the cap (`spend.ts` 76, `readNexus.ts` 62, `pageFile.ts` 57, others 22–32); trimmed with Task 10's settle.
 - Gate 1: one review (the simplifier), net −4. Ruled: `dialer.ts`'s reach into the preload for `LegacyApi` is the transitional seam Task 7 closes; `tree.ts` importing `AccentSetting` from UIX/Theme is Core pulling its kit (the accent names are the theme's); `keyBindingFor`'s only test rides in `Desktop/Actions/accelerators.test.ts` until Task 13 touches the editor menu. Fixed: the root `tsconfig.json` (inert references, nothing runs `tsc -b`) deleted; `Core/vitest.config.ts` gains UIX's `noExternal`. `hasWebScheme` stays in `links.ts` beside its callers.
 - Task 3: Desktop became a gated workspace early (its own vitest project, `tsc -p Desktop/tsconfig.node.json` in the root typecheck, an `exports` map) because `editorMenu.test.ts` moved there whole. `WEB_PARTITION` is `Core/Web/partition.ts` (three of four readers are Core surfaces; ruled at commit). `PickFileOptions` sits in `Core/Contract/bridge.ts`; `WINDOW_BG` in `UIX/Theme/theme.ts`; the interface-scale setting in `Core/Settings/personalization.ts` with only the Electron zoom mapping left in Desktop. `clamp` restored as `Core/Utilities/clamp.ts` after inlining read worse at 28 sites. The two JSON fixtures live in `Core/Views/fixtures/` (inlining would triplicate a 37-line registry). Five of the 13 zero-importer exports stay exported because the split put their one consumer across a file boundary. `personalization.ts` (75) and `tree.ts` (34) carry `types.ts`'s field docs above the twenty-line cap; trimmed at Task 10 with the defaults moved to the Settings Features doc.
 - Task 2: `LegacyApi` counts 3, the third being dialer.ts's own import. `composite` dropped from Pommora's two tsconfigs (TS6307 across the workspace boundary; nothing runs `tsc -b`). `tsconfig.web.json` includes `../Core/Platform/dialer.ts` explicitly until Task 5 gives the renderer a Core import. `Core/Contract/bridge.ts` reaches back into `Pommora/src/shared` for 24 type imports until Task 3 moves them.

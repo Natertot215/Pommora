@@ -1,4 +1,4 @@
-<title>Monorepo Run Board</title>
+<title>Monorepo Restructure Progress</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
@@ -53,11 +53,16 @@ a{color:var(--accent)}
 <main>
 <header>
   <div class="eyebrow">Pommora · PM-129 · plan ratified 09-05-2026</div>
-  <h2>Monorepo Run Board</h2>
+  <h2>Monorepo Restructure Progress</h2>
   <div id="updated" class="hash mono"></div>
 </header>
 <section class="strip" id="strip"></section>
 <div class="bar"><i id="fill"></i></div>
+<section>
+  <h3>Code lines</h3>
+  <p class="note" style="color:var(--muted);font-size:13px;margin:4px 0 12px">TypeScript and CSS under the app source at each landed commit. Tests, type shims, configs, the Showcase, comments, and blank lines excluded. The delta is against the base.</p>
+  <div class="tablewrap" style="overflow-x:auto"><table id="loc" style="border-collapse:collapse;width:100%;font-size:13px"></table></div>
+</section>
 <section id="phases" style="display:grid;gap:16px"></section>
 <section>
   <h3>Gate output</h3>
@@ -78,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-05-2026 21:20 PT",
+  updated: "09-05-2026 22:00 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -91,8 +96,8 @@ const DATA = {
       { n: 3, title: "shared dissolves, types.ts first", state: "done", hash: "30b897c9", note: "types.ts → 13 domain files; shared/ gone; 5 URL grammars → 2; WEB_PARTITION, PickFileOptions, scale setting back in Core; clamp restored." },
     ], gate: { name: "Gate 1", state: "done", note: "One review; net −4; root tsconfig removed." } },
     { name: "Phase 2", title: "The engine out of Electron", tasks: [
-      { n: 4, title: "Pure engine domains move whole", state: "running", note: "Opus." },
-      { n: 5, title: "Renderer into Core and UIX", state: "pending", note: "Fable authors the move table, Haiku executes. Every tile kind lands in Core/Tiles/Surfaces (ruling 09-05-2026)." },
+      { n: 4, title: "Pure engine domains move whole", state: "done", hash: "e004a49a", note: "−702 lines; raw mode, assetMigrate, bare-Record reader gone; SQLite stores wait in Core/Store for Task 6's seam." },
+      { n: 5, title: "Renderer into Core and UIX", state: "running", note: "Fable authors the move table, Haiku executes. Every tile kind lands in Core/Tiles/Surfaces (ruling 09-05-2026)." },
       { n: 6, title: "Platform seam", state: "pending", note: "Fable." },
       { n: 7, title: "Dialer replaces the api object", state: "pending" },
       { n: 8, title: "main/index.ts splits by domain", state: "pending", note: "Fable." },
@@ -119,7 +124,16 @@ const DATA = {
       { n: "—", title: "Delivery Claim → neutral verifier → attack → Nathan's own pass", state: "pending" },
     ] },
   ],
+  loc: [
+    { at: "7941edec", label: "base", lines: 69459 },
+    { at: "ebed2f3a", label: "Task 1", lines: 69461 },
+    { at: "df7cde74", label: "Task 2", lines: 69500 },
+    { at: "30b897c9", label: "Task 3", lines: 69693 },
+    { at: "90e2436b", label: "Gate 1", lines: 69689 },
+    { at: "e004a49a", label: "Task 4", lines: 69431 },
+  ],
   gates: [
+    { name: "Task 4 · e004a49a", text: "typecheck 0 · lint 0 · test 0 (320 / 3,986: −1 file, −20 cases, each named) · build 0\nrg electron Core → 0 · rg @pommora/desktop Core UIX → 0" },
     { name: "Gate 1 · 90e2436b", text: "typecheck 0 · lint 0 (1,041 files) · test 0 (321 / 4,006) · build 0\nsimplifier: 10 files, +12 / −16; 5 concerns, 2 fixed, 3 ruled" },
     { name: "Task 3", text: "typecheck 0 · lint 0 (1,041 files) · test 0 (321 / 4,006) · build 0\ntest ! -d Pommora/src/shared · rg @shared/ → 0 · rg @pommora/desktop Core UIX renderer → 0" },
     { name: "Task 2", text: "typecheck 0 · lint 0 · test 0 (321 / 4,006) · build 0" },
@@ -146,11 +160,13 @@ const running = all.find(t => t.state === "running");
 const blocked = all.filter(t => t.state === "blocked").length;
 document.getElementById("updated").textContent = `updated ${DATA.updated} · base ${DATA.base}`;
 document.getElementById("fill").style.width = `${(done / all.length) * 100}%`;
+const locNow = DATA.loc[DATA.loc.length - 1].lines, locBase = DATA.loc[0].lines, locDelta = locNow - locBase;
+const signed = n => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-US");
 document.getElementById("strip").innerHTML = [
   [`${done} / ${all.length}`, "tasks done"],
   [running ? `Task ${running.n}` : blocked ? "blocked" : "idle", running ? "running now" : "state"],
-  [DATA.baseline.tests, "baseline tests"],
-  [DATA.baseline.loc, "baseline lines"],
+  [locNow.toLocaleString("en-US"), "code lines now"],
+  [signed(locDelta), "vs. base (goal: negative)"],
 ].map(([b, s]) => `<div class="stat"><b class="mono">${b}</b><span>${s}</span></div>`).join("");
 document.getElementById("phases").innerHTML = DATA.phases.map(p => `
   <article class="phase">
@@ -163,6 +179,7 @@ document.getElementById("phases").innerHTML = DATA.phases.map(p => `
         <span class="chip ${t.state}">${label[t.state]}</span>
       </div>`).join("")}
   </article>`).join("");
+document.getElementById("loc").innerHTML = `<tr style="color:var(--muted);text-align:left"><th style="padding:6px 10px;border-bottom:1px solid var(--line)">Landed</th><th style="padding:6px 10px;border-bottom:1px solid var(--line)">Commit</th><th style="padding:6px 10px;border-bottom:1px solid var(--line);text-align:right">Lines</th><th style="padding:6px 10px;border-bottom:1px solid var(--line);text-align:right">Step</th><th style="padding:6px 10px;border-bottom:1px solid var(--line);text-align:right">vs. base</th></tr>` + DATA.loc.map((r, i) => `<tr><td style="padding:6px 10px">${r.label}</td><td class="mono" style="padding:6px 10px">${r.at}</td><td class="mono" style="padding:6px 10px;text-align:right">${r.lines.toLocaleString("en-US")}</td><td class="mono" style="padding:6px 10px;text-align:right">${i ? signed(r.lines - DATA.loc[i - 1].lines) : ""}</td><td class="mono" style="padding:6px 10px;text-align:right;color:${r.lines - locBase > 0 ? "var(--blocked)" : "var(--done)"}">${i ? signed(r.lines - locBase) : ""}</td></tr>`).join("");
 document.getElementById("gates").innerHTML = DATA.gates.map(g => `<div><div class="eyebrow" style="margin-bottom:6px">${g.name}</div><pre class="mono">${g.text}</pre></div>`).join("");
 document.getElementById("log").innerHTML = DATA.log.map(e => `<div class="entry"><time class="mono">${e.when}</time><div>${e.text}</div></div>`).join("");
 </script>
