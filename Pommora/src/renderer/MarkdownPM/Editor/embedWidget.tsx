@@ -160,23 +160,21 @@ function EmbedResizeHandle({
   span: HTMLElement
   targetId: string
 }): React.JSX.Element {
-  const setHeight = (h: number): void => {
-    span.style.height = `${h}px`
-    view.requestMeasure()
-  }
   const frame = useResizeFrame<{ h: number }>({
     rect: () => ({ h: span.getBoundingClientRect().height }),
     min: { h: TILE_MIN_PX },
     max: { h: Number.POSITIVE_INFINITY },
     equilateral: true,
     onChange: (next, phase) => {
+      const h = Math.round(next.h)
       if (phase !== 'drop') {
-        setHeight(next.h)
+        span.style.height = `${h}px`
+        view.requestMeasure()
         return
       }
       // The drop commits the height the drag computed, never a DOM re-read — a detached span (target
       // deleted or renamed mid-drag) would rect to 0 and silently refuse every later save.
-      const heights = { ...view.state.field(embedField).heights, [targetId]: Math.round(next.h) }
+      const heights = { ...view.state.field(embedField).heights, [targetId]: h }
       view.dispatch({ effects: setEmbedHeights.of(heights) })
       view.state.facet(embedHost).saveHeights?.(heights)
     },
