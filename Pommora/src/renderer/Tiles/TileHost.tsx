@@ -112,7 +112,7 @@ const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
 export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | null {
-  const { layout, blocks, ready, setLayout, commitLayout, refreshEntries, saveTiles } =
+  const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write
@@ -126,12 +126,12 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   const entries = useMemo(() => {
     const map = new Map<string, TileEntry>()
-    for (const raw of blocks) {
+    for (const raw of tiles) {
       const entry = knownTile(raw)
       if (entry) map.set(entry.id, entry)
     }
     return map
-  }, [blocks])
+  }, [tiles])
 
   // Shared per-tree projections — the connections index and every page-embed lookup read the
   // same cached tables, never per-embed walks.

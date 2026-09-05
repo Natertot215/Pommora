@@ -2,7 +2,6 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { tileHostKey } from '@shared/tiles'
 import { isUlidShaped } from '@shared/identity'
 import type { EntityRecord } from '@shared/record'
 import { readKey, writeKey } from './Database/localState'
@@ -11,6 +10,7 @@ import { readBaseline, runOpenRecord } from './record'
 import type { Baseline } from './record'
 import { adjudicate } from './remint'
 import { closeSessionDb, openSessionDb } from './sessionDb'
+import { readTileDocAt, writeTileDocAt } from './tileDoc'
 
 const claim = (path: string, over: Partial<EntityRecord> = {}): EntityRecord => ({
   id: 'page-dup',
@@ -220,8 +220,9 @@ describe('the re-mint writes', () => {
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
     writeKey('activeView', SET, 'view-2')
     writeKey('viewOrder', 'view-2', ['page-b', 'page-a'])
-    writeKey('blockDoc', tileHostKey({ kind: 'space', id: SPACE }), {
-      blocks: [
+    await writeTileDocAt(join(root, '.nexus', 'contexts', 'Areas', 'Work'), (cur) => ({
+      ...cur,
+      tiles: [
         {
           id: 'tile-1',
           type: 'view',
@@ -229,7 +230,7 @@ describe('the re-mint writes', () => {
           views: [{ name: 'Board', config: { id: 'cfg-original', type: 'table' } }],
         },
       ],
-    })
+    }))
     await runOpenRecord(root)
     await cp(join(root, 'Library', 'Fiction'), join(root, 'Library', 'Fiction copy'), {
       recursive: true,
@@ -275,12 +276,16 @@ describe('the re-mint writes', () => {
     expect(readKey('viewOrder', 'view-2')).toEqual(['page-b', 'page-a'])
     expect(readKey('viewOrder', copySet.views[1].id)).toEqual(['page-b', 'page-a'])
 
-    type Doc = { blocks: { views: { config: { id: string } }[] }[] }
-    const originalDoc = readKey<Doc>('blockDoc', tileHostKey({ kind: 'space', id: SPACE }))!
-    const copyDoc = readKey<Doc>('blockDoc', tileHostKey({ kind: 'space', id: copySpace.id }))!
-    expect(originalDoc.blocks[0].views[0].config.id).toBe('cfg-original')
-    expect(isUlidShaped(copyDoc.blocks[0].views[0].config.id)).toBe(true)
-    expect(copyDoc.blocks[0].views[0].config.id).not.toBe(originalDoc.blocks[0].views[0].config.id)
+    type Doc = { tiles: { views: { config: { id: string } }[] }[] }
+    const originalDoc = (await readTileDocAt(
+      join(root, '.nexus', 'contexts', 'Areas', 'Work'),
+    )) as unknown as Doc
+    const copyDoc = (await readTileDocAt(
+      join(root, '.nexus', 'contexts', 'Areas', 'Work copy'),
+    )) as unknown as Doc
+    expect(originalDoc.tiles[0].views[0].config.id).toBe('cfg-original')
+    expect(isUlidShaped(copyDoc.tiles[0].views[0].config.id)).toBe(true)
+    expect(copyDoc.tiles[0].views[0].config.id).not.toBe(originalDoc.tiles[0].views[0].config.id)
   })
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {

@@ -65,6 +65,10 @@ export function tileHostDir(root: string): string {
   return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
 }
 
+/** A tile host's document, beside its bodies: the layout, the entries, the lock. */
+export const TILE_DOC_FILENAME = '_tiles.json'
+export const tileDocPath = (hostDirAbs: string): string => join(hostDirAbs, TILE_DOC_FILENAME)
+
 /** The canonical `.nexus/` files. Per-machine chrome is not among them — that lives in nexus.db,
  *  so everything named here is content a user or another app can legitimately read and edit. */
 export const NEXUS_CONFIG_FILES = {

@@ -3,12 +3,14 @@
 // and every other claimant takes a fresh id plus duplicated device-local rows.
 
 import { join } from 'node:path'
-import { tileHostKey } from '@shared/tiles'
 import { ID_KEY } from '@shared/identity'
 import { isPlainObject } from '@shared/propertyValue'
 import type { EntityRecord, RecordKind } from '@shared/record'
 import { errText } from '@shared/result'
 import { copyEntry } from './tiles'
+import { readTileDocAt, writeTileDocAt } from './tileDoc'
+import { pathExists } from './IO/atomicWrite'
+import { tileDocPath } from './paths'
 import { readKey, writeKey } from './Database/localState'
 import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from './IO/atomicWrite'
@@ -124,6 +126,12 @@ async function remintSidecar(
       return { ...v, id: minted }
     })
   await writeJson(file, next)
+  // A copied Space folder carries its document too, and a view tile's config ids are live keys
+  // two boards must never share — each entry passes through the same re-mint every copy uses.
+  if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
+    const doc = await readTileDocAt(absFolder)
+    await writeTileDocAt(absFolder, () => ({ ...doc, tiles: doc.tiles.map(copyEntry) }))
+  }
   return viewIds
 }
 
@@ -154,7 +162,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
     const active = readKey<string>('activeView', target.id)
     const moved = active === null ? undefined : viewIds.get(active)
     if (moved) writeKey('activeView', fresh, moved)
-    if (target.kind === 'space') copyTileDoc(target.id, fresh)
     const windows = readWindowsState()
     const origin = windows.origins[target.id]
     if (origin)
@@ -165,19 +172,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
   } catch (e) {
     console.error('remint: device-row copy failed; the copy starts on default chrome:', errText(e))
   }
-}
-
-/** The blockDoc value is NOT opaque: view-embed tiles carry `views[].config.id`, a live
- *  per-machine key two boards must never share — each tile's views pass through the same
- *  re-mint every in-app tile copy uses. */
-function copyTileDoc(oldId: string, fresh: string): void {
-  const doc = readKey<Record<string, unknown>>(
-    'blockDoc',
-    tileHostKey({ kind: 'space', id: oldId }),
-  )
-  if (doc === null) return
-  const blocks = Array.isArray(doc.blocks) ? doc.blocks.map(copyEntry) : doc.blocks
-  writeKey('blockDoc', tileHostKey({ kind: 'space', id: fresh }), { ...doc, blocks })
 }
 
 /** Fold executed re-mints back into the projection the baseline will latch: each written copy
