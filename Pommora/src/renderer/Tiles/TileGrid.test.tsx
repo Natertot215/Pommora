@@ -95,6 +95,25 @@ describe('the grid on the gesture engine', () => {
     expect(tileIds(onLayoutChange.mock.calls[0][0])).toEqual(['b', 'a'])
   })
 
+  it('a handle press owns the layout from the press, not the first move', () => {
+    const onBusyChange = vi.fn()
+    act(() =>
+      root.render(
+        <TileGrid
+          layout={layout}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+          onBusyChange={onBusyChange}
+        />,
+      ),
+    )
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
+    act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
+    expect(onBusyChange).toHaveBeenLastCalledWith(true)
+    act(() => firePointer(window, 'pointerup'))
+    expect(onBusyChange).toHaveBeenLastCalledWith(false)
+  })
+
   it('Escape during a handle drag settles home and commits nothing', () => {
     const { onLayoutChange } = mount()
     const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement

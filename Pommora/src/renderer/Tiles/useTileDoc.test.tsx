@@ -107,6 +107,25 @@ describe('a host document changing on disk', () => {
     expect(shown()).toEqual(['a', 'b', 'c'])
   })
 
+  it('a gesture that begins during the read holds the push until it settles', async () => {
+    let releaseGet: (() => void) | null = null
+    get.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseGet = () => resolve({ ok: true as const, value: disk })
+        }),
+    )
+    disk = docWith('a', 'b')
+    await act(async () => push(HOST))
+    act(() => session?.setBusy(true))
+    await act(async () => releaseGet?.())
+    await tick()
+    expect(shown()).toEqual(['a'])
+    act(() => session?.setBusy(false))
+    await tick()
+    expect(shown()).toEqual(['a', 'b'])
+  })
+
   it('holds a push while a gesture is busy and applies it once the gesture settles', async () => {
     act(() => session?.setBusy(true))
     disk = docWith('a', 'b')
