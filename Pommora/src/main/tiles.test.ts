@@ -28,7 +28,7 @@ const entries = (host: TileHostRef = HOST): Array<Record<string, unknown>> =>
   readTileDoc(host).blocks as Array<Record<string, unknown>>
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'blocks-'))
+  root = await mkdtemp(join(tmpdir(), 'tiles-'))
   await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
   await mkdir(spaceDir(), { recursive: true })
   await writeFile(

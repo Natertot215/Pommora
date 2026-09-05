@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { validateLayout } from './model'
-import { insertBand, splitAtTile, removeTile } from './ops'
+import { insertBand, splitAtTile, removeLeaf } from './ops'
 import { decodeLayout, encodeLayout } from './codec'
 
 const real = (): ReturnType<typeof splitAtTile> =>
@@ -40,13 +40,13 @@ describe('ops keep the tree decodable', () => {
   })
 
   it('removing a tile collapses the single-child split it leaves behind', () => {
-    const l = removeTile(real(), 'b')
+    const l = removeLeaf(real(), 'b')
     expect(validateLayout(l)).toEqual([])
     expect(decodeLayout(encodeLayout(l))).toEqual(l)
   })
 
   it('emptying a band drops it rather than leaving a childless node', () => {
-    const l = removeTile(removeTile(real(), 'b'), 'a')
+    const l = removeLeaf(removeLeaf(real(), 'b'), 'a')
     expect(l.bands).toEqual([])
     expect(validateLayout(l)).toEqual([])
   })
