@@ -23,7 +23,7 @@ Windows, the glance, the strips, the window side panels, and MarkdownPM's embed 
 ### Vocabulary
 
 - **Tiles/** is a plain-noun sibling of `Views/`, `Windows/`, `Tables/`, `Cards/`. "Surface" is the glass material and Nathan's word for any UI surface, so it cannot name the module; "Canvas" implies free placement, which the model rejects.
-- **Block** is MarkdownPM's word for its CM6 blocks (`blockModel`, `blockHandles`, `blockDrag`, `blockMoveChanges`) and nothing else's. Storage and channels included: the channels are `tiles:*`, the document's entries are `tiles`, and the one legacy `blockDoc` scope lives only in the migration that retires it.
+- **Block** is MarkdownPM's word for its CM6 blocks (`blockModel`, `blockHandles`, `blockDrag`, `blockMoveChanges`) and nothing else's. Storage and channels included: the channels are `tiles:*` and the document's entries are `tiles`.
 - A **pane** is a glass region of the shell or a window (inspector, sidebar, a window's side pane); a **tab** is one configured tile host inside the inspector; a **panel** is a menu surface — properties, backlinks — whether it stands alone or sits on a tile. "Surface" stays the glass material and a tile's content.
 
 ### The Seams
@@ -54,7 +54,7 @@ The shape is decided; nothing of it is built.
 
 ### Why the Document Is a File of Its Own
 
-The document left the identity sidecar in July 2026 to retire a whole-file lost update between a debounced layout save and a banner write, and an interim `_blocks.json` was reverted for "one file, one entity" once write-echo suppression landed. It returned as a file because cross-device is required and `nexus.db` is device-local; it returned as its own file because `_space.json` and `homepage.json` have no schema, four writers rebuild them whole, two write them unlocked, and the layout debounce would make the document the hottest writer on the file the watcher's echo window hides. The per-machine rows migrated once, file-wins, on the first open of each device; a `local_state` scope rename that shipped without a migration once reset per-machine chrome, which is acceptable for chrome and not for a layout.
+The document left the identity sidecar in July 2026 to retire a whole-file lost update between a debounced layout save and a banner write, and an interim `_blocks.json` was reverted for "one file, one entity" once write-echo suppression landed. It returned as a file because cross-device is required and `nexus.db` is device-local; it returned as its own file because `_space.json` and `homepage.json` have no schema, four writers rebuild them whole, two write them unlocked, and the layout debounce would make the document the hottest writer on the file the watcher's echo window hides. The per-machine rows that held each layout were moved into the files once on the Mac's first open and the row family retired; a machine that never opened the Nexus on that build arranges its layouts again, or copies them by hand from its `nexus.db` into the host's `_tiles.json`.
 
 ### Sequenced Work
 
@@ -64,7 +64,6 @@ The document left the identity sidecar in July 2026 to retire a whole-file lost 
 - The host-lock toggle: `setHostLocked` in `Store/cacheSlice.ts` writes through `tiles:save` outside `useTileDoc`, so a toggle inside a reload's window can blink off and back until its own echo re-seeds it. Routing it through the hook or dropping the optimistic set are each a few lines; the ruling is on the toggle's immediacy.
 - A webpage embed tile sized taller than the current window renders at the window's fit cap, and a drag on its strip persists the capped height over the stored one. Seeding the press from the stored height keeps the store but makes the live drag stop tracking the pointer inside a short window; the ruling is whether the cap speaks only about display.
 - A Space folder whose sidecar syncs in before its `_tiles.json`: the open-time re-mint gates on the document's presence, so a document arriving later keeps the source's view-config ids. The sync arc decides whether a folder lands ordered; if not, the re-mint needs a second trigger on the document's arrival.
-- Retiring `tilesMigrate.ts` and the `blockDoc` scope once every device has opened the Nexus on this build; the lift leaves no code behind.
 
 ### Prospects
 

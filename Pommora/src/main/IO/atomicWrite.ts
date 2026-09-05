@@ -78,16 +78,12 @@ async function readJsonStrictly(absPath: string): Promise<StrictRead> {
 }
 
 function strictResult(read: StrictRead, absPath: string): Result<Record<string, unknown>> {
-  switch (read.kind) {
-    case 'ok':
-      return ok(read.value)
-    case 'absent':
-      return fail('not-found', `Unreadable file: ${basename(absPath)}`)
-    case 'unreadable':
-      return fail('operation-failed', `Unreadable file: ${basename(absPath)}`)
-    case 'corrupt':
-      return fail('operation-failed', `${read.why}: ${basename(absPath)}`)
-  }
+  if (read.kind === 'ok') return ok(read.value)
+  const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
+  return fail(
+    read.kind === 'absent' ? 'not-found' : 'operation-failed',
+    `${why}: ${basename(absPath)}`,
+  )
 }
 
 /** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
@@ -116,15 +112,14 @@ export function rmwJsonStrict(
   onCorrupt?: (absPath: string) => Promise<void>,
 ): Promise<Result<Record<string, unknown>>> {
   return serializeOnFile(absPath, async () => {
-    let read = await readJsonStrictly(absPath)
-    if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
-      await onCorrupt(absPath)
-      read = { kind: 'absent' }
-    }
+    const read = await readJsonStrictly(absPath)
     let base: Record<string, unknown>
     if (read.kind === 'ok') base = read.value
     else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
-    else return strictResult(read, absPath)
+    else if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
+      await onCorrupt(absPath)
+      base = seedOnAbsent()
+    } else return strictResult(read, absPath)
     const next = mutate(base)
     await writeJson(absPath, next)
     return ok(next)

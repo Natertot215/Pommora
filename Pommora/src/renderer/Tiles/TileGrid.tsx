@@ -287,17 +287,6 @@ export function TileGrid({
     [finishSettle],
   )
 
-  // A gesture starting during a live settle takes over: finalize the pending
-  // commit NOW and hand back the decided layout — the parent hasn't re-rendered
-  // yet, so live.current still holds the pre-commit origin, and a gesture built
-  // on that stale origin would silently erase the just-dropped move.
-  const takePendingSettle = useCallback((): TileLayout | null => {
-    const s = settleRef.current
-    if (!s) return null
-    finishSettle(s.id)
-    return s.next
-  }, [finishSettle])
-
   // The boundary's own edge is always among the snap candidates — left in, it
   // magnetizes the drag back to its start and makes sub-snapPx adjustment
   // impossible (a dead band on every resize). Filter it per action.
@@ -308,7 +297,12 @@ export function TileGrid({
     if (e.button !== 0 || live.current.isTileStatic?.(id)) return null
     e.preventDefault()
     e.stopPropagation()
-    const pending = takePendingSettle()
+    // A gesture starting during a live settle takes over: finalize the pending commit NOW — the
+    // parent hasn't re-rendered yet, so live.current still holds the pre-commit origin, and a
+    // gesture built on that stale origin would silently erase the just-dropped move.
+    const settling = settleRef.current
+    if (settling) finishSettle(settling.id)
+    const pending = settling?.next ?? null
     const grid = gridRef.current
     const g =
       pending && grid
@@ -411,7 +405,6 @@ export function TileGrid({
       if (!from) return
       const { origin, g, grid, rect } = from
       if (!grid) return
-      const zone = BAND_ZONE_PX
       const downBox = grid.getBoundingClientRect()
       // The grab offset is frozen at the down event — recomputing it per move would
       // cancel the pointer delta and pin the lifted tile to its origin.
@@ -437,7 +430,7 @@ export function TileGrid({
         const px = clientX - downBox.left + dsx
         const py = clientY - downBox.top + dsy
         setTileDrag({ id, lift: { x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h } })
-        target = hitTest(g, origin, id, px, py, zone, target)
+        target = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target)
         latest = applyTarget(origin, id, target)
         setDraft(latest === origin ? null : latest)
       }
@@ -498,7 +491,6 @@ export function TileGrid({
     return () => onBusyChange?.(false)
   }, [busy, onBusyChange])
 
-  const dragId = tileDrag?.id ?? settle?.id ?? null
   const interacting = resizingId !== null || tracking
   // Reads off the draft geometry, so it IS the future slot, not an approximation.
   const dropSlot = tileDrag && draft ? geometry.tiles.get(tileDrag.id) : null
@@ -553,7 +545,7 @@ export function TileGrid({
             ? 'lifted'
             : settling
               ? 'settling'
-              : dragId !== null
+              : tileDrag || settle
                 ? 'reflow'
                 : 'idle'
           return (

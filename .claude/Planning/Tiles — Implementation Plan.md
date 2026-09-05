@@ -762,6 +762,9 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Phase 4, Claude: the migration's file-wins gate is on presence, not readability — a zero-byte `_tiles.json` counts as another device's arrangement and the row is dropped. Spent on NexusOS; recorded for the migration's retirement.
 - Nathan, 09-05-2026: the tile chassis class is `tile-base` (`.tile-base`, `.tile-base-body`), named for its file. The Features doc is [[SurfacePM]] — surfaces are the doc's subject and Tiles are a section of it — so the arc's "SurfacePM → 0 in .claude" check is retired; `SurfacePM` names the doc and the record, never a module.
 
+- Nathan, 09-05-2026: the whole-range pass must leave the arc net negative — a polish of what shipped, not more stuff. The polish alone reached +46 (the recipe, the document machinery, and the live reload are the plan's own additions and stay); the `blockDoc` migration is retired now rather than later, by Nathan's call, with no helper left behind — a machine that never opened the Nexus on the migrating build carries its layouts over by hand from its `nexus.db`. The arc closes at −3.
+- Whole-range, Claude: the six tile-id channels share one prologue (`onTile`); `strictResult` is one `fail`; `rmwJsonStrict`'s corrupt arm seeds directly instead of relabeling its read; `takePendingSettle` is inline in `gestureOrigin`; the handle menu's rows refuse through `MenuItem`'s own `disabled`, its pane states use the source vocabulary, the model's rows are one array literal. The grid, the recipe table, and the surfaces are at their floor after five passes; each remaining candidate was a new abstraction for fewer than three lines.
+
 ### Open Against Later Tasks
 
 - Nathan's call: a webpage embed tile sized taller than the current window renders at the window's fit cap, and a drag on its strip then persists the capped height over the stored one (`embedWidget.tsx`'s `rect` measures the capped DOM). Seeding the press from the stored height keeps the store but makes the live drag stop tracking the pointer inside a short window; the cap's own rule speaks about display, not the store.
@@ -804,7 +807,6 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Markdown tile bodies (`<ulid>.md`) sync with `.nexus/` like everything else there, but the app does not watch them under either host kind, so a synced body shows its old text until ⌘R while the layout beside it reloads live. Live body reload is one watcher arm plus a `replaceBody`-style push, the same mechanism the page editor's external-edit reload needs; it rides that arc.
 - Per-tab warmth for the inspector through `tileCache.ts`'s warm seam and the active-tab cache (Decision C-10), so folds and scrolls persist across tab switches at the page cache's cost.
 - A Space folder whose sidecar syncs in before its `_tiles.json`: the open-time re-mint gates the document on its presence, so a document arriving later keeps the source's view-config ids. The sync plan decides whether a folder lands ordered; if not, the re-mint needs a second trigger on the document's arrival.
-- Retiring `tilesMigrate.ts` and the `blockDoc` scope once every device has opened the Nexus on this build — the lift is a one-time job and leaves no code behind (`b370e5c0`'s precedent).
 
 ### Closeout
 

@@ -64,7 +64,7 @@ describe('openNexusDb', () => {
     const first = openNexusDb(root)
     expect(first).not.toBeNull()
     if (!first) return
-    for (const scope of ['aliases', 'blockDoc', 'folds']) {
+    for (const scope of ['aliases', 'folds', 'tabs']) {
       first
         .prepare('INSERT INTO local_state (scope, key, value) VALUES (?, ?, ?)')
         .run(scope, 'k', '{}')
