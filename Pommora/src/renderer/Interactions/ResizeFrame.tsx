@@ -121,11 +121,17 @@ export function useResizeFrame<R extends Partial<Rect>>(
           return true
         },
         onDragMove: (ev) => {
-          last = pull(spec, from, grip, ev.clientX - sx, ev.clientY - sy)
+          const dx = ev.clientX - sx
+          const dy = ev.clientY - sy
+          if (dx === 0 && dy === 0) return
+          last = pull(spec, from, grip, dx, dy)
           spec.onChange(last, 'move')
         },
         teardown: () => setActive(null),
-        onDrop: () => spec.onChange(last, 'drop'),
+        // A release that moved nothing is a click, not a size the host should remember.
+        onDrop: () => {
+          if (last !== from) spec.onChange(last, 'drop')
+        },
         onAbort: () => spec.onChange(from, 'abort'),
       })
       // A press that took the gesture is not a selection, a focus change, or a native drag.
