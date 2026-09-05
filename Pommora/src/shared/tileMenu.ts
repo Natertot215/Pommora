@@ -36,7 +36,8 @@ export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: 
 
 export interface TileMenuContext {
   entry: TileEntry
-  /** The source page's identity, for a page tile. Its title heads the menu, inert. */
+  /** The identity of the page a tile stands for, when it stands for one. Its title heads the
+   *  menu, inert. */
   pageInfo?: { title: string }
   pageItems: PagePickerItem[]
   viewItems: ViewPickerItem[]
