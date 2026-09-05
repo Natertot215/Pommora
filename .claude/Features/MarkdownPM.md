@@ -99,13 +99,13 @@ The editor's design vocabulary is defined in one stylesheet as scoped custom-pro
 
 #### II. Scale
 
-The root of everything: one size factor for structure, one derived factor for glyphs. `--block-zoom` is a registered `<number>` so the per-block zoom classes interpolate.
+The root of everything: one size factor for structure, one derived factor for glyphs. `--tile-zoom` is a registered `<number>` so a tile's inline Scale interpolates.
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Page Detail Factor | `--page-detail-scale` | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
-| Per-Block Zoom | `@property --block-zoom` | `<number>`, inherits, initial `1` |
-| Glyph Scale | `--glyph-scale` | `calc(var(--page-detail-scale) * var(--block-zoom, 1))` · `.mdpm-shell` |
+| Per-Tile Zoom | `@property --tile-zoom` | `<number>`, inherits, initial `1` |
+| Glyph Scale | `--glyph-scale` | `calc(var(--page-detail-scale) * var(--tile-zoom, 1))` · `.mdpm-shell` |
 | Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell` |
 
 #### II. Header, Banner & Title

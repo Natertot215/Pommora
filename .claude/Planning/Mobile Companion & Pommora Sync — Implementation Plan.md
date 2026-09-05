@@ -67,7 +67,7 @@ Bounded by: v0 phone scope is A-7 (tree, open page, edit body, create page with 
 - `src/main/readNexus.ts`, `readPage.ts`, `IO/walk.ts`, `walkCache.ts`, `IO/pageFile.ts`, `sidecarIO.ts`, `IO/propertiesRegistry.ts`, `folderKind.ts`, `ids.ts`, `paths.ts`, `exclusion.ts`, `coerce.ts`, `order.ts`, `CRUD/util.ts`, `CRUD/page.ts`, `CRUD/loadValues.ts` — the moving set, 2,861 lines including `watchPatch.ts` and the preload.
 - `src/renderer/Store/nexusSlice.ts:80-145` (boot), `App.tsx`, `Assets/assetUrl.ts`, `Settings/SettingsWindow.tsx` (Frames, Row kinds, `settingsRow`), `Windows/PageHistoryWindow.tsx`, `Sidebar/Ribbon.tsx`, `Tabs/tabsModel.ts:318`, `styles.css:10-13`.
 - `tsconfig.node.json`, `tsconfig.web.json`, `electron.vite.config.ts`, `vitest.config.ts`, `vite.config.ts`, `vite.config.app.ts`, `biome.json`, `package.json`.
-- `~/NexusOS`: 990 files outside `.git`/`.obsidian`/`.claude`, 533 outside `.trash`; `.trash` 53 MB, `.obsidian` 13 MB, `.nexus` 7.6 MB; largest asset under 10 MB; `.nexus/nexus.json` id `01KS5VNGTE7NX7E0KHMF0TF7CT`.
+- `~/NexusOS`: 990 files outside `.git`/`.obsidian`/`.claude` on the morning of 09-04-2026, 533 outside `.trash`; by evening `.trash` held one entry and the manifest 506 files across 107 directories — the vault moves daily, so every count is re-derived at run time; `.obsidian` 13 MB, `.nexus` 7.6 MB; largest asset under 10 MB; `.nexus/nexus.json` id `01KS5VNGTE7NX7E0KHMF0TF7CT`.
 - Toolchain checked 09-04-2026: Node 24.15.0, Xcode 26.6 (17F113), iOS 26.5 Simulator runtime (23F77), iPhone 17 Pro `00887B6E-210B-4E8A-B253-2D544620F25D`, no CocoaPods, zero signing identities.
 - npm latest 09-04-2026: `@capacitor/core` `cli` `ios` 8.5.1, `@capacitor/filesystem` 8.1.3, `@capacitor/app` 8.1.1, `@capacitor/preferences` 8.0.1, `@aparajita/capacitor-secure-storage` 8.0.0.
 - `.claude/Planning/Tiles — Implementation Plan.md` — status "written, pending review"; `src/main/blocks.ts:67` still reads `readKey('blockDoc'`.
@@ -511,7 +511,7 @@ const api = {
 
 ```ts
 // src/shared/nexusApi.ts (new) + nexusApi.test.ts
-type Leaf = { ask: keyof Asks; menu?: true } | { tell: keyof Tells } | { on: keyof Pushes }   // menu: the reply is a picked action or null
+type Leaf = { ask: keyof Asks; menu?: true; raw?: true } | { tell: keyof Tells } | { on: keyof Pushes }   // menu: the reply is a picked action or null; raw: a bare value, never a Result (25 handlers today)
 export const NEXUS_API = {
   state: { ask: 'nexus:state' }, choose: { ask: 'nexus:choose' }, openPage: { ask: 'page:open' },
   folds: { get: { ask: 'folds:get' }, set: { ask: 'folds:set' } },
@@ -535,7 +535,10 @@ export function menuAsks(): ReadonlySet<keyof Asks>      // derived from the tab
 // src/preload/index.d.ts — imports NexusApi from '@shared/nexusApi'
 // src/shared/localState.ts (new): the Scope union moves here from main, plus the one channel ↔ scope pairing
 export type Scope = 'folds' | 'activeView' | 'viewOrder' | 'headingCols' | 'headingIcon' | 'citations' | 'embedHeights' | 'embedZooms' | 'aliases' | 'linkTitle' | 'blockDoc' | 'tabs' | 'windows' | 'recents' | 'record' | 'glancePane' | 'devicePrefs'
-export const SCOPE_ASKS: Readonly<Record<Scope, { get?: keyof Asks; set?: keyof Asks }>>   // e.g. activeView: { get: 'activeViews:get', set: 'activeViews:set' }
+export const SCOPE_ASKS: Readonly<Record<Scope, { get?: keyof Asks; set?: keyof Asks }>>
+// 13 entries carry channels: the 9 scopeGet/scopeSet pairs in index.ts (folds, embedHeights, embedZooms, activeView, viewOrder, headingCols, headingIcon, citations, aliases)
+// and the 4 singleton rows with their own sanitizers (tabs: tabs:load/save · windows: windows:load/save · glancePane: glance:load/save · devicePrefs: devicePrefs:load/save);
+// linkTitle, blockDoc, recents, record carry none (served raw or never by a renderer channel)
 // src/main/Database/localState.ts imports Scope from shared; main's validators in index.ts stay where they are
 ```
 
@@ -543,7 +546,7 @@ export const SCOPE_ASKS: Readonly<Record<Scope, { get?: keyof Asks; set?: keyof 
 
 **Verify — automated**
 
-- [ ] Red first: `nexusApi.test.ts` — `buildApi` with a recording dialer yields every leaf as a function, nested groups intact, and calling `api.folds.get()` dials `'folds:get'`; `menuAsks()` has 26 members, one per `kind: 'menu'` handler (the count re-derived: `rg -c "kind: 'menu'" src/main/index.ts`); every `SCOPE_ASKS` channel exists in `Asks` (a type-level check). Expect module-not-found, then green.
+- [ ] Red first: `nexusApi.test.ts` — `buildApi` with a recording dialer yields every leaf as a function, nested groups intact, and calling `api.folds.get()` dials `'folds:get'`; `menuAsks()` has 26 members and `rawAsks()` 25, one per `kind: 'menu'` / `kind: 'raw'` handler (the counts re-derived: `rg -c "kind: 'menu'" src/main/index.ts`, `rg -c "kind: 'raw'"`); `SCOPE_ASKS` has 13 entries with channels and 4 without, every channel in `Asks` (a type-level check). Expect module-not-found, then green.
 - [ ] Full gate green; `npm run typecheck:web` proves every renderer call site still types against the table (216 sites; a dropped key is a compile error).
 - [ ] `wc -l src/preload/index.ts` → under 50. Control: `rg -c "ask: '" src/shared/nexusApi.ts` → 140 or more.
 - [ ] The dev app launched once: boot, a page, a native menu, a settings toggle all work (preload does not hot-reload; restart the dev process).
@@ -691,7 +694,7 @@ Sync/
                           "scripts": { "start": "node src/index.ts" } }   — no dependencies
   .env-sample           DATA_DIR=./data  PORT=8642  SIGNUP=open
   Dockerfile            built from Pommora/ as its context (`docker build -f Sync/Dockerfile -t pommora-sync .`) so the shared protocol module is inside it:
-                        multistage node:24-slim, tini, non-root `node`, COPY Sync/src → /app/Sync/src and src/shared/{syncProtocol,result}.ts → /app/src/shared, WORKDIR /app/Sync, CMD ["node","src/index.ts"]
+                        multistage node:24-slim, tini, non-root `node`, COPY Sync/package.json and Sync/src → /app/Sync, src/shared/{syncProtocol,result}.ts → /app/src/shared, WORKDIR /app/Sync, CMD ["node","src/index.ts"]
   src/index.ts          reads env, opens the db, listens
   src/env.ts            parseEnv(process.env, defaults) → { dataDir, port, signup: 'open'|'closed' }; a non-numeric number throws
   src/db.ts             openDb(path): DatabaseSync with WAL, busy timeout 5000, limits.length 64 MiB; applySchema (additive, version row); transaction(fn) = BEGIN IMMEDIATE … COMMIT, ROLLBACK on throw
@@ -779,9 +782,10 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 // POST   /vaults        VaultInfo         → 201 VaultInfo | 409 exists (create-once; Connect is the client's answer)
 // GET    /vaults/:id/info                 → VaultInfo
 // PUT    /vaults/:id/info { retentionDays?, keys? } + X-Info-Version → 200 VaultInfo | 409 conflict   (the desktop keeps retentionDays equal to the Nexus's History Timeframe, Task 21)
-// GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage read from `items` (heads only, tombstones included at every since, so a snapshot is self-sufficient); since > seq → 409 resync
+// GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage read from `items` (heads only, tombstones included at every since, so a snapshot is self-sufficient); since > seq → 409 resync;
+//        cursor = the highest version in the page, or `since` when the page is empty (retain-only seqs never appear in items, so the cursor never claims them)
 // PUT    /vaults/:id/items/:itemId  (headers of Task 10; the body is read whole, capped, before the database block)
-//        one transaction: base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise;
+//        one transaction: base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise; a base given for an item the vault never held → 404 not-found;
 //        seq += 1 always; retain-only → versions row at that seq with head 0, items untouched, 201 { version } (invisible to changes by construction: changes reads items);
 //        else items head replaced at version = seq, versions row head 1, the prior head row's head flag cleared; tombstone = deleted 1, blob NULL; answers { version } and never content
 // GET    /vaults/:id/items/:itemId                → head blob + headers; a tombstone answers 404 not-found
@@ -795,7 +799,7 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 
 **Verify — automated**
 
-- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and lists a tombstoned item as deleted; since 1 includes the tombstone; since 99 → 409 resync; two retain-only stores on one item land two versions rows at two fresh seqs the change log never lists and the versions route does, and the head is unmoved; a body of `MAX_ITEM_BYTES + 1` → 413 (client-side skipping is Task 18's; this is the wire's own guard); prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a store whose transaction throws after `seq += 1` leaves seq, items, and versions as they were; a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
+- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and lists a tombstoned item as deleted; since 1 includes the tombstone; since 99 → 409 resync; two retain-only stores on one item land two versions rows at two fresh seqs the change log never lists and the versions route does, and the head is unmoved; a body of `MAX_ITEM_BYTES + 1` → 413 (client-side skipping is Task 18's; this is the wire's own guard); prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a store whose transaction throws after `seq += 1` leaves seq, items, and versions as they were; a store with base 3 for an item never stored → 404; after a retain-only store, `changes?since=<cursor>` answers an empty page with the cursor unmoved; a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
 - [ ] Both halves of the ownership guard: the owner's read succeeds; with `requireSession` stubbed to another user the same read is 404.
 - [ ] Full gate green.
 
@@ -929,9 +933,11 @@ export async function syncManifest(root: string): Promise<Map<string, ManifestEn
 
 ```ts
 // src/engine/Sync/state.ts + state.test.ts
-export interface BaseRecord { itemId: string; version: number; mtimeMs: number; size: number; hash: string }
-// mtimeMs and size are the DISK's, read by host().stat after the file was written or pushed — the change gate compares them to the next manifest;
-// the envelope's mtime lives on the server record and never here. hash = sha256Hex(bytes) at that moment.
+export type BaseRecord =
+  | { itemId: string; version: number; mtimeMs: number; size: number; hash: string }
+  | { itemId: string; version: number; deleted: true }                       // after a tombstone pushed or landed; the version is what the next store builds on
+// mtimeMs and size are the DISK's: after a landing, host().stat after applyRemote; after a push, the manifest entry whose bytes were hashed.
+// The envelope's mtime lives on the server record and never here. hash = sha256Hex(bytes) at that moment.
 export interface SyncStateStore {
   cursor(): Promise<number>
   setCursor(seq: number): Promise<void>
@@ -991,6 +997,9 @@ export interface SyncDeps {
   beforeReplace?: (abs: string, rel: string) => Promise<void>
   /** The host's policy after a landing — the phone patches its tree; the desktop lets its watcher classify. */
   afterLanding?: (rel: string, kind: 'upsert' | 'remove') => Promise<void>
+  /** Rels the host wrote since the last run, drained per run and hashed regardless of (mtime, size): a rewrite that keeps both
+   *  (`rewritePreservingTimes` — a rename cascade, an option rename, a sweep) is invisible to the gate. */
+  forceHash?: () => Set<string>
 }
 export async function runSync(deps: SyncDeps): Promise<SyncReport>      // SyncReport from @shared/syncProtocol
 // Never concurrent per root: a second call while one runs queues once and coalesces (F-9).
@@ -999,15 +1008,18 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 // noteDirty debounces; trigger runs at once (a feed seq, Sync Now); a run that ended dirty re-runs; the sweep is a periodic noteDirty so an outside edit
 // the desktop watcher never delivers (the user's excluded folders, `.trash`, any dot-folder) still pushes within the sweep; both hosts drive this
 // Pull: for each page: for each change in sequence: own echo (base.version === change.version) → skip; tombstone → conflict rule vs local
-//   (a local change since base with mtime > tombstone mtime wins and is re-pushed; else beforeReplace, remove, base cleared; absent locally → skip);
+//   (absent locally → base set deleted; a local change since base — or, with NO BASE, a file whose disk mtime is newer than the tombstone's — wins and is re-pushed;
+//   else beforeReplace, remove, base set deleted);
 //   else fetch + open (null → skipped 'decrypt'); rel validated (lexical containment + invalidName per segment; else 'invalid-path');
 //   a second item landing on a case-folded rel already held → 'case-collision', refused; local unchanged since base → land;
 //   local changed → newer mtime wins, ties by deviceId order; the loser is stored retain-only (never a file beside the winner);
 //   NO BASE and the file present locally (a fresh connect over a populated root, a resync): equal hash → seed the base, no write; else the same conflict rule;
 //   land = lock(abs) { beforeReplace; host.applyRemote(abs, bytes, mtimeMs) }; base set from host().stat after the write; afterLanding.
 //   After the page: prune directories emptied by removals (never root, never `.nexus`, `.trash`); setCursor(page.cursor); flush.
-// Detect: manifest vs bases; new or (mtime, size) moved → hash; hash moved → changed; base absent from manifest → deleted.
-// Push: store(base.version ?? null); conflict → apply the same rule against the returned record (fetch it), then re-store or land; base set from stat after a successful store.
+// Detect: manifest vs bases; new, (mtime, size) moved, or named by forceHash → hash; hash moved → changed; a live base absent from the manifest → deleted; a deleted base stays deleted.
+// Push: store(base.version ?? null); a `not-found` on a given base reads as no base (the vault never held it) and re-stores with null; conflict → the returned record's
+//   `deleted` decides whether there is a blob to fetch, then the same rule, then re-store or land. After a successful store the base takes the manifest entry it hashed
+//   (mtime, size, hash) and the answered version; a tombstone store sets the deleted form. A post-store stat that no longer matches the entry leaves the base unset, so the next run re-detects.
 //   Over MAX_ITEM_BYTES → skipped 'too-large' before any request. First sync rules (F-7) fall out: an empty remote pushes everything, an empty local pulls everything,
 //   both populated merge item by item under the no-base rule above.
 // Resync: 'resync' clears the cursor and pulls since 0 (tombstones included) under the same rules; identical content is a no-op, a delete for an absent file is a no-op.
@@ -1019,7 +1031,7 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 
 **Verify — automated**
 
-- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing's base equals the host's stat after the write; a no-base landing over an identical local file seeds the base and writes nothing; a no-base landing over a differing local file runs the conflict rule; conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved; the scheduler runs once for three `noteDirty` calls inside the window, re-runs once when a `noteDirty` lands mid-run, and runs on the sweep with fake timers. Then green.
+- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing's base equals the host's stat after the write; a no-base landing over an identical local file seeds the base and writes nothing; a no-base landing over a differing local file runs the conflict rule; a no-base tombstone over a newer local file re-pushes and over an older one removes; a rel in `forceHash` whose bytes changed under an unmoved (mtime, size) pushes; a save landing between hash and store (the fake host moves the file mid-run) leaves the base unset and the next run pushes the new bytes; a deleted base then a restore at the same path pushes with the deleted base's version and a `not-found` conflict re-stores with null; conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved; the scheduler runs once for three `noteDirty` calls inside the window, re-runs once when a `noteDirty` lands mid-run, and runs on the sweep with fake timers. Then green.
 - [ ] Both halves of the containment guard: a good rel lands (file exists after), and with the validator disabled the `../` case would have written outside root (asserted through the memory host's key set).
 - [ ] Full gate green.
 
@@ -1051,6 +1063,8 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 // 12 B's cursor set to 999 → resync → clean; 13 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 14 a no-change sync on both makes 0 stores (server request log)
 // 15 B disconnects, deletes Ideas/A.md into its trash, reconnects to the same vault → the deletion pushes (bases kept), A loses the page and gains the bundle
 // 16 B's bases wiped (a fresh device over a populated copy of A) → connect → zero writes on B, zero stores, every base seeded; then B edits one page → one store
+// 17 A deletes Ideas/A.md into its trash → B (with A.md open in its editor, no sync yet) restores it from the bundle on A → the page pushes with the deleted base's version and both roots hold it
+// 18 A renames a page whose inbound link text is the same length (`rewritePreservingTimes` on the linking page) → the linking page reaches B with the new link text
 // (wrong password, case collision, and the 50 MB skip are client-only and stay in Tasks 15 and 18; the server's 413 is http.test.ts)
 // scripts/sync-cli.ts + vite.config.cli.ts (ssr build to out/cli/sync-cli.js; "build:cli" script)
 //   node out/cli/sync-cli.js register|login|create|connect|sync|watch --server URL --root DIR --state FILE [--email --password --vault-password --vault ID --name NAME]
@@ -1061,7 +1075,7 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 
 **Verify — automated**
 
-- [ ] The 16 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
+- [ ] The 18 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
 - [ ] `npm run typecheck` green with the test under the node project (`tsconfig.node.json` gains `allowImportingTsExtensions`; `typecheck:sync` never sees it).
 - [ ] `npm run build:cli` green; `node out/cli/sync-cli.js sync --root <fixture copy> …` against a running server pushes 14 items and a second run pushes 0.
 - [ ] Full gate green.
@@ -1105,8 +1119,8 @@ export function recordWrite(absPath: string): void {
 const listeners = new Set<(absPath: string) => void>()
 export function onWrite(fn: (absPath: string) => void): () => void
 export function recordWrite(absPath: string): void   // notifies after recording
-// src/shared/localState.ts — Scope gains 'sync' (keys: '' = cursor, else rel → BaseRecord); SCOPE_ASKS has no entry for it (never a renderer channel)
-// src/main/Sync/localStateStore.ts — SyncStateStore over readScope/writeKey('sync'); flush is a no-op (rows are immediate)
+// src/shared/localState.ts — Scope gains 'sync' (keys: `<vaultId>` = cursor, `<vaultId>/<rel>` = BaseRecord, so a Nexus that has connected to two vaults holds both and a reconnect resumes the right one); SCOPE_ASKS has no entry for it (never a renderer channel)
+// src/main/Sync/localStateStore.ts — localStateStore(vaultId): SyncStateStore over readScope/writeKey('sync') filtered by the vault prefix; flush is a no-op (rows are immediate)
 // src/main/appConfig.ts — AppConfig gains account?: AccountFields
 // src/main/index.ts:201 — beside POMMORA_DEBUG_PORT: `if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)`
 //   (Development-Environment.md:41 describes it as instrumentation to add and remove; it becomes a standing flag, since every scratch run of this arc writes account rows and secrets)
@@ -1120,7 +1134,7 @@ export function forgetSecret(userDataDir: string, key: string): Promise<void>
 
 **Verify — automated**
 
-- [ ] Red first: `writeEcho.test.ts` (new) — a listener fires with the path on `recordWrite`, unsubscribes; `localStateStore.test.ts` — cursor and bases round trip through a temp `nexus.db`; `secrets.test.ts` — save/read/forget with a stubbed `safeStorage`. Then green.
+- [ ] Red first: `writeEcho.test.ts` (new) — a listener fires with the path on `recordWrite`, unsubscribes; `localStateStore.test.ts` — cursor and bases round trip through a temp `nexus.db`, and two vault ids keep separate cursors and bases; `secrets.test.ts` — save/read/forget with a stubbed `safeStorage`. Then green.
 - [ ] `env -u ELECTRON_RUN_AS_NODE POMMORA_USERDATA=/tmp/pommora-scratch/userdata ./node_modules/.bin/electron .` after a build writes `pommora.json` under that directory and leaves the real profile's `pommora.json` mtime unchanged.
 - [ ] Full gate green.
 
@@ -1152,8 +1166,8 @@ export function startDesktopSync(root: string, win: BrowserWindow): Promise<void
 export function stopDesktopSync(): Promise<void>                                     // scheduler.stop(), aborts the feed
 export function syncNow(): Promise<SyncReport>
 export function syncStatus(): SyncStatus                                             // SyncStatus from @shared/syncProtocol
-// one createSyncScheduler per session: onWrite (paths under root that syncable() admits) and the watcher's settle (watcher.ts calls noteSyncActivity(root)) → noteDirty;
-//   the feed's onSeq > cursor and Sync Now → trigger
+// one createSyncScheduler per session: onWrite (paths under root that syncable() admits) → the rel joins the forceHash set and noteDirty; the watcher's settle (watcher.ts calls noteSyncActivity(root)) → noteDirty;
+//   the feed's onSeq > cursor and Sync Now → trigger; deps.forceHash drains the set per run
 // before each run: if the vault's retentionDays ≠ the Nexus's historyDays (readFileHistoryConfig) → transport.updateInfo, so the server prunes by the live Timeframe
 // deps.beforeReplace: read the current text; liveIdOf → captureIfDue(root, pageId, text, 'external') for a page; nothing for other files
 // deps.afterLanding: none — host.applyRemote records no echo, so the watcher classifies the landing as it does an Obsidian edit
@@ -1168,7 +1182,7 @@ export function syncStatus(): SyncStatus                                        
 
 **Verify — automated**
 
-- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's integer mtime equals the envelope's; a second sync after a landing re-hashes nothing (spy on `readBytes` → 0 calls for landed files); a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
+- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a `rewritePreservingTimes` of a page to a same-length body pushes it (the gate alone would not see it); a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's integer mtime equals the envelope's; a second sync after a landing re-hashes nothing (spy on `readBytes` → 0 calls for landed files); a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
 - [ ] Both halves of the capture: the row appears with capture enabled; with `beforeReplace` disabled the row does not.
 - [ ] Full gate green.
 
@@ -1237,7 +1251,7 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'ite
 
 ```tsx
 // SettingsWindow.tsx — Row: `clear` becomes
-| { kind: 'action'; label: string; hint?: string; verb: string; done?: string; act: () => Promise<boolean>; disabled?: boolean }
+| { kind: 'action'; label: string; hint?: string; verb: string; done?: string; destructive?: boolean; act: () => Promise<boolean>; disabled?: boolean }   // the two former clear rows pass destructive
 // and gains
 | { kind: 'field'; label: string; hint?: string; value: string; secret?: boolean; onCommit: (v: string) => void }
 | { kind: 'caption'; text: string }
@@ -1252,7 +1266,7 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'ite
 
 **Verify — automated**
 
-- [ ] `ActionRow.test.tsx` and `FieldRow.test.tsx`: the two former clear rows still read Clear / Cleared; a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:vaults` returns a matching id; Sign Out hides when signed out.
+- [ ] `ActionRow.test.tsx` and `FieldRow.test.tsx`: the two former clear rows still read Clear / Cleared and render the destructive button, Sign In renders the default one; a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:vaults` returns a matching id; Sign Out hides when signed out.
 - [ ] `rg -n "kind: 'clear'" src/renderer` → 0. Control: `rg -n "kind: 'action'" src/renderer/Settings/SettingsWindow.tsx` → 8 or more.
 - [ ] Full gate green.
 
@@ -1471,7 +1485,8 @@ export function libraryStateStore(): SyncStateStore                             
 ```ts
 // Mobile/src/host/api.ts + api.test.ts
 export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ ask, tell, on }, extras)
-// ask(channel): handled.get(channel) ?? (menuAsks().has(channel) ? () => null : () => REFUSED)   where REFUSED = fail('operation-failed', 'Not available on this device.')
+// ask(channel): handled.get(channel) ?? (menuAsks().has(channel) ? () => null : rawAsks().has(channel) ? () => undefined : () => REFUSED)   where REFUSED = fail('operation-failed', 'Not available on this device.')
+//   the raw channels the boot reads are handled explicitly rather than defaulted: 'linkTitles:get' → {} (nexusSlice.ts:105 stores the answer as the title cache)
 // tell: every tell is a no-op; on: an in-process emitter per push channel, returning the unsubscribe
 // handled: 'nexus:state' (session.tree() or { status: 'empty' } before a vault connects), 'assets:map' (engine buildAssetMap, Task 4),
 //   'page:open' (engine readPage), 'page:updateBody' (engine updatePageBody; then session.noteOwnWrite(rel)),
@@ -1487,7 +1502,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Verify — automated**
 
-- [ ] Red first: every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled data channel answers `{ ok: false }` with the shared code; a menu channel answers null; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
+- [ ] Red first: every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled envelope channel answers `{ ok: false }` with the shared code; a menu channel answers null; an unhandled raw channel answers undefined and `linkTitles.get()` answers `{}`; `tabs.load()` answers `{ ok: true, value: null }` before any save and round-trips a saved set; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -1500,7 +1515,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Why:** I-2 and I-3: push on own writes after a short debounce, the feed while foregrounded, catch-up on `resume` and at launch after `getState()`, a Sync action, and every landing patching the tree through the engine's classification rather than a re-walk.
 
-**Now** — `src/engine/treePatch.ts` (Task 6), `src/engine/Sync/client.ts` (Task 18).
+**Now** — `src/engine/diskPatch.ts` (Task 6), `src/engine/Sync/client.ts` (Task 18).
 
 **Becomes**
 
@@ -1609,7 +1624,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 
 **Verify — automated**
 
-- [ ] The first push completes and reports 990 items; the CLI's first pull lands 990; `diffRoots` clean.
+- [ ] The first push reports the manifest count re-derived on the copy that morning (`syncManifest` over it; 506 on the evening of 09-04-2026 after Nathan emptied `.trash`, 990 that morning); the CLI's first pull lands the same count; `diffRoots` clean.
 - [ ] A no-change `sync:now` on the desktop completes under one second (timed in the report).
 - [ ] Over CDP: a body edit through `window.__pommora.getState().…` on a throwaway page created for the run (hit-test the active element first; never an existing page) reaches root B within five seconds of the save; a CLI-side edit reaches the desktop tree (`window.__pommora.getState().tree` shows the change) within five seconds; a desktop delete lands B's tombstone and bundle; a desktop rename crosses with the id intact.
 - [ ] The run's instance killed, its pid confirmed gone; `/tmp/pommora-scratch` left only until Task 34.
@@ -1798,7 +1813,7 @@ Asked and answered 09-04-2026 (Nathan's call on each):
 6. **Scratch vaults** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
 7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
 
-Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file.
+Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file. Attack round 2 (09-04-2026) returned 8 findings (2 High: `rewritePreservingTimes` invisible to the change gate — the `forceHash` set; the desktop's sync rows carrying no vault id) and 2 unknowns (the cursor after a retain-only store; `Sync/package.json` in the image); all folded. A third round would exceed the two-agent cap per scope; Nathan decides whether the second round's severity earns one.
 
 ### Open Against Later Tasks
 
@@ -1863,7 +1878,7 @@ Everything else is the standard below.
 
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause, on the Simulator against the scratch copy.
-- [ ] The integration suite's 16 scenarios green under `npm run test`.
+- [ ] The integration suite's 18 scenarios green under `npm run test`.
 - [ ] `npm run typecheck:engine` green with `types: []`; `rg -n "from 'node:" src/engine -g '!*.test.ts'` → 0.
 - [ ] The container builds; `SIGNUP=closed` refuses registration.
 
