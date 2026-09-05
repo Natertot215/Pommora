@@ -34,7 +34,7 @@ Resize is window-style on the tile's edges and corners: south stretches the tile
 
 ### Storage + Host Rules
 
-The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. Markdown-tile bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched. A copied Space folder carries its document; the open-time re-mint gives the copy's view tiles fresh config ids along with its sidecar.
+The document loads per host when the host opens, never in the tree walk, and layout writes debounce on gesture end. The watcher names each host's `_tiles.json`: a change that lands from outside the app — a sync, a hand edit — pushes the host, which flushes any save it owes and re-reads the file, so the file's newest contents are what the host shows (most recent wins); a change arriving mid-gesture waits for the gesture to settle. Tile bodies are not watched, so a synced body shows its old text until the page reloads. Markdown-tile bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock; the watcher ignores host content folders while host configs stay watched. A copied Space folder carries its document; the open-time re-mint gives the copy's view tiles fresh config ids along with its sidecar.
 
 ---
 

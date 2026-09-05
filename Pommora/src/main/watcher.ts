@@ -17,7 +17,7 @@ import { getHeldAssetMap, refreshAssetMap } from './assetMap'
 import { readNavigationFile } from './IO/navigationFile'
 import { isRecentWrite } from './IO/writeEcho'
 import { isMarkdownFile } from './IO/walk'
-import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES } from './paths'
+import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from './paths'
 import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshAfterWrite } from './liveTree'
@@ -33,6 +33,7 @@ import {
 import { containerOf, pageIdIndex } from './valuesChanged'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
 import type { NexusTree, ValueChange } from '@shared/types'
+import { type TileHostRef, tileHostKey } from '@shared/tiles'
 
 const SETTLE_MS = 200
 
@@ -43,6 +44,8 @@ let batch: WatchEvent[] = []
 
 /** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
  *  in the tree). */
+const isTileDocPath = (path: string): boolean => path.endsWith(`${sep}${TILE_DOC_FILENAME}`)
+
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split(sep)
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
@@ -66,9 +69,13 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
       segs.some(neverWatched) ||
-      // Tile-host content loads through tiles:get, never the tree walk — a debounced
-      // tile-body write must not cost a full re-walk. homepage.json stays watched.
-      (segs[0] === NEXUS_DIR && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
+      // Tile bodies load through tiles:get, never the tree walk — a debounced body write must not
+      // cost a re-walk. The host's document stays watched, and so does the folder entry itself,
+      // since chokidar never descends into an ignored directory.
+      (segs[0] === NEXUS_DIR &&
+        segs[1] === HOMEPAGE_HOST_DIRNAME &&
+        segs.length >= 3 &&
+        segs[2] !== TILE_DOC_FILENAME) ||
       // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space
       // never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
       (segs[0] === NEXUS_DIR &&
@@ -103,8 +110,10 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
         return
       }
       // The app's own atomic writes echo back here — skip them: every tree-relevant in-app
-      // write confirms through its own channel (hot under tile gestures + embed typing).
-      if (isRecentWrite(path)) return
+      // write confirms through its own channel (hot under tile gestures + embed typing). A host
+      // document is exempt like navigation: a synced or hand edit landing right after the app's
+      // own save must reach the open host, and the host's re-read returns what it just wrote.
+      if (!isTileDocPath(path) && isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)
@@ -162,6 +171,19 @@ function valueChangesOf(
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
+/** The hosts whose document a batch touched, each once — read off the raw batch, since a batch
+ *  holding one unclassifiable event applies none of its arms. */
+function tilesChangedIn(events: WatchEvent[], root: string, scope: WatchScope): TileHostRef[] {
+  const held = getLiveTree()
+  if (!held) return []
+  const hosts = new Map<string, TileHostRef>()
+  for (const ev of events) {
+    const c = classifyEvent(held, root, ev, scope)
+    if (c.kind === 'tiles-leaf') hosts.set(tileHostKey(c.host), c.host)
+  }
+  return [...hosts.values()]
+}
+
 /** Spend the settle window's batch: patch what classifies, walk for the rest. Push only when the
  *  tree object moved (an all-index-only batch changes nothing anyone renders). */
 async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
@@ -185,6 +207,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
     const changed = valueChangesOf(events, root, scope, outcome === 'refresh' ? null : tree)
     if (changed.length) pushToWindow(win, 'values:changed', changed)
+    for (const host of tilesChangedIn(events, root, scope)) pushToWindow(win, 'tiles:changed', host)
     // One push for the whole batch, however many files the sync delivered.
     const assets = getHeldAssetMap(root)
     if (assetsBefore && assets && assets !== assetsBefore)

@@ -43,6 +43,8 @@ export interface TileGridProps {
   /** Inline style on the tile itself — the element that transitions `--tile-zoom`. Must be
    *  identity-stable per value; the tile memoizes on it. */
   tileStyle?: (id: string) => CSSProperties | undefined
+  /** True while a gesture or its settle owns the layout; a disk change waits for it. */
+  onBusyChange?: (busy: boolean) => void
   /** STATIC freezes drag + resize — the handle still opens the menu. The host derives this (e.g.
    *  a locked tile); the engine only gates the gesture. */
   isTileStatic?: (id: string) => boolean
@@ -221,6 +223,7 @@ export function TileGrid({
   feel = DEFAULT_FEEL,
   tileClassName,
   tileStyle,
+  onBusyChange,
   isTileStatic,
   onHandleMenu,
   onBackdrop,
@@ -515,6 +518,9 @@ export function TileGrid({
     },
     [begin],
   )
+
+  const busy = resizingId !== null || tileDrag !== null || settle !== null
+  useEffect(() => onBusyChange?.(busy), [busy, onBusyChange])
 
   const dragId = tileDrag?.id ?? settle?.id ?? null
   const interacting = resizingId !== null || tracking

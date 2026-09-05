@@ -187,6 +187,7 @@ const api = {
   onAssetsChanged: on('assets:changed'),
   onNexusChanged: on('nexus:changed'),
   onValuesChanged: on('values:changed'),
+  onTilesChanged: on('tiles:changed'),
   onWebPopup: on('web:popup'),
 }
 

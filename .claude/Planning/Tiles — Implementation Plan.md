@@ -565,7 +565,7 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 - [x] `contextWrite.test.ts` — the Space seed lands in `_tiles.json` with four markdown entries and the 2×2 layout; `_space.json` carries no `tiles` key.
 - [x] `remint.test.ts:220-284` — the copied Space's `_tiles.json` view config id is a fresh ULID and the source's is unchanged.
 - [x] `rg -F "writeKey('blockDoc'" src` → 0 outside Task 9's migration; `rg -F "'Unknown tile host.'" src` → 1. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] Full gate green; dev process restarted for the live check.
+- [x] Full gate green; dev process restarted for the live check.
 
 **Verify — user**
 
@@ -605,13 +605,13 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Verify — automated**
 
-- [ ] Red first: `watchPatch.test.ts` — a change event at `.nexus/contexts/Realms/Astral/_tiles.json` classifies `tiles-leaf` with `{ kind: 'space', id }`; at `.nexus/homepage/_tiles.json` → `{ kind: 'homepage' }`; a tile `.md` beside it is still ignored (`watcher.test.ts`). Red before, green after.
-- [ ] Both halves of the ignore change: `ignoredUnder` returns false for `_tiles.json` under the homepage dir and true for `<ulid>.md` there; a Space's `_tiles.json` was watched before and classifies `tiles-leaf` after (before: `full-refresh`).
-- [ ] `useTileDoc.test.tsx` (new): a `tiles:changed` push for the mounted host replaces the layout; one for another host does not; a pending save is cancelled by the push.
-- [ ] Echo: a new `watcher.test.ts` case (none exists for echo today): an external change to `_tiles.json` 200ms after the app's own write reaches `batch` (exempt), while the same timing on `_space.json` is still swallowed.
-- [ ] `watcher.test.ts`: a batch of one `_tiles.json` change plus one unclassifiable `.nexus` event (a full refresh) still pushes `tiles:changed` for that host.
-- [ ] `useTileDoc.test.tsx`: a push during an in-flight save awaits it and the re-read carries the save; a `commitLayout` after a push builds on the pushed layout, not the pre-push one; a push while busy applies when busy clears and after the drop's save is on disk; a `.bad-` file classifies `ignored`.
-- [ ] Full gate green; dev process restarted.
+- [x] Red first: `watchPatch.test.ts` — a change event at `.nexus/contexts/Realms/Astral/_tiles.json` classifies `tiles-leaf` with `{ kind: 'space', id }`; at `.nexus/homepage/_tiles.json` → `{ kind: 'homepage' }`; a tile `.md` beside it is still ignored (`watcher.test.ts`). Red before, green after.
+- [x] Both halves of the ignore change: `ignoredUnder` returns false for `_tiles.json` under the homepage dir and true for `<ulid>.md` there; a Space's `_tiles.json` was watched before and classifies `tiles-leaf` after (before: `full-refresh`).
+- [x] `useTileDoc.test.tsx` (new): a `tiles:changed` push for the mounted host replaces the layout; one for another host does not; a pending save is cancelled by the push.
+- [x] Echo: a new `watcher.test.ts` case (none exists for echo today): an external change to `_tiles.json` 200ms after the app's own write reaches `batch` (exempt), while the same timing on `_space.json` is still swallowed.
+- [x] `watcher.test.ts`: a batch of one `_tiles.json` change plus one unclassifiable `.nexus` event (a full refresh) still pushes `tiles:changed` for that host.
+- [x] `useTileDoc.test.tsx`: a push during an in-flight save awaits it and the re-read carries the save; a `commitLayout` after a push builds on the pushed layout, not the pre-push one; a push while busy applies when busy clears and after the drop's save is on disk; a `.bad-` file classifies `ignored`.
+- [x] Full gate green; dev process restarted.
 
 **Verify — user**
 
@@ -714,7 +714,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 6 — The renderer table · `0dc65e48`
 - [ ] **Phase 4** — The document in the Nexus
   - [x] Task 7 — `_tiles.json` · (stamped at Gate 4)
-  - [ ] Task 8 — Live reload · ``
+  - [x] Task 8 — Live reload · (stamped at Gate 4)
   - [ ] Task 9 — The migration · ``
   - [ ] Task 10 — The reserved key · ``
 
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 8, the live check on a scratch Nexus (the dev process restarted, pointed there through the app config): a tile minted over IPC, its layout written into `_tiles.json` by hand, rendered within 1.5 s with the same `.tile-host` element (no remount); a south-edge drag over CDP landed the new height on disk and a reload showed it; the tile's `.md` sat beside the document. The `useTileDoc.test.tsx` cases cover the four rules — replace for the mounted host only, flush-then-read, a later commit on the pushed layout, a held push applied after the drop's save lands; the `.bad-` classification is `watchPatch.test.ts`'s. `_tiles.json` is matched by basename at the echo exemption (the one file with that name) and by exact path in the classifier.
 - Task 7: the document primitives live in `main/tileDoc.ts` (`EMPTY_DOC`, `coerceTileDoc`, `readTileDocAt`, `writeTileDocAt`), not in `main/tiles.ts` — `contextWrite.ts` seeds through them and `tiles.ts` loads the context world through `contextWrite.ts`, so the split keeps the import graph acyclic. `hostDir(root, host)` answers null for a host that no longer resolves and `tileHostAnd` turns that into the one `'Unknown tile host.'`; `tiles:get` alone maps that failure to the empty document. `onCorrupt` is exercised through `main/tiles.test.ts`'s quarantine case rather than a separate `atomicWrite.test.ts` case: the split it relies on (`readJsonStrictly`'s `corrupt` vs `unreadable`) is the same function the strict read tests already cover. Requirement 4 stands at five sites until Task 8 adds the watcher's two. The live check on a scratch Nexus is taken once, after Task 8, with the dev process restarted then.
 - Gate 3: `knownTile` no longer keeps its own union — `knownEntry` is built from the three `TILE_KINDS` schemas, each typed to its kind through the mapped table, so the parse authority and the recipe are one definition (the attack showed a fourth kind added to both tables compiled clean and still parsed to null). `copyEntry` is tested through its own dispatcher. The plan's Task 5 sentence "knownTile keeps its explicit z.union" is retired by this.
 - Task 6: `TileSurface.sourceInfo` returns the `ConnPage` itself rather than a four-field copy of it — the two menu sites read title, icon, path, and id off it, which is the page record. The crossing test compares the menu model's link rows against `TILE_KINDS` per kind (the presenter renders from the same rows by construction; `TileHandleMenu` itself mounts a PickerMenu and is not rendered in jsdom). The host mount test runs tree-less: markdown mounts its editor; page, view, and the foreign kind hold space.

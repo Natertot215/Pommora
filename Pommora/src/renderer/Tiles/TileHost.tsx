@@ -112,7 +112,7 @@ const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
 export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | null {
-  const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles } =
+  const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write
@@ -394,6 +394,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         feel={GLIDE_FEEL}
         tileClassName={tileClassName}
         tileStyle={tileStyle}
+        onBusyChange={setBusy}
         isTileStatic={(id) => hostLocked || (entries.get(id)?.locked ?? false)}
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
