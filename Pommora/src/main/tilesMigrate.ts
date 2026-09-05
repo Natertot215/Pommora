@@ -5,6 +5,7 @@
 // registry that fails to load drops nothing, so the next open retries.
 
 import { isPlainObject } from '@shared/propertyValue'
+import { errText } from '@shared/result'
 import { readScope, writeKey } from './Database/localState'
 import { loadContextWorld } from './CRUD/contextWrite'
 import { pathExists } from './IO/atomicWrite'
@@ -26,11 +27,20 @@ export interface TileMigration {
 
 export async function migrateTileRows(root: string): Promise<TileMigration> {
   const result: TileMigration = { written: 0, dropped: 0, divergent: [] }
+  try {
+    await moveRows(root, result)
+  } catch (e) {
+    console.error('tiles: the legacy-row move stopped; the rest retry next open:', errText(e))
+  }
+  return result
+}
+
+async function moveRows(root: string, result: TileMigration): Promise<void> {
   const rows = readScope<unknown>('blockDoc')
   const keys = Object.keys(rows)
-  if (keys.length === 0) return result
+  if (keys.length === 0) return
   const world = await loadContextWorld(root)
-  if (!world.ok) return result
+  if (!world.ok) return
   const dirs = new Map<string, string>([['homepage', tileHostDir(root)]])
   for (const [id, ref] of world.value.spaceById) dirs.set(`space:${id}`, ref.dir)
   for (const key of keys) {
@@ -53,5 +63,4 @@ export async function migrateTileRows(root: string): Promise<TileMigration> {
     writeKey('blockDoc', key, null)
     result.dropped++
   }
-  return result
 }

@@ -141,8 +141,10 @@ export function classifyEvent(
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
   if (segs[0] === NEXUS_DIR) {
-    // A quarantined document is the writer's record, never a change to anything mounted.
+    // A quarantined document is the writer's record, never a change to anything mounted; the
+    // homepage folder itself appears with its first tile and holds nothing the tree reads.
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
+    if (segs.length === 2 && segs[1] === HOMEPAGE_HOST_DIRNAME) return { kind: 'ignored' }
     if (name === TILE_DOC_FILENAME) {
       if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME)
         return { kind: 'tiles-leaf', host: { kind: 'homepage' } }
