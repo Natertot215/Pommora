@@ -1514,7 +1514,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Requirement:** 6
 
-**Why:** I-2 and I-3: push on own writes after a short debounce, the feed while foregrounded, catch-up on `resume` and at launch after `getState()`, a Sync action, and every landing patching the tree through the engine's classification rather than a re-walk.
+**Why:** I-2 and I-3: push on own writes after a short debounce, the feed while foregrounded, catch-up on `resume` and at launch after `getState()`, Sync Now from Settings, and every landing patching the tree through the engine's classification rather than a re-walk.
 
 **Now** — `src/engine/diskPatch.ts` (Task 6), `src/engine/Sync/client.ts` (Task 18).
 
