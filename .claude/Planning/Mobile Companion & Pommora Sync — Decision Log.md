@@ -1,6 +1,8 @@
 ## Mobile Companion & Pommora Sync — Decision Log
 
 > **Standing (09-04-2026):** nothing here is ratified for execution, and the work is not starting now. This log states the v0 mandate and the decisions that stay true regardless of when it starts; the implementation plan holds the specifics and re-derives every one of them at execution.
+>
+> **Step 1, before anything else:** an app-wide, long-term restructuring of the repository into a monorepo is necessitated, so that desktop, mobile, the server, and the shared core are one long-term solution rather than a package with attachments. Its exact architecture is yet to be decided; the workspace layout named below is the current candidate, and it is settled at a declared stop before the restructure runs.
 
 ### Frame
 
@@ -38,7 +40,7 @@
 - **A-3:** [confirmed] V0 establishes the long-term architecture and does not care much about interface quality. Deletions and trash travel, and updates are live: a change on one open device reaches the other without a manual action.
 - **A-4:** [confirmed] A sync server is in scope.
 - **A-5:** [confirmed] No paid Apple Developer membership today. Every step is gated on the Simulator with no signing, and the plan carries the device path end to end so that buying the account is the only thing between the Simulator and the phone.
-- **A-6:** [confirmed] The repository is one root with four workspaces, `Core`, `Desktop`, `Mobile`, and `Sync`; the `Pommora/` package folder dissolves into them, the local folder and the session's working directory stay where they are, and this restructure is the plan's first task, before any new folder lands.
+- **A-6:** [open] The repository is restructured into a monorepo first, before any new folder lands; the local folder and the session's working directory stay where they are. The candidate layout is one root with four workspaces, `Core`, `Desktop`, `Mobile`, and `Sync`, the `Pommora/` package folder dissolving into them; the exact architecture is decided at the plan's stop before Task 0 runs.
 - **A-7:** [confirmed] V0 mobile scope, in two steps. The arc that ships regardless: the phone holds the Nexus as a Files-visible synced folder with a sign-in and status shell, and nothing of the desktop renderer mounts. Behind a separate go and a phone product spec (the plan's Phase 8): read the tree, open a page, edit the body, create a page, rename, delete a page or container into the trash, move, reorder, open and switch tabs, through the renderer's existing menus opened by a long press. Space and Context deletes, properties, schema, views, and restore wait. No expectation of a pleasant experience; nothing else needs 1-to-1 parity.
 - **A-8:** [confirmed] MarkdownPM ships on mobile as-is, no mobile toolbar.
 - **A-9:** [confirmed] Bottom bar items, Phase 8: Collections, Spaces, Tabs, Navigation, Settings. No Sync action and no Agenda placeholder. Tap behavior takes the simplest reading; nothing is designed.
@@ -141,7 +143,7 @@
 
 ### Core (must-have)
 
-- The repository restructured into `Core`, `Desktop`, `Mobile`, and `Sync` before anything else lands.
+- The repository restructured into a monorepo before anything else lands, to an architecture decided at that step.
 - The host seam with a Node binding; the sync client behind it.
 - The Pommora Sync server with its change feed, packaged as one deployable container; the desktop client in main; the Settings › General sections to sign in and connect a remote Nexus, designed at a stop.
 - The mobile host and a sign-in and status shell booting on the Simulator, with the Nexus visible in the Files app.
