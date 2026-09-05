@@ -2,8 +2,9 @@
 
 ### Current Focus
 
-**The Glance Pane landed 09-04-2026.** The hover surface is `Interface/Glance/GlancePane.tsx` on the PickerMenu chassis, raised through one import-free seam, `Interface/Glance/glanceAction.ts`, that any host can call with an anchor element and a page or website target: it owns the per-host dwell table, the presenter slot, and the anchor watch that keeps a glance standing while the content view scrolls. MarkdownPM is one host of it through a single `ConnectionsApi.glance` hook, the pane resolves its page itself, hands focus back on close through the host editor's own view, and keeps a small fenced per-page warm store so a re-glance returns to where it was left. The code vocabulary settled with it — Window names the floating Page Window (`windowSlice`, `pageWindow`, `openWindow`, `windows:*`), Glance names the hover surface — while every label and on-disk word still reads "Preview" by ruling. `Links/` is gone; its three helpers live in `Actions/`. What the arc left open: the non-editor hosts it exists to allow (sidebar rows, tabs, view rows, PropertyPanel values), each a host supplying an element and a dwell row.
+**The Tiles substrate landed 09-04-2026.** `renderer/Tiles/` is the tile system, every drag in the app runs on `Interactions/gesture.ts`, a tile kind is one entry in each of three tables, and each host's document is `_tiles.json` in its folder — synced with `.nexus/`, reloaded live when it changes on disk, and migrated once from the per-machine rows NexusOS held. The inspector's nexus-wide configuration has a reserved key and a cap of six custom tabs; nothing reads them yet. What stands in front of the next piece is the inspector itself: a tab strip whose reserved Collection and Pages tabs and user-made tabs each mount `TileHost` on a document under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) that would give those tabs something to hold.
 
+**Nathan's own pass is still owed** on the six drags, the embed handle, the three handle menus, the Scale ramp easing back to 1.0, a hand edit to `_tiles.json` under an open Space, and NexusOS opening with every layout intact.
 
 ### Immediate Work
 
@@ -61,7 +62,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
-- [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `blocks.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `glance.save`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at sixteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
+- [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `tiles.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `glance.save`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at sixteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
 - [ ] **The renderer's remaining filing and style rows.** `Sidebar/sidebarDndModel` → `Interactions/reorderModel` and `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker` (each has zero importers in its own folder); the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `MarkdownPM/Tables/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across Tiles, the Views, and the toolbar.
 - [ ] **Two renders of a page's property rows.** `Properties/PageProperties.tsx` and the inspector in `Windows/PageWindow.tsx` share `usePropertyRows` and `PropertyValueEditors`, but each still renders the row itself — label, value cell, inline editor, the row and value menus — on its own styling system (`page-properties.css` against the `page-window-insp-*` classes). One row component both surfaces mount closes it.
 - [ ] **Table perf ceilings.** Tables render every row without virtualization, so a very long collection will eventually feel it, and a value edited outside the app doesn't live-refresh an open table.
@@ -75,6 +76,16 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 
 ### Recent Work
+
+#### PM-128 || Tiles
+**DATE:** 09-04-2026
+
+`SurfacePM/` became `Tiles/` and every tile-system "block" became "tile"; the grid's drags and the embed handle moved onto the one pointer engine; the three tile kinds are declared in `TILE_KINDS`, `TILE_SURFACES`, and `TILE_COPY` rather than branched on; each host's document moved from a `local_state` row to `_tiles.json` in its folder, watched and reloaded live, with the legacy rows migrated once on open. The inspector's cap and `state.json` key are reserved.
+
+#### PM-127 || The Resize Frame
+**DATE:** 09-04-2026
+
+Every drag-to-size and drag-to-move gesture on one box — the floating windows, the glance pane, the sidebar and inspector strips, the window side panes — runs through `useResizeFrame` in `Interactions/ResizeFrame.tsx` on the shared pointer engine; a host owns its rect and declares its floor, ceiling, whether it is equilateral, and whether it is outlined. `FloatingWindow.tsx` and the two strip sheets are gone.
 
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
@@ -90,16 +101,6 @@ A page's body accumulates device-local snapshots in `versions.db` under one capt
 **DATE:** 09-02-2026
 
 Every destructive confirmation moved out of main's native dialogs into one in-app window, `Windows/ConfirmationWindow.tsx`, behind named `ask*` wrappers in `Windows/confirmations.ts`; a new Confirm Before Deletion setting gates pages, tiles, and schema-less folders while Collections, Sets, views, and properties always ask. `Interface/NotificationLabel.tsx` reports the finished act with an Undo shaped by what left — a bundle-backed restore for files, a configuration re-save for a view.
-
-#### PM-123 || Stamp Retirement
-**DATE:** 09-01-2026
-
-`created_at` and `modified_at` left every page and sidecar; Last Modified is the file's mtime and Creation Time the `PageID` ULID's instant, carried to every view as `PageValues` from `loadValues`. A `created_time` type sits beside `last_edited_time`, both stamps reveal from the Hidden frame, and every stamping writer is gone. A rewrite the user did not make restores the file's time, `setGovernedRootKeys` skips an identical write, and a push refreshes only its named pages over the `Result` envelope; the vault pass re-minted 40 adopted PageIDs from their real creation dates. A post-plan review closed four gaps the scoped push exposed — a move now notes its page, a straddled parse never caches, a scoped read settles only what it resolved — and folded five simplifications.
-
-#### PM-122 || Compatible Properties
-**DATE:** 08-31-2026 → 09-01
-
-Property values moved from `<Property>:` keys to bare keys named as the property, Context keys from `(Title):` to `<Title>:`, and Select/Status values to one-element lists, so a page's frontmatter reads identically in Pommora and in another frontmatter editor. `governedKeys.ts` and `standing.ts` dissolved: a key is Pommora's when the registry names it, a reserved-name rule and a held-key refusal guard the namespace, and `reconcileGovernedRoot` is the one reconcile every governed write, restore, and the opt-in on-open sweep run. A `values:changed` push fed by the watcher and by every main-side writer replaced the `refreshValues` thread, with overrides retired by page id. Two Settings toggles — Repair Properties On Open and Capitalize All Metadata — opened the Properties leaf's Metadata section.
 
 ### Guidelines
 

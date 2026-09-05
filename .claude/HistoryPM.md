@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-04-2026              | PM-128 | Tiles                                                |
 | 09-04-2026              | PM-127 | The Resize Frame                                     |
 | 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026              | PM-125 | Page File History                                    |
@@ -130,6 +131,20 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-128 || Tiles
+**DATE:** 09-04-2026
+
+`renderer/SurfacePM/` became `renderer/Tiles/` — `Core/` unchanged, `TileGrid.tsx` (was `SurfaceView`), `TileHost.tsx` (was `TileSurface`), the four bodies under `Surfaces/`, `tile-base.css` and `tile-grid.css` — and every tile-system identifier, IPC channel, CSS class, variable, and user string that said "block" says "tile": `shared/tiles.ts` carries `TileHostRef`, `TileEntry`, `TileDoc`, and `knownTile`; the channels are `tiles:*` under `window.nexus.tiles`; the classes are `.tile-host`, `.tile-grid`, `.tile`, `.tile-handle`, `.tile-edge`; the Scale ramp is one inline `--tile-zoom` set through `TileGridProps.tileStyle` from `zoomStyle` in `tileZoom.ts`, replacing seven class rules. MarkdownPM keeps "block" for its own CM6 blocks.
+
+**The engine:** the grid's edge and handle drags moved from a private rAF sensor (`Sensors/pointerDrag.ts`, deleted) onto `Interactions/gesture.ts` through `usePointerGesture`, and the embed tile's bottom-edge handle became a `useResizeFrame` consumer whose `rect` is measured at press (the frame's `rect` accepts a function). A frame release that never travelled emits no drop, so a bare click on an embed strip no longer freezes an auto-height tile. Over CDP a sixty-move edge drag fired `onDragMove` once per move and half a call per frame, so the engine gained no coalescing.
+
+**The recipe:** the three tile kinds are declared in `TILE_KINDS` (`shared/tiles.ts`: schema, `fileBacked`, `menuRows`), `TILE_SURFACES` (`Tiles/tileKinds.tsx`: render, `sourceInfo`), and `TILE_COPY` (`main/tiles.ts`, the view re-mint, dispatched through `copyEntry`); `knownTile` parses through the table's schemas, and the host's render, `TileHandleMenu`, `tileMenuModel`, the Space seed, and main's lifecycle read the tables, so no `.type === '<kind>'` comparison remains outside them.
+
+**The document:** each host's layout, entries, and lock moved from a per-machine `local_state` row to `_tiles.json` in the host's folder, beside its tile bodies, so it syncs with `.nexus/`. `main/tileDoc.ts` reads it read-only (absent or corrupt reads empty) and writes it through `rmwJsonStrict` under the file's own lock, quarantining corrupt bytes to `_tiles.json.bad-<ulid>` before a write lands; `rmwJsonStrict` gained the `onCorrupt` hook for that. The watcher names the file (the homepage folder is now descended so its document is watched while its bodies stay ignored), exempts it from write-echo suppression the way navigation is, and pushes `tiles:changed` per host off the raw batch; `useTileDoc` answers by flushing its pending save, awaiting it, re-reading, and replacing its state — identical bytes under one stable serializer (`shared/stableJson.ts`) change nothing, and a push landing mid-gesture waits for the settle. `main/tilesMigrate.ts` moved every legacy row into its file once on open, file-wins, dropping nothing when the registry fails to load; NexusOS moved 12 rows into 11 files with none divergent. `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
+
+- **Commits:** `97c820f4^..1d3d8678`
+- **Diff:** Net +165 | +1337 / −1172
 
 #### PM-127 || The Resize Frame
 **DATE:** 09-04-2026

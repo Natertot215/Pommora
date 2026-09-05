@@ -5,27 +5,27 @@
 
 **Goal**
 
-Pommora gains its own end-to-end-encrypted file synchronization and an iOS companion. At the end, `Pommora/Sync` is one self-hostable Node process shipped as a container; `src/engine` holds the read-and-page-write chain and the sync client behind one filesystem seam that main binds to Node and the phone binds to Capacitor; `Pommora/Mobile` is a Capacitor iOS project that renders the existing renderer with a floating bottom bar; and Settings › General carries Account and Sync sections. Nathan can turn Obsidian Sync off, create a remote vault from `~/NexusOS` without moving it, connect the phone to that vault, and have both devices edit the same files with live updates, deletions and trash bundles crossing, catch-up on reopen, and page history retained on the server.
+Pommora gains its own end-to-end-encrypted file synchronization and an iOS companion. At the end, `Pommora/Sync` is one self-hostable Node process shipped as a container; `src/engine` holds the read-and-page-write chain and the sync client behind one filesystem seam that main binds to Node and the phone binds to Capacitor; `Pommora/Mobile` is a Capacitor iOS project that renders the existing renderer with a floating bottom bar; and Settings › General carries Account and Sync sections. Nathan can turn Obsidian Sync off, create a remote Nexus from `~/NexusOS` without moving it, connect the phone to that Nexus, and have both devices edit the same files with live updates, deletions and trash bundles crossing, catch-up on reopen, and page history retained on the server.
 
-Phases 1 through 7 are the arc that ships regardless of what the phone becomes: the host interface, the server, the client, the desktop client, and the phone as a Files-visible synced vault with a sign-in shell. Phase 8, the renderer port, is the product bet, and it opens only on an explicit go after Gate 5 and a product spec naming what the phone is for.
+Phases 1 through 7 are the arc that ships regardless of what the phone becomes: the host interface, the server, the client, the desktop client, and the phone as a Files-visible synced Nexus with a sign-in shell. Phase 8, the renderer port, is the product bet, and it opens only on an explicit go after Gate 5 and a product spec naming what the phone is for.
 
-The shape follows the ratified decision log: a server rather than the desktop as remote (so a closed laptop never strands the phone), whole-file items with tombstones on a monotonic per-vault sequence (one counter serves as the store precondition and the pull cursor), most-recent-wins by envelope mtime with device-id tie-break and every loser retained as a server version, a random vault key wrapped by a PBKDF2 key so a password change never re-encrypts content, and an engine seam rather than a phone-side re-implementation of the walk (a second definition of what a Nexus is was rejected). The engine binds its host once per process at boot rather than threading a host parameter through the 400-odd import sites of the moving set; the engine owns POSIX path helpers rather than routing joins through the seam; the phone's atomic-write plugin sets modification dates, so both hosts restore envelope mtime the same way.
+The shape follows the ratified decision log: a server rather than the desktop as remote (so a closed laptop never strands the phone), whole-file items with tombstones on a monotonic per-Nexus sequence (one counter serves as the store precondition and the pull cursor), most-recent-wins by envelope mtime with device-id tie-break and every loser retained as a server version, a random Nexus key wrapped by a PBKDF2 key so a password change never re-encrypts content, and an engine seam rather than a phone-side re-implementation of the walk (a second definition of what a Nexus is was rejected). The engine binds its host once per process at boot rather than threading a host parameter through the 400-odd import sites of the moving set; the engine owns POSIX path helpers rather than routing joins through the seam; the phone's atomic-write plugin sets modification dates, so both hosts restore envelope mtime the same way.
 
-Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit body, create page with its order, rename, delete of pages and containers, move, reorder, tabs, sign in, connect, sync) and every other mutation refuses; the phone opens the renderer's existing menus on a long press through one in-app row-menu pane drawn from the existing menu kit, and no menu is redesigned; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents stay wherever the Tiles plan leaves them (in execution at planning, moving to `_tiles.json`), and whole-file sync carries their `.md` bodies and that sidecar either way. Not solved here: phone-side mutations beyond v0, the list-menu generalization (every menu drawn from one shared model on both hosts), a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user vaults.
+Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit body, create page with its order, rename, delete of pages and containers, move, reorder, tabs, sign in, connect, sync) and every other mutation refuses; the phone opens the renderer's existing menus on a long press through one in-app row-menu pane drawn from the existing menu kit, and no menu is redesigned; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents stay wherever the Tiles plan leaves them (in execution at planning, moving to `_tiles.json`), and whole-file sync carries their `.md` bodies and that sidecar either way. Not solved here: phone-side mutations beyond v0, the list-menu generalization (every menu drawn from one shared model on both hosts), a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user Nexus'.
 
 **Requirements** (the spec's Core, numbered)
 
 1. The engine seam: one host interface in `src/engine`, Node-bound in main (Task 1); the read-and-page-write chain, the rename cascade, folder-entity CRUD, and the content-trash writers move behind it in Phase 8, behavior-preserving on desktop (B-1..B-4).
 2. Phase 8: the bridge grouping shared and the asset scheme host-injected, so a second host installs the same `window.nexus` shape (D-1, D-3, D-4).
-3. Pommora Sync server: Node 24.15+ built-ins only, one SQLite file, email + password, device tokens, vaults keyed by Nexus id, monotonic sequence, tombstones, retained versions with server-side retention pruning, change feed, CORS for `capacitor://localhost`, one Docker container with `DATA_DIR` (C-9, C-10, F-1, F-4, F-5, G-1..G-4).
+3. Pommora Sync server: Node 24.15+ built-ins only, one SQLite file, email + password, device tokens, Nexus' keyed by Nexus id, monotonic sequence, tombstones, retained versions with server-side retention pruning, change feed, CORS for `capacitor://localhost`, one Docker container with `DATA_DIR` (C-9, C-10, F-1, F-4, F-5, G-1..G-4).
 4. The sync client in `src/engine/Sync`: manifest walk, E2E crypto, base state, pull → detect → push, the conflict rule with loser retention, per-page cursor persistence, resync, per-item apply with empty-directory pruning (C-2..C-8, F-2..F-9, J-1, J-2, L-1, L-2).
 5. Desktop client in main: push on the write funnel and watcher activity, feed subscription, landings applied through `applyRemote` under the page lock with the outgoing text captured to file history, Settings › General Account and Sync sections, remote versions listed in Page History (C-7, C-11, H-1..H-5).
-6. The mobile skeleton: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<vault name>`, a Swift atomic-write plugin, Keychain-held secrets, JSON state under `Library`, the first-run and status shell, sync on resume, launch, and the feed, booting on the iOS 26.5 Simulator with the vault in the Files app (A-5, A-6, D-2, E-1..E-6, I-1, I-2). Phase 8 adds the in-process api, the tree patched per landing, the bottom bar, a long press opening the renderer's existing menus through an in-app row-menu pane, and rename, delete, move, and reorder through the engine (A-7 as restated by Ruling 8, A-9, D-1, D-4, D-5, I-3, J-3).
+6. The mobile skeleton: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<Nexus name>`, a Swift atomic-write plugin, Keychain-held secrets, JSON state under `Library`, the first-run and status shell, sync on resume, launch, and the feed, booting on the iOS 26.5 Simulator with the Nexus in the Files app (A-5, A-6, D-2, E-1..E-6, I-1, I-2). Phase 8 adds the in-process api, the tree patched per landing, the bottom bar, a long press opening the renderer's existing menus through an in-app row-menu pane, and rename, delete, move, and reorder through the engine (A-7 as restated by Ruling 8, A-9, D-1, D-4, D-5, I-3, J-3).
 7. Verification Nathan asked for on 09-04-2026: an automated two-root integration suite against the real server under `npm run test`, a headless Node sync CLI that stands in for a second device, a dry run over a scratch copy of NexusOS, and a Simulator acceptance that reads the app container's files directly.
 8. The device path documented end to end (bundle id, team signing, TestFlight or ad-hoc), gated only on the developer account (A-5).
 9. Documentation reconciled per section K, including the CLAUDE.md hard rule restated (K-1..K-9).
 
-**Acceptance — the whole thing working:** With the sync server running on localhost, a desktop instance open on a scratch copy of NexusOS and connected to a remote vault, and the companion on the iOS 26.5 Simulator connected to the same vault: a body edit saved on the desktop appears in the Simulator's `Documents/NexusOS` copy within five seconds without any manual action; a page created by writing a file into the Simulator's copy reaches the desktop's folder after the app relaunches; a desktop delete removes the page from the Simulator's copy and lands its `.trash` bundle there; the Simulator app is terminated during three desktop edits and holds all three after relaunch; both roots' sync manifests are byte-identical for every file outside the database set; and the server lists two versions for a page both sides edited before syncing, the newer mtime standing at the head. **Phase 8 adds:** a body edit typed on the phone and a page renamed on the Simulator each land on the desktop, the rename with its inbound links rewritten.
+**Acceptance — the whole thing working:** With the sync server running on localhost, a desktop instance open on a scratch copy of NexusOS and connected to a remote Nexus, and the companion on the iOS 26.5 Simulator connected to the same Nexus: a body edit saved on the desktop appears in the Simulator's `Documents/NexusOS` copy within five seconds without any manual action; a page created by writing a file into the Simulator's copy reaches the desktop's folder after the app relaunches; a desktop delete removes the page from the Simulator's copy and lands its `.trash` bundle there; the Simulator app is terminated during three desktop edits and holds all three after relaunch; both roots' sync manifests are byte-identical for every file outside the database set; and the server lists two versions for a page both sides edited before syncing, the newer mtime standing at the head. **Phase 8 adds:** a body edit typed on the phone and a page renamed on the Simulator each land on the desktop, the rename with its inbound links rewritten.
 
 **Forced By**
 
@@ -53,7 +53,7 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - Desktop-as-server, mirroring Obsidian Sync, a thin client over the desktop, and Node polyfills in the WebView were each rejected (spec: Considered & Rejected); a task that reaches for any of them is wrong.
 - A sibling conflict file would duplicate a page's `ID` key; losers are retained versions, never files beside the winner.
 - Standard Notes' timestamp cursor loses a write landing between a read and its save; the sequence cursor is the rule.
-- A separate key-verifier record is redundant: the GCM tag on the wrapped vault key is the password check.
+- A separate key-verifier record is redundant: the GCM tag on the wrapped Nexus key is the password check.
 - Capacitor Preferences is documented as lightweight; sync state is a JSON file under `Library`.
 - `NSAllowsArbitraryLoads` is never added; `localhost` needs no ATS key.
 - Client-side sync locks are unnecessary under the server's version precondition.
@@ -69,7 +69,7 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - `src/main/readNexus.ts`, `readPage.ts`, `IO/walk.ts`, `walkCache.ts`, `IO/pageFile.ts`, `sidecarIO.ts`, `IO/propertiesRegistry.ts`, `folderKind.ts`, `ids.ts`, `paths.ts`, `exclusion.ts`, `coerce.ts`, `order.ts`, `CRUD/util.ts`, `CRUD/page.ts`, `CRUD/loadValues.ts` — the moving set, 2,861 lines including `watchPatch.ts` and the preload.
 - `src/renderer/Store/nexusSlice.ts:80-145` (boot), `App.tsx`, `Assets/assetUrl.ts`, `Settings/SettingsWindow.tsx` (Frames, Row kinds, `settingsRow`), `Windows/PageHistoryWindow.tsx`, `Sidebar/Ribbon.tsx`, `Tabs/tabsModel.ts:318`, `styles.css:10-13`.
 - `tsconfig.node.json`, `tsconfig.web.json`, `electron.vite.config.ts`, `vitest.config.ts`, `vite.config.ts`, `vite.config.app.ts`, `biome.json`, `package.json`.
-- `~/NexusOS`: 990 files outside `.git`/`.obsidian`/`.claude` on the morning of 09-04-2026, 533 outside `.trash`; by evening `.trash` held one entry and the manifest 506 files across 107 directories — the vault moves daily, so every count is re-derived at run time; `.obsidian` 13 MB, `.nexus` 7.6 MB; largest asset under 10 MB; `.nexus/nexus.json` id `01KS5VNGTE7NX7E0KHMF0TF7CT`.
+- `~/NexusOS`: 990 files outside `.git`/`.obsidian`/`.claude` on the morning of 09-04-2026, 533 outside `.trash`; by evening `.trash` held one entry and the manifest 506 files across 107 directories — the Nexus moves daily, so every count is re-derived at run time; `.obsidian` 13 MB, `.nexus` 7.6 MB; largest asset under 10 MB; `.nexus/nexus.json` id `01KS5VNGTE7NX7E0KHMF0TF7CT`.
 - Toolchain checked 09-04-2026: Node 24.15.0, Xcode 26.6 (17F113), iOS 26.5 Simulator runtime (23F77), iPhone 17 Pro `00887B6E-210B-4E8A-B253-2D544620F25D`, no CocoaPods, zero signing identities.
 - npm latest 09-04-2026: `@capacitor/core` `cli` `ios` 8.5.1, `@capacitor/filesystem` 8.1.3, `@capacitor/app` 8.1.1, `@capacitor/preferences` 8.0.1, `@aparajita/capacitor-secure-storage` 8.0.0.
 - `.claude/Planning/Tiles — Implementation Plan.md` — status "written, pending review"; `src/main/blocks.ts:67` still reads `readKey('blockDoc'`.
@@ -79,12 +79,12 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - Plan directory: `.claude/Planning`. Spec input: the decision log. Explorer: `Explore`. Research: `general-purpose` with curl. Code reviewer: `general-purpose` scoped to correctness (no dedicated reviewer agent exists). Attack reviewer: `build-breaking-agent`. Neutral verifier: `general-purpose`. Simplification: `code-simplifier` then `comment-killer-agent`. Rules directory: `.claude/Guidelines`. Standard agents only; never the Workflow tool; at most two verification or synthesis agents per scope.
 - Gate commands, run from `Pommora/`, exit codes read directly: `npm run typecheck` (grows `typecheck:engine`, `typecheck:sync`, `typecheck:mobile`), `npm run test`, `npm run lint`, `npm run build`. Baseline at `e79702e3`: typecheck green, 318 test files / 3,981 tests, lint clean over 1,014 files, build green.
 
-**Shapes:** additive (Phases 1–6) · refactor (Phase 8) · user-visible (Tasks 15, 39) · live-data (Tasks 25, 26: NexusOS is Nathan's real vault, every run is against a copy on a throwaway server).
+**Shapes:** additive (Phases 1–6) · refactor (Phase 8) · user-visible (Tasks 15, 39) · live-data (Tasks 25, 26: NexusOS is Nathan's real Nexus, every run is against a copy on a throwaway server).
 
 **Declared Stops**
 
 - Gate 4 — the Settings › General Account and Sync sections are the first user-visible surface; Nathan sees them before the phone is built on the same channels, and gives the go for Phase 5 here.
-- Gate 5 — the companion on the Simulator: the sign-in shell, the status screen, and the vault in the Files app. Phase 8 opens only on a separate go given here or later, with the phone's product spec in hand.
+- Gate 5 — the companion on the Simulator: the sign-in shell, the status screen, and the Nexus in the Files app. Phase 8 opens only on a separate go given here or later, with the phone's product spec in hand.
 - Task 27 — the device install, gated on the paid developer account.
 
 **Global Constraints (every task inherits these):**
@@ -260,7 +260,7 @@ export function bindNodeHost(): void // setHost(nodeHost); called first thing in
 
 ### Phase 2 — Pommora Sync, the server
 
-Additive. Budget: about +900 lines of server (router, db, auth, vaults, items, feed, env) and +600 of tests. Built-ins only; no framework, no ORM, no dependency.
+Additive. Budget: about +900 lines of server (router, db, auth, Nexus', items, feed, env) and +600 of tests. Built-ins only; no framework, no ORM, no dependency.
 
 #### Task 2: The wire contract
 
@@ -277,7 +277,7 @@ Additive. Budget: about +900 lines of server (router, db, auth, vaults, items, f
 export const SYNC_PROTOCOL = 1
 export const MAX_ITEM_BYTES = 50 * 1024 * 1024
 export const KDF_ITERATIONS_MIN = 600_000
-export interface VaultInfo {
+export interface NexusInfo {
   id: string                      // the Nexus id from nexus.json
   name: string                    // the folder's name at creation; the phone's Documents/<name>
   protocol: typeof SYNC_PROTOCOL
@@ -292,11 +292,11 @@ export interface VersionRow extends ItemRecord { head: boolean; storedAt: number
 export interface Session { token: string; deviceId: string; email: string }
 export interface AccountFields { server: string; email: string; deviceName: string }
 export interface AccountStatus extends AccountFields { signedIn: boolean }
-export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; vaultId: string | null; lastSync: number | null; error?: string; pending: number }
+export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; nexusId: string | null; lastSync: number | null; error?: string; pending: number }
 export interface SyncReport { pulled: number; pushed: number; tombstoned: number; conflicts: { rel: string; kept: 'local' | 'remote' }[]; skipped: { rel: string; why: 'too-large' | 'decrypt' | 'case-collision' | 'invalid-path' }[]; cursor: number }
 export type SyncErrorCode = 'unauthorized' | 'not-found' | 'conflict' | 'resync' | 'too-large' | 'exists' | 'signup-closed' | 'bad-request'
 export const STATUS_BY_CODE: Readonly<Record<SyncErrorCode, number>>   // 401 · 404 · 409 · 409 · 413 · 409 · 403 · 400 — the server answers by it, the client inverts it once
-// Blob endpoints carry bytes, not JSON: PUT /vaults/:id/items/:itemId with headers X-Base-Version (number or 'none'),
+// Blob endpoints carry bytes, not JSON: PUT /nexus/:id/items/:itemId with headers X-Base-Version (number or 'none'),
 // X-Mtime, X-Deleted (0|1), X-Retain-Only (0|1); body = IV || ciphertext || tag. GET answers the same headers plus X-Version.
 // Since 409 serves three codes, every error body is { code: SyncErrorCode, message } and the client reads the code, not the status.
 ```
@@ -340,10 +340,10 @@ Sync/
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, scrypt TEXT NOT NULL, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY, user_id TEXT NOT NULL, device_id TEXT NOT NULL, device_name TEXT NOT NULL, created_at INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0);
-CREATE TABLE IF NOT EXISTS vaults (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, info TEXT NOT NULL, info_version INTEGER NOT NULL, seq INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS items (vault_id TEXT NOT NULL, item_id TEXT NOT NULL, version INTEGER NOT NULL, mtime_ms INTEGER NOT NULL, size INTEGER NOT NULL, deleted INTEGER NOT NULL, PRIMARY KEY (vault_id, item_id));
-CREATE INDEX IF NOT EXISTS items_by_version ON items (vault_id, version);
-CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NULL, version INTEGER NOT NULL, mtime_ms INTEGER NOT NULL, size INTEGER NOT NULL, deleted INTEGER NOT NULL, head INTEGER NOT NULL, stored_at INTEGER NOT NULL, blob BLOB, PRIMARY KEY (vault_id, item_id, version));
+CREATE TABLE IF NOT EXISTS nexus (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, info TEXT NOT NULL, info_version INTEGER NOT NULL, seq INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS items (nexus_id TEXT NOT NULL, item_id TEXT NOT NULL, version INTEGER NOT NULL, mtime_ms INTEGER NOT NULL, size INTEGER NOT NULL, deleted INTEGER NOT NULL, PRIMARY KEY (nexus_id, item_id));
+CREATE INDEX IF NOT EXISTS items_by_version ON items (nexus_id, version);
+CREATE TABLE IF NOT EXISTS versions (nexus_id TEXT NOT NULL, item_id TEXT NOT NULL, version INTEGER NOT NULL, mtime_ms INTEGER NOT NULL, size INTEGER NOT NULL, deleted INTEGER NOT NULL, head INTEGER NOT NULL, stored_at INTEGER NOT NULL, blob BLOB, PRIMARY KEY (nexus_id, item_id, version));
 -- a tombstone row has blob NULL; a retain-only row has head 0 and never appears in the change feed
 ```
 
@@ -373,7 +373,7 @@ CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NU
 
 **Requirement:** 3
 
-**Why:** Email and password on Nathan's own server, a revocable token per device, and every vault request checked against its owner (C-10, G-2).
+**Why:** Email and password on Nathan's own server, a revocable token per device, and every Nexus request checked against its owner (C-10, G-2).
 
 **Now** — `—`.
 
@@ -386,20 +386,20 @@ CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NU
 // POST /auth/logout   (Bearer) → 204; the token row is revoked
 export function hashPassword(password: string): string      // scrypt N=2^17 r=8 p=1, 16-byte salt, `scrypt$<salt>$<hash>` base64
 export function verifyPassword(password: string, stored: string): boolean   // timingSafeEqual
-export function requireSession(db, req): { userId: string; deviceId: string }  // throws unauthorized; every /vaults route calls it
+export function requireSession(db, req): { userId: string; deviceId: string }  // throws unauthorized; every /nexus route calls it
 // tokens and device ids are 32 random bytes, base64url; email is trimmed and lower-cased; password NFKC-normalized before scrypt
 ```
 
 **Verify — automated**
 
-- [ ] Red first: register → login; wrong password 401; second register 409; `SIGNUP=closed` 403; logout revokes (the next vault call 401); a vault route without Bearer 401. Then green.
+- [ ] Red first: register → login; wrong password 401; second register 409; `SIGNUP=closed` 403; logout revokes (the next Nexus call 401); a Nexus route without Bearer 401. Then green.
 - [ ] Full gate green.
 
 **Verify — user**
 
 - [ ] *(none.)*
 
-#### Task 5: Vaults, items, versions, and the change log
+#### Task 5: Nexus', items, versions, and the change log
 
 **Requirement:** 3
 
@@ -410,29 +410,29 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 **Becomes**
 
 ```ts
-// Sync/src/vaults.ts + vaults.test.ts, Sync/src/items.ts + items.test.ts
-// GET    /vaults                          → { vaults: { id, name, createdAt }[] } (the caller's)
-// POST   /vaults        VaultInfo         → 201 VaultInfo | 409 exists (create-once; Connect is the client's answer)
-// GET    /vaults/:id/info                 → VaultInfo
-// PUT    /vaults/:id/info { retentionDays?, keys? } + X-Info-Version → 200 VaultInfo | 409 conflict   (the desktop keeps retentionDays equal to the Nexus's History Timeframe, Task 13)
-// GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage read from `items` (heads only, tombstones included at every since, so a snapshot is self-sufficient); since > seq → 409 resync;
+// Sync/src/nexus.ts + nexus.test.ts, Sync/src/items.ts + items.test.ts
+// GET    /nexus                          → { nexus: { id, name, createdAt }[] } (the caller's)
+// POST   /nexus        NexusInfo         → 201 NexusInfo | 409 exists (create-once; Connect is the client's answer)
+// GET    /nexus/:id/info                 → NexusInfo
+// PUT    /nexus/:id/info { retentionDays?, keys? } + X-Info-Version → 200 NexusInfo | 409 conflict   (the desktop keeps retentionDays equal to the Nexus's History Timeframe, Task 13)
+// GET    /nexus/:id/changes?since=N&limit=500 → ChangesPage read from `items` (heads only, tombstones included at every since, so a snapshot is self-sufficient); since > seq → 409 resync;
 //        cursor = the highest version in the page, or `since` when the page is empty (retain-only seqs never appear in items, so the cursor never claims them)
-// PUT    /vaults/:id/items/:itemId  (headers of Task 2; the body is read whole, capped, before the database block)
-//        one transaction: base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise; a base given for an item the vault never held → 404 not-found;
+// PUT    /nexus/:id/items/:itemId  (headers of Task 2; the body is read whole, capped, before the database block)
+//        one transaction: base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise; a base given for an item the Nexus never held → 404 not-found;
 //        seq += 1 always; retain-only → versions row at that seq with head 0, items untouched, 201 { version } (invisible to changes by construction: changes reads items);
 //        else items head replaced at version = seq, versions row head 1, the prior head row's head flag cleared; tombstone = deleted 1, blob NULL; answers { version } and never content
-// GET    /vaults/:id/items/:itemId                → head blob + headers; a tombstone answers 404 not-found
-// GET    /vaults/:id/items/:itemId/versions       → { versions: VersionRow[] } newest first
-// GET    /vaults/:id/items/:itemId/versions/:v    → that blob + headers
-// prune: after every store, DELETE FROM versions WHERE vault_id=? AND head=0 AND deleted=0 AND stored_at < now - retentionDays*86400000
-// every route: requireSession, then the vault's user_id must equal the session's; else 404 (never 403: a foreign id is not confirmed to exist)
+// GET    /nexus/:id/items/:itemId                → head blob + headers; a tombstone answers 404 not-found
+// GET    /nexus/:id/items/:itemId/versions       → { versions: VersionRow[] } newest first
+// GET    /nexus/:id/items/:itemId/versions/:v    → that blob + headers
+// prune: after every store, DELETE FROM versions WHERE nexus_id=? AND head=0 AND deleted=0 AND stored_at < now - retentionDays*86400000
+// every route: requireSession, then the Nexus's user_id must equal the session's; else 404 (never 403: a foreign id is not confirmed to exist)
 ```
 
 **Assumed by:** Tasks 9–11, 13, 16, 22.
 
 **Verify — automated**
 
-- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and lists a tombstoned item as deleted; since 1 includes the tombstone; since 99 → 409 resync; two retain-only stores on one item land two versions rows at two fresh seqs the change log never lists and the versions route does, and the head is unmoved; a body of `MAX_ITEM_BYTES + 1` → 413 (client-side skipping is Task 10's; this is the wire's own guard); prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a store whose transaction throws after `seq += 1` leaves seq, items, and versions as they were; a store with base 3 for an item never stored → 404; after a retain-only store, `changes?since=<cursor>` answers an empty page with the cursor unmoved; a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
+- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and lists a tombstoned item as deleted; since 1 includes the tombstone; since 99 → 409 resync; two retain-only stores on one item land two versions rows at two fresh seqs the change log never lists and the versions route does, and the head is unmoved; a body of `MAX_ITEM_BYTES + 1` → 413 (client-side skipping is Task 10's; this is the wire's own guard); prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a store whose transaction throws after `seq += 1` leaves seq, items, and versions as they were; a store with base 3 for an item never stored → 404; after a retain-only store, `changes?since=<cursor>` answers an empty page with the cursor unmoved; a Nexus of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
 - [ ] Both halves of the ownership guard: the owner's read succeeds; with `requireSession` stubbed to another user the same read is 404.
 - [ ] Full gate green.
 
@@ -452,16 +452,16 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 
 ```ts
 // Sync/src/feed.ts + feed.test.ts
-// GET /vaults/:id/feed  (Bearer; text/event-stream) → an initial `event: seq\ndata: {"seq":N}\n\n`, then one per store to that vault,
-// a `: keepalive` comment every 25 s; subscribers held per vault in a Map<vaultId, Set<ServerResponse>>, removed on close
-export function publish(vaultId: string, seq: number): void   // items.ts calls it after every store's commit
+// GET /nexus/:id/feed  (Bearer; text/event-stream) → an initial `event: seq\ndata: {"seq":N}\n\n`, then one per store to that Nexus,
+// a `: keepalive` comment every 25 s; subscribers held per Nexus in a Map<nexusId, Set<ServerResponse>>, removed on close
+export function publish(nexusId: string, seq: number): void   // items.ts calls it after every store's commit
 ```
 
 `Sync/Dockerfile`, `Sync/.env-sample`, `Sync/README.md` (run locally, run the container: `docker run --env-file .env -v pommora-sync:/data -p 8642:8642 pommora-sync`; TLS at a reverse proxy).
 
 **Verify — automated**
 
-- [ ] Red first: two subscribers on one vault both receive the seq of a store within 200 ms; a subscriber on another vault receives nothing; a closed response is removed (the Set shrinks). Then green.
+- [ ] Red first: two subscribers on one Nexus both receive the seq of a store within 200 ms; a subscriber on another Nexus receives nothing; a closed response is removed (the Set shrinks). Then green.
 - [ ] `curl -N` against the running server shows the initial event and one per store.
 - [ ] Full gate green.
 
@@ -483,7 +483,7 @@ export function publish(vaultId: string, seq: number): void   // items.ts calls 
 
 Additive. Budget: about +1,100 lines (crypto 200, manifest 80, state 80, transport 200, client 450, CLI 90) and +900 of tests including the integration suite.
 
-#### Task 7: Vault cryptography
+#### Task 7: Nexus cryptography
 
 **Requirement:** 4
 
@@ -496,23 +496,23 @@ Additive. Budget: about +1,100 lines (crypto 200, manifest 80, state 80, transpo
 ```ts
 // src/engine/Sync/crypto.ts + crypto.test.ts — Web Crypto only (`crypto.subtle`, `crypto.getRandomValues`)
 export function deriveKek(password: string, salt: Uint8Array, iterations: number): Promise<CryptoKey>  // NFKC first; PBKDF2-HMAC-SHA256 → AES-GCM 256, wrap/unwrap only
-export function mintVaultKey(): Uint8Array                                                              // 32 random bytes
-export function wrapVaultKey(kek: CryptoKey, vaultKey: Uint8Array): Promise<{ keyId: string; iv: string; wrapped: string }>
-export function unwrapVaultKey(kek: CryptoKey, entry: VaultInfo['keys'][number]): Promise<Uint8Array | null>   // null = wrong password (the GCM tag)
-export interface VaultKeys { keyId: string; content: CryptoKey; path: CryptoKey }                       // HKDF-SHA256 subkeys, info 'pommora/content' and 'pommora/path'
-export function subkeys(vaultKey: Uint8Array, keyId: string): Promise<VaultKeys>
-export function itemId(keys: VaultKeys, rel: string): Promise<string>                                   // HMAC-SHA256 over NFC(rel), hex; case preserved
-export function seal(keys: VaultKeys, item: { itemId: string; mtimeMs: number; rel: string; bytes: Uint8Array }): Promise<Uint8Array>
-export function open(keys: VaultKeys, item: { itemId: string; mtimeMs: number }, blob: Uint8Array): Promise<{ rel: string; bytes: Uint8Array } | null>
+export function mintNexusKey(): Uint8Array                                                              // 32 random bytes
+export function wrapNexusKey(kek: CryptoKey, nexusKey: Uint8Array): Promise<{ keyId: string; iv: string; wrapped: string }>
+export function unwrapNexusKey(kek: CryptoKey, entry: NexusInfo['keys'][number]): Promise<Uint8Array | null>   // null = wrong password (the GCM tag)
+export interface NexusKeys { keyId: string; content: CryptoKey; path: CryptoKey }                       // HKDF-SHA256 subkeys, info 'pommora/content' and 'pommora/path'
+export function subkeys(nexusKey: Uint8Array, keyId: string): Promise<NexusKeys>
+export function itemId(keys: NexusKeys, rel: string): Promise<string>                                   // HMAC-SHA256 over NFC(rel), hex; case preserved
+export function seal(keys: NexusKeys, item: { itemId: string; mtimeMs: number; rel: string; bytes: Uint8Array }): Promise<Uint8Array>
+export function open(keys: NexusKeys, item: { itemId: string; mtimeMs: number }, blob: Uint8Array): Promise<{ rel: string; bytes: Uint8Array } | null>
 // blob = iv(12) || AES-256-GCM( u16 relLen || rel utf8 || bytes ) with AAD = `${SYNC_PROTOCOL}|${keyId}|${itemId}|${mtimeMs}`; null on any tag failure
-export function newVaultInfo(id: string, name: string, password: string, retentionDays: number): Promise<{ info: Omit<VaultInfo, 'infoVersion'>; vaultKey: Uint8Array }>
+export function newNexusInfo(id: string, name: string, password: string, retentionDays: number): Promise<{ info: Omit<NexusInfo, 'infoVersion'>; nexusKey: Uint8Array }>
 ```
 
 **Assumed by:** Tasks 10, 11, 13, 16, 22.
 
 **Verify — automated**
 
-- [ ] Red first: round trip; wrong password → `unwrapVaultKey` null; a flipped byte in the blob → `open` null; the same blob under another `itemId` or another `mtimeMs` → null (the AAD binding); `itemId` equal for `'A/B.md'` on two calls and different for `'a/b.md'`; the password `'é'` composed and decomposed derive the same key; iterations below `KDF_ITERATIONS_MIN` refused by `newVaultInfo`; `deriveKek` at 600,000 iterations completes under 500 ms on this machine (a floor, not a benchmark). Then green.
+- [ ] Red first: round trip; wrong password → `unwrapNexusKey` null; a flipped byte in the blob → `open` null; the same blob under another `itemId` or another `mtimeMs` → null (the AAD binding); `itemId` equal for `'A/B.md'` on two calls and different for `'a/b.md'`; the password `'é'` composed and decomposed derive the same key; iterations below `KDF_ITERATIONS_MIN` refused by `newNexusInfo`; `deriveKek` at 600,000 iterations completes under 500 ms on this machine (a floor, not a benchmark). Then green.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -582,15 +582,15 @@ export function memoryStore(): SyncStateStore
 // src/engine/Sync/transport.ts + transport.test.ts (fake fetch)
 export interface Transport {
   register / login / logout
-  vaults(): Promise<{ id; name; createdAt }[]>
-  createVault(info): Promise<VaultInfo>              // 409 exists surfaces as { code: 'exists' }
-  info(vaultId): Promise<VaultInfo>
-  updateInfo(vaultId, patch: { retentionDays?: number; keys?: VaultInfo['keys'] }, infoVersion: number): Promise<VaultInfo>
-  changes(vaultId, since, limit): Promise<ChangesPage>   // 409 → { code: 'resync' }
-  store(vaultId, itemId, blob: Uint8Array | null, meta: { baseVersion: number | null; mtimeMs; deleted; retainOnly }): Promise<{ version: number } | { conflict: ItemRecord }>
-  fetchItem(vaultId, itemId, version?): Promise<{ blob: Uint8Array; record: ItemRecord } | null>
-  versions(vaultId, itemId): Promise<VersionRow[]>
-  feed(vaultId, onSeq: (seq: number) => void, signal: AbortSignal): Promise<void>   // reconnects with backoff 1s→30s until aborted
+  nexus(): Promise<{ id; name; createdAt }[]>
+  createNexus(info): Promise<NexusInfo>              // 409 exists surfaces as { code: 'exists' }
+  info(nexusId): Promise<NexusInfo>
+  updateInfo(nexusId, patch: { retentionDays?: number; keys?: NexusInfo['keys'] }, infoVersion: number): Promise<NexusInfo>
+  changes(nexusId, since, limit): Promise<ChangesPage>   // 409 → { code: 'resync' }
+  store(nexusId, itemId, blob: Uint8Array | null, meta: { baseVersion: number | null; mtimeMs; deleted; retainOnly }): Promise<{ version: number } | { conflict: ItemRecord }>
+  fetchItem(nexusId, itemId, version?): Promise<{ blob: Uint8Array; record: ItemRecord } | null>
+  versions(nexusId, itemId): Promise<VersionRow[]>
+  feed(nexusId, onSeq: (seq: number) => void, signal: AbortSignal): Promise<void>   // reconnects with backoff 1s→30s until aborted
 }
 export function httpTransport(server: string, token: () => string | null, fetchImpl?: typeof fetch): Transport
 export class SyncError extends Error { code: SyncErrorCode }
@@ -622,8 +622,8 @@ export class SyncError extends Error { code: SyncErrorCode }
 export interface SyncDeps {
   root: string
   transport: Transport
-  vaultId: string
-  keys: VaultKeys
+  nexusId: string
+  keys: NexusKeys
   state: SyncStateStore
   deviceId: string
   /** The host's policy before a remote version replaces a local file — desktop captures file history here. */
@@ -650,14 +650,14 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 //   land = lock(abs) { beforeReplace; host.applyRemote(abs, bytes, mtimeMs) }; base set from host().stat after the write; afterLanding.
 //   After the page: prune directories emptied by removals (never root, never `.nexus`, `.trash`); setCursor(page.cursor); flush.
 // Detect: manifest vs bases; new, (mtime, size) moved, or named by forceHash → hash; hash moved → changed; a live base absent from the manifest → deleted; a deleted base stays deleted.
-// Push: store(base.version ?? null); a `not-found` on a given base reads as no base (the vault never held it) and re-stores with null; conflict → the returned record's
+// Push: store(base.version ?? null); a `not-found` on a given base reads as no base (the Nexus never held it) and re-stores with null; conflict → the returned record's
 //   `deleted` decides whether there is a blob to fetch, then the same rule, then re-store or land. After a successful store the base takes the manifest entry it hashed
 //   (mtime, size, hash) and the answered version; a tombstone store sets the deleted form. A post-store stat that no longer matches the entry leaves the base unset, so the next run re-detects.
 //   Over MAX_ITEM_BYTES → skipped 'too-large' before any request. First sync rules (F-7) fall out: an empty remote pushes everything, an empty local pulls everything,
 //   both populated merge item by item under the no-base rule above.
 // Resync: 'resync' clears the cursor and pulls since 0 (tombstones included) under the same rules; identical content is a no-op, a delete for an absent file is a no-op.
-// A page deleted while a device was disconnected from its vault is indistinguishable from one another device created: the deletion never pushed, so the file returns
-// on reconnect and its trash bundle stands beside it. Disconnect therefore keeps the device's bases and cursor (Task 14) so reconnecting to the same vault resumes.
+// A page deleted while a device was disconnected from its Nexus is indistinguishable from one another device created: the deletion never pushed, so the file returns
+// on reconnect and its trash bundle stands beside it. Disconnect therefore keeps the device's bases and cursor (Task 14) so reconnecting to the same Nexus resumes.
 ```
 
 **Assumed by:** Tasks 11, 13, 22.
@@ -688,19 +688,19 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 //                      Ideas/Set/{_pageset.json,C.md}, .trash/Ideas/2026-01-01T00-00-00-000Z__D.md.deleted/{D.md,_record.json}, .nexus/assets/pic.png, .nexus/nexus.db (excluded)
 export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]; onlyB: string[]; differ: string[] }>   // Sync/test/diffRoots.ts; manifests + sha-256 per file
 // scenarios, each its own `it`, in this order, two temp roots A and B, one server on an ephemeral port with DATA_DIR in a temp dir:
-//  1 A creates the vault from the fixture (empty remote takes everything); 2 B connects with the same password and pulls; diffRoots clean
+//  1 A creates the Nexus from the fixture (empty remote takes everything); 2 B connects with the same password and pulls; diffRoots clean
 //  3 edit A/Ideas/A.md → sync A → sync B → B holds it, mtime equal; 4 create B/Ideas/New.md → B → A; 5 delete A/Ideas/B.md (move into .trash bundle) → B removed, bundle present
 //  6 rename A/Ideas/C.md → A/Ideas/C2.md → B (tombstone + new; id inside the file unchanged); 7 frontmatter edit → crosses; 8 settings.json edit → crosses
 //  9 both edit A.md before syncing; the newer mtime stands on both, the server lists 2 versions, the loser's text is the retain-only blob
 // 10 A edits, B deletes, A newer → the file revives on B; 11 B offline (no sync) while A makes 3 edits → B syncs once → holds all 3
 // 12 B's cursor set to 999 → resync → clean; 13 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 14 a no-change sync on both makes 0 stores (server request log)
-// 15 B disconnects, deletes Ideas/A.md into its trash, reconnects to the same vault → the deletion pushes (bases kept), A loses the page and gains the bundle
+// 15 B disconnects, deletes Ideas/A.md into its trash, reconnects to the same Nexus → the deletion pushes (bases kept), A loses the page and gains the bundle
 // 16 B's bases wiped (a fresh device over a populated copy of A) → connect → zero writes on B, zero stores, every base seeded; then B edits one page → one store
 // 17 A deletes Ideas/A.md into its trash → B (with A.md open in its editor, no sync yet) restores it from the bundle on A → the page pushes with the deleted base's version and both roots hold it
 // 18 A renames a page whose inbound link text is the same length (`rewritePreservingTimes` on the linking page) → the linking page reaches B with the new link text
 // (wrong password, case collision, and the 50 MB skip are client-only and stay in Tasks 7 and 10; the server's 413 is http.test.ts)
 // scripts/sync-cli.ts + vite.config.cli.ts (ssr build to out/cli/sync-cli.js; "build:cli" script)
-//   node out/cli/sync-cli.js register|login|create|connect|sync|watch --server URL --root DIR --state FILE [--email --password --vault-password --vault ID --name NAME]
+//   node out/cli/sync-cli.js register|login|create|connect|sync|watch --server URL --root DIR --state FILE [--email --password --nexus-password --nexus ID --name NAME]
 //   `watch` subscribes to the feed and syncs on every seq plus every 30 s; state is a JSON SyncStateStore at --state
 ```
 
@@ -735,7 +735,7 @@ Additive plus user-visible. Budget: about +700 lines (desktopSync 250, channels 
 
 **Requirement:** 5
 
-**Why:** The watcher never sees the app's own writes, so the push trigger listens where every in-app write already reports (C-7); sync state is a `local_state` scope (H-2); the device token and vault password never touch a plaintext file (F-3).
+**Why:** The watcher never sees the app's own writes, so the push trigger listens where every in-app write already reports (C-7); sync state is a `local_state` scope (H-2); the device token and Nexus password never touch a plaintext file (F-3).
 
 **Now** — `src/main/IO/writeEcho.ts` 9 importers; `Scope` union in `Database/localState.ts:14-31` has 17 members; `appConfig.ts` `AppConfig { lastNexusPath?, recents?, trashMode? }`; `rg -n "safeStorage" src/main` → 0; `rg -n "POMMORA_" src/main` → 1 (`index.ts:201`, `POMMORA_DEBUG_PORT`); `app.getPath('userData')` at `index.ts:448,695,1902,2029` with no override:
 
@@ -752,13 +752,13 @@ export function recordWrite(absPath: string): void {
 const listeners = new Set<(absPath: string) => void>()
 export function onWrite(fn: (absPath: string) => void): () => void
 export function recordWrite(absPath: string): void   // notifies after recording
-// src/shared/localState.ts — Scope gains 'sync' (keys: `<vaultId>` = cursor, `<vaultId>/<rel>` = BaseRecord, so a Nexus that has connected to two vaults holds both and a reconnect resumes the right one); SCOPE_ASKS has no entry for it (never a renderer channel)
-// src/main/Sync/localStateStore.ts — localStateStore(vaultId): SyncStateStore over readScope/writeKey('sync') filtered by the vault prefix; flush is a no-op (rows are immediate)
+// src/shared/localState.ts — Scope gains 'sync' (keys: `<nexusId>` = cursor, `<nexusId>/<rel>` = BaseRecord, so a Nexus that has connected to two Nexus' holds both and a reconnect resumes the right one); SCOPE_ASKS has no entry for it (never a renderer channel)
+// src/main/Sync/localStateStore.ts — localStateStore(nexusId): SyncStateStore over readScope/writeKey('sync') filtered by the Nexus prefix; flush is a no-op (rows are immediate)
 // src/main/appConfig.ts — AppConfig gains account?: AccountFields
 // src/main/index.ts:201 — beside POMMORA_DEBUG_PORT: `if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)`
 //   (Development-Environment.md:41 describes it as instrumentation to add and remove; it becomes a standing flag, since every scratch run of this arc writes account rows and secrets)
 // src/main/Sync/secrets.ts + secrets.test.ts (safeStorage stubbed)
-export function saveSecret(userDataDir: string, key: 'token' | `vault:${string}`, value: string): Promise<void>   // safeStorage.encryptString → <userData>/secrets/<key>
+export function saveSecret(userDataDir: string, key: 'token' | `nexus:${string}`, value: string): Promise<void>   // safeStorage.encryptString → <userData>/secrets/<key>
 export function readSecret(userDataDir: string, key: string): Promise<string | null>
 export function forgetSecret(userDataDir: string, key: string): Promise<void>
 ```
@@ -767,7 +767,7 @@ export function forgetSecret(userDataDir: string, key: string): Promise<void>
 
 **Verify — automated**
 
-- [ ] Red first: `writeEcho.test.ts` (new) — a listener fires with the path on `recordWrite`, unsubscribes; `localStateStore.test.ts` — cursor and bases round trip through a temp `nexus.db`, and two vault ids keep separate cursors and bases; `secrets.test.ts` — save/read/forget with a stubbed `safeStorage`. Then green.
+- [ ] Red first: `writeEcho.test.ts` (new) — a listener fires with the path on `recordWrite`, unsubscribes; `localStateStore.test.ts` — cursor and bases round trip through a temp `nexus.db`, and two Nexus ids keep separate cursors and bases; `secrets.test.ts` — save/read/forget with a stubbed `safeStorage`. Then green.
 - [ ] `env -u ELECTRON_RUN_AS_NODE POMMORA_USERDATA=/tmp/pommora-scratch/userdata ./node_modules/.bin/electron .` after a build writes `pommora.json` under that directory and leaves the real profile's `pommora.json` mtime unchanged.
 - [ ] Full gate green.
 
@@ -795,13 +795,13 @@ export function noteExternalEdit(root: string, absPath: string): void {
 
 ```ts
 // src/main/Sync/desktopSync.ts + desktopSync.test.ts
-export function startDesktopSync(root: string, win: BrowserWindow): Promise<void>   // no-op when the Nexus has no connected vault or the app has no session
+export function startDesktopSync(root: string, win: BrowserWindow): Promise<void>   // no-op when the Nexus has no connected Nexus or the app has no session
 export function stopDesktopSync(): Promise<void>                                     // scheduler.stop(), aborts the feed
 export function syncNow(): Promise<SyncReport>
 export function syncStatus(): SyncStatus                                             // SyncStatus from @shared/syncProtocol
 // one createSyncScheduler per session: onWrite (paths under root that syncable() admits) → the rel joins the forceHash set and noteDirty; the watcher's settle (watcher.ts calls noteSyncActivity(root)) → noteDirty;
 //   the feed's onSeq > cursor and Sync Now → trigger; deps.forceHash drains the set per run
-// before each run: if the vault's retentionDays ≠ the Nexus's historyDays (readFileHistoryConfig) → transport.updateInfo, so the server prunes by the live Timeframe
+// before each run: if the remote Nexus's retentionDays ≠ the local Nexus's historyDays (readFileHistoryConfig) → transport.updateInfo, so the server prunes by the live Timeframe
 // deps.beforeReplace: read the current text; liveIdOf → captureIfDue(root, pageId, text, 'external') for a page; nothing for other files
 // deps.afterLanding: none — host.applyRemote records no echo, so the watcher classifies the landing as it does an Obsidian edit
 //   (`.trash`, `.nexus/homepage/*.md`, `.nexus/contexts/**/*.md` are watcher-ignored: the Trash frame and the block hosts read those on open)
@@ -815,7 +815,7 @@ export function syncStatus(): SyncStatus                                        
 
 **Verify — automated**
 
-- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a `rewritePreservingTimes` of a page to a same-length body pushes it (the gate alone would not see it); a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's integer mtime equals the envelope's; a second sync after a landing re-hashes nothing (spy on `readBytes` → 0 calls for landed files); a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
+- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a `rewritePreservingTimes` of a page to a same-length body pushes it (the gate alone would not see it); a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's integer mtime equals the envelope's; a second sync after a landing re-hashes nothing (spy on `readBytes` → 0 calls for landed files); a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a Nexus at 60 sends one `updateInfo` before the run and none after. Then green.
 - [ ] Both halves of the capture: the row appears with capture enabled; with `beforeReplace` disabled the row does not.
 - [ ] Full gate green.
 
@@ -827,7 +827,7 @@ export function syncStatus(): SyncStatus                                        
 
 **Requirement:** 5
 
-**Why:** Sign in, create or connect a vault, disconnect, sync now, and a live status are the renderer's only view of sync; they go through the bridge like everything else, and the phone serves the same channels in process (D-1, H-3).
+**Why:** Sign in, create or connect a Nexus, disconnect, sync now, and a live status are the renderer's only view of sync; they go through the bridge like everything else, and the phone serves the same channels in process (D-1, H-3).
 
 **Now** — `src/shared/bridge.ts` `Asks` has no `account:`/`sync:` channel; `Pushes` has 14 members:
 
@@ -845,13 +845,13 @@ export interface Asks {
 'account:signIn': { args: [req: AccountFields & { password: string; register: boolean }]; reply: Result<AccountStatus> }
 'account:signOut': { args: []; reply: Result<null> }
 'sync:status': { args: []; reply: SyncStatus }
-'sync:vaults': { args: []; reply: Result<{ id: string; name: string; matches: boolean }[]> }   // matches = id equals this Nexus's
-'sync:create': { args: [vaultPassword: string]; reply: Result<{ vaultId: string }> }         // 'exists' → the row offers Connect
-'sync:connect': { args: [vaultId: string, vaultPassword: string]; reply: Result<null> }       // id mismatch refused with the reason
-'sync:disconnect': { args: []; reply: Result<null> }                                          // stops syncing and forgets the vault secret; the 'sync' scope (bases, cursor, keyed by vault id) and the server's vault both stay, so reconnecting resumes
+'sync:nexus': { args: []; reply: Result<{ id: string; name: string; matches: boolean }[]> }   // matches = id equals this Nexus's
+'sync:create': { args: [nexusPassword: string]; reply: Result<{ nexusId: string }> }         // 'exists' → the row offers Connect
+'sync:connect': { args: [nexusId: string, nexusPassword: string]; reply: Result<null> }       // id mismatch refused with the reason
+'sync:disconnect': { args: []; reply: Result<null> }                                          // stops syncing and forgets the Nexus secret; the 'sync' scope (bases, cursor, keyed by Nexus id) and the server's Nexus both stay, so reconnecting resumes
 'sync:now': { args: []; reply: Result<SyncReport> }
 // Pushes gains 'sync:changed': SyncStatus   (every type from @shared/syncProtocol)
-// src/shared/nexusApi.ts gains account: { status, signIn, signOut }, sync: { status, vaults, create, connect, disconnect, now }, onSyncChanged
+// src/shared/nexusApi.ts gains account: { status, signIn, signOut }, sync: { status, nexus, create, connect, disconnect, now }, onSyncChanged
 // src/main/index.ts — handlers in the serveBridge object beside 'nexus:state', delegating to desktopSync and secrets; envelope kind
 ```
 
@@ -860,7 +860,7 @@ export interface Asks {
 **Verify — automated**
 
 - [ ] `npm run typecheck` proves the handler map is exhaustive (a declared channel without a handler is the compile error `serveBridge` exists for).
-- [ ] Handler tests with `desktopSync` stubbed: `sync:create` against an existing id answers the `exists` code; `sync:connect` with a mismatched id refuses with `operation-failed` naming the mismatch; `sync:disconnect` forgets the secret and leaves the `sync` scope's rows; `sync:connect` to a vault whose bases are held resumes from the held cursor (the transport sees `since=<cursor>`, never 0).
+- [ ] Handler tests with `desktopSync` stubbed: `sync:create` against an existing id answers the `exists` code; `sync:connect` with a mismatched id refuses with `operation-failed` naming the mismatch; `sync:disconnect` forgets the secret and leaves the `sync` scope's rows; `sync:connect` to a Nexus whose bases are held resumes from the held cursor (the transport sees `since=<cursor>`, never 0).
 - [ ] Full gate green (preload does not hot-reload: restart the dev process before the user pass).
 
 **Verify — user**
@@ -892,14 +892,14 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'ite
 // General sections:
 //  { title: 'Account', rows: [ field Server Address · field Email · field Password (secret) · field Device Name ·
 //                              action Sign In · action Create Account · action Sign Out (shown when signed in) ] }
-//  { title: 'Sync',    rows: [ field Vault Password (secret) · action Create From This Nexus / Connect (one row; label by sync:vaults) ·
+//  { title: 'Sync',    rows: [ field Nexus Password (secret) · action Create From This Nexus / Connect (one row; label by sync:nexus) ·
 //                              action Sync Now · action Disconnect · caption: the status line ] }
 // src/renderer/Store/configSlice.ts gains syncStatus: SyncStatus and applySyncStatus; App.tsx subscribes onSyncChanged like onNavChanged
 ```
 
 **Verify — automated**
 
-- [ ] `ActionRow.test.tsx` and `FieldRow.test.tsx`: the two former clear rows still read Clear / Cleared and render the destructive button, Sign In renders the default one; a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:vaults` returns a matching id; Sign Out hides when signed out.
+- [ ] `ActionRow.test.tsx` and `FieldRow.test.tsx`: the two former clear rows still read Clear / Cleared and render the destructive button, Sign In renders the default one; a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:nexus` returns a matching id; Sign Out hides when signed out.
 - [ ] `rg -n "kind: 'clear'" src/renderer` → 0. Control: `rg -n "kind: 'action'" src/renderer/Settings/SettingsWindow.tsx` → 8 or more.
 - [ ] Full gate green.
 
@@ -949,13 +949,13 @@ export async function remoteBody(root: string, pageId: string, ts: number): Prom
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/main/Sync`, `src/main/index.ts`, `src/main/IO/writeEcho.ts`, `src/main/watcher.ts`, `src/shared/bridge.ts`, `src/shared/nexusApi.ts`, `src/renderer/Settings`, `src/renderer/Store/configSlice.ts`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying a ruling in the Log.
 - [ ] Progress hashes filled in; line count reported.
-- [ ] **Declared stop.** Execution halts until Nathan closes Task 15's and Task 16's user boxes. This is also where the arc's product decision is put: Phase 5 (the phone as a synced vault) opens on his go; Phase 8 (the renderer port) needs its own go and the phone's product spec, given here or at Gate 5.
+- [ ] **Declared stop.** Execution halts until Nathan closes Task 15's and Task 16's user boxes. This is also where the arc's product decision is put: Phase 5 (the phone as a synced Nexus) opens on his go; Phase 8 (the renderer port) needs its own go and the phone's product spec, given here or at Gate 5.
 
 ---
 
 ### Phase 5 — The mobile skeleton
 
-Additive plus user-visible, and one removal. The phone in this phase is the vault in the Files app plus a sign-in and status shell; no renderer mounts. Budget: about +850 lines (host 250, state and keychain 120, sync wiring 120, shell 150, Swift plugin 80, configs 150) plus the committed `ios/` template.
+Additive plus user-visible, and one removal. The phone in this phase is the Nexus in the Files app plus a sign-in and status shell; no renderer mounts. Budget: about +850 lines (host 250, state and keychain 120, sync wiring 120, shell 150, Swift plugin 80, configs 150) plus the committed `ios/` template.
 
 #### Task 17: The stale mobile build target retires
 
@@ -1113,9 +1113,9 @@ export function bindCapacitorHost(): void
 // Mobile/src/host/state.ts + state.test.ts
 export function readScope<T>(scope: Scope): Promise<Record<string, T>>           // Library/state/<scope>.json, {} when absent
 export function writeKey(scope: Scope, key: string, value: unknown): Promise<void>   // null deletes; whole-file rewrite through AtomicWrite
-export function libraryStateStore(): SyncStateStore                               // Library/sync/<vaultId>.json; buffered; flush writes
-// Mobile/src/host/prefs.ts — Preferences: 'account' (AccountFields as JSON), 'vaultId', 'vaultName'
-// Mobile/src/host/keychain.ts — SecureStorage: 'token' afterFirstUnlock; `vault:<id>` whenUnlockedThisDeviceOnly; setSynchronize(false) once
+export function libraryStateStore(): SyncStateStore                               // Library/sync/<nexusId>.json; buffered; flush writes
+// Mobile/src/host/prefs.ts — Preferences: 'account' (AccountFields as JSON), 'nexusId', 'nexusName'
+// Mobile/src/host/keychain.ts — SecureStorage: 'token' afterFirstUnlock; `nexus:<id>` whenUnlockedThisDeviceOnly; setSynchronize(false) once
 ```
 
 **Assumed by:** Tasks 22, 38.
@@ -1143,7 +1143,7 @@ export function libraryStateStore(): SyncStateStore                             
 export interface PhoneSession {
   noteOwnWrite(rel: string): void                 // scheduler.noteDirty
   syncNow(): Promise<SyncReport>                  // scheduler.trigger
-  connect(vaultId: string, vaultPassword: string): Promise<Result<null>>   // pulls into Documents/<vaultName>; the walk arrives with Task 38
+  connect(nexusId: string, nexusPassword: string): Promise<Result<null>>   // pulls into Documents/<nexusName>; the walk arrives with Task 38
   disconnect(): Promise<void>
   start(): Promise<void>                          // App.getState() → trigger; App.addListener('resume') → trigger; feed while active; pause aborts the feed
 }
@@ -1162,7 +1162,7 @@ export interface PhoneSession {
 
 **Requirement:** 6
 
-**Why:** D-4: the mobile entry binds the host before rendering; `MobileApp` composes the first-run form and, once a vault is connected, a status screen. Nothing of the desktop renderer mounts here; the phone is the vault in the Files app plus the means to sign in, connect, and sync.
+**Why:** D-4: the mobile entry binds the host before rendering; `MobileApp` composes the first-run form and, once a Nexus is connected, a status screen. Nothing of the desktop renderer mounts here; the phone is the Nexus in the Files app plus the means to sign in, connect, and sync.
 
 **Now** — `—`.
 
@@ -1170,16 +1170,16 @@ export interface PhoneSession {
 
 ```tsx
 // Mobile/src/main.tsx — bindCapacitorHost(); the same CSS side-imports as src/renderer/main.tsx; render <MobileApp/>
-// Mobile/src/MobileApp.tsx — no vault → <FirstRun/>; else <Status/>; a DEV-only seed: Library/dev-first-run.json { server, email, password, vaultId, vaultPassword } performs the first run unattended and is deleted after
-// Mobile/src/FirstRun.tsx — server, email, password, Sign In / Create Account, the vault list (matches first), vault password, Connect — plain InputField + Button on a Surface
-// Mobile/src/Status.tsx — the vault's name, SyncStatus.state, lastSync, pending, the last SyncReport's counts; Sync Now and Disconnect Buttons; padding-bottom var(--safe-bottom)
+// Mobile/src/MobileApp.tsx — no Nexus → <FirstRun/>; else <Status/>; a DEV-only seed: Library/dev-first-run.json { server, email, password, nexusId, nexusPassword } performs the first run unattended and is deleted after
+// Mobile/src/FirstRun.tsx — server, email, password, Sign In / Create Account, the Nexus list (matches first), Nexus password, Connect — plain InputField + Button on a Surface
+// Mobile/src/Status.tsx — the Nexus's name, SyncStatus.state, lastSync, pending, the last SyncReport's counts; Sync Now and Disconnect Buttons; padding-bottom var(--safe-bottom)
 ```
 
 **Assumed by:** Task 24, Task 39 (grows `MobileApp` with the desktop `App` and the bottom bar).
 
 **Verify — automated**
 
-- [ ] `FirstRun.test.tsx`: Connect disabled until a vault is picked and a password typed; `Status.test.tsx`: Sync Now calls `session.syncNow`, Disconnect returns to `FirstRun`.
+- [ ] `FirstRun.test.tsx`: Connect disabled until a Nexus is picked and a password typed; `Status.test.tsx`: Sync Now calls `session.syncNow`, Disconnect returns to `FirstRun`.
 - [ ] `rg -n "var\(--safe-bottom\)" Mobile/src` → 1. Control: `rg -n "safe-bottom" src/renderer/styles.css` → 1.
 - [ ] Full gate green.
 
@@ -1199,14 +1199,14 @@ export interface PhoneSession {
 
 **Verify — automated**
 
-- [ ] With the server on localhost and the CLI having created a vault from the fixture: the seed file written into the container (`xcrun simctl get_app_container booted com.pommora.app data`)/`Library/dev-first-run.json`; the app launched; within 30 s `Documents/<name>/Ideas/A.md` exists in the container; `xcrun simctl io booted screenshot` shows the status screen with the vault's name and an idle state.
+- [ ] With the server on localhost and the CLI having created a Nexus from the fixture: the seed file written into the container (`xcrun simctl get_app_container booted com.pommora.app data`)/`Library/dev-first-run.json`; the app launched; within 30 s `Documents/<name>/Ideas/A.md` exists in the container; `xcrun simctl io booted screenshot` shows the status screen with the Nexus's name and an idle state.
 - [ ] Safari Web Inspector attached once: no console error at boot (the secure-context checks ran at Task 18).
 
 **Verify — user**
 
-- [ ] Two screenshots: the sign-in form, then the status screen after Connect; and the Simulator's Files app (`xcrun simctl launch booted com.apple.DocumentsApp`) showing On My iPhone › Pommora › the vault with its folders.
+- [ ] Two screenshots: the sign-in form, then the status screen after Connect; and the Simulator's Files app (`xcrun simctl launch booted com.apple.DocumentsApp`) showing On My iPhone › Pommora › the Nexus with its folders.
 
-#### Gate 5 — the companion holds the vault (Declared Stop)
+#### Gate 5 — the companion holds the Nexus (Declared Stop)
 
 - [ ] Gate commands green (`typecheck:mobile`, the lint excludes).
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Mobile/src`, `Mobile/plugins`, `Mobile/*.ts`, `Mobile/package.json`, `vite.config.app.ts`'s removal, the tsconfig and biome changes; the reports cite files inside it.
@@ -1224,7 +1224,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 
 **Requirement:** 7
 
-**Why:** The fixture proves the mechanism; Nathan's real vault proves the scale (990 files, 53 MB of trash, thumbnails that churn) and J-2's one-second budget.
+**Why:** The fixture proves the mechanism; Nathan's real Nexus proves the scale (990 files, 53 MB of trash, thumbnails that churn) and J-2's one-second budget.
 
 **Now** — `~/NexusOS` as counted in Grounding.
 
@@ -1239,7 +1239,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 
 **Verify — user**
 
-- [ ] *(none — Task 27's device pass is the real-vault moment.)*
+- [ ] *(none — Task 27's device pass is the real-Nexus moment.)*
 
 #### Task 26: Desktop and Simulator end to end
 
@@ -1249,7 +1249,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 
 **Now** — Task 25's scratch state; the Simulator app from Task 24.
 
-**Becomes** — the seed file aims the app at the scratch server and the dry run's vault; the app foregrounded.
+**Becomes** — the seed file aims the app at the scratch server and the dry run's Nexus; the app foregrounded.
 
 **Verify — automated**
 
@@ -1282,7 +1282,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 
 **Verify — user**
 
-- [ ] After buying the account: the install lands, Obsidian Sync switched off, `~/NexusOS` connected as the vault, the phone connected, an edit each way.
+- [ ] After buying the account: the install lands, Obsidian Sync switched off, `~/NexusOS` connected as the Nexus, the phone connected, an edit each way.
 
 #### Gate 6 — observed end to end
 
@@ -1307,11 +1307,11 @@ The closeout of the arc that ships regardless.
 
 **Now** — `.claude/Features/` holds 18 documents; none describes sync or mobile.
 
-**Becomes** — `.claude/Features/SyncPM.md` (the local and remote vault, the change log and sequence, the manifest rule and what never syncs, the envelope and key hierarchy, the conflict rule and retained versions, the server and its container, how a landing enters each host, the Settings rows by label) and `.claude/Features/MobilePM.md` (the host seam and the Capacitor binding, the api table, the Files-visible copy and per-device state, first run, the sync triggers, the bottom bar, the dev loop, the device path).
+**Becomes** — `.claude/Features/SyncPM.md` (the local and remote Nexus, the change log and sequence, the manifest rule and what never syncs, the envelope and key hierarchy, the conflict rule and retained versions, the server and its container, how a landing enters each host, the Settings rows by label) and `.claude/Features/MobilePM.md` (the host seam and the Capacitor binding, the api table, the Files-visible copy and per-device state, first run, the sync triggers, the bottom bar, the dev loop, the device path).
 
 **Verify — automated**
 
-- [ ] `rg -n "Nathan|session" .claude/Features/SyncPM.md .claude/Features/MobilePM.md` → 0. Control: `rg -c "vault" .claude/Features/SyncPM.md` → 10 or more.
+- [ ] `rg -n "Nathan|session" .claude/Features/SyncPM.md .claude/Features/MobilePM.md` → 0. Control: `rg -c "Nexus" .claude/Features/SyncPM.md` → 10 or more.
 
 **Verify — user**
 
@@ -1727,7 +1727,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 // ask(channel): handled.get(channel) ?? (menuAsks().has(channel) ? () => null : rawAsks().has(channel) ? () => undefined : () => REFUSED)   where REFUSED = fail('operation-failed', 'Not available on this device.')
 //   the raw channels the boot reads are handled explicitly rather than defaulted: 'linkTitles:get' → {} (nexusSlice.ts:105 stores the answer as the title cache)
 // tell: every tell is a no-op; on: an in-process emitter per push channel, returning the unsubscribe
-// handled: 'nexus:state' (session.tree() or { status: 'empty' } before a vault connects), 'assets:map' (engine buildAssetMap, Task 33),
+// handled: 'nexus:state' (session.tree() or { status: 'empty' } before a Nexus connects), 'assets:map' (engine buildAssetMap, Task 33),
 //   'page:open' (engine readPage), 'page:updateBody' (engine updatePageBody; then session.noteOwnWrite(rel)),
 //   'view:loadValues' (engine loadValues over corpusFilesUnder — a full scan; the phone has no index),
 //   'mutate' for ops createPage (engine createPageInOrder), rename (renamePage or renameFolderEntity; a page rename then renameCascade with mentions null — the tile heal stays desktop),
@@ -1773,7 +1773,7 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 
 ```tsx
 // Mobile/src/main.tsx (Task 23) grows: installAssetUrl(rel => session.assetBase() + '/' + rel.split('/').map(encodeURIComponent).join('/'))
-//   where assetBase() is Capacitor.convertFileSrc of the connected vault's Documents uri, resolved once at connect and read at call time (nothing is connected at boot);
+//   where assetBase() is Capacitor.convertFileSrc of the connected Nexus's Documents uri, resolved once at connect and read at call time (nothing is connected at boot);
 //   window.nexus = createPhoneApi(session) before render; initNativeCaret()
 // Mobile/src/MobileApp.tsx (Task 23) — the connected branch renders <App/> + <BottomBar/> in place of <Status/>; Status moves under Settings › General's Sync section (Task 15's rows, served by Task 38)
 // Mobile/src/BottomBar.tsx — a floating Surface at the foot, padding-bottom var(--safe-bottom), five Buttons: Collections and Spaces (sidebarMode + show the sidebar),
@@ -1839,10 +1839,10 @@ export function lastHoldPoint(): { x: number; y: number }
   - [ ] Task 2 — The wire contract · `<commit>`
   - [ ] Task 3 — The server scaffold, its database, and its environment · `<commit>`
   - [ ] Task 4 — Accounts and device tokens · `<commit>`
-  - [ ] Task 5 — Vaults, items, versions, and the change log · `<commit>`
+  - [ ] Task 5 — Nexus', items, versions, and the change log · `<commit>`
   - [ ] Task 6 — The change feed and the container · `<commit>`
 - [ ] **Phase 3** — The sync client in the engine
-  - [ ] Task 7 — Vault cryptography · `<commit>`
+  - [ ] Task 7 — Nexus cryptography · `<commit>`
   - [ ] Task 8 — The sync manifest · `<commit>`
   - [ ] Task 9 — Sync state and the transport · `<commit>`
   - [ ] Task 10 — The sync run · `<commit>`
@@ -1885,18 +1885,18 @@ export function lastHoldPoint(): { x: number; y: number }
 
 Asked and answered 09-04-2026 (Nathan's call on each):
 
-0. **The order (09-04-2026):** the arc runs its reversible, product-independent work first — Task 1, the server, the client, the desktop client, the phone as a Files-visible synced vault — and closes at Gate 7 as a complete arc. The read-chain moves and the renderer port are Phase 8, behind an explicit go and a phone product spec, because they are the one piece that cannot be walked back and the one that depends on what the phone is for.
+0. **The order (09-04-2026):** the arc runs its reversible, product-independent work first — Task 1, the server, the client, the desktop client, the phone as a Files-visible synced Nexus — and closes at Gate 7 as a complete arc. The read-chain moves and the renderer port are Phase 8, behind an explicit go and a phone product spec, because they are the one piece that cannot be walked back and the one that depends on what the phone is for.
 
 1. **Account creation:** a Create Account action beside Sign In; the server's `SIGNUP=open|closed` env, default open.
 2. **Bottom bar (Phase 8):** five items — Collections, Spaces, Tabs, Navigation, Settings. No Sync action (I-2's is withdrawn; the phone syncs on its own writes, resume, launch, and the feed, and Settings › General keeps Sync Now) and no Agenda placeholder. Taps as Task 39 states; nothing designed beyond the simplest reading.
 3. **A text field row kind** in the Settings window on `InputField`.
 4. **Page History rows** stay timestamp-only with remote and local merged.
 5. **Phone create-page (Phase 8) writes the parent's `page_order`** exactly as the desktop does; `setChildOrder`, `updateFolderSidecar`, and `createDisambiguated` move into the engine (Task 34).
-6. **Scratch vaults** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
+6. **Scratch Nexus'** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
 7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
 8. **Phone mutations and menus (09-04-2026, Phase 8):** rename, delete of pages, Sets, and Collections, move, and reorder join v0 (A-7 restated); Space and Context deletes stay desktop-only. The phone reaches them through the renderer's existing menus: a long press dispatches the renderer's own `contextmenu`, the sidebar menu's rows are stated once in `src/shared/contextMenu.ts`, and one in-app row-menu pane drawn from the existing menu kit presents them; no menu is redesigned. Hold lifts, release opens the menu, move drags (the iOS convention). The list-menu generalization (every menu from one model, the 22 channels collapsing into `row-menu`, the desktop's in-app default) is deferred. New renderer pieces sit beside their kin (`Actions/`, `Interactions/`), which is where the renderer already keeps menus and gestures.
 
-Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file. Attack round 2 (09-04-2026) returned 8 findings (2 High: `rewritePreservingTimes` invisible to the change gate — the `forceHash` set; the desktop's sync rows carrying no vault id) and 2 unknowns (the cursor after a retain-only store; `Sync/package.json` in the image); all folded. A third round would exceed the two-agent cap per scope; Nathan decides whether the second round's severity earns one.
+Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file. Attack round 2 (09-04-2026) returned 8 findings (2 High: `rewritePreservingTimes` invisible to the change gate — the `forceHash` set; the desktop's sync rows carrying no Nexus id) and 2 unknowns (the cursor after a retain-only store; `Sync/package.json` in the image); all folded. A third round would exceed the two-agent cap per scope; Nathan decides whether the second round's severity earns one.
 
 ### Open Against Later Tasks
 
@@ -1929,7 +1929,7 @@ Taken at planning against the decision log, each the simpler mechanism:
 - A source label on Page History rows (local snapshot versus remote version), and remote history that survives a rename (the envelope carrying the prior item id).
 - `startDesktopSync(root, win)` binds one window for its status push; a second window needs the push to fan out through the live-refresh transport the multi-window seam names.
 - The block documents' sync classification once the Tiles plan lands `_tiles.json` (the watcher ignores `.nexus/homepage` and Space `.md` bodies today).
-- OAuth providers behind the sign-in seam (Ruling 7: right after the device install, when the paid program exists); Argon2id or scrypt as a new vault KDF; chunked transfer; Postgres or a blob folder; multi-user vaults on the wrapped-key list; file coordination in the atomic-write plugin.
+- OAuth providers behind the sign-in seam (Ruling 7: right after the device install, when the paid program exists); Argon2id or scrypt as a new Nexus KDF; chunked transfer; Postgres or a blob folder; multi-user Nexus' on the wrapped-key list; file coordination in the atomic-write plugin.
 
 ### Closeout
 
@@ -1941,7 +1941,7 @@ Taken at planning against the decision log, each the simpler mechanism:
 
 ```
 Execute Mobile Companion & Pommora Sync — Implementation Plan. Live.
-Live-verify: the Simulator screenshots at Gate 5 and the Files app holding the vault; the device install (Task 27) waits on the account. Phase 8 does not open without a separate go.
+Live-verify: the Simulator screenshots at Gate 5 and the Files app holding the Nexus; the device install (Task 27) waits on the account. Phase 8 does not open without a separate go.
 Screenshots: Gate 5 (the sign-in form, the status screen, the Files app); Task 26 (the desktop page after each cross-device clause); Phase 8, if opened: the tree, the bottom bar, a page open.
 Pings: at every declared stop and at completion.
 Record: PM-128 || Pommora Sync And The Mobile Companion.
@@ -1980,8 +1980,8 @@ Everything else is the standard below.
 
 - [ ] Settings › General: Account and Sync sections, every action and its inverse, against the local server.
 - [ ] Page History listing a remote version and restoring it.
-- [ ] The Simulator: the sign-in shell, the status screen, the vault in the Files app, a file edited there reaching the desktop after Pommora foregrounds. (Phase 8, if opened: the tree, a page, the bottom bar's five items, a body edit typed on the phone.)
-- [ ] The device install after the account: Obsidian Sync off, `~/NexusOS` as the vault, the phone connected, an edit each way (Task 27, pending until then).
+- [ ] The Simulator: the sign-in shell, the status screen, the Nexus in the Files app, a file edited there reaching the desktop after Pommora foregrounds. (Phase 8, if opened: the tree, a page, the bottom bar's five items, a body edit typed on the phone.)
+- [ ] The device install after the account: Obsidian Sync off, `~/NexusOS` as the Nexus, the phone connected, an edit each way (Task 27, pending until then).
 
 **The record**
 

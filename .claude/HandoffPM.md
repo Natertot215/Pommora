@@ -1,92 +1,83 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"I want to retire the Links/ folder … completely refactor the 'hover over this, display it in a preview pane' system to where it becomes one shared … chassis; with its action being able to be used app-wide."* — then, ratifying: *"Glances go under Interface please."*, *"Dwell knob lives in glance-action.ts … which describes different timers for different users"*, *"Glance action can be camelCase"*, *"Unify the connection + web to one 'Link' dwell timer"*, *"the current ui-copy stands. Open in Preview stays"*, *"Ends with /closeout. No History, re-write handoff + ContextPM accordingly."*
+> **User Prompt:** *"Execute .claude/Planning/Tiles — Implementation Plan.md (ratified …). Live, phase by phase. … Closeout (Phase H): write the Delivery Claim; dispatch a neutral general-purpose verifier against the decision log; then build-breaking-agent against the full range; fix or rule on everything; run the Dead Vocabulary sweep against its control; rewrite ContextPM, HandoffPM, and the History entry PM-128 'Tiles'; hand me the Completion Criteria's user's-own-pass list."*
 
 #### Current Focus
 
-**Session ID:** 973f0051-88f1-4a64-ae11-23e6a6ef57ff
-**Dates:** 09-03-2026 → 09-04
+**Session ID:** c6dd673e-55a1-45d2-b95b-12da6896d315
+**Dates:** 09-04-2026
 **Model:** Fable 5.1
 
-**The Glance Pane arc is closed.** The hover pane left `renderer/Links/` and became `renderer/Interface/Glance/`: `GlancePane.tsx` on the PickerMenu chassis, `glanceAction.ts` as the import-free seam any host calls (`armGlance(target, el, 'link')`, `cancelGlance`, `closeGlance`, the per-host dwell table `GLANCE_DWELL`, the presenter slot, and `watchAnchor`, which keeps a glance standing while the content view scrolls until its anchor leaves the DOM), and `glance-pane.css` for the rules PickerMenu cannot express. MarkdownPM is one host of the seam through a single `ConnectionsApi.glance` hook (`glanceLink`); its own dwell timer and the two pre-gate cancels that would have killed a shared timer are gone. The pane resolves its page itself, records focus on the capture-phase press and hands it back through the host editor's own view, and keeps an eight-entry id-keyed warm store fenced by `fenceWarm`, so re-glancing a page returns to where it was left unless the page changed. The three link helpers moved to `Actions/`; `Links/` no longer exists.
+**The Tiles arc is closed in code; Nathan's own pass is owed.** Four phases, ten tasks, four gates, each gate a simplification pass, a correctness review, and an attack with every finding fixed or ruled in the plan's Log. `renderer/SurfacePM/` is `renderer/Tiles/`; every tile-system "block" is "tile"; the grid's drags and the embed handle run on `Interactions/gesture.ts`; a tile kind is one entry in `TILE_KINDS`, `TILE_SURFACES`, and (when it re-mints) `TILE_COPY`; each host's document is `_tiles.json` in its folder, watched, reloaded live, and migrated once from the `local_state` rows.
 
-**The vocabulary moved with it, in code only.** Every identifier that said "preview" and meant the floating Page Window says "window" — `windowSlice`, `pageWindow`, `openWindow`, `WindowsFile`, IPC `windows:*` and `glance:*`, push `open-in-window`, local_state keys `windows` and `glancePane`, action strings `title:window` / `link:window` / `open-window`. Nathan ruled the user-facing and on-disk words stay: "Open Preview", "Open Connections In Preview", "Hover Preview Linger", the "Preview / Full Page" toggle, sidecar `page-preview`, settings.json `connectionsOpenInPreview` and `hoverPreviewLinger`.
+**Verified live over CDP, as distinct from traced:** the grid edge drag's per-frame count on the homepage (60 `onDragMove` per 60-move drag, 0.50 per rAF tick, the layout snapshotted and restored byte-identical); on a scratch Nexus, a tile minted over IPC, its `_tiles.json` hand-edited, rendered within 1.5 s on the same `.tile-host` element, a south-edge drag landing its height on disk and surviving a reload; on NexusOS, the first open with the migration logging `{ written: 11, dropped: 12, divergent: [] }`, 11 `_tiles.json` files, 0 rows, and the Homepage rendering its three tiles at the heights the Gate 1 snapshot recorded. Traced and unit-covered, not driven: the handle menus, the embed handle in a page, Escape mid-drag, the Scale ramp easing back to 1.0.
 
-**Verified live over CDP against NexusOS, as distinct from traced:** a website glance on a markdown link (its cover never lifted for a slow external site and the resolve deadline closed it, the standing contract); a connection glance in the main editor that stayed through a content-view scroll, scrolled inside on `.cm-scroller`, closed on Escape, and re-glanced at the same scroll (402 → 402); a connection glance inside a Page Window tab; and, after a Gate 3 fix, the focus hand-back after a selection drag with no scroll jump. Not driven live: a table-cell link and a dashboard-tile link (no NexusOS page holds one; the unit suites cover both hosts), "Open Preview" from the native link menu (native menus are not CDP-drivable), and the edit-then-re-glance fence (unit-covered, a real page would have been mutated).
+**What the reviews changed.** Gate 1 found a pre-existing flaw and fixed it at the frame (a bare click on an embed strip froze an auto-height tile). Gate 3's attack found the recipe's `schema` field had no reader while `knownTile` kept a hand-written union; `knownEntry` now derives from the table. Gate 4's two reviews agreed the echo comparison used two serializers and never matched; `shared/stableJson.ts` is now the one serializer on both sides. The plan's Progress hashes were re-derived from the log after the amend pattern skewed five of them.
 
-**The closeout attack found no regression from the arc** and six inherited fragilities; four are fixed (`a25d7e8f`): the pane no longer registers as a modal picker, so menus and toolbar panels dismiss normally while a glance stands; a drag pinned at a cramped anchor's cap keeps the stored size; the size seeds per nexus; a table inside a glanced page no longer closes the pane, and a read-only tile's cell no longer mounts an editor. Nathan then ruled webpages inert inside a glance too; `followTarget` is the one seat (the wikilink and citation follows now route through it). One is accepted: a single Escape both exits a tile's edit and closes a glance. Nathan's mid-closeout ruling put the glance and the autocomplete on the window glass (`37fa4c59`), and the simplifier rerun over the folds landed one `insideGlance` predicate and a supersession token on the size seed (`c5990564`).
-
-**What the reviews changed.** The plan attack before ratification folded nine findings — the scroll owner moving to `.cm-scroller`, the focus record's guards, the sweep globs, the ledger mechanism, the knob's home, the resolve-then-open order, and the seam's self-guard. The implementation review folded two: every close routes through one `dismiss` that cancels a queued retarget beat and supersedes an in-flight cold fetch. The live walkthrough found the third: CodeMirror focuses its own content inside the native mousedown, so the press record moved to `onMouseDownCapture`.
+**Not this session's:** a parallel session was trimming comments across the tree throughout (about a dozen files, plus three Planning docs staged as deleted by the hook); its files were never staged here except where they also carried this arc's import rewrites, which bundled them. Two of its files were formatted in place so lint could run.
 
 #### Completion Criteria
 
 - [x] Every requirement traces to a landed task; the plan's Progress carries the hashes.
-- [x] The acceptance walkthrough observed over CDP where the data allowed, with the three unit-covered clauses named.
-- [x] Simplification, comment pass, code review, and attack ran per gate; every finding folded or ruled in the plan's Log.
-- [x] Docs, guidelines, the Codebase Map, and the comment ledgers rewritten; the closing sweep at zero against its control.
-- [x] Handoff and Context rewritten; no History entry, by ruling.
-- [ ] Nathan's own pass: the glance in the running app (now on the window glass), the Page Window routes, and InterfacePM's Glance Pane section.
+- [x] The acceptance clauses observed over CDP where the data allowed; the migration census and the CDP count recorded in the Log with their numbers.
+- [x] Simplification, the comment pass, code review, and attack ran per gate and over the whole range; every finding folded or ruled in the plan's Log.
+- [x] Docs made false rewritten in the commits that falsified them; the Dead Vocabulary sweep at zero against its control (`blockDoc` stands in the migration's four files).
+- [x] Context, Handoff, and History PM-128 written.
+- [ ] Nathan's own pass — the Completion Criteria's user list in the plan.
 
 #### Next Session
 
-- Nathan's own pass over the glance and the window routes; his remembered Page Window tab sets and glance size reset once with the key rename.
-- Non-editor glance hosts — sidebar rows, tabs, view rows, PropertyPanel values — are the arc's Prospect: a host supplies an element and a dwell row, and the seam does the rest.
-- Blur-close for the glance on ⌘-Tab, if wanted; none exists today.
-- `main/remint.ts` never drops the old origin key when copying a window set (pre-existing).
+- Nathan's own pass over the plan's Completion Criteria user list; then the plan's Status header to "closed".
+- The inspector: the tab strip, the reserved Collection and Pages tabs, custom tabs under `.nexus/inspector/<id>/` reading the reserved `state.json` key, and a `state-leaf` watcher arm the moment that key gains a writer (Sequenced After in the plan).
+- Panel kinds (properties, backlinks, list) and webpage as a surface kind: one shared entry, one renderer entry, a copy arm if needed, and a component each.
+- Live body reload for markdown tiles (bodies sync but are not watched) rides the page editor's external-edit arc.
+- Retiring `tilesMigrate.ts` and the `blockDoc` scope once every device has opened the Nexus on this build.
 
 #### Feedback
 
-- "Panel is taken, Pane may be too broad … lets call it a Pane for now."
-- "I want the size to be bound to the core TSX file … minimal amount of files total is the best outcome here."
-- "the detachment focus should be done in a way where markdownpm doesn't need to enumerate it. the 'click off and have an active cursor elsewhere' should just be core behavior."
-- "Stop and ask when you need to — otherwise please try and handle this autonomously."
+- "Execute … Live, phase by phase." / "Ambiguity: simplest reading, record under Rulings, continue." / "'Done with concerns' is unfinished."
 
 #### Session Pointers
 
-- The spec and the plan: `.claude/Planning/Glance Pane — Decision Log.md`, `.claude/Planning/Glance Pane — Implementation Plan.md` (Rulings R-1 through R-5, Deviations, the Delivery Claim under Closeout).
-- The seam: `Pommora/src/renderer/Interface/Glance/glanceAction.ts`; the pane: `GlancePane.tsx`; the hook: `MarkdownPM/Connections/index.ts` (`glanceLink`); the hosts: `Interface/PageView.tsx`, `Tiles/TileHost.tsx`, `Windows/PageWindow.tsx`, `Windows/NavWindow.tsx`.
-- The CDP driver, throwaway, in the session scratchpad: `cdp.mjs` (`eval` / `--move` / `--down` / `--up` / `--wheel` / `--key` / `--shot`); the screenshots `glance-site.png`, `glance-connection.png`, `glance-window.png`.
-- A parallel session (the CalendarPicker delegation) committed on the same tree throughout; its files were never staged here.
+- The spec and the plan: `.claude/Planning/Tiles — Decision Log.md`, `.claude/Planning/Tiles — Implementation Plan.md` (Progress, Rulings incl. the four Gate blocks, Deviations, Lessons, Sequenced After, the Delivery Claim under Closeout, Completion Criteria).
+- The tile system: `Pommora/src/renderer/Tiles/` (`TileGrid.tsx`, `TileHost.tsx`, `tileKinds.tsx`, `useTileDoc.ts`, `Surfaces/`); the contract `Pommora/src/shared/tiles.ts`; main's `tiles.ts`, `tileDoc.ts`, `tilesMigrate.ts`; the watcher arm in `watcher.ts` / `watchPatch.ts`.
+- The scratch Nexus and the CDP driver in the session scratchpad: `ScratchNexus/`, `cdp.js` (`probe` / `eval` / `drag` / `reload`); the pre-migration `nexus.db.before-tiles-migration` copy sits beside them.
 
 #### Working Notes
 
-- CodeMirror focuses its content during the native mousedown, before a bubbling React handler runs; anything that must read "who had focus before this press" reads it on the capture phase.
-- One shared dwell timer under N pointer handlers turns every defensive pre-gate cancel into a killer of the one that armed; audit the cancels, not the arms.
-- jsdom performs no layout, so `scrollTop` cannot be set or read on a scroller there; scroll-restore is a seam-level unit test plus a live check.
-- `git stash` on a shared tree takes a parallel session's uncommitted work with it; filter their paths out of gate output instead.
-- `electron-vite dev` needs a fresh launch with `--remote-debugging-port=9333` after a main-process change; a page reload follows any edit to a module the renderer imports at boot.
+- A hash stamped into the plan before an `--amend` records the commit the amend replaced; stamp after the last rewrite or commit the stamp separately.
+- Two serializers on one comparison never match; a "bytes are identical" skip needs the writer's own serializer on both sides, and a test whose fixture is built by that serializer.
+- `rg` is a shell function in this environment that can shadow the binary inside `subprocess`; `grep -r` from Python is the safe spelling.
+- The peer session's unformatted edits fail the tree-wide lint gate; formatting them in place is content-neutral and the only way the gate runs.
 
 #### Changes
 
 **FILES ADDED**
 
-- Pommora/src/renderer/Interface/Glance/glanceAction.ts · glanceAction.test.ts · glance-pane.css · glancePane.test.tsx
+- Pommora/src/main: tileDoc.ts · tilesMigrate.ts · tilesMigrate.test.ts; shared/stableJson.ts
+- Pommora/src/renderer/Tiles: tileKinds.tsx · tileKinds.test.tsx · TileHost.test.tsx · TileGrid.test.tsx · useTileDoc.test.tsx
 
 **FILES MOVED**
 
-- Pommora/src/renderer/Links/ConnectionPane.tsx → Interface/Glance/GlancePane.tsx (rewritten)
-- Pommora/src/renderer/Links/{connectionMenu,linkResolve,openWebLink}.ts → Actions/
-- Pommora/src/renderer/Store/previewSlice.ts · previewSlice.test.ts → windowSlice.ts · windowSlice.test.ts
-- Pommora/src/main/IO/previewState.ts · previewState.test.ts → windowState.ts · windowState.test.ts
+- Pommora/src/renderer/SurfacePM/ → Tiles/ (SurfaceView.tsx → TileGrid.tsx · TileSurface.tsx → TileHost.tsx · tile-surface.css → tile-grid.css · block-tile-base.css → tile-base.css · block-title.css → tile-title.css · SurfaceLab.tsx → TileLab.tsx · the four bodies + webRetention + view-tile.css → Surfaces/)
+- Pommora/src/shared/blocks.ts → tiles.ts (+test); Pommora/src/main/blocks.ts → tiles.ts (+test)
+- .claude/Features/SurfacePM.md → TilesPM.md
 
 **FILES REMOVED**
 
-- Pommora/src/renderer/Links/ (connection-pane.css · connectionPane.test.tsx · hoverPaneSize.ts · hoverPaneSize.test.ts · panePresenter.ts)
+- Pommora/src/renderer/SurfacePM/Sensors/ (pointerDrag.ts · pointerDrag.test.ts)
 
 **FILES MODIFIED**
 
-- .claude: CLAUDE.md · ContextPM.md · HandoffPM.md · scripts/comment-baseline.json · comment-units.json · comment-ledger.mjs
-- .claude/Features: ArchitecturePM · ConfigurationPM · ConnectionsPM · DesignSystemPM · InteractionPM · InterfacePM · MarkdownPM · TilesPM · WebviewPM; Guidelines: Editor-Internals · Web-Guests
-- Pommora/src/shared: types.ts · bridge.ts · links.ts · citationMenu.ts · pageMenu.ts · connMenu.ts · cellMenu.ts · navRowMenu.ts · tabMenu.ts and their tests
-- Pommora/src/main: index.ts · contextMenu.ts · navRowMenu.ts · tabMenu.ts · remint.ts · sessionDb.ts · webGuests.ts · Database/localState.ts; preload/index.ts
-- Pommora/src/renderer: App.tsx · Store/nexusSlice.ts · sessionState.ts · store.ts · Interface/PageView.tsx · restoreSnapshot.ts · pageEditor.ts · Tiles/TileHost.tsx · Surfaces/WebTile.tsx · tileCache.ts · Windows/PageWindow.tsx · NavWindow.tsx · WindowTabStrip.tsx · useWindowWarm.ts · windowTabs.ts · windowCache.ts · windowMorph.ts · page-window.css · PageHistoryWindow.tsx · Interactions/FloatingWindow.tsx · Tabs/TabBar.tsx · Navigation/NavList.tsx · Sidebar/Sidebar.tsx · Views/TableView/TableView.tsx · CardView/CardsView.tsx · CardValue.tsx · CardPickerHost.tsx · Properties/PageProperties.tsx · Assignment/LinkCell.tsx · usePropertyRows.ts · cardValueInput.ts · MarkdownPM/index.tsx · PageHeader.tsx · Connections/index.ts · Editor/pointerPath.ts · links.ts · connections.ts · folding.ts · editorGesture.ts · citationPointer.ts · Tables/MarkdownTable.tsx · cellStatic.tsx
-- The matching test files beside each of the above.
+- .claude: ContextPM.md · HandoffPM.md · HistoryPM.md · FrameworkPM.md · scripts/loc.py · comment-baseline.json · comment-units.json; Features: InteractionPM · InterfacePM · MarkdownPM · DesignSystemPM · PommoraDND · WebviewPM · TilesPM
+- Pommora/src/shared: tiles.ts · tileMenu.ts · bridge.ts · types.ts · viewMenus.ts; preload/index.ts
+- Pommora/src/main: index.ts · tiles.ts · remint.ts · paths.ts · watcher.ts · watchPatch.ts · mutate.ts · IO/atomicWrite.ts · CRUD/contextWrite.ts and their tests
+- Pommora/src/renderer: Interactions/ResizeFrame.tsx · gesture.test.ts; MarkdownPM/Editor/embedWidget.tsx · Styles.css · embedResize.test.tsx; Tiles/* (every file, by the move and rename); the twenty-odd importers of the old module path; Interface/Interface.css · scope.ts · notifications.ts; Windows/confirmations.ts; Settings/SettingsWindow.tsx; Views/TableView + CardView css
 
 **COMMITS**
 
-- `f19ca8bd` the ratified plan · `6992b60f` Task 1 · `c54a2c57` Task 2 · `e26a0095` Task 3 · `97ac9438` Gate 1
-- `6f7cb913` Task 4 · `70afe9da` Task 5 · `3c1010d4` Tasks 6–8 · `2ef7e752` Task 9 · `99acb80b` Gate 3 · `cf2ba0fe` the comment pass and residue sweep · `a3ce42eb` the record · `37fa4c59` the window glass · `a25d7e8f` the attack's folds · `c5990564` the simplifier rerun · `7343d5ac` the comment pass
-- The parallel session's, interleaved and not this session's: the `pickers` commits from `e7e3bd17` onward.
+- `c53f7bce` ratified · `97c820f4` Task 1 · `e411d814` Task 2 · `69bb49f4` Gate 1 simplification · `15fbcc1f` Gate 1 · `d05db560` Task 3 · `f376ea7a` Task 4 · `4a21b5c6` Gate 2 simplification · `59bf6fdc` Gate 2 · `6a715876` Task 5 · `0dc65e48` Task 6 · `cb0ada1d` Gate 3 simplification · `57a46fc9` Gate 3 · `c674ef5f` Task 7 · `c5600368` Task 8 · `50d86e59` Task 9 · `a5baaa74` Task 10 · `83341bca` Gate 4 simplification · `97cf4f55` Gate 4 · `1d3d8678` the Delivery Claim
+- The parallel session's Mobile Companion & Pommora Sync planning commits are interleaved and not this session's.
 
 #### Handoff Guidelines
 
