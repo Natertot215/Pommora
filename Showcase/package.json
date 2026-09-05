@@ -1,0 +1,14 @@
+{
+  "name": "@pommora/showcase",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@pommora/uix": "*",
+    "@vanilla-extract/vite-plugin": "^5.2.2",
+    "@vitejs/plugin-react": "^5.2.0",
+    "vite": "^7.3.5"
+  }
+}
