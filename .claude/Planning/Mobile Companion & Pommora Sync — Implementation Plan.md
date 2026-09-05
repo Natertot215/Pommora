@@ -114,6 +114,9 @@ Bounded by: v0 phone scope is A-7 (tree, open page, edit body, create page with 
 | `ConfigurationPM.md:7,9-16` | "each row writes one key of the `personalization` object"; §General has two rows | Account and Sync rows store elsewhere | 23 |
 | `Dependencies.md:3` | "Reconcile against `Pommora/package.json`" | Three package files | 37 |
 | `Development-Environment.md:24` | "covering both tsconfig projects" | Five projects; the mobile loop and the server are added | 37 |
+| `.claude/CLAUDE.md:43` | "`npm run typecheck` … covers both `tsconfig` projects" | Five projects | 37 |
+| `Development-Environment.md:41` | "set `app.setPath('userData', …)` from a `POMMORA_USERDATA` env … (instrumentation — removed before committing, grep-verified gone)" | The flag is standing | 20 |
+| `ArchitecturePM.md:188` | "The preload derives its entire API from that map with one dialer per declared name" | It derives from the shared api table | 7 |
 | `NexusRecordPM.md:15` | "`.trash` is outside the watcher and the list is fetched when the leaf opens" | Still true; gains "a bundle travels with sync" | 37 |
 | `Guidelines/Development-Environment.md` | no mention of the mobile dev loop or Simulator verification | Added (K-7) | 37 |
 
@@ -221,7 +224,9 @@ export function sha256Hex(data: string | Uint8Array): string
 import { setHost, type EngineHost } from '@engine/host'
 export const nodeHost: EngineHost   // readFile/readdir(sorted)/stat/write-file-atomic + recordWrite/
                                     // applyRemote = write-file-atomic + utimes + forgetParse, no recordWrite/
-                                    // mkdir recursive/rename + recordWrite×2/rm/serializeOnFile
+                                    // mkdir recursive/rename + recordWrite×2/remove = rmdir for a directory, rm force for a file/serializeOnFile
+// stat answers mtimeMs rounded to an integer: APFS stores nanoseconds and utimes takes seconds, so a raw mtimeMs never round-trips
+// (measured 09-04-2026: set 1757012345678 → read 1757012345677.999); every mtime the engine compares or ships is integer ms
 export function bindNodeHost(): void // setHost(nodeHost); called first thing in src/main/index.ts
 // src/main/Testing/setup.ts (new): bindNodeHost() — added to vitest.config.ts setupFiles
 ```
@@ -230,7 +235,7 @@ export function bindNodeHost(): void // setHost(nodeHost); called first thing in
 
 **Verify — automated**
 
-- [ ] Red first: `host.test.ts` (unbound `host()` throws), `posixPath.test.ts` (join/relative/dirname/basename/extname/normalize against `node:path.posix` on 30 cases including `..`, trailing slashes, root, empty), `sha256.test.ts`, `engineHost.test.ts` (readDir sorted; `applyRemote` restores mtime, records no echo — `isRecentWrite` false after; `writeText` records — true after; `remove` on absent resolves). Expect module-not-found, then green.
+- [ ] Red first: `host.test.ts` (unbound `host()` throws), `posixPath.test.ts` (join/relative/dirname/basename/extname/normalize against `node:path.posix` on 30 cases including `..`, trailing slashes, root, empty), `sha256.test.ts`, `engineHost.test.ts` (readDir sorted; `applyRemote` with `mtimeMs` 1757012345678 then `stat` answers exactly 1757012345678; records no echo — `isRecentWrite` false after; `writeText` records — true after; `remove` on absent resolves, on an empty directory resolves, on a non-empty directory rejects). Expect module-not-found, then green.
 - [ ] `npm run typecheck:engine` green; a probe file `src/engine/probe.ts` containing `import 'node:fs'` fails `typecheck:engine` and is deleted before commit.
 - [ ] Full gate green; test files 318 + 4 new, test count 3,981 + new.
 - [ ] `rg -F "@engine" tsconfig.node.json tsconfig.engine.json electron.vite.config.ts vitest.config.ts vite.config.ts` → 5. Control: `rg -F "@shared" vitest.config.ts` → 1.
@@ -314,8 +319,10 @@ export function rmwJsonStrict(absPath, mutate, seedOnAbsent?): Promise<Result<Re
 // src/engine/IO/walk.ts — DirEntry in place of Dirent
 export function isContentFile(entry: DirEntry): boolean
 export function listEntries(dir: string): Promise<DirEntry[]>    // host().readDir
-export function listMarkdownFiles(dir, opts?): Promise<string[]>  // recursion by hand over readDir
-export function corpusFiles / corpusFilesUnder / listFilesRecursive — unchanged contracts
+export function listMarkdownFiles(dir, opts?): Promise<string[]>  // recursion by hand over readDir; enters every directory (dot-dirs and `.trash` included) exactly as readdir({recursive:true}) did, and filters after — skipTopLevel is the only prune
+export function corpusFiles / corpusFilesUnder / listFilesRecursive — unchanged contracts (listFilesRecursive recurses by hand too; `parentPath` is gone)
+// Every consumer of a listed entry moves from Dirent methods to DirEntry.kind: readNexus.ts:461,590,658 · folderKind.ts:133 (moving) and, staying in main,
+// adopt.ts:145,194,226 · assetDirValidate.ts:47,50 · exclusionScan.ts:35,39 · assetMigrate.ts:131,241 · provenance.ts:249,425,497,517 — 8 modules, compile-enumerated
 // src/engine/IO/walkCache.ts
 export async function cachedParse<T>(absPath: string, parse: (stat: FileStat | null) => Promise<T>, known?: FileStat): Promise<T>
 // `known` skips the stat: a readDir that listed the stat already answered it
@@ -324,7 +331,7 @@ export async function cachedParse<T>(absPath: string, parse: (stat: FileStat | n
 
 **Verify — automated**
 
-- [ ] Red first: `walkCache.test.ts` gains "a known stat is used without a stat call" (spy on `host().stat` → 0 calls). Expect failure, then green.
+- [ ] Red first: `walkCache.test.ts` gains "a known stat is used without a stat call" (spy on `host().stat` → 0 calls); `walk.test.ts` gains "`listMarkdownFiles` over a fixture holding `.trash/x.md` and `.hidden/y.md` returns both" and "`listFilesRecursive` matches the retired recursive readdir on a three-level fixture". Expect failure, then green.
 - [ ] Full gate green; counts unmoved plus one.
 - [ ] `rg -l "from '(\.\./)*\.?/?(IO/walk|walkCache)'" src/main` → 0; `rg -n "pathExists|readJsonObject|readJsonStrict|readTextOrNull|rmwJsonStrict|writeJson|stableStringify" src/main/IO/atomicWrite.ts` shows only imports from `@engine/IO/files`. Control: `rg -l "from '@engine/IO/files'" src/main` → 40 or more.
 - [ ] The 8 `vi.mock('…/IO/atomicWrite')` and `vi.mock('./readNexus')` sites (`deleteOrder`, `mutatePatch`, `liveTree`, `journalWiring`, `keyHolders`, `cascade`, `governedWorldWrite` tests) re-aimed at the symbol's new module; `npm run test` proves each still intercepts (a mock that misses its target reads as a real write in a temp dir and the assertion on the spy fails).
@@ -394,7 +401,7 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
 // src/engine/CRUD/page.ts — createPage, renamePage, movePage, updatePageBody; relocate = host().lock + host().rename; plus the one create sequence both hosts run:
 export async function createPageInOrder(parentDir: string, name: string, opts: CreateOpts, order?: readonly string[]): Promise<Result<{ id: string; path: string }>>
 //   createDisambiguated → createPage → setChildOrder(parentDir, 'page_order', order with NEW_PAGE_SLOT replaced) when order is given; mutate.ts calls it and keeps its index and values side effects
-// src/engine/CRUD/util.ts — invalidName, invalidContextTitle, sweepAdmitsBody, sweepAdmits (the dead pathExists re-export at util.ts:9 is dropped; its 0 importers stay 0)
+// src/engine/CRUD/util.ts — invalidName, invalidContextTitle, sweepAdmitsBody, sweepAdmits (the pathExists re-export at util.ts:9 is dropped; its 2 importers, page.ts:12 and folderEntity.ts:11, import it from @engine/IO/files)
 // src/engine/CRUD/reorder.ts — setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder (host().mkdir; rmwJsonStrict from the engine)
 // src/engine/IO/sidecarIO.ts gains updateFolderSidecar (moved from CRUD/folderEntity.ts; the one sidecar patch primitive) — folderEntity keeps create/rename/move in main
 // src/engine/disambiguate.ts — createDisambiguated (pure)
@@ -439,7 +446,7 @@ export const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null)
 **Becomes** — the holder binds once per process like the host, so every patcher keeps its signature and main's callers keep their imports (now from the engine):
 
 ```ts
-// src/engine/treePatch.ts (new home; classifyEvent, WatchEvent, WatchClass, applyPatch, and every patch*FromDisk) + treePatch.test.ts
+// src/engine/diskPatch.ts (new home; classifyEvent, WatchEvent, WatchClass, applyPatch, and every patch*FromDisk) + diskPatch.test.ts — named apart from @shared/treePatch, the pure node builders it imports
 export interface TreeHolder {
   get(): NexusTree | null
   patch(fn: (t: NexusTree) => NexusTree | null): NexusTree | null
@@ -449,16 +456,16 @@ export function classifyEvent(tree: NexusTree, root: string, ev: WatchEvent, sco
 export const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null): 'ok' | 'refresh'   // unchanged signature
 export function patchPageFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'>              // unchanged; the six others likewise
 // src/main/liveTree.ts — bindLiveTree(): setTreeHolder({ get: getLiveTree, patch: patchLiveTree }); called beside bindNodeHost at boot and in the test setup
-// src/main/watchPatch.ts — keeps applyWatchEvents, applyOne (index + history side effects), touchesCorpus; imports the patchers from @engine/treePatch
+// src/main/watchPatch.ts — keeps applyWatchEvents, applyOne (index + history side effects), touchesCorpus; imports the patchers from @engine/diskPatch
 ```
 
 **Assumed by:** Task 30 (the phone binds its own holder).
 
 **Verify — automated**
 
-- [ ] `watchPatch.test.ts` splits: classification and patch cases move to `treePatch.test.ts` binding a memory holder in `beforeEach`; the `applyOne` side-effect cases stay. Total unmoved.
+- [ ] `watchPatch.test.ts` splits: classification and patch cases move to `diskPatch.test.ts` binding a memory holder in `beforeEach`; the `applyOne` side-effect cases stay. Total unmoved.
 - [ ] Full gate green.
-- [ ] `rg -n "getLiveTree|patchLiveTree" src/engine` → 0. Control: `rg -n "from '@engine/treePatch'" src/main` → 3 or more (`watchPatch.ts`, `index.ts`, `mutatePatch.ts`).
+- [ ] `rg -n "getLiveTree|patchLiveTree" src/engine` → 0. Control: `rg -n "from '@engine/diskPatch'" src/main` → 3 or more (`watchPatch.ts`, `index.ts`, `mutatePatch.ts`).
 
 **Verify — user**
 
@@ -643,7 +650,7 @@ export interface VaultInfo {
   retentionDays: number           // plaintext: the server prunes by it
   infoVersion: number             // the server's precondition for PUT
 }
-export interface ItemRecord { itemId: string; version: number; mtimeMs: number; size: number; deleted: boolean }
+export interface ItemRecord { itemId: string; version: number; mtimeMs: number; size: number; deleted: boolean }   // mtimeMs is always an integer
 export interface ChangesPage { changes: ItemRecord[]; cursor: number; hasMore: boolean }
 export interface VersionRow extends ItemRecord { head: boolean; storedAt: number }
 export interface Session { token: string; deviceId: string; email: string }
@@ -683,10 +690,11 @@ Sync/
   package.json          { "name": "pommora-sync", "private": true, "type": "module", "engines": { "node": ">=24.15" },
                           "scripts": { "start": "node src/index.ts" } }   — no dependencies
   .env-sample           DATA_DIR=./data  PORT=8642  SIGNUP=open
-  Dockerfile            multistage node:24-slim, tini, non-root `node`, COPY src, CMD ["node","src/index.ts"]
+  Dockerfile            built from Pommora/ as its context (`docker build -f Sync/Dockerfile -t pommora-sync .`) so the shared protocol module is inside it:
+                        multistage node:24-slim, tini, non-root `node`, COPY Sync/src → /app/Sync/src and src/shared/{syncProtocol,result}.ts → /app/src/shared, WORKDIR /app/Sync, CMD ["node","src/index.ts"]
   src/index.ts          reads env, opens the db, listens
   src/env.ts            parseEnv(process.env, defaults) → { dataDir, port, signup: 'open'|'closed' }; a non-numeric number throws
-  src/db.ts             openDb(path): DatabaseSync with WAL, busy timeout 5000, limits.length 64 MiB; applySchema (additive, version row)
+  src/db.ts             openDb(path): DatabaseSync with WAL, busy timeout 5000, limits.length 64 MiB; applySchema (additive, version row); transaction(fn) = BEGIN IMMEDIATE … COMMIT, ROLLBACK on throw
   src/http.ts           route table, JSON body reader and bytes body reader both capped at MAX_ITEM_BYTES, CORS (reflect Origin, preflight, max-age 86400), errors answered through STATUS_BY_CODE
   src/app.ts            createApp(db, env) → the request handler (what tests import); index.ts wraps it in http.createServer
 ```
@@ -705,7 +713,8 @@ CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NU
 
 ```json
 // tsconfig.sync.json (new): module NodeNext, moduleResolution NodeNext, types ["node"], allowImportingTsExtensions, erasableSyntaxOnly,
-// noEmit, strict; include ["Sync/src/**/*", "src/shared/syncProtocol.ts", "src/shared/result.ts"]
+// noEmit, strict; include ["Sync/src/**/*", "src/shared/syncProtocol.ts", "src/shared/result.ts"] — the server's own files use relative `.ts` specifiers only;
+// the integration test lives in src/engine (Task 19) under the node project, which gains allowImportingTsExtensions so it may import Sync/src/app.ts
 // package.json (root): "typecheck:sync": "tsc --noEmit -p tsconfig.sync.json"; typecheck runs it; "dev:sync": "node Sync/src/index.ts"
 // vitest.config.ts include gains 'Sync/src/**/*.test.ts'
 ```
@@ -716,7 +725,8 @@ CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NU
 
 - [ ] Red first: `env.test.ts` (defaults, override, non-numeric throws), `db.test.ts` (schema applies twice idempotently; `PRAGMA journal_mode` answers `wal`; meta holds `schema_version` 1), `http.test.ts` (a body over the cap answers 413 `too-large` and the socket is not left half-read; preflight from `capacitor://localhost` answers the reflected origin, `Authorization, Content-Type`, and `GET, PUT, POST, DELETE, OPTIONS`; an unknown route 404). Expect module-not-found, then green.
 - [ ] `node Sync/src/index.ts` with `DATA_DIR=/tmp/pommora-scratch/s` starts and answers `GET /health` 200 `{ ok: true }`; stopped with SIGTERM and exits 0.
-- [ ] `docker build -t pommora-sync Sync` green if Docker is present; otherwise recorded as skipped in the Log with the reason.
+- [ ] `db.test.ts` gains: a `transaction` whose body throws leaves no row behind.
+- [ ] If Docker is present: `docker build -f Sync/Dockerfile -t pommora-sync .` from `Pommora/`, then `docker run --rm -e DATA_DIR=/data -p 8642:8642 pommora-sync` answers `curl localhost:8642/health` 200 (the build alone proves nothing about the shared module). Otherwise recorded as skipped in the Log with the reason.
 - [ ] Full gate green; `npm run typecheck:sync` green.
 
 **Verify — user**
@@ -769,11 +779,11 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 // POST   /vaults        VaultInfo         → 201 VaultInfo | 409 exists (create-once; Connect is the client's answer)
 // GET    /vaults/:id/info                 → VaultInfo
 // PUT    /vaults/:id/info { retentionDays?, keys? } + X-Info-Version → 200 VaultInfo | 409 conflict   (the desktop keeps retentionDays equal to the Nexus's History Timeframe, Task 21)
-// GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage; since > seq → 409 resync; since=0 omits tombstones (a snapshot)
-// PUT    /vaults/:id/items/:itemId  (headers of Task 10, body bytes ≤ MAX_ITEM_BYTES)
-//        base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise;
-//        retain-only → 201 { version } and the head is untouched; else seq += 1, version = seq, items head replaced, versions row head=1,
-//        the prior head row's head flag cleared; tombstone = deleted 1, blob NULL; answers { version } and never content
+// GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage read from `items` (heads only, tombstones included at every since, so a snapshot is self-sufficient); since > seq → 409 resync
+// PUT    /vaults/:id/items/:itemId  (headers of Task 10; the body is read whole, capped, before the database block)
+//        one transaction: base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise;
+//        seq += 1 always; retain-only → versions row at that seq with head 0, items untouched, 201 { version } (invisible to changes by construction: changes reads items);
+//        else items head replaced at version = seq, versions row head 1, the prior head row's head flag cleared; tombstone = deleted 1, blob NULL; answers { version } and never content
 // GET    /vaults/:id/items/:itemId                → head blob + headers; a tombstone answers 404 not-found
 // GET    /vaults/:id/items/:itemId/versions       → { versions: VersionRow[] } newest first
 // GET    /vaults/:id/items/:itemId/versions/:v    → that blob + headers
@@ -785,7 +795,7 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 
 **Verify — automated**
 
-- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and omits a tombstoned item; since 1 includes the tombstone; since 99 → 409 resync; retain-only stores a version the change log never lists and the versions route does; a body of `MAX_ITEM_BYTES + 1` → 413; prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
+- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and lists a tombstoned item as deleted; since 1 includes the tombstone; since 99 → 409 resync; two retain-only stores on one item land two versions rows at two fresh seqs the change log never lists and the versions route does, and the head is unmoved; a body of `MAX_ITEM_BYTES + 1` → 413 (client-side skipping is Task 18's; this is the wire's own guard); prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a store whose transaction throws after `seq += 1` leaves seq, items, and versions as they were; a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
 - [ ] Both halves of the ownership guard: the owner's read succeeds; with `requireSession` stubbed to another user the same read is 404.
 - [ ] Full gate green.
 
@@ -894,7 +904,7 @@ export function neverWatched(seg: string): boolean {
 export interface ManifestEntry { rel: string; mtimeMs: number; size: number }
 export const syncable = (segs: readonly string[]): boolean =>
   segs.every((s, i) => (i === 0 && s === TRASH_DIR) || !neverWatched(s))
-export async function syncManifest(root: string): Promise<Map<string, ManifestEntry>>   // host().readDir per directory, name-sorted, rel POSIX
+export async function syncManifest(root: string): Promise<Map<string, ManifestEntry>>   // host().readDir per directory, name-sorted, rel POSIX, mtimeMs integer
 ```
 
 **Verify — automated**
@@ -919,7 +929,9 @@ export async function syncManifest(root: string): Promise<Map<string, ManifestEn
 
 ```ts
 // src/engine/Sync/state.ts + state.test.ts
-export interface BaseRecord { itemId: string; version: number; mtimeMs: number; size: number; hash: string }   // hash = sha256Hex(bytes) at the last sync
+export interface BaseRecord { itemId: string; version: number; mtimeMs: number; size: number; hash: string }
+// mtimeMs and size are the DISK's, read by host().stat after the file was written or pushed — the change gate compares them to the next manifest;
+// the envelope's mtime lives on the server record and never here. hash = sha256Hex(bytes) at that moment.
 export interface SyncStateStore {
   cursor(): Promise<number>
   setCursor(seq: number): Promise<void>
@@ -983,26 +995,31 @@ export interface SyncDeps {
 export async function runSync(deps: SyncDeps): Promise<SyncReport>      // SyncReport from @shared/syncProtocol
 // Never concurrent per root: a second call while one runs queues once and coalesces (F-9).
 export interface SyncScheduler { noteDirty(): void; trigger(): void; stop(): Promise<void> }
-export function createSyncScheduler(run: () => Promise<SyncReport>, debounceMs = 1500): SyncScheduler
-// noteDirty debounces; trigger runs at once (a feed seq, Sync Now); a run that ended dirty re-runs; both hosts drive this, one KNOB governs both
+export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { debounceMs?: number; sweepMs?: number }): SyncScheduler   // KNOB defaults 1500 and 30000
+// noteDirty debounces; trigger runs at once (a feed seq, Sync Now); a run that ended dirty re-runs; the sweep is a periodic noteDirty so an outside edit
+// the desktop watcher never delivers (the user's excluded folders, `.trash`, any dot-folder) still pushes within the sweep; both hosts drive this
 // Pull: for each page: for each change in sequence: own echo (base.version === change.version) → skip; tombstone → conflict rule vs local
-//   (a local change since base with mtime > tombstone mtime wins and is re-pushed; else beforeReplace, remove, base cleared);
+//   (a local change since base with mtime > tombstone mtime wins and is re-pushed; else beforeReplace, remove, base cleared; absent locally → skip);
 //   else fetch + open (null → skipped 'decrypt'); rel validated (lexical containment + invalidName per segment; else 'invalid-path');
 //   a second item landing on a case-folded rel already held → 'case-collision', refused; local unchanged since base → land;
 //   local changed → newer mtime wins, ties by deviceId order; the loser is stored retain-only (never a file beside the winner);
-//   land = lock(abs) { beforeReplace; host.applyRemote(abs, bytes, mtimeMs) }; base set; afterLanding.
+//   NO BASE and the file present locally (a fresh connect over a populated root, a resync): equal hash → seed the base, no write; else the same conflict rule;
+//   land = lock(abs) { beforeReplace; host.applyRemote(abs, bytes, mtimeMs) }; base set from host().stat after the write; afterLanding.
 //   After the page: prune directories emptied by removals (never root, never `.nexus`, `.trash`); setCursor(page.cursor); flush.
 // Detect: manifest vs bases; new or (mtime, size) moved → hash; hash moved → changed; base absent from manifest → deleted.
-// Push: store(base.version ?? null); conflict → apply the same rule against the returned record (fetch it), then re-store or land.
-//   Over MAX_ITEM_BYTES → skipped 'too-large'. First sync rules (F-7) fall out: an empty remote pushes everything, an empty local pulls everything.
-// Resync: 'resync' clears the cursor, pulls since 0 (no tombstones) under the no-op rules (identical hash → skip; absent delete → skip).
+// Push: store(base.version ?? null); conflict → apply the same rule against the returned record (fetch it), then re-store or land; base set from stat after a successful store.
+//   Over MAX_ITEM_BYTES → skipped 'too-large' before any request. First sync rules (F-7) fall out: an empty remote pushes everything, an empty local pulls everything,
+//   both populated merge item by item under the no-base rule above.
+// Resync: 'resync' clears the cursor and pulls since 0 (tombstones included) under the same rules; identical content is a no-op, a delete for an absent file is a no-op.
+// A page deleted while a device was disconnected from its vault is indistinguishable from one another device created: the deletion never pushed, so the file returns
+// on reconnect and its trash bundle stands beside it. Disconnect therefore keeps the device's bases and cursor (Task 22) so reconnecting to the same vault resumes.
 ```
 
 **Assumed by:** Tasks 19, 21, 30.
 
 **Verify — automated**
 
-- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing restores mtime (host stat equals envelope); conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved; the scheduler runs once for three `noteDirty` calls inside the window and re-runs once when a `noteDirty` lands mid-run. Then green.
+- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing's base equals the host's stat after the write; a no-base landing over an identical local file seeds the base and writes nothing; a no-base landing over a differing local file runs the conflict rule; conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved; the scheduler runs once for three `noteDirty` calls inside the window, re-runs once when a `noteDirty` lands mid-run, and runs on the sweep with fake timers. Then green.
 - [ ] Both halves of the containment guard: a good rel lands (file exists after), and with the validator disabled the `../` case would have written outside root (asserted through the memory host's key set).
 - [ ] Full gate green.
 
@@ -1021,7 +1038,7 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, debounceMs =
 **Becomes**
 
 ```ts
-// Sync/src/e2e.test.ts — imports createApp (Task 11) and the engine client through '../../src/engine/Sync/client.ts'
+// src/engine/Sync/e2e.test.ts — imports createApp through '../../../Sync/src/app.ts' (the node project types it; Task 11) and the client beside it
 // Sync/test/fixture/  a 14-file Nexus: .nexus/{nexus.json,settings.json,properties.json,contexts.json,state.json}, Ideas/{_pagecollection.json,A.md,B.md},
 //                      Ideas/Set/{_pageset.json,C.md}, .trash/Ideas/2026-01-01T00-00-00-000Z__D.md.deleted/{D.md,_record.json}, .nexus/assets/pic.png, .nexus/nexus.db (excluded)
 export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]; onlyB: string[]; differ: string[] }>   // Sync/test/diffRoots.ts; manifests + sha-256 per file
@@ -1031,9 +1048,10 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 //  6 rename A/Ideas/C.md → A/Ideas/C2.md → B (tombstone + new; id inside the file unchanged); 7 frontmatter edit → crosses; 8 settings.json edit → crosses
 //  9 both edit A.md before syncing; the newer mtime stands on both, the server lists 2 versions, the loser's text is the retain-only blob
 // 10 A edits, B deletes, A newer → the file revives on B; 11 B offline (no sync) while A makes 3 edits → B syncs once → holds all 3
-// 12 B's cursor set to 999 → resync → clean; 13 a 51 MB asset → skipped 'too-large' (the server's 413 crossed)
-// 14 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 15 a no-change sync on both makes 0 stores (server request log)
-// (wrong password and case collision are client-only and stay in Tasks 15 and 18)
+// 12 B's cursor set to 999 → resync → clean; 13 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 14 a no-change sync on both makes 0 stores (server request log)
+// 15 B disconnects, deletes Ideas/A.md into its trash, reconnects to the same vault → the deletion pushes (bases kept), A loses the page and gains the bundle
+// 16 B's bases wiped (a fresh device over a populated copy of A) → connect → zero writes on B, zero stores, every base seeded; then B edits one page → one store
+// (wrong password, case collision, and the 50 MB skip are client-only and stay in Tasks 15 and 18; the server's 413 is http.test.ts)
 // scripts/sync-cli.ts + vite.config.cli.ts (ssr build to out/cli/sync-cli.js; "build:cli" script)
 //   node out/cli/sync-cli.js register|login|create|connect|sync|watch --server URL --root DIR --state FILE [--email --password --vault-password --vault ID --name NAME]
 //   `watch` subscribes to the feed and syncs on every seq plus every 30 s; state is a JSON SyncStateStore at --state
@@ -1043,7 +1061,8 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 
 **Verify — automated**
 
-- [ ] The 15 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
+- [ ] The 16 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
+- [ ] `npm run typecheck` green with the test under the node project (`tsconfig.node.json` gains `allowImportingTsExtensions`; `typecheck:sync` never sees it).
 - [ ] `npm run build:cli` green; `node out/cli/sync-cli.js sync --root <fixture copy> …` against a running server pushes 14 items and a second run pushes 0.
 - [ ] Full gate green.
 
@@ -1054,7 +1073,7 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 #### Gate 4 — two roots converge
 
 - [ ] Gate commands green.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/engine/Sync`, `Sync/src/e2e.test.ts`, `Sync/test`, `scripts/`, `vite.config.cli.ts`; the reports cite files inside it.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `src/engine/Sync`, `Sync/test`, `scripts/`, `vite.config.cli.ts`, `tsconfig.node.json`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying a ruling in the Log.
 - [ ] Progress hashes filled in; line count reported.
 - [ ] Not a declared stop: Phase 5 opens.
@@ -1071,7 +1090,7 @@ Additive plus user-visible. Budget: about +700 lines (desktopSync 250, channels 
 
 **Why:** The watcher never sees the app's own writes, so the push trigger listens where every in-app write already reports (C-7); sync state is a `local_state` scope (H-2); the device token and vault password never touch a plaintext file (F-3).
 
-**Now** — `src/main/IO/writeEcho.ts` 9 importers; `Scope` union in `Database/localState.ts:14-31` has 17 members; `appConfig.ts` `AppConfig { lastNexusPath?, recents?, trashMode? }`; `rg -n "safeStorage" src/main` → 0:
+**Now** — `src/main/IO/writeEcho.ts` 9 importers; `Scope` union in `Database/localState.ts:14-31` has 17 members; `appConfig.ts` `AppConfig { lastNexusPath?, recents?, trashMode? }`; `rg -n "safeStorage" src/main` → 0; `rg -n "POMMORA_" src/main` → 1 (`index.ts:201`, `POMMORA_DEBUG_PORT`); `app.getPath('userData')` at `index.ts:448,695,1902,2029` with no override:
 
 ```ts
 // src/main/IO/writeEcho.ts:17-23
@@ -1089,6 +1108,8 @@ export function recordWrite(absPath: string): void   // notifies after recording
 // src/shared/localState.ts — Scope gains 'sync' (keys: '' = cursor, else rel → BaseRecord); SCOPE_ASKS has no entry for it (never a renderer channel)
 // src/main/Sync/localStateStore.ts — SyncStateStore over readScope/writeKey('sync'); flush is a no-op (rows are immediate)
 // src/main/appConfig.ts — AppConfig gains account?: AccountFields
+// src/main/index.ts:201 — beside POMMORA_DEBUG_PORT: `if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)`
+//   (Development-Environment.md:41 describes it as instrumentation to add and remove; it becomes a standing flag, since every scratch run of this arc writes account rows and secrets)
 // src/main/Sync/secrets.ts + secrets.test.ts (safeStorage stubbed)
 export function saveSecret(userDataDir: string, key: 'token' | `vault:${string}`, value: string): Promise<void>   // safeStorage.encryptString → <userData>/secrets/<key>
 export function readSecret(userDataDir: string, key: string): Promise<string | null>
@@ -1100,6 +1121,7 @@ export function forgetSecret(userDataDir: string, key: string): Promise<void>
 **Verify — automated**
 
 - [ ] Red first: `writeEcho.test.ts` (new) — a listener fires with the path on `recordWrite`, unsubscribes; `localStateStore.test.ts` — cursor and bases round trip through a temp `nexus.db`; `secrets.test.ts` — save/read/forget with a stubbed `safeStorage`. Then green.
+- [ ] `env -u ELECTRON_RUN_AS_NODE POMMORA_USERDATA=/tmp/pommora-scratch/userdata ./node_modules/.bin/electron .` after a build writes `pommora.json` under that directory and leaves the real profile's `pommora.json` mtime unchanged.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -1140,13 +1162,13 @@ export function syncStatus(): SyncStatus                                        
 // status pushes: push(win, 'sync:changed', status) on every transition
 ```
 
-`src/main/index.ts`: `openNexusSequence` ends with `await startDesktopSync(root, mainWindow)` after `startWatcher`; the root switch and quit call `stopDesktopSync` beside `retireFileHistory`; `watcher.ts` `settle` calls `noteSyncActivity(root)` after its pushes.
+`src/main/index.ts`: `openNexusSequence` ends with `await startDesktopSync(root, mainWindow)` after `startWatcher`; the root switch awaits `stopDesktopSync()` beside `retireFileHistory` at `index.ts:378-380`, before `openSession` repoints the root, so an in-flight run's bases never land in the next Nexus's `nexus.db`; quit does the same; `watcher.ts` `settle` calls `noteSyncActivity(root)` after its pushes.
 
 **Assumed by:** Tasks 22, 24, 33, 34.
 
 **Verify — automated**
 
-- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's mtime equals the envelope's; a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
+- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's integer mtime equals the envelope's; a second sync after a landing re-hashes nothing (spy on `readBytes` → 0 calls for landed files); a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
 - [ ] Both halves of the capture: the row appears with capture enabled; with `beforeReplace` disabled the row does not.
 - [ ] Full gate green.
 
@@ -1179,7 +1201,7 @@ export interface Asks {
 'sync:vaults': { args: []; reply: Result<{ id: string; name: string; matches: boolean }[]> }   // matches = id equals this Nexus's
 'sync:create': { args: [vaultPassword: string]; reply: Result<{ vaultId: string }> }         // 'exists' → the row offers Connect
 'sync:connect': { args: [vaultId: string, vaultPassword: string]; reply: Result<null> }       // id mismatch refused with the reason
-'sync:disconnect': { args: []; reply: Result<null> }                                          // clears the 'sync' scope and the vault secret; the server keeps the vault
+'sync:disconnect': { args: []; reply: Result<null> }                                          // stops syncing and forgets the vault secret; the 'sync' scope (bases, cursor, keyed by vault id) and the server's vault both stay, so reconnecting resumes
 'sync:now': { args: []; reply: Result<SyncReport> }
 // Pushes gains 'sync:changed': SyncStatus   (every type from @shared/syncProtocol)
 // src/shared/nexusApi.ts gains account: { status, signIn, signOut }, sync: { status, vaults, create, connect, disconnect, now }, onSyncChanged
@@ -1191,7 +1213,7 @@ export interface Asks {
 **Verify — automated**
 
 - [ ] `npm run typecheck` proves the handler map is exhaustive (a declared channel without a handler is the compile error `serveBridge` exists for).
-- [ ] Handler tests with `desktopSync` stubbed: `sync:create` against an existing id answers the `exists` code; `sync:connect` with a mismatched id refuses with `invalid-path`-class `operation-failed` naming the mismatch; `sync:disconnect` empties the `sync` scope.
+- [ ] Handler tests with `desktopSync` stubbed: `sync:create` against an existing id answers the `exists` code; `sync:connect` with a mismatched id refuses with `operation-failed` naming the mismatch; `sync:disconnect` forgets the secret and leaves the `sync` scope's rows; `sync:connect` to a vault whose bases are held resumes from the held cursor (the transport sees `since=<cursor>`, never 0).
 - [ ] Full gate green (preload does not hot-reload: restart the dev process before the user pass).
 
 **Verify — user**
@@ -1256,8 +1278,10 @@ export const listHistory = (pageId: string): Result<number[]> =>
 
 ```ts
 // src/main/Sync/remoteHistory.ts + test
-export async function remoteVersions(root: string, pageId: string): Promise<{ ts: number; version: number }[]>   // [] when not connected; ts = the version's mtimeMs
+export async function remoteVersions(root: string, pageId: string): Promise<{ ts: number; version: number }[]>   // [] when not connected or the page is not live; ts = the version's mtimeMs
 export async function remoteBody(root: string, pageId: string, ts: number): Promise<string | null>
+// pageId → livePathOf(root, pageId) → itemId(keys, rel): remote history is keyed by path, so a page's history on the server starts over at a rename
+// (the old item's versions stay under its retired id until the prune); the desktop's versions.db keys by page id and is unaffected — stated in SyncPM
 // src/main/CRUD/fileHistory.ts — listHistory becomes async: local timestamps ∪ remote, deduped, newest first;
 // readHistoryBody: local row else remoteBody; history:list and history:read handlers await them (the bridge types are unchanged: Result<number[]>, Result<string>)
 ```
@@ -1328,6 +1352,8 @@ biome.json              includes gains "!**/Mobile/ios", "!**/Mobile/dist"
 - [ ] `ls Mobile/node_modules/react` → absent. Control: `ls Mobile/node_modules/@capacitor/core` → present.
 - [ ] `npm run typecheck` (with `typecheck:mobile`) and `npm run lint` green; `rg -c "Mobile/ios" biome.json` → 1.
 - [ ] `plutil -p Mobile/ios/App/App/Info.plist | rg "UIFileSharingEnabled|LSSupportsOpeningDocumentsInPlace"` → 2 lines, both `1`.
+- [ ] The placeholder app run once on the Simulator with Safari Web Inspector attached: `isSecureContext` true, `typeof crypto.subtle` `'object'`, `typeof crypto.randomUUID` `'function'` at `capacitor://localhost`, and the same three under live reload at `http://localhost:5173` — the arc's crypto (Task 15 on) and `tabsModel.ts:318` both rest on this, so it is checked here, before either is written, rather than at Task 32.
+- [ ] In the same session: `fetch(Capacitor.convertFileSrc(<a Documents file uri>) + '?v=3')` answers 200 — the renderer's `resolveAssetUrl` appends `?v=` to every asset URL.
 
 **Verify — user**
 
@@ -1362,7 +1388,7 @@ Mobile/plugins/atomic-write/
 **Verify — automated**
 
 - [ ] `npx cap sync ios` lists `PommoraAtomicWrite` in `Mobile/ios/App/CapApp-SPM/Package.swift` and `AtomicWritePlugin` in `ios/App/App/capacitor.config.json`'s `packageClassList`; `xcodebuild … build` green.
-- [ ] On the Simulator (Task 32's app, driven through Safari Web Inspector once): `AtomicWrite.write({path, base64, mtimeMs: 1700000000000})` then `Filesystem.stat` reports `mtime === 1700000000000`; a write over an existing file leaves either the old or the new bytes when the app is killed mid-loop of 200 writes (`simctl terminate` during the loop; every file parses).
+- [ ] On the Simulator (Task 25's placeholder app, driven through Safari Web Inspector once): `AtomicWrite.write({path, base64, mtimeMs: 1700000000123})` then `Filesystem.stat` reports `mtime === 1700000000123` (integer ms round-trips through the plugin and the plugin's readdir/stat); a write over an existing file leaves either the old or the new bytes when the app is killed mid-loop of 200 writes (`simctl terminate` during the loop; every file parses).
 
 **Verify — user**
 
@@ -1517,7 +1543,8 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 **Becomes**
 
 ```tsx
-// Mobile/src/main.tsx — bindCapacitorHost(); installAssetUrl(rel => Capacitor.convertFileSrc(documentsUri) + '/' + rel.split('/').map(encodeURIComponent).join('/'));
+// Mobile/src/main.tsx — bindCapacitorHost(); installAssetUrl(rel => session.assetBase() + '/' + rel.split('/').map(encodeURIComponent).join('/'))
+//   where assetBase() is Capacitor.convertFileSrc of the connected vault's Documents uri, resolved once at connect and read at call time (nothing is connected at boot);
 //   window.nexus = createPhoneApi(session); the same CSS side-imports as src/renderer/main.tsx; render <MobileApp/>; initNativeCaret()
 // Mobile/src/MobileApp.tsx — status 'empty' && no vault → <FirstRun/>; else <App/> + <BottomBar/>; a DEV-only seed: Library/dev-first-run.json { server, email, password, vaultId, vaultPassword } performs the first run unattended and is deleted after
 // Mobile/src/FirstRun.tsx — server, email, password, Sign In / Create Account, the vault list (matches first), vault password, Connect — plain InputField + Button on a Surface
@@ -1550,7 +1577,7 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 **Verify — automated**
 
 - [ ] With the server on localhost and the CLI having created a vault from the fixture: the seed file written into the container (`xcrun simctl get_app_container booted com.pommora.app data`)/`Library/dev-first-run.json`; the app launched; within 30 s `Documents/<name>/Ideas/A.md` exists in the container; `xcrun simctl io booted screenshot` shows the tree and the bottom bar; a second screenshot after opening a page shows the editor.
-- [ ] Safari Web Inspector attached once: `isSecureContext` true, `typeof crypto.subtle` `'object'`, no console error at boot.
+- [ ] Safari Web Inspector attached once: no console error at boot (the secure-context checks ran at Task 25).
 
 **Verify — user**
 
@@ -1771,7 +1798,7 @@ Asked and answered 09-04-2026 (Nathan's call on each):
 6. **Scratch vaults** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
 7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
 
-Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error.
+Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file.
 
 ### Open Against Later Tasks
 
@@ -1787,6 +1814,9 @@ Taken at planning against the decision log, each the simpler mechanism:
 - **I-3 (watchPatch's classification):** the classification and the patchers move into the engine behind a `TreeHolder` bound once per process (Task 6) rather than being copied to the phone.
 - **C-4 (every non-hidden entry syncs):** the manifest is `neverWatched` with a top-level `.trash` admitted, so `node_modules` stays home like every other name the watcher never delivers (Task 16). NexusOS holds none.
 - **I-2 (a Sync action in the bottom bar):** withdrawn by Ruling 2; Settings › General's Sync Now is the manual fallback on both hosts.
+- **F-4 (a snapshot without tombstones):** the change log carries tombstones at every cursor, since tombstone heads are kept forever anyway; a self-sufficient snapshot is what makes a populated reconnect safe (Task 13, Task 18).
+- **F-6 (the base compares against the envelope's time):** the base holds the disk's integer mtime read after each write; a raw APFS mtime never round-trips through `utimes`, so comparing to the envelope would re-hash every landed file on every sync (Task 1, Task 17).
+- **C-7 (no periodic sync):** the scheduler carries a 30 s sweep, because the desktop watcher never delivers an outside edit in an excluded folder, `.trash`, or a dot-folder, and those are in the manifest (Task 18).
 
 ### Lessons
 
@@ -1794,7 +1824,8 @@ Taken at planning against the decision log, each the simpler mechanism:
 
 - Watcher-driven reload of an open editor on an external or synced edit through `replaceBody` (H-4's successor; the two-host lost update in Context's Known Issues).
 - Phone-side mutation parity, one module at a time into `src/engine` (delete, rename, move, properties, schema, Contexts, views, reorders, restore).
-- A source label on Page History rows (local snapshot versus remote version).
+- A source label on Page History rows (local snapshot versus remote version), and remote history that survives a rename (the envelope carrying the prior item id).
+- `startDesktopSync(root, win)` binds one window for its status push; a second window needs the push to fan out through the live-refresh transport the multi-window seam names.
 - The block documents' sync classification once the Tiles plan lands `_tiles.json` (the watcher ignores `.nexus/homepage` and Space `.md` bodies today).
 - OAuth providers behind the sign-in seam (Ruling 7: right after the device install, when the paid program exists); Argon2id or scrypt as a new vault KDF; chunked transfer; Postgres or a blob folder; multi-user vaults on the wrapped-key list; file coordination in the atomic-write plugin.
 
@@ -1832,7 +1863,7 @@ Everything else is the standard below.
 
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause, on the Simulator against the scratch copy.
-- [ ] The integration suite's 15 scenarios green under `npm run test`.
+- [ ] The integration suite's 16 scenarios green under `npm run test`.
 - [ ] `npm run typecheck:engine` green with `types: []`; `rg -n "from 'node:" src/engine -g '!*.test.ts'` → 0.
 - [ ] The container builds; `SIGNUP=closed` refuses registration.
 
