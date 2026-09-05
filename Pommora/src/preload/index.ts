@@ -95,18 +95,18 @@ const api = {
   headingIcon: { get: ask('headingIcon:get'), set: ask('headingIcon:set') },
   citations: { get: ask('citations:get'), set: ask('citations:set') },
   aliases: { get: ask('aliases:get'), set: ask('aliases:set') },
-  blocks: {
-    get: ask('blocks:get'),
-    save: ask('blocks:save'),
+  tiles: {
+    get: ask('tiles:get'),
+    save: ask('tiles:save'),
     // create mints the ULID + file + entry (the renderer splices the layout after); remove
     // drops the entry + trashes the file.
-    createMarkdown: ask('blocks:createMarkdown'),
-    removeTile: ask('blocks:removeTile'),
-    readMarkdown: ask('blocks:readMarkdown'),
-    writeMarkdown: ask('blocks:writeMarkdown'),
-    convertToPage: ask('blocks:convertToPage'),
-    convertToView: ask('blocks:convertToView'),
-    duplicateTile: ask('blocks:duplicateTile'),
+    createMarkdown: ask('tiles:createMarkdown'),
+    removeTile: ask('tiles:removeTile'),
+    readMarkdown: ask('tiles:readMarkdown'),
+    writeMarkdown: ask('tiles:writeMarkdown'),
+    convertToPage: ask('tiles:convertToPage'),
+    convertToView: ask('tiles:convertToView'),
+    duplicateTile: ask('tiles:duplicateTile'),
   },
   subfield: { get: ask('subfield:get'), set: ask('subfield:set') },
   navViewModes: { get: ask('navViewModes:get'), set: ask('navViewModes:set') },

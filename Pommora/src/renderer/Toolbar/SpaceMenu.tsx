@@ -1,4 +1,4 @@
-import { blockHostKey } from '@shared/blocks'
+import { tileHostKey } from '@shared/tiles'
 import { lockLabel } from '@shared/toggleLabels'
 import { useRef, useState } from 'react'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
@@ -29,7 +29,7 @@ export function SpaceMenu(): React.JSX.Element | null {
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const id = selection.kind === 'space' ? selection.id : null
   const locked = useSession(
-    (st) => st.hostLocks[blockHostKey({ kind: 'space', id: id ?? '' })] ?? false,
+    (st) => st.hostLocks[tileHostKey({ kind: 'space', id: id ?? '' })] ?? false,
   )
   const setHostLocked = useSession((st) => st.setHostLocked)
   const iconRef = useRef<HTMLButtonElement>(null)

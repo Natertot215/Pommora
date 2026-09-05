@@ -18,10 +18,7 @@ export const notifyDeleted = (title: string, undo?: () => void | Promise<void>):
     ...(undo ? { action: { label: 'Undo', run: undo } } : {}),
   })
 
-/** A view carries no trash bundle — its configuration left the container and nothing was filed so the undo is the object the surface still holds, saved back under its own id. */
-/** A tile carries no title and its file is trashed flat, with no bundle to name — so its removal
- *  reports the act alone, without a subject and without an Undo. */
-export const notifyRemovedTile = (): void => post({ message: 'Removed the block', tone: 'normal' })
+export const notifyRemovedTile = (): void => post({ message: 'Removed the tile', tone: 'normal' })
 
 export const restoreView = async (
   containerPath: string,

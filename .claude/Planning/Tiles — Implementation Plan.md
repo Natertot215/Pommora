@@ -371,11 +371,11 @@ export function tilePatchProblem(patch: TileDocPatch): string | null   // the ke
 
 **Verify — automated**
 
-- [ ] Each token in Now re-run → 0, one command per token, `-Fw`. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26; `rg -Fw -o "hostLocks" src | wc -l` → 10.
-- [ ] `rg -o '\b[A-Za-z]*[Bb]lock[A-Za-z]*\b' src --glob '!src/renderer/MarkdownPM/**' | sed 's/.*://' | sort | uniq -c` → only the allowlist in Dead Vocabulary.
-- [ ] `rg -F "@property --tile-zoom" src/renderer/MarkdownPM/Styles.css` → 1 (the one registration survives the rename).
-- [ ] `rg -F ".tile-zoom-" src` → 0 and `rg -F "blk-zoom" src` → 0; `shared/tiles.test.ts`, `main/tiles.test.ts`, `remint.test.ts`, `contextWrite.test.ts`, `tileMenu.test.ts` renamed with their subjects and green; `main/tiles.test.ts` still round-trips a row under the `blocks` key.
-- [ ] Full gate green; `npm run build` green.
+- [x] Each token in Now re-run → 0, one command per token, `-Fw`. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26; `rg -Fw -o "hostLocks" src | wc -l` → 10.
+- [x] `rg -o '\b[A-Za-z]*[Bb]lock[A-Za-z]*\b' src --glob '!src/renderer/MarkdownPM/**' | sed 's/.*://' | sort | uniq -c` → only the allowlist in Dead Vocabulary.
+- [x] `rg -F "@property --tile-zoom" src/renderer/MarkdownPM/Styles.css` → 1 (the one registration survives the rename).
+- [x] `rg -F ".tile-zoom-" src` → 0 and `rg -F "blk-zoom" src` → 0; `shared/tiles.test.ts`, `main/tiles.test.ts`, `remint.test.ts`, `contextWrite.test.ts`, `tileMenu.test.ts` renamed with their subjects and green; `main/tiles.test.ts` still round-trips a row under the `blocks` key.
+- [x] Full gate green; `npm run build` green.
 
 **Verify — user**
 
@@ -708,7 +708,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 2 — The grid on the engine · `e411d814`
 - [ ] **Phase 2** — Tiles/
   - [x] Task 3 — The move · `6196f915`
-  - [ ] Task 4 — The vocabulary · ``
+  - [x] Task 4 — The vocabulary · `2544b2be`
 - [ ] **Phase 3** — The recipe
   - [ ] Task 5 — The shared table · ``
   - [ ] Task 6 — The renderer table · ``
@@ -741,6 +741,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 4: three Now counts read higher than the plan by Phase 1's own additions — `spm-*` 65 (the grid test's selectors), `SurfaceLayout` 75 (`settleInto`'s parameter type), `SurfaceView` 7 (the test's import) — every one → 0 after. `'blocks must be an array.'` keeps its wording with the `blocks` key it names; both rename in Task 7. `blockMoveChanges` (MarkdownPM's list-drag export, read by `Interface/pageEditor.ts`) joins the allowlist as MarkdownPM's own word. `zoomStyle` in `tileZoom.ts` is the one writer of the inline variable: a `Map` of one style object per step, so the memoized tile sees a stable identity.
 - Task 3: `.claude/scripts/loc.py:33` lists `renderer/Tiles` beside `renderer/SurfacePM` rather than replacing it — its own rule is that a renamed folder lists both names so one map measures every commit on the branch. The one legitimate `SurfacePM` hit outside the records. The comment JSONs had their path keys rewritten in place (the baseline is a snapshot, not regenerated).
 - Task 3: the surfaces' relative imports deepened one level (`../store` → `../../store`); `webRetention`, `view-tile.css`, and `PageTile.test` stay relative within `Surfaces/`.
 - Task 2: the grid's red-green case lives in `SurfaceView.test.tsx` beside its subject (the plan named `TileGrid.test.tsx`); Task 3's move renames it with the file. The engine's two ported cases pass against the engine as it stood, as the plan predicted.

@@ -44,7 +44,7 @@ export function PickerControl<T extends string>({
    *  worn with a unit hands that unit over as `suffix`: it stays drawn beside the field, so the mark
    *  never leaves and the digits stay where they were read. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
-  /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
+  /** Opaque menu surface — for pickers that open over another pane (the tile Scale idiom). */
   solid?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)

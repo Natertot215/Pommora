@@ -3,7 +3,7 @@
 // pointer deltas back to ops with the extents measured here. Heights are
 // content-driven (nodeHeight); a row's shorter children end ragged — legal.
 
-import type { DividerRef, LayoutNode, SurfaceLayout } from './model'
+import type { DividerRef, LayoutNode, TileLayout } from './model'
 import { nodeHeight } from './model'
 
 export interface Rect {
@@ -23,14 +23,14 @@ export interface BandEdgeRect extends Rect {
   band: number
 }
 
-export interface SurfaceGeometry {
+export interface TileGeometry {
   tiles: Map<string, Rect>
   dividers: DividerRect[]
   bandEdges: BandEdgeRect[]
   totalHeight: number
 }
 
-export function computeGeometry(layout: SurfaceLayout, width: number, gap = 0): SurfaceGeometry {
+export function computeGeometry(layout: TileLayout, width: number, gap = 0): TileGeometry {
   const tiles = new Map<string, Rect>()
   const dividers: DividerRect[] = []
   const bandEdges: BandEdgeRect[] = []

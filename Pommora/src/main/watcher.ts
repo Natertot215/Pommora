@@ -66,8 +66,8 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
       segs.some(neverWatched) ||
-      // Block-host content loads through blocks:get, never the tree walk — a debounced
-      // block-body write must not cost a full re-walk. homepage.json stays watched.
+      // Tile-host content loads through tiles:get, never the tree walk — a debounced
+      // tile-body write must not cost a full re-walk. homepage.json stays watched.
       (segs[0] === NEXUS_DIR && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
       // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space
       // never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
@@ -103,7 +103,7 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
         return
       }
       // The app's own atomic writes echo back here — skip them: every tree-relevant in-app
-      // write confirms through its own channel (hot under block gestures + embed typing).
+      // write confirms through its own channel (hot under tile gestures + embed typing).
       if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)

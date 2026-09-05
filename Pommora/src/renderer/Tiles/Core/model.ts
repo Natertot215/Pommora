@@ -1,7 +1,7 @@
 // A mosaic of independent column stacks. The page is a vertical stack of bands; inside a band,
 // ROW splits divide width by ratios, COLUMN nodes stack children, and every tile owns its own
 // pixel height. Columns flow independently: a short column simply ends (ragged ends are legal);
-// trapped holes between blocks can't exist by construction.
+// trapped holes between tiles can't exist by construction.
 
 export interface RowNode {
   kind: 'row'
@@ -26,7 +26,7 @@ export interface Band {
   node: LayoutNode
 }
 
-export interface SurfaceLayout {
+export interface TileLayout {
   bands: Band[]
 }
 
@@ -44,7 +44,7 @@ export interface DividerRef extends NodePath {
   index: number
 }
 
-export const emptyLayout = (): SurfaceLayout => ({ bands: [] })
+export const emptyLayout = (): TileLayout => ({ bands: [] })
 
 /** A node's height: a tile owns it, a column sums its stack (+gaps), a row is
  *  as tall as its tallest child (shorter children end ragged). */
@@ -57,7 +57,7 @@ export function nodeHeight(node: LayoutNode, gap: number): number {
   return node.children.reduce((a, c) => Math.max(a, nodeHeight(c, gap)), 0)
 }
 
-function nodeAt(layout: SurfaceLayout, ref: NodePath): LayoutNode | undefined {
+function nodeAt(layout: TileLayout, ref: NodePath): LayoutNode | undefined {
   let node = layout.bands[ref.band]?.node
   for (const i of ref.path) {
     if (!node || node.kind === 'tile') return undefined
@@ -67,7 +67,7 @@ function nodeAt(layout: SurfaceLayout, ref: NodePath): LayoutNode | undefined {
 }
 
 export function findTile(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   tileId: string,
 ): { band: number; path: number[] } | undefined {
   const walk = (node: LayoutNode, path: number[]): number[] | undefined => {
@@ -89,14 +89,14 @@ export function findTile(
   return undefined
 }
 
-export function getTile(layout: SurfaceLayout, tileId: string): TileLeaf | undefined {
+export function getTile(layout: TileLayout, tileId: string): TileLeaf | undefined {
   const at = findTile(layout, tileId)
   if (!at) return undefined
   const node = nodeAt(layout, at)
   return node?.kind === 'tile' ? node : undefined
 }
 
-export function tileIds(layout: SurfaceLayout): string[] {
+export function tileIds(layout: TileLayout): string[] {
   const out: string[] = []
   const walk = (node: LayoutNode): void => {
     if (node.kind === 'tile') {
@@ -115,13 +115,13 @@ export function cloneNode(node: LayoutNode): LayoutNode {
   return { kind: 'row', ratios: [...node.ratios], children: node.children.map(cloneNode) }
 }
 
-export function cloneLayout(layout: SurfaceLayout): SurfaceLayout {
+export function cloneLayout(layout: TileLayout): TileLayout {
   return { bands: layout.bands.map((b) => ({ node: cloneNode(b.node) })) }
 }
 
 /** A structurally valid tree: splits hold 2+ children, row ratios match and sum
  *  to 1, tile heights are positive, ids unique. */
-export function validateLayout(layout: SurfaceLayout): string[] {
+export function validateLayout(layout: TileLayout): string[] {
   const problems: string[] = []
   const walk = (node: LayoutNode, where: string): void => {
     if (node.kind === 'tile') {

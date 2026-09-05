@@ -53,7 +53,7 @@ describe('resolveEdge', () => {
     expect(resolveEdge(l, 'ghost', 'e')).toBeNull()
   })
 
-  it('a full-width block negotiates the band seam when both roots are tiles', () => {
+  it('a full-width tile negotiates the band seam when both roots are tiles', () => {
     let bands = insertBand({ bands: [] }, 0, 'top', 200)
     bands = insertBand(bands, 1, 'bottom', 160)
     expect(resolveEdge(bands, 'bottom', 'n')).toEqual({ kind: 'bandpair', above: 0 })

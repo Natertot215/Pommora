@@ -445,8 +445,8 @@ const selectionOn = (state: EditorState, from: number, to: number): boolean =>
 /** An off-grid persisted factor still renders by snapping to the ramp; 1.0 wears no var at all. */
 function applyTileZoom(dom: HTMLElement, zoom: number | undefined): void {
   const factor = zoomStep(zoom).factor
-  if (factor === DEFAULT_ZOOM) dom.style.removeProperty('--block-zoom')
-  else dom.style.setProperty('--block-zoom', String(factor))
+  if (factor === DEFAULT_ZOOM) dom.style.removeProperty('--tile-zoom')
+  else dom.style.setProperty('--tile-zoom', String(factor))
 }
 
 function buildTiles(

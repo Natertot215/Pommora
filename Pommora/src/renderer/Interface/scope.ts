@@ -55,7 +55,7 @@ export function findCollectionForSet(
   return allCollections(tree).find((c) => has(c.sets))
 }
 
-/** Block-based surface kinds (homepage + Spaces) run tight tile gutters instead of the page/table
+/** Tile-based surface kinds (homepage + Spaces) run tight tile gutters instead of the page/table
  *  content inset — the tile handles supply their own grip/chevron actions. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'

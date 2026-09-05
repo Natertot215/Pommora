@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { blockPatchProblem, coerceBlockHost, knownBlock, rawLayoutSchema } from './blocks'
+import { tilePatchProblem, coerceTileHost, knownTile, rawLayoutSchema } from './tiles'
 
-describe('knownBlock', () => {
+describe('knownTile', () => {
   it('types the three known entry kinds', () => {
-    expect(knownBlock({ id: 'a', type: 'markdown' })).toEqual({ id: 'a', type: 'markdown' })
-    expect(knownBlock({ id: 'b', type: 'page', page_id: 'p1' })).toMatchObject({
+    expect(knownTile({ id: 'a', type: 'markdown' })).toEqual({ id: 'a', type: 'markdown' })
+    expect(knownTile({ id: 'b', type: 'page', page_id: 'p1' })).toMatchObject({
       type: 'page',
       page_id: 'p1',
     })
     expect(
-      knownBlock({ id: 'c', type: 'view', views: [{ source_id: 's1', config: { id: 'v' } }] }),
+      knownTile({ id: 'c', type: 'view', views: [{ source_id: 's1', config: { id: 'v' } }] }),
     ).toMatchObject({
       type: 'view',
       views: [{ source_id: 's1' }],
@@ -17,11 +17,11 @@ describe('knownBlock', () => {
   })
 
   it('keeps foreign keys on a known entry (loose) — including inside view elements', () => {
-    expect(knownBlock({ id: 'a', type: 'markdown', future_field: 1 })).toMatchObject({
+    expect(knownTile({ id: 'a', type: 'markdown', future_field: 1 })).toMatchObject({
       future_field: 1,
     })
     expect(
-      knownBlock({
+      knownTile({
         id: 'c',
         type: 'view',
         views: [{ source_id: 's1', config: {}, outside_key: true }],
@@ -30,10 +30,10 @@ describe('knownBlock', () => {
   })
 
   it('a view entry needs a non-empty views list; a bad active index degrades, not rejects', () => {
-    expect(knownBlock({ id: 'c', type: 'view', views: [] })).toBeNull()
-    expect(knownBlock({ id: 'c', type: 'view' })).toBeNull()
+    expect(knownTile({ id: 'c', type: 'view', views: [] })).toBeNull()
+    expect(knownTile({ id: 'c', type: 'view' })).toBeNull()
     expect(
-      knownBlock({ id: 'c', type: 'view', views: [{ source_id: 's1' }], active: -2 }),
+      knownTile({ id: 'c', type: 'view', views: [{ source_id: 's1' }], active: -2 }),
     ).toMatchObject({
       type: 'view',
       active: undefined,
@@ -42,7 +42,7 @@ describe('knownBlock', () => {
 
   it('view chrome keys ride through; malformed ones degrade, not reject', () => {
     expect(
-      knownBlock({
+      knownTile({
         id: 'c',
         type: 'view',
         views: [{ source_id: 's1' }],
@@ -53,7 +53,7 @@ describe('knownBlock', () => {
       }),
     ).toMatchObject({ title: false, icon: false, view_button: 'icon', view_style: 'dropdown' })
     expect(
-      knownBlock({
+      knownTile({
         id: 'c',
         type: 'view',
         views: [{ source_id: 's1' }],
@@ -71,21 +71,21 @@ describe('knownBlock', () => {
 
   it('title_level accepts 1–6 and degrades out-of-range / non-int', () => {
     expect(
-      knownBlock({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 2 }),
+      knownTile({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 2 }),
     ).toMatchObject({ title_level: 2 })
     expect(
-      knownBlock({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 9 }),
+      knownTile({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 9 }),
     ).toMatchObject({ title_level: undefined })
     expect(
-      knownBlock({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 2.5 }),
+      knownTile({ id: 'c', type: 'view', views: [{ source_id: 's1' }], title_level: 2.5 }),
     ).toMatchObject({ title_level: undefined })
   })
 
   it('returns null for unknown types and garbage — the caller renders inert', () => {
-    expect(knownBlock({ id: 'x', type: 'widget' })).toBeNull()
-    expect(knownBlock({ type: 'page', page_id: 'p1' })).toBeNull()
-    expect(knownBlock('nope')).toBeNull()
-    expect(knownBlock(null)).toBeNull()
+    expect(knownTile({ id: 'x', type: 'widget' })).toBeNull()
+    expect(knownTile({ type: 'page', page_id: 'p1' })).toBeNull()
+    expect(knownTile('nope')).toBeNull()
+    expect(knownTile(null)).toBeNull()
   })
 })
 
@@ -110,35 +110,35 @@ describe('rawLayoutSchema', () => {
   })
 })
 
-describe('blockPatchProblem', () => {
+describe('tilePatchProblem', () => {
   it('passes well-shaped patches and names the malformed ones', () => {
-    expect(blockPatchProblem({ layout: { bands: [] } })).toBeNull()
-    expect(blockPatchProblem({ blocks: [], locked: true })).toBeNull()
-    expect(blockPatchProblem({ layout: 'garbage' })).toBe('Malformed layout.')
-    expect(blockPatchProblem({ blocks: 'no' as unknown as unknown[] })).toBe(
+    expect(tilePatchProblem({ layout: { bands: [] } })).toBeNull()
+    expect(tilePatchProblem({ blocks: [], locked: true })).toBeNull()
+    expect(tilePatchProblem({ layout: 'garbage' })).toBe('Malformed layout.')
+    expect(tilePatchProblem({ blocks: 'no' as unknown as unknown[] })).toBe(
       'blocks must be an array.',
     )
-    expect(blockPatchProblem({ locked: 'yes' as unknown as boolean })).toBe(
+    expect(tilePatchProblem({ locked: 'yes' as unknown as boolean })).toBe(
       'locked must be a boolean.',
     )
   })
 })
 
-describe('coerceBlockHost', () => {
+describe('coerceTileHost', () => {
   it('accepts the homepage host and rejects the rest', () => {
-    expect(coerceBlockHost({ kind: 'homepage' })).toEqual({ kind: 'homepage' })
-    expect(coerceBlockHost({ kind: 'area', path: 'x' })).toBeNull()
-    expect(coerceBlockHost('homepage')).toBeNull()
+    expect(coerceTileHost({ kind: 'homepage' })).toEqual({ kind: 'homepage' })
+    expect(coerceTileHost({ kind: 'area', path: 'x' })).toBeNull()
+    expect(coerceTileHost('homepage')).toBeNull()
   })
 })
 
-describe('block entry zoom field', () => {
+describe('tile entry zoom field', () => {
   it('round-trips a numeric zoom on a page entry', () => {
-    expect(knownBlock({ id: 'b', type: 'page', page_id: 'p1', zoom: 1.25 })?.zoom).toBe(1.25)
+    expect(knownTile({ id: 'b', type: 'page', page_id: 'p1', zoom: 1.25 })?.zoom).toBe(1.25)
   })
 
   it('drops a non-numeric zoom to undefined without failing the entry (E-1 foreign-data guard)', () => {
-    const e = knownBlock({ id: 'c', type: 'markdown', zoom: 'big' })
+    const e = knownTile({ id: 'c', type: 'markdown', zoom: 'big' })
     expect(e).not.toBeNull()
     expect(e?.zoom).toBeUndefined()
   })

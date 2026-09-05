@@ -3,12 +3,12 @@
 // and every other claimant takes a fresh id plus duplicated device-local rows.
 
 import { join } from 'node:path'
-import { blockHostKey } from '@shared/blocks'
+import { tileHostKey } from '@shared/tiles'
 import { ID_KEY } from '@shared/identity'
 import { isPlainObject } from '@shared/propertyValue'
 import type { EntityRecord, RecordKind } from '@shared/record'
 import { errText } from '@shared/result'
-import { remintConfigIds } from './blocks'
+import { remintConfigIds } from './tiles'
 import { readKey, writeKey } from './Database/localState'
 import { newContentId, newId } from './ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from './IO/atomicWrite'
@@ -154,7 +154,7 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
     const active = readKey<string>('activeView', target.id)
     const moved = active === null ? undefined : viewIds.get(active)
     if (moved) writeKey('activeView', fresh, moved)
-    if (target.kind === 'space') copyBlockDocRow(target.id, fresh)
+    if (target.kind === 'space') copyTileDoc(target.id, fresh)
     const windows = readWindowsState()
     const origin = windows.origins[target.id]
     if (origin)
@@ -170,10 +170,10 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
 /** The blockDoc value is NOT opaque: view-embed tiles carry `views[].config.id`, a live
  *  per-machine key two boards must never share — each tile's views pass through the same
  *  re-mint every in-app tile copy uses. */
-function copyBlockDocRow(oldId: string, fresh: string): void {
+function copyTileDoc(oldId: string, fresh: string): void {
   const doc = readKey<Record<string, unknown>>(
     'blockDoc',
-    blockHostKey({ kind: 'space', id: oldId }),
+    tileHostKey({ kind: 'space', id: oldId }),
   )
   if (doc === null) return
   const blocks = Array.isArray(doc.blocks)
@@ -183,7 +183,7 @@ function copyBlockDocRow(oldId: string, fresh: string): void {
           : b,
       )
     : doc.blocks
-  writeKey('blockDoc', blockHostKey({ kind: 'space', id: fresh }), { ...doc, blocks })
+  writeKey('blockDoc', tileHostKey({ kind: 'space', id: fresh }), { ...doc, blocks })
 }
 
 /** Fold executed re-mints back into the projection the baseline will latch: each written copy

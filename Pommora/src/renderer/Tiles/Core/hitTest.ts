@@ -6,8 +6,8 @@
 // the previous edge holds until the new one genuinely beats it, killing flicker.
 
 import { HYSTERESIS } from '@renderer/Interactions/shared'
-import type { Edge, SurfaceLayout } from './model'
-import type { SurfaceGeometry } from './rects'
+import type { Edge, TileLayout } from './model'
+import type { TileGeometry } from './rects'
 
 export type DropTarget =
   | { kind: 'tile'; id: string; edge: Edge }
@@ -15,8 +15,8 @@ export type DropTarget =
   | null
 
 export function hitTest(
-  geometry: SurfaceGeometry,
-  layout: SurfaceLayout,
+  geometry: TileGeometry,
+  layout: TileLayout,
   dragId: string,
   px: number,
   py: number,

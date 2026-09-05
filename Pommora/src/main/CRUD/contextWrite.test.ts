@@ -10,8 +10,8 @@ import {
   setSpaceColor,
   setSpaceContext,
 } from './contextWrite'
-import { rawLayoutSchema } from '@shared/blocks'
-import { readBlockDoc } from '../blocks'
+import { rawLayoutSchema } from '@shared/tiles'
+import { readTileDoc } from '../tiles'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../paths'
 import { splitFrontmatter } from '../readNexus'
@@ -82,7 +82,7 @@ describe('createContextGroup', () => {
 })
 
 describe('createSpace', () => {
-  it('creates folder + sidecar (no icon, no color) seeded with the 2×2 block doc', async () => {
+  it('creates folder + sidecar (no icon, no color) seeded with the 2×2 tile doc', async () => {
     const r = await createSpace(root, 'ctx_projects', 'Sapphire')
     expect(r.ok).toBe(true)
     if (!r.ok) return
@@ -94,7 +94,7 @@ describe('createSpace', () => {
     expect(sc.icon).toBeUndefined()
     expect(sc.color).toBeUndefined()
     expect(sc.blocks).toBeUndefined() // the document is a row, not the sidecar's business
-    const doc = readBlockDoc({ kind: 'space', id: sc.id })
+    const doc = readTileDoc({ kind: 'space', id: sc.id })
     expect(doc.blocks).toHaveLength(4)
     expect((doc.blocks as { type: string }[]).every((b) => b.type === 'markdown')).toBe(true)
     const layout = rawLayoutSchema.parse(doc.layout)

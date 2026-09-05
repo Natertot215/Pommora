@@ -44,7 +44,7 @@ import {
 import { setSpaceOrder } from './CRUD/reorder'
 import { renameCascade } from './CRUD/cascade'
 import { applyAdoptions } from './CRUD/optionOps'
-import { rewriteBlockConnections } from './blocks'
+import { rewriteTileConnections } from './tiles'
 import {
   mintBundle,
   settleBundle,
@@ -335,11 +335,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           await renamePage(r.value.path, oldTitle)
           return fault('Rename cascade failed; the rename was reverted.')
         }
-        // Heal markdown-block bodies too (renameCascade skips .nexus-resident, id-less block files).
-        // Best-effort AFTER the page cascade committed: a failure here leaves blocks stale (re-runnable),
+        // Heal markdown-tile bodies too (renameCascade skips .nexus-resident, id-less tile files).
+        // Best-effort AFTER the page cascade committed: a failure here leaves tiles stale (re-runnable),
         // never un-reverts the now-successful page rename.
         try {
-          await rewriteBlockConnections(root, oldTitle, req.newName)
+          await rewriteTileConnections(root, oldTitle, req.newName)
         } catch {}
         await moveIndexPaths(root, abs, r.value.path)
         return renamedReply(r.value.path)

@@ -1,4 +1,4 @@
-import { blockHostKey, type BlockHostRef } from '@shared/blocks'
+import { tileHostKey, type TileHostRef } from '@shared/tiles'
 import type { Result } from '@shared/result'
 import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
 import { stabilize } from '@shared/treeStabilize'
@@ -14,10 +14,10 @@ export interface CacheSlice {
   pageAliases: Record<string, string[]>
   rememberAlias: (pageId: string, alias: string) => void
   forgetAlias: (pageId: string, alias: string) => void
-  /** Every block host's lock, keyed by host. Seeded from the doc the host loads — the one source. */
+  /** Every tile host's lock, keyed by host. Seeded from the doc the host loads — the one source. */
   hostLocks: Record<string, boolean>
-  seedHostLock: (host: BlockHostRef, locked: boolean) => void
-  setHostLocked: (host: BlockHostRef, v: boolean) => Promise<void>
+  seedHostLock: (host: TileHostRef, locked: boolean) => void
+  setHostLocked: (host: TileHostRef, v: boolean) => Promise<void>
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
   setAssetDirectory: (dir: string) => Promise<void>
@@ -91,12 +91,12 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
     hostLocks: {},
     seedHostLock: (host, locked) =>
       set((s) => {
-        const key = blockHostKey(host)
+        const key = tileHostKey(host)
         return s.hostLocks[key] === locked ? {} : { hostLocks: { ...s.hostLocks, [key]: locked } }
       }),
     setHostLocked: async (host, v) => {
-      set((s) => ({ hostLocks: { ...s.hostLocks, [blockHostKey(host)]: v } }))
-      await window.nexus.blocks.save(host, { locked: v })
+      set((s) => ({ hostLocks: { ...s.hostLocks, [tileHostKey(host)]: v } }))
+      await window.nexus.tiles.save(host, { locked: v })
     },
 
     assetMap: EMPTY_ASSET_MAP,

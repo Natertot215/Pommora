@@ -32,7 +32,7 @@ export const TILE_MIN_PX = 64
 /** KNOB — the height a resizable tile reports and occupies before a persisted one exists.*/
 export const TILE_DEFAULT_PX = 320
 
-/** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a block
+/** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a tile
  *  widget measures, so the value the widget answers CM6 with has to add it back or the height model
  *  runs short by the gap for every tile on the page.*/
 export const TILE_GAP_PX = 4

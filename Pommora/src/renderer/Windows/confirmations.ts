@@ -58,9 +58,9 @@ export const askRemoveTile = (): Promise<boolean> =>
   waived()
     ? Promise.resolve(true)
     : ask({
-        message: 'Remove this block?',
+        message: 'Remove this tile?',
         detail:
-          'A markdown block’s file moves to the nexus’s .trash (recoverable); embeds only remove the tile.',
+          'A markdown tile’s file moves to the nexus’s .trash (recoverable); embeds only remove the tile.',
         action: 'Remove',
         tone: 'destructive',
       })

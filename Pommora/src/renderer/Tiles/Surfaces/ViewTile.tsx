@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ViewBlockEntry } from '@shared/blocks'
+import type { ViewTileEntry } from '@shared/tiles'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import {
@@ -143,7 +143,7 @@ function EmbedTitle({
   }
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a rich block surface, not a form control
+    // biome-ignore lint/a11y/useSemanticElements: a rich tile surface, not a form control
     <span
       ref={ref}
       className={`${s.titleText} md-h${level}`}
@@ -237,7 +237,7 @@ export function ViewTile({
   mutateEntry,
   onActivate,
 }: {
-  entry: ViewBlockEntry
+  entry: ViewTileEntry
   mutateEntry: (
     entryId: string,
     fn: (raw: Record<string, unknown>) => Record<string, unknown>,

@@ -8,7 +8,7 @@
   --card-body-min: calc(16px + 18px + var(--card-min-rows) * (var(--card-row-h) + 4px));
   --band-clearance: var(--card-gap-v);
   --label-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
-  zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
+  zoom: calc(var(--zoom, 1) * var(--tile-zoom, 1));
   padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {

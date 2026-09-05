@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  knownBlock,
+  knownTile,
   NEW_TILE_H,
-  type BlockEntry,
-  blockHostKey,
-  type BlockHostRef,
-  type BlockStyle,
+  type TileEntry,
+  tileHostKey,
+  type TileHostRef,
+  type TileStyle,
   type PagePickerItem,
   type ViewPick,
   type ViewPickerItem,
-} from '@shared/blocks'
+} from '@shared/tiles'
 import { GLIDE_FEEL } from '@renderer/Animation/feel'
 import { type ConnPage, type ConnectionsApi, glanceLink } from '@renderer/MarkdownPM/Connections'
 import {
@@ -21,7 +21,7 @@ import {
 import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/Tiles/Core/ops'
 import { getTile } from '@renderer/Tiles/Core/model'
-import { SurfaceView, type BackdropTarget } from '@renderer/Tiles/TileGrid'
+import { TileGrid, type BackdropTarget } from '@renderer/Tiles/TileGrid'
 import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
@@ -33,7 +33,7 @@ import { useHeld } from '@renderer/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import { ZOOM_STEPS, zoomStep } from './tileZoom'
+import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { TileHandleMenu } from './TileHandleMenu'
 import { ViewTile } from './Surfaces/ViewTile'
@@ -96,8 +96,8 @@ function viewPickerItems(
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
-export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element | null {
-  const { layout, blocks, ready, setLayout, commitLayout, refreshEntries, saveBlocks } =
+export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | null {
+  const { layout, blocks, ready, setLayout, commitLayout, refreshEntries, saveTiles } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write
@@ -107,12 +107,12 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const select = useSession((s) => s.select)
   // The store is the cross-subtree source — settings surfaces toggle this from elsewhere.
-  const hostLocked = useSession((s) => s.hostLocks[blockHostKey(host)] ?? false)
+  const hostLocked = useSession((s) => s.hostLocks[tileHostKey(host)] ?? false)
 
   const entries = useMemo(() => {
-    const map = new Map<string, BlockEntry>()
+    const map = new Map<string, TileEntry>()
     for (const raw of blocks) {
-      const entry = knownBlock(raw)
+      const entry = knownTile(raw)
       if (entry) map.set(entry.id, entry)
     }
     return map
@@ -147,7 +147,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
     // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not
     // swallow the click-out.
     const onDown = (e: PointerEvent): void => {
-      if (!(e.target as Element | null)?.closest?.('.spm-tile.is-editing-tile')) setEditingId(null)
+      if (!(e.target as Element | null)?.closest?.('.tile.is-editing-tile')) setEditingId(null)
     }
     const onKey = (e: KeyboardEvent): void => {
       // CM6 consumes Esc first when its autocomplete is open — that press closes the popup only.
@@ -163,12 +163,12 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
 
   // Order is load-bearing: suppress the tile's editor flush, layout first
   // (invisible orphan beats a dead box on a crash), then the entry + file.
-  const removeBlock = useCallback(
+  const removeTile = useCallback(
     (id: string) => {
       removing.current.add(id)
       setEditingId((cur) => (cur === id ? null : cur))
       commitLayout((cur) => removeLeaf(cur, id))
-      void window.nexus.blocks.removeTile(host, id).then(refreshEntries)
+      void window.nexus.tiles.removeTile(host, id).then(refreshEntries)
     },
     [commitLayout, refreshEntries, host],
   )
@@ -177,7 +177,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
       setEditingId((cur) => (cur === id ? null : cur))
-      void window.nexus.blocks.convertToPage(host, id, pageId).then(refreshEntries)
+      void window.nexus.tiles.convertToPage(host, id, pageId).then(refreshEntries)
     },
     [refreshEntries, host],
   )
@@ -196,7 +196,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         : (container.views ?? []).find((v) => v.id === pick.view_id)
       if (!config) return
       setEditingId((cur) => (cur === id ? null : cur))
-      void window.nexus.blocks
+      void window.nexus.tiles
         .convertToView(host, id, [{ source_id: pick.source_id, config }])
         .then(refreshEntries)
     },
@@ -219,21 +219,21 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   // dismissal that cleared it — otherwise React tears the pane out before it can retract.
   const menu = useHeld(handleMenu, handleMenu !== null)
   const setStyle = useCallback(
-    (id: string, style: BlockStyle) => {
-      saveBlocks((cur) =>
+    (id: string, style: TileStyle) => {
+      saveTiles((cur) =>
         cur.map((b) =>
-          knownBlock(b)?.id === id ? { ...(b as Record<string, unknown>), style } : b,
+          knownTile(b)?.id === id ? { ...(b as Record<string, unknown>), style } : b,
         ),
       )
     },
-    [saveBlocks],
+    [saveTiles],
   )
   // Raw entry spreads so foreign fields survive; absent = unlocked.
   const toggleLock = useCallback(
     (id: string) => {
-      saveBlocks((cur) =>
+      saveTiles((cur) =>
         cur.map((b) => {
-          if (knownBlock(b)?.id !== id) return b
+          if (knownTile(b)?.id !== id) return b
           const next = { ...(b as Record<string, unknown>) }
           // Toggles off the STRICT boolean — a foreign truthy `locked` (e.g. 1) parses to unlocked,
           // so the first click must lock, not delete-to-no-op.
@@ -243,11 +243,11 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         }),
       )
     },
-    [saveBlocks],
+    [saveTiles],
   )
-  const duplicateBlock = useCallback(
+  const duplicateTile = useCallback(
     (id: string) => {
-      void window.nexus.blocks.duplicateTile(host, id).then((r) => {
+      void window.nexus.tiles.duplicateTile(host, id).then((r) => {
         if (!r.ok) return
         refreshEntries()
         commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
@@ -259,11 +259,11 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
     (id: string) => {
       void askRemoveTile().then((ok) => {
         if (!ok) return
-        removeBlock(id)
+        removeTile(id)
         notifyRemovedTile()
       })
     },
-    [removeBlock],
+    [removeTile],
   )
 
   const tileClassName = useCallback(
@@ -273,33 +273,34 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         editingId === id ? 'is-editing-tile' : null,
         entries.get(id)?.locked ? 'is-locked' : null,
         handleMenu?.id === id ? 'handle-pinned' : null, // the open picker's anchor stays shown
-        zoomStep(entries.get(id)?.zoom).cls || null,
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
     },
     [entries, editingId, handleMenu],
   )
 
+  const tileStyle = useCallback((id: string) => zoomStyle(entries.get(id)?.zoom), [entries])
+
   // Hands the embed the raw entry so foreign keys on it and its elements survive.
   const mutateViewEntry = useCallback(
     (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
-      saveBlocks((cur) =>
+      saveTiles((cur) =>
         cur.map((raw) => {
-          const e = knownBlock(raw)
+          const e = knownTile(raw)
           if (e?.id !== entryId || e.type !== 'view') return raw
           return fn(raw as Record<string, unknown>)
         }),
       )
     },
-    [saveBlocks],
+    [saveTiles],
   )
 
   // Clears `zoom` at 1.0 so the default stays an absent key (mirrors setStyle/toggleLock).
-  const setBlockZoom = useCallback(
+  const setTileZoom = useCallback(
     (id: string, factor: number) => {
-      saveBlocks((cur) =>
+      saveTiles((cur) =>
         cur.map((raw) => {
-          if (knownBlock(raw)?.id !== id) return raw
+          if (knownTile(raw)?.id !== id) return raw
           const next = { ...(raw as Record<string, unknown>) }
           if (factor === 1) delete next.zoom
           else next.zoom = factor
@@ -307,7 +308,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         }),
       )
     },
-    [saveBlocks],
+    [saveTiles],
   )
 
   const renderTile = useCallback(
@@ -355,7 +356,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
   // render-captured layout.
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
-      void window.nexus.blocks.createMarkdown(host).then((r) => {
+      void window.nexus.tiles.createMarkdown(host).then((r) => {
         if (!r.ok) return
         refreshEntries()
         commitLayout((cur) =>
@@ -413,25 +414,24 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
       const chosen = picked === undefined ? undefined : picks[Number(picked)]
       if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
       else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
-      else if (zoom !== undefined) setBlockZoom(id, Number(zoom))
+      else if (zoom !== undefined) setTileZoom(id, Number(zoom))
       else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
       else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
-      else if (action === 'tile:duplicate') duplicateBlock(id)
+      else if (action === 'tile:duplicate') duplicateTile(id)
       else if (action === 'tile:delete') confirmRemove(id)
       else if (action === 'tile:lock') toggleLock(id)
     })
   }
 
   return (
-    <div
-      className={`blk-surface${editingId ? ' has-live-editor' : ''}${hostLocked ? ' is-host-locked' : ''}`}
-    >
-      <SurfaceView
+    <div className={`tile-host${hostLocked ? ' is-host-locked' : ''}`}>
+      <TileGrid
         layout={layout}
         onLayoutChange={setLayout}
         renderTile={renderTile}
         feel={GLIDE_FEEL}
         tileClassName={tileClassName}
+        tileStyle={tileStyle}
         isTileStatic={(id) => hostLocked || (entries.get(id)?.locked ?? false)}
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
@@ -439,7 +439,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
       {menu && entries.get(menu.id) && tree && (
         <TileHandleMenu
           open={handleMenu !== null}
-          entry={entries.get(menu.id) as BlockEntry}
+          entry={entries.get(menu.id) as TileEntry}
           anchor={menu.el}
           pageItems={pagePickerItems(tree, defaultIcons)}
           viewItems={viewPickerItems(tree, defaultIcons)}
@@ -449,14 +449,14 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
           onPickPage={(pageId) => applyPagePick(menu.id, pageId)}
           onPickView={(pick) => applyViewPick(menu.id, pick)}
           onStyle={(style) => setStyle(menu.id, style)}
-          onDuplicate={() => duplicateBlock(menu.id)}
+          onDuplicate={() => duplicateTile(menu.id)}
           onRemove={() => confirmRemove(menu.id)}
           onToggleLock={() => toggleLock(menu.id)}
           onOpenPage={() =>
             menuPage && select({ kind: 'page', id: menuPage.id, path: menuPage.path })
           }
           zoom={menuEntry?.zoom}
-          onSetZoom={(factor) => setBlockZoom(menu.id, factor)}
+          onSetZoom={(factor) => setTileZoom(menu.id, factor)}
           containerLocked={hostLocked}
         />
       )}

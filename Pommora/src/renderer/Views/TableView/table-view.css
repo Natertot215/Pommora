@@ -19,9 +19,9 @@
    trailing 1fr filler track eat slack. */
 .table-grid {
   width: 100%;
-  /* Base density (--zoom) × the per-tile Scale (--block-zoom, absent = 1), so the table scales as one
+  /* Base density (--zoom) × the per-tile Scale (--tile-zoom, absent = 1), so the table scales as one
      unit within the grid tile's fixed inset. */
-  zoom: calc(var(--zoom) * var(--block-zoom, 1));
+  zoom: calc(var(--zoom) * var(--tile-zoom, 1));
 }
 
 /* Scoped to the Hide / style-slide beats only, so a drag resize stays instant. */

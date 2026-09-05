@@ -1,9 +1,9 @@
-// Blocks resize by their own edges and corners (window-style, never bars in the gaps). East/west
+// Tiles resize by their own edges and corners (window-style, never bars in the gaps). East/west
 // edges move the nearest ancestor ROW divider. A north edge negotiates with the stacked neighbor
 // directly above. South edges never resolve here — they stretch the tile itself (the caller goes
 // straight to stretchTileHeight).
 
-import type { DividerRef, Edge, SurfaceLayout } from './model'
+import type { DividerRef, Edge, TileLayout } from './model'
 import { findTile } from './model'
 
 export type EdgeBoundary =
@@ -13,7 +13,7 @@ export type EdgeBoundary =
   | { kind: 'bandpair'; above: number }
   | null
 
-export function resolveEdge(layout: SurfaceLayout, tileId: string, edge: Edge): EdgeBoundary {
+export function resolveEdge(layout: TileLayout, tileId: string, edge: Edge): EdgeBoundary {
   if (edge === 's') return null
   const at = findTile(layout, tileId)
   if (!at) return null
@@ -42,7 +42,7 @@ export function resolveEdge(layout: SurfaceLayout, tileId: string, edge: Edge): 
       return { kind: 'divider', ref: { band: at.band, path: parentPath, index: childIndex - 1 } }
   }
 
-  // A full-width block's north edge crosses the band seam: negotiate with the
+  // A full-width tile's north edge crosses the band seam: negotiate with the
   // band above when both roots are plain tiles (each has one height to give).
   if (edge === 'n' && at.path.length === 0 && at.band > 0) {
     const above = layout.bands[at.band - 1]?.node

@@ -279,7 +279,7 @@ const FRAMES = roster([
             kind: 'zoom',
             key: 'embedScale',
             label: 'Embed Scale',
-            hint: "The scale embedded pages and views start at; a block's own toggle compounds it.",
+            hint: "The scale embedded pages and views start at; a tile's own toggle compounds it.",
             fallback: EMBED_SCALE_DEFAULT,
           },
         ],
@@ -502,7 +502,7 @@ const FRAMES = roster([
             key: 'confirmDeletion',
             label: 'Confirm Before Deletion',
             defaultOn: true,
-            hint: 'Ask before deleting a page, a block, or a folder that carries no schema. Collections, Sets, views and properties always ask.',
+            hint: 'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, views and properties always ask.',
           },
           {
             kind: 'toggle',
