@@ -1,8 +1,8 @@
 // The mutate IPC contract — renderer→main write requests. Paths are nexus-relative POSIX (main
 // resolves them under the session root); entities are addressed by path, never by a
-// renderer-supplied absolute path. Kept out of types.ts so it can import the data-layer shape.
+// renderer-supplied absolute path.
 
-import type { Result } from '@pommora/core/Contract/result'
+import type { Result } from '../Contract/result'
 import type { PageMoveContext } from '../Actions/pageMenu'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { Crop } from '../Nexus/schemas'

@@ -189,7 +189,7 @@ export const WEB_ZOOM_DEFAULT = 1
 export const EDITOR_SCALE_DEFAULT = 1
 export function coerceScale(v: unknown, fallback: number): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
-  return Math.min(SCALE_MAX, Math.max(SCALE_MIN, v))
+  return clamp(v, SCALE_MIN, SCALE_MAX)
 }
 
 /** The scale embedded pages and views render at before a tile's own Scale multiplies it
@@ -209,7 +209,7 @@ const INTERFACE_SCALE_MIN = INTERFACE_SCALE_STEPS[0]
 const INTERFACE_SCALE_MAX = INTERFACE_SCALE_STEPS[INTERFACE_SCALE_STEPS.length - 1]
 export function coerceInterfaceScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return INTERFACE_SCALE_DEFAULT
-  return Math.min(INTERFACE_SCALE_MAX, Math.max(INTERFACE_SCALE_MIN, v))
+  return clamp(v, INTERFACE_SCALE_MIN, INTERFACE_SCALE_MAX)
 }
 
 /** `personalization.hoverPreviewLinger`. Whole seconds; a hand-typed value clamps in, and zero

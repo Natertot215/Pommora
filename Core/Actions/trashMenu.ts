@@ -17,7 +17,7 @@ export interface TrashMenuContext {
    *  right-click on an unchecked row acts on that row alone, whatever else is checked. */
   batch: boolean
   /** The places this row may be sent, when its recorded home no longer resolves. Absent means the
-   *  home is there and Restore acts without asking.*/
+   *  home is there and Restore acts without asking. */
   destinations?: MoveTarget[]
   /** Which address a destination pick carries, decided by the row's kind. */
   destinationKind?: RestoreDestination['kind']

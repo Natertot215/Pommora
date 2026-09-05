@@ -30,11 +30,7 @@ export function coverStyle(crop: Crop, imageAspect: number, boxAspect: number): 
 }
 
 export function panToCrop(crop: Crop, dx: number, dy: number): Crop {
-  return {
-    ...crop,
-    x: clamp(crop.x + dx, 0, 1),
-    y: clamp(crop.y + dy, 0, 1),
-  }
+  return { ...crop, x: clamp(crop.x + dx, 0, 1), y: clamp(crop.y + dy, 0, 1) }
 }
 
 export interface CoverRect {

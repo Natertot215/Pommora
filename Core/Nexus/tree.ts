@@ -131,7 +131,7 @@ export interface NexusTree {
 }
 
 /** `empty` = no nexus open (show the empty state, not an error); `open` = open + read OK;
- *  `error` = a nexus is open but its tree couldn't be read.*/
+ *  `error` = a nexus is open but its tree couldn't be read. */
 export type NexusState =
   | { status: 'empty' }
   | { status: 'open'; tree: NexusTree }

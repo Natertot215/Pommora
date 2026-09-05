@@ -53,6 +53,8 @@ export function embedTitleMenuItems(
     { label: iconLabel(iconShown), action: 'toggle-icon' },
     {
       label: 'Title Size',
+      // A branch carries its leading leaf's action, so a host that resolves one lands on the row
+      // a person would have reached through it.
       action: 'size-1',
       submenu: EMBED_TITLE_SIZES.map((n) => ({
         label: `Heading ${n}`,
@@ -65,7 +67,7 @@ export function embedTitleMenuItems(
 }
 
 /** The switcher area's presentation menu. Show Title surfaces here only while the title row is
- *  hidden — with the row gone, its own right-click target is gone too.*/
+ *  hidden — with the row gone, its own right-click target is gone too. */
 export function embedAreaMenuItems(current: {
   viewStyle: ViewStyle
   titleShown: boolean
