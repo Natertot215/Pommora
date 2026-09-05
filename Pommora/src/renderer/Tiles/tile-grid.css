@@ -5,7 +5,7 @@
 }
 
 /* The chassis geometry (border, radius, body clip) is the shared tile-chassis; what's here is
-   The grid's own layer — placement, motion, and the state selectors that drive the chassis's
+   the grid's own layer — placement, motion, and the state selectors that drive the chassis's
    --tile-border-color. */
 .tile {
   position: absolute;
