@@ -86,6 +86,20 @@ describe('the document', () => {
     expect(await readFile(spaceSidecar(), 'utf8')).toBe(before)
   })
 
+  it('a top-level key this build does not model rides through a save', async () => {
+    await mkdir(home(), { recursive: true })
+    await writeFile(tileDocPath(home()), JSON.stringify({ tiles: [], note: 'mine' }))
+    await seed(home(), [{ id: 'a', type: 'markdown' }])
+    expect(JSON.parse(await readFile(tileDocPath(home()), 'utf8')).note).toBe('mine')
+  })
+
+  it('a top-level key this build does not model rides through a save', async () => {
+    await mkdir(home(), { recursive: true })
+    await writeFile(tileDocPath(home()), JSON.stringify({ tiles: [], note: 'mine' }))
+    await seed(home(), [{ id: 'a', type: 'markdown' }])
+    expect(JSON.parse(await readFile(tileDocPath(home()), 'utf8')).note).toBe('mine')
+  })
+
   it('a hand-edited shape coerces on read and inside a mutation', async () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), JSON.stringify({ tiles: {}, locked: 'yes', layout: 1 }))

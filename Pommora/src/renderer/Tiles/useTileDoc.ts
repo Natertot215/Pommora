@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TileHostRef } from '@shared/tiles'
 import { tileHostKey } from '@shared/tiles'
+import { stableStringify } from '@shared/stableJson'
 import { useSession } from '@renderer/store'
 import { decodeLayout, encodeLayout } from './Core/codec'
 import { emptyLayout, type TileLayout } from './Core/model'
@@ -106,8 +107,8 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     seedHostLock(target, r.value.locked)
     // The app's own save echoes back too: bytes that match what the host shows change nothing.
     if (
-      JSON.stringify(r.value.layout) === JSON.stringify(encodeLayout(liveLayout.current)) &&
-      JSON.stringify(r.value.tiles) === JSON.stringify(liveTiles.current)
+      stableStringify(r.value.layout) === stableStringify(encodeLayout(liveLayout.current)) &&
+      stableStringify(r.value.tiles) === stableStringify(liveTiles.current)
     )
       return
     const layout = decodeLayout(r.value.layout) ?? emptyLayout()

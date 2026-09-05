@@ -252,6 +252,7 @@ describe('classifyEvent', () => {
         ),
       ),
     ).toBe('ignored')
+    expect(kind(ev('addDir', '.nexus', 'homepage'))).toBe('ignored')
     expect(kind(ev('change', '.nexus', 'crops.json'))).toBe('crops-leaf')
     expect(kind(ev('add', 'Loose', 'second.md'))).toBe('index-only')
     expect(kind(ev('add', 'root-note.md'))).toBe('index-only')

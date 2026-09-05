@@ -7,6 +7,7 @@ import writeFileAtomic from 'write-file-atomic'
 import { readFile, rename, mkdir, stat, utimes } from 'node:fs/promises'
 import { join, basename, dirname, relative, isAbsolute } from 'node:path'
 import { isPlainObject } from '@shared/propertyValue'
+import { stableStringify } from '@shared/stableJson'
 import { fail, ok, type Result } from '@shared/result'
 import { forgetParse } from '../walkCache'
 import { recordWrite } from './writeEcho'
@@ -170,23 +171,6 @@ export async function readJsonObject(absPath: string): Promise<Record<string, un
   } catch {
     return null
   }
-}
-
-/** Deterministic JSON: object keys sorted recursively, 2-space indent. Byte-stable
- *  across writes so re-saving unchanged data produces identical bytes. */
-export function stableStringify(value: unknown): string {
-  return JSON.stringify(sortKeys(value), null, 2)
-}
-
-function sortKeys(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortKeys)
-  if (value !== null && typeof value === 'object') {
-    const source = value as Record<string, unknown>
-    const out: Record<string, unknown> = {}
-    for (const key of Object.keys(source).sort()) out[key] = sortKeys(source[key])
-    return out
-  }
-  return value
 }
 
 /** True when a path exists. The one owner of the stat-as-existence check. */

@@ -607,7 +607,7 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 - [x] Red first: `watchPatch.test.ts` — a change event at `.nexus/contexts/Realms/Astral/_tiles.json` classifies `tiles-leaf` with `{ kind: 'space', id }`; at `.nexus/homepage/_tiles.json` → `{ kind: 'homepage' }`; a tile `.md` beside it is still ignored (`watcher.test.ts`). Red before, green after.
 - [x] Both halves of the ignore change: `ignoredUnder` returns false for `_tiles.json` under the homepage dir and true for `<ulid>.md` there; a Space's `_tiles.json` was watched before and classifies `tiles-leaf` after (before: `full-refresh`).
-- [x] `useTileDoc.test.tsx` (new): a `tiles:changed` push for the mounted host replaces the layout; one for another host does not; a pending save is cancelled by the push.
+- [x] `useTileDoc.test.tsx` (new): a `tiles:changed` push for the mounted host replaces the layout; one for another host does not; a pending save is flushed by the push before the read.
 - [x] Echo: a new `watcher.test.ts` case (none exists for echo today): an external change to `_tiles.json` 200ms after the app's own write reaches `batch` (exempt), while the same timing on `_space.json` is still swallowed.
 - [x] `watcher.test.ts`: a batch of one `_tiles.json` change plus one unclassifiable `.nexus` event (a full refresh) still pushes `tiles:changed` for that host.
 - [x] `useTileDoc.test.tsx`: a push during an in-flight save awaits it and the re-read carries the save; a `commitLayout` after a push builds on the pushed layout, not the pre-push one; a push while busy applies when busy clears and after the drop's save is on disk; a `.bad-` file classifies `ignored`.
@@ -688,14 +688,14 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 #### Gate 4 — the document travels
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Every Now count re-run against its control.
-- [ ] Simplification and review dispatched against `<gate-3 head>..HEAD` scoped to `src/main`, `src/shared`, `src/preload`, `Tiles/useTileDoc.ts`.
-- [ ] Every concern fixed, or carrying an explicit user ruling.
-- [ ] The hazard window is closed (Task 9 landed).
-- [ ] [[TilesPM]]'s Storage section, [[InterfacePM]]'s inspector line, `shared/tiles.ts`'s header rewritten in this phase's commits.
-- [ ] Progress hashes filled in. Not a declared stop.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked.
+- [x] Every Now count re-run against its control.
+- [x] Simplification and review dispatched against `dcb6806e..HEAD` scoped to `src/main`, `src/shared`, `src/preload`, `Tiles/useTileDoc.ts`.
+- [x] Every concern fixed, or carrying an explicit user ruling.
+- [x] The hazard window is closed (Task 9 landed).
+- [x] [[TilesPM]]'s Storage section, [[InterfacePM]]'s inspector line, `shared/tiles.ts`'s header rewritten in this phase's commits.
+- [x] Progress hashes filled in. Not a declared stop.
 
 ---
 
@@ -731,6 +731,13 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: a corrupt `_tiles.json` is adjudicated by the writer under the lock, never by a read; the read shows the host empty, the next save quarantines and lands.
 - 09-04-2026, Claude: the simplification round's twenty findings folded (blocks-key timing, rmwJsonStrict, dir-first primitives, the copy arm in main, static menu rows, the inline zoom variable, listTileHosts-driven migration, counts).
 
+### Gate 4 rulings
+
+- 09-04-2026, Claude: the host compares a pushed document against what it shows through one stable serialization (`shared/stableJson.ts`, the writer's own), so the app's own echo changes nothing; the first comparison had used two serializers and never matched.
+- 09-04-2026, Claude: a `_tiles.json` deleted under an open host reloads as the empty document — most recent wins, and a deleted file is the emptiest recent state; the next save re-seeds it. Nothing in the app unlinks the file (its atomic rename raises one `change`).
+- 09-04-2026, Claude: a press before activation (`tracking`) does not hold a push, by the plan's own rule; a push landing under a held-still press re-lays the grid before the drag begins, and the drag then reads the new geometry.
+- 09-04-2026, Claude: a document-level key this build doesn't model rides through a save, as an entry-level one always has.
+
 ### Open Against Later Tasks
 
 - Nathan's pass (Completion Criteria): the Scale ramp easing on the way back to 1.0, where the inline variable is removed rather than set — a registered property's removal transitions in Chromium by contract; unverified by eye.
@@ -743,6 +750,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Gate 4: `tilesMigrate.ts` names `'homepage'` once more as the legacy row key — the eighth host-kind site the plan's grep excluded by construction; it leaves with the migration. `shared/stableJson.ts` holds `stableStringify`, moved out of `main/IO/atomicWrite.ts` so the renderer compares with the writer's own serialization. The homepage folder's own directory events classify `ignored` (the folder appears with the first tile). `migrateTileRows` carries a throw net: a write that throws keeps its row and the rest continue on the next open.
 - Task 9, the census and the run on NexusOS (09-04-2026): `local_state` held 12 `blockDoc` rows — `homepage` and 11 `space:` keys — against 10 Space folders and no `_tiles.json` anywhere; predicted written 11 / dropped 12 / divergent none. `nexus.db` was copied aside first. The first open logged `{ written: 11, dropped: 12, divergent: [] }`; 11 `_tiles.json` files exist (the homepage and every Space folder), the scope holds 0 rows, and the Homepage rendered its three tiles at the heights the Gate 1 snapshot recorded. `blockDoc` reads 4 files in `src` (the scope union, the migration, its test, `open.test.ts`) — the plan's count of 3 predates the migration having a test. A failed file write keeps its row for the next open rather than dropping it.
 - Task 8, the live check on a scratch Nexus (the dev process restarted, pointed there through the app config): a tile minted over IPC, its layout written into `_tiles.json` by hand, rendered within 1.5 s with the same `.tile-host` element (no remount); a south-edge drag over CDP landed the new height on disk and a reload showed it; the tile's `.md` sat beside the document. The `useTileDoc.test.tsx` cases cover the four rules — replace for the mounted host only, flush-then-read, a later commit on the pushed layout, a held push applied after the drop's save lands; the `.bad-` classification is `watchPatch.test.ts`'s. `_tiles.json` is matched by basename at the echo exemption (the one file with that name) and by exact path in the classifier.
 - Task 7: the document primitives live in `main/tileDoc.ts` (`EMPTY_DOC`, `coerceTileDoc`, `readTileDocAt`, `writeTileDocAt`), not in `main/tiles.ts` — `contextWrite.ts` seeds through them and `tiles.ts` loads the context world through `contextWrite.ts`, so the split keeps the import graph acyclic. `hostDir(root, host)` answers null for a host that no longer resolves and `tileHostAnd` turns that into the one `'Unknown tile host.'`; `tiles:get` alone maps that failure to the empty document. `onCorrupt` is exercised through `main/tiles.test.ts`'s quarantine case rather than a separate `atomicWrite.test.ts` case: the split it relies on (`readJsonStrictly`'s `corrupt` vs `unreadable`) is the same function the strict read tests already cover. Requirement 4 stands at five sites until Task 8 adds the watcher's two. The live check on a scratch Nexus is taken once, after Task 8, with the dev process restarted then.
