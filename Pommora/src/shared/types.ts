@@ -227,7 +227,7 @@ export interface Personalization {
   openLinksInApp?: boolean
   /** Every guest renders at the host factor times this. Absent = 1.0. */
   webZoomFactor?: number
-  /** The scale embedded pages and views start at, before a block's own Scale multiplies it.
+  /** The scale embedded pages and views start at, before a tile's own Scale multiplies it.
    *  Absent = 0.9. */
   embedScale?: number
   /** Body text, chrome, and inline title as one factor. Absent = 1.0. A tile states its own
@@ -244,7 +244,7 @@ export interface Personalization {
  *  surface, per machine, surviving restarts. */
 export const WEB_PARTITION = 'persist:pommora-web'
 
-/** The Webpage Zoom and Embed Scale pickers and the per-block Scale menus all offer these
+/** The Webpage Zoom and Embed Scale pickers and the per-tile Scale menus all offer these
  *  factors, and a hand-typed value clamps to the ramp's own ends. */
 export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const
 export const SCALE_MIN = SCALE_STEPS[0]
@@ -256,7 +256,7 @@ export function coerceScale(v: unknown, fallback: number): number {
   return Math.min(SCALE_MAX, Math.max(SCALE_MIN, v))
 }
 
-/** The scale embedded pages and views render at before a block's own Scale multiplies it
+/** The scale embedded pages and views render at before a tile's own Scale multiplies it
  *  (`personalization.embedScale`). Resize is a viewport, never a scale — the factor sets the
  *  content's text level: page embeds apply it as a log-curved editor zoom; view embeds first
  *  normalize the table's body text to the editor's, then apply the same zoom, so both read at
@@ -417,7 +417,7 @@ export interface NexusTree {
     profileIcon?: string
     profileSubtitle: string
   }
-  /** The block doc's heavy layout/blocks stay off the walk, loaded lazily by useTileDoc. */
+  /** The tile doc's heavy layout and entries stay off the walk, loaded lazily by useTileDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
   /** Keyed by the image (nexus-relative path or raw web address). Absent key ⇒ the seat draws
    *  its plain image. */

@@ -10,16 +10,16 @@ import { MenuFooting, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { FooterLockButton } from '@renderer/DesignSystem/Menus'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useNexusIcon } from '@renderer/Utilities/useNexusIcon'
-import { blockHostKey, type BlockHostRef } from '@shared/blocks'
+import { tileHostKey, type TileHostRef } from '@shared/tiles'
 
 import * as s from './frames.css'
 
-const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
+const HOMEPAGE_HOST: TileHostRef = { kind: 'homepage' }
 
 export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
-  const locked = useSession((st) => st.hostLocks[blockHostKey(HOMEPAGE_HOST)] ?? false)
+  const locked = useSession((st) => st.hostLocks[tileHostKey(HOMEPAGE_HOST)] ?? false)
   const setHostLocked = useSession((st) => st.setHostLocked)
   const setLocked = (v: boolean): Promise<void> => setHostLocked(HOMEPAGE_HOST, v)
   const {

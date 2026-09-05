@@ -1,11 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { findScroller, startAutoScroll } from '@renderer/Interactions/autoscroll'
 import { DEFAULT_FEEL, type Feel } from '@renderer/Animation/feel'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { SETTLE_FALLBACK } from '@renderer/Interactions/shared'
 import { TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { findTile } from './Core/model'
-import type { DividerRef, Edge, SurfaceLayout } from './Core/model'
+import type { DividerRef, Edge, TileLayout } from './Core/model'
 import { resolveEdge } from './Core/edges'
 import { hitTest, type DropTarget } from './Core/hitTest'
 import {
@@ -16,19 +16,19 @@ import {
   resizeStackPair,
   stretchTileHeight,
 } from './Core/ops'
-import { computeGeometry, type Rect, type SurfaceGeometry } from './Core/rects'
+import { computeGeometry, type Rect, type TileGeometry } from './Core/rects'
 import { snapAxis, xCandidates, yCandidates } from './Core/snap'
 import '@renderer/Tiles/tile-base.css'
 import './tile-grid.css'
 
-// Moving a block lifts the block itself under the pointer (shadowed, 1:1, no ghost) while its
+// Moving a tile lifts the tile itself under the pointer (shadowed, 1:1, no ghost) while its
 // siblings reflow through the shared Feel transition; releasing settles it into its slot and the
 // layout commits on transitionend (decide-then-animate). Every gesture is snapshot → preview →
 // commit/abort against the frozen drag-origin layout; Esc settles home.
 
-export interface SurfaceViewProps {
-  layout: SurfaceLayout
-  onLayoutChange: (layout: SurfaceLayout) => void
+export interface TileGridProps {
+  layout: TileLayout
+  onLayoutChange: (layout: TileLayout) => void
   /** MUST be identity-stable (useCallback) — tiles memoize on it, and it must not close over
    *  mutable per-tile data (the memo would skip the update). */
   renderTile: (id: string, rect: Rect) => React.ReactNode
@@ -40,8 +40,11 @@ export interface SurfaceViewProps {
   snapPx?: number
   feel?: Feel
   tileClassName?: (id: string) => string | undefined
+  /** Inline style on the tile itself — the element that transitions `--tile-zoom`. Must be
+   *  identity-stable per value; the tile memoizes on it. */
+  tileStyle?: (id: string) => CSSProperties | undefined
   /** STATIC freezes drag + resize — the handle still opens the menu. The host derives this (e.g.
-   *  a locked block); the engine only gates the gesture. */
+   *  a locked tile); the engine only gates the gesture. */
   isTileStatic?: (id: string) => boolean
   onHandleMenu?: (id: string, e: React.MouseEvent) => void
   /** Resolved to a semantic create target: a ragged wedge under a tile (fill flush to the row
@@ -61,7 +64,7 @@ interface TileDrag {
 interface Settle {
   id: string
   to: Rect
-  next: SurfaceLayout | null
+  next: TileLayout | null
 }
 
 // Measured from the tile's top-left corner; only caret-active tiles reveal a handle by it.
@@ -83,8 +86,8 @@ const refKey = (ref: { band: number; path: number[]; index: number }): string =>
   `${ref.band}|${ref.path.join('.')}|${ref.index}`
 
 interface LiveState {
-  layout: SurfaceLayout
-  originGeometry: SurfaceGeometry
+  layout: TileLayout
+  originGeometry: TileGeometry
   bandZonePx: number
   minTilePx: number
   gap: number
@@ -100,6 +103,7 @@ const TileShell = memo(
     feel,
     resizing,
     extraClass,
+    extraStyle,
     renderTile,
     onHandleDown,
     onHandleMenu,
@@ -112,6 +116,7 @@ const TileShell = memo(
     feel: Feel
     resizing: boolean
     extraClass?: string
+    extraStyle?: CSSProperties
     renderTile: (id: string, rect: Rect) => React.ReactNode
     onHandleDown: (id: string, e: React.PointerEvent<HTMLElement>) => void
     onHandleMenu?: (id: string, e: React.MouseEvent) => void
@@ -129,7 +134,7 @@ const TileShell = memo(
     const cornerRef = useRef<{ x: number; y: number } | null>(null)
     return (
       <div
-        className={`spm-tile tile-chassis${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
+        className={`tile tile-chassis${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
           resizing ? ' is-resizing' : ''
         }${extraClass ? ` ${extraClass}` : ''}${handleNear ? ' handle-near' : ''}`}
         onPointerEnter={(e) => {
@@ -147,6 +152,7 @@ const TileShell = memo(
           if (handleNear) setHandleNear(false)
         }}
         style={{
+          ...extraStyle,
           transform: `translate(${rect.x}px, ${rect.y}px)`,
           width: rect.w,
           height: rect.h,
@@ -166,7 +172,7 @@ const TileShell = memo(
         {/* Unarmed clicks pass through — suppressNextClick fires only on armed drags. */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
         <div
-          className="spm-handle"
+          className="tile-handle"
           onPointerDown={(e) => onHandleDown(id, e)}
           onClick={(e) => onHandleMenu?.(id, e)}
           onContextMenu={(e) => {
@@ -177,7 +183,7 @@ const TileShell = memo(
         {EDGE_ZONES.map(({ zone, edges }) => (
           <div
             key={zone}
-            className={`spm-edge resize-edge resize-edge-${zone}`}
+            className={`tile-edge resize-edge resize-edge-${zone}`}
             onPointerDown={(e) => onEdgeDown(id, edges, e)}
           />
         ))}
@@ -191,6 +197,7 @@ const TileShell = memo(
     a.feel === b.feel &&
     a.resizing === b.resizing &&
     a.extraClass === b.extraClass &&
+    a.extraStyle === b.extraStyle &&
     a.renderTile === b.renderTile &&
     a.onHandleDown === b.onHandleDown &&
     a.onHandleMenu === b.onHandleMenu &&
@@ -202,7 +209,7 @@ const TileShell = memo(
     a.rect.h === b.rect.h,
 )
 
-export function SurfaceView({
+export function TileGrid({
   layout,
   onLayoutChange,
   renderTile,
@@ -213,13 +220,14 @@ export function SurfaceView({
   snapPx = 9,
   feel = DEFAULT_FEEL,
   tileClassName,
+  tileStyle,
   isTileStatic,
   onHandleMenu,
   onBackdrop,
-}: SurfaceViewProps): React.JSX.Element {
+}: TileGridProps): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const [width, setWidth] = useState(0)
-  const [draft, setDraft] = useState<SurfaceLayout | null>(null)
+  const [draft, setDraft] = useState<TileLayout | null>(null)
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
   const [settle, setSettle] = useState<Settle | null>(null)
   const [resizingId, setResizingId] = useState<string | null>(null)
@@ -305,7 +313,7 @@ export function SurfaceView({
   // commit NOW and hand back the decided layout — the parent hasn't re-rendered
   // yet, so live.current still holds the pre-commit origin, and a gesture built
   // on that stale origin would silently erase the just-dropped move.
-  const takePendingSettle = useCallback((): SurfaceLayout | null => {
+  const takePendingSettle = useCallback((): TileLayout | null => {
     const s = settleRef.current
     if (!s) return null
     finishSettle(s.id)
@@ -339,7 +347,7 @@ export function SurfaceView({
       const snapY = yCandidates(g)
       // South edges STRETCH — exactly one tile grows. North edges negotiate the stacked boundary
       // above; east/west move the row splitter. Each action's candidates are own-edge-filtered so
-      // its delta can magnetize to OTHER blocks' edges.
+      // its delta can magnetize to OTHER tiles' edges.
       type Action =
         | { edge: Edge; kind: 'stretch'; start: number; cands: number[] }
         | { edge: Edge; kind: 'divider'; ref: DividerRef; start: number; cands: number[] }
@@ -380,7 +388,7 @@ export function SurfaceView({
       }
       if (actions.length === 0) return
 
-      let latest: SurfaceLayout = origin
+      let latest: TileLayout = origin
       const sx = e.clientX
       const sy = e.clientY
       const started = begin({
@@ -434,7 +442,7 @@ export function SurfaceView({
       if (!rect) return
       const downBox = host.getBoundingClientRect()
       // The grab offset is frozen at the down event — recomputing it per move would
-      // cancel the pointer delta and pin the lifted block to its origin.
+      // cancel the pointer delta and pin the lifted tile to its origin.
       const grab = {
         x: e.clientX - downBox.left - rect.x,
         y: e.clientY - downBox.top - rect.y,
@@ -443,7 +451,7 @@ export function SurfaceView({
       // forced layout, and it folds our own autoscroll back into the pointer math.
       const scroller = findScroller(host, 'xy')
       const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
-      let latest: SurfaceLayout = origin
+      let latest: TileLayout = origin
       let target: DropTarget = null
       let moved = false
       const lastPoint = { x: e.clientX, y: e.clientY }
@@ -463,7 +471,7 @@ export function SurfaceView({
       }
 
       // Settle into the decided slot (the final layout's rect), or back home.
-      const settleInto = (decided: SurfaceLayout | null): void => {
+      const settleInto = (decided: TileLayout | null): void => {
         const finalGeometry = decided
           ? computeGeometry(decided, Math.max(0, host.clientWidth), live.current.gap)
           : g
@@ -545,7 +553,7 @@ export function SurfaceView({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={hostRef}
-      className={`spm-surface${interacting ? ' is-interacting' : ''}`}
+      className={`tile-grid${interacting ? ' is-interacting' : ''}`}
       style={{ height: geometry.totalHeight + bottomPadPx }}
       onContextMenu={onSurfaceContextMenu}
     >
@@ -578,6 +586,7 @@ export function SurfaceView({
               feel={feel}
               resizing={resizingId === id}
               extraClass={tileClassName?.(id)}
+              extraStyle={tileStyle?.(id)}
               renderTile={renderTile}
               onHandleDown={onHandleDown}
               onHandleMenu={onHandleMenu}
@@ -594,7 +603,7 @@ export function SurfaceView({
           const slot = geometry.tiles.get(tileDrag.id)
           return slot ? (
             <div
-              className="spm-placement drop-slot"
+              className="tile-placement drop-slot"
               style={{
                 transform: `translate(${slot.x}px, ${slot.y}px)`,
                 width: slot.w,
@@ -607,7 +616,7 @@ export function SurfaceView({
   )
 }
 
-function applyTarget(origin: SurfaceLayout, id: string, target: DropTarget): SurfaceLayout {
+function applyTarget(origin: TileLayout, id: string, target: DropTarget): TileLayout {
   if (!target) return origin
   if (target.kind === 'band') return moveTileToBand(origin, id, target.index)
   return moveTile(origin, id, target.id, target.edge)

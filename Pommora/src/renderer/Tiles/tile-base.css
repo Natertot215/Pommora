@@ -1,4 +1,4 @@
-/* The block-tile primitive: the chassis every embedded-tile host keys onto (the grid's tiles and
+/* The tile primitive: the chassis every embedded-tile host keys onto (the grid's tiles and
    MarkdownPM's embedded pages), with the markdown, page, and webpage body chrome hanging off it. */
 
 /* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here

@@ -1,5 +1,5 @@
 // Every absolute path main builds, resolved against the nexus root, plus the on-disk names only
-// main ever reads — sidecars, config filenames, the block host's folder. Names the renderer also
+// main ever reads — sidecars, config filenames, the tile host's folder. Names the renderer also
 // speaks are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
 
 import { join, relative, sep } from 'node:path'
@@ -57,11 +57,11 @@ export function contextsDir(root: string): string {
 /** A Space folder's sidecar filename (membership comes from the parent folder). */
 export const SPACE_SIDECAR = SIDECAR_FILENAME.space
 
-/** The homepage block host's content folder — its markdown-block `.md` files live here
+/** The homepage tile host's content folder — its markdown-tile `.md` files live here
  *  (distinct from the `homepage.json` config file). Real hosts use their own folders. */
 export const HOMEPAGE_HOST_DIRNAME = 'homepage'
 
-export function blockHostDir(root: string): string {
+export function tileHostDir(root: string): string {
   return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
 }
 

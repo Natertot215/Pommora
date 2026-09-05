@@ -9,7 +9,7 @@ const c = colorVars.color
 
 /** KNOB — a picker's height ceiling: the list grows to this, then its body scrolls. Lower than the
  *  menu's own MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. Lives
- *  here so the design system owns it; the block drill menus consume it from here. */
+ *  here so the design system owns it; the tile drill menus consume it from here. */
 export const PICKER_MAX_HEIGHT = 240
 
 export const treePane = style({

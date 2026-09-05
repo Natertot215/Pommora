@@ -1,5 +1,5 @@
 import type { NexusTree } from '@shared/types'
-import { TileSurface } from '@renderer/Tiles/TileHost'
+import { TileHost } from '@renderer/Tiles/TileHost'
 import { InterfaceScaffold } from './InterfaceScaffold'
 
 // Module-level: a fresh literal per render would churn every tile memo downstream.
@@ -16,7 +16,7 @@ export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.El
         headingIconHidden: tree?.homepage.headingIconHidden,
       }}
     >
-      <TileSurface host={HOMEPAGE_HOST} />
+      <TileHost host={HOMEPAGE_HOST} />
     </InterfaceScaffold>
   )
 }

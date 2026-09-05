@@ -2,13 +2,13 @@ import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { lockLabel } from '@shared/toggleLabels'
 import type {
-  BlockEntry,
-  BlockStyle,
+  TileEntry,
+  TileStyle,
   DrillPickItem,
   PagePickerItem,
   ViewPick,
   ViewPickerItem,
-} from '@shared/blocks'
+} from '@shared/tiles'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { leadingRow, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
@@ -141,7 +141,7 @@ export function TileHandleMenu({
   containerLocked = false,
 }: {
   open: boolean
-  entry: BlockEntry
+  entry: TileEntry
   anchor: HTMLElement
   pageItems: PagePickerItem[]
   viewItems: ViewPickerItem[]
@@ -150,7 +150,7 @@ export function TileHandleMenu({
   onClose: () => void
   onPickPage: (pageId: string) => void
   onPickView: (pick: ViewPick) => void
-  onStyle: (style: BlockStyle) => void
+  onStyle: (style: TileStyle) => void
   onDuplicate: () => void
   onRemove: () => void
   onToggleLock: () => void
@@ -162,7 +162,7 @@ export function TileHandleMenu({
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
   const [scaleOpen, setScaleOpen] = useState(false)
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
-  const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
+  const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   const currentStep = zoomStep(zoom)
   const locked = (entry.locked ?? false) || containerLocked
   const rowMute = locked ? rowDisabled : undefined

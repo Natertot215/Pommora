@@ -10,7 +10,7 @@ import {
 } from '@shared/contexts'
 import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
-import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
+import { tileHostKey, NEW_TILE_H } from '@shared/tiles'
 import type { PropertyDefinition } from '@shared/properties'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { writeKey } from '../Database/localState'
@@ -248,7 +248,7 @@ export async function createContextGroup(
   return ok({ id, path: contextDirRel(title) })
 }
 
-/** Seeded with the 2×2 block document — four empty markdown tiles in two half/half bands.
+/** Seeded with the 2×2 tile document — four empty markdown tiles in two half/half bands.
  *  Files first, so a crash leaks at worst an orphan file, never an entry without one. */
 export async function createSpace(
   root: string,
@@ -269,7 +269,7 @@ export async function createSpace(
   const band = (a: string, b: string): Raw => ({
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },
   })
-  writeKey('blockDoc', blockHostKey({ kind: 'space', id: created.value.id }), {
+  writeKey('blockDoc', tileHostKey({ kind: 'space', id: created.value.id }), {
     blocks: tileIds.map((tid) => ({ id: tid, type: 'markdown' })),
     layout: { bands: [band(tileIds[0], tileIds[1]), band(tileIds[2], tileIds[3])] },
     locked: false,

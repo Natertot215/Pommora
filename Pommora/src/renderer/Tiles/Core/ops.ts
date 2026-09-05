@@ -2,7 +2,7 @@
 // heights are per-tile and absolute — vertical ops touch exactly one tile (stretch) or one
 // stacked pair (north negotiation), and the page flows.
 
-import type { Band, DividerRef, Edge, LayoutNode, SurfaceLayout, TileLeaf } from './model'
+import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
 import { clamp } from '@shared/clamp'
 
@@ -29,12 +29,12 @@ function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNo
  *  the target's width; column placements stack — nobody's height changes but the
  *  newcomer's own.*/
 function placeLeaf(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   targetId: string,
   edge: Edge,
   leaf: TileLeaf,
   share: number,
-): SurfaceLayout {
+): TileLayout {
   const at = findTile(layout, targetId)
   if (!at || findTile(layout, leaf.id)) return layout
 
@@ -73,12 +73,12 @@ function placeLeaf(
 /** Split the target's region for a NEW tile: east/west halves the width by
  *  `share`; north/south splits the target's own height between the two. */
 export function splitAtTile(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   targetId: string,
   edge: Edge,
   newId: string,
   share = 0.5,
-): SurfaceLayout {
+): TileLayout {
   const target = getTile(layout, targetId)
   if (!target) return layout
   const vertical = edge === 'n' || edge === 's'
@@ -97,14 +97,14 @@ export function splitAtTile(
 }
 
 /** Move an existing tile against a target edge. A row placement (e/w) adopts the
- *  target's height — dropping beside a block lands flush with it instead of
+ *  target's height — dropping beside a tile lands flush with it instead of
  *  importing the mover's old height as a ragged end; stacking (n/s) keeps it. */
 export function moveTile(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   tileId: string,
   targetId: string,
   edge: Edge,
-): SurfaceLayout {
+): TileLayout {
   if (tileId === targetId) return layout
   const mover = getTile(layout, tileId)
   if (!mover || !findTile(layout, targetId)) return layout
@@ -117,7 +117,7 @@ export function moveTile(
 
 /** Remove a tile; a row's siblings absorb its width, a column's stack closes up,
  *  a split left with one child collapses, a band left tileless disappears. */
-export function removeTile(layout: SurfaceLayout, tileId: string): SurfaceLayout {
+export function removeTile(layout: TileLayout, tileId: string): TileLayout {
   const at = findTile(layout, tileId)
   if (!at) return layout
 
@@ -151,21 +151,21 @@ export function removeTile(layout: SurfaceLayout, tileId: string): SurfaceLayout
 /** Attach a NEW tile directly below the target with its own height — the wedge
  *  fill: the target keeps its height, the newcomer takes the ragged remainder. */
 export function attachBelow(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   targetId: string,
   newId: string,
   h: number,
-): SurfaceLayout {
+): TileLayout {
   return placeLeaf(layout, targetId, 's', { kind: 'tile', id: newId, h }, 0.5)
 }
 
 /** Insert a tile as its own full-width band at `index`. */
 export function insertBand(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   index: number,
   tileId: string,
   height: number,
-): SurfaceLayout {
+): TileLayout {
   if (findTile(layout, tileId)) return layout
   const next = cloneLayout(layout)
   const at = Math.max(0, Math.min(index, next.bands.length))
@@ -177,11 +177,7 @@ export function insertBand(
 /** Move an existing tile out into its own band at `index` (an index against the
  *  layout as given — when the tile currently IS a band above the target, its
  *  removal shifts the band list, so the insertion compensates). */
-export function moveTileToBand(
-  layout: SurfaceLayout,
-  tileId: string,
-  index: number,
-): SurfaceLayout {
+export function moveTileToBand(layout: TileLayout, tileId: string, index: number): TileLayout {
   const at = findTile(layout, tileId)
   const mover = getTile(layout, tileId)
   if (!at || !mover) return layout
@@ -195,12 +191,12 @@ export function moveTileToBand(
 /** Drag a row divider: redistribute the pair's width ratio by `deltaPx`, each
  *  side clamped to `minPx`. `extentPx` is the row's usable width. */
 export function resizeDivider(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   ref: DividerRef,
   deltaPx: number,
   extentPx: number,
   minPx: number,
-): SurfaceLayout {
+): TileLayout {
   if (extentPx <= 0) return layout
   const next = cloneLayout(layout)
   let node = next.bands[ref.band]?.node
@@ -225,11 +221,11 @@ export function resizeDivider(
 /** Stretch a tile's height — the whole vertical model in one line: the tile
  *  grows or shrinks, nothing else is touched, the page flows. */
 export function stretchTileHeight(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   tileId: string,
   deltaPx: number,
   minPx: number,
-): SurfaceLayout {
+): TileLayout {
   if (deltaPx === 0) return layout
   const current = getTile(layout, tileId)
   if (!current) return layout
@@ -243,11 +239,11 @@ export function stretchTileHeight(
 /** A north edge negotiates with the stacked neighbor above: the boundary moves,
  *  one grows what the other gives, both clamped to `minPx`. */
 export function resizeStackPair(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   ref: DividerRef,
   deltaPx: number,
   minPx: number,
-): SurfaceLayout {
+): TileLayout {
   if (deltaPx === 0) return layout
   const next = cloneLayout(layout)
   let node = next.bands[ref.band]?.node
@@ -269,14 +265,14 @@ export function resizeStackPair(
 }
 
 /** The band-seam twin of resizeStackPair: two adjacent FULL-WIDTH single-tile
- *  bands negotiate the boundary — one grows what the other gives, so the blocks
+ *  bands negotiate the boundary — one grows what the other gives, so the tiles
  *  below stay put (the neighbor "fills the space" instead of the page flowing). */
 export function resizeBandPair(
-  layout: SurfaceLayout,
+  layout: TileLayout,
   aboveIndex: number,
   deltaPx: number,
   minPx: number,
-): SurfaceLayout {
+): TileLayout {
   if (deltaPx === 0) return layout
   const next = cloneLayout(layout)
   const above = next.bands[aboveIndex]?.node

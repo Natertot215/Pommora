@@ -227,7 +227,7 @@ export async function settleBundle(bundleDir: string, absPath: string): Promise<
   return dest
 }
 
-/** Trash a bare file with no record and no bundle, under a stamped leaf. A markdown-block tile
+/** Trash a bare file with no record and no bundle, under a stamped leaf. A markdown tile
  *  is not an entity — it has no identity to record and no restore semantics — so it takes this
  *  rather than a bundle. Returns the destination path. */
 export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {

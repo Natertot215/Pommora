@@ -60,22 +60,22 @@
 }
 /* A table content-view (collection/set): the banner scrolls away with the rows, and the body carries
    the views gutter (grips + group chevrons) carved from the inset, with the heading band flush under
-   the banner divider. The :not(:has(.blk-surface)) guard here and below scopes to the whole-page case
+   the banner divider. The :not(:has(.tile-host)) guard here and below scopes to the whole-page case
    only, so a tile that embeds a table or cards view never flips its own body. */
-.detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
+.detail-scroll.has-header .detail-body:has(.table-head):not(:has(.tile-host)) {
   padding-top: 0;
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
 }
 /* A cards content-view (collection/set): the card grid runs the tight surface inset — cards carry no
-   grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance. */
-.detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.blk-surface)) {
+   grips/chevron lane, so no views gutter is reserved — with the tile surfaces' banner clearance. */
+.detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.tile-host)) {
   padding-top: 8px;
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
   padding-right: calc(var(--inspector-clearance) + var(--surface-lane));
 }
-/* A block-based surface (Homepage, contexts): tiles run the tight --surface-lane instead of the
+/* A tile-based surface (Homepage, contexts): tiles run the tight --surface-lane instead of the
    content inset — the tile handles supply the grip/chevron actions, so no reserved lane is needed.
-   Driven by kind (is-surface), so a context with no live block surface still insets tight. */
+   Driven by kind (is-surface), so a context with no live tile surface still insets tight. */
 .detail-scroll.is-surface .detail-body {
   padding-left: calc(var(--sidebar-clearance) + var(--surface-lane));
   padding-right: calc(var(--inspector-clearance) + var(--surface-lane));

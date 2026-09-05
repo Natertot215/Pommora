@@ -32,7 +32,7 @@ import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } f
 import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
-import type { BlockDoc, BlockDocPatch, BlockHostRef, EmbeddedView } from './blocks'
+import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView } from './tiles'
 import type {
   FileConfig,
   LinkConfig,
@@ -218,29 +218,29 @@ export interface Asks {
   'property:removeStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:clearStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
 
-  // Blocks
-  'blocks:get': { args: [host: BlockHostRef]; reply: Result<BlockDoc> }
-  'blocks:save': { args: [host: BlockHostRef, patch: BlockDocPatch]; reply: Result<null> }
-  'blocks:createMarkdown': { args: [host: BlockHostRef]; reply: Result<{ id: string }> }
-  'blocks:removeTile': { args: [host: BlockHostRef, tileId: string]; reply: Result<null> }
-  'blocks:readMarkdown': {
-    args: [host: BlockHostRef, tileId: string]
+  // Tiles
+  'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
+  'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<null> }
+  'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<{ id: string }> }
+  'tiles:removeTile': { args: [host: TileHostRef, tileId: string]; reply: Result<null> }
+  'tiles:readMarkdown': {
+    args: [host: TileHostRef, tileId: string]
     reply: Result<{ body: string }>
   }
-  'blocks:writeMarkdown': {
-    args: [host: BlockHostRef, tileId: string, body: string]
+  'tiles:writeMarkdown': {
+    args: [host: TileHostRef, tileId: string, body: string]
     reply: Result<null>
   }
-  'blocks:convertToPage': {
-    args: [host: BlockHostRef, tileId: string, pageId: string]
+  'tiles:convertToPage': {
+    args: [host: TileHostRef, tileId: string, pageId: string]
     reply: Result<null>
   }
-  'blocks:convertToView': {
-    args: [host: BlockHostRef, tileId: string, views: EmbeddedView[]]
+  'tiles:convertToView': {
+    args: [host: TileHostRef, tileId: string, views: EmbeddedView[]]
     reply: Result<null>
   }
-  'blocks:duplicateTile': {
-    args: [host: BlockHostRef, tileId: string]
+  'tiles:duplicateTile': {
+    args: [host: TileHostRef, tileId: string]
     reply: Result<{ id: string }>
   }
 
