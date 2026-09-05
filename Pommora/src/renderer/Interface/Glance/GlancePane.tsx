@@ -9,7 +9,7 @@ import { WEB_PARTITION, type GlanceSize } from '@shared/types'
 import { resolveOnlyConnections } from '../../treeIndex'
 import { fenceWarm, fetchPageDetail, readPageDetail } from '../../Store/tabState'
 import { useSession } from '../../store'
-import { PageTile } from '../../SurfacePM/PageTile'
+import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
   GLANCE_BODY_ATTR,
   type GlanceRequest,
@@ -20,7 +20,7 @@ import './glance-pane.css'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click
 // or pull focus out of its host; a deliberate press inside it is the one exception, and the close
-// hands focus back. Mounted once at app level; every host reaches it through the seam.
+// hands focus back.
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band, live.
 export const GLANCE_DEFAULT: GlanceSize = { w: 260, h: 120 }
@@ -191,8 +191,6 @@ export function GlancePane(): React.JSX.Element {
     onChange: (next, phase) => {
       setSize(next)
       if (phase !== 'drop') return
-      // An axis that ended pinned at a cramped anchor's cap keeps the stored value, or the drag
-      // would silently ratchet the universal size down to that anchor's band-clamped render.
       const stored = glanceSize()
       const cap = maxSize()
       const keep = (axis: 'w' | 'h'): number =>
@@ -210,18 +208,10 @@ export function GlancePane(): React.JSX.Element {
         retargetRaf.current = 0
       }
       const cur = shownRef.current
-      // A re-present of the SAME target is free — re-dwelling an anchor must not reset the site
-      // cover or re-arm the resolve deadline over an already-painted guest.
       if (cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
-      // Readiness follows the GUEST, not the presenter: it resets only when the rendered site
-      // actually changes, so a same-url retarget (the guest survives on its key) stays lifted.
       const freshGuest =
         next.target.kind === 'site' &&
         !(cur?.target.kind === 'site' && cur.target.url === next.target.url)
-      // Retarget routes through a closed beat: PickerMenu re-decides its flip only on open=false,
-      // and the Bloom replays at the new anchor. A different ELEMENT for the same page retargets
-      // too — placement captured the old node, so an in-place swap would leave the pane frozen
-      // over the first anchor.
       if (cur) {
         setShownState(null)
         retargetRaf.current = requestAnimationFrame(() => {
@@ -236,8 +226,7 @@ export function GlancePane(): React.JSX.Element {
       setShownState(next)
     }
     // The body is resolved BEFORE the pane opens: a cold page blooms only once its fetch lands,
-    // still under the pointer, and a failed open blooms nothing. An anchor already out of the DOM
-    // opens nothing: the dwell outlives its editor when navigation tears the node out.
+    // still under the pointer, and a failed open blooms nothing.
     setGlancePresenter((next) => {
       if (next === null) {
         dismiss()
@@ -272,7 +261,6 @@ export function GlancePane(): React.JSX.Element {
     if (shown?.target.kind !== 'site' || !siteEl) return
     const onLoad = (): void => setSiteReady(true)
     const onFail = (e: Event): void => {
-      // Subframe failures are the site's own business; -3 is the abort every redirect fires.
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
       if (d.isMainFrame !== false && d.errorCode !== -3) dismiss()
     }
@@ -388,10 +376,6 @@ export function GlancePane(): React.JSX.Element {
         {...{ [GLANCE_BODY_ATTR]: '' }}
         className="glance-body"
         style={{ width: box.w, height: box.h }}
-        // A press starts a read-only text selection whose drag routinely overshoots the pane, so
-        // the leave lifecycle stands down until the release. Focus is recorded on the capture phase
-        // and only on the press that takes it: the pane's own editor focuses itself inside the
-        // native mousedown, before a bubbling handler would run.
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return
           selectingRef.current = true
@@ -402,8 +386,7 @@ export function GlancePane(): React.JSX.Element {
         // start a native drag whose drop lands the text in the live host page.
         onDragStartCapture={(e) => e.preventDefault()}
         // A heading click IS the fold toggle — the chevron stays hidden here and the whole line
-        // becomes the affordance, through the same fold logic. A press that dragged out a
-        // selection keeps it: the highlight is what it asked for, not a fold.
+        // becomes the affordance, through the same fold logic.
         onClick={(e) => {
           if (window.getSelection()?.isCollapsed === false) return
           const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
@@ -431,8 +414,6 @@ export function GlancePane(): React.JSX.Element {
               ref={attachSiteEl}
               src={held.target.url}
               partition={WEB_PARTITION}
-              // No allowpopups, unlike the tile and browser guests: a glance takes no
-              // interaction, so a popup has nowhere honest to come from.
               className="glance-web"
             />
             {/* The shield is the loading face and the pointer owner: opaque until the site paints,

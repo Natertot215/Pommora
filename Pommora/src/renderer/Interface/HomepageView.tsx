@@ -1,5 +1,5 @@
 import type { NexusTree } from '@shared/types'
-import { TileSurface } from '@renderer/SurfacePM/TileSurface'
+import { TileSurface } from '@renderer/Tiles/TileHost'
 import { InterfaceScaffold } from './InterfaceScaffold'
 
 // Module-level: a fresh literal per render would churn every tile memo downstream.

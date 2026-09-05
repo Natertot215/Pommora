@@ -7,7 +7,7 @@ import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
 import { InteractionsLeaf } from './InteractionsLeaf'
 import { PanesLeaf } from './PanesLeaf'
-import { SurfaceLab } from '@renderer/SurfacePM/SurfaceLab'
+import { SurfaceLab } from '@renderer/Tiles/TileLab'
 
 export type SectionId = 'foundations' | 'components' | 'materials' | 'interactions'
 
@@ -85,7 +85,7 @@ export const LEAVES: readonly Leaf[] = [
   },
   {
     id: 'surfacepm',
-    label: 'SurfacePM Lab',
+    label: 'Tiles Lab',
     icon: 'layout-dashboard',
     section: 'interactions',
     render: () => <SurfaceLab />,

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import { coerceScale, type CollectionNode, type SetNode } from '@shared/types'
-import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
+import { useViewTileScope } from '@renderer/Tiles/ViewTileScope'
 import type { SavedView } from '@shared/views'
 import { useActiveView } from './useActiveView'
 import { TableView } from './TableView/TableView'

@@ -5,7 +5,7 @@
 }
 
 /* The chassis geometry (border, radius, body clip) is the shared tile-chassis; what's here is
-   SurfacePM's own layer — placement, motion, and the state selectors that drive the chassis's
+   The grid's own layer — placement, motion, and the state selectors that drive the chassis's
    --tile-border-color. */
 .spm-tile {
   position: absolute;
@@ -170,7 +170,7 @@
 }
 
 /* An embedded PAGE reads as one at a glance: an accent border (accent @ tint-secondary) while the
-   pointer is over it OR the caret is inside it — SurfacePM's location carrier is the handle menu,
+   pointer is over it OR the caret is inside it — the grid's location carrier is the handle menu,
    so the border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps
    the separator); it yields to the stronger resize accent (tint-primary) at the edges. The doubled
    .spm-tile outranks the borderless-hide rule (equal base specificity) so a borderless embed still

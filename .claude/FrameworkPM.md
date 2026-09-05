@@ -6,7 +6,7 @@
 
 #### Version 0.0.0 → 0.5.0 // React Rebuild
 
-The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it. The arc ran from a walking skeleton — one nexus walk over IPC into a Zustand store — through the headless data layer and desktop write path, the glass and drag design system, the MarkdownPM editor, the chrome and inspector, tables and Properties V2, the view-settings suite, SurfacePM's block surfaces, auto-scroll and the navigation surface, the multi-tab nexus, and page previews. The unified Subfield and scan-promote closed the rebuild at v0.5.0. Locked decisions and full detail per milestone live in [[HistoryPM|]].
+The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it. The arc ran from a walking skeleton — one nexus walk over IPC into a Zustand store — through the headless data layer and desktop write path, the glass and drag design system, the MarkdownPM editor, the chrome and inspector, tables and Properties V2, the view-settings suite, the tile surfaces, auto-scroll and the navigation surface, the multi-tab nexus, and page previews. The unified Subfield and scan-promote closed the rebuild at v0.5.0. Locked decisions and full detail per milestone live in [[HistoryPM|]].
 
 #### v0.5.x — The Baseline Hardened
 
@@ -28,9 +28,9 @@ Building Agenda from a settled identity model and an empty schema: Tasks and Eve
 
 The rest of the Settings editing UI — the window ships off the ribbon with its boolean toggles, leaving the pickers (accent, connection color, default icons) and the placement knobs without controls. Plus Quick Capture (specced, zero code), the Claude-chat inspector (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
 
-#### v0.9.0 — SurfacePM Completion + Context Surfaces
+#### v0.9.0 — Tiles Completion + Context Surfaces
 
-SurfacePM's remaining reach — bidirectional tile conversion, the background Insert menu, embed banners, the remaining locks — plus the Homepage's final shape. The Contexts registry shipped early, so what rides here is its aggregate surfaces: **ContextView**, the **Linked-From** list, and a Space's own relation rows, all three gated on the content index above.
+The tile system's remaining reach — bidirectional tile conversion, the background Insert menu, embed banners, the remaining locks — plus the Homepage's final shape. The Contexts registry shipped early, so what rides here is its aggregate surfaces: **ContextView**, the **Linked-From** list, and a Space's own relation rows, all three gated on the content index above.
 
 #### v1.0.0 — Stabilization
 

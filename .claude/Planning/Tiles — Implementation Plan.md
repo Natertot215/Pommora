@@ -309,10 +309,10 @@ src/renderer/Tiles/
 
 **Verify — automated**
 
-- [ ] `rg -F "SurfacePM" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] `rg -F "SurfacePM" .claude --glob '!Sessions/**' --glob '!HistoryPM.md' --glob '!Planning/**'` → 0 (History, Sessions, and the two planning docs are the record).
-- [ ] Full gate green; `npm run build` green (the showcase leaf still compiles).
-- [ ] No red-green: a move has no behavior to invert; the type gate is the proof.
+- [x] `rg -F "SurfacePM" src` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] `rg -F "SurfacePM" .claude --glob '!Sessions/**' --glob '!HistoryPM.md' --glob '!Planning/**'` → 0 (History, Sessions, and the two planning docs are the record).
+- [x] Full gate green; `npm run build` green (the showcase leaf still compiles).
+- [x] No red-green: a move has no behavior to invert; the type gate is the proof.
 
 **Verify — user**
 
@@ -707,7 +707,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 1 — The embed tile's handle on the frame · `97c820f4`
   - [x] Task 2 — The grid on the engine · `e411d814`
 - [ ] **Phase 2** — Tiles/
-  - [ ] Task 3 — The move · ``
+  - [x] Task 3 — The move · `6196f915`
   - [ ] Task 4 — The vocabulary · ``
 - [ ] **Phase 3** — The recipe
   - [ ] Task 5 — The shared table · ``
@@ -741,6 +741,8 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 3: `.claude/scripts/loc.py:33` lists `renderer/Tiles` beside `renderer/SurfacePM` rather than replacing it — its own rule is that a renamed folder lists both names so one map measures every commit on the branch. The one legitimate `SurfacePM` hit outside the records. The comment JSONs had their path keys rewritten in place (the baseline is a snapshot, not regenerated).
+- Task 3: the surfaces' relative imports deepened one level (`../store` → `../../store`); `webRetention`, `view-tile.css`, and `PageTile.test` stay relative within `Surfaces/`.
 - Task 2: the grid's red-green case lives in `SurfaceView.test.tsx` beside its subject (the plan named `TileGrid.test.tsx`); Task 3's move renames it with the file. The engine's two ported cases pass against the engine as it stood, as the plan predicted.
 - Task 2, the CDP count: a 60-move edge drag on the homepage grid (moves dispatched every 16ms) fired `onDragMove` 60 times over ~119 rAF ticks on the 120Hz panel — 0.50 per frame, 1.00 per move; three runs identical. Under the 1.2 bar; `coalesce` is not added. The homepage layout was snapshotted before and restored byte-identical after.
 

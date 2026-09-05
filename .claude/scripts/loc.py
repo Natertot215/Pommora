@@ -30,7 +30,7 @@ AREAS = [
     ("Design System", ["renderer/DesignSystem"]),
     (
         "Surfaces & Embeds",
-        ["renderer/SurfacePM", "renderer/Blocks", "renderer/Embeds", "renderer/PagePreview"],
+        ["renderer/Tiles", "renderer/SurfacePM", "renderer/Blocks", "renderer/Embeds", "renderer/PagePreview"],
     ),
     (
         "Views & Properties",

@@ -150,7 +150,7 @@ function surfaceOf(view: EditorView): HTMLElement {
   if (cached?.contains(view.dom)) return cached
   // A detached editor has no surface to walk to, and the answer must not be cached: the loop bottoms
   // out at the body, which is connected by definition, so nothing would ever re-walk. The outer
-  // editor detaches tile DOM mid-sync on a re-slot (→ SurfacePM/TileCache.ts), so this is a real pass.
+  // editor detaches tile DOM mid-sync on a re-slot (→ Tiles/tileCache.ts), so this is a real pass.
   if (!view.dom.isConnected) return document.body
   let el = view.dom.parentElement
   while (el && el !== document.body) {

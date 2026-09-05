@@ -29,13 +29,13 @@ import { useResizeFrame } from '@renderer/Interactions/ResizeFrame'
 import { clamp } from '@shared/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
-import '@renderer/SurfacePM/block-tile-base.css'
+import '@renderer/Tiles/tile-base.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { DEFAULT_ZOOM, zoomStep } from '@renderer/SurfacePM/tileZoom'
+import { DEFAULT_ZOOM, zoomStep } from '@renderer/Tiles/tileZoom'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../Detect'
 import { claimedEmbeds } from './embedRanges'
-import { healTileScrolls, tileWarmSeam } from '@renderer/SurfacePM/tileCache'
+import { healTileScrolls, tileWarmSeam } from '@renderer/Tiles/tileCache'
 import type { ConnectionsApi } from '../Connections'
 
 export interface EmbedHost {
@@ -105,7 +105,7 @@ interface EmbedTiles {
 // cycle. React.lazy owns the load-order problem; Suspense's null fallback is the loading frame
 // estimatedHeight covers.
 const LazyPageTile = lazy(() =>
-  import('@renderer/SurfacePM/PageTile').then((m) => ({ default: m.PageTile })),
+  import('@renderer/Tiles/Surfaces/PageTile').then((m) => ({ default: m.PageTile })),
 )
 
 interface TileDom extends HTMLElement {
@@ -336,7 +336,7 @@ function observersFor(view: EditorView): WebObservers {
 }
 
 const LazyWebTile = lazy(() =>
-  import('@renderer/SurfacePM/WebTile').then((m) => ({ default: m.WebTile })),
+  import('@renderer/Tiles/Surfaces/WebTile').then((m) => ({ default: m.WebTile })),
 )
 
 class WebpageTileWidget extends WidgetType {
@@ -669,7 +669,7 @@ const embedAtomic = EditorView.atomicRanges.of((view) => {
   return b.finish()
 })
 
-// Click-out + Escape end the live edit — the same pair TileSurface owns for SurfacePM tiles.
+// Click-out + Escape end the live edit — the same pair TileHost owns for grid tiles.
 // Capture-phase so nothing inside the editor can swallow the exit; Escape yields to a consumer
 // that already handled it (the autocomplete panel eats the first Esc).
 const editingExit = ViewPlugin.fromClass(

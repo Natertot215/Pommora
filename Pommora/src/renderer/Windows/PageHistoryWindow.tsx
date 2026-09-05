@@ -17,7 +17,7 @@ import { useEmbedScale, useSession, type WindowTarget } from '../store'
 import { askDeleteSnapshots, askRestoreSnapshot } from './confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from './window-base'
 import '../Navigation/nav-list.css'
-import '../SurfacePM/block-tile-base.css'
+import '../Tiles/tile-base.css'
 import './page-window.css'
 
 // A non-path host chain: embeds inside a snapshot render inert, and no page path can collide with it.
