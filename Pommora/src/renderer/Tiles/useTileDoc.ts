@@ -104,6 +104,11 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
       pending.current.layout !== null
     )
       return
+    // A gesture that began during the read owns the layout now; the push waits for it.
+    if (busy.current) {
+      heldPush.current = true
+      return
+    }
     seedHostLock(target, r.value.locked)
     // The app's own save echoes back too: bytes that match what the host shows change nothing.
     if (

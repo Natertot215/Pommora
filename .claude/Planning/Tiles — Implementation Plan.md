@@ -735,11 +735,12 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 - 09-04-2026, Claude: the host compares a pushed document against what it shows through one stable serialization (`shared/stableJson.ts`, the writer's own), so the app's own echo changes nothing; the first comparison had used two serializers and never matched.
 - 09-04-2026, Claude: a `_tiles.json` deleted under an open host reloads as the empty document — most recent wins, and a deleted file is the emptiest recent state; the next save re-seeds it. Nothing in the app unlinks the file (its atomic rename raises one `change`).
-- 09-04-2026, Claude: a press before activation (`tracking`) does not hold a push, by the plan's own rule; a push landing under a held-still press re-lays the grid before the drag begins, and the drag then reads the new geometry.
+- 09-04-2026, Claude: the grid's `tracking` (the width-transition follow) never holds a push, by the plan's own rule. A press holds one from the press itself — an edge press through `resizingId`, a handle press through `pressedId` — until the settle, and a reload that finds the host busy after its own reads holds the push too; the closeout attack showed the gap at both ends of a gesture lost the other writer's arrangement.
 - 09-04-2026, Claude: a document-level key this build doesn't model rides through a save, as an entry-level one always has.
 
 ### Open Against Later Tasks
 
+- Nathan's call: `setHostLocked` in `Store/cacheSlice.ts` writes the lock through `tiles:save` outside `useTileDoc`, so a reload racing that write (a toggle inside the ~400 ms after a drag's save) can seed the lock back off until the write's own echo re-seeds it — a blink, never a lost setting. Routing the toggle through the hook, or dropping the optimistic store set and letting the echo seed it, are each a few lines; neither was taken without a ruling on the toggle's immediacy.
 - Nathan's pass (Completion Criteria): the Scale ramp easing on the way back to 1.0, where the inline variable is removed rather than set — a registered property's removal transitions in Chromium by contract; unverified by eye.
 
 ### Gate 1 rulings
@@ -766,6 +767,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Lessons
 
+- A hold-the-push rule keyed on gesture state has to cover the whole gesture: the press before activation and the reads a reload has in flight when the gesture begins. The closeout attack found both ends open after four gates had passed the middle.
 - A hash stamped into the plan before an `--amend` records the commit the amend replaced. Stamp after the last rewrite, or commit the stamp separately — five Progress hashes (Task 3–6, the Gate 2 head) were re-derived from the log at Gate 3.
 
 ### Sequenced After
@@ -774,22 +776,24 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - A Collection host's tile bodies: a Collection folder is corpus, so `<ulid>.md` there is adopted as a page; bodies for a corpus host go in a `_`-prefixed folder the walk already refuses. Recorded so the first Collection tab doesn't learn it the hard way.
 - Panel kinds (properties, backlinks over `mentions`, list), webpage as a surface kind: one shared entry and one renderer entry each.
 - Markdown tile bodies (`<ulid>.md`) sync with `.nexus/` like everything else there, but the app does not watch them under either host kind, so a synced body shows its old text until ⌘R while the layout beside it reloads live. Live body reload is one watcher arm plus a `replaceBody`-style push, the same mechanism the page editor's external-edit reload needs; it rides that arc.
+- Per-tab warmth for the inspector through `tileCache.ts`'s warm seam and the active-tab cache (Decision C-10), so folds and scrolls persist across tab switches at the page cache's cost.
+- A Space folder whose sidecar syncs in before its `_tiles.json`: the open-time re-mint gates the document on its presence, so a document arriving later keeps the source's view-config ids. The sync plan decides whether a folder lands ordered; if not, the re-mint needs a second trigger on the document's arrival.
 - Retiring `tilesMigrate.ts` and the `blockDoc` scope once every device has opened the Nexus on this build — the lift is a one-time job and leaves no code behind (`b370e5c0`'s precedent).
 
 ### Closeout
 
 **Delivery Claim** (09-04-2026, range `043ee930..0be53bf8`)
 
-1. Every drag that sizes or moves something runs on `Interactions/gesture.ts`: the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled is not a drop.
+1. Every drag that sizes a box or arranges a tile runs on `Interactions/gesture.ts` (the DnD engine's list drags and the tab bar's native-window drag stay where they were, by scope): the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled is not a drop.
 2. `src/renderer/Tiles/` is the tile system — `Core/`, `TileGrid.tsx`, `TileHost.tsx`, `Surfaces/`, `tile-base.css`, `tile-grid.css`, `tile-title.css` — and no identifier, channel, class, variable, user string, or Features doc in the tile system says "block"; MarkdownPM keeps the word. The zoom ramp is one inline variable set through `tileStyle`.
 3. A tile kind is declared in `TILE_KINDS` (shared: schema, `fileBacked`, `menuRows`), `TILE_SURFACES` (renderer: render, `sourceInfo`), and, when it has something to re-mint, `TILE_COPY` (main); `knownTile` parses through the table's own schemas; the host's render, both menu presenters, the menu model, the Space seed, and main's lifecycle read the tables; no `.type === '<kind>'` comparison survives in `src`.
 4. `TileHostRef` enumerates the homepage and Spaces; a host is a folder; a new member is the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier.
 5. Each host's document is `_tiles.json` in its folder, written by one locked read-modify-write that quarantines corrupt bytes; the watcher names the file and pushes `tiles:changed`, and an open host flushes its pending save, re-reads, and shows the file (identical bytes change nothing; a busy gesture holds the push). The legacy rows migrated once on open (NexusOS: 11 files from 12 rows, 0 divergent). `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
 6. The shared contract's sidecar comment, the README's stale paths, `has-live-editor`, and the seven zoom CSS rules are gone; `NEW_TILE_H` and `TILE_DEFAULT_PX` stay two constants.
 
-Gates at the head: typecheck 0, lint 0, vitest 322 files / 4003 tests. Line delta over the range, comments and tests excluded: +1337 / −1172, net +165; tests +1088 / −531.
+Gates at the head: typecheck 0, lint 0, vitest 322 files / 4005 tests. Line delta over the range, comments and tests excluded: DELTA_LINE.
 
-**Not claimed:** the Completion Criteria's user's-own-pass items; a live sync client against two machines; Showcase beyond compiling.
+**Not claimed:** the Completion Criteria's user's-own-pass items; a live sync client against two machines; Showcase beyond compiling; the inspector's per-tab warmth through the tile cache's warm seam (Decision C-10), which is the inspector arc's first task. The live reload's latency was observed under a 1.5 s poll, not timed; by construction it is the watcher's 200 ms write-settle plus its 200 ms batch plus one IPC read.
 
 ---
 
