@@ -143,8 +143,10 @@
 
 **The document:** each host's layout, entries, and lock moved from a per-machine `local_state` row to `_tiles.json` in the host's folder, beside its tile bodies, so it syncs with `.nexus/`. `main/tileDoc.ts` reads it read-only (absent or corrupt reads empty) and writes it through `rmwJsonStrict` under the file's own lock, quarantining corrupt bytes to `_tiles.json.bad-<ulid>` before a write lands and returning its own failure; one JSON decode (`parseJsonText`) reads a BOM as encoding for every file another app may have written. The watcher names the file, exempts it from write-echo suppression the way navigation is, and pushes `tiles:changed` per host; `useTileDoc` answers by flushing its pending save, awaiting it, re-reading, and replacing its state — identical bytes under one stable serializer (`shared/stableJson.ts`) change nothing, and a push landing mid-gesture waits for the settle. Every `tiles:*` channel refuses while a nexus adopts, the Homepage host remounts per nexus, and a markdown body the read fails on renders inert rather than empty.
 
-- **Commits:** `97c820f4^..506cf3fb`
-- **Diff:** Net −6 | +1788 / −1794
+**The simplification:** the host lock has one writer — a settings surface sets the store's value and `useTileDoc` writes the document when it diverges — and the app's own document writes are echo-suppressed like every other file's, so the hook's byte comparison and the watcher's exemption are gone; `hostDir` answers from the live tree alone, `copyEntry` is one function, `tiles:save` spreads its patch once, the view tile's permanently refused Source row is gone, `TileLab` sits under `Showcase/Leaves/`, and the subsystem's comments were cut by half. The spec's Collection-tab plan was retired: the inspector's tabs are folders under `.nexus/tiles/<tab>/`.
+
+- **Commits:** `97c820f4^..506cf3fb`; the simplification `bb12b0e7`
+- **Diff:** Net −6 | +1788 / −1794; the simplification Net −344 | +167 / −511
 
 #### PM-127 || The Resize Frame
 **DATE:** 09-04-2026
