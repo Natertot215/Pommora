@@ -30,17 +30,19 @@ const rawTileSchema: z.ZodType<RawTile> = z.object({
 })
 
 const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
-  z.object({
-    kind: z.literal('row'),
-    ratios: z.array(z.number()),
-    children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(1),
-  }),
+  z
+    .object({
+      kind: z.literal('row'),
+      ratios: z.array(z.number()),
+      children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(2),
+    })
+    .refine((r) => r.ratios.length === r.children.length),
 )
 
 const rawColumnSchema: z.ZodType<RawColumn> = z.lazy(() =>
   z.object({
     kind: z.literal('column'),
-    children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(1),
+    children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(2),
   }),
 )
 

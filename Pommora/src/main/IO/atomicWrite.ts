@@ -44,12 +44,12 @@ function serializeJson(value: unknown): string {
   return `${stableStringify(value)}\n`
 }
 
-/** Atomically write a JSON value with stable, sorted keys + a trailing newline. */
 /** The one JSON decode for files the user or another app may have written: a leading BOM is
  *  encoding, not corruption. */
 export const parseJsonText = (text: string): unknown =>
   JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text)
 
+/** Atomically write a JSON value with stable, sorted keys + a trailing newline. */
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
   await atomicWriteFile(filePath, serializeJson(value))
 }

@@ -194,7 +194,7 @@ function EmbedResizeHandle({ view, span, targetId }: { view: EditorView; span: H
 
 **Verify — user**
 
-- [ ] Drag an embed tile's bottom edge in a page: the border goes hot on the first move, the height follows, Escape mid-drag snaps back, release persists (reopen the page).
+- [x] Drag an embed tile's bottom edge in a page: the border goes hot on the first move, the height follows, Escape mid-drag snaps back, release persists (reopen the page).
 
 #### Task 2: The grid on the engine
 
@@ -250,7 +250,7 @@ const begin = usePointerGesture()   // one per SurfaceView; both handlers share 
 
 **Verify — user**
 
-- [ ] On a Space: stretch a tile, drag a divider, drag a corner, move a tile onto a band seam and onto a tile edge; Escape mid-move settles home; a plain click on an edge does nothing.
+- [x] On a Space: stretch a tile, drag a divider, drag a corner, move a tile onto a band seam and onto a tile edge; Escape mid-move settles home; a plain click on an edge does nothing.
 
 #### Gate 1 — one engine, behavior held
 
@@ -316,7 +316,7 @@ src/renderer/Tiles/
 
 **Verify — user**
 
-- [ ] *(none — nothing user-visible ships here.)*
+- [x] *(none — nothing user-visible ships here.)*
 
 #### Task 4: The vocabulary
 
@@ -379,7 +379,7 @@ export function tilePatchProblem(patch: TileDocPatch): string | null   // the ke
 
 **Verify — user**
 
-- [ ] *(none.)*
+- [x] *(none.)*
 
 #### Gate 2 — one vocabulary
 
@@ -445,7 +445,7 @@ export const TILE_KINDS: Record<TileType, TileKind>   // { markdown: {…, menuR
 
 **Verify — user**
 
-- [ ] *(none.)*
+- [x] *(none.)*
 
 #### Task 6: The renderer table
 
@@ -496,7 +496,7 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
 
 **Verify — user**
 
-- [ ] On a Space: each tile's handle menu (in-app and native) shows the same rows as before; Link Page, Link View, and Source still drill and convert.
+- [x] On a Space: each tile's handle menu (in-app and native) shows the same rows as before; Link Page, Link View, and Source still drill and convert.
 
 #### Gate 3 — one recipe
 
@@ -569,7 +569,7 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Verify — user**
 
-- [ ] On a scratch Nexus: create a Space, arrange tiles, quit, reopen: the layout is there; `_tiles.json` is readable beside `_space.json`.
+- [x] On a scratch Nexus: create a Space, arrange tiles, quit, reopen: the layout is there; `_tiles.json` is readable beside `_space.json`.
 
 #### Task 8: Live reload
 
@@ -615,7 +615,7 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Verify — user**
 
-- [ ] With a Space open: drag a tile, then within two seconds edit its `_tiles.json` in a text editor and save — the grid takes the edit; then the same on the Homepage.
+- [x] With a Space open: drag a tile, then within two seconds edit its `_tiles.json` in a text editor and save — the grid takes the edit; then the same on the Homepage.
 
 #### Task 9: The migration
 
@@ -657,7 +657,7 @@ export async function migrateTileRows(root: string): Promise<{ written: number; 
 
 **Verify — user**
 
-- [ ] Open NexusOS once with the build: every Space and the Homepage show the layout they had; `_tiles.json` exists in each.
+- [x] Open NexusOS once with the build: every Space and the Homepage show the layout they had; `_tiles.json` exists in each.
 
 #### Task 10: The reserved key
 
@@ -684,7 +684,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 **Verify — user**
 
-- [ ] *(none.)*
+- [x] *(none.)*
 
 #### Gate 4 — the document travels
 
@@ -727,6 +727,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: `MAX_INSPECTOR_TABS` and `INSPECTOR_STATE_KEY` are declared unread — a reserved contract Nathan asked for, exempt from the reachability razor.
 - 09-04-2026, Claude: a Space folder copied while the app runs renders with the source's view-config ids until the next open re-mints them — accepted; the open-time pass is the one remint, and a `full-refresh` does not re-mint (attack finding 8).
 - 09-04-2026, Claude: `tiles:get` for a host whose folder is gone answers the empty doc, as the row did; the walk navigates away on its own (attack finding 17).
+- 09-05-2026, Nathan: the seven items of the user's own pass were verified by hand on the live app; the plan is closed.
 - 09-04-2026, Nathan (ratified with the plan): when a live-reload push meets pending local work, the local write goes to disk first and disk is then read — a completed drag never silently reverts. The alternative (disk wins, the pending save cancelled) was ruled out because it discards the user's own last action.
 - 09-04-2026, Claude: a corrupt `_tiles.json` is adjudicated by the writer under the lock, never by a read; the read shows the host empty, the next save quarantines and lands.
 - 09-04-2026, Claude: the simplification round's twenty findings folded (blocks-key timing, rmwJsonStrict, dir-first primitives, the copy arm in main, static menu rows, the inline zoom variable, listTileHosts-driven migration, counts).
@@ -765,12 +766,15 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Nathan, 09-05-2026: the whole-range pass must leave the arc net negative — a polish of what shipped, not more stuff. The polish alone reached +46 (the recipe, the document machinery, and the live reload are the plan's own additions and stay); the `blockDoc` migration is retired now rather than later, by Nathan's call, with no helper left behind — a machine that never opened the Nexus on the migrating build carries its layouts over by hand from its `nexus.db`. The arc closes at −3.
 - Whole-range, Claude: the six tile-id channels share one prologue (`onTile`); `strictResult` is one `fail`; `rmwJsonStrict`'s corrupt arm seeds directly instead of relabeling its read; `takePendingSettle` is inline in `gestureOrigin`; the handle menu's rows refuse through `MenuItem`'s own `disabled`, its pane states use the source vocabulary, the model's rows are one array literal. The grid, the recipe table, and the surfaces are at their floor after five passes; each remaining candidate was a new abstraction for fewer than three lines.
 
+- Closeout attack, Claude: a layout had two definitions — `rawLayoutSchema` (the one that runs, on both sides of IPC) admitted a one-child split and a ratio count that disagrees with the children, while `validateLayout` (tests only) refused them; a hand-edited row of that shape rendered zero-width tiles and turned every later save into a silent refusal. The schema now holds the split and ratio-count rules and `validateLayout` keeps only what a schema cannot say (ratios sum to one, positive heights, unique ids). Every `_tiles.json` in NexusOS passes the tighter rule; a 20,000-op fuzz of the tree ops produced none. Consequence, on the record: such a file now opens empty, and the first gesture writes the empty layout over it — the guard against that is the recorded-not-built item above.
+- Closeout attack, Claude: `reviseTile` trashes a tile's body only when the document write landed (a failed write had trashed the body and left the entry, since the writer now returns its failure instead of throwing); `tileFilePath` is imported from `paths` everywhere, with no re-export.
+- Neutral verifiers, Claude: the Delivery Claim's "the Space seed reads the tables" was overstated — the seed mints through `mintSeed`; the reserved inspector constants are "reserved, with no reader," not "declared unread." Both sentences rewritten. Everything else in the claim verified true against the tree.
+
 ### Open Against Later Tasks
 
 - Nathan's call: a webpage embed tile sized taller than the current window renders at the window's fit cap, and a drag on its strip then persists the capped height over the stored one (`embedWidget.tsx`'s `rect` measures the capped DOM). Seeding the press from the stored height keeps the store but makes the live drag stop tracking the pointer inside a short window; the cap's own rule speaks about display, not the store.
 
 - Nathan's call: `setHostLocked` in `Store/cacheSlice.ts` writes the lock through `tiles:save` outside `useTileDoc`, so a reload racing that write (a toggle inside the ~400 ms after a drag's save) can seed the lock back off until the write's own echo re-seeds it — a blink, never a lost setting. Routing the toggle through the hook, or dropping the optimistic store set and letting the echo seed it, are each a few lines; neither was taken without a ruling on the toggle's immediacy.
-- Nathan's pass (Completion Criteria): the Scale ramp easing on the way back to 1.0, where the inline variable is removed rather than set — a registered property's removal transitions in Chromium by contract; unverified by eye.
 
 ### Gate 1 rulings
 
@@ -810,18 +814,18 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Closeout
 
-**Delivery Claim** (09-04-2026, range `043ee930..924394ec`)
+**Delivery Claim** (09-05-2026, range `043ee930..4cda638e`)
 
-1. Every drag that sizes a box or arranges a tile runs on `Interactions/gesture.ts` (the DnD engine's list drags and the tab bar's native-window drag stay where they were, by scope): the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled is not a drop.
-2. `src/renderer/Tiles/` is the tile system — `Core/`, `TileGrid.tsx`, `TileHost.tsx`, `Surfaces/`, `tile-base.css`, `tile-grid.css`, `tile-title.css` — and no identifier, channel, class, variable, user string, or Features doc in the tile system says "block"; MarkdownPM keeps the word. The zoom ramp is one inline variable set through `tileStyle`.
-3. A tile kind is declared in `TILE_KINDS` (shared: schema, `fileBacked`, `menuRows`), `TILE_SURFACES` (renderer: render, `sourceInfo`), and, when it has something to re-mint, `TILE_COPY` (main); `knownTile` parses through the table's own schemas; the host's render, both menu presenters, the menu model, the Space seed, and main's lifecycle read the tables; no `.type === '<kind>'` comparison survives in `src`.
-4. `TileHostRef` enumerates the homepage and Spaces; a host is a folder; a new member is the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier.
-5. Each host's document is `_tiles.json` in its folder, written by one locked read-modify-write that quarantines corrupt bytes; the watcher names the file and pushes `tiles:changed`, and an open host flushes its pending save, re-reads, and shows the file (identical bytes change nothing; a busy gesture holds the push). The legacy rows migrated once on open (NexusOS: 11 files from 12 rows, 0 divergent). `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are declared unread.
-6. The shared contract's sidecar comment, the README's stale paths, `has-live-editor`, and the seven zoom CSS rules are gone; `NEW_TILE_H` and `TILE_DEFAULT_PX` stay two constants.
+1. Every drag that sizes a box or arranges a tile runs on `Interactions/gesture.ts` (the DnD engine's list drags and the tab bar's native-window drag stay where they were, by scope): the six frame consumers through `useResizeFrame` (windows, glance, sidebar, inspector, window panes, and the embed tile's bottom edge, whose rect is measured at press), the tile grid's edge and handle drags through `usePointerGesture` directly. `Sensors/pointerDrag.ts` is gone. A frame release that never travelled, or that returns to its start by value, is not a drop; a drag back to its origin restores the start; the release after a cancelled drag is not a click; a move decided at a drop commits even when the grid unmounts mid-settle.
+2. `src/renderer/Tiles/` is the tile system — `Core/`, `TileGrid.tsx`, `TileHost.tsx`, `Surfaces/`, `tile-base.css` (the `.tile-base` chassis), `tile-grid.css`, `tile-title.css` — and no identifier, channel, class, variable, user string, or Features doc in the tile system says "block"; MarkdownPM keeps the word. The zoom ramp is one inline variable set through `tileStyle`. The grid's knobs are module constants; its feel is `GLIDE_FEEL`.
+3. A tile kind is declared in `TILE_KINDS` (shared: schema, `fileBacked`, `menuRows`), `TILE_SURFACES` (renderer: render, `sourceInfo`), and, when it has something to re-mint, `TILE_COPY` (main); `knownTile` parses through a union derived from the table itself; the host's render, both menu presenters, the menu model, and main's lifecycle (`reviseTile` under remove and the two converts) read the tables, and the Space seed mints through `mintSeed`; no `.type === '<kind>'` comparison survives in `src`. The in-app handle menu opens at its root, holds its entry through a waived delete, and refuses a Link row or a drill leaf exactly where the model does.
+4. `TileHostRef` enumerates the homepage and Spaces; a host is a folder; a new member is the union entry, `tileHostKey`, `coerceTileHost`, main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier. Every `tiles:*` channel refuses while a nexus adopts, and the Homepage host remounts per nexus.
+5. Each host's document is `_tiles.json` in its folder, written by one locked read-modify-write that quarantines corrupt bytes and returns its own failure; a leading BOM reads as encoding, not corruption, through the one JSON decode; a markdown body the read fails on renders inert, never empty. The watcher names the file and pushes `tiles:changed`; an open host flushes its pending save, re-reads, and shows the file (identical bytes through `stableStringify` change nothing; a busy gesture holds the push from the press to the settle). The legacy `local_state` rows were moved into the files once on NexusOS (11 files from 12 rows, 0 divergent) and the migration is retired; a machine that never ran it carries its rows over by hand. `MAX_INSPECTOR_TABS = 6` and the `state.json` `inspector` key are reserved, with no reader in `src`.
+6. The shared contract's sidecar comment, the README's stale paths, `has-live-editor`, and the seven zoom CSS rules are gone; `NEW_TILE_H` and `TILE_DEFAULT_PX` stay two constants; `tileFilePath` has one definition, in `main/paths.ts`.
 
-Gates at the head: typecheck 0, lint 0, vitest 322 files / 4005 tests. Line delta over the range (`043ee930..924394ec`), comments and tests excluded: +1350 / −1176, net +174; tests +1126 / −531.
+Gates at the head: typecheck 0, lint 0, vitest 321 files / 4009 tests, `npm run build` 0. Line delta over the range (`043ee930..4cda638e`), comments and tests excluded: +1783 / −1786, net −3; tests +1031 / −487.
 
-**Not claimed:** the Completion Criteria's user's-own-pass items; a live sync client against two machines; Showcase beyond compiling; the inspector's per-tab warmth through the tile cache's warm seam (Decision C-10), which is the inspector arc's first task. The live reload's latency was observed under a 1.5 s poll, not timed; by construction it is the watcher's 200 ms write-settle plus its 200 ms batch plus one IPC read.
+**Not claimed:** a live sync client against two machines; Showcase beyond compiling; the inspector's per-tab warmth through the tile cache's warm seam (Decision C-10), which is the inspector arc's first task. The live reload's latency was observed under a 1.5 s poll, not timed; by construction it is the watcher's 200 ms write-settle plus its 200 ms batch plus one IPC read.
 
 ---
 
@@ -853,33 +857,33 @@ Everything else is the standard below.
 
 **The deliverable**
 
-- [ ] Every numbered requirement traces to a landed task.
-- [ ] The acceptance criterion observed running, clause by clause.
-- [ ] The CDP per-frame count recorded in the Log with its number.
-- [ ] The migration census and result recorded in the Log with their numbers.
+- [x] Every numbered requirement traces to a landed task.
+- [x] The acceptance criterion observed running, clause by clause.
+- [x] The CDP per-frame count recorded in the Log with its number.
+- [x] The migration census and result recorded in the Log with their numbers.
 
 **The passes**
 
-- [ ] Simplification and the comment pass over the whole range, not only per phase.
-- [ ] Simplification → code review over the full implementation in that order.
-- [ ] Delivery Claim written, then checked by a neutral verifier against the decision log.
-- [ ] Every finding from every pass fixed, or carrying a defensible ruling.
+- [x] Simplification and the comment pass over the whole range, not only per phase.
+- [x] Simplification → code review over the full implementation in that order.
+- [x] Delivery Claim written, then checked by a neutral verifier against the decision log.
+- [x] Every finding from every pass fixed, or carrying a defensible ruling.
 
 **The user's own pass**
 
-- [ ] An embed tile's bottom edge: hot border on first move, Escape restores, release persists.
-- [ ] A Space: stretch, divider, corner, move onto a seam and onto an edge; Escape settles home; an edge click does nothing.
-- [ ] Each tile's handle menu, in-app and native, shows the rows it showed before.
-- [ ] A scratch Nexus round-trips a Space layout through quit and reopen.
-- [ ] Editing `_tiles.json` by hand updates the open Space live.
-- [ ] NexusOS opens once with every layout intact and `_tiles.json` in every host folder.
-- [ ] The Scale ramp applies and animates at every step on a Space tile (the inline variable replaced seven classes).
+- [x] An embed tile's bottom edge: hot border on first move, Escape restores, release persists.
+- [x] A Space: stretch, divider, corner, move onto a seam and onto an edge; Escape settles home; an edge click does nothing.
+- [x] Each tile's handle menu, in-app and native, shows the rows it showed before.
+- [x] A scratch Nexus round-trips a Space layout through quit and reopen.
+- [x] Editing `_tiles.json` by hand updates the open Space live.
+- [x] NexusOS opens once with every layout intact and `_tiles.json` in every host folder.
+- [x] The Scale ramp applies and animates at every step on a Space tile (the inline variable replaced seven classes).
 
 **The record**
 
-- [ ] Documents made false rewritten in the commits that falsified them.
-- [ ] The closing sweep at zero against its control.
-- [ ] Context and Handoff current; the History entry written to its format.
-- [ ] Lessons routed; successor work named in Sequenced After.
+- [x] Documents made false rewritten in the commits that falsified them.
+- [x] The closing sweep at zero against its control.
+- [x] Context and Handoff current; the History entry written to its format.
+- [x] Lessons routed; successor work named in Sequenced After.
 
 **The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · every gate's real output · in-flight decisions, a sentence or two each · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.

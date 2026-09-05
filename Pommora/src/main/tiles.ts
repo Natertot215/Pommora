@@ -23,7 +23,6 @@ import { serializeOnFile } from './IO/fileLock'
 import { loadContextWorld } from './CRUD/contextWrite'
 import { getLiveTree } from './liveTree'
 import { tileFilePath, tileHostDir } from './paths'
-export { tileFilePath }
 
 /** Where a host keeps its document and bodies; null when the host no longer resolves. A Space is
  *  answered by the live tree; the world load covers the pre-walk moment and an unconfirmed Space. */
@@ -74,7 +73,7 @@ async function reviseTile(
   patch: Record<string, unknown> | null,
 ): Promise<void> {
   let wasFileBacked = false
-  await setTiles(dir, (tiles) =>
+  const written = await setTiles(dir, (tiles) =>
     tiles.flatMap((b) => {
       const entry = knownTile(b)
       if (entry?.id !== tileId) return [b]
@@ -82,7 +81,7 @@ async function reviseTile(
       return patch ? [{ ...(b as Record<string, unknown>), ...patch }] : []
     }),
   )
-  if (wasFileBacked) await trashTileFile(root, dir, tileId)
+  if (written.ok && wasFileBacked) await trashTileFile(root, dir, tileId)
 }
 
 /** Trash a markdown tile's backing file on ITS lock — ordered against a still-pending
