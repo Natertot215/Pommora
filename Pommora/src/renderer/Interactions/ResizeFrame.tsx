@@ -123,14 +123,16 @@ export function useResizeFrame<R extends Partial<Rect>>(
         onDragMove: (ev) => {
           const dx = ev.clientX - sx
           const dy = ev.clientY - sy
-          if (dx === 0 && dy === 0) return
-          last = pull(spec, from, grip, dx, dy)
+          const next = dx === 0 && dy === 0 ? from : pull(spec, from, grip, dx, dy)
+          if (next === last) return
+          last = next
           spec.onChange(last, 'move')
         },
         teardown: () => setActive(null),
         // A release that moved nothing is a click, not a size the host should remember.
         onDrop: () => {
-          if (last !== from) spec.onChange(last, 'drop')
+          if (Object.keys(from).some((k) => last[k as keyof R] !== from[k as keyof R]))
+            spec.onChange(last, 'drop')
         },
         onAbort: () => spec.onChange(from, 'abort'),
       })
