@@ -4,6 +4,7 @@
 // registry no longer names are dropped unwritten. Runs beside the asset migration on open; a
 // registry that fails to load drops nothing, so the next open retries.
 
+import { isPlainObject } from '@shared/propertyValue'
 import { readScope, writeKey } from './Database/localState'
 import { loadContextWorld } from './CRUD/contextWrite'
 import { pathExists } from './IO/atomicWrite'
@@ -24,21 +25,22 @@ export interface TileMigration {
 }
 
 export async function migrateTileRows(root: string): Promise<TileMigration> {
-  const none: TileMigration = { written: 0, dropped: 0, divergent: [] }
-  const rows = readScope<LegacyRow>('blockDoc')
+  const result: TileMigration = { written: 0, dropped: 0, divergent: [] }
+  const rows = readScope<unknown>('blockDoc')
   const keys = Object.keys(rows)
-  if (keys.length === 0) return none
+  if (keys.length === 0) return result
   const world = await loadContextWorld(root)
-  if (!world.ok) return none
+  if (!world.ok) return result
   const dirs = new Map<string, string>([['homepage', tileHostDir(root)]])
   for (const [id, ref] of world.value.spaceById) dirs.set(`space:${id}`, ref.dir)
-  const result: TileMigration = { written: 0, dropped: 0, divergent: [] }
   for (const key of keys) {
     const dir = dirs.get(key)
     if (dir) {
       if (await pathExists(tileDocPath(dir))) result.divergent.push(key)
       else {
-        const row = rows[key]
+        // A row that decoded to anything but an object says nothing about the host's tiles; it
+        // seeds an empty document rather than failing the open.
+        const row: LegacyRow = isPlainObject(rows[key]) ? rows[key] : {}
         const landed = await writeTileDocAt(dir, () => ({
           layout: row.layout,
           tiles: Array.isArray(row.blocks) ? row.blocks : [],

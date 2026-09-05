@@ -42,10 +42,10 @@ let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
 let batch: WatchEvent[] = []
 
-/** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
- *  in the tree). */
 const isTileDocPath = (path: string): boolean => path.endsWith(`${sep}${TILE_DOC_FILENAME}`)
 
+/** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
+ *  in the tree). */
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split(sep)
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation

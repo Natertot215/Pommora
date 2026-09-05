@@ -8,7 +8,7 @@ import { isPlainObject } from '@shared/propertyValue'
 import type { EntityRecord, RecordKind } from '@shared/record'
 import { errText } from '@shared/result'
 import { copyEntry } from './tiles'
-import { readTileDocAt, writeTileDocAt } from './tileDoc'
+import { writeTileDocAt } from './tileDoc'
 import { pathExists } from './IO/atomicWrite'
 import { tileDocPath } from './paths'
 import { readKey, writeKey } from './Database/localState'
@@ -128,10 +128,8 @@ async function remintSidecar(
   await writeJson(file, next)
   // A copied Space folder carries its document too, and a view tile's config ids are live keys
   // two boards must never share — each entry passes through the same re-mint every copy uses.
-  if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
-    const doc = await readTileDocAt(absFolder)
-    await writeTileDocAt(absFolder, () => ({ ...doc, tiles: doc.tiles.map(copyEntry) }))
-  }
+  if (kind === 'space' && (await pathExists(tileDocPath(absFolder))))
+    await writeTileDocAt(absFolder, (cur) => ({ ...cur, tiles: cur.tiles.map(copyEntry) }))
   return viewIds
 }
 
