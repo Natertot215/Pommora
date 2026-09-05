@@ -106,7 +106,13 @@ describe('rawLayoutSchema', () => {
             ratios: [0.5, 0.5],
             children: [
               { kind: 'tile', id: 'a', h: 100 },
-              { kind: 'column', children: [{ kind: 'tile', id: 'b', h: 40 }] },
+              {
+                kind: 'column',
+                children: [
+                  { kind: 'tile', id: 'b', h: 40 },
+                  { kind: 'tile', id: 'c', h: 40 },
+                ],
+              },
             ],
           },
         },
@@ -114,6 +120,19 @@ describe('rawLayoutSchema', () => {
     }
     expect(rawLayoutSchema.safeParse(tree).success).toBe(true)
     expect(rawLayoutSchema.safeParse({ bands: 'no' }).success).toBe(false)
+    const split = (node: unknown) => rawLayoutSchema.safeParse({ bands: [{ node }] }).success
+    expect(split({ kind: 'column', children: [{ kind: 'tile', id: 'b', h: 40 }] })).toBe(false)
+    expect(
+      split({
+        kind: 'row',
+        ratios: [0.5, 0.5],
+        children: [
+          { kind: 'tile', id: 'a', h: 1 },
+          { kind: 'tile', id: 'b', h: 1 },
+          { kind: 'tile', id: 'c', h: 1 },
+        ],
+      }),
+    ).toBe(false)
   })
 })
 

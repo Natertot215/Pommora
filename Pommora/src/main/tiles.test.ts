@@ -14,11 +14,10 @@ import {
   removeTile,
   rewriteTileConnections,
   TILE_COPY,
-  tileFilePath,
   writeMarkdownTile,
 } from './tiles'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { tileDocPath, tileHostDir } from './paths'
+import { tileDocPath, tileFilePath, tileHostDir } from './paths'
 
 let root: string
 const home = (): string => tileHostDir(root)

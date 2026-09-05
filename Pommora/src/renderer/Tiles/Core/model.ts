@@ -119,8 +119,8 @@ export function cloneLayout(layout: TileLayout): TileLayout {
   return { bands: layout.bands.map((b) => ({ node: cloneNode(b.node) })) }
 }
 
-/** A structurally valid tree: splits hold 2+ children, row ratios match and sum
- *  to 1, tile heights are positive, ids unique. */
+/** Beyond the shape the schema holds (splits of 2+, a ratio per child): ratios sum to 1, tile
+ *  heights are positive, ids unique. */
 export function validateLayout(layout: TileLayout): string[] {
   const problems: string[] = []
   const walk = (node: LayoutNode, where: string): void => {
@@ -128,11 +128,7 @@ export function validateLayout(layout: TileLayout): string[] {
       if (!(node.h > 0)) problems.push(`${where}: non-positive tile height`)
       return
     }
-    if (node.children.length < 2)
-      problems.push(`${where}: split with ${node.children.length} child`)
     if (node.kind === 'row') {
-      if (node.ratios.length !== node.children.length)
-        problems.push(`${where}: ${node.ratios.length} ratios for ${node.children.length} children`)
       if (node.ratios.some((r) => !(r > 0))) problems.push(`${where}: non-positive ratio`)
       const sum = node.ratios.reduce((a, r) => a + r, 0)
       if (Math.abs(sum - 1) > 1e-6) problems.push(`${where}: ratios sum to ${sum}`)
