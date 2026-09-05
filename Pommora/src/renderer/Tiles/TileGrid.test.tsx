@@ -114,6 +114,18 @@ describe('the grid on the gesture engine', () => {
     expect(onBusyChange).toHaveBeenLastCalledWith(false)
   })
 
+  it('unmounting during a settle commits the decided move', () => {
+    const { onLayoutChange } = mount()
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
+    act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 5 }))
+    act(() => firePointer(window, 'pointerup'))
+    act(() => root.unmount())
+    expect(onLayoutChange).toHaveBeenCalledOnce()
+    expect(tileIds(onLayoutChange.mock.calls[0][0])).toEqual(['b', 'a'])
+    root = createRoot(host)
+  })
+
   it('Escape during a handle drag settles home and commits nothing', () => {
     const { onLayoutChange } = mount()
     const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement

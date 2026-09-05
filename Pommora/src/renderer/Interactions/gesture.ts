@@ -1,5 +1,5 @@
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
-import { ACTIVATION, suppressNextClick } from './shared'
+import { ACTIVATION, suppressNextClick, suppressReleaseClick } from './shared'
 import { beginDragDisclose, endDragDisclose } from './dragDisclose'
 
 export type PointerGestureSpec = {
@@ -84,11 +84,6 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   const startY = e.clientY
   const threshold = spec.activation ?? ACTIVATION
 
-  const abortLive = (): void => {
-    detach(g)
-    spec.onAbort?.()
-  }
-
   const g: LiveGesture = {
     spec,
     active: false,
@@ -117,7 +112,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             ok = false
           }
           if (ok === false) {
-            abortLive()
+            g.handlers.cancel()
             return
           }
         }
@@ -125,7 +120,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
           spec.onDragMove(ev)
         } catch (err) {
           console.error(err)
-          abortLive()
+          g.handlers.cancel()
         }
       },
       up: (ev: PointerEvent) => {
@@ -139,7 +134,9 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
       },
       cancel: (ev?: PointerEvent) => {
         if (ev && ev.pointerId !== e.pointerId) return
+        const wasActive = g.active
         detach(g)
+        if (wasActive) suppressReleaseClick()
         spec.onAbort?.()
       },
       key: (ev: KeyboardEvent) => {
@@ -158,7 +155,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
           spec.onWindowScroll(ev)
         } catch (err) {
           console.error(err)
-          abortLive()
+          g.handlers.cancel()
         }
       },
     },

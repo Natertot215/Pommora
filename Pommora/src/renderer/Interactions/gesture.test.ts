@@ -221,6 +221,16 @@ describe('a release before activation is a tap, and only a release', () => {
     expect(click.defaultPrevented).toBe(true)
   })
 
+  it('the release after a cancelled drag is not a click either', () => {
+    gesture.beginPointerGesture(spec({}))
+    move(20, 20)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    firePointer(el, 'pointerup')
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    el.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+  })
+
   it('an activated release drops rather than taps', () => {
     const calls: string[] = []
     gesture.beginPointerGesture(

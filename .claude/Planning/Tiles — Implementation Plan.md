@@ -738,7 +738,17 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: the grid's `tracking` (the width-transition follow) never holds a push, by the plan's own rule. A press holds one from the press itself — an edge press through `resizingId`, a handle press through `pressedId` — until the settle, and a reload that finds the host busy after its own reads holds the push too; the closeout attack showed the gap at both ends of a gesture lost the other writer's arrangement.
 - 09-04-2026, Claude: a document-level key this build doesn't model rides through a save, as an entry-level one always has.
 
+### Closeout re-run rulings
+
+- Phase 1, Claude: a frame drag that returns to its origin restores the start as a move and does not drop (the zero-delta guard had returned before `last` was reassigned, so a return-to-origin stayed at the last size and persisted it); a release whose size equals the start by value does not drop either (a clamped pull allocates a new rect that the identity guard read as travel).
+- Phase 1, Claude: a decided tile move outlives the grid — unmounting mid-settle commits it (a Space switch inside the 350 ms settle had dropped the move on the floor).
+- Phase 1, Claude: the release after a cancelled drag is not a click — the handle menu no longer opens on the release after an Escape, and CalendarPicker's day cells no longer re-pick on the release after an aborted scrub. The swallow arms on the release itself (`suppressReleaseClick`), disarmed by a new press so a release lost to a blur does not eat a later click; the release listeners live on `document`, where the swallow lives, so a component's own window listeners stay identity-matched on unmount.
+- Phase 1, Claude: the grid's six never-passed props (`gap`, `minTilePx`, `bandZonePx`, `bottomPadPx`, `snapPx`, `feel`) are module knobs; the grid takes `GLIDE_FEEL` itself, so `TileLab` now runs the same feel as the hosts.
+- Phase 1, Claude: a webpage tile whose stored height exceeds what the window can hold renders capped, and a drag on its strip persists the capped measurement over the stored value. Pre-existing, adjacent to the Gate 1 ruling on the webpage tile's own re-render; whether the cap should also rewrite the store is Nathan's call, recorded under Open Against Later Tasks.
+
 ### Open Against Later Tasks
+
+- Nathan's call: a webpage embed tile sized taller than the current window renders at the window's fit cap, and a drag on its strip then persists the capped height over the stored one (`embedWidget.tsx`'s `rect` measures the capped DOM). Seeding the press from the stored height keeps the store but makes the live drag stop tracking the pointer inside a short window; the cap's own rule speaks about display, not the store.
 
 - Nathan's call: `setHostLocked` in `Store/cacheSlice.ts` writes the lock through `tiles:save` outside `useTileDoc`, so a reload racing that write (a toggle inside the ~400 ms after a drag's save) can seed the lock back off until the write's own echo re-seeds it — a blink, never a lost setting. Routing the toggle through the hook, or dropping the optimistic store set and letting the echo seed it, are each a few lines; neither was taken without a ruling on the toggle's immediacy.
 - Nathan's pass (Completion Criteria): the Scale ramp easing on the way back to 1.0, where the inline variable is removed rather than set — a registered property's removal transitions in Chromium by contract; unverified by eye.

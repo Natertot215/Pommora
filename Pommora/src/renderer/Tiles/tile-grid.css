@@ -18,24 +18,12 @@
     opacity var(--duration-base) var(--ease-base),
     border-color var(--duration-base) var(--ease-base),
     --tile-zoom var(--duration-base) var(--ease-base);
-  /* No overflow clip here — the edge zones straddle the border by design; the
-     body does the content clipping. */
 }
 
 .tile-grid.is-interacting .tile {
   transition: none;
 }
 
-/* Markdown/page tiles read --tile-zoom for the font (via .cm-content) and the editor glyphs (via
-   --glyph-scale); a view tile's table reads it in its own grid `zoom` (base density ×
-   --tile-zoom). The handle, resize edges, gutter, and padding do not read it — chrome and
-   structure stay fixed. The host sets it inline on the tile; 1.0 sets none and the var falls back
-   to 1. Every tile animates the factor on the standard beat: a view tile's grid `zoom` is a layout
-   property, so its table relayouts each frame of the transition only — a bounded one-shot, not a
-   per-frame trigger. */
-
-/* OPAQUE: the state-hover wash layers over --main-bg so underlying tiles never show through a
-   dragged tile. No accent tint while dragged — the border stays the separator. */
 .tile.is-lifted {
   z-index: var(--z-lifted);
   cursor: grabbing;
@@ -58,18 +46,12 @@
 
 /* The tile drag handle is a bordered chip notched into the left border: its own rounded border is
    the curve, its --main-bg fill erases the straight border line behind it, and its border-color
-   inherits the tile's so the accent resize/lift highlight flows through. Hover-revealed; drag
-   moves it, click or right-click opens the handle menu. */
+   inherits the tile's so the accent resize/lift highlight flows through. */
 .tile-handle {
   position: absolute;
   top: 16px;
-  /* The handle is tile CHROME (a sibling to the resize edges, which don't scale either), so the
-     per-tile Scale never touches it: only the tile's CONTENT zooms, not its manipulation grips. */
   --handle-w: 12px;
   --grip-size: 14px;
-  /* Chip center sits exactly on the border's centerline (offsets resolve from the padding box, so
-     one border-width folds back out of the shift); the border matches the tile's border width so
-     the notch reads as one line. */
   left: calc((var(--handle-w) + var(--tile-border)) / -2);
   width: var(--handle-w);
   height: 22px;
@@ -86,6 +68,7 @@
   content: "";
   position: absolute;
   inset: calc((100% - var(--grip-size)) / 2);
+  z-index: 1;
   background-color: var(--label-tertiary);
   -webkit-mask: var(--grip-glyph) center / contain no-repeat;
   mask: var(--grip-glyph) center / contain no-repeat;
@@ -94,9 +77,6 @@
 .tile:hover .tile-handle {
   opacity: 1;
 }
-/* While the tile's editor holds the caret, whole-tile hover doesn't reveal the
-   handle — only its own strip or POINTER PROXIMITY to the top-left corner does
-   (the engine's handle-near tracker; HANDLE_REVEAL_PX is the radius knob). */
 .tile.is-editing-tile:hover .tile-handle {
   opacity: 0;
 }
@@ -104,16 +84,12 @@
 .tile.is-editing-tile .tile-handle:hover {
   opacity: 1;
 }
-/* A tile whose handle menu is open keeps its handle shown — the picker's anchor must
-   not vanish when the pointer leaves for the pane. Doubled class outranks the
-   editing-tile hide. */
 .tile.handle-pinned.handle-pinned .tile-handle {
   opacity: 1;
 }
 
 /* The wash is its own layer so it fades on duration-base instead of snapping — a swapped
-   background can't interpolate. The chip's own --main-bg stays put underneath so the notch fill
-   remains opaque. */
+   background can't interpolate. */
 .tile-handle::after {
   content: "";
   position: absolute;
@@ -136,10 +112,6 @@
   background: var(--state-selected);
   opacity: 1;
 }
-.tile-handle::before {
-  z-index: 1;
-}
-
 /* The chassis hides until you reach for it — the border (and the notch with it) returns on
    border/handle hover, while dragging or resizing, and while its handle menu is open so the menu
    reads as attached to a visible tile. */
@@ -151,10 +123,7 @@
 
 /* An embedded PAGE reads as one at a glance: an accent border (accent @ tint-secondary) while the
    pointer is over it OR the caret is inside it — the grid's location carrier is the handle menu,
-   so the border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps
-   the separator); it yields to the stronger resize accent (tint-primary) at the edges. The doubled
-   .tile outranks the borderless-hide rule (equal base specificity) so a borderless embed still
-   shows the accent on hover, independent of source order. */
+   so the border only signals "this is an embed."*/
 .tile-host:not(.is-host-locked)
 .tile.tile:not(.is-locked):has(.page-tile):hover:not(.is-resizing):not(:has(> .tile-edge:hover)),
 .tile-host:not(.is-host-locked)

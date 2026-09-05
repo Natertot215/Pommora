@@ -127,6 +127,24 @@ describe('the resize frame', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('a drag back to its origin restores the start and does not drop', () => {
+    const onChange = vi.fn()
+    const el = mount({ rect: { w: 200, h: 100 }, equilateral: true, onChange, grip: 'e' })
+    drag(el, 30, 0)
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 0 }))
+    expect(onChange).toHaveBeenLastCalledWith({ w: 200, h: 100 }, 'move')
+    release()
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop')
+  })
+
+  it('a release at the same size as the start does not drop', () => {
+    const onChange = vi.fn()
+    const el = mount({ rect: { h: 64 }, min: { h: 64 }, equilateral: true, onChange, grip: 's' })
+    drag(el, 0, -40)
+    release()
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop')
+  })
+
   it('a move keeps a grab of the frame on screen', () => {
     const onChange = vi.fn()
     drag(mount({ rect: { x: 100, y: 50, w: 200, h: 100 }, onChange, grip: 'move' }), 5000, -500)
