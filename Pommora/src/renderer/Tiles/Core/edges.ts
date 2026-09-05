@@ -1,15 +1,9 @@
-// Tiles resize by their own edges and corners (window-style, never bars in the gaps). East/west
-// edges move the nearest ancestor ROW divider. A north edge negotiates with the stacked neighbor
-// directly above. South edges never resolve here — they stretch the tile itself (the caller goes
-// straight to stretchTileHeight).
-
 import type { DividerRef, Edge, TileLayout } from './model'
 import { findTile } from './model'
 
 export type EdgeBoundary =
   | { kind: 'divider'; ref: DividerRef }
   | { kind: 'stack'; ref: DividerRef }
-  /** The seam between two full-width single-tile bands; `above` is the upper band's index. */
   | { kind: 'bandpair'; above: number }
   | null
 

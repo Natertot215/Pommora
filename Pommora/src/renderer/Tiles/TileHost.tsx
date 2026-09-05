@@ -106,7 +106,6 @@ const withKey = (
   return next
 }
 
-// Stable empties for a tree-less render, so the projections need no memo to hold identity.
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 
@@ -128,7 +127,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     [tree, defaultIcons],
   )
   const select = useSession((s) => s.select)
-  // The store is the cross-subtree source — settings surfaces toggle this from elsewhere.
   const hostLocked = useSession((s) => s.hostLocks[tileHostKey(host)] ?? false)
 
   const entries = useMemo(() => {
@@ -140,8 +138,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     return map
   }, [tiles])
 
-  // Shared per-tree projections — the connections index and every page-embed lookup read the
-  // same cached tables, never per-embed walks.
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
   const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
@@ -193,7 +189,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     [refreshEntries, host],
   )
 
-  // main re-mints the config id payload-local and flips the entry — copied, never synced.
   const applyViewPick = useCallback(
     (id: string, pick: ViewPick) => {
       if (!tree) return
@@ -216,7 +211,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
   const nativeMenus = useNativeMenus()
-  // The native path never sets `handleMenu`, so the in-app pane is never mounted for it.
   const popNativeMenu = useRef<(id: string, el: HTMLElement) => void>(() => undefined)
   const onHandleMenu = useCallback(
     (id: string, e: React.MouseEvent) => {
@@ -231,7 +225,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const menu = useHeld(handleMenu, handleMenu !== null)
   // Held with the anchor: a delete with confirmation waived drops the entry inside the retract.
   const menuTile = useHeld(handleMenu ? entries.get(handleMenu.id) : undefined, handleMenu !== null)
-  // Every per-entry edit walks the RAW list, so foreign fields survive whatever it rewrites.
   const mutateEntry = useCallback<MutateEntry>(
     (id, fn) => {
       saveTiles((cur) =>
@@ -318,8 +311,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     [entries, editingId, connections, suppressFlush, pagesById, host, mutateEntry],
   )
 
-  // Updater form — a gesture committing during the IPC await must not be overwritten by a
-  // render-captured layout.
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
       void window.nexus.tiles.createMarkdown(host).then((r) => {
@@ -336,7 +327,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   )
 
   if (!ready) return null
-  // Resolved off the shared id→page map — never a per-embed walk.
   const menuPage = menuTile && tileSourceInfo(menuTile, pagesById)
   const menuPageInfo = menuPage && {
     title: menuPage.title,
@@ -364,7 +354,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     })
     void popRowMenu(items, el).then((action) => {
       if (action === null) return
-      // The two rows that carry a value carry it in their action, so each names its prefix once.
       const arg = (prefix: string): string | undefined =>
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined
       const picked = arg('tile:pick:')

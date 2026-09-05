@@ -7,7 +7,7 @@ import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
 import { InteractionsLeaf } from './InteractionsLeaf'
 import { PanesLeaf } from './PanesLeaf'
-import { TileLab } from '@renderer/Tiles/TileLab'
+import { TileLab } from './TileLab'
 
 export type SectionId = 'foundations' | 'components' | 'materials' | 'interactions'
 

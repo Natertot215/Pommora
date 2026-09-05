@@ -121,7 +121,6 @@ describe('moveTile', () => {
     expect(getTile(r, 'a')?.h).toBe(170)
     expect(getTile(r, 'b')?.h).toBe(190)
     expect(getTile(r, 'c')?.h).toBe(120)
-    // clamps at min; declines when a side is a split
     expect(getTile(resizeBandPair(l, 0, -150, 64), 'a')?.h).toBe(64)
     const split = splitAtTile(l, 'a', 'e', 'x')
     expect(resizeBandPair(split, 0, -10, 64)).toBe(split)

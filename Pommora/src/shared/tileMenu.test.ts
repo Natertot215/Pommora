@@ -93,10 +93,9 @@ describe('the tile menu as a model', () => {
     expect(r?.submenu).toBeUndefined()
   })
 
-  it('shows a view tile its Source, refused — the row is fixed, not absent', () => {
+  it('offers a view tile no link rows', () => {
     const m = tileMenuModel(ctx({ entry: { type: 'view', id: 'b1' } as unknown as TileEntry }))
-    expect(row(m, 'Source')).toMatchObject({ disabled: true })
-    expect(row(m, 'Source')?.submenu).toBeUndefined()
+    expect(row(m, 'Source')).toBeUndefined()
   })
 
   it('refuses a container holding nothing rather than branching into blank space', () => {

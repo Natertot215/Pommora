@@ -1,7 +1,4 @@
-// The host-agnostic contract a tile host carries: a tile layout tree under `layout`,
-// tagged-union tile payloads under `tiles`, and the host lock under `locked`. Entries ride
-// RAW through reads and writes so foreign or future tile types survive rewrites; `knownTile` is
-// the read lens typing the entries this build understands.
+// Entries ride raw through reads and writes so foreign tile types survive; `knownTile` types the ones this build understands.
 
 import { z } from 'zod'
 import type { ViewButton, ViewStyle } from './types'
@@ -50,13 +47,8 @@ export const rawLayoutSchema = z.object({
   bands: z.array(z.object({ node: z.union([rawTileSchema, rawRowSchema, rawColumnSchema]) })),
 })
 
-/** The height a freshly-minted tile gets — the renderer's new-tile drops and main's
- *  Space 2×2 seed share this one value. */
 export const NEW_TILE_H = 160
 
-/** The tile hosts that exist: the homepage singleton and a Space. A host is a folder holding
- *  `_tiles.json` and its bodies; a new member is this union, `tileHostKey`, `coerceTileHost`,
- *  main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier. */
 export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
 export function tileHostKey(host: TileHostRef): string {
@@ -71,12 +63,9 @@ export function coerceTileHost(raw: unknown): TileHostRef | null {
   return null
 }
 
-/** Per-tile chassis style: borderless hides the border until you reach for
- *  it — border/handle hover, drag, resize. */
 export type TileStyle = 'bordered' | 'borderless'
 const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
 
-/** Markdown tile: body lives in `<id>.md` inside the host's own folder. */
 interface MarkdownTileEntry {
   id: string
   type: 'markdown'
@@ -85,8 +74,6 @@ interface MarkdownTileEntry {
   zoom?: number
 }
 
-/** Page embed: a scrollable, editable window onto the real page. `banner` /
- *  `title` are the chrome toggles (absent = shown). */
 interface PageTileEntry {
   id: string
   type: 'page'
@@ -98,17 +85,12 @@ interface PageTileEntry {
   zoom?: number
 }
 
-/** One view a view-embed tile carries: its own source container + the copied config (snapshotted
- *  at pick time, never synced). The config's `id` is payload-local, minted at copy — never the
- *  source view's id and never the DEFAULT_VIEW_ID mint sentinel. */
+/** The config `id` is payload-local, minted at copy — never the source view's id. */
 export interface EmbeddedView {
   source_id: string
   config?: unknown
 }
 
-/** View embed: `views` is the switcher's list; `active` indexes into it. The header chrome follows
- *  the page embed's absent-=-shown convention — `title` hides the title row, `icon` the view icon
- *  beside it — and the switcher reuses the container presentation vocabulary. */
 export interface ViewTileEntry {
   id: string
   type: 'view'
@@ -129,7 +111,6 @@ export type TileEntry = MarkdownTileEntry | PageTileEntry | ViewTileEntry
 
 const boolField = z.boolean().optional().catch(undefined)
 const zoomField = z.number().positive().optional().catch(undefined)
-/** The chassis every kind carries: identity plus the frame the host draws around it. */
 const chassisFields = {
   id: z.string().min(1),
   style: styleField,
@@ -166,16 +147,12 @@ const viewEntry = z.looseObject({
 })
 export type TileType = TileEntry['type']
 
-/** Which picker a link row drills into; `'none'` renders the row refused. */
-type TileMenuSource = 'pages' | 'views' | 'none'
+type TileMenuSource = 'pages' | 'views'
 
-/** What a kind declares once; the host, the menus, and main's lifecycle read it here. */
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
-  /** The kind owns a `<id>.md` beside the document: trashed on remove or convert, copied on
-   *  duplicate, walked by the rename heal. */
+  /** The kind owns a `<id>.md` beside the document. */
   fileBacked: boolean
-  /** The handle menu's link rows, in order. */
   menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
 }
 
@@ -189,25 +166,18 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
     ],
   },
   page: { schema: pageEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'pages' }] },
-  view: { schema: viewEntry, fileBacked: false, menuRows: [{ label: 'Source', source: 'none' }] },
+  view: { schema: viewEntry, fileBacked: false, menuRows: [] },
 }
 
 type EntrySchemas = [z.ZodType<TileEntry>, z.ZodType<TileEntry>, ...z.ZodType<TileEntry>[]]
 const knownEntry = z.union(Object.values(TILE_KINDS).map((k) => k.schema) as EntrySchemas)
 
-/** The tabs the inspector may hold beyond the reserved ones. */
 export const MAX_INSPECTOR_TABS = 6
 
-/** The `inspector` key of `.nexus/state.json` is reserved for user-made tabs, each a tile host
- *  under `.nexus/inspector/<id>/`; nothing reads or writes it yet. */
 export const INSPECTOR_STATE_KEY = 'inspector'
 
-/** The entry a freshly minted tile starts as — complete for a markdown tile, whose kind is its
- *  only field. */
 export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
 
-/** One node of a native returning drill menu (renderer-built — main has no tree).
- *  A node with `pick` resolves the menu; a node with `submenu` drills. */
 export interface DrillPickItem<T> {
   label: string
   icon?: string
@@ -216,10 +186,8 @@ export interface DrillPickItem<T> {
   footer?: boolean
 }
 
-/** The Link Page drill resolves a page id. */
 export type PagePickerItem = DrillPickItem<string>
 
-/** The Link View drill resolves a source view to copy, or + Custom on a container. */
 export interface ViewPick {
   source_id: string
   view_id?: string
@@ -227,22 +195,18 @@ export interface ViewPick {
 }
 export type ViewPickerItem = DrillPickItem<ViewPick>
 
-/** Type one raw `tiles[]` entry, or null for shapes this build doesn't know —
- *  the caller keeps the raw value either way (never strip, render inert). */
+/** Null for shapes this build doesn't know — the caller keeps the raw value and renders inert. */
 export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as TileEntry) : null
 }
 
-/** The document as it sits in a host's `_tiles.json` and crosses IPC — layout + entries stay raw;
- *  the renderer decodes the layout and lenses the entries. */
 export interface TileDoc {
   layout: unknown
   tiles: unknown[]
   locked: boolean
 }
 
-/** A partial write — only the present keys change. */
 export interface TileDocPatch {
   layout?: unknown
   tiles?: unknown[]

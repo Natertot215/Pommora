@@ -31,7 +31,7 @@ export function SpaceMenu(): React.JSX.Element | null {
   const locked = useSession(
     (st) => st.hostLocks[tileHostKey({ kind: 'space', id: id ?? '' })] ?? false,
   )
-  const setHostLocked = useSession((st) => st.setHostLocked)
+  const setHostLock = useSession((st) => st.setHostLock)
   const iconRef = useRef<HTMLButtonElement>(null)
   const colorRef = useRef<HTMLButtonElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -86,7 +86,7 @@ export function SpaceMenu(): React.JSX.Element | null {
                     verb={lockLabel(locked)}
                     noun="board"
                     locked={locked}
-                    onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
+                    onToggle={() => setHostLock({ kind: 'space', id }, !locked)}
                   />
                 }
                 trailing={

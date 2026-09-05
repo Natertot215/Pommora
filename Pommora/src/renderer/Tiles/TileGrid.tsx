@@ -21,29 +21,21 @@ import { snapAxis, xCandidates, yCandidates } from './Core/snap'
 import './tile-base.css'
 import './tile-grid.css'
 
-// Moving a tile lifts the tile itself under the pointer (shadowed, 1:1, no ghost) while its
-// siblings reflow through the shared Feel transition; releasing settles it into its slot and the
-// layout commits on transitionend (decide-then-animate). Every gesture is snapshot → preview →
-// commit/abort against the frozen drag-origin layout; Esc settles home.
+// Every gesture is snapshot → preview → commit/abort against the frozen drag-origin layout;
+// releasing settles the tile and the layout commits on transitionend.
 
 export interface TileGridProps {
   layout: TileLayout
   onLayoutChange: (layout: TileLayout) => void
-  /** MUST be identity-stable (useCallback) — tiles memoize on it, and it must not close over
-   *  mutable per-tile data (the memo would skip the update). */
+  /** Must be identity-stable and must not close over mutable per-tile data — tiles memoize on it. */
   renderTile: (id: string, rect: Rect) => React.ReactNode
   tileClassName?: (id: string) => string | undefined
-  /** Inline style on the tile itself — the element that transitions `--tile-zoom`. Must be
-   *  identity-stable per value; the tile memoizes on it. */
+  /** Inline style on the tile itself; identity-stable per value, the tile memoizes on it. */
   tileStyle?: (id: string) => CSSProperties | undefined
-  /** True while a gesture or its settle owns the layout; a disk change waits for it. */
   onBusyChange?: (busy: boolean) => void
-  /** STATIC freezes drag + resize — the handle still opens the menu. The host derives this (e.g.
-   *  a locked tile); the engine only gates the gesture. */
+  /** Freezes drag + resize; the handle still opens the menu. */
   isTileStatic?: (id: string) => boolean
   onHandleMenu?: (id: string, e: React.MouseEvent) => void
-  /** Resolved to a semantic create target: a ragged wedge under a tile (fill flush to the row
-   *  bottom), or a plain append. */
   onBackdrop?: (target: BackdropTarget, e: React.MouseEvent) => void
 }
 
@@ -62,7 +54,6 @@ interface Settle {
   next: TileLayout | null
 }
 
-// Measured from the tile's top-left corner; only caret-active tiles reveal a handle by it.
 const HANDLE_REVEAL_PX = 240
 const TRACK_SETTLE_MS = 160
 // KNOB — grid gutter, drop-band zone, snap radius, and the append space under the last band.
@@ -158,7 +149,6 @@ const TileShell = memo(
             onSettled(id)
         }}
       >
-        {/* Unarmed clicks pass through — suppressNextClick fires only on armed drags. */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
         <div
           className="tile-handle"
@@ -250,9 +240,6 @@ export function TileGrid({
     [draft, originGeometry, width],
   )
 
-  // Every live value a gesture reads, refreshed each render — the handlers stay identity-stable
-  // while never seeing a stale layout, geometry, knob, or predicate (a changing isTileStatic must
-  // not re-render every tile).
   const now = {
     layout,
     originGeometry,
@@ -287,9 +274,8 @@ export function TileGrid({
     [finishSettle],
   )
 
-  // The boundary's own edge is always among the snap candidates — left in, it
-  // magnetizes the drag back to its start and makes sub-snapPx adjustment
-  // impossible (a dead band on every resize). Filter it per action.
+  // Left in, the boundary's own edge magnetizes the drag back to its start, making
+  // sub-snapPx adjustment impossible — filter it per action.
   const withoutOwn = (candidates: number[], start: number): number[] =>
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
@@ -320,9 +306,6 @@ export function TileGrid({
       const dividers = new Map(g.dividers.map((d) => [refKey(d.ref), d]))
       const snapX = xCandidates(g)
       const snapY = yCandidates(g)
-      // South edges STRETCH — exactly one tile grows. North edges negotiate the stacked boundary
-      // above; east/west move the row splitter. Each action's candidates are own-edge-filtered so
-      // its delta can magnetize to OTHER tiles' edges.
       type Action =
         | { kind: 'stretch'; start: number; cands: number[] }
         | { kind: 'divider'; ref: DividerRef; start: number; cands: number[] }
@@ -412,8 +395,8 @@ export function TileGrid({
         x: e.clientX - downBox.left - rect.x,
         y: e.clientY - downBox.top - rect.y,
       }
-      // Reads the REAL scroll ancestor's delta (the grid never scrolls itself) — cheap per move, no
-      // forced layout, and it folds our own autoscroll back into the pointer math.
+      // Reads the REAL scroll ancestor's delta (the grid never scrolls itself), folding
+      // our own autoscroll back into the pointer math.
       const scroller = findScroller(grid, 'xy')
       const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
       let latest: TileLayout = origin
@@ -422,8 +405,6 @@ export function TileGrid({
       const lastPoint = { x: e.clientX, y: e.clientY }
       let stopScroll: (() => void) | null = null
 
-      // Called on every pointer move AND on every auto-scrolled frame (via onScrolled) so a
-      // held-still drag near an edge keeps re-targeting as content flows past.
       const resolve = (clientX: number, clientY: number): void => {
         const dsx = (scroller?.scrollLeft ?? 0) - scroll0.x
         const dsy = (scroller?.scrollTop ?? 0) - scroll0.y
@@ -435,7 +416,6 @@ export function TileGrid({
         setDraft(latest === origin ? null : latest)
       }
 
-      // Settle into the decided slot (the final layout's rect), or back home.
       const settleInto = (decided: TileLayout | null): void => {
         const finalGeometry = decided
           ? computeGeometry(decided, Math.max(0, grid.clientWidth), GAP)
@@ -492,10 +472,8 @@ export function TileGrid({
   }, [busy, onBusyChange])
 
   const interacting = resizingId !== null || tracking
-  // Reads off the draft geometry, so it IS the future slot, not an approximation.
   const dropSlot = tileDrag && draft ? geometry.tiles.get(tileDrag.id) : null
 
-  // Tiles swallow their own right-clicks.
   const onGridContextMenu = (e: React.MouseEvent): void => {
     if (!onBackdrop || e.target !== e.currentTarget) return
     e.preventDefault()
@@ -517,7 +495,6 @@ export function TileGrid({
       onBackdrop({ kind: 'append' }, e)
       return
     }
-    // The band's bottom = its seam centerline minus half the gap.
     const seam = g.bandEdges[above.band]
     const bandBottom = seam ? seam.y - GAP / 2 : g.totalHeight
     const fillPx = bandBottom - above.bottom - GAP

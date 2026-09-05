@@ -1,11 +1,5 @@
 import type { ZoomOption } from './gripMenu'
-// The surface tile's menu as a model — the same offering the in-app pane draws, in the shape an OS
-// menu can be built from. Which one a person sees is a preference; what the menu OFFERS is stated
-// once, here.
-//
-// A native menu draws no glyphs and pins no footer, so the icons and the footer flag the drill items
-// carry are simply not read: the rows, their order and their nesting survive, which is what the menu
-// actually is.
+// The tile menu as a model: the in-app pane and the native menu both draw from it.
 
 import {
   type DrillPickItem,
@@ -28,24 +22,17 @@ export type TileAction =
   | `tile:zoom:${string}`
   | `tile:pick:${number}`
 
-/** What a `tile:pick:<n>` resolves to. The drill trees hold values a menu row can't carry — a view
- *  pick is three fields — so the rows name an index into this list and the caller reads it back.
- *  Built in the same pass as the rows, so the two can never fall out of step. */
+/** Rows name an index into this list because a menu row can't carry a view pick's three fields. */
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 
 export interface TileMenuContext {
   entry: TileEntry
-  /** The identity of the page a tile stands for, when it stands for one. Its title heads the
-   *  menu, inert. */
   pageInfo?: { title: string }
   pageItems: PagePickerItem[]
   viewItems: ViewPickerItem[]
   zoomSteps: readonly ZoomOption[]
   currentFactor: number
-  /** The tile's own lock, or the board's — every act is refused either way, and the menu still
-   *  opens: what it offers is worth reading even when none of it can be taken. */
   locked: boolean
-  /** A board-level lock, which the tile can't undo, so the Lock row goes with it. */
   containerLocked: boolean
 }
 
@@ -79,15 +66,13 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
 
   const borderless = entry.style === 'borderless'
   const items: ActionItem<TileAction>[] = [
-    // The page's own name, inert — the in-app menu's title field reads as a link, and an OS menu has
-    // no equivalent, so what survives is the identity rather than the affordance.
     ...(pageInfo ? [{ label: pageInfo.title, action: 'tile:open' as const, disabled: true }] : []),
-    // A row with no source is shown and refused rather than dropped — the menu reads the same
-    // whichever tile it belongs to.
+    // A row with no source is shown and refused rather than dropped.
     ...TILE_KINDS[entry.type].menuRows.map(({ label, source }): ActionItem<TileAction> => {
-      let rows: ActionItem<TileAction>[] = []
-      if (source === 'pages') rows = drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
-      else if (source === 'views') rows = drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
+      const rows =
+        source === 'pages'
+          ? drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
+          : drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
       const off = locked || rows.length === 0
       return { label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) }
     }),

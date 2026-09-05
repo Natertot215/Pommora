@@ -1,7 +1,3 @@
-// Every op returns a new layout; the input is never mutated. Widths are zero-sum ratio splitters;
-// heights are per-tile and absolute — vertical ops touch exactly one tile (stretch) or one
-// stacked pair (north negotiation), and the page flows.
-
 import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
 import { clamp } from '@shared/clamp'
@@ -25,9 +21,6 @@ function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNo
   return node.kind === 'row' ? { ...node, children } : { kind: 'column', children }
 }
 
-/** Place a leaf against the target tile's `edge`. Row placements take `share` of
- *  the target's width; column placements stack — nobody's height changes but the
- *  newcomer's own.*/
 function placeLeaf(
   layout: TileLayout,
   targetId: string,
@@ -70,8 +63,6 @@ function placeLeaf(
   return next
 }
 
-/** Split the target's region for a NEW tile: east/west halves the width by
- *  `share`; north/south splits the target's own height between the two. */
 export function splitAtTile(
   layout: TileLayout,
   targetId: string,
@@ -115,8 +106,6 @@ export function moveTile(
   return placeLeaf(removed, targetId, edge, { kind: 'tile', id: tileId, h }, 0.5)
 }
 
-/** Remove a tile; a row's siblings absorb its width, a column's stack closes up,
- *  a split left with one child collapses, a band left tileless disappears. */
 export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
   const at = findTile(layout, tileId)
   if (!at) return layout
@@ -148,8 +137,6 @@ export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
   return next
 }
 
-/** Attach a NEW tile directly below the target with its own height — the wedge
- *  fill: the target keeps its height, the newcomer takes the ragged remainder. */
 export function attachBelow(
   layout: TileLayout,
   targetId: string,
@@ -159,7 +146,6 @@ export function attachBelow(
   return placeLeaf(layout, targetId, 's', { kind: 'tile', id: newId, h }, 0.5)
 }
 
-/** Insert a tile as its own full-width band at `index`. */
 export function insertBand(
   layout: TileLayout,
   index: number,
@@ -188,8 +174,6 @@ export function moveTileToBand(layout: TileLayout, tileId: string, index: number
   return insertBand(removed, insertAt, tileId, mover.h)
 }
 
-/** Drag a row divider: redistribute the pair's width ratio by `deltaPx`, each
- *  side clamped to `minPx`. `extentPx` is the row's usable width. */
 export function resizeDivider(
   layout: TileLayout,
   ref: DividerRef,
@@ -218,8 +202,6 @@ export function resizeDivider(
   return next
 }
 
-/** Stretch a tile's height — the whole vertical model in one line: the tile
- *  grows or shrinks, nothing else is touched, the page flows. */
 export function stretchTileHeight(
   layout: TileLayout,
   tileId: string,
@@ -236,8 +218,6 @@ export function stretchTileHeight(
   return next
 }
 
-/** A north edge negotiates with the stacked neighbor above: the boundary moves,
- *  one grows what the other gives, both clamped to `minPx`. */
 export function resizeStackPair(
   layout: TileLayout,
   ref: DividerRef,
@@ -264,9 +244,8 @@ export function resizeStackPair(
   return next
 }
 
-/** The band-seam twin of resizeStackPair: two adjacent FULL-WIDTH single-tile
- *  bands negotiate the boundary — one grows what the other gives, so the tiles
- *  below stay put (the neighbor "fills the space" instead of the page flowing). */
+/** Two adjacent full-width bands negotiate the seam — one grows what the other gives, so the
+ *  tiles below stay put. */
 export function resizeBandPair(
   layout: TileLayout,
   aboveIndex: number,

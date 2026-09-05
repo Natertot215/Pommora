@@ -43,7 +43,7 @@
 - **A-6:** [open] The repository is restructured into a monorepo first, before any new folder lands; the local folder and the session's working directory stay where they are. The candidate layout is one root with four workspaces, `Core`, `Desktop`, `Mobile`, and `Sync`, the `Pommora/` package folder dissolving into them; the exact architecture is decided at the plan's stop before Task 0 runs.
 - **A-7:** [confirmed] V0 mobile scope, in two steps. The arc that ships regardless: the phone holds the Nexus as a Files-visible synced folder with a sign-in and status shell, and nothing of the desktop renderer mounts. Behind a separate go and a phone product spec (the plan's Phase 8): read the tree, open a page, edit the body, create a page, rename, delete a page or container into the trash, move, reorder, open and switch tabs, through the renderer's existing menus opened by a long press. Space and Context deletes, properties, schema, views, and restore wait. No expectation of a pleasant experience; nothing else needs 1-to-1 parity.
 - **A-8:** [confirmed] MarkdownPM ships on mobile as-is, no mobile toolbar.
-- **A-9:** [confirmed] Bottom bar items, Phase 8: Collections, Spaces, Tabs, Navigation, Settings. No Sync action and no Agenda placeholder. Tap behavior takes the simplest reading; nothing is designed.
+- **A-9:** [confirmed] Bottom bar items: Collections, Spaces, Tabs, Navigation, Settings. No Sync action and no Agenda placeholder. Tap behavior takes the simplest reading; nothing is designed.
 - **A-10:** [confirmed] Vocabulary: the remote is a Nexus, never a vault. Nexus' is the plural in prose; code paths that need a plural stay singular.
 
 #### B — Engine Seam

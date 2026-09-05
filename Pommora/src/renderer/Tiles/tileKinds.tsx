@@ -23,11 +23,9 @@ export interface TileRenderContext {
 
 export interface TileSurface<E extends TileEntry = TileEntry> {
   render: (ctx: TileRenderContext & { entry: E }) => React.ReactNode
-  /** The page a tile stands for, when it stands for one — heads its menu and opens from it. */
   sourceInfo?: (entry: E, pagesById: ReadonlyMap<string, ConnPage>) => ConnPage | undefined
 }
 
-/** A dead reference or a kind this build doesn't know renders inert — the space holds. */
 export const inertTile = (): React.JSX.Element => <div className="tile-inert" />
 
 export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> } = {
@@ -75,7 +73,6 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
   },
 }
 
-// The mapped table is exact per kind; the two dispatchers are where the union meets it.
 export const renderTile = (ctx: TileRenderContext): React.ReactNode =>
   (TILE_SURFACES[ctx.entry.type] as TileSurface).render(ctx)
 

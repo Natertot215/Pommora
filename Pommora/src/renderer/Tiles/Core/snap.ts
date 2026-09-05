@@ -1,7 +1,3 @@
-// Alignment snapping: a dragged boundary magnetizes to other tiles' edges when
-// it comes within `threshold` px of perfect alignment — the tiny form-lock that
-// makes near-aligned layouts land exactly aligned.
-
 import type { TileGeometry } from './rects'
 
 export function snapAxis(value: number, candidates: number[], threshold: number): number {
@@ -33,14 +29,12 @@ const dedupe = (values: number[]): number[] => {
   return out
 }
 
-/** Every tile's left + right edge — the vertical-boundary magnet lines. */
 export function xCandidates(geometry: TileGeometry): number[] {
   const out: number[] = []
   for (const r of geometry.tiles.values()) out.push(r.x, r.x + r.w)
   return dedupe(out)
 }
 
-/** Every tile's top + bottom edge — the horizontal-boundary magnet lines. */
 export function yCandidates(geometry: TileGeometry): number[] {
   const out: number[] = []
   for (const r of geometry.tiles.values()) out.push(r.y, r.y + r.h)

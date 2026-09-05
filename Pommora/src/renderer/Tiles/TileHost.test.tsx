@@ -59,7 +59,6 @@ describe('the host over the renderer table', () => {
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
     expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
     expect(await until(() => host.querySelector('.cm-editor') !== null)).toBe(true)
-    // With no tree mounted, the page and view references resolve to nothing; the foreign kind never does.
     expect(host.querySelectorAll('.tile-inert')).toHaveLength(3)
   })
 })

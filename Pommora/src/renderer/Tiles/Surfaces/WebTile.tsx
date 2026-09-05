@@ -1,6 +1,5 @@
-// A guest clips correctly only at full visibility, so visibility management IS the rendering
-// model, not an optimization: live while fully visible, hidden (not unmounted) under the
-// retention cap otherwise. Editor-agnostic — nothing here imports CodeMirror.
+// A guest clips correctly only at full visibility, so it stays live while fully visible and
+// hidden (not unmounted) under the retention cap otherwise.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/Interactions/OverScroll'
@@ -16,18 +15,13 @@ import { webGuestRetention } from './webRetention'
 import '../tile-base.css'
 import '../tile-title.css'
 
-/** What the guest element answers with once attached — the parting frame, and the webContents id
- *  main zooms and pauses by. Both read as absent before the attach. */
 type Guest = HTMLElement & {
   capturePage?: () => Promise<{ toDataURL(): string }>
   getWebContentsId?: () => number
 }
 
-// How long a capture may hang before the clip proceeds without a frame.
 const CAPTURE_DEADLINE_MS = 200
 
-/** Resolves through the store's format and cache, arming the shared fetch in Page Title mode
- *  exactly as a cell does. */
 function useWebpageTitle(label: string, url: string): string {
   const display = useSession((s) => s.personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY)
   const title = useSession((s) => s.linkTitles[url])
@@ -48,15 +42,10 @@ export function WebTile({
   refocusHost,
 }: {
   url: string
-  /** The on-disk hand label; empty resolves through the display format. */
   label?: string
-  /** Fully visible in the owning scrollport, per the host's observer. */
   visible: boolean
-  /** The host tab left the main view — pauses this guest's media when the preference is on. */
   tabInactive?: boolean
-  /** The tile's Scale factor, joining the host-zoom × Webpage Zoom derivation main stamps. */
   zoom?: number
-  /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
 }): React.JSX.Element {
   const title = useWebpageTitle(label, url)
@@ -64,11 +53,7 @@ export function WebTile({
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [engaged, setEngaged] = useState(false)
-  // Eviction and failure clear the guest — the tile falls back to a face and mounts a fresh
-  // guest on its next visibility entry.
   const [guest, setGuest] = useState(visible)
-  // The guest's last frame, painted on the face so a clipped tile reads as a paused page rather
-  // than a blank; `parting` holds the guest on screen long enough to capture it.
   const [snap, setSnap] = useState<string | null>(null)
   const [parting, setParting] = useState(false)
   const ref = useRef<HTMLElement | null>(null)
@@ -77,12 +62,10 @@ export function WebTile({
   guestRef.current = guest
   const visibleRef = useRef(visible)
   visibleRef.current = visible
-  // A ref so the visibility effect never re-runs on the host's render churn.
   const refocusRef = useRef(refocusHost)
   refocusRef.current = refocusHost
   const id = useRef(Symbol('webguest')).current
 
-  // A different site invalidates the old guest's state, load, engagement, and frame.
   useEffect(() => {
     setFailed(false)
     setLoaded(false)
@@ -90,7 +73,6 @@ export function WebTile({
     setSnap(null)
   }, [url])
 
-  // An evicted or torn-down guest must load again before the catcher hands it interaction.
   useEffect(() => {
     if (!guest) setLoaded(false)
   }, [guest])
@@ -99,7 +81,6 @@ export function WebTile({
   // reaches the compositor, or a hidden guest captures an empty frame.
   useLayoutEffect(() => {
     if (visible) {
-      // A retry always happens in front of the user, never as an invisible load behind a hidden tile.
       webGuestRetention.show(id)
       setGuest(true)
       setFailed(false)
@@ -114,7 +95,6 @@ export function WebTile({
     if (!guestRef.current) return
     const retain = (): void => {
       setParting(false)
-      // A re-entry mid-capture leaves nothing to retain.
       if (!visibleRef.current && guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
     }
     if (!el?.capturePage) {
@@ -159,9 +139,7 @@ export function WebTile({
     if (!wv?.getWebContentsId || !loaded) return
     try {
       void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
-    } catch {
-      // A guest torn down between render and effect has no id to stamp — the next mount re-sends.
-    }
+    } catch {}
   }, [zoom, loaded])
 
   // Only ever pauses, never plays — returning to the tab leaves media where the pause left it.
@@ -182,8 +160,6 @@ export function WebTile({
   useEffect(() => {
     const wv = ref.current
     if (!wv) return
-    // A failure tears the guest down whole — it never occupies a retention slot, and the failed
-    // face stands until the next visibility entry retries.
     const fail = (): void => {
       setFailed(true)
       setGuest(false)
@@ -243,7 +219,6 @@ export function WebTile({
         <div
           className="web-tile-catcher"
           onClick={() => {
-            // Mid-load, the catcher stays: interaction is handed over only to a settled guest.
             if (loaded) setEngaged(true)
           }}
         />
