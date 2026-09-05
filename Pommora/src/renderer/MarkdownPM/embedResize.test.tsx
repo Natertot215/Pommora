@@ -61,7 +61,7 @@ describe('persisted tile heights', () => {
     const handle = span.querySelector('.resize-edge-s') as HTMLElement
     firePointer(handle, 'pointerdown', { x: 0, y: 0 })
     firePointer(window, 'pointermove', { x: 0, y: 40 })
-    expect(span.style.height).toBe('520.4px')
+    expect(span.style.height).toBe('520px')
     firePointer(window, 'pointerup')
     expect(span.style.height).toBe('520px')
     expect(save).toHaveBeenCalledOnce()

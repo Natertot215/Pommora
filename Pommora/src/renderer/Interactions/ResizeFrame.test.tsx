@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@renderer/Testing/pointerHarness'
-import { onScreen, useResizeFrame, type Rect, type ResizeFrameSpec } from './ResizeFrame'
+import {
+  onScreen,
+  useResizeFrame,
+  type Rect,
+  type ResizeFrameSpec,
+  type ResizeGrip,
+} from './ResizeFrame'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -23,7 +29,7 @@ afterEach(() => {
 })
 
 function Frame<R extends Partial<Rect>>(
-  props: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' | 's' },
+  props: ResizeFrameSpec<R> & { grip: ResizeGrip },
 ): React.JSX.Element {
   const frame = useResizeFrame(props)
   return (
@@ -34,7 +40,7 @@ function Frame<R extends Partial<Rect>>(
 }
 
 const mount = <R extends Partial<Rect>>(
-  spec: ResizeFrameSpec<R> & { grip: 'move' | 'e' | 'w' | 'n' | 's' },
+  spec: ResizeFrameSpec<R> & { grip: ResizeGrip },
 ): HTMLElement => {
   act(() => root.render(<Frame {...spec} />))
   return host.querySelector('.box') as HTMLElement
