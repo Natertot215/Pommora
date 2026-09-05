@@ -709,7 +709,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - [x] **Phase 2** — Tiles/ · gate head `59bf6fdc`
   - [x] Task 3 — The move · `d05db560`
   - [x] Task 4 — The vocabulary · `f376ea7a`
-- [x] **Phase 3** — The recipe · gate head `GATE3`
+- [x] **Phase 3** — The recipe · gate head `57a46fc9`
   - [x] Task 5 — The shared table · `6a715876`
   - [x] Task 6 — The renderer table · `0dc65e48`
 - [ ] **Phase 4** — The document in the Nexus
