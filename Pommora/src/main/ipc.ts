@@ -1,12 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import type { Asks, Pushes, Tells } from '@shared/bridge'
-import { errText, fail, ok, type Result } from '@shared/result'
+import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
+import { errText, fail, NO_NEXUS, ok, type Result } from '@pommora/core/Contract/result'
 import { readScope, writeKey, type Scope } from './Database/localState'
-
-/** THE two session refusals — one spelling, one code, everywhere. A handler refuses through
- *  these or not at all. */
-export const NO_NEXUS = fail('no-nexus', 'No nexus is open.')
-export const BUSY = fail('busy', 'Nexus switching.')
 
 type Args<K extends keyof Asks> = Asks[K]['args']
 type Reply<K extends keyof Asks> = Asks[K]['reply']

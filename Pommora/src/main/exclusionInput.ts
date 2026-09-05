@@ -1,7 +1,7 @@
 // The exclusion list as the set channel will store it, isolated from the handler so the rule the
 // pane depends on — refuse, normalize, dedup — is testable without the electron-coupled handler.
 
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { normalizeSeg, rootSegs } from './exclusion'
 import { excludedFolderRefusal } from './readNexus'
 

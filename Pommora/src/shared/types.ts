@@ -6,7 +6,7 @@ import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
 import type { Crop, PageFrontmatter } from './schemas'
 import type { DateFormat } from './columnStyles'
-import type { PommoraError } from './result'
+import type { PommoraError } from '@pommora/core/Contract/result'
 import type { SavedView } from './views'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'

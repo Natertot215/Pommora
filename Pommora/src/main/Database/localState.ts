@@ -5,7 +5,7 @@
 // Only Pommora writes here, so a decode failure is a bug rather than untrusted input: the row is
 // dropped and logged instead of every read paying for validation.
 
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { sessionDb } from '../sessionDb'
 
 export type Scope =

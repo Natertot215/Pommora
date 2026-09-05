@@ -4,7 +4,7 @@
 // would deadlock).
 
 import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { readJsonStrict, rmwJsonStrict, writeJson } from './IO/atomicWrite'
 import { newId } from './ids'
 import { contextsRegistryFile } from './paths'

@@ -1,5 +1,5 @@
 import type { MutateRequest } from '@shared/mutate'
-import { caught, type PommoraError, type Result } from '@shared/result'
+import { caught, type PommoraError, type Result } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@shared/types'
 import {
   insertCreatedInTree,

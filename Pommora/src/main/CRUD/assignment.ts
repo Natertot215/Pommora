@@ -9,7 +9,7 @@ import { getLiveTree, refreshTree } from '../liveTree'
 import { restoreCachedValues } from './removeProperty'
 import { serializeSchemaOp } from './schemaChain'
 import type { CollectionNode, SetNode } from '@shared/types'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 
 async function read(
   folder: string,

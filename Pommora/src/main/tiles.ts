@@ -4,7 +4,7 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from '@shared/tiles'
-import { errText, fail, ok, type Result } from '@shared/result'
+import { errText, fail, ok, type Result } from '@pommora/core/Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '@shared/propertyValue'
 import { normalizeTitle } from '@shared/connections'

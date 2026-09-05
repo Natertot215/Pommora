@@ -8,7 +8,7 @@ import { rmwJsonStrict, pathExists } from '../IO/atomicWrite'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, sidecarPath, type SidecarKind } from '../paths'
 import { updateFolderSidecar } from './folderEntity'
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
-import { ok, type Result } from '@shared/result'
+import { ok, type Result } from '@pommora/core/Contract/result'
 import type { StateOrderKey, ChildOrderKey } from '@shared/mutate'
 
 export type { StateOrderKey }

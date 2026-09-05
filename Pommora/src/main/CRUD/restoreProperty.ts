@@ -6,7 +6,7 @@
 import { join } from 'node:path'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { readRegistry } from '../IO/propertiesRegistry'
 import type { RecordFile } from '../provenance'
 import { projectBaseline } from '../record'
