@@ -57,8 +57,7 @@ export function NotificationLabel(): React.JSX.Element {
   }, [note, shown, dismiss])
 
   // Proximity rather than hover: the pointer heading for the action reaches the drain before it
-  // does, so the label can't leave out from under a reach. Measured only once the arrival has
-  // landed — the host is parked off-frame while it travels, and that rect no pointer can satisfy.
+  // does, so the label can't leave out from under a reach.
   useEffect(() => {
     if (!note || !shown) return
     let rect: DOMRect | null = null
