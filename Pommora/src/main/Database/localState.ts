@@ -19,7 +19,6 @@ export type Scope =
   | 'embedZooms'
   | 'aliases'
   | 'linkTitle'
-  | 'blockDoc'
   | 'tabs'
   | 'windows'
   | 'recents'

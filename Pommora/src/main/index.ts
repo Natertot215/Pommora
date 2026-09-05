@@ -53,7 +53,6 @@ import {
   writeMarkdownTile,
 } from './tiles'
 import { EMPTY_DOC, readTileDocAt, writeTileDocAt } from './tileDoc'
-import { migrateTileRows } from './tilesMigrate'
 import { isUlid } from './ids'
 import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
@@ -407,8 +406,6 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
         console.error('adopt: the post-migration walk failed; reads will retry:', errText(e))
       }
     }
-    const moved = await migrateTileRows(root)
-    if (moved.dropped > 0) console.log('tiles: legacy rows moved into their hosts:', moved)
   }
   return root
 }
@@ -690,6 +687,15 @@ const tileHostAnd = async (
     return fail('not-found', 'Invalid tile id.')
   return ok({ root, dir })
 }
+
+const onTile =
+  <T>(
+    fn: (ctx: { root: string; dir: string }, tileId: string, arg?: unknown) => Promise<Result<T>>,
+  ) =>
+  async (host: unknown, tileId: unknown, arg?: unknown): Promise<Result<T>> => {
+    const ctx = await tileHostAnd(host, tileId)
+    return ctx.ok ? fn(ctx.value, tileId as string, arg) : ctx
+  }
 
 async function mutateDeps(): Promise<MutateDeps> {
   const config = await readAppConfig(app.getPath('userData'))
@@ -1512,65 +1518,53 @@ serveBridge(
     },
     'tiles:removeTile': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
-        await removeTile(ctx.value.root, ctx.value.dir, tileId as string)
+      fn: onTile(async ({ root, dir }, tileId) => {
+        await removeTile(root, dir, tileId)
         return ok(null)
-      },
+      }),
     },
     'tiles:readMarkdown': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
-        const body = await readMarkdownTile(ctx.value.dir, tileId as string)
+      fn: onTile(async ({ dir }, tileId) => {
+        const body = await readMarkdownTile(dir, tileId)
         return body.ok ? ok({ body: body.value }) : body
-      },
+      }),
     },
     'tiles:writeMarkdown': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, body: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
+      fn: onTile(async ({ dir }, tileId, body) => {
         if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
-        await writeMarkdownTile(ctx.value.dir, tileId as string, body)
+        await writeMarkdownTile(dir, tileId, body)
         return ok(null)
-      },
+      }),
     },
     'tiles:convertToPage': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, pageId: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
+      fn: onTile(async ({ root, dir }, tileId, pageId) => {
         if (typeof pageId !== 'string' || pageId.length === 0)
           return fail('operation-failed', 'Invalid page id.')
-        await convertTileToPage(ctx.value.root, ctx.value.dir, tileId as string, pageId)
+        await convertTileToPage(root, dir, tileId, pageId)
         return ok(null)
-      },
+      }),
     },
     'tiles:convertToView': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, views: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
+      fn: onTile(async ({ root, dir }, tileId, views) => {
         const list = Array.isArray(views) ? views : null
         const valid =
           list?.length &&
           list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
         if (!valid) return fail('operation-failed', 'Invalid view list.')
-        await convertTileToView(ctx.value.root, ctx.value.dir, tileId as string, list as unknown[])
+        await convertTileToView(root, dir, tileId, list as unknown[])
         return ok(null)
-      },
+      }),
     },
     'tiles:duplicateTile': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown) => {
-        const ctx = await tileHostAnd(host, tileId)
-        if (!ctx.ok) return ctx
-        const id = await duplicateTile(ctx.value.dir, tileId as string)
+      fn: onTile(async ({ dir }, tileId) => {
+        const id = await duplicateTile(dir, tileId)
         return id ? ok({ id }) : fail('not-found', 'No such tile.')
-      },
+      }),
     },
 
     'personalization:set': {
