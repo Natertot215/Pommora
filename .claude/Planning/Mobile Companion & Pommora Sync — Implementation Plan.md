@@ -1,6 +1,6 @@
 ## Mobile Companion & Pommora Sync — Implementation Plan
 
-> **Status:** written, pending review · Task 0 restructures the repo first; Phases 1–7 ship regardless; Phase 8 waits on a go and the phone's product spec · Spec: [[Mobile Companion & Pommora Sync — Decision Log]] · Research: [[Mobile Companion & Pommora Sync — Research]] · Execute tasks in order.
+> **Status:** written, pending review · not ratified; execution deferred (09-04-2026) · Task 0 restructures the repo first; Phases 1–7 ship regardless; Phase 8 waits on a go and the phone's product spec · Spec: [[Mobile Companion & Pommora Sync — Decision Log]] · Research: [[Mobile Companion & Pommora Sync — Research]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Counts below were taken 09-04-2026 at `e79702e3`.
 
 **Goal**
@@ -9,9 +9,9 @@ Pommora gains its own end-to-end-encrypted file synchronization and an iOS compa
 
 Task 0 comes first: the repo becomes one root with `Core`, `Desktop`, `Mobile`, and `Sync` as workspaces and the `Pommora/` package folder dissolves, so every folder this arc adds lands in its final home once. Phases 1 through 7 are the arc that ships regardless of what the phone becomes: the host interface, the server, the client, the desktop client, and the phone as a Files-visible synced Nexus with a sign-in shell. Phase 8, the renderer port, is the product bet, and it opens only on an explicit go after Gate 5 and a product spec naming what the phone is for.
 
-The shape follows the ratified decision log: a server rather than the desktop as remote (so a closed laptop never strands the phone), whole-file items with tombstones on a monotonic per-Nexus sequence (one counter serves as the store precondition and the pull cursor), most-recent-wins by envelope mtime with device-id tie-break and every loser retained as a server version, a random Nexus key wrapped by a PBKDF2 key so a password change never re-encrypts content, and an engine seam rather than a phone-side re-implementation of the walk (a second definition of what a Nexus is was rejected). The engine binds its host once per process at boot rather than threading a host parameter through the 400-odd import sites of the moving set; the engine owns POSIX path helpers rather than routing joins through the seam; the phone's atomic-write plugin sets modification dates, so both hosts restore envelope mtime the same way.
+The shape follows the ratified decision log: a server rather than the desktop as remote (so a closed laptop never strands the phone), whole-file items with tombstones on a monotonic per-Nexus sequence (one counter serves as the store precondition and the pull cursor), most-recent-wins by envelope mtime with device-id tie-break and every loser retained as a server version, a random Nexus key wrapped by a PBKDF2 key so a password change never re-encrypts content, and an engine seam rather than a phone-side re-implementation of the walk (a second definition of what a Nexus is was rejected). The engine binds its host once per process at boot rather than threading a host parameter through the 400-odd import sites of the moving set; the engine owns POSIX path helpers rather than routing joins through the seam; how the phone lands an atomic write that keeps the envelope's modification time is Task 18's open decision, taken at a declared stop.
 
-Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit body, create page with its order, rename, delete of pages and containers, move, reorder, tabs, sign in, connect, sync) and every other mutation refuses; the phone opens the renderer's existing menus on a long press through one in-app row-menu pane drawn from the existing menu kit, and no menu is redesigned; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents stay wherever the Tiles plan leaves them (in execution at planning, moving to `_tiles.json`), and whole-file sync carries their `.md` bodies and that sidecar either way. Not solved here: phone-side mutations beyond v0, the list-menu generalization (every menu drawn from one shared model on both hosts), a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user Nexus'.
+Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit body, create page with its order, rename, delete of pages and containers, move, reorder, tabs, sign in, connect, sync) and every other mutation refuses; the phone opens the renderer's existing menus on a long press through one in-app row-menu pane drawn from the existing menu kit, and no menu is redesigned; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents live in `_tiles.json` sidecars (Tiles, PM-128) and whole-file sync carries them like any file. Not solved here: phone-side mutations beyond v0, the list-menu generalization (every menu drawn from one shared model on both hosts), a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user Nexus'.
 
 **Requirements** (the spec's Core, numbered)
 
@@ -20,7 +20,7 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 3. Pommora Sync server: Node 24.15+ built-ins only, one SQLite file, email + password, device tokens, Nexus' keyed by Nexus id, monotonic sequence, tombstones, retained versions with server-side retention pruning, change feed, CORS for `capacitor://localhost`, one Docker container with `DATA_DIR` (C-9, C-10, F-1, F-4, F-5, G-1..G-4).
 4. The sync client in `src/engine/Sync`: manifest walk, E2E crypto, base state, pull → detect → push, the conflict rule with loser retention, per-page cursor persistence, resync, per-item apply with empty-directory pruning (C-2..C-8, F-2..F-9, J-1, J-2, L-1, L-2).
 5. Desktop client in main: push on the write funnel and watcher activity, feed subscription, landings applied through `applyRemote` under the page lock with the outgoing text captured to file history, Settings › General Account and Sync sections, remote versions listed in Page History (C-7, C-11, H-1..H-5).
-6. The mobile skeleton: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<Nexus name>`, a Swift atomic-write plugin, Keychain-held secrets, JSON state under `Library`, the first-run and status shell, sync on resume, launch, and the feed, booting on the iOS 26.5 Simulator with the Nexus in the Files app (A-5, A-6, D-2, E-1..E-6, I-1, I-2). Phase 8 adds the in-process api, the tree patched per landing, the bottom bar, a long press opening the renderer's existing menus through an in-app row-menu pane, and rename, delete, move, and reorder through the engine (A-7 as restated by Ruling 8, A-9, D-1, D-4, D-5, I-3, J-3).
+6. The mobile skeleton: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<Nexus name>`, an atomic write that keeps modification dates by the mechanism Task 18 decides, Keychain-held secrets, JSON state under `Library`, the first-run and status shell, sync on resume, launch, and the feed, booting on the iOS 26.5 Simulator with the Nexus in the Files app (A-5, A-6, D-2, E-1..E-6, I-1, I-2). Phase 8 adds the in-process api, the tree patched per landing, the bottom bar, a long press opening the renderer's existing menus through an in-app row-menu pane, and rename, delete, move, and reorder through the engine (A-7 as restated by Ruling 8, A-9, D-1, D-4, D-5, I-3, J-3).
 7. Verification Nathan asked for on 09-04-2026: an automated two-root integration suite against the real server under `npm run test`, a headless Node sync CLI that stands in for a second device, a dry run over a scratch copy of NexusOS, and a Simulator acceptance that reads the app container's files directly.
 8. The device path documented end to end (bundle id, team signing, TestFlight or ad-hoc), gated only on the developer account (A-5).
 9. Documentation reconciled per section K, including the CLAUDE.md hard rule restated (K-1..K-9).
@@ -34,7 +34,7 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - `serializeOnFile` is keyed on the literal absolute path and is non-reentrant (`IO/fileLock.ts`) → the desktop apply takes the landed file's absolute path as its key and never calls `rmwJsonStrict` or `rewritePageSerialized` inside it. Binds Task 13.
 - `noteExternalEdit` arms a timer that reads the text from disk later (`CRUD/fileHistory.ts`) → by then the remote text has replaced it, so the apply captures the outgoing text itself, before the write. Binds Task 13.
 - `rewritePreservingTimes` calls `forgetParse` because a restored mtime is invisible to the (mtime, size) gate (`IO/atomicWrite.ts:25-32`) → `applyRemote` landings forget the parse the same way. Binds Tasks 1, 13, 21.
-- `loadValues.ts:58` reads Last Modified from disk mtime → a landing that re-dated the file would move Last Modified; every host restores envelope mtime. Binds Tasks 1, 18.
+- `loadValues.ts:58` reads Last Modified from disk mtime → a landing that re-dated the file would move Last Modified; the desktop restores the envelope's mtime, and the phone either restores it or answers Last Modified from its sync record (Task 18's decision). Binds Tasks 1, 18.
 - The moving set has 9 forward edges into main (`fileLock`, `writeEcho`, `governedWrite`, `indexSeed`, `valuesChanged`) and 3 true cycles (page ⇄ governedWrite, loadValues ⇄ indexSeed, loadValues ⇄ valuesChanged) → the lock and echo become host operations; `updatePageProperty` stays in main; `loadValues` splits at its corpus boundary. Binds Tasks 32, 33.
 - `paths.ts` has 51 importers, `IO/atomicWrite.ts` 53, `ids.ts` 24 → the engine binds its host once per process (`setHost`) so no signature changes; moves are import-path rewrites. Binds Task 1.
 - `readdir` order is non-deterministic in Capacitor Filesystem (research: Capacitor Filesystem) and Node sorts nothing either → `host.readDir` returns name-sorted entries on every host. Binds Tasks 1, 19.
@@ -71,9 +71,9 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - `src/renderer/Store/nexusSlice.ts:80-145` (boot), `App.tsx`, `Assets/assetUrl.ts`, `Settings/SettingsWindow.tsx` (Frames, Row kinds, `settingsRow`), `Windows/PageHistoryWindow.tsx`, `Sidebar/Ribbon.tsx`, `Tabs/tabsModel.ts:318`, `styles.css:10-13`.
 - `tsconfig.node.json`, `tsconfig.web.json`, `electron.vite.config.ts`, `vitest.config.ts`, `vite.config.ts`, `vite.config.app.ts`, `biome.json`, `package.json`.
 - `~/NexusOS`: 990 files outside `.git`/`.obsidian`/`.claude` on the morning of 09-04-2026, 533 outside `.trash`; by evening `.trash` held one entry and the manifest 506 files across 107 directories — the Nexus moves daily, so every count is re-derived at run time; `.obsidian` 13 MB, `.nexus` 7.6 MB; largest asset under 10 MB; `.nexus/nexus.json` id `01KS5VNGTE7NX7E0KHMF0TF7CT`.
-- Toolchain checked 09-04-2026: Node 24.15.0, Xcode 26.6 (17F113), iOS 26.5 Simulator runtime (23F77), iPhone 17 Pro `00887B6E-210B-4E8A-B253-2D544620F25D`, no CocoaPods, zero signing identities.
+- Toolchain checked 09-04-2026: Node 24.15.0, Xcode 26.6 (17F113), iOS 26.5 Simulator runtime (23F77), iPhone 17 Pro `00887B6E-210B-4E8A-B253-2D544620F25D`, no CocoaPods, zero signing identities, Docker not installed (installed before Phase 2 opens).
 - npm latest 09-04-2026: `@capacitor/core` `cli` `ios` 8.5.1, `@capacitor/filesystem` 8.1.3, `@capacitor/app` 8.1.1, `@capacitor/preferences` 8.0.1, `@aparajita/capacitor-secure-storage` 8.0.0.
-- `.claude/Planning/Tiles — Implementation Plan.md` — status "written, pending review"; `src/main/blocks.ts:67` still reads `readKey('blockDoc'`.
+- `.claude/Planning/Tiles — Implementation Plan.md` — closed as PM-128 (`44fc04f1`, 09-04-2026); block documents live in `_tiles.json` sidecars the watcher classifies (`watchPatch.ts:68`).
 
 **Environment**
 
@@ -84,6 +84,8 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 
 **Declared Stops**
 
+- Task 15, before implementation — the Settings › General sections are Nathan's design; execution stops to ask for it before a row is built.
+- Task 18, before implementation — how the phone lands an atomic write that keeps modification dates is undecided; execution stops for the decision.
 - Gate 4 — the Settings › General Account and Sync sections are the first user-visible surface; Nathan sees them before the phone is built on the same channels, and gives the go for Phase 5 here.
 - Gate 5 — the companion on the Simulator: the sign-in shell, the status screen, and the Nexus in the Files app. Phase 8 opens only on a separate go given here or later, with the phone's product spec in hand.
 - Task 26 — the device install, gated on the paid developer account.
@@ -93,12 +95,11 @@ Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit
 - Gates from `Pommora/`, exit codes read directly, never piped: `npm run typecheck && npm run test && npm run lint && npm run build`. `npm run lint` exits 0 with warnings: read the summary line.
 - Every line, module, and mechanism is a budget: add only what a task's Becomes names; reuse before invention; a second resolver, walker, cache, or validator is a plan defect to log, not a thing to write.
 - Commit as soon as a gate is green, explicit paths only (`git add <path>…`), never a directory, never `git stash`/`checkout .`/`clean`/`reset`. Never touch a path `git status` shows dirty that this arc did not dirty (another session's set; five files and three deleted plans at planning). Check `git status` for foreign staged paths before every commit; the `.claude` auto-stage hook makes a peer's doc edits ride any commit, which is the ratified convention, so name them in the commit report rather than unstaging them. Commit messages end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
-- Phase 8 opens only after the Tiles arc's closeout commit: that arc is editing `watchPatch.ts`, `watcher.ts`, `mutate.ts`, `index.ts`, and folding `blocks.ts` into `Tiles/`, and Tasks 31 and 34 rewrite or move those files. Tasks 31 and 34 re-derive their Now first (`watchPatch.ts`'s line count and export list, the `_tiles.json` patcher that will exist and belongs in `diskPatch.ts`, the `blocks.ts` importers).
 - Comments only for a why the code cannot state; never a feature's state; `KNOB` and `(Nathan's call)` markers survive every pass. Title-Case UI labels. No keyboard shortcuts.
 - Biome formats every write through the hook; a shell-driven edit runs `npm run format` after.
 - Main and preload do not hot-reload; a bridge change needs a dev-process restart. React editor extensions need ⌘R.
 - Live data: `~/NexusOS` is never opened by a test instance; every verification run copies it (`rsync -a --exclude .git --exclude .obsidian --exclude .claude ~/NexusOS/ /tmp/pommora-scratch/NexusOS/`) and runs the server with a throwaway `DATA_DIR` under `/tmp/pommora-scratch/`, removed at closeout. A test instance uses `POMMORA_USERDATA` pointed at a scratch dir.
-- Out of scope everywhere: `Showcase/`, the block-document location (Tiles plan), phone-side mutations beyond A-7 as restated by Ruling 8, the bottom bar's design, every menu's design (the pane draws the existing kit), the list-menu generalization, OAuth, chunked transfer.
+- Out of scope everywhere: `Showcase/`, phone-side mutations beyond A-7 as restated by Ruling 8, the bottom bar's design, every menu's design (the pane draws the existing kit), the list-menu generalization, OAuth, chunked transfer.
 
 **Made False** (each rewrite lands in the commit that falsifies it)
 
@@ -222,7 +223,7 @@ settings.local.json                                 untouched (absolute paths st
 
 **Ordered Steps**
 
-1. Preflight: the Tiles arc closed; `git status` clean; no other session on the tree; the baseline recorded (`npm run test` counts, `npm run lint`'s file count, `node .claude/scripts/check-atlas.mjs`, `python3 .claude/scripts/loc.py`).
+1. Preflight: `git status` clean; no other session on the tree; the baseline recorded (`npm run test` counts, `npm run lint`'s file count, `node .claude/scripts/check-atlas.mjs`, `python3 .claude/scripts/loc.py`).
 2. The `git mv`s and `git rm`s above, the untracked outputs deleted, `rmdir Pommora`; no commit yet.
 3. The configs written; `npm install` at the root; `./node_modules/.bin/electron --version` (the binary downloads once).
 4. The `.claude` step: the four scripts rewritten and run by hand until each prints the baseline's numbers; the doc sed and its greps.
@@ -483,7 +484,7 @@ CREATE TABLE IF NOT EXISTS versions (nexus_id TEXT NOT NULL, item_id TEXT NOT NU
 - [ ] Red first: `env.test.ts` (defaults, override, non-numeric throws), `db.test.ts` (schema applies twice idempotently; `PRAGMA journal_mode` answers `wal`; meta holds `schema_version` 1), `http.test.ts` (a body over the cap answers 413 `too-large` and the socket is not left half-read; preflight from `capacitor://localhost` answers the reflected origin, `Authorization, Content-Type`, and `GET, PUT, POST, DELETE, OPTIONS`; an unknown route 404). Expect module-not-found, then green.
 - [ ] `node Sync/src/index.ts` with `DATA_DIR=/tmp/pommora-scratch/s` starts and answers `GET /health` 200 `{ ok: true }`; stopped with SIGTERM and exits 0.
 - [ ] `db.test.ts` gains: a `transaction` whose body throws leaves no row behind.
-- [ ] If Docker is present: `docker build -f Sync/Dockerfile -t pommora-sync .` from `Pommora/`, then `docker run --rm -e DATA_DIR=/data -p 8642:8642 pommora-sync` answers `curl localhost:8642/health` 200 (the build alone proves nothing about the shared module). Otherwise recorded as skipped in the Log with the reason.
+- [ ] Docker is a prerequisite (Ruling 13): `docker build -f Sync/Dockerfile -t pommora-sync .` from `Pommora/`, then `docker run --rm -e DATA_DIR=/data -p 8642:8642 pommora-sync` answers `curl localhost:8642/health` 200 (the build alone proves nothing about the shared module). Otherwise recorded as skipped in the Log with the reason.
 - [ ] Full gate green; `npm run typecheck:sync` green.
 
 **Verify — user**
@@ -925,7 +926,7 @@ export function syncStatus(): SyncStatus                                        
 // before each run: if the remote Nexus's retentionDays ≠ the local Nexus's historyDays (readFileHistoryConfig) → transport.updateInfo, so the server prunes by the live Timeframe
 // deps.beforeReplace: read the current text; liveIdOf → captureIfDue(root, pageId, text, 'external') for a page; nothing for other files
 // deps.afterLanding: none — host.applyRemote records no echo, so the watcher classifies the landing as it does an Obsidian edit
-//   (`.trash`, `.nexus/homepage/*.md`, `.nexus/contexts/**/*.md` are watcher-ignored: the Trash frame and the block hosts read those on open)
+//   (what the watcher ignores under `.trash`, `.nexus/homepage`, and `.nexus/contexts` after Tiles is re-derived here; the Trash frame reads its folder on open)
 // lock: host().lock is serializeOnFile keyed on the landed absolute path — the same key every in-app writer of that file takes
 // status pushes: push(win, 'sync:changed', status) on every transition
 ```
@@ -994,6 +995,8 @@ export interface Asks {
 
 **Why:** H-3, confirmed: two sections in General, every action with its inverse. The window's row kinds have no text field, so one `field` kind lands on the existing `InputField`.
 
+**Declared stop, before implementation:** the sections' design is Nathan's. Execution stops here to ask; the row kinds below are the mechanism the design will use, and the section listing is the actions H-3 names, not a layout.
+
 **Now** — `src/renderer/Settings/SettingsWindow.tsx:203-230` General has one untitled section of two `picker` rows; `Row` kinds: `toggle | slider | device | path | exclusions | clear | color | picker | zoom`; the `clear` kind (`:108-113`) is label + hint + `clear: () => Promise<boolean>` rendered by `ClearActionRow.tsx` with the fixed verbs Clear / Cleared, used at two sites; `MenuCaption` is imported at `:6`; `DesignSystem/Fields/InputField.tsx` exists:
 
 ```tsx
@@ -1010,11 +1013,8 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'ite
 | { kind: 'field'; label: string; hint?: string; value: string; secret?: boolean; onCommit: (v: string) => void }
 | { kind: 'caption'; text: string }
 // Settings/ClearActionRow.tsx → Settings/ActionRow.tsx (verb/done as props); Settings/FieldRow.tsx (new) on InputField
-// General sections:
-//  { title: 'Account', rows: [ field Server Address · field Email · field Password (secret) · field Device Name ·
-//                              action Sign In · action Create Account · action Sign Out (shown when signed in) ] }
-//  { title: 'Sync',    rows: [ field Nexus Password (secret) · action Create From This Nexus / Connect (one row; label by sync:nexus) ·
-//                              action Sync Now · action Disconnect · caption: the status line ] }
+// General sections, per the design given at the stop; the actions they must carry (H-3): Account — the server, email, password, device name, Sign In, Create Account, Sign Out;
+//   Sync — the Nexus password, Create From This Nexus / Connect (one row; label by sync:nexus), Sync Now, Disconnect, the status line
 // src/renderer/Store/configSlice.ts gains syncStatus: SyncStatus and applySyncStatus; App.tsx subscribes onSyncChanged like onNavChanged
 ```
 
@@ -1026,7 +1026,7 @@ const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'ite
 
 **Verify — user**
 
-- [ ] Settings › General shows Account then Sync under the two existing rows; labels Title-Case; every action has its inverse (Sign In / Sign Out, Create or Connect / Disconnect).
+- [ ] Settings › General shows the two sections as designed at the stop; labels Title-Case; every action has its inverse (Sign In / Sign Out, Create or Connect / Disconnect).
 - [ ] Against `node Sync/src/index.ts` on localhost with a scratch copy: Create Account, Sign In, Create From This Nexus, the status line moves to idle with a last-sync time; Sync Now reports; Disconnect returns the row to Create/Connect.
 
 #### Task 16: Remote versions in Page History
@@ -1076,7 +1076,7 @@ export async function remoteBody(root: string, pageId: string, ts: number): Prom
 
 ### Phase 5 — The mobile skeleton
 
-Additive plus user-visible. The phone in this phase is the Nexus in the Files app plus a sign-in and status shell; no renderer mounts. Budget: about +850 lines (host 250, state and keychain 120, sync wiring 120, shell 150, Swift plugin 80, configs 150) plus the committed `ios/` template.
+Additive plus user-visible. The phone in this phase is the Nexus in the Files app plus a sign-in and status shell; no renderer mounts. Budget: about +850 lines (host 250, state and keychain 120, sync wiring 120, shell 150, the write mechanism up to 80, configs 150) plus the committed `ios/` template.
 
 #### Task 17: The Mobile project
 
@@ -1127,11 +1127,19 @@ biome.json              includes gains "!**/Mobile/ios", "!**/Mobile/dist"
 
 - [ ] *(none yet.)*
 
-#### Task 18: The atomic-write plugin
+#### Task 18: The phone's atomic write and modification date (undecided)
 
 **Requirement:** 6
 
-**Why:** Capacitor's Filesystem writes are not atomic and cannot set mtime (E-5, research); the engine's contract is an atomic write and a landing that keeps its envelope date. One small Swift plugin does both.
+**Why:** Capacitor's Filesystem writes are not atomic and cannot set mtime (E-5, research); the engine's contract is an atomic write and a landing that keeps its envelope date. How the phone meets it is undecided.
+
+**Declared stop, before implementation:** two mechanisms are drafted below; Nathan picks one here. Task 19 binds whichever lands.
+
+**Option A — a Swift plugin** that writes atomically and sets the modification date, so the phone restores envelope time exactly as the desktop does and the base record is one shape on both hosts.
+
+**Option B — stock Filesystem writes:** a write to a temp name then a rename, no modification date set; the base record holds the envelope's time and the phone answers Last Modified from its sync record rather than from disk (the log's F-6 as first written). Cheaper to build, one more code path in the engine's Last Modified read.
+
+Option A's shape:
 
 **Now** — `—`. Research (SPM project layout, custom plugin Route B): a local package needs `package.json` `capacitor.ios.src`, a `Package.swift` whose library name equals the CLI's `fixName` of the npm name, and `@objc(<Class>)` first in the Swift file.
 
@@ -1155,8 +1163,8 @@ Mobile/plugins/atomic-write/
 
 **Verify — automated**
 
-- [ ] `npx cap sync ios` lists `PommoraAtomicWrite` in `Mobile/ios/App/CapApp-SPM/Package.swift` and `AtomicWritePlugin` in `ios/App/App/capacitor.config.json`'s `packageClassList`; `xcodebuild … build` green.
-- [ ] On the Simulator (Task 17's placeholder app, driven through Safari Web Inspector once): `AtomicWrite.write({path, base64, mtimeMs: 1700000000123})` then `Filesystem.stat` reports `mtime === 1700000000123` (integer ms round-trips through the plugin and the plugin's readdir/stat); a write over an existing file leaves either the old or the new bytes when the app is killed mid-loop of 200 writes (`simctl terminate` during the loop; every file parses).
+- [ ] Under Option A: `npx cap sync ios` lists `PommoraAtomicWrite` in `Mobile/ios/App/CapApp-SPM/Package.swift` and `AtomicWritePlugin` in `ios/App/App/capacitor.config.json`'s `packageClassList`; `xcodebuild … build` green.
+- [ ] Under Option A, on the Simulator (Task 17's placeholder app, driven through Safari Web Inspector once): `AtomicWrite.write({path, base64, mtimeMs: 1700000000123})` then `Filesystem.stat` reports `mtime === 1700000000123` (integer ms round-trips through the plugin and the plugin's readdir/stat); a write over an existing file leaves either the old or the new bytes when the app is killed mid-loop of 200 writes (`simctl terminate` during the loop; every file parses).
 
 **Verify — user**
 
@@ -1181,8 +1189,7 @@ export const capacitorHost: EngineHost
 // readBytes: readFile without encoding → base64 → Uint8Array
 // readDir: Filesystem.readdir → entries sorted by name, each with stat { mtimeMs: mtime, size, kind } (one bridge call per directory)
 // stat: Filesystem.stat, null on 0008
-// writeText: AtomicWrite.write({ path: <file uri of DOCUMENTS/path>, base64 }) via Filesystem.getUri once per call
-// applyRemote: AtomicWrite.write({ …, mtimeMs }) after mkdir of the parent
+// writeText and applyRemote: Task 18's write primitive (Option A: AtomicWrite.write with the file uri from Filesystem.getUri, mtimeMs on applyRemote; Option B: write-then-rename, the base holding the envelope's time) after mkdir of the parent
 // mkdir: Filesystem.mkdir recursive, 0010 (exists) swallowed; rename: Filesystem.rename; remove: deleteFile, or rmdir for a directory; 0008 swallowed
 // lock: (_, fn) => fn()
 export function bindCapacitorHost(): void
@@ -1210,7 +1217,7 @@ export function bindCapacitorHost(): void
 ```ts
 // Mobile/src/host/state.ts + state.test.ts
 export function readScope<T>(scope: Scope): Promise<Record<string, T>>           // Library/state/<scope>.json, {} when absent
-export function writeKey(scope: Scope, key: string, value: unknown): Promise<void>   // null deletes; whole-file rewrite through AtomicWrite
+export function writeKey(scope: Scope, key: string, value: unknown): Promise<void>   // null deletes; whole-file rewrite through the host's writeText
 export function libraryStateStore(): SyncStateStore                               // Library/sync/<nexusId>.json; buffered; flush writes
 // Mobile/src/host/prefs.ts — Preferences: 'account' (AccountFields as JSON), 'nexusId', 'nexusName'
 // Mobile/src/host/keychain.ts — SecureStorage: 'token' afterFirstUnlock; `nexus:<id>` whenUnlockedThisDeviceOnly; setSynchronize(false) once
@@ -1439,13 +1446,13 @@ The closeout of the arc that ships regardless.
 
 **Why:** K-9: the arc under one History heading at closeout; Context rewritten to where things stand.
 
-**Now** — `HistoryPM.md` index tops at `PM-127 | The Resize Frame`; `ContextPM.md` §Current Focus is the Glance Pane.
+**Now** — `HistoryPM.md` index tops at `PM-128 | Tiles`; `ContextPM.md` §Current Focus is the Glance Pane.
 
-**Becomes** — `PM-128 || Pommora Sync And The Mobile Companion` to the History format (commits, diff from the closeout's actionable difference); Context's Current Focus, Recent Work (five entries, oldest dropped), Known Issues (the two-host lost update gains the sync landing case; H-4's open-editor reload as the named successor); the Handoff.
+**Becomes** — `PM-<next> || Pommora Sync And The Mobile Companion` (the next number at closeout; a plan that never starts gets no entry) to the History format (commits, diff from the closeout's actionable difference); Context's Current Focus, Recent Work (five entries, oldest dropped), Known Issues (the two-host lost update gains the sync landing case; H-4's open-editor reload as the named successor); the Handoff.
 
 **Verify — automated**
 
-- [ ] `rg -c "PM-128" .claude/HistoryPM.md .claude/ContextPM.md` → both 1 or more. Control: `rg -c "PM-127" .claude/HistoryPM.md` → 2.
+- [ ] `rg -c "Pommora Sync And The Mobile Companion" .claude/HistoryPM.md .claude/ContextPM.md` → both 1 or more. Control: `rg -c "PM-128" .claude/HistoryPM.md` → 2.
 
 **Verify — user**
 
@@ -1461,7 +1468,7 @@ The closeout of the arc that ships regardless.
 
 ### Phase 8 — The renderer port (behind a go)
 
-Opens only on Nathan's explicit go after Gate 5 and a phone product spec that names what the phone is for; if the spec answers "capture and read" rather than "the desktop's editor", this phase is re-planned, not executed. A behavior-preserving refactor plus additive. Baseline invariant: the test-file and test counts at Gate 7 and the same after every move; no test body changes except import paths; `npm run build` green. Budget: about +650 lines new (holder adapter, shared table, scope map, api 300, pane 150, hold 60, bottom bar 80) against about 2,900 moved; preload shrinks from 195 lines to about 40. The Tiles closeout constraint binds here.
+Opens only on Nathan's explicit go after Gate 5 and a phone product spec that names what the phone is for; if the spec answers "capture and read" rather than "the desktop's editor", this phase is re-planned, not executed. A behavior-preserving refactor plus additive. Baseline invariant: the test-file and test counts at Gate 7 and the same after every move; no test body changes except import paths; `npm run build` green. Budget: about +650 lines new (holder adapter, shared table, scope map, api 300, pane 150, hold 60, bottom bar 80) against about 2,900 moved; preload shrinks from 195 lines to about 40.
 
 #### Task 30: The pure modules move
 
@@ -1955,7 +1962,7 @@ export function lastHoldPoint(): { x: number; y: number }
   - [ ] Task 16 — Remote versions in Page History · `<commit>`
 - [ ] **Phase 5** — The mobile skeleton
   - [ ] Task 17 — The Mobile project · `<commit>`
-  - [ ] Task 18 — The atomic-write plugin · `<commit>`
+  - [ ] Task 18 — The phone's atomic write and modification date (undecided) · `<commit>`
   - [ ] Task 19 — The Capacitor host · `<commit>`
   - [ ] Task 20 — Phone state, preferences, and the keychain · `<commit>`
   - [ ] Task 21 — Phone sync wiring · `<commit>`
@@ -1992,16 +1999,20 @@ Asked and answered 09-04-2026 (Nathan's call on each):
 4. **Page History rows** stay timestamp-only with remote and local merged.
 5. **Phone create-page (Phase 8) writes the parent's `page_order`** exactly as the desktop does; `setChildOrder`, `updateFolderSidecar`, and `createDisambiguated` move into the engine (Task 33).
 6. **Scratch Nexus'** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
-7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
+7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Deferred (Nathan, 09-04-2026).
 8. **Phone mutations and menus (09-04-2026, Phase 8):** rename, delete of pages, Sets, and Collections, move, and reorder join v0 (A-7 restated); Space and Context deletes stay desktop-only. The phone reaches them through the renderer's existing menus: a long press dispatches the renderer's own `contextmenu`, the sidebar menu's rows are stated once in `src/shared/contextMenu.ts`, and one in-app row-menu pane drawn from the existing menu kit presents them; no menu is redesigned. Hold lifts, release opens the menu, move drags (the iOS convention). The list-menu generalization (every menu from one model, the 22 channels collapsing into `row-menu`, the desktop's in-app default) is deferred. New renderer pieces sit beside their kin (`Actions/`, `Interactions/`), which is where the renderer already keeps menus and gestures.
 9. **Vocabulary (09-04-2026):** the remote is a Nexus, never a vault; Nexus' is the plural in prose; code paths that need a plural stay singular (`/nexus`, the `nexus` table, `sync:nexus`).
-10. **The monorepo first (09-04-2026):** Task 0 restructures the repo before Phase 1 — root workspaces `Core`, `Desktop`, `Mobile`, `Sync`; the `Pommora/` package folder dissolves; the local folder `Project Pommora/` and the session's cwd stay, so nothing terminates and `.claude` never moves; its scripts and docs are rewritten as a step of their own inside the same commit. `Core` as the name for shared code is the planner's pick, standing unless overruled.
+10. **The monorepo first (09-04-2026):** Task 0 restructures the repo before Phase 1 — root workspaces `Core`, `Desktop`, `Mobile`, `Sync`; the `Pommora/` package folder dissolves; the local folder `Project Pommora/` and the session's cwd stay, so nothing terminates and `.claude` never moves; its scripts and docs are rewritten as a step of their own inside the same commit. `Core` confirmed (Nathan, 09-04-2026).
+11. **The Settings sections are designed at a stop (09-04-2026):** Task 15 halts before implementation and asks; the plan carries the mechanism and the actions, never the layout.
+12. **The phone's write mechanism is undecided (09-04-2026):** the Swift plugin is one option, stock writes with the time held in the sync record the other; Task 18 halts for the pick. The earlier deviation that assumed the plugin is withdrawn.
+13. **Docker is a prerequisite (09-04-2026):** installed before Phase 2 opens; the container proof is unconditional.
+14. **Nothing is ratified (09-04-2026):** execution is deferred; the decision log was cut to the mandate that stays true regardless, and the plan keeps the specifics under its re-derive rule. Tiles closed as PM-128 the same day, so its sequencing constraints are gone; this arc takes the next History number only when it closes, and none if it never starts.
 
 Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file. Attack round 2 (09-04-2026) returned 8 findings (2 High: `rewritePreservingTimes` invisible to the change gate — the `forceHash` set; the desktop's sync rows carrying no Nexus id) and 2 unknowns (the cursor after a retain-only store; `Sync/package.json` in the image); all folded. A third round would exceed the two-agent cap per scope; Nathan decides whether the second round's severity earns one.
 
 ### Open Against Later Tasks
 
-- **Tasks 8, 31, 34 — the Tiles arc** (in execution at `4a21b5c6`, 09-04-2026): `_tiles.json` lands as a synced sidecar with its own watcher classification; `blocks.ts` folds into `Tiles/`; the `.nexus/homepage` and Space `.md` ignore in `watcher.ts` may change. Re-derive before editing: the moving set's importers, `watchPatch.ts`'s classes, and whether the manifest test's block-body case still names the right paths.
+- **Tasks 8, 13, 31, 34 — after Tiles (PM-128):** `_tiles.json` sidecars exist and the watcher classifies them; what `watcher.ts` still ignores under `.nexus/homepage` and `.nexus/contexts`, the manifest test's block-document case, and the moving set's importers are re-derived before those tasks are edited.
 
 ### Deviations
 
@@ -2010,7 +2021,6 @@ Taken at planning against the decision log, each the simpler mechanism:
 - **B-2 (path joins in the seam):** the engine owns `posixPath.ts`; the host seam carries no path operations. Every path the engine handles is POSIX on both hosts; main keeps `relPosix` for chokidar's absolute paths.
 - **B-2 (setTimes in the seam):** folded into `applyRemote`; `rewritePreservingTimes` stays in main as Node.
 - **B-2 (host threading):** the host is bound once per process (`setHost`) rather than passed through every signature; the moving set's 400-odd import sites change path only.
-- **F-6 (the phone reads Last Modified from its sync record):** the atomic-write plugin sets the modification date, so the phone restores envelope mtime like the desktop and the base record is one shape on both hosts.
 - **D-2 (the content index answers null on the phone):** `view:loadValues` full-scans through `corpusFilesUnder`; the index channels are not served at all in v0, which the renderer already reads as "no index".
 - **I-3 (watchPatch's classification):** the classification and the patchers move into the engine behind a `TreeHolder` bound once per process (Task 34) rather than being copied to the phone.
 - **C-4 (every non-hidden entry syncs):** the manifest is `neverWatched` with a top-level `.trash` admitted, so `node_modules` stays home like every other name the watcher never delivers (Task 8). NexusOS holds none.
@@ -2029,7 +2039,6 @@ Taken at planning against the decision log, each the simpler mechanism:
 - The list-menu generalization: the nine main-assembled menu templates become shared models, the 22 per-surface menu channels collapse into `row-menu`, `presentRowMenu` becomes the desktop's in-app path with the Use Native Menus default flipped on so the desktop keeps its look, and the sidebar menu's pick is performed by the renderer on both hosts.
 - A source label on Page History rows (local snapshot versus remote version), and remote history that survives a rename (the envelope carrying the prior item id).
 - `startDesktopSync(root, win)` binds one window for its status push; a second window needs the push to fan out through the live-refresh transport the multi-window seam names.
-- The block documents' sync classification once the Tiles plan lands `_tiles.json` (the watcher ignores `.nexus/homepage` and Space `.md` bodies today).
 - OAuth providers behind the sign-in seam (Ruling 7: right after the device install, when the paid program exists); Argon2id or scrypt as a new Nexus KDF; chunked transfer; Postgres or a blob folder; multi-user Nexus' on the wrapped-key list; file coordination in the atomic-write plugin.
 
 ### Closeout
@@ -2045,7 +2054,7 @@ Execute Mobile Companion & Pommora Sync — Implementation Plan. Live.
 Live-verify: the Simulator screenshots at Gate 5 and the Files app holding the Nexus; the device install (Task 26) waits on the account. Phase 8 does not open without a separate go.
 Screenshots: Gate 5 (the sign-in form, the status screen, the Files app); Task 25 (the desktop page after each cross-device clause); Phase 8, if opened: the tree, the bottom bar, a page open.
 Pings: at every declared stop and at completion.
-Record: PM-128 || Pommora Sync And The Mobile Companion.
+Record: PM-<next> || Pommora Sync And The Mobile Companion.
 Also: never open ~/NexusOS in a test instance; every run is the scratch copy on a throwaway DATA_DIR; the two foreign dirty renderer files are never touched; explicit paths only.
 Everything else is the standard below.
 ```
