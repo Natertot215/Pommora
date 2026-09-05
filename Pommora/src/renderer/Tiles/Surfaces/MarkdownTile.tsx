@@ -5,7 +5,6 @@ import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
 import { createBodyWriter } from '../pageTileWrite'
 
-// The markdown tile's body shares the page autosave's debounce machinery, keyed by tile id.
 const saves = createBodyWriter()
 
 export function MarkdownTile({
@@ -39,18 +38,16 @@ export function MarkdownTile({
     }
   }, [tileId])
 
-  // The guard rides both the settle paths and the debounced write, so neither lands after a removal.
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
-  const settleRef = useRef<() => void>(() => {})
-  settleRef.current = () => {
-    if (suppressRef.current?.(tileId)) saves.cancel(tileId)
-    else void saves.flush(tileId)
-  }
-  useEffect(() => () => settleRef.current(), [])
-  useEffect(() => {
-    if (!editing) settleRef.current()
-  }, [editing])
+  // Leaving edit mode and unmounting both settle the pending write, unless the tile is being removed.
+  useEffect(
+    () => () => {
+      if (suppressRef.current?.(tileId)) saves.cancel(tileId)
+      else void saves.flush(tileId)
+    },
+    [editing, tileId],
+  )
 
   const scheduleSave = (next: string): void =>
     saves.schedule(tileId, next, () =>

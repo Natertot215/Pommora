@@ -1,13 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { TileLayout } from './Core/model'
-import { tileIds } from './Core/model'
-import type { Rect } from './Core/rects'
-import { insertBand, splitAtTile } from './Core/ops'
-import { TileGrid } from './TileGrid'
-
-// The tile system's lab — dummy numbered tiles over the live engine, for driving the
-// tessellation by hand: handle-drag to move (edge quadrants + band seams preview
-// the real result), tile edges/corners to resize, Esc aborts anything.
+import type { TileLayout } from '@renderer/Tiles/Core/model'
+import { tileIds } from '@renderer/Tiles/Core/model'
+import type { Rect } from '@renderer/Tiles/Core/rects'
+import { insertBand, splitAtTile } from '@renderer/Tiles/Core/ops'
+import { TileGrid } from '@renderer/Tiles/TileGrid'
 
 function demoLayout(): TileLayout {
   let l: TileLayout = { bands: [] }

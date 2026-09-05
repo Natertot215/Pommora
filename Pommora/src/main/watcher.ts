@@ -107,11 +107,8 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
         navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
         return
       }
-      // The app's own atomic writes echo back here — skip them: every tree-relevant in-app
-      // write confirms through its own channel (hot under tile gestures + embed typing). A host
-      // document is exempt like navigation: a synced or hand edit landing right after the app's
-      // own save must reach the open host, and the host's re-read returns what it just wrote.
-      if (!path.endsWith(`${sep}${TILE_DOC_FILENAME}`) && isRecentWrite(path)) return
+      // The app's own atomic writes echo back here; every in-app write confirms through its own channel.
+      if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)

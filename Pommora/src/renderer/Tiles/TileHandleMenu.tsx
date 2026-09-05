@@ -206,7 +206,7 @@ export function TileHandleMenu({
           </button>
         )}
         {rows.map(({ label, source }) => {
-          const items = source === 'pages' ? pageItems : source === 'views' ? viewItems : []
+          const items = source === 'pages' ? pageItems : viewItems
           const off = locked || items.length === 0
           return (
             <MenuItem
@@ -214,7 +214,7 @@ export function TileHandleMenu({
               disabled={off}
               leading={<Icon name="link" size={GLYPH} />}
               trailing={CHEVRON}
-              onClick={source === 'none' ? undefined : () => setPane(source)}
+              onClick={() => setPane(source)}
             >
               {label}
             </MenuItem>

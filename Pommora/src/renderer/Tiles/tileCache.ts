@@ -1,10 +1,8 @@
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { fenceWarm, readPageDetail } from '@renderer/Store/tabState'
 
-// The tile counterpart of the tab and window warm caches: the outer editor tears a tile's DOM
-// down whenever it leaves the viewport, and the nested editor re-creates from scratch — this
-// holds its doc, selection, undo history, and scroll for the session, keyed by the full host
-// chain so the same page embedded under two hosts keeps two positions. In-memory only.
+// The outer editor tears a tile's DOM down whenever it leaves the viewport; this holds the nested
+// editor's doc, selection, history, and scroll, keyed by the full host chain.
 const tileCache = new Map<string, { editorState: unknown; scrollTop: number }>()
 
 export function tileWarmSeam(chain: readonly string[]): WarmSeam {

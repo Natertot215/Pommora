@@ -7,8 +7,6 @@ import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 
 const c = colorVars.color
 
-// The header's horizontal insets — shared by the title row, the switcher row, and the title divider,
-// so the divider aligns with the content instead of bleeding to the tile edges.
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
 
@@ -24,8 +22,6 @@ export const tile = style({
   minHeight: 0,
 })
 
-/** The title row — the editable heading over the switcher; its bottom hairline is the header's
- *  ONLY divider (none under the pills, none once the title row is hidden).*/
 export const titleRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -34,7 +30,6 @@ export const titleRow = style({
   flex: 'none',
   fontSize: 'var(--editor-font-size, 15px)',
   position: 'relative',
-  // The divider inset to the header padding (not a full-bleed border), so it aligns with the content.
   '::after': {
     content: '""',
     position: 'absolute',
@@ -74,8 +69,6 @@ export const titleSpaceHidden = style({
 })
 export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
-/** The title text + its in-place rename input. Size + weight come from the `.md-hN` class the caller
- *  appends (markdownPM's own heading code); this carries only color, truncation, and the input reset. */
 export const titleText = style({
   flex: '1 1 auto',
   minWidth: 0,
@@ -90,8 +83,6 @@ export const titleText = style({
   outline: 'none',
 })
 
-/** The switcher row — the ActionBand segments (+ New View) leading, the config affordance trailing
- *  when the title row is hidden and this line is the whole header.*/
 export const switcherRow = style([
   segmentRow,
   {
@@ -117,8 +108,6 @@ export const slideWrap = style({
 
 export const spacer = style({ flex: '1 1 auto' })
 
-/** The switcher's New-View "+" — hidden until the toolbar area is hovered (the group-header "+" idiom),
- *  opacity-only so the pills never reflow.*/
 export const newViewReveal = style({
   display: 'inline-flex',
   opacity: 0,
@@ -126,10 +115,8 @@ export const newViewReveal = style({
 })
 globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 
-// The embed binds the ActionBand settings affordance's reveal to whole-tile hover.
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
-/** The dropdown-mode view list — the ViewFrame's row anatomy inside a PickerMenu. */
 export const listPane = style({ minWidth: 150 })
 
 export const body = style({

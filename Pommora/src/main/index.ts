@@ -52,7 +52,7 @@ import {
   removeTile,
   writeMarkdownTile,
 } from './tiles'
-import { EMPTY_DOC, readTileDocAt, writeTileDocAt } from './tileDoc'
+import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isUlid } from './ids'
 import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
@@ -1481,13 +1481,9 @@ serveBridge(
 
     'tiles:get': {
       kind: 'envelope',
-      // A host whose folder no longer resolves answers the empty document: the walk navigates
-      // away on its own.
       fn: async (host: unknown) => {
         const ctx = await tileHostAnd(host)
-        if (!ctx.ok)
-          return coerceTileHost(host) && ctx.error.code === 'not-found' ? ok(EMPTY_DOC) : ctx
-        return ok(await readTileDocAt(ctx.value.dir))
+        return ctx.ok ? ok(await readTileDocAt(ctx.value.dir)) : ctx
       },
     },
     'tiles:save': {
@@ -1499,12 +1495,7 @@ serveBridge(
           return fail('operation-failed', 'Invalid tile-doc patch.')
         const problem = tilePatchProblem(patch as TileDocPatch)
         if (problem) return fail('operation-failed', problem)
-        const p = patch as TileDocPatch
-        return writeTileDocAt(ctx.value.dir, (cur) => ({
-          layout: 'layout' in p ? p.layout : cur.layout,
-          tiles: 'tiles' in p ? (p.tiles as unknown[]) : cur.tiles,
-          locked: 'locked' in p ? p.locked === true : cur.locked,
-        }))
+        return writeTileDocAt(ctx.value.dir, (cur) => ({ ...cur, ...(patch as TileDocPatch) }))
       },
     },
 
