@@ -18,7 +18,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   │   └── // <Context>
 │   │       └── // <Space>
 │   │           └── _space.json          | • The Space's identity, color, banner, and its own relation keys
-│   ├── // homepage                      | • The Homepage's markdown-block bodies
+│   ├── // homepage                      | • The Homepage's tile document and markdown-tile bodies
 │   ├── contexts.json                    | • The Context registry — order is display order
 │   ├── crops.json                       | • Per-image framing, keyed by the image
 │   ├── homepage.json                    | • The Homepage's banner and heading icon
@@ -157,7 +157,6 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Content index | Which titles each page mentions, the governed values each page carries, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved; an index-generation change drops it whole |
 | Glance pane size | The one universal glance pane size | Resizing it |
 | Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
-| Dashboard blocks | Each block surface's layout and its blocks | Editing the surface |
 | Aliases | The names each page has been given, for the picker | Forgetting one from the picker |
 | Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History, which also gives the file's bytes back |
 | The record baseline | What the last open saw, for the deletion record | The next open |
