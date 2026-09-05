@@ -123,7 +123,7 @@ const TileShell = memo(
     const cornerRef = useRef<{ x: number; y: number } | null>(null)
     return (
       <div
-        className={`tile tile-chassis${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
+        className={`tile tile-base${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
           resizing ? ' is-resizing' : ''
         }${extraClass ? ` ${extraClass}` : ''}${handleNear ? ' handle-near' : ''}`}
         onPointerEnter={(e) => {
@@ -176,7 +176,7 @@ const TileShell = memo(
             onPointerDown={(e) => onEdgeDown(id, edges, e)}
           />
         ))}
-        <div className="tile-chassis-body">{renderTile(id, rect)}</div>
+        <div className="tile-base-body">{renderTile(id, rect)}</div>
       </div>
     )
   },

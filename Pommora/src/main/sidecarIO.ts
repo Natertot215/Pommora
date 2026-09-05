@@ -6,7 +6,7 @@
 import { readFile } from 'node:fs/promises'
 import type { z } from 'zod'
 import { sidecarPath, type SidecarKind } from './paths'
-import { writeJson } from './IO/atomicWrite'
+import { parseJsonText, writeJson } from './IO/atomicWrite'
 import { serializeOnFile } from './IO/fileLock'
 
 /** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
@@ -31,7 +31,7 @@ export async function readSidecar<S extends z.ZodType>(
 ): Promise<z.infer<S> | null> {
   let raw: unknown
   try {
-    raw = JSON.parse(await readFile(sidecarPath(absFolder, kind), 'utf8'))
+    raw = parseJsonText(await readFile(sidecarPath(absFolder, kind), 'utf8'))
   } catch {
     return null
   }

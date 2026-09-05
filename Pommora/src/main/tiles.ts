@@ -11,7 +11,7 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef, type TileType } from '@shared/tiles'
-import type { Result } from '@shared/result'
+import { errText, fail, ok, type Result } from '@shared/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isPlainObject } from '@shared/propertyValue'
 import { normalizeTitle } from '@shared/connections'
@@ -160,19 +160,24 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
   if (!src || !entry) return null
   const id = newId()
   if (TILE_KINDS[entry.type].fileBacked) {
-    const body = (await readMarkdownTile(dir, tileId)) ?? ''
-    await atomicWriteFile(tileFilePath(dir, id), body)
+    const body = await readMarkdownTile(dir, tileId)
+    if (!body.ok && body.error.code !== 'not-found') throw new Error(body.error.message)
+    await atomicWriteFile(tileFilePath(dir, id), body.ok ? body.value : '')
   }
   const copy = copyEntry({ ...(src as Record<string, unknown>), id })
   await setTiles(dir, (tiles) => [...tiles, copy])
   return id
 }
 
-export async function readMarkdownTile(dir: string, tileId: string): Promise<string | null> {
+/** Absent and unreadable stay apart: a body the read merely failed on must never render as an
+ *  empty tile the next keystroke overwrites. */
+export async function readMarkdownTile(dir: string, tileId: string): Promise<Result<string>> {
   try {
-    return await readFile(tileFilePath(dir, tileId), 'utf8')
-  } catch {
-    return null
+    return ok(await readFile(tileFilePath(dir, tileId), 'utf8'))
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === 'ENOENT'
+      ? fail('not-found', 'Tile file not found.')
+      : fail('operation-failed', errText(e))
   }
 }
 

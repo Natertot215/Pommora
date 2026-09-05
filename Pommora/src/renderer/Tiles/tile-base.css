@@ -3,7 +3,7 @@
 
 /* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here
    would replace a host's own list instead of merging with it. */
-.tile-chassis {
+.tile-base {
   --tile-border: var(--width-125); /* one source — hosts' handle/notch math reads it */
   /* Re-anchored on every chassis because custom properties inherit where border-color wouldn't;
      host triggers still outrank it at (0,2,0)+ on the same element. */
@@ -11,7 +11,7 @@
   border: var(--tile-border) solid var(--tile-border-color);
   border-radius: 12px;
 }
-.tile-chassis-body {
+.tile-base-body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -20,17 +20,17 @@
 
 /* The tile is the CM6 portal, read-only at rest: wheel chains to the page (edge-release) until
    editing traps it here — matching how view embeds scroll. */
-.tile-chassis.is-editing-tile :is(.markdown-tile, .page-tile) {
+.tile-base.is-editing-tile :is(.markdown-tile, .page-tile) {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-.tile-chassis:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-scroller {
+.tile-base:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-scroller {
   /* biome-ignore lint/complexity/noImportantStyles: must beat CM6's runtime overflow rule. */
   overflow-x: hidden !important;
   /* biome-ignore lint/complexity/noImportantStyles: as above. */
   overflow-y: auto !important;
 }
-.tile-chassis:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-content {
+.tile-base:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-content {
   cursor: default;
 }
 /* Portal padding: the editor's boundary-to-first-line standard, never the host page's side

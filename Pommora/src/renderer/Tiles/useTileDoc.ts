@@ -2,8 +2,7 @@
 // debounce that flushes on unmount so a navigation inside the window can't drop a gesture.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TileHostRef } from '@shared/tiles'
-import { tileHostKey } from '@shared/tiles'
+import { type TileHostRef, tileHostKey } from '@shared/tiles'
 import { stableStringify } from '@shared/stableJson'
 import { useSession } from '@renderer/store'
 import { decodeLayout, encodeLayout } from './Core/codec'
@@ -158,13 +157,10 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   // live layout, never a stale render capture.
   const commitLayout = useCallback(
     (update: TileLayout | ((cur: TileLayout) => TileLayout)) => {
-      const layout = typeof update === 'function' ? update(liveLayout.current) : update
-      liveLayout.current = layout
-      setState((s) => ({ ...s, layout }))
-      pending.current.layout = layout
+      setLayout(typeof update === 'function' ? update(liveLayout.current) : update)
       flush()
     },
-    [flush],
+    [setLayout, flush],
   )
 
   /** Re-pull the entry list after a main-side entry mutation; the local layout stays. */

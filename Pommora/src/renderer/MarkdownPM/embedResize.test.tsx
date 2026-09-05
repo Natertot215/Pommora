@@ -31,7 +31,7 @@ async function until(cond: () => boolean): Promise<boolean> {
 
 async function mount(props: Parameters<typeof mountEditor>[0]): Promise<EditorView> {
   const view = await mountEditor(props)
-  await until(() => view.dom.querySelector('.tile-chassis-body') !== null)
+  await until(() => view.dom.querySelector('.tile-base-body') !== null)
   return view
 }
 

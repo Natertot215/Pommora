@@ -56,7 +56,7 @@ export interface TileMenuModel {
 
 export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
   const picks: TilePick[] = []
-  const { locked, containerLocked, entry } = ctx
+  const { locked, containerLocked, entry, pageInfo } = ctx
 
   const drill = <T>(
     nodes: readonly DrillPickItem<T>[],
@@ -77,58 +77,48 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
       return { label: n.label, action: `tile:pick:${picks.length - 1}` as const }
     })
 
-  const items: ActionItem<TileAction>[] = []
-
-  // The page's own name, inert — the in-app menu's title field reads as a link, and an OS menu has
-  // no equivalent, so what survives is the identity rather than the affordance.
-  if (ctx.pageInfo) items.push({ label: ctx.pageInfo.title, action: 'tile:open', disabled: true })
-
-  // A row with no source is shown and refused rather than dropped — the menu reads the same
-  // whichever tile it belongs to.
-  for (const { label, source } of TILE_KINDS[entry.type].menuRows) {
-    let rows: ActionItem<TileAction>[] = []
-    if (source === 'pages') rows = drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
-    else if (source === 'views') rows = drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
-    const off = locked || rows.length === 0
-    items.push({ label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) })
-  }
-
   const borderless = entry.style === 'borderless'
-  items.push({
-    label: 'Style',
-    action: 'tile:open',
-    disabled: locked,
-    submenu: [
-      { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless },
-      { label: 'Borderless', action: 'tile:style:borderless', checked: borderless },
-    ],
-  })
-
-  items.push({
-    label: 'Scale',
-    action: 'tile:open',
-    disabled: locked,
-    submenu: ctx.zoomSteps.map((st) => ({
-      label: st.label,
-      action: `tile:zoom:${st.factor}` as const,
-      checked: st.factor === ctx.currentFactor,
-    })),
-  })
-
-  items.push({
-    label: 'Duplicate',
-    action: 'tile:duplicate',
-    separatorBefore: true,
-    disabled: locked,
-  })
-  items.push({ label: 'Delete', action: 'tile:delete', disabled: locked })
-
-  items.push({
-    label: containerLocked ? 'Locked' : lockLabel(locked),
-    action: 'tile:lock',
-    separatorBefore: true,
-    disabled: containerLocked,
-  })
+  const items: ActionItem<TileAction>[] = [
+    // The page's own name, inert — the in-app menu's title field reads as a link, and an OS menu has
+    // no equivalent, so what survives is the identity rather than the affordance.
+    ...(pageInfo ? [{ label: pageInfo.title, action: 'tile:open' as const, disabled: true }] : []),
+    // A row with no source is shown and refused rather than dropped — the menu reads the same
+    // whichever tile it belongs to.
+    ...TILE_KINDS[entry.type].menuRows.map(({ label, source }): ActionItem<TileAction> => {
+      let rows: ActionItem<TileAction>[] = []
+      if (source === 'pages') rows = drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
+      else if (source === 'views') rows = drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
+      const off = locked || rows.length === 0
+      return { label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) }
+    }),
+    {
+      label: 'Style',
+      action: 'tile:open',
+      disabled: locked,
+      submenu: [
+        { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless },
+        { label: 'Borderless', action: 'tile:style:borderless', checked: borderless },
+      ],
+    },
+    {
+      label: 'Scale',
+      action: 'tile:open',
+      disabled: locked,
+      submenu: ctx.zoomSteps.map((st) => ({
+        label: st.label,
+        action: `tile:zoom:${st.factor}` as const,
+        checked: st.factor === ctx.currentFactor,
+      })),
+    },
+    { label: 'Duplicate', action: 'tile:duplicate', separatorBefore: true, disabled: locked },
+    { label: 'Delete', action: 'tile:delete', disabled: locked },
+    {
+      label: containerLocked ? 'Locked' : lockLabel(locked),
+      action: 'tile:lock',
+      separatorBefore: true,
+      disabled: containerLocked,
+    },
+  ]
 
   return { items, picks }
 }

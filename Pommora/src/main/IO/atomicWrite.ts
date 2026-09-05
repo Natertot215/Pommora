@@ -45,6 +45,11 @@ function serializeJson(value: unknown): string {
 }
 
 /** Atomically write a JSON value with stable, sorted keys + a trailing newline. */
+/** The one JSON decode for files the user or another app may have written: a leading BOM is
+ *  encoding, not corruption. */
+export const parseJsonText = (text: string): unknown =>
+  JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text)
+
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
   await atomicWriteFile(filePath, serializeJson(value))
 }
@@ -63,7 +68,7 @@ async function readJsonStrictly(absPath: string): Promise<StrictRead> {
     return { kind: (e as NodeJS.ErrnoException).code === 'ENOENT' ? 'absent' : 'unreadable' }
   }
   try {
-    const v: unknown = JSON.parse(raw)
+    const v = parseJsonText(raw)
     return isPlainObject(v)
       ? { kind: 'ok', value: v }
       : { kind: 'corrupt', why: 'Not a JSON object' }
@@ -166,7 +171,7 @@ export async function readTextOrNull(absPath: string): Promise<string | null> {
  *  `rmwJsonStrict`. */
 export async function readJsonObject(absPath: string): Promise<Record<string, unknown> | null> {
   try {
-    const v: unknown = JSON.parse(await readFile(absPath, 'utf8'))
+    const v = parseJsonText(await readFile(absPath, 'utf8'))
     return isPlainObject(v) ? v : null
   } catch {
     return null
