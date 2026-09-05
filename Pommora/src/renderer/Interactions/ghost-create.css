@@ -1,9 +1,7 @@
 /* THE ghost — a hover-born stand-in for something that doesn't exist yet: the table's New Page row,
    the grid's New Page card, the sidebar's New Page leaf, a property's New Option chip. It rests dimmed
    and lifts toward presence under the pointer; the dim, the lift target, and the timing live here once
-   rather than in each surface. Creating something that isn't there yet is a different promise from the
-   rest of the app's chrome, which keeps the arrow on purpose, so a ghost (or a `+` that adds) takes the
-   finger instead; `data-create` marks the ones that aren't ghosts. */
+   rather than in each surface. */
 [data-ghost-root],
 [data-create] {
   cursor: pointer;

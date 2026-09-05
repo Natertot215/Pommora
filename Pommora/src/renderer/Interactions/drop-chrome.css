@@ -1,7 +1,5 @@
 /* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost every
-   drop-line surface renders. Geometry a surface genuinely owns (a depth-indented left, a column-
-   scoped width) rides inline on top of these defaults. The ghost's frost half (fill, blur, lift
-   shadow) comes from GHOST_FROST via DragGhost. */
+   drop-line surface renders.*/
 .drop-line-host {
   position: relative;
 }

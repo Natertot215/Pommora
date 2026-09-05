@@ -3,8 +3,6 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  /* Zero the gallery's OWN inset so NavView drives the edge straight off the surface tokens below;
-     the cards then land on the EXACT homepage block-surface inset, never the gallery's own on top. */
   --surface-inset: 0;
 }
 

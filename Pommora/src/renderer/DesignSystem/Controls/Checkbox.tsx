@@ -56,8 +56,6 @@ export function Checkbox({
       aria-label={ariaLabel}
       className={cls}
       style={style}
-      // The row underneath is the checkbox's own larger target, so the press must not reach it
-      // twice — and a press on a control never arms whatever gesture the row carries.
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation()
