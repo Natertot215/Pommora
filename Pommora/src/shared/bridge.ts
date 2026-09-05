@@ -384,6 +384,8 @@ export interface Pushes {
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
+  // A host's document changed on disk under an open host — the host re-reads it.
+  'tiles:changed': TileHostRef
   // A guest webview's window.open, denied main-side and handed to the renderer's one open-link
   // adjudicator — popups and link clicks can never route differently.
   'web:popup': string
