@@ -33,6 +33,7 @@ import { ViewHost } from '@renderer/Views/ViewHost'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { resolveViewWrite, ViewTileScopeProvider } from '../ViewTileScope'
+import type { MutateEntry } from '../tileKinds'
 import { useSession } from '@renderer/store'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
@@ -238,10 +239,7 @@ export function ViewTile({
   onActivate,
 }: {
   entry: ViewTileEntry
-  mutateEntry: (
-    entryId: string,
-    fn: (raw: Record<string, unknown>) => Record<string, unknown>,
-  ) => void
+  mutateEntry: MutateEntry
   onActivate?: () => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
