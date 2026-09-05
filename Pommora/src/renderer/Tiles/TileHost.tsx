@@ -34,7 +34,12 @@ import { findCollection, findCollectionForSet, findSet } from '@renderer/Interfa
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
-import { inertTile, renderTile as renderSurface, tileSourceInfo } from './tileKinds'
+import {
+  inertTile,
+  type MutateEntry,
+  renderTile as renderSurface,
+  tileSourceInfo,
+} from './tileKinds'
 import { TileHandleMenu } from './TileHandleMenu'
 import { useTileDoc } from './useTileDoc'
 import './tile-base.css'
@@ -229,8 +234,8 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   // dismissal that cleared it — otherwise React tears the pane out before it can retract.
   const menu = useHeld(handleMenu, handleMenu !== null)
   // Every per-entry edit walks the RAW list, so foreign fields survive whatever it rewrites.
-  const mutateEntry = useCallback(
-    (id: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
+  const mutateEntry = useCallback<MutateEntry>(
+    (id, fn) => {
       saveTiles((cur) =>
         cur.map((raw) => (knownTile(raw)?.id === id ? fn(raw as Record<string, unknown>) : raw)),
       )

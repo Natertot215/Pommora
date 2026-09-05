@@ -1,8 +1,13 @@
 import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
-import type { TileEntry, TileHostRef, TileType } from '@shared/tiles'
+import { knownTile, type TileEntry, type TileHostRef, type TileType } from '@shared/tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
+
+export type MutateEntry = (
+  id: string,
+  fn: (raw: Record<string, unknown>) => Record<string, unknown>,
+) => void
 
 export interface TileRenderContext {
   entry: TileEntry
@@ -13,7 +18,7 @@ export interface TileRenderContext {
   connections?: ConnectionsApi
   suppressFlush: (id: string) => boolean
   pagesById: ReadonlyMap<string, ConnPage>
-  mutateEntry: (id: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => void
+  mutateEntry: MutateEntry
 }
 
 export interface TileSurface<E extends TileEntry = TileEntry> {
@@ -38,7 +43,6 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
         locked={entry.locked ?? false}
       />
     ),
-    sourceInfo: undefined,
   },
   page: {
     render: ({ entry, id, editing, beginEdit, connections, pagesById }) => {
@@ -58,8 +62,15 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
     sourceInfo: (entry, pagesById) => pagesById.get(entry.page_id),
   },
   view: {
+    // The surface may only rewrite an entry still of its own kind.
     render: ({ entry, id, beginEdit, mutateEntry }) => (
-      <ViewTile entry={entry} mutateEntry={mutateEntry} onActivate={() => beginEdit(id)} />
+      <ViewTile
+        entry={entry}
+        mutateEntry={(target, fn) =>
+          mutateEntry(target, (raw) => (knownTile(raw)?.type === entry.type ? fn(raw) : raw))
+        }
+        onActivate={() => beginEdit(id)}
+      />
     ),
   },
 }

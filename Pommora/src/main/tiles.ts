@@ -108,16 +108,16 @@ export async function createMarkdownTile(root: string, host: TileHostRef): Promi
  *  entries are never touched. The renderer splices the layout leaf FIRST — if this
  *  op is what fails, the leftover is an entry-less invisible orphan, never a dead box. */
 export async function removeTile(root: string, host: TileHostRef, tileId: string): Promise<void> {
-  let wasMarkdown = false
+  let wasFileBacked = false
   setTiles(host, (blocks) =>
     blocks.filter((b) => {
       const entry = knownTile(b)
       if (entry?.id !== tileId) return true
-      if (TILE_KINDS[entry.type].fileBacked) wasMarkdown = true
+      if (TILE_KINDS[entry.type].fileBacked) wasFileBacked = true
       return false
     }),
   )
-  if (wasMarkdown) await trashTileFile(root, host, tileId)
+  if (wasFileBacked) await trashTileFile(root, host, tileId)
 }
 
 /** Trash a markdown tile's backing file on ITS lock — ordered against a still-pending
@@ -138,16 +138,16 @@ async function flipTile(
   tileId: string,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  let wasMarkdown = false
+  let wasFileBacked = false
   setTiles(host, (blocks) =>
     blocks.map((b) => {
       const entry = knownTile(b)
       if (entry?.id !== tileId) return b
-      if (TILE_KINDS[entry.type].fileBacked) wasMarkdown = true
+      if (TILE_KINDS[entry.type].fileBacked) wasFileBacked = true
       return { ...(b as Record<string, unknown>), ...patch }
     }),
   )
-  if (wasMarkdown) await trashTileFile(root, host, tileId)
+  if (wasFileBacked) await trashTileFile(root, host, tileId)
 }
 
 export async function convertTileToPage(
@@ -182,7 +182,10 @@ export const TILE_COPY: Partial<
 
 export function copyEntry(raw: unknown): unknown {
   if (!isPlainObject(raw) || typeof raw.type !== 'string') return raw
-  return (TILE_COPY[raw.type as TileType] ?? ((r) => r))(raw)
+  // `hasOwn`, not a bare index — a foreign `type: 'toString'` would otherwise reach
+  // Object.prototype and rewrite the entry into whatever that returns.
+  if (!Object.hasOwn(TILE_COPY, raw.type)) return raw
+  return TILE_COPY[raw.type as TileType]?.(raw) ?? raw
 }
 
 /** Link View: the entry becomes a view embed carrying the COPIED config(s), each re-minted. */

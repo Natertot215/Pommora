@@ -12,6 +12,7 @@ import {
   type PagePickerItem,
   TILE_KINDS,
   type TileEntry,
+  type TileMenuSource,
   type TileStyle,
   type ViewPick,
   type ViewPickerItem,
@@ -88,15 +89,12 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
   }
   // A row with no source is shown and refused rather than dropped — the menu reads the same
   // whichever tile it belongs to.
-  for (const row of TILE_KINDS[entry.type].menuRows)
-    link(
-      row.label,
-      row.source === 'pages'
-        ? drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
-        : row.source === 'views'
-          ? drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
-          : [],
-    )
+  const drillFor = (source: TileMenuSource): ActionItem<TileAction>[] => {
+    if (source === 'pages') return drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
+    if (source === 'views') return drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
+    return []
+  }
+  for (const row of TILE_KINDS[entry.type].menuRows) link(row.label, drillFor(row.source))
 
   const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   items.push({
