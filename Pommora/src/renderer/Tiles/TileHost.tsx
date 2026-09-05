@@ -34,10 +34,8 @@ import { findCollection, findCollectionForSet, findSet } from '@renderer/Interfa
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
-import { MarkdownTile } from './Surfaces/MarkdownTile'
+import { inertTile, renderTile as renderSurface, tileSourceInfo } from './tileKinds'
 import { TileHandleMenu } from './TileHandleMenu'
-import { ViewTile } from './Surfaces/ViewTile'
-import { PageTile } from './Surfaces/PageTile'
 import { useTileDoc } from './useTileDoc'
 import './tile-base.css'
 
@@ -295,36 +293,18 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const renderTile = useCallback(
     (id: string) => {
       const entry = entries.get(id)
-      if (entry?.type === 'markdown')
-        return (
-          <MarkdownTile
-            host={host}
-            tileId={id}
-            editing={editingId === id}
-            onBeginEdit={setEditingId}
-            connections={connections}
-            suppressFlush={suppressFlush}
-            locked={entry.locked ?? false}
-          />
-        )
-      if (entry?.type === 'page') {
-        const page = pagesById.get(entry.page_id)
-        if (!page) return <div className="tile-inert" /> // dead reference — inert, space holds
-        return (
-          <PageTile
-            path={page.path}
-            editing={editingId === id}
-            onBeginEdit={() => setEditingId(entry.id)}
-            connections={connections}
-            locked={entry.locked ?? false}
-          />
-        )
-      }
-      if (entry?.type === 'view')
-        return (
-          <ViewTile entry={entry} mutateEntry={mutateEntry} onActivate={() => setEditingId(id)} />
-        )
-      return <div className="tile-inert" /> // no/foreign/unknown entry — space holds, nothing breaks
+      if (!entry) return inertTile()
+      return renderSurface({
+        entry,
+        id,
+        host,
+        editing: editingId === id,
+        beginEdit: setEditingId,
+        connections,
+        suppressFlush,
+        pagesById,
+        mutateEntry,
+      })
     },
     [entries, editingId, connections, suppressFlush, pagesById, host, mutateEntry],
   )
@@ -349,7 +329,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   if (!ready) return null
   // Resolved off the shared id→page map — never a per-embed walk.
   const menuEntry = handleMenu ? entries.get(handleMenu.id) : undefined
-  const menuPage = menuEntry?.type === 'page' ? pagesById.get(menuEntry.page_id) : undefined
+  const menuPage = menuEntry && tileSourceInfo(menuEntry, pagesById)
   const menuPageInfo = menuPage
     ? {
         title: menuPage.title,
@@ -370,7 +350,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   popNativeMenu.current = (id, el) => {
     const entry = entries.get(id)
     if (!entry || !tree) return
-    const page = entry.type === 'page' ? pagesById.get(entry.page_id) : undefined
+    const page = tileSourceInfo(entry, pagesById)
     const { items, picks } = tileMenuModel({
       entry,
       pageInfo: page && { title: page.title },

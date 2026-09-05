@@ -489,10 +489,10 @@ export const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { 
 
 **Verify — automated**
 
-- [ ] Red first: a `TileHost.test.tsx` case mounting a host document with one entry per kind plus one `{ type: 'widget' }` expects three surfaces and one `.tile-inert`. Fails before (the file does not exist), green after. The page kind with a dead `page_id` → `.tile-inert`.
-- [ ] `rg -n '\.type\s*[!=]==' src/renderer/Tiles/TileHost.tsx src/renderer/Tiles/TileHandleMenu.tsx` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] Crossing test: `TileHandleMenu` renders exactly the rows `tileMenuModel` returns for each kind (a test enumerating `TILE_KINDS` and comparing labels).
-- [ ] Full gate green.
+- [x] Red first: a `TileHost.test.tsx` case mounting a host document with one entry per kind plus one `{ type: 'widget' }` expects three surfaces and one `.tile-inert`. Fails before (the file does not exist), green after. The page kind with a dead `page_id` → `.tile-inert`.
+- [x] `rg -n '\.type\s*[!=]==' src/renderer/Tiles/TileHost.tsx src/renderer/Tiles/TileHandleMenu.tsx` → 0. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] Crossing test: `TileHandleMenu` renders exactly the rows `tileMenuModel` returns for each kind (a test enumerating `TILE_KINDS` and comparing labels).
+- [x] Full gate green.
 
 **Verify — user**
 
@@ -711,7 +711,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 4 — The vocabulary · `2544b2be`
 - [ ] **Phase 3** — The recipe
   - [x] Task 5 — The shared table · `b1fa7769`
-  - [ ] Task 6 — The renderer table · ``
+  - [x] Task 6 — The renderer table · `eb2ce5a1`
 - [ ] **Phase 4** — The document in the Nexus
   - [ ] Task 7 — `_tiles.json` · ``
   - [ ] Task 8 — Live reload · ``
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 6: `TileSurface.sourceInfo` returns the `ConnPage` itself rather than a four-field copy of it — the two menu sites read title, icon, path, and id off it, which is the page record. The crossing test compares the menu model's link rows against `TILE_KINDS` per kind (the presenter renders from the same rows by construction; `TileHandleMenu` itself mounts a PickerMenu and is not rendered in jsdom). The host mount test runs tree-less: markdown mounts its editor; page, view, and the foreign kind hold space.
 - Task 5: the kind-branch sweep reads 0 across `shared/` and `main/` after this task; the ten renderer sites in `TileHost.tsx` and `TileHandleMenu.tsx` are Task 6's Now list and fall there — the plan's Task 5 box claimed the whole tree a task early. `contextWrite.test.ts:99` asserts the four seeded types by value rather than through a kind comparison. `copyEntry(raw)` in `main/tiles.ts` is the one dispatcher over `TILE_COPY`; `duplicateTile` and `remint`'s copy both call it.
 - Gate 2: `'Unknown tile host.'` stands at three sites after Task 4; Task 7's routing of `tiles:get`/`tiles:save` through `tileHostAnd` brings it to one, where that task's box counts it. The comment ledgers had the four `blocks`→`tiles` keys and the two deleted `Sensors/` keys corrected by hand; files newer than the baseline rev carry no key, as every file added since that rev already does. The peer session's unformatted edit to `tile-grid.css` was formatted in place so the lint gate could run; its content is untouched.
 - Task 4: three Now counts read higher than the plan by Phase 1's own additions — `spm-*` 65 (the grid test's selectors), `SurfaceLayout` 75 (`settleInto`'s parameter type), `SurfaceView` 7 (the test's import) — every one → 0 after. `'blocks must be an array.'` keeps its wording with the `blocks` key it names; both rename in Task 7. `blockMoveChanges` (MarkdownPM's list-drag export, read by `Interface/pageEditor.ts`) joins the allowlist as MarkdownPM's own word. `zoomStyle` in `tileZoom.ts` is the one writer of the inline variable: a `Map` of one style object per step, so the memoized tile sees a stable identity.
