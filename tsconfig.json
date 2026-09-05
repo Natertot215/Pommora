@@ -1,9 +1,0 @@
-{
-  "files": [],
-  "references": [
-    { "path": "UIX" },
-    { "path": "Core" },
-    { "path": "Desktop/tsconfig.node.json" },
-    { "path": "Desktop/tsconfig.web.json" }
-  ]
-}
