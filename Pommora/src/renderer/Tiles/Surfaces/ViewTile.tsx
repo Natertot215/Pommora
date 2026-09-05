@@ -87,7 +87,6 @@ function usePillPresence(views: SavedView[]): {
     prevIdsRef.current = cur
   }, [idKey])
 
-  const beginExit = (id: string): void => setExiting(id)
   const onAnimEnd = (id: string, commitDelete: () => void): void => {
     if (exiting === id) {
       commitDelete()
@@ -96,7 +95,7 @@ function usePillPresence(views: SavedView[]): {
       setEntering((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
     }
   }
-  return { entering, exiting, beginExit, onAnimEnd }
+  return { entering, exiting, beginExit: setExiting, onAnimEnd }
 }
 
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
@@ -186,7 +185,6 @@ function EmbedTitle({
 }
 
 function ViewPill({
-  id,
   view,
   active,
   entering,
@@ -197,7 +195,6 @@ function ViewPill({
   onMenu,
   onAnimEnd,
 }: {
-  id: string
   view: SavedView
   active: boolean
   entering: boolean
@@ -208,7 +205,7 @@ function ViewPill({
   onMenu: (e: React.MouseEvent) => void
   onAnimEnd: () => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(id)
+  const { setNodeRef, style, handle } = useDragItem(view.id)
   return (
     <button
       ref={setNodeRef}
@@ -285,16 +282,12 @@ export function ViewTile({
   const patchEntry = (patch: Record<string, unknown>): void => {
     if (locked && !('locked' in patch) && !('active' in patch)) return
     mutateEntry(entry.id, (raw) => {
-      const next = { ...raw }
-      for (const [k, v] of Object.entries(patch)) {
-        if (v === undefined) delete next[k]
-        else next[k] = v
-      }
+      const next = { ...raw, ...patch }
+      for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k]
       return next
     })
   }
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
-  const toggleTitles = (): void => patchEntry({ view_button: labeled ? 'icon' : undefined })
   const writeConfig = (i: number, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
@@ -403,7 +396,7 @@ export function ViewTile({
       case 'color':
         return setColorFor(i)
       case 'titles':
-        return toggleTitles()
+        return patchEntry({ view_button: labeled ? 'icon' : undefined })
       case 'delete':
         return animate ? presence.beginExit(views[i].id) : deleteView(views[i].id)
       default:
@@ -477,7 +470,6 @@ export function ViewTile({
         {views.map((v, i) => (
           <ViewPill
             key={v.id}
-            id={v.id}
             view={v}
             active={i === index}
             entering={presence.entering.has(v.id)}

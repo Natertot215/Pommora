@@ -16,18 +16,19 @@ import { webGuestRetention } from './webRetention'
 import '../tile-base.css'
 import '../tile-title.css'
 
-/** What the guest element answers with once attached — the parting frame's only surface. */
-type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }
-
-/** The guest's webContents id, readable only once attached — the handle main zooms and pauses by. */
-type GuestWithId = HTMLElement & { getWebContentsId?: () => number }
+/** What the guest element answers with once attached — the parting frame, and the webContents id
+ *  main zooms and pauses by. Both read as absent before the attach. */
+type Guest = HTMLElement & {
+  capturePage?: () => Promise<{ toDataURL(): string }>
+  getWebContentsId?: () => number
+}
 
 // How long a capture may hang before the clip proceeds without a frame.
 const CAPTURE_DEADLINE_MS = 200
 
 /** Resolves through the store's format and cache, arming the shared fetch in Page Title mode
  *  exactly as a cell does. */
-export function useWebpageTitle(label: string, url: string): string {
+function useWebpageTitle(label: string, url: string): string {
   const display = useSession((s) => s.personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY)
   const title = useSession((s) => s.linkTitles[url])
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
@@ -105,7 +106,7 @@ export function WebTile({
       return
     }
     setEngaged(false)
-    const el = ref.current as CapturableGuest | null
+    const el = ref.current as Guest | null
     if (el && document.activeElement === el) {
       el.blur()
       refocusRef.current?.()
@@ -154,7 +155,7 @@ export function WebTile({
   // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change
   // or remount; 1.0 must still be sent — it clears a previous factor's map entry.
   useEffect(() => {
-    const wv = ref.current as GuestWithId | null
+    const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
       void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
@@ -166,7 +167,7 @@ export function WebTile({
   // Only ever pauses, never plays — returning to the tab leaves media where the pause left it.
   useEffect(() => {
     if (!tabInactive || !pauseOnTabSwitch) return
-    const wv = ref.current as GuestWithId | null
+    const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
       void window.nexus.webGuestMedia.pause(wv.getWebContentsId())

@@ -1,6 +1,6 @@
 ## Tiles — Implementation Plan
 
-> **Status:** executed — Nathan's pass pending · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
+> **Status:** closed · Spec: [[TilesV2-Spec]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Base: `043ee930`.
 
 **Goal**
@@ -51,7 +51,7 @@ This arc builds the substrate only. No inspector tab strip, no new tile kinds, n
 
 **Grounding** *(re-open these; don't cite them)*
 
-- [[Tiles — Decision Log]] — every ruling; Core vs Prospects.
+- [[TilesV2-Spec]] — every ruling; the seams, the inspector's shape, Prospects and Rejected.
 - `Pommora/src/renderer/Interactions/gesture.ts` — the engine: singleton, capture at activation, cancel → `onAbort` (all paths since `043ee930`), `swallowActiveEscape`.
 - `Pommora/src/renderer/Interactions/ResizeFrame.tsx` — `useResizeFrame(spec)` → `{ start, active, edges }`; `pull` reads `spec.max` as value or function.
 - `Pommora/src/renderer/SurfacePM/Sensors/pointerDrag.ts` — capture on down, element listeners, rAF-coalesced cumulative deltas, `onEnd(commit)`.
@@ -745,6 +745,9 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - Phase 1, Claude: the release after a cancelled drag is not a click — the handle menu no longer opens on the release after an Escape, and CalendarPicker's day cells no longer re-pick on the release after an aborted scrub. The swallow arms on the release itself (`suppressReleaseClick`), disarmed by a new press so a release lost to a blur does not eat a later click; the release listeners live on `document`, where the swallow lives, so a component's own window listeners stay identity-matched on unmount.
 - Phase 1, Claude: the grid's six never-passed props (`gap`, `minTilePx`, `bandZonePx`, `bottomPadPx`, `snapPx`, `feel`) are module knobs; the grid takes `GLIDE_FEEL` itself, so `TileLab` now runs the same feel as the hosts.
 - Phase 1, Claude: a webpage tile whose stored height exceeds what the window can hold renders capped, and a drag on its strip persists the capped measurement over the stored value. Pre-existing, adjacent to the Gate 1 ruling on the webpage tile's own re-render; whether the cap should also rewrite the store is Nathan's call, recorded under Open Against Later Tasks.
+
+- Phase 2, Claude: the vocabulary and the move held under two reviews and two attacks with no finding of the arc's own; the surfaces' simplification is behavior-neutral (ViewTile's `patchEntry` on a spread plus an undefined-strip, WebTile's one guest type, the dead `useWebpageTitle` and `WEB_RETAINED_MAX` gone, `ZOOM_STEPS` one derivation from `SCALE_STEPS`, `useSaveView` one closure, the two tile-body rules one `:is()`). The comment claiming the zoom Map buys memo skips was dropped: an entry write re-renders every tile through `renderTile`'s dependency on `entries`, by design.
+- Phase 2, Claude: `comment-ledger.mjs --unit` crashes on nine of fourteen units over casing drift in `comment-units.json`, and `--verify` skips files with no baseline key. Pre-existing at the arc's base, proven at three revisions; a tooling chore outside the arc, recorded for the next comment pass.
 
 ### Open Against Later Tasks
 
