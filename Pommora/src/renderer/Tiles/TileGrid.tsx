@@ -520,7 +520,10 @@ export function TileGrid({
   )
 
   const busy = resizingId !== null || tileDrag !== null || settle !== null
-  useEffect(() => onBusyChange?.(busy), [busy, onBusyChange])
+  useEffect(() => {
+    onBusyChange?.(busy)
+    return () => onBusyChange?.(false)
+  }, [busy, onBusyChange])
 
   const dragId = tileDrag?.id ?? settle?.id ?? null
   const interacting = resizingId !== null || tracking

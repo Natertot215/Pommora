@@ -87,22 +87,38 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   const heldPush = useRef(false)
   // Most recent wins: what the file holds after the pending local write is what the host shows.
   const reload = useCallback(async () => {
+    const target = hostRef.current
+    const key = tileHostKey(target)
     flush()
-    await lastSave.current
-    const r = await window.nexus.tiles.get(hostRef.current)
-    if (!r.ok || tileHostKey(hostRef.current) !== hostKeyRef.current) return
+    const saved = lastSave.current
+    await saved
+    const r = await window.nexus.tiles.get(target)
+    // A host swapped in place, or a local edit issued during the read (written or still in its
+    // debounce), leaves what came back stale — that edit's own echo pushes again, so dropping this
+    // one loses nothing.
+    if (
+      !r.ok ||
+      key !== tileHostKey(hostRef.current) ||
+      lastSave.current !== saved ||
+      pending.current.layout !== null
+    )
+      return
+    seedHostLock(target, r.value.locked)
+    // The app's own save echoes back too: bytes that match what the host shows change nothing.
+    if (
+      JSON.stringify(r.value.layout) === JSON.stringify(encodeLayout(liveLayout.current)) &&
+      JSON.stringify(r.value.tiles) === JSON.stringify(liveTiles.current)
+    )
+      return
     const layout = decodeLayout(r.value.layout) ?? emptyLayout()
     liveLayout.current = layout
     liveTiles.current = r.value.tiles
     setState({ layout, tiles: r.value.tiles, ready: true })
-    seedHostLock(hostRef.current, r.value.locked)
   }, [flush, seedHostLock])
-  const hostKeyRef = useRef(hostKey)
-  hostKeyRef.current = hostKey
   useEffect(
     () =>
       window.nexus.onTilesChanged((host) => {
-        if (tileHostKey(host) !== hostKeyRef.current) return
+        if (tileHostKey(host) !== tileHostKey(hostRef.current)) return
         if (busy.current) heldPush.current = true
         else void reload()
       }),
