@@ -48,9 +48,6 @@ export async function writeJson(filePath: string, value: unknown): Promise<void>
   await atomicWriteFile(filePath, serializeJson(value))
 }
 
-/** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
- *  `operation-failed` — never a fallback. The read half of `rmwJsonStrict`, exposed for
- *  callers that branch on the failure kind (the registry's seed-vs-unmigrated split). */
 type StrictRead =
   | { kind: 'ok'; value: Record<string, unknown> }
   | { kind: 'absent' }
@@ -74,8 +71,7 @@ async function readJsonStrictly(absPath: string): Promise<StrictRead> {
   }
 }
 
-export async function readJsonStrict(absPath: string): Promise<Result<Record<string, unknown>>> {
-  const read = await readJsonStrictly(absPath)
+function strictResult(read: StrictRead, absPath: string): Result<Record<string, unknown>> {
   switch (read.kind) {
     case 'ok':
       return ok(read.value)
@@ -86,6 +82,13 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
     case 'corrupt':
       return fail('operation-failed', `${read.why}: ${basename(absPath)}`)
   }
+}
+
+/** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
+ *  `operation-failed` — never a fallback. The read half of `rmwJsonStrict`, exposed for
+ *  callers that branch on the failure kind (the registry's seed-vs-unmigrated split). */
+export async function readJsonStrict(absPath: string): Promise<Result<Record<string, unknown>>> {
+  return strictResult(await readJsonStrictly(absPath), absPath)
 }
 
 /** STRICT read-modify-write — the ONE way to write a JSON file based on a prior read, taken
@@ -115,7 +118,7 @@ export function rmwJsonStrict(
     let base: Record<string, unknown>
     if (read.kind === 'ok') base = read.value
     else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
-    else return (await readJsonStrict(absPath)) as Result<Record<string, unknown>>
+    else return strictResult(read, absPath)
     const next = mutate(base)
     await writeJson(absPath, next)
     return ok(next)

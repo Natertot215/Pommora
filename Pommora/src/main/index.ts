@@ -55,7 +55,7 @@ import {
 import { EMPTY_DOC, readTileDocAt, writeTileDocAt } from './tileDoc'
 import { migrateTileRows } from './tilesMigrate'
 import { isUlid } from './ids'
-import { tilePatchProblem, coerceTileHost, type TileDoc, type TileDocPatch } from '@shared/tiles'
+import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
 import { DEFAULT_TRASH_MODE } from '@shared/types'
@@ -683,7 +683,7 @@ const tileHostAnd = async (
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
   const h = coerceTileHost(host)
-  const dir = h && (await hostDir(root, h))
+  const dir = h ? await hostDir(root, h) : null
   if (!dir) return fail('not-found', 'Unknown tile host.')
   if (tileId !== undefined && (typeof tileId !== 'string' || !isUlid(tileId)))
     return fail('not-found', 'Invalid tile id.')
@@ -1478,7 +1478,8 @@ serveBridge(
       // away on its own.
       fn: async (host: unknown) => {
         const ctx = await tileHostAnd(host)
-        if (!ctx.ok) return ctx.error.code === 'not-found' ? ok(EMPTY_DOC) : ctx
+        if (!ctx.ok)
+          return coerceTileHost(host) && ctx.error.code === 'not-found' ? ok(EMPTY_DOC) : ctx
         return ok(await readTileDocAt(ctx.value.dir))
       },
     },
@@ -1492,9 +1493,11 @@ serveBridge(
           return fail('operation-failed', 'Invalid tile-doc patch.')
         const problem = tilePatchProblem(patch as TileDocPatch)
         if (problem) return fail('operation-failed', problem)
-        return writeTileDocAt(ctx.value.dir, (cur: TileDoc) => ({
-          ...cur,
-          ...(patch as TileDocPatch),
+        const p = patch as TileDocPatch
+        return writeTileDocAt(ctx.value.dir, (cur) => ({
+          layout: 'layout' in p ? p.layout : cur.layout,
+          tiles: 'tiles' in p ? (p.tiles as unknown[]) : cur.tiles,
+          locked: 'locked' in p ? p.locked === true : cur.locked,
         }))
       },
     },
