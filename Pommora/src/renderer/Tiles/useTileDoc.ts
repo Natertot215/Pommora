@@ -21,6 +21,8 @@ export interface TileDocSession extends TileDocState {
   commitLayout: (update: TileLayout | ((cur: TileLayout) => TileLayout)) => void
   refreshEntries: () => void
   saveTiles: (update: unknown[] | ((cur: unknown[]) => unknown[])) => void
+  /** A gesture in flight holds a disk change back until it settles. */
+  setBusy: (busy: boolean) => void
 }
 
 export function useTileDoc(host: TileHostRef): TileDocSession {
@@ -42,6 +44,14 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   // Async continuations (IPC .then) must never build on a render-captured layout — a gesture
   // committing during the await would be silently overwritten.
   const liveLayout = useRef<TileLayout>(state.layout)
+  // The last save's promise: a disk change is read only after the local write it may race has
+  // landed, so the user's own last action never silently reverts.
+  const lastSave = useRef<Promise<unknown>>(Promise.resolve())
+
+  // Same reason as commitLayout — a menu or IPC window between capture and write must not
+  // clobber concurrent changes.
+  const liveTiles = useRef<unknown[]>(state.tiles)
+  liveTiles.current = state.tiles
 
   // Host IDENTITY keys the load — two Spaces share a kind, so kind alone would serve one
   // Space's doc to another after an in-place host swap.
@@ -64,11 +74,50 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   const flush = useCallback(() => {
     const p = pending.current
     if (p.timer) clearTimeout(p.timer)
-    if (p.layout) void window.nexus.tiles.save(hostRef.current, { layout: encodeLayout(p.layout) })
+    if (p.layout)
+      lastSave.current = window.nexus.tiles.save(hostRef.current, {
+        layout: encodeLayout(p.layout),
+      })
     pending.current = { timer: null, layout: null }
   }, [])
 
   useEffect(() => flush, [flush])
+
+  const busy = useRef(false)
+  const heldPush = useRef(false)
+  // Most recent wins: what the file holds after the pending local write is what the host shows.
+  const reload = useCallback(async () => {
+    flush()
+    await lastSave.current
+    const r = await window.nexus.tiles.get(hostRef.current)
+    if (!r.ok || tileHostKey(hostRef.current) !== hostKeyRef.current) return
+    const layout = decodeLayout(r.value.layout) ?? emptyLayout()
+    liveLayout.current = layout
+    liveTiles.current = r.value.tiles
+    setState({ layout, tiles: r.value.tiles, ready: true })
+    seedHostLock(hostRef.current, r.value.locked)
+  }, [flush, seedHostLock])
+  const hostKeyRef = useRef(hostKey)
+  hostKeyRef.current = hostKey
+  useEffect(
+    () =>
+      window.nexus.onTilesChanged((host) => {
+        if (tileHostKey(host) !== hostKeyRef.current) return
+        if (busy.current) heldPush.current = true
+        else void reload()
+      }),
+    [reload],
+  )
+  const setBusy = useCallback(
+    (next: boolean) => {
+      busy.current = next
+      if (!next && heldPush.current) {
+        heldPush.current = false
+        void reload()
+      }
+    },
+    [reload],
+  )
 
   const setLayout = useCallback(
     (layout: TileLayout) => {
@@ -103,18 +152,13 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     })
   }, [])
 
-  // Same reason as commitLayout — a menu or IPC window between capture and write must not
-  // clobber concurrent changes.
-  const liveTiles = useRef<unknown[]>(state.tiles)
-  liveTiles.current = state.tiles
-
   /** Write the entry list (per-entry field edits, e.g. style) — immediate. */
   const saveTiles = useCallback((update: unknown[] | ((cur: unknown[]) => unknown[])) => {
     const next = typeof update === 'function' ? update(liveTiles.current) : update
     liveTiles.current = next
     setState((s) => ({ ...s, tiles: next }))
-    void window.nexus.tiles.save(hostRef.current, { tiles: next })
+    lastSave.current = window.nexus.tiles.save(hostRef.current, { tiles: next })
   }, [])
 
-  return { ...state, setLayout, commitLayout, refreshEntries, saveTiles }
+  return { ...state, setLayout, commitLayout, refreshEntries, saveTiles, setBusy }
 }

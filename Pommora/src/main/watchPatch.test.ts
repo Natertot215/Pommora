@@ -223,6 +223,35 @@ describe('classifyEvent', () => {
     )
     expect(kind(ev('change', '.nexus', 'settings.json'))).toBe('settings-leaf')
     expect(kind(ev('change', '.nexus', 'homepage.json'))).toBe('homepage-leaf')
+    expect(
+      classifyEvent(tree, root, ev('change', '.nexus', 'homepage', '_tiles.json'), scope()),
+    ).toEqual({
+      kind: 'tiles-leaf',
+      host: { kind: 'homepage' },
+    })
+    expect(
+      classifyEvent(
+        tree,
+        root,
+        ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_tiles.json'),
+        scope(),
+      ),
+    ).toEqual({ kind: 'tiles-leaf', host: { kind: 'space', id: tree.contexts[0].spaces[0].id } })
+    expect(kind(ev('change', '.nexus', 'contexts', 'Areas', 'Nowhere', '_tiles.json'))).toBe(
+      'ignored',
+    )
+    expect(
+      kind(
+        ev(
+          'add',
+          '.nexus',
+          'contexts',
+          'Areas',
+          'Home',
+          '_tiles.json.bad-01ARZ3NDEKPSV4RRFFQ69G5FAV',
+        ),
+      ),
+    ).toBe('ignored')
     expect(kind(ev('change', '.nexus', 'crops.json'))).toBe('crops-leaf')
     expect(kind(ev('add', 'Loose', 'second.md'))).toBe('index-only')
     expect(kind(ev('add', 'root-note.md'))).toBe('index-only')

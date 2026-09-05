@@ -31,6 +31,7 @@ let root: Root
 
 beforeEach(() => {
   stubEditorBridge({
+    onTilesChanged: () => () => {},
     tiles: {
       get: async () => ({ ok: true, value: doc }),
       save: async () => ({ ok: true, value: null }),

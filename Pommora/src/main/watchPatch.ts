@@ -16,7 +16,16 @@ import { indexWrittenPage } from './indexSeed'
 import { noteExternalEdit } from './CRUD/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
-import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig, relPosix } from './paths'
+import {
+  HOMEPAGE_HOST_DIRNAME,
+  NEXUS_CONFIG_FILES,
+  SIDECAR_FILENAME,
+  SPACE_SIDECAR,
+  TILE_DOC_FILENAME,
+  nexusConfig,
+  relPosix,
+} from './paths'
+import type { TileHostRef } from '@shared/tiles'
 import {
   parseViews,
   readCropLeaves,
@@ -56,6 +65,9 @@ export type WatchClass =
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
   | { kind: 'crops-leaf' }
+  /** A host's `_tiles.json` moved under an open host; the tree holds no document, so nothing
+   *  patches — the settle pushes the host and it re-reads. */
+  | { kind: 'tiles-leaf'; host: TileHostRef }
   | { kind: 'asset'; rel: string; event: WatchEventName }
   | { kind: 'index-only'; rel: string }
   | { kind: 'ignored' }
@@ -129,6 +141,17 @@ export function classifyEvent(
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
   if (segs[0] === NEXUS_DIR) {
+    // A quarantined document is the writer's record, never a change to anything mounted.
+    if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
+    if (name === TILE_DOC_FILENAME) {
+      if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME)
+        return { kind: 'tiles-leaf', host: { kind: 'homepage' } }
+      const space =
+        segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? findSpace(tree, dirRel) : null
+      return space
+        ? { kind: 'tiles-leaf', host: { kind: 'space', id: space.id } }
+        : { kind: 'ignored' }
+    }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`) return { kind: 'crops-leaf' }
@@ -256,6 +279,8 @@ async function applyOne(
       return patchSpaceFromDisk(root, c.dirRel)
     case 'settings-leaf':
       return applySettingsLeaf(root, watched)
+    case 'tiles-leaf':
+      return 'ok'
     case 'homepage-leaf':
       return patchHomepageFromDisk(root)
     case 'crops-leaf':
