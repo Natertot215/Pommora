@@ -180,19 +180,23 @@ export interface DirEntry {
 export interface FileStat { mtimeMs: number; size: number; kind: 'file' | 'directory' }
 export class HostNotFound extends Error { readonly code = 'not-found' as const }
 export interface EngineHost {
-  readText(abs: string): Promise<string>                // HostNotFound when absent
-  readBytes(abs: string): Promise<Uint8Array>           // HostNotFound when absent
-  readDir(abs: string): Promise<DirEntry[]>             // [] when unreadable; sorted by name
+  readText(abs: string): Promise<string>
+  readBytes(abs: string): Promise<Uint8Array>
+  readDir(abs: string): Promise<DirEntry[]>
   stat(abs: string): Promise<FileStat | null>
-  writeText(abs: string, text: string): Promise<void>   // atomic; the host's own write (desktop records the echo)
-  applyRemote(abs: string, bytes: Uint8Array, mtimeMs: number): Promise<void> // atomic, no echo, parents created, mtime restored
-  mkdir(abs: string): Promise<void>                     // recursive; existing is not an error
-  rename(from: string, to: string): Promise<void>       // the host's own move (desktop records both echoes)
-  remove(abs: string): Promise<void>                    // file or empty directory; absent is not an error; no echo
+  writeText(abs: string, text: string): Promise<void>
+  applyRemote(abs: string, bytes: Uint8Array, mtimeMs: number): Promise<void>
+  mkdir(abs: string): Promise<void>
+  rename(from: string, to: string): Promise<void>
+  remove(abs: string): Promise<void>
   lock<T>(key: string, fn: () => Promise<T>): Promise<T>
 }
 export function setHost(h: EngineHost): void
-export function host(): EngineHost                      // throws when unbound: a boot-order bug, never a silent no-op
+export function host(): EngineHost
+// Contract, pinned by host.test.ts and engineHost.test.ts rather than by comments: readText/readBytes throw HostNotFound when
+// absent; readDir answers [] when unreadable and is name-sorted; writeText and rename are the host's own writes (the desktop
+// records their echoes); applyRemote is atomic, records no echo, creates parents, restores mtimeMs; mkdir is recursive and
+// idempotent; remove tolerates absence and records no echo; host() throws when unbound.
 ```
 
 ```ts
@@ -207,8 +211,9 @@ export function normalize(p: string): string
 ```
 
 ```ts
-// src/engine/sha256.ts (new) + sha256.test.ts — pure; tested equal to node:crypto on 6 vectors
-export function sha256Hex(text: string): string
+// src/engine/sha256.ts (new) + sha256.test.ts — pure and synchronous, the one hash in the engine: adoptedId (hot, synchronous read
+// paths) and the sync base record (file bytes) both use it; tested equal to node:crypto on 6 vectors for both input kinds
+export function sha256Hex(data: string | Uint8Array): string
 ```
 
 ```ts
@@ -347,12 +352,12 @@ export function mutateRegistry<T>(root: string, fn: …): Promise<T> {
 // src/main/IO/pageFile.ts:193 readFile(absPath, 'utf8') · :202 atomicWriteFile(absPath, written)
 ```
 
-**Becomes** — `src/engine/IO/{pageFile,sidecarIO,propertiesRegistry}.ts`, `src/engine/{folderKind,readNexus,readPage}.ts`, tests moved; `serializeOnFile(...)` → `host().lock(...)` at the three sites; `readFile` → `host().readText` with `HostNotFound` mapped where `ENOENT` was; `mkdir` → `host().mkdir`; `readSidecar` in `readNexus` keeps its lenient null; every main importer rewritten to `@engine/...`. `readNexus`'s exports consumed outside the moving set (`splitFrontmatter` 17, `readNexus` 12, `readSettingsLeaves` 4, `scopeOf` 4, `SettingsLeaves`, `readPageRecord`, `excludedFolderRefusal`, `assetDirRefusal`, `parseViews`, `readCropLeaves`, `readHomepageLeaves`, `readSpaceOrders`, `resolveAssignedSchema`, `resolveEntityContexts`) keep their names and signatures.
+**Becomes** — `src/engine/IO/{pageFile,sidecarIO,propertiesRegistry}.ts`, `src/engine/{folderKind,readNexus,readPage}.ts`, tests moved; `serializeOnFile(...)` → `host().lock(...)` at the three sites; `readFile` → `host().readText` with `HostNotFound` mapped where `ENOENT` was; `mkdir` → `host().mkdir`; `readSidecar` in `readNexus` keeps its lenient null; every main importer rewritten to `@engine/...`. Two read halves the phone's boot needs ride along: `src/engine/assetMap.ts` takes `indexable`, `buildAssetMap`, `patchAssetMap` from `src/main/assetMap.ts` (the held map and its push stay in main), and `src/engine/IO/navigationFile.ts` takes `readNavigationFile` and the ref gate from `src/main/IO/navigationFile.ts` (the write and the recents row stay). `readNexus`'s exports consumed outside the moving set (`splitFrontmatter` 17, `readNexus` 12, `readSettingsLeaves` 4, `scopeOf` 4, `SettingsLeaves`, `readPageRecord`, `excludedFolderRefusal`, `assetDirRefusal`, `parseViews`, `readCropLeaves`, `readHomepageLeaves`, `readSpaceOrders`, `resolveAssignedSchema`, `resolveEntityContexts`) keep their names and signatures.
 
 **Verify — automated**
 
 - [ ] Full gate green; counts unmoved.
-- [ ] `rg -l "from '(\.\./)*\.?/?(IO/pageFile|sidecarIO|IO/propertiesRegistry|folderKind|readNexus|readPage)'" src/main` → 0. Control: `rg -l "from '@engine/readNexus'" src/main` → 35 or more.
+- [ ] `rg -l "from '(\.\./)*\.?/?(IO/pageFile|sidecarIO|IO/propertiesRegistry|folderKind|readNexus|readPage)'" src/main` → 0; `rg -n "buildAssetMap|readNavigationFile" src/main --glob '!*.test.ts'` shows only engine imports and their callers. Control: `rg -l "from '@engine/readNexus'" src/main` → 35 or more.
 - [ ] `rg -n "from 'node:" src/engine` → 0 (test files excluded with `-g '!*.test.ts'`). Control: `rg -n "from '@shared/" src/engine | wc -l` → 20 or more.
 - [ ] Crossing test: `writePageFile` on a missing file starts from empty frontmatter and on an unreadable path refuses — `pageFile.test.ts` covers both with the Node host (`HostNotFound` versus a directory-as-file read).
 
@@ -386,8 +391,10 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
 **Becomes**
 
 ```ts
-// src/engine/CRUD/page.ts — createPage, renamePage, movePage, updatePageBody; relocate = host().lock + host().rename
-// src/engine/CRUD/util.ts — invalidName, invalidContextTitle, sweepAdmitsBody, sweepAdmits, pathExists re-export
+// src/engine/CRUD/page.ts — createPage, renamePage, movePage, updatePageBody; relocate = host().lock + host().rename; plus the one create sequence both hosts run:
+export async function createPageInOrder(parentDir: string, name: string, opts: CreateOpts, order?: readonly string[]): Promise<Result<{ id: string; path: string }>>
+//   createDisambiguated → createPage → setChildOrder(parentDir, 'page_order', order with NEW_PAGE_SLOT replaced) when order is given; mutate.ts calls it and keeps its index and values side effects
+// src/engine/CRUD/util.ts — invalidName, invalidContextTitle, sweepAdmitsBody, sweepAdmits (the dead pathExists re-export at util.ts:9 is dropped; its 0 importers stay 0)
 // src/engine/CRUD/reorder.ts — setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder (host().mkdir; rmwJsonStrict from the engine)
 // src/engine/IO/sidecarIO.ts gains updateFolderSidecar (moved from CRUD/folderEntity.ts; the one sidecar patch primitive) — folderEntity keeps create/rename/move in main
 // src/engine/disambiguate.ts — createDisambiguated (pure)
@@ -403,7 +410,7 @@ export async function loadValues(rootPath, containerRelPath, pageIds?): Promise<
 
 **Verify — automated**
 
-- [ ] Full gate green; counts unmoved (`page.test.ts` moves; `loadValues.test.ts` splits into an engine half taking a file list and a main half proving the corpus resolution, same total).
+- [ ] Full gate green; counts unmoved plus one (`page.test.ts` moves and gains the `createPageInOrder` case: `[NEW_PAGE_SLOT, existingId]` leaves `page_order` `[newId, existingId]`, a taken name lands as `Name 2`; `loadValues.test.ts` splits into an engine half taking a file list and a main half proving the corpus resolution, same total); `rg -n "createDisambiguated|setChildOrder" src/main/mutate.ts` → the createPage arm calls neither directly.
 - [ ] `rg -l "from '(\.\./)*\.?/?(CRUD/page|CRUD/util|CRUD/loadValues|CRUD/reorder|disambiguate)'" src/main` → 0 excluding `pageProperty.ts` and `loadValues.ts` themselves; `rg -n "updateFolderSidecar" src/main/CRUD/folderEntity.ts` → 1 (the import). Control: `rg -l "updatePageProperty" src/main` → 6.
 - [ ] `rg -n "from 'node:" src/engine -g '!*.test.ts'` → 0. Control as Task 4.
 
@@ -429,32 +436,29 @@ export const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null)
 // patchSpaceFromDisk, patchSettingsFromDisk, patchTopOrderFromDisk, patchSpaceOrderFromDisk, patchHomepageFromDisk, patchCropsFromDisk
 ```
 
-**Becomes**
+**Becomes** — the holder binds once per process like the host, so every patcher keeps its signature and main's callers keep their imports (now from the engine):
 
 ```ts
-// src/engine/treePatch.ts (new home; classifyEvent, WatchEvent, WatchClass, and every patch*FromDisk) + treePatch.test.ts
+// src/engine/treePatch.ts (new home; classifyEvent, WatchEvent, WatchClass, applyPatch, and every patch*FromDisk) + treePatch.test.ts
 export interface TreeHolder {
   get(): NexusTree | null
   patch(fn: (t: NexusTree) => NexusTree | null): NexusTree | null
 }
+export function setTreeHolder(h: TreeHolder): void
 export function classifyEvent(tree: NexusTree, root: string, ev: WatchEvent, scope: WatchScope): WatchClass
-export const applyPatch = (holder: TreeHolder, root: string, fn: …): 'ok' | 'refresh'
-export function patchPageFromDisk(holder: TreeHolder, root: string, rel: string): Promise<'ok' | 'refresh'>
-// …and the six other patch*FromDisk, each taking the holder first
-// src/main/watchPatch.ts — keeps applyWatchEvents, applyOne (index + history side effects), touchesCorpus,
-// and the bound adapters main's callers use:
-export const liveHolder: TreeHolder = { get: getLiveTree, patch: patchLiveTree }
-export const patchPageFromDisk = (root: string, rel: string) => enginePatchPage(liveHolder, root, rel)
-// (one line per patcher; index.ts and mutatePatch.ts keep their imports)
+export const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null): 'ok' | 'refresh'   // unchanged signature
+export function patchPageFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'>              // unchanged; the six others likewise
+// src/main/liveTree.ts — bindLiveTree(): setTreeHolder({ get: getLiveTree, patch: patchLiveTree }); called beside bindNodeHost at boot and in the test setup
+// src/main/watchPatch.ts — keeps applyWatchEvents, applyOne (index + history side effects), touchesCorpus; imports the patchers from @engine/treePatch
 ```
 
-**Assumed by:** Task 30 (the phone's holder).
+**Assumed by:** Task 30 (the phone binds its own holder).
 
 **Verify — automated**
 
-- [ ] `watchPatch.test.ts` splits: classification and patch cases move to `treePatch.test.ts` with a memory holder; the `applyOne` side-effect cases stay. Total unmoved.
+- [ ] `watchPatch.test.ts` splits: classification and patch cases move to `treePatch.test.ts` binding a memory holder in `beforeEach`; the `applyOne` side-effect cases stay. Total unmoved.
 - [ ] Full gate green.
-- [ ] `rg -n "getLiveTree|patchLiveTree" src/engine` → 0. Control: `rg -n "liveHolder" src/main/watchPatch.ts` → 8 or more.
+- [ ] `rg -n "getLiveTree|patchLiveTree" src/engine` → 0. Control: `rg -n "from '@engine/treePatch'" src/main` → 3 or more (`watchPatch.ts`, `index.ts`, `mutatePatch.ts`).
 
 **Verify — user**
 
@@ -477,7 +481,7 @@ export const patchPageFromDisk = (root: string, rel: string) => enginePatchPage(
 
 ### Phase 2 — Host seams the phone shares
 
-Refactor plus removal. Budget: preload shrinks from 229 lines to about 40; the shared table is about 200; net near zero.
+Refactor plus removal. Budget: preload shrinks from 195 lines to about 40; the shared table is about 200 and the scope map about 30; net about +45.
 
 #### Task 7: The api shape becomes a shared table
 
@@ -485,7 +489,7 @@ Refactor plus removal. Budget: preload shrinks from 229 lines to about 40; the s
 
 **Why:** The preload's hand-grouped `api` is the only definition of `window.nexus`'s shape; a second host cannot re-derive 150 keys without drifting. One table, two binders.
 
-**Now** — `src/preload/index.ts` 229 lines; `rg -o "window\.nexus\." src/renderer | wc -l` → 216; `src/preload/index.d.ts` declares `Window.nexus: NexusApi` from the preload:
+**Now** — `src/preload/index.ts` 195 lines; `rg -o "window\.nexus\." src/renderer | wc -l` → 216; `src/preload/index.d.ts` declares `Window.nexus: NexusApi` from the preload; `Scope` (17 members) lives in `src/main/Database/localState.ts:14-31`, a main-only module, and `index.ts:1125-1198` hand-wires each scope's get/set pair; 26 handlers carry `kind: 'menu'`:
 
 ```ts
 // src/preload/index.ts:33-36
@@ -500,10 +504,11 @@ const api = {
 
 ```ts
 // src/shared/nexusApi.ts (new) + nexusApi.test.ts
-type Leaf = { ask: keyof Asks } | { tell: keyof Tells } | { on: keyof Pushes }
+type Leaf = { ask: keyof Asks; menu?: true } | { tell: keyof Tells } | { on: keyof Pushes }   // menu: the reply is a picked action or null
 export const NEXUS_API = {
   state: { ask: 'nexus:state' }, choose: { ask: 'nexus:choose' }, openPage: { ask: 'page:open' },
   folds: { get: { ask: 'folds:get' }, set: { ask: 'folds:set' } },
+  tableMenu: { ask: 'table-menu', menu: true },
   setEditorFormatState: { tell: 'editor:format-state' }, onMenuAction: { on: 'menu:action' },
   // …every key the preload holds today, in the same grouping; the table is the wire truth's shape
 } as const
@@ -518,17 +523,20 @@ export interface HostExtras {
 }
 export type NexusApi = Bound<typeof NEXUS_API> & HostExtras
 export function buildApi(dial: Dialer, extras: HostExtras): NexusApi
-/** Channels whose reply is a picked action or null — a host with no menus answers null. */
-export const MENU_ASKS: readonly (keyof Asks)[]
+export function menuAsks(): ReadonlySet<keyof Asks>      // derived from the table's menu flags
 // src/preload/index.ts — the three dialers plus contextBridge.exposeInMainWorld('nexus', buildApi({ask, tell, on}, {openDropped, personalization}))
 // src/preload/index.d.ts — imports NexusApi from '@shared/nexusApi'
+// src/shared/localState.ts (new): the Scope union moves here from main, plus the one channel ↔ scope pairing
+export type Scope = 'folds' | 'activeView' | 'viewOrder' | 'headingCols' | 'headingIcon' | 'citations' | 'embedHeights' | 'embedZooms' | 'aliases' | 'linkTitle' | 'blockDoc' | 'tabs' | 'windows' | 'recents' | 'record' | 'glancePane' | 'devicePrefs'
+export const SCOPE_ASKS: Readonly<Record<Scope, { get?: keyof Asks; set?: keyof Asks }>>   // e.g. activeView: { get: 'activeViews:get', set: 'activeViews:set' }
+// src/main/Database/localState.ts imports Scope from shared; main's validators in index.ts stay where they are
 ```
 
 **Assumed by:** Task 29 (the phone binds the same table).
 
 **Verify — automated**
 
-- [ ] Red first: `nexusApi.test.ts` — `buildApi` with a recording dialer yields every leaf as a function, nested groups intact, and calling `api.folds.get()` dials `'folds:get'`; `MENU_ASKS` contains every channel whose reply type is `X | null` (asserted by a type-level test against `Asks`). Expect module-not-found, then green.
+- [ ] Red first: `nexusApi.test.ts` — `buildApi` with a recording dialer yields every leaf as a function, nested groups intact, and calling `api.folds.get()` dials `'folds:get'`; `menuAsks()` has 26 members, one per `kind: 'menu'` handler (the count re-derived: `rg -c "kind: 'menu'" src/main/index.ts`); every `SCOPE_ASKS` channel exists in `Asks` (a type-level check). Expect module-not-found, then green.
 - [ ] Full gate green; `npm run typecheck:web` proves every renderer call site still types against the table (216 sites; a dropped key is a compile error).
 - [ ] `wc -l src/preload/index.ts` → under 50. Control: `rg -c "ask: '" src/shared/nexusApi.ts` → 140 or more.
 - [ ] The dev app launched once: boot, a page, a native menu, a settings toggle all work (preload does not hot-reload; restart the dev process).
@@ -558,7 +566,6 @@ export const assetUrl = (rel: string): string =>
 export type AssetUrlBuilder = (rel: string) => string
 const desktopAssetUrl: AssetUrlBuilder = (rel) => `nexus-asset://nexus/${rel.split('/').map(encodeURIComponent).join('/')}`
 let builder = desktopAssetUrl
-/** A host with another scheme installs its builder before the first render. */
 export function installAssetUrl(fn: AssetUrlBuilder): void
 export const assetUrl = (rel: string): string => builder(rel)
 ```
@@ -640,16 +647,22 @@ export interface ItemRecord { itemId: string; version: number; mtimeMs: number; 
 export interface ChangesPage { changes: ItemRecord[]; cursor: number; hasMore: boolean }
 export interface VersionRow extends ItemRecord { head: boolean; storedAt: number }
 export interface Session { token: string; deviceId: string; email: string }
+export interface AccountFields { server: string; email: string; deviceName: string }
+export interface AccountStatus extends AccountFields { signedIn: boolean }
+export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; vaultId: string | null; lastSync: number | null; error?: string; pending: number }
+export interface SyncReport { pulled: number; pushed: number; tombstoned: number; conflicts: { rel: string; kept: 'local' | 'remote' }[]; skipped: { rel: string; why: 'too-large' | 'decrypt' | 'case-collision' | 'invalid-path' }[]; cursor: number }
 export type SyncErrorCode = 'unauthorized' | 'not-found' | 'conflict' | 'resync' | 'too-large' | 'exists' | 'signup-closed' | 'bad-request'
+export const STATUS_BY_CODE: Readonly<Record<SyncErrorCode, number>>   // 401 · 404 · 409 · 409 · 413 · 409 · 403 · 400 — the server answers by it, the client inverts it once
 // Blob endpoints carry bytes, not JSON: PUT /vaults/:id/items/:itemId with headers X-Base-Version (number or 'none'),
 // X-Mtime, X-Deleted (0|1), X-Retain-Only (0|1); body = IV || ciphertext || tag. GET answers the same headers plus X-Version.
+// Since 409 serves three codes, every error body is { code: SyncErrorCode, message } and the client reads the code, not the status.
 ```
 
-**Assumed by:** Tasks 11–19, 21, 30.
+**Assumed by:** Tasks 11–19, 21, 22, 30.
 
 **Verify — automated**
 
-- [ ] `npm run typecheck` green (the file has no runtime code; the engine and node projects both include `src/shared`).
+- [ ] `npm run typecheck` green (the engine, node, and sync projects all include `src/shared`); `syncProtocol.test.ts` asserts `STATUS_BY_CODE` covers every code.
 
 **Verify — user**
 
@@ -669,12 +682,12 @@ export type SyncErrorCode = 'unauthorized' | 'not-found' | 'conflict' | 'resync'
 Sync/
   package.json          { "name": "pommora-sync", "private": true, "type": "module", "engines": { "node": ">=24.15" },
                           "scripts": { "start": "node src/index.ts" } }   — no dependencies
-  .env-sample           DATA_DIR=./data  PORT=8642  SIGNUP=open  BODY_LIMIT_BYTES=52428800
+  .env-sample           DATA_DIR=./data  PORT=8642  SIGNUP=open
   Dockerfile            multistage node:24-slim, tini, non-root `node`, COPY src, CMD ["node","src/index.ts"]
   src/index.ts          reads env, opens the db, listens
-  src/env.ts            parseEnv(process.env, defaults) → { dataDir, port, signup: 'open'|'closed', bodyLimit }; a non-numeric number throws
+  src/env.ts            parseEnv(process.env, defaults) → { dataDir, port, signup: 'open'|'closed' }; a non-numeric number throws
   src/db.ts             openDb(path): DatabaseSync with WAL, busy timeout 5000, limits.length 64 MiB; applySchema (additive, version row)
-  src/http.ts           route table, JSON body reader with the byte cap, bytes body reader, CORS (reflect Origin, preflight, max-age 86400), error → status map
+  src/http.ts           route table, JSON body reader and bytes body reader both capped at MAX_ITEM_BYTES, CORS (reflect Origin, preflight, max-age 86400), errors answered through STATUS_BY_CODE
   src/app.ts            createApp(db, env) → the request handler (what tests import); index.ts wraps it in http.createServer
 ```
 
@@ -725,7 +738,6 @@ CREATE TABLE IF NOT EXISTS versions (vault_id TEXT NOT NULL, item_id TEXT NOT NU
 // POST /auth/register {email,password,deviceName} → 201 Session | 403 signup-closed | 409 exists
 // POST /auth/login    {email,password,deviceName} → 200 Session | 401 unauthorized
 // POST /auth/logout   (Bearer) → 204; the token row is revoked
-// GET  /auth/session  (Bearer) → 200 { email, deviceId, deviceName }
 export function hashPassword(password: string): string      // scrypt N=2^17 r=8 p=1, 16-byte salt, `scrypt$<salt>$<hash>` base64
 export function verifyPassword(password: string, stored: string): boolean   // timingSafeEqual
 export function requireSession(db, req): { userId: string; deviceId: string }  // throws unauthorized; every /vaults route calls it
@@ -734,7 +746,7 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 
 **Verify — automated**
 
-- [ ] Red first: register → login → session; wrong password 401; second register 409; `SIGNUP=closed` 403; logout revokes (the next call 401); a vault route without Bearer 401. Then green.
+- [ ] Red first: register → login; wrong password 401; second register 409; `SIGNUP=closed` 403; logout revokes (the next vault call 401); a vault route without Bearer 401. Then green.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -756,8 +768,7 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 // GET    /vaults                          → { vaults: { id, name, createdAt }[] } (the caller's)
 // POST   /vaults        VaultInfo         → 201 VaultInfo | 409 exists (create-once; Connect is the client's answer)
 // GET    /vaults/:id/info                 → VaultInfo
-// PUT    /vaults/:id/info { retentionDays?, keys? } + X-Info-Version → 200 VaultInfo | 409 conflict
-// DELETE /vaults/:id                      → 204 (everything under it)
+// PUT    /vaults/:id/info { retentionDays?, keys? } + X-Info-Version → 200 VaultInfo | 409 conflict   (the desktop keeps retentionDays equal to the Nexus's History Timeframe, Task 21)
 // GET    /vaults/:id/changes?since=N&limit=500 → ChangesPage; since > seq → 409 resync; since=0 omits tombstones (a snapshot)
 // PUT    /vaults/:id/items/:itemId  (headers of Task 10, body bytes ≤ MAX_ITEM_BYTES)
 //        base mismatch → 409 { current: ItemRecord }; base 'none' with an existing item → 409 likewise;
@@ -774,7 +785,7 @@ export function requireSession(db, req): { userId: string; deviceId: string }  /
 
 **Verify — automated**
 
-- [ ] Red first, each named: create-once (second POST 409); a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and omits a tombstoned item; since 1 includes the tombstone; since 99 → 409 resync; retain-only stores a version the change log never lists and the versions route does; a body of `MAX_ITEM_BYTES + 1` → 413; prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
+- [ ] Red first, each named: create-once (second POST 409); PUT info with a stale `X-Info-Version` → 409 and with the current one bumps it; a store with base `none` creates version 1; a second store with base 1 gives 2; base 1 again → 409 carrying `{version: 2}`; changes since 0 lists the item once at 2 and omits a tombstoned item; since 1 includes the tombstone; since 99 → 409 resync; retain-only stores a version the change log never lists and the versions route does; a body of `MAX_ITEM_BYTES + 1` → 413; prune with `retentionDays: 0` deletes only non-head non-tombstone rows (a head and a tombstone survive); a vault of another user → 404; paging with `limit=2` over 5 changes walks three pages with `hasMore` flipping on the last. Then green.
 - [ ] Both halves of the ownership guard: the owner's read succeeds; with `requireSession` stubbed to another user the same read is 404.
 - [ ] Full gate green.
 
@@ -867,25 +878,28 @@ export function newVaultInfo(id: string, name: string, password: string, retenti
 
 **Why:** What syncs is a rule stated once (C-4, J-2): every non-hidden entry plus `.nexus` and `.trash`, minus the store files. It is its own walk because the tree walk never enters `.trash`.
 
-**Now** — `src/engine/exclusion.ts` `STORE_FILE = /\.db(-wal|-shm)?$/` and `neverWatched`; `IO/walk.ts` `corpusFilesUnder` is the hand-descent pattern:
+**Now** — `src/engine/exclusion.ts` `neverWatched(seg)` is the one rule for a segment Pommora never delivers (`.trash`, `node_modules`, a store or its journal, any dot-name but `.nexus`); `IO/walk.ts` `corpusFilesUnder` is the hand-descent pattern:
 
 ```ts
-// src/engine/IO/walk.ts:66-75 (post-move) — descended by hand so an out-of-corpus subtree is never entered
+// src/engine/exclusion.ts:12-19 (post-move)
+export function neverWatched(seg: string): boolean {
+  return seg === TRASH_DIR || seg === 'node_modules' || STORE_FILE.test(seg) || (seg.startsWith('.') && seg !== NEXUS_DIR)
+}
 ```
 
-**Becomes**
+**Becomes** — the manifest is that rule with one exception, a top-level `.trash`; `node_modules` therefore stays home, which C-4's "every non-hidden entry" did not say (Deviation):
 
 ```ts
 // src/engine/Sync/manifest.ts + manifest.test.ts
 export interface ManifestEntry { rel: string; mtimeMs: number; size: number }
-/** True for a path the vault carries: no dot-segment anywhere except a top-level `.nexus` or `.trash`, and no SQLite store or journal. */
-export function syncable(segs: readonly string[]): boolean
+export const syncable = (segs: readonly string[]): boolean =>
+  segs.every((s, i) => (i === 0 && s === TRASH_DIR) || !neverWatched(s))
 export async function syncManifest(root: string): Promise<Map<string, ManifestEntry>>   // host().readDir per directory, name-sorted, rel POSIX
 ```
 
 **Verify — automated**
 
-- [ ] Red first, over a fixture root: `.trash/X/2026__A.md.deleted/A.md` present; `.nexus/nexus.db`, `-wal`, `-shm`, `versions.db` absent; `.obsidian/app.json`, `.git/HEAD`, `.DS_Store`, `Ideas/.DS_Store` absent; `_pagecollection.json` present; `.nexus/assets/<id>/thumbnails/x.jpg` present; the map's iteration order is sorted. Then green.
+- [ ] Red first, over a fixture root: `.trash/X/2026__A.md.deleted/A.md` present; `Ideas/.trash/x.md` absent; `.nexus/nexus.db`, `-wal`, `-shm`, `versions.db` absent; `.obsidian/app.json`, `.git/HEAD`, `.DS_Store`, `Ideas/.DS_Store`, `node_modules/x` absent; `_pagecollection.json` present; `.nexus/assets/<id>/thumbnails/x.jpg` present; the map's iteration order is sorted. Then green.
 - [ ] Over the scratch NexusOS copy: the manifest counts 990 entries (re-derived: `find` with the same exclusions), and `syncManifest` completes under 400 ms on this machine (J-2's budget for the whole no-change sync is one second).
 - [ ] Full gate green.
 
@@ -905,21 +919,22 @@ export async function syncManifest(root: string): Promise<Map<string, ManifestEn
 
 ```ts
 // src/engine/Sync/state.ts + state.test.ts
-export interface BaseRecord { itemId: string; version: number; mtimeMs: number; size: number; hash: string }   // hash = sha-256 hex of the bytes at the last sync
+export interface BaseRecord { itemId: string; version: number; mtimeMs: number; size: number; hash: string }   // hash = sha256Hex(bytes) at the last sync
 export interface SyncStateStore {
   cursor(): Promise<number>
   setCursor(seq: number): Promise<void>
   bases(): Promise<Map<string, BaseRecord>>          // rel → record
   setBase(rel: string, rec: BaseRecord | null): Promise<void>
-  flush(): Promise<void>                              // a host that buffers writes it here; called after every applied page
+  flush(): Promise<void>                              // called after every applied page
 }
 export function memoryStore(): SyncStateStore
 // src/engine/Sync/transport.ts + transport.test.ts (fake fetch)
 export interface Transport {
-  register / login / logout / session
+  register / login / logout
   vaults(): Promise<{ id; name; createdAt }[]>
   createVault(info): Promise<VaultInfo>              // 409 exists surfaces as { code: 'exists' }
   info(vaultId): Promise<VaultInfo>
+  updateInfo(vaultId, patch: { retentionDays?: number; keys?: VaultInfo['keys'] }, infoVersion: number): Promise<VaultInfo>
   changes(vaultId, since, limit): Promise<ChangesPage>   // 409 → { code: 'resync' }
   store(vaultId, itemId, blob: Uint8Array | null, meta: { baseVersion: number | null; mtimeMs; deleted; retainOnly }): Promise<{ version: number } | { conflict: ItemRecord }>
   fetchItem(vaultId, itemId, version?): Promise<{ blob: Uint8Array; record: ItemRecord } | null>
@@ -934,7 +949,7 @@ export class SyncError extends Error { code: SyncErrorCode }
 
 **Verify — automated**
 
-- [ ] Red first: `memoryStore` round trips; `httpTransport` builds the exact headers of Task 10 (asserted through the fake fetch), maps 401/404/409/413 to `SyncError` codes, parses `changes`, and `feed` parses two SSE events from a streamed body then reconnects once after the stream ends and stops on abort. Then green.
+- [ ] Red first: `memoryStore` round trips; `httpTransport` builds the exact headers of Task 10 (asserted through the fake fetch), reads the error body's `code` into `SyncError` for every member of `STATUS_BY_CODE`, parses `changes`, and `feed` parses two SSE events from a streamed body then reconnects once after the stream ends and stops on abort. Then green.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -965,9 +980,11 @@ export interface SyncDeps {
   /** The host's policy after a landing — the phone patches its tree; the desktop lets its watcher classify. */
   afterLanding?: (rel: string, kind: 'upsert' | 'remove') => Promise<void>
 }
-export interface SyncReport { pulled: number; pushed: number; tombstoned: number; conflicts: { rel: string; kept: 'local' | 'remote' }[]; skipped: { rel: string; why: 'too-large' | 'decrypt' | 'case-collision' | 'invalid-path' }[]; cursor: number }
-export async function runSync(deps: SyncDeps): Promise<SyncReport>
+export async function runSync(deps: SyncDeps): Promise<SyncReport>      // SyncReport from @shared/syncProtocol
 // Never concurrent per root: a second call while one runs queues once and coalesces (F-9).
+export interface SyncScheduler { noteDirty(): void; trigger(): void; stop(): Promise<void> }
+export function createSyncScheduler(run: () => Promise<SyncReport>, debounceMs = 1500): SyncScheduler
+// noteDirty debounces; trigger runs at once (a feed seq, Sync Now); a run that ended dirty re-runs; both hosts drive this, one KNOB governs both
 // Pull: for each page: for each change in sequence: own echo (base.version === change.version) → skip; tombstone → conflict rule vs local
 //   (a local change since base with mtime > tombstone mtime wins and is re-pushed; else beforeReplace, remove, base cleared);
 //   else fetch + open (null → skipped 'decrypt'); rel validated (lexical containment + invalidName per segment; else 'invalid-path');
@@ -985,7 +1002,7 @@ export async function runSync(deps: SyncDeps): Promise<SyncReport>
 
 **Verify — automated**
 
-- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing restores mtime (host stat equals envelope); conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved. Then green.
+- [ ] Red first, each a named case over two memory hosts and a fake transport: own echo skipped; landing restores mtime (host stat equals envelope); conflict both-changed newer wins, loser stored retain-only (the fake transport records it) and never written as a sibling file; equal mtime resolved by deviceId on both sides identically; edit-vs-tombstone both directions; a deleted folder's files removed and the empty folder pruned only after the page (a page and its sidecar landing in one page keep the folder); cursor persisted once per page and not on a thrown apply mid-page; resync clears the cursor and lands nothing identical; case collision refused with a report; `../x.md` and `bad|name.md` refused; 50 MB + 1 skipped; a no-change run makes zero `store` calls; two concurrent `runSync` calls coalesce to two runs, never interleaved; the scheduler runs once for three `noteDirty` calls inside the window and re-runs once when a `noteDirty` lands mid-run. Then green.
 - [ ] Both halves of the containment guard: a good rel lands (file exists after), and with the validator disabled the `../` case would have written outside root (asserted through the memory host's key set).
 - [ ] Full gate green.
 
@@ -1014,9 +1031,9 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 //  6 rename A/Ideas/C.md → A/Ideas/C2.md → B (tombstone + new; id inside the file unchanged); 7 frontmatter edit → crosses; 8 settings.json edit → crosses
 //  9 both edit A.md before syncing; the newer mtime stands on both, the server lists 2 versions, the loser's text is the retain-only blob
 // 10 A edits, B deletes, A newer → the file revives on B; 11 B offline (no sync) while A makes 3 edits → B syncs once → holds all 3
-// 12 B's cursor set to 999 → resync → clean; 13 wrong password on connect → unwrap null, no request past /info
-// 14 B creates `ideas/a.md` (case-folded twin of Ideas/A.md) → A refuses with 'case-collision'; 15 a 51 MB asset → skipped 'too-large'
-// 16 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 17 a no-change sync on both makes 0 stores (server request log)
+// 12 B's cursor set to 999 → resync → clean; 13 a 51 MB asset → skipped 'too-large' (the server's 413 crossed)
+// 14 feed: B subscribes; A stores; B's onSeq fires within 1,000 ms; 15 a no-change sync on both makes 0 stores (server request log)
+// (wrong password and case collision are client-only and stay in Tasks 15 and 18)
 // scripts/sync-cli.ts + vite.config.cli.ts (ssr build to out/cli/sync-cli.js; "build:cli" script)
 //   node out/cli/sync-cli.js register|login|create|connect|sync|watch --server URL --root DIR --state FILE [--email --password --vault-password --vault ID --name NAME]
 //   `watch` subscribes to the feed and syncs on every seq plus every 30 s; state is a JSON SyncStateStore at --state
@@ -1026,7 +1043,7 @@ export async function diffRoots(a: string, b: string): Promise<{ onlyA: string[]
 
 **Verify — automated**
 
-- [ ] The 17 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
+- [ ] The 15 scenarios green under `npm run test`, each red first against a stub `runSync` that does nothing (one commit before the real client is wired proves the assertions bite).
 - [ ] `npm run build:cli` green; `node out/cli/sync-cli.js sync --root <fixture copy> …` against a running server pushes 14 items and a second run pushes 0.
 - [ ] Full gate green.
 
@@ -1067,12 +1084,11 @@ export function recordWrite(absPath: string): void {
 ```ts
 // src/main/IO/writeEcho.ts
 const listeners = new Set<(absPath: string) => void>()
-/** Every path the app writes reaches here; the desktop sync client is the reader. */
 export function onWrite(fn: (absPath: string) => void): () => void
 export function recordWrite(absPath: string): void   // notifies after recording
-// src/main/Database/localState.ts — Scope gains 'sync' (keys: '' = cursor, else rel → BaseRecord)
+// src/shared/localState.ts — Scope gains 'sync' (keys: '' = cursor, else rel → BaseRecord); SCOPE_ASKS has no entry for it (never a renderer channel)
 // src/main/Sync/localStateStore.ts — SyncStateStore over readScope/writeKey('sync'); flush is a no-op (rows are immediate)
-// src/main/appConfig.ts — AppConfig gains server?: string, email?: string, deviceName?: string
+// src/main/appConfig.ts — AppConfig gains account?: AccountFields
 // src/main/Sync/secrets.ts + secrets.test.ts (safeStorage stubbed)
 export function saveSecret(userDataDir: string, key: 'token' | `vault:${string}`, value: string): Promise<void>   // safeStorage.encryptString → <userData>/secrets/<key>
 export function readSecret(userDataDir: string, key: string): Promise<string | null>
@@ -1110,13 +1126,13 @@ export function noteExternalEdit(root: string, absPath: string): void {
 
 ```ts
 // src/main/Sync/desktopSync.ts + desktopSync.test.ts
-export interface SyncStatus { state: 'off' | 'idle' | 'syncing' | 'error'; vaultId: string | null; lastSync: number | null; error?: string; pending: number }
 export function startDesktopSync(root: string, win: BrowserWindow): Promise<void>   // no-op when the Nexus has no connected vault or the app has no session
-export function stopDesktopSync(): Promise<void>                                     // aborts the feed, waits for an in-flight run
+export function stopDesktopSync(): Promise<void>                                     // scheduler.stop(), aborts the feed
 export function syncNow(): Promise<SyncReport>
-export function syncStatus(): SyncStatus
-// triggers: onWrite (paths under root, not under `.nexus/nexus.db`-class files) and the watcher's settle (watcher.ts calls noteSyncActivity(root))
-//   → dirty → debounce 1,500 ms → runSync; the feed's onSeq > cursor → runSync at once; a run that ended dirty re-runs.
+export function syncStatus(): SyncStatus                                             // SyncStatus from @shared/syncProtocol
+// one createSyncScheduler per session: onWrite (paths under root that syncable() admits) and the watcher's settle (watcher.ts calls noteSyncActivity(root)) → noteDirty;
+//   the feed's onSeq > cursor and Sync Now → trigger
+// before each run: if the vault's retentionDays ≠ the Nexus's historyDays (readFileHistoryConfig) → transport.updateInfo, so the server prunes by the live Timeframe
 // deps.beforeReplace: read the current text; liveIdOf → captureIfDue(root, pageId, text, 'external') for a page; nothing for other files
 // deps.afterLanding: none — host.applyRemote records no echo, so the watcher classifies the landing as it does an Obsidian edit
 //   (`.trash`, `.nexus/homepage/*.md`, `.nexus/contexts/**/*.md` are watcher-ignored: the Trash frame and the block hosts read those on open)
@@ -1130,7 +1146,7 @@ export function syncStatus(): SyncStatus
 
 **Verify — automated**
 
-- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's mtime equals the envelope's; a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run. Then green.
+- [ ] Red first: with a fake transport, an in-app `atomicWriteFile` under root schedules a run and the run pushes the file; a landing over an open page captures the outgoing text (a `versions.db` row with source `external` appears) and the file's mtime equals the envelope's; a landing's watcher event is not echo-suppressed (`isRecentWrite` false for its path); a tombstone landing removes the file and the watcher classifies `page-remove`; a feed seq triggers a run without a debounce; two overlapping triggers produce one run; a History Timeframe of 30 against a vault at 60 sends one `updateInfo` before the run and none after. Then green.
 - [ ] Both halves of the capture: the row appears with capture enabled; with `beforeReplace` disabled the row does not.
 - [ ] Full gate green.
 
@@ -1156,8 +1172,8 @@ export interface Asks {
 
 ```ts
 // src/shared/bridge.ts — Asks gains
-'account:status': { args: []; reply: AccountStatus }                       // { server, email, deviceName, signedIn }
-'account:signIn': { args: [req: { server: string; email: string; password: string; deviceName: string; register: boolean }]; reply: Result<AccountStatus> }
+'account:status': { args: []; reply: AccountStatus }                       // from AppConfig.account plus whether a token secret exists
+'account:signIn': { args: [req: AccountFields & { password: string; register: boolean }]; reply: Result<AccountStatus> }
 'account:signOut': { args: []; reply: Result<null> }
 'sync:status': { args: []; reply: SyncStatus }
 'sync:vaults': { args: []; reply: Result<{ id: string; name: string; matches: boolean }[]> }   // matches = id equals this Nexus's
@@ -1165,8 +1181,7 @@ export interface Asks {
 'sync:connect': { args: [vaultId: string, vaultPassword: string]; reply: Result<null> }       // id mismatch refused with the reason
 'sync:disconnect': { args: []; reply: Result<null> }                                          // clears the 'sync' scope and the vault secret; the server keeps the vault
 'sync:now': { args: []; reply: Result<SyncReport> }
-// Pushes gains 'sync:changed': SyncStatus
-// src/shared/types.ts gains AccountStatus, SyncStatus, SyncReport (moved from engine to shared since the wire carries them)
+// Pushes gains 'sync:changed': SyncStatus   (every type from @shared/syncProtocol)
 // src/shared/nexusApi.ts gains account: { status, signIn, signOut }, sync: { status, vaults, create, connect, disconnect, now }, onSyncChanged
 // src/main/index.ts — handlers in the serveBridge object beside 'nexus:state', delegating to desktopSync and secrets; envelope kind
 ```
@@ -1189,31 +1204,34 @@ export interface Asks {
 
 **Why:** H-3, confirmed: two sections in General, every action with its inverse. The window's row kinds have no text field, so one `field` kind lands on the existing `InputField`.
 
-**Now** — `src/renderer/Settings/SettingsWindow.tsx:203-230` General has one untitled section of two `picker` rows; `Row` kinds: `toggle | slider | device | path | exclusions | clear | color | picker | zoom`; `DesignSystem/Fields/InputField.tsx` exists:
+**Now** — `src/renderer/Settings/SettingsWindow.tsx:203-230` General has one untitled section of two `picker` rows; `Row` kinds: `toggle | slider | device | path | exclusions | clear | color | picker | zoom`; the `clear` kind (`:108-113`) is label + hint + `clear: () => Promise<boolean>` rendered by `ClearActionRow.tsx` with the fixed verbs Clear / Cleared, used at two sites; `MenuCaption` is imported at `:6`; `DesignSystem/Fields/InputField.tsx` exists:
 
 ```tsx
 // SettingsWindow.tsx:164-169
 const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({ kind: 'item', label: row.label, caption: row.hint, trailing })
 ```
 
-**Becomes**
+**Becomes** — `clear` generalizes to `action` (the verb and its done-label become fields; the two existing rows pass Clear / Cleared), a `field` kind lands on `InputField`, and a `caption` kind is `MenuCaption`:
 
 ```tsx
-// SettingsWindow.tsx — Row gains
+// SettingsWindow.tsx — Row: `clear` becomes
+| { kind: 'action'; label: string; hint?: string; verb: string; done?: string; act: () => Promise<boolean>; disabled?: boolean }
+// and gains
 | { kind: 'field'; label: string; hint?: string; value: string; secret?: boolean; onCommit: (v: string) => void }
-| { kind: 'action'; label: string; hint?: string; act: () => Promise<boolean>; disabled?: boolean }
+| { kind: 'caption'; text: string }
+// Settings/ClearActionRow.tsx → Settings/ActionRow.tsx (verb/done as props); Settings/FieldRow.tsx (new) on InputField
 // General sections:
 //  { title: 'Account', rows: [ field Server Address · field Email · field Password (secret) · field Device Name ·
 //                              action Sign In · action Create Account · action Sign Out (shown when signed in) ] }
 //  { title: 'Sync',    rows: [ field Vault Password (secret) · action Create From This Nexus / Connect (one row; label by sync:vaults) ·
-//                              action Sync Now · action Disconnect · a caption row with the status line ] }
-// src/renderer/Settings/SyncRows.tsx (new): FieldRow, ActionRow, SyncStatusCaption; state from window.nexus.account/sync + onSyncChanged
+//                              action Sync Now · action Disconnect · caption: the status line ] }
 // src/renderer/Store/configSlice.ts gains syncStatus: SyncStatus and applySyncStatus; App.tsx subscribes onSyncChanged like onNavChanged
 ```
 
 **Verify — automated**
 
-- [ ] `SyncRows.test.tsx`: a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:vaults` returns a matching id; Sign Out hides when signed out.
+- [ ] `ActionRow.test.tsx` and `FieldRow.test.tsx`: the two former clear rows still read Clear / Cleared; a field commits on Enter and blur; a secret field renders `type="password"`; the Create/Connect row reads Connect when `sync:vaults` returns a matching id; Sign Out hides when signed out.
+- [ ] `rg -n "kind: 'clear'" src/renderer` → 0. Control: `rg -n "kind: 'action'" src/renderer/Settings/SettingsWindow.tsx` → 8 or more.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -1332,11 +1350,10 @@ Mobile/plugins/atomic-write/
   Package.swift       Package(name: "PommoraAtomicWrite", platforms: [.iOS(.v15)], products: [.library(name: "PommoraAtomicWrite", targets: ["AtomicWritePlugin"])],
                       dependencies: capacitor-swift-pm from 8.0.0, targets: [.target(name: "AtomicWritePlugin", dependencies: [Capacitor, Cordova], path: "ios/Sources/AtomicWritePlugin")])
   ios/Sources/AtomicWritePlugin/AtomicWritePlugin.swift
-    @objc(AtomicWritePlugin) public class AtomicWritePlugin: CAPPlugin, CAPBridgedPlugin { jsName "AtomicWrite"; methods write, setModified }
-    write({ path: absolute file path, base64: String, mtimeMs?: Double }) → Data(base64).write(to:, options: .atomic); then setAttributes([.modificationDate])
-    setModified({ path, mtimeMs }) → FileManager.setAttributes
+    @objc(AtomicWritePlugin) public class AtomicWritePlugin: CAPPlugin, CAPBridgedPlugin { jsName "AtomicWrite"; one method: write }
+    write({ path: absolute file path, base64: String, mtimeMs?: Double }) → Data(base64).write(to:, options: .atomic); then setAttributes([.modificationDate]) when mtimeMs is given
   src/index.ts        export const AtomicWrite = registerPlugin<AtomicWritePlugin>('AtomicWrite')
-  src/definitions.ts  interface AtomicWritePlugin { write(o: { path: string; base64: string; mtimeMs?: number }): Promise<void>; setModified(o: { path: string; mtimeMs: number }): Promise<void> }
+  src/definitions.ts  interface AtomicWritePlugin { write(o: { path: string; base64: string; mtimeMs?: number }): Promise<void> }
   tsconfig.json + a one-line build script (tsc) run by Mobile's postinstall
 ```
 
@@ -1401,7 +1418,7 @@ export function bindCapacitorHost(): void
 export function readScope<T>(scope: Scope): Promise<Record<string, T>>           // Library/state/<scope>.json, {} when absent
 export function writeKey(scope: Scope, key: string, value: unknown): Promise<void>   // null deletes; whole-file rewrite through AtomicWrite
 export function libraryStateStore(): SyncStateStore                               // Library/sync/<vaultId>.json; buffered; flush writes
-// Mobile/src/host/prefs.ts — Preferences: 'server', 'email', 'deviceName', 'vaultId', 'vaultName' (strings only)
+// Mobile/src/host/prefs.ts — Preferences: 'account' (AccountFields as JSON), 'vaultId', 'vaultName'
 // Mobile/src/host/keychain.ts — SecureStorage: 'token' afterFirstUnlock; `vault:<id>` whenUnlockedThisDeviceOnly; setSynchronize(false) once
 ```
 
@@ -1421,21 +1438,21 @@ export function libraryStateStore(): SyncStateStore                             
 
 **Why:** The renderer boots against `window.nexus`; the phone builds the same table (Task 7) over an in-process dialer that serves the v0 channels through the engine and refuses the rest through the shared envelope, menus answering null (A-7, D-1).
 
-**Now** — Tier-A boot keys (scout 09-04-2026): `systemAccent`, `state`, `subfield.get`, `navViewModes.get`, `citations.get`, `linkTitles.get`, `activeViews.get`, `aliases.get`, `nav.read`, `windows.load`, `tabs.load`, `devicePrefs.load`, `assetMap`, and 13 `on*` subscriptions; `MENU_ASKS` (Task 7).
+**Now** — Tier-A boot keys (scout 09-04-2026): `systemAccent`, `state`, `subfield.get`, `navViewModes.get`, `citations.get`, `linkTitles.get`, `activeViews.get`, `aliases.get`, `nav.read`, `windows.load`, `tabs.load`, `devicePrefs.load`, `assetMap`, and 13 `on*` subscriptions; `menuAsks()` and `SCOPE_ASKS` (Task 7).
 
 **Becomes**
 
 ```ts
 // Mobile/src/host/api.ts + api.test.ts
 export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ ask, tell, on }, extras)
-// ask(channel): handled.get(channel) ?? (MENU_ASKS.has(channel) ? () => null : () => REFUSED)   where REFUSED = fail('operation-failed', 'Not available on this device.')
+// ask(channel): handled.get(channel) ?? (menuAsks().has(channel) ? () => null : () => REFUSED)   where REFUSED = fail('operation-failed', 'Not available on this device.')
 // tell: every tell is a no-op; on: an in-process emitter per push channel, returning the unsubscribe
-// handled: 'nexus:state' (session.tree() or { status: 'empty' } before a vault connects), 'assets:map' (engine buildAssetMap over the host — moved from main/assetMap.ts's pure half in this task),
+// handled: 'nexus:state' (session.tree() or { status: 'empty' } before a vault connects), 'assets:map' (engine buildAssetMap, Task 4),
 //   'page:open' (engine readPage), 'page:updateBody' (engine updatePageBody; then session.noteOwnWrite(rel)),
 //   'view:loadValues' (engine loadValues over corpusFilesUnder — a full scan; the phone has no index),
-//   'mutate' for op 'createPage' only: createDisambiguated → createPage → setChildOrder(parent, 'page_order', req.order with NEW_PAGE_SLOT replaced) — the desktop's sequence at mutate.ts:269-279 — then session.noteOwnWrite for both files; every other op REFUSED,
-//   the local_state scopes ('folds', 'activeViews', 'viewOrders', 'embedHeights', 'embedZooms', 'tableHeadingCols', 'headingIcon', 'citations', 'aliases', 'linkTitles:get', 'tabs', 'windows', 'glance', 'devicePrefs', 'subfield', 'navViewModes') through state.ts,
-//   'nav:read' (engine readNavigationFile — the read half moves to src/engine/IO/navigationFile.ts in this task) and 'nav:write' REFUSED,
+//   'mutate' for op 'createPage' only: engine createPageInOrder (Task 5) then session.noteOwnWrite for the page and the sidecar; every other op REFUSED,
+//   every SCOPE_ASKS get/set pair through state.ts (derived from the map, never listed by hand), plus 'subfield:get', 'navViewModes:get' (settings.json reads through the engine's readJsonObject) and their sets REFUSED,
+//   'nav:read' (engine readNavigationFile, Task 4) and 'nav:write' REFUSED,
 //   'theme:systemAccent' → null, 'history:list' / 'history:read' (remote versions only), 'account:*', 'sync:*' (Task 30), 'error:show' → console
 // extras: openDropped → REFUSED; personalization.set → REFUSED
 ```
@@ -1444,8 +1461,8 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Verify — automated**
 
-- [ ] Red first: every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled data channel answers `{ ok: false }` with the shared code; a menu channel answers null; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` with `order: [NEW_PAGE_SLOT, existingId]` leaves the sidecar's `page_order` as `[newId, existingId]` and a taken name lands as `Name 2`. Then green.
-- [ ] `nav:read`'s move leaves main's `navigationFile.ts` importing the read half from the engine; full gate green.
+- [ ] Red first: every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled data channel answers `{ ok: false }` with the shared code; a menu channel answers null; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
+- [ ] Full gate green.
 
 **Verify — user**
 
@@ -1465,14 +1482,14 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 // Mobile/src/host/session.ts + session.test.ts
 export interface PhoneSession {
   tree(): NexusState
-  holder: TreeHolder
-  noteOwnWrite(rel: string): void                 // dirty → debounce 1,500 ms → sync
-  syncNow(): Promise<SyncReport>
+  noteOwnWrite(rel: string): void                 // scheduler.noteDirty
+  syncNow(): Promise<SyncReport>                  // scheduler.trigger
   connect(vaultId: string, vaultPassword: string): Promise<Result<null>>   // pulls into Documents/<vaultName>, walks, becomes 'open'
   disconnect(): Promise<void>
-  start(): Promise<void>                          // App.getState() → sync; App.addListener('resume') → sync; feed while active; pause aborts the feed
+  start(): Promise<void>                          // setTreeHolder(the phone's); App.getState() → trigger; App.addListener('resume') → trigger; feed while active; pause aborts the feed
 }
-// afterLanding(rel, kind): classifyEvent over { event: kind === 'remove' ? 'unlink' : 'change', absPath: join(root, rel) } → the matching patch*FromDisk(holder, …);
+// the scheduler is createSyncScheduler from the engine (Task 18) — the same debounce as the desktop's
+// afterLanding(rel, kind): classifyEvent over { event: kind === 'remove' ? 'unlink' : 'change', absPath: join(root, rel) } → the matching patch*FromDisk(root, …);
 //   'full-refresh' → one debounced readNexus; then emit 'nexus:changed' with the held tree
 ```
 
@@ -1542,7 +1559,7 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 #### Gate 6 — the companion boots (Declared Stop)
 
 - [ ] Gate commands green (`typecheck:mobile`, the lint excludes).
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Mobile/src`, `Mobile/plugins`, `Mobile/*.ts`, `Mobile/package.json`, `src/engine/IO/navigationFile.ts`, `src/renderer/Windows/WebWindow.tsx`, the tsconfig and biome changes; the reports cite files inside it.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Mobile/src`, `Mobile/plugins`, `Mobile/*.ts`, `Mobile/package.json`, `src/renderer/Windows/WebWindow.tsx`, the tsconfig and biome changes; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying a ruling in the Log.
 - [ ] Progress hashes filled in; line count reported.
 - [ ] **Declared stop.** Execution halts until Nathan closes Task 32's user box.
@@ -1754,6 +1771,8 @@ Asked and answered 09-04-2026 (Nathan's call on each):
 6. **Scratch vaults** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
 7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
 
+Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error.
+
 ### Open Against Later Tasks
 
 ### Deviations
@@ -1765,7 +1784,9 @@ Taken at planning against the decision log, each the simpler mechanism:
 - **B-2 (host threading):** the host is bound once per process (`setHost`) rather than passed through every signature; the moving set's 400-odd import sites change path only.
 - **F-6 (the phone reads Last Modified from its sync record):** the atomic-write plugin sets the modification date, so the phone restores envelope mtime like the desktop and the base record is one shape on both hosts.
 - **D-2 (the content index answers null on the phone):** `view:loadValues` full-scans through `corpusFilesUnder`; the index channels are not served at all in v0, which the renderer already reads as "no index".
-- **I-3 (watchPatch's classification):** the classification and the patchers move into the engine behind a `TreeHolder` (Task 6) rather than being copied to the phone.
+- **I-3 (watchPatch's classification):** the classification and the patchers move into the engine behind a `TreeHolder` bound once per process (Task 6) rather than being copied to the phone.
+- **C-4 (every non-hidden entry syncs):** the manifest is `neverWatched` with a top-level `.trash` admitted, so `node_modules` stays home like every other name the watcher never delivers (Task 16). NexusOS holds none.
+- **I-2 (a Sync action in the bottom bar):** withdrawn by Ruling 2; Settings › General's Sync Now is the manual fallback on both hosts.
 
 ### Lessons
 
@@ -1811,7 +1832,7 @@ Everything else is the standard below.
 
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause, on the Simulator against the scratch copy.
-- [ ] The integration suite's 17 scenarios green under `npm run test`.
+- [ ] The integration suite's 15 scenarios green under `npm run test`.
 - [ ] `npm run typecheck:engine` green with `types: []`; `rg -n "from 'node:" src/engine -g '!*.test.ts'` → 0.
 - [ ] The container builds; `SIGNUP=closed` refuses registration.
 
