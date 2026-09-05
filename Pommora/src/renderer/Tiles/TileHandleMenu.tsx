@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { lockLabel } from '@shared/toggleLabels'
-import type {
-  TileEntry,
-  TileStyle,
-  DrillPickItem,
-  PagePickerItem,
-  ViewPick,
-  ViewPickerItem,
+import {
+  type DrillPickItem,
+  type PagePickerItem,
+  TILE_KINDS,
+  type TileEntry,
+  type TileStyle,
+  type ViewPick,
+  type ViewPickerItem,
 } from '@shared/tiles'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
@@ -171,6 +172,7 @@ export function TileHandleMenu({
     fn()
   }
   const chevron = <Icon name="chevron-right" size={GLYPH} />
+  const rows = TILE_KINDS[entry.type].menuRows
 
   const root = (
     <div className={s.pane}>
@@ -195,7 +197,7 @@ export function TileHandleMenu({
           />
         }
       >
-        {entry.type === 'page' && pageInfo && (
+        {pageInfo && (
           <button
             type="button"
             className={s.titleField}
@@ -216,35 +218,21 @@ export function TileHandleMenu({
             )}
           </button>
         )}
-        {entry.type === 'markdown' ? (
-          <>
-            <MenuItem
-              className={rowMute}
-              leading={<Icon name="link" size={GLYPH} />}
-              trailing={chevron}
-              onClick={locked ? undefined : () => setPane('view')}
-            >
-              Link View
-            </MenuItem>
-            <MenuItem
-              className={rowMute}
-              leading={<Icon name="link" size={GLYPH} />}
-              trailing={chevron}
-              onClick={locked ? undefined : () => setPane('page')}
-            >
-              Link Page
-            </MenuItem>
-          </>
-        ) : (
+        {rows.map((row) => (
           <MenuItem
-            className={cx(entry.type === 'view' && rowDisabled, rowMute)}
+            key={row.label}
+            className={cx(row.source === 'none' && rowDisabled, rowMute)}
             leading={<Icon name="link" size={GLYPH} />}
             trailing={chevron}
-            onClick={!locked && entry.type === 'page' ? () => setPane('page') : undefined}
+            onClick={
+              locked || row.source === 'none'
+                ? undefined
+                : () => setPane(row.source === 'pages' ? 'page' : 'view')
+            }
           >
-            Source
+            {row.label}
           </MenuItem>
-        )}
+        ))}
         <MenuItem
           className={rowMute}
           leading={<Icon name="palette" size={GLYPH} />}
@@ -307,7 +295,7 @@ export function TileHandleMenu({
   )
 
   const drillRootLabel =
-    pane === 'page' ? (entry.type === 'markdown' ? 'Link Page' : 'Source') : 'Link View'
+    rows.find((r) => r.source === (pane === 'page' ? 'pages' : 'views'))?.label ?? ''
   const detail =
     pane === 'style' ? (
       stylePane
