@@ -5,7 +5,6 @@ import type { CSSProperties } from 'react'
 import { SCALE_STEPS } from '@shared/types'
 
 export const DEFAULT_ZOOM = 1
-export const ZOOM_FACTORS: readonly number[] = [...SCALE_STEPS].reverse()
 
 export interface ZoomStep {
   factor: number
@@ -15,19 +14,16 @@ export interface ZoomStep {
   label: string
 }
 
-const step = (factor: number): ZoomStep => ({
+export const ZOOM_STEPS: ZoomStep[] = [...SCALE_STEPS].reverse().map((factor) => ({
   factor,
   inline: `${factor}x`,
   label: `${factor.toFixed(2)}x`,
-})
+}))
 
-export const ZOOM_STEPS: ZoomStep[] = ZOOM_FACTORS.map(step)
-
-// One object per step, so a memoized tile sees the same style identity across renders.
 const ZOOM_STYLES = new Map<number, CSSProperties>(
-  ZOOM_FACTORS.filter((f) => f !== DEFAULT_ZOOM).map((f) => [
-    f,
-    { '--tile-zoom': f } as CSSProperties,
+  ZOOM_STEPS.filter((s) => s.factor !== DEFAULT_ZOOM).map((s) => [
+    s.factor,
+    { '--tile-zoom': s.factor } as CSSProperties,
   ]),
 )
 

@@ -5,7 +5,7 @@
 import { capSet } from '@renderer/DesignSystem/Util/capMap'
 
 // KNOB — how many hidden guests stay alive beyond the visible ones.
-export const WEB_RETAINED_MAX = 5
+const WEB_RETAINED_MAX = 5
 
 export interface WebRetention {
   /** A guest just went hidden. May evict the least-recently-hidden retainee over the cap. */
