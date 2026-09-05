@@ -1,5 +1,5 @@
 // The host-agnostic contract a tile host carries: a tile layout tree under `layout`,
-// tagged-union tile payloads under `blocks`, and the host lock under `locked`. Entries ride
+// tagged-union tile payloads under `tiles`, and the host lock under `locked`. Entries ride
 // RAW through reads and writes so foreign or future tile types survive rewrites; `knownTile` is
 // the read lens typing the entries this build understands.
 
@@ -52,7 +52,9 @@ export const rawLayoutSchema = z.object({
  *  Space 2×2 seed share this one value. */
 export const NEW_TILE_H = 160
 
-/** The tile hosts that exist: the homepage singleton and a Space. */
+/** The tile hosts that exist: the homepage singleton and a Space. A host is a folder holding
+ *  `_tiles.json` and its bodies; a new member is this union, `tileHostKey`, `coerceTileHost`,
+ *  main's `hostDir` arm and `listTileHosts` entry, and the watcher's ignore arm and classifier. */
 export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
 export function tileHostKey(host: TileHostRef): string {
@@ -221,25 +223,25 @@ export interface ViewPick {
 }
 export type ViewPickerItem = DrillPickItem<ViewPick>
 
-/** Type one raw `blocks[]` entry, or null for shapes this build doesn't know —
+/** Type one raw `tiles[]` entry, or null for shapes this build doesn't know —
  *  the caller keeps the raw value either way (never strip, render inert). */
 export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as TileEntry) : null
 }
 
-/** The doc as main hands it across IPC — layout + entries stay raw; the renderer
- *  decodes the layout and lenses the entries. */
+/** The document as it sits in a host's `_tiles.json` and crosses IPC — layout + entries stay raw;
+ *  the renderer decodes the layout and lenses the entries. */
 export interface TileDoc {
   layout: unknown
-  blocks: unknown[]
+  tiles: unknown[]
   locked: boolean
 }
 
-/** A partial write — only the present keys touch the sidecar. */
+/** A partial write — only the present keys change. */
 export interface TileDocPatch {
   layout?: unknown
-  blocks?: unknown[]
+  tiles?: unknown[]
   locked?: boolean
 }
 
@@ -248,7 +250,7 @@ export interface TileDocPatch {
 export function tilePatchProblem(patch: TileDocPatch): string | null {
   if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
     return 'Malformed layout.'
-  if ('blocks' in patch && !Array.isArray(patch.blocks)) return 'blocks must be an array.'
+  if ('tiles' in patch && !Array.isArray(patch.tiles)) return 'tiles must be an array.'
   if ('locked' in patch && typeof patch.locked !== 'boolean') return 'locked must be a boolean.'
   return null
 }

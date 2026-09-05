@@ -10,10 +10,10 @@ import {
 } from '@shared/contexts'
 import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
-import { mintSeed, NEW_TILE_H, tileHostKey } from '@shared/tiles'
+import { mintSeed, NEW_TILE_H } from '@shared/tiles'
+import { writeTileDocAt } from '../tileDoc'
 import type { PropertyDefinition } from '@shared/properties'
 import { pageCollectionSidecar } from '@shared/schemas'
-import { writeKey } from '../Database/localState'
 import { getLiveTree } from '../liveTree'
 import { collectionFolderOf } from './assignment'
 import { applyAdoptions } from './optionOps'
@@ -269,11 +269,11 @@ export async function createSpace(
   const band = (a: string, b: string): Raw => ({
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },
   })
-  writeKey('blockDoc', tileHostKey({ kind: 'space', id: created.value.id }), {
-    blocks: tileIds.map((tid) => mintSeed('markdown', tid)),
+  await writeTileDocAt(created.value.path, () => ({
     layout: { bands: [band(tileIds[0], tileIds[1]), band(tileIds[2], tileIds[3])] },
+    tiles: tileIds.map((tid) => mintSeed('markdown', tid)),
     locked: false,
-  })
+  }))
   return ok({
     id: created.value.id,
     path: spaceDirRel(def.title, name),
