@@ -4,7 +4,7 @@
   min-height: 120px;
 }
 
-/* The chassis geometry (border, radius, body clip) is the shared tile-chassis; what's here is
+/* The chassis geometry (border, radius, body clip) is the shared tile-base; what's here is
    the grid's own layer — placement, motion, and the state selectors that drive the chassis's
    --tile-border-color. */
 .tile {

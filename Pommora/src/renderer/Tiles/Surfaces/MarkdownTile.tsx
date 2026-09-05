@@ -32,7 +32,7 @@ export function MarkdownTile({
   useEffect(() => {
     let live = true
     void window.nexus.tiles.readMarkdown(host, tileId).then((r) => {
-      if (live) setBody(r.ok ? r.value.body : '')
+      if (live) setBody(r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null)
     })
     return () => {
       live = false

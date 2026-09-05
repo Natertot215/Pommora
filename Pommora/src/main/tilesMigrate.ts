@@ -12,12 +12,6 @@ import { pathExists } from './IO/atomicWrite'
 import { tileDocPath, tileHostDir } from './paths'
 import { writeTileDocAt } from './tileDoc'
 
-interface LegacyRow {
-  layout?: unknown
-  blocks?: unknown
-  locked?: unknown
-}
-
 export interface TileMigration {
   written: number
   dropped: number
@@ -50,7 +44,7 @@ async function moveRows(root: string, result: TileMigration): Promise<void> {
       else {
         // A row that decoded to anything but an object says nothing about the host's tiles; it
         // seeds an empty document rather than failing the open.
-        const row: LegacyRow = isPlainObject(rows[key]) ? rows[key] : {}
+        const row: Record<string, unknown> = isPlainObject(rows[key]) ? rows[key] : {}
         const landed = await writeTileDocAt(dir, () => ({
           layout: row.layout,
           tiles: Array.isArray(row.blocks) ? row.blocks : [],
