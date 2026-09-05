@@ -1,5 +1,5 @@
 import { type Creator, DEFAULT_NEW_NAME, type MutateRequest, type RenameHost } from '@shared/mutate'
-import { errText, fail, type PommoraError } from '@shared/result'
+import { errText, fail, type PommoraError } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
   type NavRef,

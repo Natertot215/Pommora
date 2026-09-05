@@ -4,7 +4,7 @@
 
 import { DatabaseSync } from 'node:sqlite'
 import { basename } from 'node:path'
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 
 export type Db = DatabaseSync
 

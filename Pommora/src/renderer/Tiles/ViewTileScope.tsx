@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { pickViewState, type SavedView, type ViewState } from '@shared/views'
 import { saveViewAdopting } from '@renderer/Views/viewMint'
 

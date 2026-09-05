@@ -3,7 +3,7 @@
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import type { OpenIn, ViewButton } from '@shared/types'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 
 type ContainerKind = 'collection' | 'set'

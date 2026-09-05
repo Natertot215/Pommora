@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ES2022",
@@ -18,5 +17,5 @@
     },
     "noEmit": true
   },
-  "include": ["src/renderer/**/*", "src/shared/**/*", "src/preload/index.d.ts"]
+  "include": ["src/renderer/**/*", "src/shared/**/*", "../Core/Platform/dialer.ts"]
 }

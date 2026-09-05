@@ -10,7 +10,7 @@ import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { recordWrite } from '../IO/writeEcho'
 import { pathExists, invalidName } from './util'
 import type { SidecarKind } from '../paths'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 
 export async function createFolderEntity(
   parentDir: string,

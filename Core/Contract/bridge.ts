@@ -26,48 +26,63 @@ import type {
   ValueChange,
   ViewButton,
   ViewStyle,
-} from './types'
-import type { FileHistoryMenuAction } from './fileHistoryMenu'
-import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } from './mutate'
+} from '../../Pommora/src/shared/types'
+import type { FileHistoryMenuAction } from '../../Pommora/src/shared/fileHistoryMenu'
+import type {
+  ContextTarget,
+  Creator,
+  MutateReply,
+  MutateRequest,
+  RenameHost,
+} from '../../Pommora/src/shared/mutate'
 import type { Result } from './result'
-import type { FormatState } from './editorMenu'
-import type { SavedView } from './views'
-import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView } from './tiles'
+import type { FormatState } from '../../Pommora/src/shared/editorMenu'
+import type { SavedView } from '../../Pommora/src/shared/views'
+import type {
+  TileDoc,
+  TileDocPatch,
+  TileHostRef,
+  EmbeddedView,
+} from '../../Pommora/src/shared/tiles'
 import type {
   FileConfig,
   LinkConfig,
   NumberConfig,
   PropertyDefinition,
   StatusGroup,
-} from './properties'
-import type { TableMenuAction, TableMenuContext } from './tableMenu'
-import type { GripMenuAction, GripMenuContext } from './gripMenu'
-import type { CellMenuAction, CellMenuContext } from './cellMenu'
-import type { PageMetaAction } from './pageMenu'
-import type { CardMenuAction, CardMenuContext } from './cardMenu'
-import type { CitationMenuAction, CitationMenuContext } from './citationMenu'
-import type { ConnMenuAction, ConnMenuContext } from './connMenu'
-import type { TabMenuAction, TabMenuContext } from './tabMenu'
+} from '../../Pommora/src/shared/properties'
+import type { TableMenuAction, TableMenuContext } from '../../Pommora/src/shared/tableMenu'
+import type { GripMenuAction, GripMenuContext } from '../../Pommora/src/shared/gripMenu'
+import type { CellMenuAction, CellMenuContext } from '../../Pommora/src/shared/cellMenu'
+import type { PageMetaAction } from '../../Pommora/src/shared/pageMenu'
+import type { CardMenuAction, CardMenuContext } from '../../Pommora/src/shared/cardMenu'
+import type { CitationMenuAction, CitationMenuContext } from '../../Pommora/src/shared/citationMenu'
+import type { ConnMenuAction, ConnMenuContext } from '../../Pommora/src/shared/connMenu'
+import type { TabMenuAction, TabMenuContext } from '../../Pommora/src/shared/tabMenu'
 import type {
   TrashColumnAction,
   TrashColumnContext,
   TrashMenuAction,
   TrashMenuContext,
-} from './trashMenu'
-import type { NavRowMenuAction, NavRowMenuContext } from './navRowMenu'
-import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
-import type { OptionMenuAction, OptionMenuContext } from './optionMenu'
-import type { RowMenuRequest } from './menuModel'
-import type { DevicePrefs } from './devicePrefs'
-import type { ColumnMenuAction, ColumnMenuContext } from './columnMenu'
-import type { EmbedAreaMenuAction, EmbedTitleMenuAction, ViewButtonMenuAction } from './viewMenus'
-import type { ViewRowAction, ViewRowMenuContext } from './viewRowMenu'
+} from '../../Pommora/src/shared/trashMenu'
+import type { NavRowMenuAction, NavRowMenuContext } from '../../Pommora/src/shared/navRowMenu'
+import type { PropertyMenuAction, PropertyMenuContext } from '../../Pommora/src/shared/propertyMenu'
+import type { OptionMenuAction, OptionMenuContext } from '../../Pommora/src/shared/optionMenu'
+import type { RowMenuRequest } from '../../Pommora/src/shared/menuModel'
+import type { DevicePrefs } from '../../Pommora/src/shared/devicePrefs'
+import type { ColumnMenuAction, ColumnMenuContext } from '../../Pommora/src/shared/columnMenu'
+import type {
+  EmbedAreaMenuAction,
+  EmbedTitleMenuAction,
+  ViewButtonMenuAction,
+} from '../../Pommora/src/shared/viewMenus'
+import type { ViewRowAction, ViewRowMenuContext } from '../../Pommora/src/shared/viewRowMenu'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
   NexusIconAction,
   TitleMenuAction,
-} from './identityMenus'
+} from '../../Pommora/src/shared/identityMenus'
 
 /** Request/response channels (`invoke` → `handle`). `args` labels become the derived dialer's
  *  parameter names. */

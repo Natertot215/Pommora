@@ -13,7 +13,7 @@ import { keyHolderFiles } from './keyHolders'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepAdmits } from './util'
 import { replacePageValue, stripPageValue } from './pageValue'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import type { Adoption } from '@shared/propertyValue'
 import {
   renameOption as renameInArray,

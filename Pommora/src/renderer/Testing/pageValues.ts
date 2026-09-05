@@ -1,5 +1,5 @@
 import type { PageFrontmatter } from '@shared/schemas'
-import { ok, type Result } from '@shared/result'
+import { ok, type Result } from '@pommora/core/Contract/result'
 import type { PageValues } from '@shared/types'
 
 export const pageValues = (fm: Record<string, PageFrontmatter>): Record<string, PageValues> =>

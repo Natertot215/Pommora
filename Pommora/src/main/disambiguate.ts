@@ -1,4 +1,4 @@
-import type { Result } from '@shared/result'
+import type { Result } from '@pommora/core/Contract/result'
 
 /** Retry `attempt` under ` 2`, ` 3` … while it answers `exists`. The one place the app decides
  *  what a stepped-aside name looks like, so a page, a folder and an adopted file all read the

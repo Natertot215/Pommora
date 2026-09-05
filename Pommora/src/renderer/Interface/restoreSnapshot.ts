@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { flushPageSave } from './pageFlush'
 import { livePagePath } from '../treeIndex'
 import { useSession, type WindowTarget } from '../store'

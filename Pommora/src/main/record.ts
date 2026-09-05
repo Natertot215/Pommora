@@ -5,7 +5,7 @@
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { EntityRecord } from '@shared/record'
-import { errText } from '@shared/result'
+import { errText } from '@pommora/core/Contract/result'
 import { contextDirRel, CONTEXTS_REGISTRY_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
 import { readKey, writeKey } from './Database/localState'

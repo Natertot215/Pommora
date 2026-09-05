@@ -11,7 +11,7 @@ import {
   normalizePropertyName,
   type PropertyDefinition,
 } from '@shared/properties'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
 import { cascadePages } from './optionOps'
 import { collectionFolders } from './assignment'

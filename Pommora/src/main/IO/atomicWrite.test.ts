@@ -1,5 +1,5 @@
 import { stableStringify } from '@shared/stableJson'
-import { ok } from '@shared/result'
+import { ok } from '@pommora/core/Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

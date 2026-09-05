@@ -3,7 +3,7 @@
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from '@shared/views'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { newId } from '../ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 

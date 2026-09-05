@@ -5,7 +5,7 @@
 import { stat } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
 import { join } from 'node:path'
-import { fail, ok, type Result } from '@shared/result'
+import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { isMarkdownFile, listEntries } from './IO/walk'
 import { resolveUnderRoot } from './pathSafety'
 import { assetDirRefusal } from './readNexus'

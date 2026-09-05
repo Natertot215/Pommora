@@ -42,3 +42,8 @@ export function ok<T>(value: T): Result<T, never> {
 export function fail(code: ErrorCode, message: string): Result<never> {
   return { ok: false, error: { code, message } }
 }
+
+/** THE two session refusals — one spelling, one code, everywhere. A handler refuses through
+ *  these or not at all. */
+export const NO_NEXUS = fail('no-nexus', 'No nexus is open.')
+export const BUSY = fail('busy', 'Nexus switching.')

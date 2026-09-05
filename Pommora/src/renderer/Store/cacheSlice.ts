@@ -1,5 +1,5 @@
 import { tileHostKey, type TileHostRef } from '@shared/tiles'
-import type { Result } from '@shared/result'
+import type { Result } from '@pommora/core/Contract/result'
 import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
 import { stabilize } from '@shared/treeStabilize'
 import type { Slice } from './sessionState'

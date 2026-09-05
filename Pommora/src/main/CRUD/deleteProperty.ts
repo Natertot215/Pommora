@@ -19,7 +19,7 @@ import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject } from '@shared/propertyValue'
-import { fail, type Result } from '@shared/result'
+import { fail, type Result } from '@pommora/core/Contract/result'
 
 /** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by
  *  page id — an id-less page's value is unrestorable and marks the record partial. */

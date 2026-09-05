@@ -6,7 +6,7 @@
 // patching its live tree and pushing, so no writer here needs the store.
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import type { Result } from '@shared/result'
+import type { Result } from '@pommora/core/Contract/result'
 import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@shared/views'
 
 const inFlight = new Map<string, Promise<string>>()
