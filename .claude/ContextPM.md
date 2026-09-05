@@ -2,9 +2,7 @@
 
 ### Current Focus
 
-**The Tiles substrate landed 09-04-2026.** `renderer/Tiles/` is the tile system, every drag in the app runs on `Interactions/gesture.ts`, a tile kind is one entry in each of three tables, and each host's document is `_tiles.json` in its folder — synced with `.nexus/`, reloaded live when it changes on disk, and migrated once from the per-machine rows NexusOS held. The inspector's nexus-wide configuration has a reserved key and a cap of six custom tabs; nothing reads them yet. What stands in front of the next piece is the inspector itself: a tab strip whose reserved Collection and Pages tabs and user-made tabs each mount `TileHost` on a document under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) that would give those tabs something to hold.
-
-**Nathan's own pass is still owed** on the six drags, the embed handle, the three handle menus, the Scale ramp easing back to 1.0, a hand edit to `_tiles.json` under an open Space, and NexusOS opening with every layout intact.
+**The Tiles arc is closed.** `renderer/Tiles/` is the tile system, every drag in the app runs on `Interactions/gesture.ts`, a tile kind is one entry in each of three tables, and each host's document is `_tiles.json` in its folder — synced with `.nexus/` and reloaded live when it changes on disk. The closeout re-ran every gate as a polish: the arc nets negative, the legacy row migration is retired (a machine that never ran it carries its rows over by hand), the tile chassis class is `.tile-base`, and the Features doc is [[SurfacePM]] with Tiles as its section. The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 
@@ -78,9 +76,9 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 ### Recent Work
 
 #### PM-128 || Tiles
-**DATE:** 09-04-2026
+**DATE:** 09-05-2026
 
-`SurfacePM/` became `Tiles/` and every tile-system "block" became "tile"; the grid's drags and the embed handle moved onto the one pointer engine; the three tile kinds are declared in `TILE_KINDS`, `TILE_SURFACES`, and `TILE_COPY` rather than branched on; each host's document moved from a `local_state` row to `_tiles.json` in its folder, watched and reloaded live, with the legacy rows migrated once on open. The inspector's cap and `state.json` key are reserved.
+`SurfacePM/` became `Tiles/` and every tile-system "block" became "tile"; the grid's drags and the embed handle moved onto the one pointer engine; the three tile kinds are declared in `TILE_KINDS`, `TILE_SURFACES`, and `TILE_COPY`; each host's document is `_tiles.json` in its folder, watched and reloaded live. The closeout's polish took the arc net negative and retired the row migration.
 
 #### PM-127 || The Resize Frame
 **DATE:** 09-04-2026
