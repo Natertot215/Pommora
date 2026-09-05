@@ -20,7 +20,7 @@
 .table-grid {
   width: 100%;
   /* Base density (--zoom) × the per-tile Scale (--block-zoom, absent = 1), so the table scales as one
-     unit within the SurfacePM tile's fixed inset. */
+     unit within the grid tile's fixed inset. */
   zoom: calc(var(--zoom) * var(--block-zoom, 1));
 }
 

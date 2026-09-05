@@ -25,7 +25,7 @@ export const RAIL_INSET = 20
 
 export const DROP_LINE_INSET = 2
 
-/** SurfacePM's blocks and MarkdownPM's embedded page tiles agree on this one minimum, so a
+/** Grid tiles and MarkdownPM's embedded page tiles agree on this one minimum, so a
  *  resizable tile bottoms out the same wherever it can be grabbed. */
 export const TILE_MIN_PX = 64
 

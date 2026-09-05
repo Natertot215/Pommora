@@ -32,7 +32,7 @@ import { resolveContainerSchema } from '@renderer/Views/Pipeline/pickView'
 import { ViewHost } from '@renderer/Views/ViewHost'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
-import { resolveViewWrite, ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
+import { resolveViewWrite, ViewTileScopeProvider } from '@renderer/Tiles/ViewTileScope'
 import { useSession } from '@renderer/store'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {

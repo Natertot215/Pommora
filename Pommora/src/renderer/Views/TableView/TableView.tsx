@@ -1206,7 +1206,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       onActivate: (ev) => {
         // The CSS density factor (screen px per pre-zoom track px) — the RESOLVED `zoom`, which
         // compounds the base density token (--zoom) with the per-block Scale (--block-zoom on a
-        // SurfacePM tile). Read the computed property, not the --zoom token alone, so a scaled
+        // grid tile). Read the computed property, not the --zoom token alone, so a scaled
         // tile's drag maps 1:1; NOT back-solved from the header's rendered width ÷ its track width
         // (that ratio bakes in the grid's layout slack).
         zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1

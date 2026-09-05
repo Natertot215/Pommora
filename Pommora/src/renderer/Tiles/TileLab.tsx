@@ -3,9 +3,9 @@ import type { SurfaceLayout } from './Core/model'
 import { tileIds } from './Core/model'
 import type { Rect } from './Core/rects'
 import { insertBand, splitAtTile } from './Core/ops'
-import { SurfaceView } from './SurfaceView'
+import { SurfaceView } from './TileGrid'
 
-// SurfacePM's lab — dummy numbered tiles over the live engine, for driving the
+// The tile system's lab — dummy numbered tiles over the live engine, for driving the
 // tessellation by hand: handle-drag to move (edge quadrants + band seams preview
 // the real result), block edges/corners to resize, Esc aborts anything.
 

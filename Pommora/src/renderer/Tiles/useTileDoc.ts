@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BlockHostRef } from '@shared/blocks'
 import { blockHostKey } from '@shared/blocks'
 import { useSession } from '@renderer/store'
-import { decodeLayout, encodeLayout } from '@renderer/SurfacePM/Core/codec'
-import { emptyLayout, type SurfaceLayout } from '@renderer/SurfacePM/Core/model'
+import { decodeLayout, encodeLayout } from '@renderer/Tiles/Core/codec'
+import { emptyLayout, type SurfaceLayout } from '@renderer/Tiles/Core/model'
 
 const SAVE_DEBOUNCE_MS = 300
 

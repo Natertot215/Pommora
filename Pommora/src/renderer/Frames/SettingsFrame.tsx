@@ -33,7 +33,7 @@ import {
 } from '@renderer/DesignSystem/Elements/PickerControl'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
-import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
+import { useViewTileScope } from '@renderer/Tiles/ViewTileScope'
 import { lockLabel } from '@shared/toggleLabels'
 
 type FrameId =

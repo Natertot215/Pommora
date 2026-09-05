@@ -7,7 +7,7 @@ import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem
 import { resolveColumns } from '@renderer/Views/Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '@renderer/Properties/Assignment/columnLabel'
 import { useActiveView } from '@renderer/Views/useActiveView'
-import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
+import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import { FrameDnd, RowShell, useFrameRegions } from './frameDnd'
 import type { PaneDrop, FrameRow } from './frameDndModel'
 import { contextIdsOf, contextsByIdOf } from '@renderer/Properties/contextIdentity'
