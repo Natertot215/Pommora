@@ -78,7 +78,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-05-2026 20:50 PT",
+  updated: "09-05-2026 21:20 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -89,9 +89,9 @@ const DATA = {
     { name: "Phase 1", title: "shared dissolves", tasks: [
       { n: 2, title: "Contract and dialer type", state: "done", hash: "df7cde74", note: "+31 lines (dialer.ts and reflowed imports); composite dropped from Pommora tsconfigs." },
       { n: 3, title: "shared dissolves, types.ts first", state: "done", hash: "30b897c9", note: "types.ts → 13 domain files; shared/ gone; 5 URL grammars → 2; WEB_PARTITION, PickFileOptions, scale setting back in Core; clamp restored." },
-    ], gate: { name: "Gate 1", state: "running", note: "Simplifier then build-breaker over Core UIX Desktop." } },
+    ], gate: { name: "Gate 1", state: "done", note: "One review; net −4; root tsconfig removed." } },
     { name: "Phase 2", title: "The engine out of Electron", tasks: [
-      { n: 4, title: "Pure engine domains move whole", state: "pending" },
+      { n: 4, title: "Pure engine domains move whole", state: "running", note: "Opus." },
       { n: 5, title: "Renderer into Core and UIX", state: "pending", note: "Fable authors the move table, Haiku executes. Every tile kind lands in Core/Tiles/Surfaces (ruling 09-05-2026)." },
       { n: 6, title: "Platform seam", state: "pending", note: "Fable." },
       { n: 7, title: "Dialer replaces the api object", state: "pending" },
@@ -120,6 +120,7 @@ const DATA = {
     ] },
   ],
   gates: [
+    { name: "Gate 1 · 90e2436b", text: "typecheck 0 · lint 0 (1,041 files) · test 0 (321 / 4,006) · build 0\nsimplifier: 10 files, +12 / −16; 5 concerns, 2 fixed, 3 ruled" },
     { name: "Task 3", text: "typecheck 0 · lint 0 (1,041 files) · test 0 (321 / 4,006) · build 0\ntest ! -d Pommora/src/shared · rg @shared/ → 0 · rg @pommora/desktop Core UIX renderer → 0" },
     { name: "Task 2", text: "typecheck 0 · lint 0 · test 0 (321 / 4,006) · build 0" },
     { name: "Gate 0 · Task 1", text: "npm run typecheck: exit 0\nnpm run lint: exit 0 · 1,027 files\nnpm run test: exit 0 · 321 files / 4,006 tests\nnpm run build: exit 0\nbuilt app on scratch Nexus: {status: open, root: ~/Pommora-Scratch/NexusOS, collections: 7}" },
