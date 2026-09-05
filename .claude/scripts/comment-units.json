@@ -1,7 +1,7 @@
 [
  {
   "id": 1,
-  "name": "Editor — the twelve densest",
+  "name": "Editor \u2014 the twelve densest",
   "budgetSource": 71907,
   "files": [
    "src/renderer/MarkdownPM/Editor/PasteLink.ts",
@@ -20,7 +20,7 @@
  },
  {
   "id": 2,
-  "name": "Editor — the remaining fifty-eight",
+  "name": "Editor \u2014 the remaining fifty-eight",
   "budgetSource": 80933,
   "files": [
    "src/renderer/MarkdownPM/Editor/EditorGesture.ts",
@@ -85,7 +85,7 @@
  },
  {
   "id": 3,
-  "name": "Shared — the contract core",
+  "name": "Shared \u2014 the contract core",
   "budgetSource": 56404,
   "files": [
    "src/shared/PasteAsMenu.ts",
@@ -99,15 +99,15 @@
  },
  {
   "id": 4,
-  "name": "Shared — the remaining seventy-six",
+  "name": "Shared \u2014 the remaining seventy-six",
   "budgetSource": 79057,
   "files": [
    "src/shared/PasteAsMenu.test.ts",
    "src/shared/PasteLink.test.ts",
    "src/shared/PasteLink.ts",
    "src/shared/assetMime.ts",
-   "src/shared/blocks.test.ts",
-   "src/shared/blocks.ts",
+   "src/shared/tiles.test.ts",
+   "src/shared/tiles.ts",
    "src/shared/bridge.ts",
    "src/shared/cardMenu.test.ts",
    "src/shared/cardMenu.ts",
@@ -182,7 +182,7 @@
  },
  {
   "id": 5,
-  "name": "Main root — the sixteen densest",
+  "name": "Main root \u2014 the sixteen densest",
   "budgetSource": 66776,
   "files": [
    "src/main/adopt.ts",
@@ -205,7 +205,7 @@
  },
  {
   "id": 6,
-  "name": "Main root — the remaining ninety",
+  "name": "Main root \u2014 the remaining ninety",
   "budgetSource": 93887,
   "files": [
    "src/main/admission.test.ts",
@@ -220,8 +220,8 @@
    "src/main/assetRoots.test.ts",
    "src/main/assetRoots.ts",
    "src/main/assetWrite.ts",
-   "src/main/blocks.test.ts",
-   "src/main/blocks.ts",
+   "src/main/tiles.test.ts",
+   "src/main/tiles.ts",
    "src/main/cardMenu.ts",
    "src/main/cellMenu.ts",
    "src/main/citationMenu.ts",
@@ -425,7 +425,7 @@
  },
  {
   "id": 9,
-  "name": "Design System — Interactions, Tokens, Fields",
+  "name": "Design System \u2014 Interactions, Tokens, Fields",
   "budgetSource": 69526,
   "files": [
    "src/renderer/DesignSystem/Fields/EditableInput.tsx",
@@ -700,8 +700,6 @@
    "src/renderer/Tiles/Surfaces/MarkdownTile.tsx",
    "src/renderer/Tiles/Surfaces/PageTile.tsx",
    "src/renderer/Tiles/PageTileWrite.ts",
-   "src/renderer/Tiles/Sensors/pointerDrag.test.ts",
-   "src/renderer/Tiles/Sensors/pointerDrag.ts",
    "src/renderer/Tiles/TileLab.tsx",
    "src/renderer/Tiles/TileGrid.tsx",
    "src/renderer/Tiles/TileCache.test.ts",
