@@ -38,7 +38,7 @@ axes deliberately obey different physics:
 | `Core/codec.ts` | Persistence codec — a parse; the ops keep every mutation normalized |
 | `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint |
 | `TileHost.tsx` | The host binding — the document, the entry union, the menus, create, remove, convert, duplicate |
-| `Surfaces/` | What a tile can hold — markdown, a page, a view, a web page |
+| `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
 | `TileLab.tsx` | Dev harness (demo + stress layouts) |
 
 #### Resize Semantics
