@@ -9,21 +9,21 @@ Pommora gains its own end-to-end-encrypted file synchronization and an iOS compa
 
 The shape follows the ratified decision log: a server rather than the desktop as remote (so a closed laptop never strands the phone), whole-file items with tombstones on a monotonic per-vault sequence (one counter serves as the store precondition and the pull cursor), most-recent-wins by envelope mtime with device-id tie-break and every loser retained as a server version, a random vault key wrapped by a PBKDF2 key so a password change never re-encrypts content, and an engine seam rather than a phone-side re-implementation of the walk (a second definition of what a Nexus is was rejected). The engine binds its host once per process at boot rather than threading a host parameter through the 400-odd import sites of the moving set; the engine owns POSIX path helpers rather than routing joins through the seam; the phone's atomic-write plugin sets modification dates, so both hosts restore envelope mtime the same way.
 
-Bounded by: v0 phone scope is A-7 (tree, open page, edit body, create page with its order, tabs, sign in, connect, sync) and every other mutation refuses; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents stay wherever the Tiles plan leaves them (in execution at planning, moving to `_tiles.json`), and whole-file sync carries their `.md` bodies and that sidecar either way. Not solved here: phone-side mutations beyond v0, a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user vaults.
+Bounded by: v0 phone scope is A-7 as restated by Ruling 8 (tree, open page, edit body, create page with its order, rename, delete of pages and containers, move, reorder, tabs, sign in, connect, sync) and every other mutation refuses; the phone opens the renderer's existing menus on a long press through one in-app row-menu pane drawn from the existing menu kit, and no menu is redesigned; MarkdownPM ships as-is; the bottom bar is five items whose tap behavior is the simplest reading and is not designed; no keyboard shortcuts; the device install waits on a paid developer account and is a documented Declared Stop; block documents stay wherever the Tiles plan leaves them (in execution at planning, moving to `_tiles.json`), and whole-file sync carries their `.md` bodies and that sidecar either way. Not solved here: phone-side mutations beyond v0, the list-menu generalization (every menu drawn from one shared model on both hosts), a content index on the phone, three-way merge, OAuth, file coordination for the Files-visible copy, and multi-user vaults.
 
 **Requirements** (the spec's Core, numbered)
 
-1. The engine seam: the read-and-page-write chain in `src/engine` behind one host interface, Node-bound in main, behavior-preserving on desktop (B-1..B-4).
+1. The engine seam: the read-and-page-write chain, the rename cascade, folder-entity CRUD, and the content-trash writers in `src/engine` behind one host interface, Node-bound in main, behavior-preserving on desktop (B-1..B-4).
 2. The bridge grouping shared and the asset scheme host-injected, so a second host installs the same `window.nexus` shape (D-1, D-3, D-4).
 3. Pommora Sync server: Node 24.15+ built-ins only, one SQLite file, email + password, device tokens, vaults keyed by Nexus id, monotonic sequence, tombstones, retained versions with server-side retention pruning, change feed, CORS for `capacitor://localhost`, one Docker container with `DATA_DIR` (C-9, C-10, F-1, F-4, F-5, G-1..G-4).
 4. The sync client in `src/engine/Sync`: manifest walk, E2E crypto, base state, pull → detect → push, the conflict rule with loser retention, per-page cursor persistence, resync, per-item apply with empty-directory pruning (C-2..C-8, F-2..F-9, J-1, J-2, L-1, L-2).
 5. Desktop client in main: push on the write funnel and watcher activity, feed subscription, landings applied through `applyRemote` under the page lock with the outgoing text captured to file history, Settings › General Account and Sync sections, remote versions listed in Page History (C-7, C-11, H-1..H-5).
-6. The mobile companion: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<vault name>`, a Swift atomic-write plugin, Keychain-held secrets, JSON state under `Library`, first-run flow, sync on own writes, resume, launch, and the feed, tree patched per landing, the bottom bar, booting on the iOS 26.5 Simulator (A-6..A-9, D-2, D-5, E-1..E-6, I-1..I-3, J-3).
+6. The mobile companion: Capacitor 8 iOS project at `Pommora/Mobile`, the Files-visible copy under `Documents/<vault name>`, a Swift atomic-write plugin, Keychain-held secrets, JSON state under `Library`, first-run flow, sync on own writes, resume, launch, and the feed, tree patched per landing, the bottom bar, a long press opening the renderer's existing menus through an in-app row-menu pane, rename, delete, move, and reorder served through the engine, booting on the iOS 26.5 Simulator (A-6..A-9 as restated by Ruling 8, D-2, D-5, E-1..E-6, I-1..I-3, J-3).
 7. Verification Nathan asked for on 09-04-2026: an automated two-root integration suite against the real server under `npm run test`, a headless Node sync CLI that stands in for a second device, a dry run over a scratch copy of NexusOS, and a Simulator acceptance that reads the app container's files directly.
 8. The device path documented end to end (bundle id, team signing, TestFlight or ad-hoc), gated only on the developer account (A-5).
 9. Documentation reconciled per section K, including the CLAUDE.md hard rule restated (K-1..K-9).
 
-**Acceptance — the whole thing working:** With the sync server running on localhost, a desktop instance open on a scratch copy of NexusOS and connected to a remote vault, and the companion on the iOS 26.5 Simulator connected to the same vault: a body edit saved on the desktop appears in the Simulator's `Documents/NexusOS` copy within five seconds without any manual action; a page created by writing a file into the Simulator's copy reaches the desktop's folder after the app relaunches; a desktop delete removes the page from the Simulator's copy and lands its `.trash` bundle there; the Simulator app is terminated during three desktop edits and holds all three after relaunch; both roots' sync manifests are byte-identical for every file outside the database set; and the server lists two versions for a page both sides edited before syncing, the newer mtime standing at the head.
+**Acceptance — the whole thing working:** With the sync server running on localhost, a desktop instance open on a scratch copy of NexusOS and connected to a remote vault, and the companion on the iOS 26.5 Simulator connected to the same vault: a body edit saved on the desktop appears in the Simulator's `Documents/NexusOS` copy within five seconds without any manual action; a page created by writing a file into the Simulator's copy reaches the desktop's folder after the app relaunches; a desktop delete removes the page from the Simulator's copy and lands its `.trash` bundle there; the Simulator app is terminated during three desktop edits and holds all three after relaunch; a page renamed on the Simulator lands renamed on the desktop with its inbound links rewritten; both roots' sync manifests are byte-identical for every file outside the database set; and the server lists two versions for a page both sides edited before syncing, the newer mtime standing at the head.
 
 **Forced By**
 
@@ -95,7 +95,7 @@ Bounded by: v0 phone scope is A-7 (tree, open page, edit body, create page with 
 - Biome formats every write through the hook; a shell-driven edit runs `npm run format` after.
 - Main and preload do not hot-reload; a bridge change needs a dev-process restart. React editor extensions need ⌘R.
 - Live data: `~/NexusOS` is never opened by a test instance; every verification run copies it (`rsync -a --exclude .git --exclude .obsidian --exclude .claude ~/NexusOS/ /tmp/pommora-scratch/NexusOS/`) and runs the server with a throwaway `DATA_DIR` under `/tmp/pommora-scratch/`, removed at closeout. A test instance uses `POMMORA_USERDATA` pointed at a scratch dir.
-- Out of scope everywhere: `Showcase/`, the block-document location (Tiles plan), phone-side mutations beyond A-7, the bottom bar's design, OAuth, chunked transfer.
+- Out of scope everywhere: `Showcase/`, the block-document location (Tiles plan), phone-side mutations beyond A-7 as restated by Ruling 8, the bottom bar's design, every menu's design (the pane draws the existing kit), the list-menu generalization, OAuth, chunked transfer.
 
 **Made False** (each rewrite lands in the commit that falsifies it)
 
@@ -373,11 +373,11 @@ export function mutateRegistry<T>(root: string, fn: …): Promise<T> {
 
 - [ ] *(none.)*
 
-#### Task 5: Page CRUD, its utilities, and the value batch move
+#### Task 5: Page CRUD, the rename cascade, the trash writers, and the value batch move
 
 **Requirement:** 1
 
-**Why:** Create, rename, move, and body write are the phone's v0 mutations; `loadValues` is what a Collection view reads. Both cycles into main (`governedWrite`, `indexSeed`/`valuesChanged`) are cut here by leaving the property write and the corpus in main.
+**Why:** Create, rename with its link cascade, move, delete into a trash bundle, reorder, and body write are the phone's v0 mutations (Ruling 8); `loadValues` is what a Collection view reads. Both cycles into main (`governedWrite`, `indexSeed`/`valuesChanged`) are cut here by leaving the property write and the corpus in main.
 
 **Now** — `CRUD/page.ts` 16 importers, `CRUD/util.ts` 13, `CRUD/loadValues.ts` 2, `CRUD/reorder.ts` 3, `disambiguate.ts` 2; `updateFolderSidecar` (`CRUD/folderEntity.ts:64-77`) is the sidecar patch `setContainerOrder` rides:
 
@@ -394,6 +394,11 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
 // src/main/CRUD/loadValues.ts:27-38 corpus(rootPath, containerRelPath, pageIds?) — folderCorpus / liveIdIndex
 // src/main/CRUD/reorder.ts:80-93 setChildOrder(absFolder, key, ids) → setContainerOrder → updateFolderSidecar; :24-38 setStateOrder (mkdir + rmwJsonStrict)
 // src/main/mutate.ts:269-279 createDisambiguated(req.name, name => createPage(…)) then setChildOrder(parent, 'page_order', req.order with NEW_PAGE_SLOT replaced)
+// src/main/CRUD/cascade.ts:23-50 renameCascade(root, oldTitle, newTitle) — queryMentions(oldKey) ?? nexusCorpus(root); per page rewritePageSerialized, then indexWrittenPage + noteValueWrite
+// src/main/Connections/scan.ts (43 lines), rewrite.ts (52) — pure; @shared imports only
+// src/main/CRUD/folderEntity.ts:15-62 createFolderEntity, renameFolderEntity, moveFolderEntity — node mkdir/rename, recordWrite, the sidecar pair
+// src/main/IO/atomicWrite.ts:230-254 mintBundle(root, absSource), settleBundle(bundleDir, absPath); src/main/provenance.ts:115-119 writeRecord, :160-192 gatherParentRef (ensureFolderId fallback), gatherContentRecord
+// src/main/mutate.ts:195-198 isReserved(root, abs) — realpath(root) then NON_CORPUS_TOP / .trash
 ```
 
 **Becomes**
@@ -406,6 +411,14 @@ export async function createPageInOrder(parentDir: string, name: string, opts: C
 // src/engine/CRUD/reorder.ts — setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder (host().mkdir; rmwJsonStrict from the engine)
 // src/engine/IO/sidecarIO.ts gains updateFolderSidecar (moved from CRUD/folderEntity.ts; the one sidecar patch primitive) — folderEntity keeps create/rename/move in main
 // src/engine/disambiguate.ts — createDisambiguated (pure)
+// src/engine/Connections/scan.ts, rewrite.ts — moved unchanged
+// src/engine/CRUD/cascade.ts
+export async function renameCascade(root: string, oldTitle: string, newTitle: string, opts?: { mentions?: readonly string[] | null; afterWrite?: (rel: string, content: string) => Promise<void> }): Promise<Result<{ touched: string[] }>>
+//   mentions absent or null → corpusFilesUnder(root) (the phone's case); main passes queryMentions(oldKey) and an afterWrite running indexWrittenPage + noteValueWrite
+// src/engine/CRUD/folderEntity.ts — createFolderEntity, renameFolderEntity, moveFolderEntity (host().mkdir / host().rename under host().lock; updateFolderSidecar from sidecarIO)
+// src/engine/CRUD/trash.ts — mintBundle, settleBundle, writeRecord, gatherContentRecord(root, kind, abs, ensureId?: (absFolder: string) => Promise<void>) — a parent with no sidecar id and no ensureId records { kind: 'unaddressable' };
+//   main passes ensureFolderId; plus isReservedRel(rel): rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}/`) — mutate.ts keeps its realpath at the boundary and calls this on the rel
+// src/main/provenance.ts — keeps restore, empty, list, rekey; imports the four from @engine/CRUD/trash
 // src/main/CRUD/pageProperty.ts (new; the half that stays)
 export async function updatePageProperty(absFile, def, value, world?): Promise<Result<Adoption[]>>
 // src/engine/loadValues.ts
@@ -414,12 +427,14 @@ export async function loadValues(rootPath: string, files: readonly string[]): Pr
 export async function loadValues(rootPath, containerRelPath, pageIds?): Promise<Record<string, PageValues>>
 ```
 
-**Assumed by:** Task 29 (the phone's create and body write), Task 21 (nothing; the apply never routes through these).
+**Assumed by:** Task 29 (the phone's create, rename, delete, move, reorder, and body write), Task 21 (nothing; the apply never routes through these).
 
 **Verify — automated**
 
 - [ ] Full gate green; counts unmoved plus one (`page.test.ts` moves and gains the `createPageInOrder` case: `[NEW_PAGE_SLOT, existingId]` leaves `page_order` `[newId, existingId]`, a taken name lands as `Name 2`; `loadValues.test.ts` splits into an engine half taking a file list and a main half proving the corpus resolution, same total); `rg -n "createDisambiguated|setChildOrder" src/main/mutate.ts` → the createPage arm calls neither directly.
 - [ ] `rg -l "from '(\.\./)*\.?/?(CRUD/page|CRUD/util|CRUD/loadValues|CRUD/reorder|disambiguate)'" src/main` → 0 excluding `pageProperty.ts` and `loadValues.ts` themselves; `rg -n "updateFolderSidecar" src/main/CRUD/folderEntity.ts` → 1 (the import). Control: `rg -l "updatePageProperty" src/main` → 6.
+- [ ] `cascade.test.ts` moves and gains: with `mentions` null the corpus is walked (spy on `corpusFilesUnder` → 1 call) and `[[Old]]` in a page under a Set is rewritten; with `mentions` given the walk never runs. `trash.test.ts` (new, memory host): a delete of `Ideas/A.md` leaves `.trash/<stamp> A.md.bundle/{_record.json, A.md}` with `entity: 'page'` and `parent: { kind: 'container', id }`; a parent without a sidecar id records `unaddressable` when no `ensureId` is given and gains one when it is; `isReservedRel('.nexus')` and `('.trash/x')` true, `('Ideas')` false.
+- [ ] `rg -l "from '(\.\./)*\.?/?(CRUD/cascade|CRUD/folderEntity|Connections/(scan|rewrite))'" src/main` → 0. Control: `rg -l "@engine/CRUD/trash" src/main` → 2 (`mutate.ts`, `provenance.ts`).
 - [ ] `rg -n "from 'node:" src/engine -g '!*.test.ts'` → 0. Control as Task 4.
 
 **Verify — user**
@@ -981,7 +996,7 @@ export class SyncError extends Error { code: SyncErrorCode }
 
 **Why:** Pull, then detect, then push, with the conflict rule, loser retention, per-item apply, per-page cursor persistence, resync, case-fold refusal, the size cap, and a report — the whole of C-2..C-7, F-4..F-9, J-1 in one module every host drives the same way.
 
-**Now** — `—`; `src/engine/CRUD/util.ts` `invalidName` is the per-segment rule F-8 reuses.
+**Now** — `—`; `src/engine/CRUD/util.ts` `invalidName` is the per-segment rule F-8 reuses; `src/engine/paths.ts` (Task 2) gains `safeRel(rel: string): boolean` here — no empty, `.`, or `..` segment, no leading `/`, `invalidName` false for every segment — the one rule the landing and the phone's mutations (Task 29) share.
 
 **Becomes**
 
@@ -1011,7 +1026,7 @@ export function createSyncScheduler(run: () => Promise<SyncReport>, opts?: { deb
 // Pull: for each page: for each change in sequence: own echo (base.version === change.version) → skip; tombstone → conflict rule vs local
 //   (absent locally → base set deleted; a local change since base — or, with NO BASE, a file whose disk mtime is newer than the tombstone's — wins and is re-pushed;
 //   else beforeReplace, remove, base set deleted);
-//   else fetch + open (null → skipped 'decrypt'); rel validated (lexical containment + invalidName per segment; else 'invalid-path');
+//   else fetch + open (null → skipped 'decrypt'); rel validated by safeRel (else 'invalid-path');
 //   a second item landing on a case-folded rel already held → 'case-collision', refused; local unchanged since base → land;
 //   local changed → newer mtime wins, ties by deviceId order; the loser is stored retain-only (never a file beside the winner);
 //   NO BASE and the file present locally (a fresh connect over a populated root, a resync): equal hash → seed the base, no write; else the same conflict rule;
@@ -1492,10 +1507,17 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 // handled: 'nexus:state' (session.tree() or { status: 'empty' } before a vault connects), 'assets:map' (engine buildAssetMap, Task 4),
 //   'page:open' (engine readPage), 'page:updateBody' (engine updatePageBody; then session.noteOwnWrite(rel)),
 //   'view:loadValues' (engine loadValues over corpusFilesUnder — a full scan; the phone has no index),
-//   'mutate' for op 'createPage' only: engine createPageInOrder (Task 5) then session.noteOwnWrite for the page and the sidecar; every other op REFUSED,
+//   'mutate' for ops createPage (engine createPageInOrder), rename (renamePage or renameFolderEntity; a page rename then renameCascade with mentions null — the tile heal stays desktop),
+//     delete for kinds page | collection | set (isReservedRel → refused; mintBundle → gatherContentRecord → writeRecord → settleBundle; Space and Context deletes REFUSED),
+//     movePage, reorderChildren, reorderTop — every path checked by safeRel (Task 18) where the desktop realpaths; each op then session.noteOwnWrite for every file it wrote
+//     (the page, the sidecar, the bundle's two files, every cascade-touched page); every other op REFUSED,
 //   every SCOPE_ASKS get/set pair through state.ts (derived from the map, never listed by hand), plus 'subfield:get', 'navViewModes:get' (settings.json reads through the engine's readJsonObject) and their sets REFUSED,
 //   'nav:read' (engine readNavigationFile, Task 4) and 'nav:write' REFUSED,
-//   'theme:systemAccent' → null, 'history:list' / 'history:read' (remote versions only), 'account:*', 'sync:*' (Task 30), 'error:show' → console
+//   'theme:systemAccent' → null, 'history:list' / 'history:read' (remote versions only), 'account:*', 'sync:*' (Task 30), 'error:show' → console,
+//   menus: 'context-menu' → presentRowMenu(contextMenuModel(target, creators), lastHoldPoint()) (Task 31), the pick run here — page-meta actions as contextMenu.ts maps them
+//     (begin-rename, confirm-delete, open-in-new-tab, open-history, begin-icon, new-page-adjacent through the in-process emitter; move: → mutate; copylink/copypath → navigator.clipboard; window/reveal → no-op),
+//     rename → emit begin-rename, delete → emit confirm-delete, create:<i> → mutate creators[i].req then begin-rename, lock → mutate setDisclosureLock, reveal → no-op;
+//   'page-actions-menu' → presentRowMenu(pageMetaMenuSubset(ctx.actions, ctx.alreadyOpen), lastHoldPoint()); 'row-menu' → presentRowMenu(req.items, req.anchor ?? lastHoldPoint()); every other menu channel → null
 // extras: openDropped → REFUSED; personalization.set → REFUSED
 ```
 
@@ -1503,7 +1525,7 @@ export function createPhoneApi(session: PhoneSession): NexusApi   // buildApi({ 
 
 **Verify — automated**
 
-- [ ] Red first: every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled envelope channel answers `{ ok: false }` with the shared code; a menu channel answers null; an unhandled raw channel answers undefined and `linkTitles.get()` answers `{}`; `tabs.load()` answers `{ ok: true, value: null }` before any save and round-trips a saved set; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
+- [ ] Red first: a `context-menu` ask with a page target presents `contextMenuModel`'s rows (the pane stubbed) and, picked `delete`, emits `confirm-delete` with the target; `mutate` rename on a page rewrites a sibling's `[[Old]]` (memory host) and notes every write; `mutate` delete leaves the bundle and notes both files; a `delete` of kind `space` answers `{ ok: false }`; a path failing `safeRel` answers `{ ok: false }` before any write. Every key the boot needs resolves to a function (the test walks `NEXUS_API` and asserts no leaf is undefined); each `on*` returns a function; an unhandled envelope channel answers `{ ok: false }` with the shared code; a menu channel answers null; an unhandled raw channel answers undefined and `linkTitles.get()` answers `{}`; `tabs.load()` answers `{ ok: true, value: null }` before any save and round-trips a saved set; `page:updateBody` writes through a memory host and notes the write; `mutate` `createPage` notes two own writes (the page and the sidecar). Then green.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -1567,6 +1589,25 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 // Mobile/src/BottomBar.tsx — a floating Surface at the foot, padding-bottom var(--safe-bottom), five Buttons: Collections and Spaces (sidebarMode + show the sidebar),
 //   Tabs (openNewTab), Navigation (toggleNav), Settings (toggleSettings) — Ruling 2: no Sync action, no Agenda; z-order below pickers, windows, confirmations (J-3)
 // src/renderer/Windows/WebWindow.tsx:66 — `if (typeof wv?.getURL === 'function' && …)` so a host without <webview> stays blank (D-5)
+// src/shared/contextMenu.ts (new) — the sidebar menu's rows stated once, in the order contextMenu.ts holds today
+export type ContextMenuAction = PageMetaAction | PageMoveAction | 'open-new-tab' | `create:${number}` | 'rename' | 'delete' | 'lock' | 'reveal'
+export function contextMenuModel(target: ContextTarget, creators: readonly Creator[]): ActionItem<ContextMenuAction>[]
+//   page → pageMetaMenuItems(target.alreadyOpen, { window: true, newPages: 'pair', move: offersMove(target), clipboard: true, history: true, reveal: true });
+//   else open-new-tab (when target.id) · create:<i> per creator · rename · delete · lock (sidebar collection/set; label by disclosureLocked) · reveal
+// src/main/contextMenu.ts — its template is rowTemplate(contextMenuModel(target, await creatorsFor(…)), pick, target); the pick map (run / push / reveal / clipboard) stays; the hand-built items go
+// src/renderer/Actions/RowMenuPane.tsx (new)
+export function presentRowMenu(items: readonly ActionItem<string>[], at: MenuAnchor | { x: number; y: number }): Promise<string | null>
+//   one MenuDropdown in a root-level portal from the existing kit (MenuItem, MenuSeparator, checked → the kit's mark, disabled, submenu → FrameSlide with a MenuTopRow back);
+//   a pick resolves and unmounts; dismissal through the dismissal stack resolves null; the Bloom origin is `at`; a second call while one is up resolves the first null
+// src/renderer/Interactions/hold.ts (new)
+export function watchHold(el: HTMLElement, e: PointerEvent, opts: { holdMs: number; onHold: () => void }): { abort: () => void }   // cancels on ACTIVATION movement, pointerup, pointercancel
+export function installHoldToContextMenu(root: HTMLElement, holdMs = 450 /* KNOB */): () => void
+export function lastHoldPoint(): { x: number; y: number }
+//   coarse pointers only; a hold with no move dispatches one synthetic `contextmenu` MouseEvent (bubbles, cancelable, clientX/Y) at the target, records the point, and calls navigator.vibrate?.(10);
+//   styles.css: body { -webkit-touch-callout: none } beside the --safe-* block
+// src/renderer/Interactions/gesture.ts — a pointer of type 'touch' activates through watchHold rather than distance: a move before the hold aborts (the scroll wins), a hold then a move drags,
+//   a hold then an up is the context menu's (Ruling 8: hold lifts, release opens the menu, move drags)
+// Mobile/src/main.tsx — installHoldToContextMenu(document.body) before render
 ```
 
 **Verify — automated**
@@ -1574,6 +1615,8 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 - [ ] `BottomBar.test.tsx`: five items, each dispatching its store action; `FirstRun.test.tsx`: Connect disabled until a vault is picked and a password typed.
 - [ ] `WebWindow.test.tsx` (new or extended): a bare element as the guest does not throw.
 - [ ] `rg -n "var\(--safe-bottom\)" Mobile/src` → 1. Control: `rg -n "safe-bottom" src/renderer/styles.css` → 1.
+- [ ] Red first: `contextMenu.test.ts` (shared) — a page target yields the page-meta rows; a locked sidebar Set yields `Unlock Folder`; a Context group with one creator yields its `New <Singular>` row before Rename. `RowMenuPane.test.tsx` — a pick resolves its action and unmounts; Escape resolves null; a submenu row slides and its leaf resolves. `hold.test.ts` — a held touch pointer dispatches `contextmenu` once at its point; a move within holdMs dispatches nothing; a mouse pointer dispatches nothing. `gesture.test.ts` gains: a touch pointer moving before holdMs never activates; one holding then moving activates. Then green.
+- [ ] `contextMenu.test.ts` (main, existing): the popped template's labels equal the model's in order. `rg -n "-webkit-touch-callout" src/renderer/styles.css` → 1.
 - [ ] Full gate green.
 
 **Verify — user**
@@ -1598,11 +1641,12 @@ if (wv && wv.getURL() !== url) void wv.loadURL(url)
 **Verify — user**
 
 - [ ] The two screenshots: the sidebar's Collections mode with the fixture's Collection, the bottom bar's five items, a page open in MarkdownPM.
+- [ ] A long press on a sidebar row opens its menu at the finger; Rename renames inline; Delete asks and trashes; a hold-then-drag reorders two pages; Move To ▸ moves one.
 
 #### Gate 6 — the companion boots (Declared Stop)
 
 - [ ] Gate commands green (`typecheck:mobile`, the lint excludes).
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Mobile/src`, `Mobile/plugins`, `Mobile/*.ts`, `Mobile/package.json`, `src/renderer/Windows/WebWindow.tsx`, the tsconfig and biome changes; the reports cite files inside it.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Mobile/src`, `Mobile/plugins`, `Mobile/*.ts`, `Mobile/package.json`, `src/renderer/Windows/WebWindow.tsx`, `src/shared/contextMenu.ts`, `src/main/contextMenu.ts`, `src/renderer/Actions/RowMenuPane.tsx`, `src/renderer/Interactions/hold.ts`, `src/renderer/Interactions/gesture.ts`, the tsconfig and biome changes; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying a ruling in the Log.
 - [ ] Progress hashes filled in; line count reported.
 - [ ] **Declared stop.** Execution halts until Nathan closes Task 32's user box.
@@ -1651,6 +1695,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 - [ ] Desktop delete → the container's copy loses the page and gains its `.trash` bundle.
 - [ ] `simctl terminate`; three desktop edits; `launch` → all three present in the container.
 - [ ] `diffRoots` over the desktop copy and the container's copy clean.
+- [ ] After the user clauses: the desktop's `page_order` for the reordered folder equals the container's; the desktop tree holds the renamed title and the moved page; the phone delete's `.trash` bundle stands on the desktop; the renamed page's inbound link on the desktop reads the new title; `diffRoots` clean again.
 - [ ] Both-edited page (desktop and the CLI) → the server's versions route lists two; the newer stands on the desktop, in the container, and in root B.
 - [ ] Screenshots after each clause where the interface shows it (the tree, the edited page).
 - [ ] The Simulator shut down, the server stopped, `/tmp/pommora-scratch` removed, `git -C ~/NexusOS status --short` unchanged from before the phase.
@@ -1658,6 +1703,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
 **Verify — user**
 
 - [ ] The screenshots; the desktop page holding the edit typed on the Simulator (the one clause only a human types).
+- [ ] On the Simulator: a rename, a delete, a hold-then-drag reorder, and a Move To ▸, each reaching the desktop.
 
 #### Task 35: The device path (Declared Stop)
 
@@ -1760,7 +1806,7 @@ Live-data. Every run uses the scratch copy and a throwaway `DATA_DIR`; both are 
   - [ ] Task 2 — The pure modules move · `<commit>`
   - [ ] Task 3 — The IO read chain and the JSON writers move · `<commit>`
   - [ ] Task 4 — Pages, sidecars, the registry, folder kind, and the walk move · `<commit>`
-  - [ ] Task 5 — Page CRUD, its utilities, and the value batch move · `<commit>`
+  - [ ] Task 5 — Page CRUD, the rename cascade, the trash writers, and the value batch move · `<commit>`
   - [ ] Task 6 — The disk-to-tree patchers move behind a tree holder · `<commit>`
 - [ ] **Phase 2** — Host seams the phone shares
   - [ ] Task 7 — The api shape becomes a shared table · `<commit>`
@@ -1813,6 +1859,7 @@ Asked and answered 09-04-2026 (Nathan's call on each):
 5. **Phone create-page writes the parent's `page_order`** exactly as the desktop does; `setChildOrder`, `updateFolderSidecar`, and `createDisambiguated` move into the engine (Task 5).
 6. **Scratch vaults** only ever reach a throwaway server `DATA_DIR`, removed at closeout.
 7. **OAuth (Google, Apple):** asked for if cheap; the planner's answer is that it is not — Sign in with Apple needs the paid program first, Google needs a Cloud console client, an auth-session browser flow with a deep-link return on both hosts, and server-side token verification — so it stays a Prospect behind the sign-in seam until the device install exists. Stands unless Nathan overrules.
+8. **Phone mutations and menus (09-04-2026):** rename, delete of pages, Sets, and Collections, move, and reorder join v0 (A-7 restated); Space and Context deletes stay desktop-only. The phone reaches them through the renderer's existing menus: a long press dispatches the renderer's own `contextmenu`, the sidebar menu's rows are stated once in `src/shared/contextMenu.ts`, and one in-app row-menu pane drawn from the existing menu kit presents them; no menu is redesigned. Hold lifts, release opens the menu, move drags (the iOS convention). The list-menu generalization (every menu from one model, the 22 channels collapsing into `row-menu`, the desktop's in-app default) is deferred. New renderer pieces sit beside their kin (`Actions/`, `Interactions/`), which is where the renderer already keeps menus and gestures.
 
 Review rounds: simplicity round 1 (09-04-2026) returned 20 findings; all folded, with one half-decline — `serveBridge`'s 26 handler kinds stay declared beside their handlers rather than deriving from the api table's `menu` flag, since a menu channel is already typed `X | null` and the two cannot drift without a compile error. Attack round 1 (09-04-2026) returned 17 findings (4 High: a populated reconnect resurrecting deletions, the mtime round-trip on APFS, the Docker build context, the absent `POMMORA_USERDATA`); all 17 folded. Two of its latent notes are accepted as outside this arc: `nexus.db` sitting inside an iCloud-synced root, and `record.ts`'s birth-time adjudication on a pulled file. Attack round 2 (09-04-2026) returned 8 findings (2 High: `rewritePreservingTimes` invisible to the change gate — the `forceHash` set; the desktop's sync rows carrying no vault id) and 2 unknowns (the cursor after a retain-only store; `Sync/package.json` in the image); all folded. A third round would exceed the two-agent cap per scope; Nathan decides whether the second round's severity earns one.
 
@@ -1834,6 +1881,7 @@ Taken at planning against the decision log, each the simpler mechanism:
 - **I-2 (a Sync action in the bottom bar):** withdrawn by Ruling 2; Settings › General's Sync Now is the manual fallback on both hosts.
 - **F-4 (a snapshot without tombstones):** the change log carries tombstones at every cursor, since tombstone heads are kept forever anyway; a self-sufficient snapshot is what makes a populated reconnect safe (Task 13, Task 18).
 - **F-6 (the base compares against the envelope's time):** the base holds the disk's integer mtime read after each write; a raw APFS mtime never round-trips through `utimes`, so comparing to the envelope would re-hash every landed file on every sync (Task 1, Task 17).
+- **A-7 (v0 scope):** restated by Ruling 8 — rename, delete of pages and containers, move, and reorder join v0; the phone reaches them through the renderer's existing menus and drags, never a new surface.
 - **C-7 (no periodic sync):** the scheduler carries a 30 s sweep, because the desktop watcher never delivers an outside edit in an excluded folder, `.trash`, or a dot-folder, and those are in the manifest (Task 18).
 
 ### Lessons
@@ -1841,7 +1889,8 @@ Taken at planning against the decision log, each the simpler mechanism:
 ### Sequenced After
 
 - Watcher-driven reload of an open editor on an external or synced edit through `replaceBody` (H-4's successor; the two-host lost update in Context's Known Issues).
-- Phone-side mutation parity, one module at a time into `src/engine` (delete, rename, move, properties, schema, Contexts, views, reorders, restore).
+- Phone-side mutation parity, one module at a time into `src/engine` (properties, schema, Contexts, views, Space and Context deletes, restore, the tile heal on rename).
+- The list-menu generalization: the nine main-assembled menu templates become shared models, the 22 per-surface menu channels collapse into `row-menu`, `presentRowMenu` becomes the desktop's in-app path with the Use Native Menus default flipped on so the desktop keeps its look, and the sidebar menu's pick is performed by the renderer on both hosts.
 - A source label on Page History rows (local snapshot versus remote version), and remote history that survives a rename (the envelope carrying the prior item id).
 - `startDesktopSync(root, win)` binds one window for its status push; a second window needs the push to fan out through the live-refresh transport the multi-window seam names.
 - The block documents' sync classification once the Tiles plan lands `_tiles.json` (the watcher ignores `.nexus/homepage` and Space `.md` bodies today).

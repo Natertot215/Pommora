@@ -48,7 +48,7 @@
 - **A-4:** [confirmed] A sync server is in scope.
 - **A-5:** [confirmed] No paid Apple Developer membership today; Xcode and an iCloud account are available. Every step is gated on the Simulator with no signing, and the plan carries the device path end to end (bundle id, automatic signing under a team, a TestFlight or ad-hoc install) so that buying the account is the only thing between the Simulator and the phone.
 - **A-6:** [confirmed] Mobile code lives at `Pommora/Mobile`.
-- **A-7:** [confirmed] V0 mobile scope: read the tree, open a page, edit the body, create a page, open and switch tabs. No expectation of a pleasant experience; nothing else needs 1-to-1 parity.
+- **A-7:** [confirmed] V0 mobile scope: read the tree, open a page, edit the body, create a page, rename, delete a page or container into the trash, move, reorder, open and switch tabs, through the renderer's existing menus opened by a long press. Space and Context deletes, properties, schema, views, and restore wait. No expectation of a pleasant experience; nothing else needs 1-to-1 parity.
 - **A-8:** [confirmed] MarkdownPM ships on mobile as-is, no mobile toolbar.
 - **A-9:** [assumed] Bottom bar items: Collections, Spaces (the code's Contexts mode), Agenda placeholder, Tabs, Navigation, Settings. Tap behavior is deferred by ruling; the plan takes the simplest reading (a sheet over the content).
 
