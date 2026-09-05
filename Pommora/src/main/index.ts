@@ -46,20 +46,20 @@ import {
   convertTileToPage,
   convertTileToView,
   createMarkdownTile,
-  duplicateBlockTile,
-  readBlockDoc,
+  duplicateTile,
+  readTileDoc,
   readMarkdownTile,
-  removeBlockTile,
-  writeBlockDoc,
+  removeTile,
+  writeTileDoc,
   writeMarkdownTile,
-} from './blocks'
+} from './tiles'
 import { isUlid } from './ids'
 import {
-  blockPatchProblem,
-  coerceBlockHost,
-  type BlockDocPatch,
-  type BlockHostRef,
-} from '@shared/blocks'
+  tilePatchProblem,
+  coerceTileHost,
+  type TileDocPatch,
+  type TileHostRef,
+} from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
 import { DEFAULT_TRASH_MODE } from '@shared/types'
@@ -678,14 +678,11 @@ function isOptionArray(v: unknown): v is Option[] {
 
 // Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must
 // never carry path segments.
-const blockHostAnd = (
-  host: unknown,
-  tileId?: unknown,
-): Result<{ root: string; h: BlockHostRef }> => {
+const tileHostAnd = (host: unknown, tileId?: unknown): Result<{ root: string; h: TileHostRef }> => {
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
-  const h = coerceBlockHost(host)
-  if (!h) return fail('not-found', 'Unknown block host.')
+  const h = coerceTileHost(host)
+  if (!h) return fail('not-found', 'Unknown tile host.')
   if (tileId !== undefined && (typeof tileId !== 'string' || !isUlid(tileId)))
     return fail('not-found', 'Invalid tile id.')
   return ok({ root, h })
@@ -1473,70 +1470,70 @@ serveBridge(
       },
     },
 
-    'blocks:get': {
+    'tiles:get': {
       kind: 'envelope',
       fn: (host: unknown) => {
-        const h = coerceBlockHost(host)
-        if (!h) return fail('not-found', 'Unknown block host.')
-        return ok(readBlockDoc(h))
+        const h = coerceTileHost(host)
+        if (!h) return fail('not-found', 'Unknown tile host.')
+        return ok(readTileDoc(h))
       },
     },
-    'blocks:save': {
+    'tiles:save': {
       kind: 'envelope',
       fn: (host: unknown, patch: unknown) => {
         if (adopting()) return BUSY
-        const h = coerceBlockHost(host)
-        if (!h) return fail('not-found', 'Unknown block host.')
+        const h = coerceTileHost(host)
+        if (!h) return fail('not-found', 'Unknown tile host.')
         if (!patch || typeof patch !== 'object')
-          return fail('operation-failed', 'Invalid block-doc patch.')
-        const problem = blockPatchProblem(patch as BlockDocPatch)
+          return fail('operation-failed', 'Invalid tile-doc patch.')
+        const problem = tilePatchProblem(patch as TileDocPatch)
         if (problem) return fail('operation-failed', problem)
         if (sessionDb() === null) return NO_NEXUS
-        writeBlockDoc(h, patch as BlockDocPatch)
+        writeTileDoc(h, patch as TileDocPatch)
         return ok(null)
       },
     },
 
-    'blocks:createMarkdown': {
+    'tiles:createMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown) => {
-        const ctx = blockHostAnd(host)
+        const ctx = tileHostAnd(host)
         if (!ctx.ok) return ctx
         return ok({ id: await createMarkdownTile(ctx.value.root, ctx.value.h) })
       },
     },
-    'blocks:removeTile': {
+    'tiles:removeTile': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        await removeBlockTile(ctx.value.root, ctx.value.h, tileId as string)
+        await removeTile(ctx.value.root, ctx.value.h, tileId as string)
         return ok(null)
       },
     },
-    'blocks:readMarkdown': {
+    'tiles:readMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         const body = await readMarkdownTile(ctx.value.root, ctx.value.h, tileId as string)
-        return body === null ? fail('not-found', 'Block file not found.') : ok({ body })
+        return body === null ? fail('not-found', 'Tile file not found.') : ok({ body })
       },
     },
-    'blocks:writeMarkdown': {
+    'tiles:writeMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, body: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
         await writeMarkdownTile(ctx.value.root, ctx.value.h, tileId as string, body)
         return ok(null)
       },
     },
-    'blocks:convertToPage': {
+    'tiles:convertToPage': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, pageId: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         if (typeof pageId !== 'string' || pageId.length === 0)
           return fail('operation-failed', 'Invalid page id.')
@@ -1544,10 +1541,10 @@ serveBridge(
         return ok(null)
       },
     },
-    'blocks:convertToView': {
+    'tiles:convertToView': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, views: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         const list = Array.isArray(views) ? views : null
         const valid =
@@ -1558,12 +1555,12 @@ serveBridge(
         return ok(null)
       },
     },
-    'blocks:duplicateTile': {
+    'tiles:duplicateTile': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = blockHostAnd(host, tileId)
+        const ctx = tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        const id = await duplicateBlockTile(ctx.value.root, ctx.value.h, tileId as string)
+        const id = await duplicateTile(ctx.value.root, ctx.value.h, tileId as string)
         return id ? ok({ id }) : fail('not-found', 'No such tile.')
       },
     },

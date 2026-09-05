@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { NexusTree } from '@shared/types'
-import { TileSurface } from '@renderer/Tiles/TileHost'
+import { TileHost } from '@renderer/Tiles/TileHost'
 import { InterfaceScaffold } from './InterfaceScaffold'
 import { findSpace } from './scope'
 
@@ -18,7 +18,7 @@ export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }):
     <InterfaceScaffold owner={owner}>
       {/* Keyed per Space: the surface's debounced saves and editor session must never
           carry across an in-place host swap. */}
-      <TileSurface key={id} host={host} />
+      <TileHost key={id} host={host} />
     </InterfaceScaffold>
   )
 }

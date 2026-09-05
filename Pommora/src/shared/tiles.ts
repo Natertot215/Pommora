@@ -1,6 +1,6 @@
-// The host-agnostic contract a BlockHost carries: a tile layout tree under `layout`,
-// tagged-union tile payloads under `blocks`, and the host lock under `blocks_locked`. Entries ride
-// RAW through reads and writes so foreign or future tile types survive rewrites; `knownBlock` is
+// The host-agnostic contract a tile host carries: a tile layout tree under `layout`,
+// tagged-union tile payloads under `blocks`, and the host lock under `locked`. Entries ride
+// RAW through reads and writes so foreign or future tile types survive rewrites; `knownTile` is
 // the read lens typing the entries this build understands.
 
 import { z } from 'zod'
@@ -52,15 +52,14 @@ export const rawLayoutSchema = z.object({
  *  Space 2×2 seed share this one value. */
 export const NEW_TILE_H = 160
 
-/** The BlockHost seam: which entity's sidecar holds the doc — the homepage singleton
- *  (homepage.json) or a Space (its `_space.json`). */
-export type BlockHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
+/** The tile hosts that exist: the homepage singleton and a Space. */
+export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
-export function blockHostKey(host: BlockHostRef): string {
+export function tileHostKey(host: TileHostRef): string {
   return host.kind === 'homepage' ? 'homepage' : `space:${host.id}`
 }
 
-export function coerceBlockHost(raw: unknown): BlockHostRef | null {
+export function coerceTileHost(raw: unknown): TileHostRef | null {
   if (typeof raw !== 'object' || raw === null) return null
   const { kind, id } = raw as { kind?: unknown; id?: unknown }
   if (kind === 'homepage') return { kind: 'homepage' }
@@ -70,25 +69,25 @@ export function coerceBlockHost(raw: unknown): BlockHostRef | null {
 
 /** Per-tile chassis style: borderless hides the border until you reach for
  *  it — border/handle hover, drag, resize. */
-export type BlockStyle = 'bordered' | 'borderless'
+export type TileStyle = 'bordered' | 'borderless'
 const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
 
-/** Markdown block: body lives in `<id>.md` inside the host's own folder. */
-export interface MarkdownBlockEntry {
+/** Markdown tile: body lives in `<id>.md` inside the host's own folder. */
+export interface MarkdownTileEntry {
   id: string
   type: 'markdown'
-  style?: BlockStyle
+  style?: TileStyle
   locked?: boolean
   zoom?: number
 }
 
 /** Page embed: a scrollable, editable window onto the real page. `banner` /
  *  `title` are the chrome toggles (absent = shown). */
-export interface PageBlockEntry {
+export interface PageTileEntry {
   id: string
   type: 'page'
   page_id: string
-  style?: BlockStyle
+  style?: TileStyle
   banner?: boolean
   title?: boolean
   locked?: boolean
@@ -106,12 +105,12 @@ export interface EmbeddedView {
 /** View embed: `views` is the switcher's list; `active` indexes into it. The header chrome follows
  *  the page embed's absent-=-shown convention — `title` hides the title row, `icon` the view icon
  *  beside it — and the switcher reuses the container presentation vocabulary. */
-export interface ViewBlockEntry {
+export interface ViewTileEntry {
   id: string
   type: 'view'
   views: EmbeddedView[]
   active?: number
-  style?: BlockStyle
+  style?: TileStyle
   display_title?: string
   title?: boolean
   icon?: boolean
@@ -122,7 +121,7 @@ export interface ViewBlockEntry {
   zoom?: number
 }
 
-export type BlockEntry = MarkdownBlockEntry | PageBlockEntry | ViewBlockEntry
+export type TileEntry = MarkdownTileEntry | PageTileEntry | ViewTileEntry
 
 const lockedField = z.boolean().optional().catch(undefined)
 const zoomField = z.number().positive().optional().catch(undefined)
@@ -188,29 +187,29 @@ export type ViewPickerItem = DrillPickItem<ViewPick>
 
 /** Type one raw `blocks[]` entry, or null for shapes this build doesn't know —
  *  the caller keeps the raw value either way (never strip, render inert). */
-export function knownBlock(raw: unknown): BlockEntry | null {
+export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
-  return parsed.success ? (parsed.data as BlockEntry) : null
+  return parsed.success ? (parsed.data as TileEntry) : null
 }
 
 /** The doc as main hands it across IPC — layout + entries stay raw; the renderer
  *  decodes the layout and lenses the entries. */
-export interface BlockDoc {
+export interface TileDoc {
   layout: unknown
   blocks: unknown[]
   locked: boolean
 }
 
 /** A partial write — only the present keys touch the sidecar. */
-export interface BlockDocPatch {
+export interface TileDocPatch {
   layout?: unknown
   blocks?: unknown[]
   locked?: boolean
 }
 
-/** Main-side gate for a blocks:save patch — a shape CHECK only: the ORIGINAL values are what get
+/** Main-side gate for a tiles:save patch — a shape CHECK only: the ORIGINAL values are what get
  *  written, since zod's parse output strips unknown keys and foreign keys must survive. */
-export function blockPatchProblem(patch: BlockDocPatch): string | null {
+export function tilePatchProblem(patch: TileDocPatch): string | null {
   if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
     return 'Malformed layout.'
   if ('blocks' in patch && !Array.isArray(patch.blocks)) return 'blocks must be an array.'

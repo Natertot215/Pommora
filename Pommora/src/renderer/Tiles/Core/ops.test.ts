@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ColumnNode, RowNode, SurfaceLayout, TileLeaf } from './model'
+import type { ColumnNode, RowNode, TileLayout, TileLeaf } from './model'
 import { findTile, getTile, nodeHeight, tileIds, validateLayout } from './model'
 import {
   insertBand,
@@ -14,9 +14,9 @@ import {
 } from './ops'
 import { computeGeometry } from './rects'
 
-const single = (): SurfaceLayout => insertBand({ bands: [] }, 0, 'a', 200)
+const single = (): TileLayout => insertBand({ bands: [] }, 0, 'a', 200)
 
-const assertValid = (layout: SurfaceLayout): void => {
+const assertValid = (layout: TileLayout): void => {
   expect(validateLayout(layout)).toEqual([])
 }
 
@@ -114,7 +114,7 @@ describe('moveTile', () => {
     expect(findTile(l, 'c')?.path[0]).toBeDefined()
   })
 
-  it('band pair: the seam negotiates, blocks below stay put', () => {
+  it('band pair: the seam negotiates, tiles below stay put', () => {
     let l = insertBand(single(), 1, 'b', 160)
     l = insertBand(l, 2, 'c', 120)
     const r = resizeBandPair(l, 0, -30, 64)

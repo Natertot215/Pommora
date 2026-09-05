@@ -2,7 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { blockHostKey } from '@shared/blocks'
+import { tileHostKey } from '@shared/tiles'
 import { isUlidShaped } from '@shared/identity'
 import type { EntityRecord } from '@shared/record'
 import { readKey, writeKey } from './Database/localState'
@@ -220,7 +220,7 @@ describe('the re-mint writes', () => {
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
     writeKey('activeView', SET, 'view-2')
     writeKey('viewOrder', 'view-2', ['page-b', 'page-a'])
-    writeKey('blockDoc', blockHostKey({ kind: 'space', id: SPACE }), {
+    writeKey('blockDoc', tileHostKey({ kind: 'space', id: SPACE }), {
       blocks: [
         {
           id: 'tile-1',
@@ -276,8 +276,8 @@ describe('the re-mint writes', () => {
     expect(readKey('viewOrder', copySet.views[1].id)).toEqual(['page-b', 'page-a'])
 
     type Doc = { blocks: { views: { config: { id: string } }[] }[] }
-    const originalDoc = readKey<Doc>('blockDoc', blockHostKey({ kind: 'space', id: SPACE }))!
-    const copyDoc = readKey<Doc>('blockDoc', blockHostKey({ kind: 'space', id: copySpace.id }))!
+    const originalDoc = readKey<Doc>('blockDoc', tileHostKey({ kind: 'space', id: SPACE }))!
+    const copyDoc = readKey<Doc>('blockDoc', tileHostKey({ kind: 'space', id: copySpace.id }))!
     expect(originalDoc.blocks[0].views[0].config.id).toBe('cfg-original')
     expect(isUlidShaped(copyDoc.blocks[0].views[0].config.id)).toBe(true)
     expect(copyDoc.blocks[0].views[0].config.id).not.toBe(originalDoc.blocks[0].views[0].config.id)

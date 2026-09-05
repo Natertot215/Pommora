@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@renderer/Testing/pointerHarness'
 import { getTile, tileIds } from './Core/model'
 import { insertBand } from './Core/ops'
-import { SurfaceView } from './TileGrid'
+import { TileGrid } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -36,7 +36,7 @@ function mount(): { onLayoutChange: ReturnType<typeof vi.fn>; edge: HTMLElement 
   const onLayoutChange = vi.fn()
   act(() =>
     root.render(
-      <SurfaceView
+      <TileGrid
         layout={layout}
         onLayoutChange={onLayoutChange}
         renderTile={(id) => <span data-tile={id} />}
@@ -47,7 +47,7 @@ function mount(): { onLayoutChange: ReturnType<typeof vi.fn>; edge: HTMLElement 
 }
 
 const tileEl = (id: string): HTMLElement =>
-  [...host.querySelectorAll<HTMLElement>('.spm-tile')].find((t) =>
+  [...host.querySelectorAll<HTMLElement>('.tile')].find((t) =>
     t.querySelector(`[data-tile="${id}"]`),
   ) as HTMLElement
 
@@ -84,7 +84,7 @@ describe('the grid on the gesture engine', () => {
 
   it('a handle drag onto the top seam lifts, settles, and commits the move once', () => {
     const { onLayoutChange } = mount()
-    const handle = tileEl('b').querySelector('.spm-handle') as HTMLElement
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
     act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
     act(() => firePointer(window, 'pointermove', { x: 0, y: 5 }))
     expect(tileEl('b').classList.contains('is-lifted')).toBe(true)
@@ -97,7 +97,7 @@ describe('the grid on the gesture engine', () => {
 
   it('Escape during a handle drag settles home and commits nothing', () => {
     const { onLayoutChange } = mount()
-    const handle = tileEl('b').querySelector('.spm-handle') as HTMLElement
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
     act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
     act(() => firePointer(window, 'pointermove', { x: 0, y: 5 }))
     act(() => pressEscape())

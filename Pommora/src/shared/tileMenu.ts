@@ -8,13 +8,13 @@ import type { ZoomOption } from './gripMenu'
 // actually is.
 
 import type {
-  BlockEntry,
-  BlockStyle,
+  TileEntry,
+  TileStyle,
   DrillPickItem,
   PagePickerItem,
   ViewPick,
   ViewPickerItem,
-} from './blocks'
+} from './tiles'
 import type { ActionItem } from './menuModel'
 import { lockLabel } from './toggleLabels'
 
@@ -23,7 +23,7 @@ export type TileAction =
   | 'tile:duplicate'
   | 'tile:delete'
   | 'tile:lock'
-  | `tile:style:${BlockStyle}`
+  | `tile:style:${TileStyle}`
   | `tile:zoom:${string}`
   | `tile:pick:${number}`
 
@@ -33,7 +33,7 @@ export type TileAction =
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 
 export interface TileMenuContext {
-  entry: BlockEntry
+  entry: TileEntry
   /** The source page's identity, for a page tile. Its title heads the menu, inert. */
   pageInfo?: { title: string }
   pageItems: PagePickerItem[]
@@ -104,7 +104,7 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
     )
   }
 
-  const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
+  const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   items.push({
     label: 'Style',
     action: 'tile:open',

@@ -1,16 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { SurfaceLayout } from './Core/model'
+import type { TileLayout } from './Core/model'
 import { tileIds } from './Core/model'
 import type { Rect } from './Core/rects'
 import { insertBand, splitAtTile } from './Core/ops'
-import { SurfaceView } from './TileGrid'
+import { TileGrid } from './TileGrid'
 
 // The tile system's lab — dummy numbered tiles over the live engine, for driving the
 // tessellation by hand: handle-drag to move (edge quadrants + band seams preview
-// the real result), block edges/corners to resize, Esc aborts anything.
+// the real result), tile edges/corners to resize, Esc aborts anything.
 
-function demoLayout(): SurfaceLayout {
-  let l: SurfaceLayout = { bands: [] }
+function demoLayout(): TileLayout {
+  let l: TileLayout = { bands: [] }
   l = insertBand(l, 0, 't1', 260)
   l = splitAtTile(l, 't1', 'e', 't2')
   l = splitAtTile(l, 't2', 'e', 't3', 0.4)
@@ -23,8 +23,8 @@ function demoLayout(): SurfaceLayout {
   return l
 }
 
-function stressLayout(): SurfaceLayout {
-  let l: SurfaceLayout = { bands: [] }
+function stressLayout(): TileLayout {
+  let l: TileLayout = { bands: [] }
   let n = 0
   for (let band = 0; band < 10; band++) {
     const first = `s${n++}`
@@ -41,8 +41,8 @@ function stressLayout(): SurfaceLayout {
   return l
 }
 
-export function SurfaceLab(): React.JSX.Element {
-  const [layout, setLayout] = useState<SurfaceLayout>(demoLayout)
+export function TileLab(): React.JSX.Element {
+  const [layout, setLayout] = useState<TileLayout>(demoLayout)
   const nextId = useMemo(() => {
     const ids = tileIds(layout)
     let n = ids.length + 1
@@ -94,7 +94,7 @@ export function SurfaceLab(): React.JSX.Element {
           Reset
         </button>
       </div>
-      <SurfaceView layout={layout} onLayoutChange={setLayout} renderTile={renderTile} />
+      <TileGrid layout={layout} onLayoutChange={setLayout} renderTile={renderTile} />
     </div>
   )
 }

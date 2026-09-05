@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { BlockHostRef } from '@shared/blocks'
+import type { TileHostRef } from '@shared/tiles'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
@@ -19,7 +19,7 @@ export function MarkdownTile({
   suppressFlush,
   locked = false,
 }: {
-  host: BlockHostRef
+  host: TileHostRef
   tileId: string
   editing: boolean
   onBeginEdit: (tileId: string) => void
@@ -33,7 +33,7 @@ export function MarkdownTile({
 
   useEffect(() => {
     let live = true
-    void window.nexus.blocks.readMarkdown(host, tileId).then((r) => {
+    void window.nexus.tiles.readMarkdown(host, tileId).then((r) => {
       if (live) setBody(r.ok ? r.value.body : '')
     })
     return () => {
@@ -59,7 +59,7 @@ export function MarkdownTile({
     saves.schedule(tileId, next, () =>
       suppressRef.current?.(tileId)
         ? Promise.resolve({ ok: true })
-        : window.nexus.blocks.writeMarkdown(host, tileId, next),
+        : window.nexus.tiles.writeMarkdown(host, tileId, next),
     )
 
   if (body === null) return <div className="markdown-tile" />

@@ -8,7 +8,7 @@ import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 const c = colorVars.color
 
 // The header's horizontal insets — shared by the title row, the switcher row, and the title divider,
-// so the divider aligns with the content instead of bleeding to the block edges.
+// so the divider aligns with the content instead of bleeding to the tile edges.
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
 
@@ -168,7 +168,7 @@ globalStyle(`${body} .table-view, ${body} .view-empty`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
 })
 
-/** Cards ride the SAME embed-zoom seam (.cards-view reads `zoom: --zoom * --block-zoom`), but take the
+/** Cards ride the SAME embed-zoom seam (.cards-view reads `zoom: --zoom * --tile-zoom`), but take the
  *  BASE page-embed zoom — not the table's, whose 15/13 factor normalizes the table's 13px
  *  body. Cards have no single body-font base, so they scale like a page embed instead of inheriting the
  *  table's text-normalization; without this the card grid rendered at full content-view size in a tile. */
@@ -182,17 +182,17 @@ globalStyle(`${body} .cards-view`, {
 /** The CARD GRIDS alone align to the header inset — the same line the title divider and pills
  *  run — while the disclosure bands lead in by the same gutter carve the embedded table's bands
  *  do, so both view kinds start their headings from one X. The divisions unwind the cards' zoom
- *  so each inset holds in real px at any block zoom. */
+ *  so each inset holds in real px at any tile zoom. */
 globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row`, {
-  paddingLeft: `calc(${HEAD_PAD_L} / (var(--zoom, 1) * var(--block-zoom, 1)))`,
-  paddingRight: `calc(${HEAD_PAD_R} / (var(--zoom, 1) * var(--block-zoom, 1)))`,
+  paddingLeft: `calc(${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
+  paddingRight: `calc(${HEAD_PAD_R} / (var(--zoom, 1) * var(--tile-zoom, 1)))`,
 })
 // GLYPH parity with the embedded table's bands, not box parity: the table floats its chevron out
 // of flow (glyph flush at its 20px-real grid start), while the cards chevron is in flow ahead of
 // the glyph — so the cards lead subtracts that chevron cluster (the outline's 12px Icon + the band
 // gap), in-zoom AFTER the division; the detail lane anchor alone holds in real px.
 globalStyle(`${body} .cards-view .group-band-row`, {
-  paddingLeft: `calc(var(--rail-inset) / (var(--zoom, 1) * var(--block-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
+  paddingLeft: `calc(var(--rail-inset) / (var(--zoom, 1) * var(--tile-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
 })
 
 /** Embedded tables shed the column-header band chrome — no heading fill, no divider under it;
@@ -207,6 +207,6 @@ globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-div
 globalStyle(`${body} .col-header:first-child`, { overflow: 'visible' })
 globalStyle(`${body} .col-header:first-child::before`, {
   // The pseudo lives inside the grid's zoom while HEAD_PAD_L is a real-px inset — divide it out,
-  // like the cards rules above, so the cap holds the pill line at any block zoom.
-  left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--block-zoom, 1))) - var(--rail-inset))`,
+  // like the cards rules above, so the cap holds the pill line at any tile zoom.
+  left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--tile-zoom, 1))) - var(--rail-inset))`,
 })

@@ -1,4 +1,4 @@
-@property --block-zoom {
+@property --tile-zoom {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
@@ -12,7 +12,7 @@
 }
 
 .mdpm-shell {
-  --glyph-scale: calc(var(--page-detail-scale) * var(--block-zoom, 1));
+  --glyph-scale: calc(var(--page-detail-scale) * var(--tile-zoom, 1));
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
   position: relative;
@@ -56,7 +56,7 @@
   --cite-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
   --cite-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
-  font-size: calc(var(--editor-font-size, 15px) * var(--block-zoom, 1) * var(--editor-scale, 1));
+  font-size: calc(var(--editor-font-size, 15px) * var(--tile-zoom, 1) * var(--editor-scale, 1));
 }
 
 .mdpm-header {
@@ -357,7 +357,7 @@
   -webkit-user-select: none;
   transition:
     border-color var(--duration-base) var(--ease-base),
-    --block-zoom var(--duration-base) var(--ease-base);
+    --tile-zoom var(--duration-base) var(--ease-base);
 }
 .mdpm-embed-tile:hover,
 .mdpm-embed-tile.is-editing-tile {

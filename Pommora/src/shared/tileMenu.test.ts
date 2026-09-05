@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { BlockEntry, PagePickerItem, ViewPickerItem } from './blocks'
+import type { TileEntry, PagePickerItem, ViewPickerItem } from './tiles'
 import { type TileMenuContext, tileMenuModel } from './tileMenu'
 
 const STEPS = [
@@ -8,7 +8,7 @@ const STEPS = [
 ]
 
 const ctx = (over: Partial<TileMenuContext> = {}): TileMenuContext => ({
-  entry: { type: 'markdown', id: 'b1' } as unknown as BlockEntry,
+  entry: { type: 'markdown', id: 'b1' } as unknown as TileEntry,
   pageItems: [],
   viewItems: [],
   zoomSteps: STEPS,
@@ -28,7 +28,7 @@ describe('the tile menu as a model', () => {
     expect(labels(tileMenuModel(ctx()))).toContain('Link Page')
     const page = tileMenuModel(
       ctx({
-        entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as BlockEntry,
+        entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
         pageInfo: { title: 'Roadmap' },
       }),
     )
@@ -39,7 +39,7 @@ describe('the tile menu as a model', () => {
   it('heads a page tile with its own name, inert — the title field has no native twin', () => {
     const m = tileMenuModel(
       ctx({
-        entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as BlockEntry,
+        entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
         pageInfo: { title: 'Roadmap' },
       }),
     )
@@ -94,7 +94,7 @@ describe('the tile menu as a model', () => {
   })
 
   it('shows a view tile its Source, refused — the row is fixed, not absent', () => {
-    const m = tileMenuModel(ctx({ entry: { type: 'view', id: 'b1' } as unknown as BlockEntry }))
+    const m = tileMenuModel(ctx({ entry: { type: 'view', id: 'b1' } as unknown as TileEntry }))
     expect(row(m, 'Source')).toMatchObject({ disabled: true })
     expect(row(m, 'Source')?.submenu).toBeUndefined()
   })

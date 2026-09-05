@@ -26,7 +26,7 @@ const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
   { label: 'Toolbar', style: 'toolbar' },
 ]
 
-/** The Style branch the embed's area menu offers — it sets the embed block's own `view_style`. A
+/** The Style branch the embed's area menu offers — it sets the embed tile's own `view_style`. A
  *  branch row never resolves its own action, so it carries the leading leaf's: the leaf a person
  *  lands on is what comes back. */
 function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> {
