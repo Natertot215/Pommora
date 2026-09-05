@@ -120,10 +120,10 @@ describe('rawLayoutSchema', () => {
 describe('tilePatchProblem', () => {
   it('passes well-shaped patches and names the malformed ones', () => {
     expect(tilePatchProblem({ layout: { bands: [] } })).toBeNull()
-    expect(tilePatchProblem({ blocks: [], locked: true })).toBeNull()
+    expect(tilePatchProblem({ tiles: [], locked: true })).toBeNull()
     expect(tilePatchProblem({ layout: 'garbage' })).toBe('Malformed layout.')
-    expect(tilePatchProblem({ blocks: 'no' as unknown as unknown[] })).toBe(
-      'blocks must be an array.',
+    expect(tilePatchProblem({ tiles: 'no' as unknown as unknown[] })).toBe(
+      'tiles must be an array.',
     )
     expect(tilePatchProblem({ locked: 'yes' as unknown as boolean })).toBe(
       'locked must be a boolean.',

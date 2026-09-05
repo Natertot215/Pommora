@@ -51,21 +51,40 @@ export async function writeJson(filePath: string, value: unknown): Promise<void>
 /** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
  *  `operation-failed` — never a fallback. The read half of `rmwJsonStrict`, exposed for
  *  callers that branch on the failure kind (the registry's seed-vs-unmigrated split). */
-export async function readJsonStrict(absPath: string): Promise<Result<Record<string, unknown>>> {
+type StrictRead =
+  | { kind: 'ok'; value: Record<string, unknown> }
+  | { kind: 'absent' }
+  | { kind: 'unreadable' }
+  | { kind: 'corrupt'; why: string }
+
+async function readJsonStrictly(absPath: string): Promise<StrictRead> {
   let raw: string
   try {
     raw = await readFile(absPath, 'utf8')
   } catch (e) {
-    const missing = (e as NodeJS.ErrnoException).code === 'ENOENT'
-    return fail(missing ? 'not-found' : 'operation-failed', `Unreadable file: ${basename(absPath)}`)
+    return { kind: (e as NodeJS.ErrnoException).code === 'ENOENT' ? 'absent' : 'unreadable' }
   }
   try {
     const v: unknown = JSON.parse(raw)
-    if (!isPlainObject(v))
-      return fail('operation-failed', `Not a JSON object: ${basename(absPath)}`)
-    return ok(v)
+    return isPlainObject(v)
+      ? { kind: 'ok', value: v }
+      : { kind: 'corrupt', why: 'Not a JSON object' }
   } catch {
-    return fail('operation-failed', `Corrupt JSON: ${basename(absPath)}`)
+    return { kind: 'corrupt', why: 'Corrupt JSON' }
+  }
+}
+
+export async function readJsonStrict(absPath: string): Promise<Result<Record<string, unknown>>> {
+  const read = await readJsonStrictly(absPath)
+  switch (read.kind) {
+    case 'ok':
+      return ok(read.value)
+    case 'absent':
+      return fail('not-found', `Unreadable file: ${basename(absPath)}`)
+    case 'unreadable':
+      return fail('operation-failed', `Unreadable file: ${basename(absPath)}`)
+    case 'corrupt':
+      return fail('operation-failed', `${read.why}: ${basename(absPath)}`)
   }
 }
 
@@ -83,13 +102,20 @@ export function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
   seedOnAbsent?: () => Record<string, unknown>,
+  /** Adjudicates a file that parses to nothing usable, under the lock, before the seed applies —
+   *  never an unreadable one, which still fails with no write. */
+  onCorrupt?: (absPath: string) => Promise<void>,
 ): Promise<Result<Record<string, unknown>>> {
   return serializeOnFile(absPath, async () => {
-    const current = await readJsonStrict(absPath)
+    let read = await readJsonStrictly(absPath)
+    if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
+      await onCorrupt(absPath)
+      read = { kind: 'absent' }
+    }
     let base: Record<string, unknown>
-    if (current.ok) base = current.value
-    else if (current.error.code === 'not-found' && seedOnAbsent) base = seedOnAbsent()
-    else return current
+    if (read.kind === 'ok') base = read.value
+    else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
+    else return (await readJsonStrict(absPath)) as Result<Record<string, unknown>>
     const next = mutate(base)
     await writeJson(absPath, next)
     return ok(next)

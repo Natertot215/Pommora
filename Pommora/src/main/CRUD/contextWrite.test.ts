@@ -11,7 +11,7 @@ import {
   setSpaceContext,
 } from './contextWrite'
 import { rawLayoutSchema } from '@shared/tiles'
-import { readTileDoc } from '../tiles'
+import { readTileDocAt } from '../tileDoc'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../paths'
 import { splitFrontmatter } from '../readNexus'
@@ -93,10 +93,10 @@ describe('createSpace', () => {
     expect(typeof sc.id).toBe('string')
     expect(sc.icon).toBeUndefined()
     expect(sc.color).toBeUndefined()
-    expect(sc.blocks).toBeUndefined() // the document is a row, not the sidecar's business
-    const doc = readTileDoc({ kind: 'space', id: sc.id })
-    expect(doc.blocks).toHaveLength(4)
-    expect((doc.blocks as { type: string }[]).map((b) => b.type)).toEqual(Array(4).fill('markdown'))
+    expect(sc.tiles).toBeUndefined() // the document is its own file, not the sidecar's business
+    const doc = await readTileDocAt(join(contextsDir(root), 'Projects', 'Sapphire'))
+    expect(doc.tiles).toHaveLength(4)
+    expect((doc.tiles as { type: string }[]).map((b) => b.type)).toEqual(Array(4).fill('markdown'))
     const layout = rawLayoutSchema.parse(doc.layout)
     expect(layout.bands).toHaveLength(2)
     const files = await readdir(join(contextsDir(root), 'Projects', 'Sapphire'))

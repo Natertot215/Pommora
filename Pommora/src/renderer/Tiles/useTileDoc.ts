@@ -12,7 +12,7 @@ const SAVE_DEBOUNCE_MS = 300
 
 interface TileDocState {
   layout: TileLayout
-  blocks: unknown[]
+  tiles: unknown[]
   ready: boolean
 }
 
@@ -26,7 +26,7 @@ export interface TileDocSession extends TileDocState {
 export function useTileDoc(host: TileHostRef): TileDocSession {
   const [state, setState] = useState<TileDocState>({
     layout: emptyLayout(),
-    blocks: [],
+    tiles: [],
     ready: false,
   })
   const hostRef = useRef(host)
@@ -53,7 +53,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
       if (canceled || !r.ok) return
       const layout = decodeLayout(r.value.layout) ?? emptyLayout()
       liveLayout.current = layout
-      setState({ layout, blocks: r.value.blocks, ready: true })
+      setState({ layout, tiles: r.value.tiles, ready: true })
       seedHostLock(hostRef.current, r.value.locked)
     })
     return () => {
@@ -96,24 +96,24 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     [flush],
   )
 
-  /** Re-pull the entry list after a main-side blocks[] mutation; the local layout stays. */
+  /** Re-pull the entry list after a main-side entry mutation; the local layout stays. */
   const refreshEntries = useCallback(() => {
     void window.nexus.tiles.get(hostRef.current).then((r) => {
-      if (r.ok) setState((s) => ({ ...s, blocks: r.value.blocks }))
+      if (r.ok) setState((s) => ({ ...s, tiles: r.value.tiles }))
     })
   }, [])
 
   // Same reason as commitLayout — a menu or IPC window between capture and write must not
   // clobber concurrent changes.
-  const liveTiles = useRef<unknown[]>(state.blocks)
-  liveTiles.current = state.blocks
+  const liveTiles = useRef<unknown[]>(state.tiles)
+  liveTiles.current = state.tiles
 
   /** Write the entry list (per-entry field edits, e.g. style) — immediate. */
   const saveTiles = useCallback((update: unknown[] | ((cur: unknown[]) => unknown[])) => {
     const next = typeof update === 'function' ? update(liveTiles.current) : update
     liveTiles.current = next
-    setState((s) => ({ ...s, blocks: next }))
-    void window.nexus.tiles.save(hostRef.current, { blocks: next })
+    setState((s) => ({ ...s, tiles: next }))
+    void window.nexus.tiles.save(hostRef.current, { tiles: next })
   }, [])
 
   return { ...state, setLayout, commitLayout, refreshEntries, saveTiles }

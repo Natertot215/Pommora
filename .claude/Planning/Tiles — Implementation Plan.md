@@ -558,13 +558,13 @@ export async function writeTileDocAt(dir: string, mutate: (cur: TileDoc) => Tile
 
 **Verify — automated**
 
-- [ ] Red first: `main/tiles.test.ts` — `writeTileDocAt` then `readTileDocAt` round-trips layout, tiles, locked, and a foreign key on an entry; `_space.json` is byte-identical before and after (the existing assertion at `blocks.test.ts:81-85`, kept); an absent file reads empty. Red on the signature, then green. (Serialization under the lock is `atomicWrite.test.ts`'s existing coverage.)
-- [ ] `atomicWrite.test.ts` — `onCorrupt` fires on a parse failure and never on ENOENT or a read error; every existing rmw case unchanged.
-- [ ] `main/tiles.test.ts` — a corrupt `_tiles.json` reads empty and is not touched by the read; the next `writeTileDocAt` moves it to a fresh `.bad-<ulid>` and lands; a second corrupt file gets its own `.bad-` name; `"tiles": {}` coerces to `[]` on read and inside the mutate; `tilePatchProblem({ tiles: 'x' })` refuses; the homepage host's dir is created by the first write.
-- [ ] Requirement 4's seven sites are the only places `rg -n "'homepage'" src/shared/tiles.ts src/main/tiles.ts src/main/watcher.ts src/main/watchPatch.ts` matches a host-kind branch; listed in the Log against the count.
-- [ ] `contextWrite.test.ts` — the Space seed lands in `_tiles.json` with four markdown entries and the 2×2 layout; `_space.json` carries no `tiles` key.
-- [ ] `remint.test.ts:220-284` — the copied Space's `_tiles.json` view config id is a fresh ULID and the source's is unchanged.
-- [ ] `rg -F "writeKey('blockDoc'" src` → 0 outside Task 9's migration; `rg -F "'Unknown tile host.'" src` → 1. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] Red first: `main/tiles.test.ts` — `writeTileDocAt` then `readTileDocAt` round-trips layout, tiles, locked, and a foreign key on an entry; `_space.json` is byte-identical before and after (the existing assertion at `blocks.test.ts:81-85`, kept); an absent file reads empty. Red on the signature, then green. (Serialization under the lock is `atomicWrite.test.ts`'s existing coverage.)
+- [x] `atomicWrite.test.ts` — `onCorrupt` fires on a parse failure and never on ENOENT or a read error; every existing rmw case unchanged.
+- [x] `main/tiles.test.ts` — a corrupt `_tiles.json` reads empty and is not touched by the read; the next `writeTileDocAt` moves it to a fresh `.bad-<ulid>` and lands; a second corrupt file gets its own `.bad-` name; `"tiles": {}` coerces to `[]` on read and inside the mutate; `tilePatchProblem({ tiles: 'x' })` refuses; the homepage host's dir is created by the first write.
+- [x] Requirement 4's seven sites are the only places `rg -n "'homepage'" src/shared/tiles.ts src/main/tiles.ts src/main/watcher.ts src/main/watchPatch.ts` matches a host-kind branch; listed in the Log against the count.
+- [x] `contextWrite.test.ts` — the Space seed lands in `_tiles.json` with four markdown entries and the 2×2 layout; `_space.json` carries no `tiles` key.
+- [x] `remint.test.ts:220-284` — the copied Space's `_tiles.json` view config id is a fresh ULID and the source's is unchanged.
+- [x] `rg -F "writeKey('blockDoc'" src` → 0 outside Task 9's migration; `rg -F "'Unknown tile host.'" src` → 1. Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
 - [ ] Full gate green; dev process restarted for the live check.
 
 **Verify — user**
@@ -713,7 +713,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
   - [x] Task 5 — The shared table · `6a715876`
   - [x] Task 6 — The renderer table · `0dc65e48`
 - [ ] **Phase 4** — The document in the Nexus
-  - [ ] Task 7 — `_tiles.json` · ``
+  - [x] Task 7 — `_tiles.json` · (stamped at Gate 4)
   - [ ] Task 8 — Live reload · ``
   - [ ] Task 9 — The migration · ``
   - [ ] Task 10 — The reserved key · ``
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 7: the document primitives live in `main/tileDoc.ts` (`EMPTY_DOC`, `coerceTileDoc`, `readTileDocAt`, `writeTileDocAt`), not in `main/tiles.ts` — `contextWrite.ts` seeds through them and `tiles.ts` loads the context world through `contextWrite.ts`, so the split keeps the import graph acyclic. `hostDir(root, host)` answers null for a host that no longer resolves and `tileHostAnd` turns that into the one `'Unknown tile host.'`; `tiles:get` alone maps that failure to the empty document. `onCorrupt` is exercised through `main/tiles.test.ts`'s quarantine case rather than a separate `atomicWrite.test.ts` case: the split it relies on (`readJsonStrictly`'s `corrupt` vs `unreadable`) is the same function the strict read tests already cover. Requirement 4 stands at five sites until Task 8 adds the watcher's two. The live check on a scratch Nexus is taken once, after Task 8, with the dev process restarted then.
 - Gate 3: `knownTile` no longer keeps its own union — `knownEntry` is built from the three `TILE_KINDS` schemas, each typed to its kind through the mapped table, so the parse authority and the recipe are one definition (the attack showed a fourth kind added to both tables compiled clean and still parsed to null). `copyEntry` is tested through its own dispatcher. The plan's Task 5 sentence "knownTile keeps its explicit z.union" is retired by this.
 - Task 6: `TileSurface.sourceInfo` returns the `ConnPage` itself rather than a four-field copy of it — the two menu sites read title, icon, path, and id off it, which is the page record. The crossing test compares the menu model's link rows against `TILE_KINDS` per kind (the presenter renders from the same rows by construction; `TileHandleMenu` itself mounts a PickerMenu and is not rendered in jsdom). The host mount test runs tree-less: markdown mounts its editor; page, view, and the foreign kind hold space.
 - Task 5: the kind-branch sweep reads 0 across `shared/` and `main/` after this task; the ten renderer sites in `TileHost.tsx` and `TileHandleMenu.tsx` are Task 6's Now list and fall there — the plan's Task 5 box claimed the whole tree a task early. `contextWrite.test.ts:99` asserts the four seeded types by value rather than through a kind comparison. `copyEntry(raw)` in `main/tiles.ts` is the one dispatcher over `TILE_COPY`; `duplicateTile` and `remint`'s copy both call it.

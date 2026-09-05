@@ -17,7 +17,7 @@ const doc = {
   layout: {
     bands: ['m', 'p', 'v', 'w'].map((id) => ({ node: { kind: 'tile', id, h: 100 } })),
   },
-  blocks: [
+  tiles: [
     { id: 'm', type: 'markdown' },
     { id: 'p', type: 'page', page_id: 'gone' },
     { id: 'v', type: 'view', views: [{ source_id: 's' }] },

@@ -47,19 +47,14 @@ import {
   convertTileToView,
   createMarkdownTile,
   duplicateTile,
-  readTileDoc,
+  hostDir,
   readMarkdownTile,
   removeTile,
-  writeTileDoc,
   writeMarkdownTile,
 } from './tiles'
+import { EMPTY_DOC, readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isUlid } from './ids'
-import {
-  tilePatchProblem,
-  coerceTileHost,
-  type TileDocPatch,
-  type TileHostRef,
-} from '@shared/tiles'
+import { tilePatchProblem, coerceTileHost, type TileDoc, type TileDocPatch } from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
 import { DEFAULT_TRASH_MODE } from '@shared/types'
@@ -80,7 +75,7 @@ import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { flushValueWrites } from './valuesChanged'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
-import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
+import { openSessionDb, closeSessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
 import { ensureContextsRegistry } from './contextsRegistry'
@@ -678,14 +673,18 @@ function isOptionArray(v: unknown): v is Option[] {
 
 // Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must
 // never carry path segments.
-const tileHostAnd = (host: unknown, tileId?: unknown): Result<{ root: string; h: TileHostRef }> => {
+const tileHostAnd = async (
+  host: unknown,
+  tileId?: unknown,
+): Promise<Result<{ root: string; dir: string }>> => {
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
   const h = coerceTileHost(host)
-  if (!h) return fail('not-found', 'Unknown tile host.')
+  const dir = h && (await hostDir(root, h))
+  if (!dir) return fail('not-found', 'Unknown tile host.')
   if (tileId !== undefined && (typeof tileId !== 'string' || !isUlid(tileId)))
     return fail('not-found', 'Invalid tile id.')
-  return ok({ root, h })
+  return ok({ root, dir })
 }
 
 async function mutateDeps(): Promise<MutateDeps> {
@@ -1472,95 +1471,98 @@ serveBridge(
 
     'tiles:get': {
       kind: 'envelope',
-      fn: (host: unknown) => {
-        const h = coerceTileHost(host)
-        if (!h) return fail('not-found', 'Unknown tile host.')
-        return ok(readTileDoc(h))
+      // A host whose folder no longer resolves answers the empty document: the walk navigates
+      // away on its own.
+      fn: async (host: unknown) => {
+        const ctx = await tileHostAnd(host)
+        if (!ctx.ok) return ctx.error.code === 'not-found' ? ok(EMPTY_DOC) : ctx
+        return ok(await readTileDocAt(ctx.value.dir))
       },
     },
     'tiles:save': {
       kind: 'envelope',
-      fn: (host: unknown, patch: unknown) => {
+      fn: async (host: unknown, patch: unknown) => {
         if (adopting()) return BUSY
-        const h = coerceTileHost(host)
-        if (!h) return fail('not-found', 'Unknown tile host.')
+        const ctx = await tileHostAnd(host)
+        if (!ctx.ok) return ctx
         if (!patch || typeof patch !== 'object')
           return fail('operation-failed', 'Invalid tile-doc patch.')
         const problem = tilePatchProblem(patch as TileDocPatch)
         if (problem) return fail('operation-failed', problem)
-        if (sessionDb() === null) return NO_NEXUS
-        writeTileDoc(h, patch as TileDocPatch)
-        return ok(null)
+        return writeTileDocAt(ctx.value.dir, (cur: TileDoc) => ({
+          ...cur,
+          ...(patch as TileDocPatch),
+        }))
       },
     },
 
     'tiles:createMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown) => {
-        const ctx = tileHostAnd(host)
+        const ctx = await tileHostAnd(host)
         if (!ctx.ok) return ctx
-        return ok({ id: await createMarkdownTile(ctx.value.root, ctx.value.h) })
+        return ok({ id: await createMarkdownTile(ctx.value.dir) })
       },
     },
     'tiles:removeTile': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        await removeTile(ctx.value.root, ctx.value.h, tileId as string)
+        await removeTile(ctx.value.root, ctx.value.dir, tileId as string)
         return ok(null)
       },
     },
     'tiles:readMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        const body = await readMarkdownTile(ctx.value.root, ctx.value.h, tileId as string)
+        const body = await readMarkdownTile(ctx.value.dir, tileId as string)
         return body === null ? fail('not-found', 'Tile file not found.') : ok({ body })
       },
     },
     'tiles:writeMarkdown': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, body: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
-        await writeMarkdownTile(ctx.value.root, ctx.value.h, tileId as string, body)
+        await writeMarkdownTile(ctx.value.dir, tileId as string, body)
         return ok(null)
       },
     },
     'tiles:convertToPage': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, pageId: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         if (typeof pageId !== 'string' || pageId.length === 0)
           return fail('operation-failed', 'Invalid page id.')
-        await convertTileToPage(ctx.value.root, ctx.value.h, tileId as string, pageId)
+        await convertTileToPage(ctx.value.root, ctx.value.dir, tileId as string, pageId)
         return ok(null)
       },
     },
     'tiles:convertToView': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown, views: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         const list = Array.isArray(views) ? views : null
         const valid =
           list?.length &&
           list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
         if (!valid) return fail('operation-failed', 'Invalid view list.')
-        await convertTileToView(ctx.value.root, ctx.value.h, tileId as string, list as unknown[])
+        await convertTileToView(ctx.value.root, ctx.value.dir, tileId as string, list as unknown[])
         return ok(null)
       },
     },
     'tiles:duplicateTile': {
       kind: 'envelope',
       fn: async (host: unknown, tileId: unknown) => {
-        const ctx = tileHostAnd(host, tileId)
+        const ctx = await tileHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        const id = await duplicateTile(ctx.value.root, ctx.value.h, tileId as string)
+        const id = await duplicateTile(ctx.value.dir, tileId as string)
         return id ? ok({ id }) : fail('not-found', 'No such tile.')
       },
     },
