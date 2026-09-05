@@ -10,7 +10,7 @@ import {
 } from '@shared/contexts'
 import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
 import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
-import { tileHostKey, NEW_TILE_H } from '@shared/tiles'
+import { mintSeed, NEW_TILE_H, tileHostKey } from '@shared/tiles'
 import type { PropertyDefinition } from '@shared/properties'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { writeKey } from '../Database/localState'
@@ -270,7 +270,7 @@ export async function createSpace(
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },
   })
   writeKey('blockDoc', tileHostKey({ kind: 'space', id: created.value.id }), {
-    blocks: tileIds.map((tid) => ({ id: tid, type: 'markdown' })),
+    blocks: tileIds.map((tid) => mintSeed('markdown', tid)),
     layout: { bands: [band(tileIds[0], tileIds[1]), band(tileIds[2], tileIds[3])] },
     locked: false,
   })

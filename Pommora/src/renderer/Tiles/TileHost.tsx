@@ -286,13 +286,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   const tileStyle = useCallback((id: string) => zoomStyle(entries.get(id)?.zoom), [entries])
 
-  // Hands the embed the raw entry so foreign keys on it and its elements survive.
-  const mutateViewEntry = useCallback(
-    (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) =>
-      mutateEntry(entryId, (raw) => (knownTile(raw)?.type === 'view' ? fn(raw) : raw)),
-    [mutateEntry],
-  )
-
   const setTileZoom = useCallback(
     (id: string, factor: number) =>
       mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === 1 ? undefined : factor)),
@@ -329,15 +322,11 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
       }
       if (entry?.type === 'view')
         return (
-          <ViewTile
-            entry={entry}
-            mutateEntry={mutateViewEntry}
-            onActivate={() => setEditingId(id)}
-          />
+          <ViewTile entry={entry} mutateEntry={mutateEntry} onActivate={() => setEditingId(id)} />
         )
       return <div className="tile-inert" /> // no/foreign/unknown entry — space holds, nothing breaks
     },
-    [entries, editingId, connections, suppressFlush, pagesById, host, mutateViewEntry],
+    [entries, editingId, connections, suppressFlush, pagesById, host, mutateEntry],
   )
 
   // Updater form — a gesture committing during the IPC await must not be overwritten by a
