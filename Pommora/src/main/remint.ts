@@ -128,8 +128,17 @@ async function remintSidecar(
   await writeJson(file, next)
   // A copied Space folder carries its document too, and a view tile's config ids are live keys
   // two boards must never share — each entry passes through the same re-mint every copy uses.
-  if (kind === 'space' && (await pathExists(tileDocPath(absFolder))))
-    await writeTileDocAt(absFolder, (cur) => ({ ...cur, tiles: cur.tiles.map(copyEntry) }))
+  if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
+    const doc = await writeTileDocAt(absFolder, (cur) => ({
+      ...cur,
+      tiles: cur.tiles.map(copyEntry),
+    }))
+    if (!doc.ok)
+      console.error(
+        "remint: the copy's tile document refused; its view ids stand:",
+        doc.error.message,
+      )
+  }
   return viewIds
 }
 

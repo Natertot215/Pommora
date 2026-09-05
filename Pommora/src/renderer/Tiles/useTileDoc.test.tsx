@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { TileHostRef } from '@shared/tiles'
+import { stableStringify } from '@shared/stableJson'
 import { insertBand } from './Core/ops'
 import { tileIds } from './Core/model'
 import { type TileDocSession, useTileDoc } from './useTileDoc'
@@ -87,6 +88,15 @@ describe('a host document changing on disk', () => {
     await tick()
     expect(get).toHaveBeenCalledTimes(2)
     expect(shown()).toEqual(['a', 'synced'])
+  })
+
+  it("the app's own echo — sorted bytes of what the host shows — changes nothing", async () => {
+    const before = session?.layout
+    disk = JSON.parse(stableStringify(docWith('a')))
+    await act(async () => push(HOST))
+    await tick()
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(session?.layout).toBe(before)
   })
 
   it('a later commit builds on the pushed layout, not the pre-push one', async () => {

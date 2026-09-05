@@ -43,7 +43,8 @@ export async function writeTileDocAt(
   await mkdir(dir, { recursive: true })
   const written = await rmwJsonStrict(
     tileDocPath(dir),
-    (cur) => ({ ...mutate(coerceTileDoc(cur)) }),
+    // A key this build doesn't model rides through, like a foreign key on an entry.
+    (cur) => ({ ...cur, ...mutate(coerceTileDoc(cur)) }),
     () => ({ ...EMPTY_DOC }),
     quarantine,
   )
