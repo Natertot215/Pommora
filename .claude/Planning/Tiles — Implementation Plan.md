@@ -649,11 +649,11 @@ export async function migrateTileRows(root: string): Promise<{ written: number; 
 
 **Verify — automated**
 
-- [ ] Red first: `tilesMigrate.test.ts` — seeds three rows under the legacy `blocks` key (a live Space, a Space whose folder is gone, the homepage) and one pre-existing `_tiles.json` for a fourth Space with its own row; expects `written: 2` with the files carrying `tiles`, `dropped: 4`, `divergent: ['space:<fourth>']`, the pre-existing file byte-identical, `readScope('blockDoc')` empty after; a second run → `{ written: 0, dropped: 0 }`; a run with the registry unreadable → `{ 0, 0, [] }` and every row still present. Red on module-not-found, then green.
-- [ ] Census against real data before the first run on NexusOS: `SELECT key FROM local_state WHERE scope = 'blockDoc'` count recorded in the Log with the predicted `written`/`dropped`; the run's result matches or the divergence is investigated before proceeding.
-- [ ] Backup: `nexus.db` copied beside itself before the first real open (the sweep deletes rows).
-- [ ] `rg -F "blockDoc" src` → 3 (`localState.ts`'s union, `tilesMigrate.ts`, `open.test.ts:67`'s raw list). Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
-- [ ] Full gate green; dev process restarted.
+- [x] Red first: `tilesMigrate.test.ts` — seeds three rows under the legacy `blocks` key (a live Space, a Space whose folder is gone, the homepage) and one pre-existing `_tiles.json` for a fourth Space with its own row; expects `written: 2` with the files carrying `tiles`, `dropped: 4`, `divergent: ['space:<fourth>']`, the pre-existing file byte-identical, `readScope('blockDoc')` empty after; a second run → `{ written: 0, dropped: 0 }`; a run with the registry unreadable → `{ 0, 0, [] }` and every row still present. Red on module-not-found, then green.
+- [x] Census against real data before the first run on NexusOS: `SELECT key FROM local_state WHERE scope = 'blockDoc'` count recorded in the Log with the predicted `written`/`dropped`; the run's result matches or the divergence is investigated before proceeding.
+- [x] Backup: `nexus.db` copied beside itself before the first real open (the sweep deletes rows).
+- [x] `rg -F "blockDoc" src` → 3 (`localState.ts`'s union, `tilesMigrate.ts`, `open.test.ts:67`'s raw list). Control: `rg -Fw -o "TileLeaf" src | wc -l` → 26.
+- [x] Full gate green; dev process restarted.
 
 **Verify — user**
 
@@ -715,7 +715,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - [ ] **Phase 4** — The document in the Nexus
   - [x] Task 7 — `_tiles.json` · (stamped at Gate 4)
   - [x] Task 8 — Live reload · (stamped at Gate 4)
-  - [ ] Task 9 — The migration · ``
+  - [x] Task 9 — The migration · (stamped at Gate 4)
   - [ ] Task 10 — The reserved key · ``
 
 ### Rulings
@@ -743,6 +743,7 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Deviations
 
+- Task 9, the census and the run on NexusOS (09-04-2026): `local_state` held 12 `blockDoc` rows — `homepage` and 11 `space:` keys — against 10 Space folders and no `_tiles.json` anywhere; predicted written 11 / dropped 12 / divergent none. `nexus.db` was copied aside first. The first open logged `{ written: 11, dropped: 12, divergent: [] }`; 11 `_tiles.json` files exist (the homepage and every Space folder), the scope holds 0 rows, and the Homepage rendered its three tiles at the heights the Gate 1 snapshot recorded. `blockDoc` reads 4 files in `src` (the scope union, the migration, its test, `open.test.ts`) — the plan's count of 3 predates the migration having a test. A failed file write keeps its row for the next open rather than dropping it.
 - Task 8, the live check on a scratch Nexus (the dev process restarted, pointed there through the app config): a tile minted over IPC, its layout written into `_tiles.json` by hand, rendered within 1.5 s with the same `.tile-host` element (no remount); a south-edge drag over CDP landed the new height on disk and a reload showed it; the tile's `.md` sat beside the document. The `useTileDoc.test.tsx` cases cover the four rules — replace for the mounted host only, flush-then-read, a later commit on the pushed layout, a held push applied after the drop's save lands; the `.bad-` classification is `watchPatch.test.ts`'s. `_tiles.json` is matched by basename at the echo exemption (the one file with that name) and by exact path in the classifier.
 - Task 7: the document primitives live in `main/tileDoc.ts` (`EMPTY_DOC`, `coerceTileDoc`, `readTileDocAt`, `writeTileDocAt`), not in `main/tiles.ts` — `contextWrite.ts` seeds through them and `tiles.ts` loads the context world through `contextWrite.ts`, so the split keeps the import graph acyclic. `hostDir(root, host)` answers null for a host that no longer resolves and `tileHostAnd` turns that into the one `'Unknown tile host.'`; `tiles:get` alone maps that failure to the empty document. `onCorrupt` is exercised through `main/tiles.test.ts`'s quarantine case rather than a separate `atomicWrite.test.ts` case: the split it relies on (`readJsonStrictly`'s `corrupt` vs `unreadable`) is the same function the strict read tests already cover. Requirement 4 stands at five sites until Task 8 adds the watcher's two. The live check on a scratch Nexus is taken once, after Task 8, with the dev process restarted then.
 - Gate 3: `knownTile` no longer keeps its own union — `knownEntry` is built from the three `TILE_KINDS` schemas, each typed to its kind through the mapped table, so the parse authority and the recipe are one definition (the attack showed a fourth kind added to both tables compiled clean and still parsed to null). `copyEntry` is tested through its own dispatcher. The plan's Task 5 sentence "knownTile keeps its explicit z.union" is retired by this.
