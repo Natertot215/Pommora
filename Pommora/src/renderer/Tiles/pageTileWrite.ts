@@ -1,6 +1,4 @@
-// One debounced body-writer machinery, shared by the page autosave and the markdown tile so neither
-// hand-rolls its own. A page open in several hosts and a markdown tile edited then removed both need
-// the same coalesce-per-key, flush-now, drop-on-removal, and land-before-teardown guarantees.
+// One debounced body writer shared by the page autosave and the markdown tile.
 
 const SAVE_DEBOUNCE_MS = 400
 
@@ -8,14 +6,9 @@ type Ack = { ok: boolean }
 type Save = () => Promise<Ack>
 
 export interface BodyWriter {
-  /** Coalesce to one pending write per key; the newest body and its write own the key. */
   schedule: (key: string, body: string, save: Save) => void
-  /** Land the key's pending write now (awaitable); a failed write requeues its body unless a newer
-   *  edit already took the key. */
   flush: (key: string) => Promise<void>
-  /** Land every pending write — the nexus-adopt path awaits this while the old root is still bound. */
   flushAll: () => Promise<void>
-  /** Drop the key's pending write without writing — a removed tile must not resurrect its file. */
   cancel: (key: string) => void
 }
 

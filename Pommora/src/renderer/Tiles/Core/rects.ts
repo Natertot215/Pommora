@@ -1,8 +1,3 @@
-// Geometry resolution: the tree → per-tile pixel rects + row-divider hit zones.
-// Pure math off the layout; the component layer renders from this and hands
-// pointer deltas back to ops with the extents measured here. Heights are
-// content-driven (nodeHeight); a row's shorter children end ragged — legal.
-
 import type { DividerRef, LayoutNode, TileLayout } from './model'
 import { nodeHeight } from './model'
 
@@ -15,7 +10,6 @@ export interface Rect {
 
 export interface DividerRect extends Rect {
   ref: DividerRef
-  /** The row's usable width — resizeDivider's `extentPx`. */
   extentPx: number
 }
 

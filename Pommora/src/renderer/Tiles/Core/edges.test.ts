@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { insertBand, splitAtTile } from './ops'
 import { resolveEdge } from './edges'
 
-// row[ a, column[b, row[c, d]] ] — a beside a stack of b over (c|d).
 const build = () => {
   let l = insertBand({ bands: [] }, 0, 'a', 300)
   l = splitAtTile(l, 'a', 'e', 'b')
@@ -59,7 +58,6 @@ describe('resolveEdge', () => {
     expect(resolveEdge(bands, 'bottom', 'n')).toEqual({ kind: 'bandpair', above: 0 })
     expect(resolveEdge(bands, 'top', 'n')).toBeNull() // first band — nothing above
 
-    // a split band above declines — no single height to give
     const splitAbove = insertBand(
       splitAtTile(insertBand({ bands: [] }, 0, 'x', 200), 'x', 'e', 'y'),
       1,

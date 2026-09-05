@@ -31,7 +31,6 @@ describe('codec', () => {
   })
 })
 
-// The invariants decodeLayout used to re-establish are the writer's job, so assert them there.
 describe('ops keep the tree decodable', () => {
   it('a split renormalizes its ratios', () => {
     const l = real()

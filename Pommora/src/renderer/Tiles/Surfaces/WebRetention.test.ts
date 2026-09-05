@@ -1,57 +1,60 @@
-import { describe, expect, it } from 'vitest'
-import { createRetention } from './webRetention'
+import { afterEach, describe, expect, it } from 'vitest'
+import { WEB_RETAINED_MAX, webGuestRetention as r } from './webRetention'
 
 const id = (): symbol => Symbol()
+const held: symbol[] = []
+const hide = (evicted: string[], name: string, sym = id()): symbol => {
+  held.push(sym)
+  r.hide(sym, () => evicted.push(name))
+  return sym
+}
+const fill = (evicted: string[]): void => {
+  for (let i = 0; i < WEB_RETAINED_MAX; i++) hide(evicted, `f${i}`)
+}
 
-describe('createRetention', () => {
+afterEach(() => {
+  for (const sym of held.splice(0)) r.drop(sym)
+})
+
+describe('webGuestRetention', () => {
   it('keeps hidden guests up to the cap without evicting', () => {
-    const r = createRetention(2)
     const evicted: string[] = []
-    r.hide(id(), () => evicted.push('a'))
-    r.hide(id(), () => evicted.push('b'))
+    fill(evicted)
     expect(evicted).toEqual([])
-    expect(r.hiddenCount).toBe(2)
+    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
   })
 
   it('evicts the least-recently-hidden guest over the cap', () => {
-    const r = createRetention(2)
     const evicted: string[] = []
-    r.hide(id(), () => evicted.push('a'))
-    r.hide(id(), () => evicted.push('b'))
-    r.hide(id(), () => evicted.push('c'))
-    expect(evicted).toEqual(['a'])
-    expect(r.hiddenCount).toBe(2)
+    fill(evicted)
+    hide(evicted, 'late')
+    expect(evicted).toEqual(['f0'])
+    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
   })
 
   it('re-hiding refreshes recency instead of double-counting', () => {
-    const r = createRetention(2)
     const evicted: string[] = []
-    const a = id()
-    r.hide(a, () => evicted.push('a'))
-    r.hide(id(), () => evicted.push('b'))
-    r.hide(a, () => evicted.push('a'))
-    r.hide(id(), () => evicted.push('c'))
-    expect(evicted).toEqual(['b'])
+    const a = hide(evicted, 'a')
+    for (let i = 0; i < WEB_RETAINED_MAX - 1; i++) hide(evicted, `f${i}`)
+    hide(evicted, 'a', a)
+    hide(evicted, 'late')
+    expect(evicted).toEqual(['f0'])
   })
 
   it('a guest back in view leaves the hidden set and cannot be evicted', () => {
-    const r = createRetention(1)
     const evicted: string[] = []
-    const a = id()
-    r.hide(a, () => evicted.push('a'))
+    const a = hide(evicted, 'a')
     r.show(a)
-    r.hide(id(), () => evicted.push('b'))
+    fill(evicted)
     expect(evicted).toEqual([])
-    expect(r.hiddenCount).toBe(1)
+    expect(r.hiddenCount).toBe(WEB_RETAINED_MAX)
   })
 
   it('a dropped tile frees its slot', () => {
-    const r = createRetention(1)
     const evicted: string[] = []
-    const a = id()
-    r.hide(a, () => evicted.push('a'))
+    const a = hide(evicted, 'a')
     r.drop(a)
-    r.hide(id(), () => evicted.push('b'))
+    fill(evicted)
     expect(evicted).toEqual([])
   })
 })

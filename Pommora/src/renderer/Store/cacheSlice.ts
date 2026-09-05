@@ -14,10 +14,9 @@ export interface CacheSlice {
   pageAliases: Record<string, string[]>
   rememberAlias: (pageId: string, alias: string) => void
   forgetAlias: (pageId: string, alias: string) => void
-  /** Every tile host's lock, keyed by host. Seeded from the doc the host loads — the one source. */
+  /** Every open tile host's lock, keyed by host; the host's document hook is its one writer. */
   hostLocks: Record<string, boolean>
-  seedHostLock: (host: TileHostRef, locked: boolean) => void
-  setHostLocked: (host: TileHostRef, v: boolean) => Promise<void>
+  setHostLock: (host: TileHostRef, locked: boolean) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
   setAssetDirectory: (dir: string) => Promise<void>
@@ -89,15 +88,11 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
     },
 
     hostLocks: {},
-    seedHostLock: (host, locked) =>
+    setHostLock: (host, locked) =>
       set((s) => {
         const key = tileHostKey(host)
         return s.hostLocks[key] === locked ? {} : { hostLocks: { ...s.hostLocks, [key]: locked } }
       }),
-    setHostLocked: async (host, v) => {
-      set((s) => ({ hostLocks: { ...s.hostLocks, [tileHostKey(host)]: v } }))
-      await window.nexus.tiles.save(host, { locked: v })
-    },
 
     assetMap: EMPTY_ASSET_MAP,
     // Stabilize buys the echo case: an unchanged push returns the held map and zustand no-ops; a

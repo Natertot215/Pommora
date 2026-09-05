@@ -67,8 +67,7 @@ describe('the renderer table', () => {
       })
       const linkRows = model.items.filter((i) => rows.some((r) => r.label === i.label))
       expect(linkRows.map((i) => i.label)).toEqual(rows.map((r) => r.label))
-      for (const [i, r] of rows.entries())
-        expect(linkRows[i].disabled ?? false).toBe(r.source === 'none')
+      for (const row of linkRows) expect(row.disabled ?? false).toBe(false)
     }
   })
 })

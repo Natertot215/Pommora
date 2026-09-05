@@ -183,7 +183,7 @@ describe('the tile recipe', () => {
       { label: 'Link Page', source: 'pages' },
     ])
     expect(TILE_KINDS.page.menuRows).toEqual([{ label: 'Source', source: 'pages' }])
-    expect(TILE_KINDS.view.menuRows).toEqual([{ label: 'Source', source: 'none' }])
+    expect(TILE_KINDS.view.menuRows).toEqual([])
     expect(knownTile({ id: 'x', type: 'widget' })).toBeNull()
   })
 })

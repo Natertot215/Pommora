@@ -20,8 +20,8 @@ export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
   const locked = useSession((st) => st.hostLocks[tileHostKey(HOMEPAGE_HOST)] ?? false)
-  const setHostLocked = useSession((st) => st.setHostLocked)
-  const setLocked = (v: boolean): Promise<void> => setHostLocked(HOMEPAGE_HOST, v)
+  const setHostLock = useSession((st) => st.setHostLock)
+  const setLocked = (v: boolean): void => setHostLock(HOMEPAGE_HOST, v)
   const {
     profileImage,
     profileIcon,

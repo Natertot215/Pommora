@@ -40,7 +40,6 @@
   padding-right: 0;
 }
 
-/* Both portal bodies are clipped scrollers at the full tile height. */
 :is(.markdown-tile, .page-tile) {
   position: relative;
   height: 100%;

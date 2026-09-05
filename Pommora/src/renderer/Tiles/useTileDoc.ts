@@ -1,9 +1,5 @@
-// Loads once on host open (never the tree walk); persists layout changes with a trailing
-// debounce that flushes on unmount so a navigation inside the window can't drop a gesture.
-
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type TileHostRef, tileHostKey } from '@shared/tiles'
-import { stableStringify } from '@shared/stableJson'
 import { useSession } from '@renderer/store'
 import { decodeLayout, encodeLayout } from './Core/codec'
 import { emptyLayout, type TileLayout } from './Core/model'
@@ -21,7 +17,6 @@ export interface TileDocSession extends TileDocState {
   commitLayout: (update: TileLayout | ((cur: TileLayout) => TileLayout)) => void
   refreshEntries: () => void
   saveTiles: (update: unknown[] | ((cur: unknown[]) => unknown[])) => void
-  /** A gesture in flight holds a disk change back until it settles. */
   setBusy: (busy: boolean) => void
 }
 
@@ -48,28 +43,39 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   // landed, so the user's own last action never silently reverts.
   const lastSave = useRef<Promise<unknown>>(Promise.resolve())
 
-  // Same reason as commitLayout — a menu or IPC window between capture and write must not
-  // clobber concurrent changes.
   const liveTiles = useRef<unknown[]>(state.tiles)
   liveTiles.current = state.tiles
 
-  // Host IDENTITY keys the load — two Spaces share a kind, so kind alone would serve one
-  // Space's doc to another after an in-place host swap.
   const hostKey = tileHostKey(host)
-  const seedHostLock = useSession((s) => s.seedHostLock)
+  const setHostLock = useSession((s) => s.setHostLock)
+  const storeLock = useSession((s) => s.hostLocks[hostKey])
+  // What the document holds; the store's value diverging from it is a toggle to write.
+  const docLock = useRef<boolean | null>(null)
+  const adopt = useCallback(
+    (target: TileHostRef, doc: { layout: unknown; tiles: unknown[]; locked: boolean }) => {
+      const layout = decodeLayout(doc.layout) ?? emptyLayout()
+      liveLayout.current = layout
+      liveTiles.current = doc.tiles
+      docLock.current = doc.locked
+      setHostLock(target, doc.locked)
+      setState({ layout, tiles: doc.tiles, ready: true })
+    },
+    [setHostLock],
+  )
   useEffect(() => {
     let canceled = false
     void window.nexus.tiles.get(hostRef.current).then((r) => {
-      if (canceled || !r.ok) return
-      const layout = decodeLayout(r.value.layout) ?? emptyLayout()
-      liveLayout.current = layout
-      setState({ layout, tiles: r.value.tiles, ready: true })
-      seedHostLock(hostRef.current, r.value.locked)
+      if (!canceled && r.ok) adopt(hostRef.current, r.value)
     })
     return () => {
       canceled = true
     }
-  }, [hostKey, seedHostLock])
+  }, [hostKey, adopt])
+  useEffect(() => {
+    if (storeLock === undefined || docLock.current === null || storeLock === docLock.current) return
+    docLock.current = storeLock
+    lastSave.current = window.nexus.tiles.save(hostRef.current, { locked: storeLock })
+  }, [storeLock])
 
   const flush = useCallback(() => {
     const p = pending.current
@@ -85,7 +91,6 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
 
   const busy = useRef(false)
   const heldPush = useRef(false)
-  // Most recent wins: what the file holds after the pending local write is what the host shows.
   const reload = useCallback(async () => {
     const target = hostRef.current
     const key = tileHostKey(target)
@@ -103,23 +108,12 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
       pending.current.layout !== null
     )
       return
-    // A gesture that began during the read owns the layout now; the push waits for it.
     if (busy.current) {
       heldPush.current = true
       return
     }
-    seedHostLock(target, r.value.locked)
-    // The app's own save echoes back too: bytes that match what the host shows change nothing.
-    if (
-      stableStringify(r.value.layout) === stableStringify(encodeLayout(liveLayout.current)) &&
-      stableStringify(r.value.tiles) === stableStringify(liveTiles.current)
-    )
-      return
-    const layout = decodeLayout(r.value.layout) ?? emptyLayout()
-    liveLayout.current = layout
-    liveTiles.current = r.value.tiles
-    setState({ layout, tiles: r.value.tiles, ready: true })
-  }, [flush, seedHostLock])
+    adopt(target, r.value)
+  }, [flush, adopt])
   useEffect(
     () =>
       window.nexus.onTilesChanged((host) => {
@@ -152,9 +146,8 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     [flush],
   )
 
-  // Structural mutations write the layout NOW, before their entry op runs, so a crash leaves an
-  // invisible orphan rather than a dead box. Takes an updater so async callers compose with the
-  // live layout, never a stale render capture.
+  // Structural mutations write the layout now, before their entry op, so a crash leaves an
+  // invisible orphan rather than a dead box.
   const commitLayout = useCallback(
     (update: TileLayout | ((cur: TileLayout) => TileLayout)) => {
       setLayout(typeof update === 'function' ? update(liveLayout.current) : update)
@@ -163,14 +156,12 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     [setLayout, flush],
   )
 
-  /** Re-pull the entry list after a main-side entry mutation; the local layout stays. */
   const refreshEntries = useCallback(() => {
     void window.nexus.tiles.get(hostRef.current).then((r) => {
       if (r.ok) setState((s) => ({ ...s, tiles: r.value.tiles }))
     })
   }, [])
 
-  /** Write the entry list (per-entry field edits, e.g. style) — immediate. */
   const saveTiles = useCallback((update: unknown[] | ((cur: unknown[]) => unknown[])) => {
     const next = typeof update === 'function' ? update(liveTiles.current) : update
     liveTiles.current = next

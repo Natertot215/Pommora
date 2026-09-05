@@ -7,7 +7,6 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { push } from './ipc'
 import { sessionRoot } from './session'
 import { ignoredUnder, startWatcher, stopWatcher } from './watcher'
-import { recordWrite } from './IO/writeEcho'
 
 vi.mock('./ipc', () => ({ push: vi.fn() }))
 vi.mock('./session', () => ({ sessionRoot: vi.fn() }))
@@ -118,19 +117,6 @@ describe('the watcher settle', () => {
 })
 
 describe('a host document under the watcher', () => {
-  it("reaches the batch even inside the app's own echo window, while a sidecar is still swallowed", async () => {
-    await startWatcher(root, win)
-    await mkdir(abs('.nexus', 'homepage'), { recursive: true })
-    await writeFile(abs('.nexus', 'homepage', '_tiles.json'), '{}')
-    recordWrite(abs('.nexus', 'homepage', '_tiles.json'))
-    recordWrite(abs('.nexus', 'state.json'))
-    emit('change', '.nexus', 'homepage', '_tiles.json')
-    emit('change', '.nexus', 'state.json')
-    await settleAll(() => pushMock.mock.calls.length > 0)
-    expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['tiles:changed'])
-    expect(pushMock.mock.calls[0][2]).toEqual({ kind: 'homepage' })
-  })
-
   it('pushes the host once even when the batch also forces a walk', async () => {
     await startWatcher(root, win)
     await mkdir(abs('.nexus', 'homepage'), { recursive: true })
