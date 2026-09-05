@@ -53,6 +53,7 @@ import {
   writeMarkdownTile,
 } from './tiles'
 import { EMPTY_DOC, readTileDocAt, writeTileDocAt } from './tileDoc'
+import { migrateTileRows } from './tilesMigrate'
 import { isUlid } from './ids'
 import { tilePatchProblem, coerceTileHost, type TileDoc, type TileDocPatch } from '@shared/tiles'
 import { pathExists } from './IO/atomicWrite'
@@ -406,6 +407,8 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
         console.error('adopt: the post-migration walk failed; reads will retry:', errText(e))
       }
     }
+    const moved = await migrateTileRows(root)
+    if (moved.dropped > 0) console.log('tiles: legacy rows moved into their hosts:', moved)
   }
   return root
 }
