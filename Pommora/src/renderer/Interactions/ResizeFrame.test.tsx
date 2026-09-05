@@ -119,6 +119,14 @@ describe('the resize frame', () => {
     release()
   })
 
+  it('a release that never travelled neither moves nor drops', () => {
+    const onChange = vi.fn()
+    const el = mount({ rect: { w: 200, h: 100 }, equilateral: true, onChange, grip: 'e' })
+    drag(el, 0, 0)
+    release()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('a move keeps a grab of the frame on screen', () => {
     const onChange = vi.fn()
     drag(mount({ rect: { x: 100, y: 50, w: 200, h: 100 }, onChange, grip: 'move' }), 5000, -500)

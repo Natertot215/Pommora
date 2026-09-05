@@ -254,14 +254,14 @@ const begin = usePointerGesture()   // one per SurfaceView; both handlers share 
 
 #### Gate 1 — one engine, behavior held
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] Simplification and review dispatched against `043ee930..HEAD` scoped to `Interactions/`, `SurfacePM/`, `MarkdownPM/Editor/embedWidget.tsx`, `MarkdownPM/Styles.css`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] [[InteractionPM]]'s Resize Frame paragraph rewritten in this phase's last commit.
-- [ ] Progress hashes filled in.
-- [ ] Not a declared stop: the next phase opens; the two user boxes carry to Completion Criteria.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
+- [x] Simplification and review dispatched against `043ee930..HEAD` scoped to `Interactions/`, `SurfacePM/`, `MarkdownPM/Editor/embedWidget.tsx`, `MarkdownPM/Styles.css`.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] [[InteractionPM]]'s Resize Frame paragraph rewritten in this phase's last commit.
+- [x] Progress hashes filled in.
+- [x] Not a declared stop: the next phase opens; the two user boxes carry to Completion Criteria.
 
 ---
 
@@ -703,9 +703,9 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 
 ### Progress
 
-- [ ] **Phase 1** — One engine · base `043ee930`
-  - [ ] Task 1 — The embed tile's handle on the frame · ``
-  - [ ] Task 2 — The grid on the engine · ``
+- [x] **Phase 1** — One engine · base `043ee930` · gate head `60076016`
+  - [x] Task 1 — The embed tile's handle on the frame · `97c820f4`
+  - [x] Task 2 — The grid on the engine · `e411d814`
 - [ ] **Phase 2** — Tiles/
   - [ ] Task 3 — The move · ``
   - [ ] Task 4 — The vocabulary · ``
@@ -732,6 +732,12 @@ export const INSPECTOR_STATE_KEY = 'inspector'
 - 09-04-2026, Claude: the simplification round's twenty findings folded (blocks-key timing, rmwJsonStrict, dir-first primitives, the copy arm in main, static menu rows, the inline zoom variable, listTileHosts-driven migration, counts).
 
 ### Open Against Later Tasks
+
+### Gate 1 rulings
+
+- 09-04-2026, Claude: a ResizeFrame release that never travelled emits no drop (the frame's one guard the grid already had; an embed tile whose height was never persisted stays auto after a bare click on its strip). Zero-delta moves emit nothing either.
+- 09-04-2026, Claude: the embed handle takes the frame's Escape rule — swallowed while active, so it no longer reaches the tile's exit-editing mid-drag — and the engine's blur abort; both are what "every frame consumer" means.
+- 09-04-2026, Claude: two pre-existing embed behaviors stay as they were, out of this arc: a webpage tile's own re-render (`_renderW` off its observers) rewrites the persisted height under a live drag, and an aborted resize restores the measured height as an inline value on a tile that had none. Both predate the fold and neither is a tile-system seam; recorded so the next embed arc finds them.
 
 ### Deviations
 

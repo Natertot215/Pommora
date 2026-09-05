@@ -23,11 +23,15 @@ const hosted = {
 
 /** PageTile loads through React.lazy, so a fresh tile holds only the Suspense frame — its body and
  *  the resize strip enter the DOM together, once that chunk lands. Every assertion reads the tile. */
+async function until(cond: () => boolean): Promise<boolean> {
+  const deadline = Date.now() + 2000
+  while (!cond() && Date.now() < deadline) await new Promise((r) => setTimeout(r, 5))
+  return cond()
+}
+
 async function mount(props: Parameters<typeof mountEditor>[0]): Promise<EditorView> {
   const view = await mountEditor(props)
-  const deadline = Date.now() + 2000
-  while (!view.dom.querySelector('.tile-chassis-body') && Date.now() < deadline)
-    await new Promise((r) => setTimeout(r, 5))
+  await until(() => view.dom.querySelector('.tile-chassis-body') !== null)
   return view
 }
 
@@ -62,7 +66,10 @@ describe('persisted tile heights', () => {
     firePointer(handle, 'pointerdown', { x: 0, y: 0 })
     firePointer(window, 'pointermove', { x: 0, y: 40 })
     expect(span.style.height).toBe('520px')
+    expect(handle.parentElement).toBe(span)
+    expect(await until(() => handle.classList.contains('is-active'))).toBe(true)
     firePointer(window, 'pointerup')
+    expect(await until(() => !handle.classList.contains('is-active'))).toBe(true)
     expect(span.style.height).toBe('520px')
     expect(save).toHaveBeenCalledOnce()
     expect(save).toHaveBeenCalledWith({ p1: 520 })

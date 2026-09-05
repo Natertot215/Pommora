@@ -212,6 +212,15 @@ describe('a release before activation is a tap, and only a release', () => {
     expect(calls).toEqual(['teardown', 'tap'])
   })
 
+  it('an activated release suppresses the click that follows it', () => {
+    gesture.beginPointerGesture(spec({}))
+    move(20, 20)
+    firePointer(window, 'pointerup')
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    el.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+  })
+
   it('an activated release drops rather than taps', () => {
     const calls: string[] = []
     gesture.beginPointerGesture(
