@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
 import { errText, fail, NO_NEXUS, ok, type Result } from '@pommora/core/Contract/result'
-import { readScope, writeKey, type Scope } from './Database/localState'
+import { readScope, writeKey, type Scope } from '@pommora/core/Store/localState'
 
 type Args<K extends keyof Asks> = Asks[K]['args']
 type Reply<K extends keyof Asks> = Asks[K]['reply']

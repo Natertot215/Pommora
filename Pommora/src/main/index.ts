@@ -31,7 +31,12 @@ import {
 import { push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@pommora/core/Pages/mutateRequest'
 import { WINDOW_BG } from '@pommora/uix/Theme/theme'
-import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
+import {
+  dropLiveTree,
+  getLiveTree,
+  refreshAfterWrite,
+  refreshTree,
+} from '@pommora/core/Nexus/liveTree'
 import {
   installWebGuests,
   pauseGuestMedia,
@@ -40,11 +45,11 @@ import {
   setWebZoomFactor,
   wheelGuest,
 } from './webGuests'
-import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
-import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
-import { runOpenRecord } from './record'
-import { seedContentIndex } from './indexSeed'
-import { readPage } from './readPage'
+import { confirmBy, confirmMutation, confirmRegistry } from '@pommora/core/Nexus/mutatePatch'
+import { patchContainerFromDisk, patchSettingsFromDisk } from '@pommora/core/Nexus/watchPatch'
+import { runOpenLedger } from '@pommora/core/Nexus/remintLedger'
+import { seedContentIndex } from '@pommora/core/Index/indexSeed'
+import { readPageDetail } from '@pommora/core/IO/pageFile'
 import {
   convertTileToPage,
   convertTileToView,
@@ -54,34 +59,39 @@ import {
   readMarkdownTile,
   removeTile,
   writeMarkdownTile,
-} from './tiles'
-import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { isUlid } from './ids'
+} from '@pommora/core/Tiles/tilesFile'
+import { readTileDocAt, writeTileDocAt } from '@pommora/core/Tiles/tileDoc'
+import { isUlid } from '@pommora/core/Locations/ids'
 import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@pommora/core/Tiles/tiles'
-import { pathExists } from './IO/atomicWrite'
-import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
+import { pathExists } from '@pommora/core/IO/atomicWrite'
+import {
+  readAppConfig,
+  updateAppConfig,
+  addRecent,
+  trashModeOf,
+} from '@pommora/desktop/Config/appConfig'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
-import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
-import { migrateAssets } from './assetMigrate'
+import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from '@pommora/core/Assets/assetMap'
 import {
   assetSubfolder,
   NOT_A_PROPERTY_DIR_MESSAGE,
   underAssetRoot,
   validPropertyDir,
-} from './assetRoots'
-import { assetsDir, relPosix } from './paths'
-import { rootSegs } from './exclusion'
-import { excludedFolderRefusal } from './readNexus'
-import { sanitizeExclusions } from './exclusionInput'
-import { clearExclusionData } from './exclusionScan'
-import { ASSET_MIME, IMAGE_EXTS } from '@pommora/desktop/Platform/assetMime'
-import { validateAssetDir } from './assetDirValidate'
-import { flushValueWrites } from './valuesChanged'
-import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
-import { openSessionDb, closeSessionDb } from './sessionDb'
-import { stampAdopted } from './adopt'
-import { ensureIdentity } from './identity'
-import { ensureContextsRegistry } from './contextsRegistry'
+} from '@pommora/core/Assets/assetRoots'
+import { assetsDir, relPosix } from '@pommora/core/Locations/paths'
+import { rootSegs } from '@pommora/core/Locations/exclusion'
+import { excludedFolderRefusal } from '@pommora/core/Settings/codec'
+import { sanitizeExclusions } from '@pommora/core/Settings/settings'
+import { clearExclusionData } from '@pommora/core/Settings/exclusionScan'
+import { ASSET_MIME, IMAGE_EXTS } from '@pommora/core/Assets/assetMime'
+import { validateAssetDir } from '@pommora/core/Settings/assetDirValidate'
+import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
+import { sessionRoot, openSession } from '@pommora/core/Nexus/session'
+import { isExistingDir, resolveRestorePath } from '@pommora/desktop/Config/appConfig'
+import { openSessionDb, closeSessionDb } from '@pommora/core/Store/sessionDb'
+import { stampAdopted } from '@pommora/core/Nexus/adopt'
+import { ensureIdentity } from '@pommora/core/Nexus/identity'
+import { ensureContextsRegistry } from '@pommora/core/Contexts/contextsRegistry'
 import {
   readNavViewModes,
   readLivePersonalization,
@@ -93,9 +103,9 @@ import {
   writeNavViewModes,
   writePersonalization,
   writeSubfield,
-} from './settings'
+} from '@pommora/core/Settings/settings'
 import { startWatcher, stopWatcher } from './watcher'
-import { resolveUnderRoot } from './pathSafety'
+import { resolveUnderRoot } from '@pommora/core/Locations/pathSafety'
 import {
   clearHistory,
   deleteHistory,
@@ -106,30 +116,42 @@ import {
   restoreSnapshot,
   sweepFileHistory,
   writeBody,
-} from './CRUD/fileHistory'
+} from '@pommora/core/Pages/fileHistory'
 import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
-import { listBundles } from './provenance'
-import { trashRows } from './CRUD/trashRows'
-import { replayPendingRename } from './CRUD/contextCascade'
-import { replaySchemaCascade } from './CRUD/replaySchemaCascade'
-import { runRepairSweep } from './repairSweep'
-import { flushNavigation, readNavigationState, writeNavigationState } from './IO/navigationFile'
-import { readTabsState, sanitizeTabSet, writeTabsState } from './IO/tabsState'
-import { readValue, writeValue } from './Database/localState'
-import { readWindowsState, sanitizeWindows, writeWindowsState } from './IO/windowState'
-import { captureThumbnail, evictThumbnails } from './IO/thumbnails'
-import { saveView, reorderViews, deleteView } from './CRUD/views'
-import { setContainerConfig, type ContainerConfigPatch } from './CRUD/containerConfig'
-import { loadValues } from './CRUD/loadValues'
+import { listBundles } from '@pommora/core/Trash/spend'
+import { trashRows } from '@pommora/core/Trash/trashRows'
+import { replayPendingRename } from '@pommora/core/Contexts/contextCascade'
+import { replaySchemaCascade } from '@pommora/core/Properties/replaySchemaCascade'
+import { runRepairSweep } from '@pommora/core/Properties/repairSweep'
+import {
+  flushNavigation,
+  readNavigationState,
+  writeNavigationState,
+} from '@pommora/core/Navigation/navigationFile'
+import { readTabsState, sanitizeTabSet, writeTabsState } from '@pommora/core/Interface/tabsState'
+import { readValue, writeValue } from '@pommora/core/Store/localState'
+import {
+  readWindowsState,
+  sanitizeWindows,
+  writeWindowsState,
+} from '@pommora/core/Interface/windowState'
+import { captureThumbnail, evictThumbnails } from '@pommora/desktop/Capture/thumbnails'
+import { saveView, reorderViews, deleteView } from '@pommora/core/Views/viewsFile'
+import { setContainerConfig, type ContainerConfigPatch } from '@pommora/core/Views/containerConfig'
+import { loadValues } from '@pommora/core/Views/loadValues'
 import {
   createProperty,
   editProperty,
   removeFromRegistry,
   reorderRegistry,
-} from './CRUD/registryProperty'
-import { assignProperty, assignPropertyAt, reorderAssignment } from './CRUD/assignment'
-import { removeProperty } from './CRUD/removeProperty'
-import { deleteProperty as deletePropertyGlobal } from './CRUD/deleteProperty'
+} from '@pommora/core/Properties/registryProperty'
+import {
+  assignProperty,
+  assignPropertyAt,
+  reorderAssignment,
+} from '@pommora/core/Properties/assignment'
+import { removeProperty } from '@pommora/core/Properties/removeProperty'
+import { deleteProperty as deletePropertyGlobal } from '@pommora/core/Properties/deleteProperty'
 import {
   setOptions,
   setStatusGroups,
@@ -139,7 +161,7 @@ import {
   renameStatusOption,
   removeStatusOption,
   clearStatusOption,
-} from './CRUD/optionOps'
+} from '@pommora/core/Properties/optionOps'
 import type {
   FileConfig,
   LinkConfig,
@@ -153,7 +175,7 @@ import {
   NUMBER_FAMILIES,
   propertyDefinition,
 } from '@pommora/core/Properties/properties'
-import { adoptFile, handleMutate, type MutateDeps } from './mutate'
+import { adoptFile, handleMutate, type MutateDeps } from '@pommora/core/Nexus/mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
@@ -402,7 +424,7 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     void sweepFileHistory(root)
     dropLiveTree()
     if (latchRecord) {
-      await runOpenRecord(root)
+      await runOpenLedger(root)
     } else {
       try {
         await refreshTree(root)
@@ -414,34 +436,8 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     if (await replaySchemaCascade(root)) await refreshAfterWrite(root)
     // Off the open's critical path: a large drifted corpus repairs behind the window, not before it.
     void runRepairSweep(root).then(() => pushValueChanges(root))
-    if (await runAssetMigration(root)) {
-      try {
-        await refreshTree(root)
-      } catch (e) {
-        console.error('adopt: the post-migration walk failed; reads will retry:', errText(e))
-      }
-    }
   }
   return root
-}
-
-/** Its own writes are echo-suppressed, so what it moved reaches the renderer through the map
- *  it refreshed, not the watcher. Never blocks the open on failure. */
-async function runAssetMigration(root: string): Promise<boolean> {
-  try {
-    const report = await migrateAssets(root)
-    if (!report) return false
-    const skipped = report.skipped.map((s) => `${s.store} (${s.why})`).join(', ')
-    console.log(
-      `assets: migrated ${report.moved.length} file(s) into the configured directory, ` +
-        `${report.rewritten} reference(s) rewritten, ${report.trashed} swept to the trash` +
-        (skipped ? `; skipped ${skipped}, so .nexus/assets is left alone` : ''),
-    )
-    return report.rewritten > 0
-  } catch (e) {
-    console.error('assets: the migration failed; references are unchanged:', errText(e))
-  }
-  return false
 }
 
 async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
@@ -927,8 +923,6 @@ serveBridge(
         // `recordWrite` suppresses this write's own echo, so the structural re-arm an external
         // edit would trigger via settle never fires here — do it explicitly.
         await confirmSettingsWrite()
-        // Runs BEFORE the walk: the banner values it rewrites are what the pushed tree carries.
-        await runAssetMigration(root)
         const tree = await refreshAfterWrite(root)
         await seedContentIndex(root)
         const assets = await refreshAssetMap(root)
@@ -1121,9 +1115,9 @@ serveBridge(
         if (!resolved.ok) {
           return resolved
         }
-        // readPage keeps relPath as the page's identity (PageDetail.path) — pass relPath,
+        // readPageDetail keeps relPath as the page's identity (PageDetail.path) — pass relPath,
         // not the canonical absolute, which would leak an abs path and mis-key the detail.
-        const page = await readPage(root, relPath)
+        const page = await readPageDetail(root, relPath)
         return ok(page)
       },
     },

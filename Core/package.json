@@ -28,9 +28,12 @@
     "ulidx": "^2.4.1",
     "yaml": "^2.9.0",
     "zod": "^4.4.3",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "write-file-atomic": "^8.0.0"
   },
   "devDependencies": {
-    "@pommora/uix": "*"
+    "@pommora/uix": "*",
+    "@types/write-file-atomic": "^4.0.3",
+    "@types/node": "^25.9.3"
   }
 }
