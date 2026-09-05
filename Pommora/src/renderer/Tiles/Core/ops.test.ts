@@ -5,7 +5,7 @@ import {
   insertBand,
   moveTile,
   moveTileToBand,
-  removeTile,
+  removeLeaf,
   resizeBandPair,
   resizeDivider,
   resizeStackPair,
@@ -81,16 +81,16 @@ describe('splitAtTile', () => {
   })
 })
 
-describe('removeTile', () => {
+describe('removeLeaf', () => {
   it('lets row siblings absorb the width and collapses the split', () => {
-    const l = removeTile(splitAtTile(single(), 'a', 'e', 'b'), 'b')
+    const l = removeLeaf(splitAtTile(single(), 'a', 'e', 'b'), 'b')
     assertValid(l)
     expect((l.bands[0]?.node as TileLeaf).id).toBe('a')
   })
 
   it('closes a column stack without touching sibling heights', () => {
     const three = splitAtTile(splitAtTile(single(), 'a', 's', 'b'), 'b', 's', 'c')
-    const l = removeTile(three, 'b')
+    const l = removeLeaf(three, 'b')
     assertValid(l)
     const node = l.bands[0]?.node as ColumnNode
     expect((node.children[0] as TileLeaf).h).toBe(100)
@@ -98,7 +98,7 @@ describe('removeTile', () => {
   })
 
   it('drops a band whose only tile is removed', () => {
-    const l = removeTile(insertBand(single(), 1, 'b', 100), 'b')
+    const l = removeLeaf(insertBand(single(), 1, 'b', 100), 'b')
     assertValid(l)
     expect(l.bands).toHaveLength(1)
   })

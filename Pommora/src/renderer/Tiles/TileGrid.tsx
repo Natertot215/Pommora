@@ -18,7 +18,7 @@ import {
 } from './Core/ops'
 import { computeGeometry, type Rect, type TileGeometry } from './Core/rects'
 import { snapAxis, xCandidates, yCandidates } from './Core/snap'
-import '@renderer/Tiles/tile-base.css'
+import './tile-base.css'
 import './tile-grid.css'
 
 // Moving a tile lifts the tile itself under the pointer (shadowed, 1:1, no ghost) while its
@@ -225,7 +225,7 @@ export function TileGrid({
   onHandleMenu,
   onBackdrop,
 }: TileGridProps): React.JSX.Element {
-  const hostRef = useRef<HTMLDivElement | null>(null)
+  const gridRef = useRef<HTMLDivElement | null>(null)
   const [width, setWidth] = useState(0)
   const [draft, setDraft] = useState<TileLayout | null>(null)
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
@@ -238,7 +238,7 @@ export function TileGrid({
   const [tracking, setTracking] = useState(false)
   const trackingSettle = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    const el = hostRef.current
+    const el = gridRef.current
     if (!el) return
     setWidth(el.clientWidth)
     const ro = new ResizeObserver(() => {
@@ -334,10 +334,10 @@ export function TileGrid({
       const pending = takePendingSettle()
       const { minTilePx: minT, snapPx: snap } = live.current
       const origin = pending ?? live.current.layout
-      const host = hostRef.current
+      const grid = gridRef.current
       const g =
-        pending && host
-          ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
+        pending && grid
+          ? computeGeometry(pending, Math.max(0, grid.clientWidth), live.current.gap)
           : live.current.originGeometry
       const ownRect = g.tiles.get(id)
       if (!ownRect) return
@@ -433,23 +433,23 @@ export function TileGrid({
       const pending = takePendingSettle()
       const zone = live.current.bandZonePx
       const origin = pending ?? live.current.layout
-      const host = hostRef.current
-      if (!host) return
+      const grid = gridRef.current
+      if (!grid) return
       const g = pending
-        ? computeGeometry(pending, Math.max(0, host.clientWidth), live.current.gap)
+        ? computeGeometry(pending, Math.max(0, grid.clientWidth), live.current.gap)
         : live.current.originGeometry
       const rect = g.tiles.get(id)
       if (!rect) return
-      const downBox = host.getBoundingClientRect()
+      const downBox = grid.getBoundingClientRect()
       // The grab offset is frozen at the down event — recomputing it per move would
       // cancel the pointer delta and pin the lifted tile to its origin.
       const grab = {
         x: e.clientX - downBox.left - rect.x,
         y: e.clientY - downBox.top - rect.y,
       }
-      // Reads the REAL scroll ancestor's delta (the host never scrolls itself) — cheap per move, no
+      // Reads the REAL scroll ancestor's delta (the grid never scrolls itself) — cheap per move, no
       // forced layout, and it folds our own autoscroll back into the pointer math.
-      const scroller = findScroller(host, 'xy')
+      const scroller = findScroller(grid, 'xy')
       const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
       let latest: TileLayout = origin
       let target: DropTarget = null
@@ -473,7 +473,7 @@ export function TileGrid({
       // Settle into the decided slot (the final layout's rect), or back home.
       const settleInto = (decided: TileLayout | null): void => {
         const finalGeometry = decided
-          ? computeGeometry(decided, Math.max(0, host.clientWidth), live.current.gap)
+          ? computeGeometry(decided, Math.max(0, grid.clientWidth), live.current.gap)
           : g
         const to = finalGeometry.tiles.get(id) ?? rect
         setTileDrag(null)
@@ -499,7 +499,7 @@ export function TileGrid({
             stopScroll = startAutoScroll({
               getPoint: () => lastPoint,
               scroller,
-              dragEl: host,
+              dragEl: grid,
               axis: 'xy',
               onScrolled: () => resolve(lastPoint.x, lastPoint.y),
             })
@@ -520,12 +520,12 @@ export function TileGrid({
   const interacting = resizingId !== null || tracking
 
   // Tiles swallow their own right-clicks.
-  const onSurfaceContextMenu = (e: React.MouseEvent): void => {
+  const onGridContextMenu = (e: React.MouseEvent): void => {
     if (!onBackdrop || e.target !== e.currentTarget) return
     e.preventDefault()
-    const host = hostRef.current
-    if (!host) return
-    const box = host.getBoundingClientRect()
+    const grid = gridRef.current
+    if (!grid) return
+    const box = grid.getBoundingClientRect()
     const px = e.clientX - box.left
     const py = e.clientY - box.top
     const g = live.current.originGeometry
@@ -552,10 +552,10 @@ export function TileGrid({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
-      ref={hostRef}
+      ref={gridRef}
       className={`tile-grid${interacting ? ' is-interacting' : ''}`}
       style={{ height: geometry.totalHeight + bottomPadPx }}
-      onContextMenu={onSurfaceContextMenu}
+      onContextMenu={onGridContextMenu}
     >
       {/* Tiles render in STABLE id order, never tree order — a mid-drag preview reorders the
           tree, and React moving the keyed DOM nodes to match would remount every reflowing tile

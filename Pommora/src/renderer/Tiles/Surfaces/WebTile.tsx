@@ -10,11 +10,11 @@ import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
 import { useDismissal } from '@renderer/Interactions/dismissalStack'
-import { useSession } from '../../store'
-import { openWebLink } from '../../Actions/openWebLink'
+import { useSession } from '@renderer/store'
+import { openWebLink } from '@renderer/Actions/openWebLink'
 import { webGuestRetention } from './webRetention'
 import '../tile-base.css'
-import '@renderer/Tiles/tile-title.css'
+import '../tile-title.css'
 
 /** What the guest element answers with once attached — the parting frame's only surface. */
 type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }

@@ -108,7 +108,7 @@ export function moveTile(
   if (tileId === targetId) return layout
   const mover = getTile(layout, tileId)
   if (!mover || !findTile(layout, targetId)) return layout
-  const removed = removeTile(layout, tileId)
+  const removed = removeLeaf(layout, tileId)
   const target = getTile(removed, targetId)
   if (!target) return layout
   const h = edge === 'e' || edge === 'w' ? target.h : mover.h
@@ -117,7 +117,7 @@ export function moveTile(
 
 /** Remove a tile; a row's siblings absorb its width, a column's stack closes up,
  *  a split left with one child collapses, a band left tileless disappears. */
-export function removeTile(layout: TileLayout, tileId: string): TileLayout {
+export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
   const at = findTile(layout, tileId)
   if (!at) return layout
 
@@ -184,7 +184,7 @@ export function moveTileToBand(layout: TileLayout, tileId: string, index: number
   const ownBand = at.path.length === 0
   const insertAt = ownBand && at.band < index ? index - 1 : index
   if (ownBand && insertAt === at.band) return layout
-  const removed = removeTile(layout, tileId)
+  const removed = removeLeaf(layout, tileId)
   return insertBand(removed, insertAt, tileId, mover.h)
 }
 

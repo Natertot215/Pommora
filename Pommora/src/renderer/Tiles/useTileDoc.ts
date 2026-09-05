@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TileHostRef } from '@shared/tiles'
 import { tileHostKey } from '@shared/tiles'
 import { useSession } from '@renderer/store'
-import { decodeLayout, encodeLayout } from '@renderer/Tiles/Core/codec'
-import { emptyLayout, type TileLayout } from '@renderer/Tiles/Core/model'
+import { decodeLayout, encodeLayout } from './Core/codec'
+import { emptyLayout, type TileLayout } from './Core/model'
 
 const SAVE_DEBOUNCE_MS = 300
 

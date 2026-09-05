@@ -19,9 +19,9 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Actions/connectionMenu'
-import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/Tiles/Core/ops'
-import { getTile } from '@renderer/Tiles/Core/model'
-import { TileGrid, type BackdropTarget } from '@renderer/Tiles/TileGrid'
+import { attachBelow, insertBand, removeLeaf } from './Core/ops'
+import { getTile } from './Core/model'
+import { TileGrid, type BackdropTarget } from './TileGrid'
 import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
@@ -90,6 +90,18 @@ function viewPickerItems(
     ],
   })
   return tree.collections.map(collectionItem)
+}
+
+// An absent key IS the default, so clearing a field deletes it rather than writing the default back.
+const withKey = (
+  raw: Record<string, unknown>,
+  key: string,
+  value: unknown,
+): Record<string, unknown> => {
+  const next = { ...raw }
+  if (value === undefined) delete next[key]
+  else next[key] = value
+  return next
 }
 
 // Stable empties for a tree-less render, so the projections need no memo to hold identity.
@@ -218,32 +230,25 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the
   // dismissal that cleared it — otherwise React tears the pane out before it can retract.
   const menu = useHeld(handleMenu, handleMenu !== null)
-  const setStyle = useCallback(
-    (id: string, style: TileStyle) => {
+  // Every per-entry edit walks the RAW list, so foreign fields survive whatever it rewrites.
+  const mutateEntry = useCallback(
+    (id: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
       saveTiles((cur) =>
-        cur.map((b) =>
-          knownTile(b)?.id === id ? { ...(b as Record<string, unknown>), style } : b,
-        ),
+        cur.map((raw) => (knownTile(raw)?.id === id ? fn(raw as Record<string, unknown>) : raw)),
       )
     },
     [saveTiles],
   )
-  // Raw entry spreads so foreign fields survive; absent = unlocked.
+  const setStyle = useCallback(
+    (id: string, style: TileStyle) => mutateEntry(id, (raw) => ({ ...raw, style })),
+    [mutateEntry],
+  )
+  // Toggles off the STRICT boolean — a foreign truthy `locked` (e.g. 1) parses to unlocked, so the
+  // first click must lock, not delete-to-no-op.
   const toggleLock = useCallback(
-    (id: string) => {
-      saveTiles((cur) =>
-        cur.map((b) => {
-          if (knownTile(b)?.id !== id) return b
-          const next = { ...(b as Record<string, unknown>) }
-          // Toggles off the STRICT boolean — a foreign truthy `locked` (e.g. 1) parses to unlocked,
-          // so the first click must lock, not delete-to-no-op.
-          if (next.locked === true) delete next.locked
-          else next.locked = true
-          return next
-        }),
-      )
-    },
-    [saveTiles],
+    (id: string) =>
+      mutateEntry(id, (raw) => withKey(raw, 'locked', raw.locked === true ? undefined : true)),
+    [mutateEntry],
   )
   const duplicateTile = useCallback(
     (id: string) => {
@@ -283,32 +288,15 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   // Hands the embed the raw entry so foreign keys on it and its elements survive.
   const mutateViewEntry = useCallback(
-    (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
-      saveTiles((cur) =>
-        cur.map((raw) => {
-          const e = knownTile(raw)
-          if (e?.id !== entryId || e.type !== 'view') return raw
-          return fn(raw as Record<string, unknown>)
-        }),
-      )
-    },
-    [saveTiles],
+    (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) =>
+      mutateEntry(entryId, (raw) => (knownTile(raw)?.type === 'view' ? fn(raw) : raw)),
+    [mutateEntry],
   )
 
-  // Clears `zoom` at 1.0 so the default stays an absent key (mirrors setStyle/toggleLock).
   const setTileZoom = useCallback(
-    (id: string, factor: number) => {
-      saveTiles((cur) =>
-        cur.map((raw) => {
-          if (knownTile(raw)?.id !== id) return raw
-          const next = { ...(raw as Record<string, unknown>) }
-          if (factor === 1) delete next.zoom
-          else next.zoom = factor
-          return next
-        }),
-      )
-    },
-    [saveTiles],
+    (id: string, factor: number) =>
+      mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === 1 ? undefined : factor)),
+    [mutateEntry],
   )
 
   const renderTile = useCallback(

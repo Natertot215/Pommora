@@ -243,8 +243,8 @@ async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: st
   return hosts
 }
 
-/** The shared walk under both the link-index read and the rename heal — a missing backing file
- *  is left to each caller to tolerate. */
+/** Every markdown tile's backing file across every host — a missing file is the caller's to
+ *  tolerate; this walk does not stat them. */
 async function markdownTileFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
   for (const { host, dir } of await listTileHosts(root)) {
