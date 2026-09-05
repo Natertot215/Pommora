@@ -28,7 +28,7 @@ import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../I
 import { serializeOnFile } from '../IO/fileLock'
 import { isMarkdownFile } from '../IO/walk'
 import { setGovernedRootKeys } from './governedWrite'
-import { contextsDir, SPACE_SIDECAR } from '../paths'
+import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../paths'
 import { createFolderEntity } from './folderEntity'
 import { invalidContextTitle } from './util'
 
@@ -264,7 +264,7 @@ export async function createSpace(
   const created = await createFolderEntity(parent, 'space', name)
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
-  for (const tid of tileIds) await atomicWriteFile(join(created.value.path, `${tid}.md`), '')
+  for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')
   const tile = (tid: string): Raw => ({ kind: 'tile', id: tid, h: NEW_TILE_H })
   const band = (a: string, b: string): Raw => ({
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },

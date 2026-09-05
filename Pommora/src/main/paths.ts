@@ -69,6 +69,10 @@ export function tileHostDir(root: string): string {
 export const TILE_DOC_FILENAME = '_tiles.json'
 export const tileDocPath = (hostDirAbs: string): string => join(hostDirAbs, TILE_DOC_FILENAME)
 
+/** A markdown tile's body file, beside the document that names it — the id IS the filename. */
+export const tileFilePath = (hostDirAbs: string, tileId: string): string =>
+  join(hostDirAbs, `${tileId}.md`)
+
 /** The canonical `.nexus/` files. Per-machine chrome is not among them — that lives in nexus.db,
  *  so everything named here is content a user or another app can legitimately read and edit. */
 export const NEXUS_CONFIG_FILES = {

@@ -12,7 +12,6 @@ import {
   type PagePickerItem,
   TILE_KINDS,
   type TileEntry,
-  type TileMenuSource,
   type TileStyle,
   type ViewPick,
   type ViewPickerItem,
@@ -84,27 +83,24 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
   // no equivalent, so what survives is the identity rather than the affordance.
   if (ctx.pageInfo) items.push({ label: ctx.pageInfo.title, action: 'tile:open', disabled: true })
 
-  const link = (label: string, rows: ActionItem<TileAction>[]): void => {
+  // A row with no source is shown and refused rather than dropped — the menu reads the same
+  // whichever tile it belongs to.
+  for (const { label, source } of TILE_KINDS[entry.type].menuRows) {
+    let rows: ActionItem<TileAction>[] = []
+    if (source === 'pages') rows = drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
+    else if (source === 'views') rows = drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
     const off = locked || rows.length === 0
     items.push({ label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) })
   }
-  // A row with no source is shown and refused rather than dropped — the menu reads the same
-  // whichever tile it belongs to.
-  const drillFor = (source: TileMenuSource): ActionItem<TileAction>[] => {
-    if (source === 'pages') return drill(ctx.pageItems, (value) => ({ kind: 'page', value }))
-    if (source === 'views') return drill(ctx.viewItems, (value) => ({ kind: 'view', value }))
-    return []
-  }
-  for (const row of TILE_KINDS[entry.type].menuRows) link(row.label, drillFor(row.source))
 
-  const style: TileStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
+  const borderless = entry.style === 'borderless'
   items.push({
     label: 'Style',
     action: 'tile:open',
     disabled: locked,
     submenu: [
-      { label: 'Bordered', action: 'tile:style:bordered', checked: style === 'bordered' },
-      { label: 'Borderless', action: 'tile:style:borderless', checked: style === 'borderless' },
+      { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless },
+      { label: 'Borderless', action: 'tile:style:borderless', checked: borderless },
     ],
   })
 
