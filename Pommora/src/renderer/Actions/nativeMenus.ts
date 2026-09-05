@@ -1,7 +1,7 @@
 // Reaching the OS menu from the renderer: whether this machine asks for one, and where it opens.
 // The rows are the caller's model — a surface states what it offers, never how it crosses.
 
-import type { ActionItem } from '@shared/menuModel'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useSession } from '@renderer/store'
 
 /** Whether this machine draws its list menus as the operating system's. */

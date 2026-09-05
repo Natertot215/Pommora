@@ -11,7 +11,7 @@ import {
   CardTitle,
   CardTrail,
 } from '@renderer/Cards/Card'
-import type { NavRef } from '@shared/types'
+import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../store'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
@@ -19,7 +19,7 @@ import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
 import './nav-gallery.css'
 import { onActivateKey } from '@renderer/Interactions/activate'
-import { thumbKey, thumbRel } from '@shared/nexusPaths'
+import { thumbKey, thumbRel } from '@pommora/core/Locations/nexusPaths'
 import { assetUrl } from '@renderer/Assets/assetUrl'
 
 export function NavGallery({

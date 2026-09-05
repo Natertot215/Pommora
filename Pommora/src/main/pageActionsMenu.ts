@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import { type PageMetaAction, pageMetaMenuSubset } from '@shared/pageMenu'
+import { type PageMetaAction, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { popModelMenu } from './rowMenu'
 
 // A named subset of the page menu, popped where a surface wants a few of its actions rather than

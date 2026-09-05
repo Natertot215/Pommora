@@ -1,9 +1,9 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { TabMenuAction, TabMenuContext } from '@shared/tabMenu'
-import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
+import type { TabMenuAction, TabMenuContext } from '@pommora/core/Actions/tabMenu'
+import { pageMetaMenuSubset, pageSendActions } from '@pommora/core/Actions/pageMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
-import { pinLabel } from '@shared/toggleLabels'
+import { pinLabel } from '@pommora/core/Actions/toggleLabels'
 
 // The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the
 // tab's state. The send items come from the shared page-menu model.

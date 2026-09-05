@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
-import { lockLabel } from '@shared/toggleLabels'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import {
   type DrillPickItem,
   type PagePickerItem,
@@ -9,7 +9,7 @@ import {
   type TileStyle,
   type ViewPick,
   type ViewPickerItem,
-} from '@shared/tiles'
+} from '@pommora/core/Tiles/tiles'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerRow } from '@renderer/DesignSystem/Pickers/picker-base'
 import { leadingRow, PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'

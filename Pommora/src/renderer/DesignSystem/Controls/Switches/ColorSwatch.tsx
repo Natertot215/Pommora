@@ -3,7 +3,7 @@ import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPic
 import type { LabelColorName } from '@renderer/DesignSystem/Labels'
 import { cellPaint } from '@renderer/DesignSystem/Tokens/ramp'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
-import type { CellKey } from '@shared/theme'
+import type { CellKey } from '@pommora/uix/Theme/theme'
 import * as s from './color-swatch.css'
 
 /**

@@ -7,9 +7,9 @@ import {
   defaultStyleFor,
   type TimeFormat,
   type WeekdayFormat,
-} from '@shared/columnStyles'
-import type { DateGranularity, DateSeparator } from '@shared/views'
-import type { NumberConfig } from '@shared/properties'
+} from '@pommora/core/Properties/columnStyles'
+import type { DateGranularity, DateSeparator } from '@pommora/core/Views/views'
+import type { NumberConfig } from '@pommora/core/Properties/properties'
 import { pad } from '@renderer/DesignSystem/Util/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell — cache by options tuple

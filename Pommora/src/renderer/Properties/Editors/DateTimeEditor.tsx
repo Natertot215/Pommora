@@ -1,4 +1,9 @@
-import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
+import type {
+  ColumnStyle,
+  DateFormat,
+  TimeFormat,
+  WeekdayFormat,
+} from '@pommora/core/Properties/columnStyles'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import { MenuRowView, type MenuRow } from '@renderer/DesignSystem/Menus'
 import * as s from './date-time-editor.css'

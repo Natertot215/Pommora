@@ -7,11 +7,11 @@ import { mkdir, readdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { nativeImage } from 'electron'
 import type { BrowserWindow, NativeImage } from 'electron'
-import { WINDOW_BG } from '@shared/theme'
-import type { ThumbRect } from '@shared/types'
+import { WINDOW_BG } from '@pommora/uix/Theme/theme'
+import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { ensureIdentity } from '../identity'
 import { atomicWriteBinary } from './atomicWrite'
-import { thumbKey, thumbRel, thumbsRel } from '@shared/nexusPaths'
+import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Locations/nexusPaths'
 
 const THUMB_WIDTH = 480
 

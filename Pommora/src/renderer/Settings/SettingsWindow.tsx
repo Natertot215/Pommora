@@ -14,12 +14,12 @@ import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase } from '@renderer/Windows/window-base'
 import type { WindowBounds } from '@renderer/Windows/window-base'
 import type { WindowPanelBounds } from '@renderer/Windows/window-panel'
-import type { DevicePrefs } from '@shared/devicePrefs'
+import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { stepsWith, type PickerOption } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/linkFormat'
-import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
+import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_TIME_FORMAT,
   HISTORY_DAY_STEPS,
@@ -38,16 +38,20 @@ import {
   EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   SCALE_STEPS,
-  INTERFACE_SCALE_DEFAULT,
-  INTERFACE_SCALE_STEPS,
   WEB_ZOOM_DEFAULT,
-  type ColorSetting,
   type Personalization,
   type PickerSelection,
   type TabOpenBehavior,
   type TimeFormatSetting,
-} from '@shared/types'
-import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/columnStyles'
+  INTERFACE_SCALE_DEFAULT,
+  INTERFACE_SCALE_STEPS,
+} from '@pommora/core/Settings/personalization'
+import type { ColorSetting } from '@pommora/uix/Theme/colorSetting'
+import {
+  DATE_FORMAT_LABELS,
+  DATE_FORMATS,
+  type DateFormat,
+} from '@pommora/core/Properties/columnStyles'
 import { useExitPresence } from '@renderer/Animation/useExitPresence'
 import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'

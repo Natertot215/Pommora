@@ -6,13 +6,13 @@
 import writeFileAtomic from 'write-file-atomic'
 import { readFile, rename, mkdir, stat, utimes } from 'node:fs/promises'
 import { join, basename, dirname, relative, isAbsolute } from 'node:path'
-import { isPlainObject } from '@shared/propertyValue'
-import { stableStringify } from '@shared/stableJson'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import { stableStringify } from '@pommora/core/IO/stableJson'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { forgetParse } from '../walkCache'
 import { recordWrite } from './writeEcho'
 import { serializeOnFile } from './fileLock'
-import { TRASH_DIR } from '@shared/nexusPaths'
+import { TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 
 /** Atomically write a UTF-8 string to `filePath`. Recorded for watcher echo
  *  suppression — the app's own writes never trigger its own re-walk. */

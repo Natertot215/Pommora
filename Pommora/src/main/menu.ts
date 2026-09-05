@@ -7,7 +7,8 @@ import { dropLiveTree } from './liveTree'
 import { pruneRecents, sessionRoot } from './session'
 import { readInterfaceScale } from './settings'
 import { setHostZoom, stepHostZoom } from './webGuests'
-import { INTERFACE_SCALE_DEFAULT, interfaceScaleZoom } from '@shared/types'
+import { INTERFACE_SCALE_DEFAULT } from '@pommora/core/Settings/personalization'
+import { interfaceScaleZoom } from '@pommora/desktop/Config/interfaceScale'
 
 type AdoptFn = (path: string) => Promise<void>
 

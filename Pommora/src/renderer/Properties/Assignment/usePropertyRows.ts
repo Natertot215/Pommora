@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
-import { contextKey, type ContextsRegistry } from '@shared/contexts'
-import { resolveContextKeys } from '@shared/contextResolve'
-import type { PropertyDefinition } from '@shared/properties'
-import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
-import type { PageFrontmatter } from '@shared/schemas'
-import type { NexusTree, ViewRow } from '@shared/types'
+import { contextKey, type ContextsRegistry } from '@pommora/core/Properties/contexts'
+import { resolveContextKeys } from '@pommora/core/Properties/contextResolve'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { useSession } from '@renderer/store'
 import {
   contextIdentityOf,

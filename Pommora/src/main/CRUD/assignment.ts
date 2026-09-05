@@ -4,11 +4,11 @@
 
 import { join, sep } from 'node:path'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
-import { pageCollectionSidecar } from '@shared/schemas'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 import { getLiveTree, refreshTree } from '../liveTree'
 import { restoreCachedValues } from './removeProperty'
 import { serializeSchemaOp } from './schemaChain'
-import type { CollectionNode, SetNode } from '@shared/types'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
 
 async function read(

@@ -11,11 +11,11 @@ import {
   type PropertyDefinition,
   type PropertyType,
   type StatusGroup,
-} from '@shared/properties'
-import type { Option } from '@shared/optionModel'
+} from '@pommora/core/Properties/properties'
+import type { Option } from '@pommora/core/Properties/optionModel'
 import type { Result } from '@pommora/core/Contract/result'
-import type { ColumnStyle } from '@shared/columnStyles'
-import type { CollectionNode, SetNode } from '@shared/types'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useActiveView } from '@renderer/Views/useActiveView'
 import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
@@ -55,7 +55,7 @@ import {
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './frames.css'
 import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
-import { normalizePropertyName } from '@shared/properties'
+import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { askDestroyProperty } from '@renderer/Windows/confirmations'
 import {
   displayPropertyName,

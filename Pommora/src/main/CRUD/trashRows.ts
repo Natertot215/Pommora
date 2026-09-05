@@ -3,8 +3,9 @@
 // this is, and whether the place it came from still exists.
 
 import { basename, dirname } from 'node:path'
-import type { NexusTree, TrashCrumb, TrashRow } from '@shared/types'
-import { CONTEXTS_DIR_REL, TRASH_DIR } from '@shared/nexusPaths'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { TrashCrumb, TrashRow } from '@pommora/core/Trash/trashRow'
+import { CONTEXTS_DIR_REL, TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 import {
   type ArtifactRecord,
   containerChain,

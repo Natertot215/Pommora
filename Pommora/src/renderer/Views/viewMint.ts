@@ -4,10 +4,10 @@
 // routes through `saveViewAdopting` — a sentinel-holding write awaits the in-flight mint and saves
 // against the real id, never minting its own. Store-free: main confirms every view save by
 // patching its live tree and pushing, so no writer here needs the store.
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'
-import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@shared/views'
+import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
 
 const inFlight = new Map<string, Promise<string>>()
 

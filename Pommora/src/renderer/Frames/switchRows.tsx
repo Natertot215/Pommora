@@ -1,4 +1,4 @@
-import type { SavedView } from '@shared/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import type { MenuRow } from '@renderer/DesignSystem/Menus'
 import { ICON } from './frames.css'

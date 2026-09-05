@@ -3,20 +3,19 @@
 // still appear as disclosure groups, and a CollectionNode and a SetNode container flow through the
 // identical structural path. Pure: no fs, no React.
 
+import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { PageValues, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type {
-  CollectionNode,
-  PageNode,
-  PageValues,
-  ResolvedGroup,
-  SetNode,
-  ViewRow,
-} from '@shared/types'
-import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
-import { ID_KEY } from '@shared/identity'
+  DateGranularity,
+  EmptyPlacement,
+  GroupConfig,
+  SubGroupConfig,
+} from '@pommora/core/Views/views'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { pad } from '@renderer/DesignSystem/Util/pad'
-import type { PageFrontmatter } from '@shared/schemas'
-import { optionValues, type PropertyDefinition } from '@shared/properties'
-import { UNGROUPED } from '@shared/types'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 
 /** Only these declared types group; everything else falls back to structural. */

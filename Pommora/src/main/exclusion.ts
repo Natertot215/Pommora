@@ -1,6 +1,6 @@
 // One pure predicate unifying convention skips + user folder exclusions.
 
-import { NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
+import { NEXUS_DIR, TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 
 /** A SQLite store or its journal — Pommora's own and anyone else's; none is content, and a
  *  journal's churn must never cost a walk. */

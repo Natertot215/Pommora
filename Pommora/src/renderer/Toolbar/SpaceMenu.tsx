@@ -1,5 +1,5 @@
-import { tileHostKey } from '@shared/tiles'
-import { lockLabel } from '@shared/toggleLabels'
+import { tileHostKey } from '@pommora/core/Tiles/tiles'
+import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { useRef, useState } from 'react'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import {

@@ -3,7 +3,11 @@ import { titleReveal } from '@renderer/Animation/animations.css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { duration } from '@renderer/Animation'
 import { SEGMENT_H, segmentRow, settingsBtn } from '@renderer/Interface/action-band.css'
-import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
+import {
+  EMBED_SCALE_DEFAULT,
+  embedZoom,
+  viewEmbedZoom,
+} from '@pommora/core/Settings/personalization'
 
 const c = colorVars.color
 

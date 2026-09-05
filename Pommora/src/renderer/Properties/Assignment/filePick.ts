@@ -3,11 +3,11 @@
 // async effect: open the dialog, land the bytes, then write the reference. Without this the arm
 // would be shared and the effect would drift four ways, one per surface tail.
 
-import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
-import type { CellMenuAction } from '@shared/cellMenu'
-import { parentOf } from '@shared/treePatch'
-import { assetSubRoot } from '@shared/nexusPaths'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { CellMenuAction } from '@pommora/core/Actions/cellMenu'
+import { parentOf } from '@pommora/core/Nexus/treePatch'
+import { assetSubRoot } from '@pommora/core/Locations/nexusPaths'
 import { resolveFileValue } from '@renderer/Assets/assetUrl'
 import { useSession } from '@renderer/store'
 import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Fields/SegmentRun'

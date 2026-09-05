@@ -1,6 +1,6 @@
 import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
-import { clamp } from '@shared/clamp'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 function renormalize(ratios: number[]): number[] {
   const sum = ratios.reduce((a, r) => a + r, 0)

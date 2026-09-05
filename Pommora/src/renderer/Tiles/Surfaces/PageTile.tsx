@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { titleFromPath } from '@shared/connections'
-import type { PageDetail } from '@shared/types'
+import { titleFromPath } from '@pommora/core/Connections/connections'
+import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
@@ -16,7 +16,7 @@ import { ancestryOf } from '@renderer/treeIndex'
 
 import '../tile-base.css'
 import '../tile-title.css'
-import { embedZoom } from '@shared/types'
+import { embedZoom } from '@pommora/core/Settings/personalization'
 
 interface EmbedEntry {
   path: string

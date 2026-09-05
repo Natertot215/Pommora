@@ -1,6 +1,6 @@
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
+import { hasWebScheme, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { linkTarget, tokenize } from '../Tokens'
 import { insideGlance } from '@renderer/Interface/Glance/glanceAction'
 import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from '../Connections'

@@ -9,21 +9,16 @@ import {
   systemPreferences,
 } from 'electron'
 import type { OpenDialogOptions } from 'electron'
-import { assetSubRoot } from '@shared/nexusPaths'
+import { assetSubRoot } from '@pommora/core/Locations/nexusPaths'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import type {
-  GlanceSize,
-  NavigationState,
-  NavViewModes,
-  NexusState,
-  NexusTree,
-  SubfieldConfig,
-  ThumbRect,
-} from '@shared/types'
-import { type DevicePrefs, packDevicePrefs } from '@shared/devicePrefs'
-import { isPlainObject } from '@shared/propertyValue'
+import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
+import type { NavigationState } from '@pommora/core/Navigation/navRef'
+import type { NavViewModes, SubfieldConfig, ThumbRect } from '@pommora/core/Interface/chrome'
+import type { NexusState, NexusTree } from '@pommora/core/Nexus/tree'
+import { type DevicePrefs, packDevicePrefs } from '@pommora/core/Settings/devicePrefs'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
 import {
   BUSY,
   caught,
@@ -34,8 +29,8 @@ import {
   type Result,
 } from '@pommora/core/Contract/result'
 import { push, scopeGet, scopeSet, serveBridge } from './ipc'
-import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
-import { WINDOW_BG } from '@shared/theme'
+import type { Creator, MutateRequest, ContextTarget } from '@pommora/core/Pages/mutateRequest'
+import { WINDOW_BG } from '@pommora/uix/Theme/theme'
 import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
 import {
   installWebGuests,
@@ -62,10 +57,10 @@ import {
 } from './tiles'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { isUlid } from './ids'
-import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@shared/tiles'
+import { tilePatchProblem, coerceTileHost, type TileDocPatch } from '@pommora/core/Tiles/tiles'
 import { pathExists } from './IO/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, trashModeOf } from './appConfig'
-import { DEFAULT_TRASH_MODE } from '@shared/types'
+import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import {
@@ -79,7 +74,7 @@ import { rootSegs } from './exclusion'
 import { excludedFolderRefusal } from './readNexus'
 import { sanitizeExclusions } from './exclusionInput'
 import { clearExclusionData } from './exclusionScan'
-import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
+import { ASSET_MIME, IMAGE_EXTS } from '@pommora/desktop/Platform/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { flushValueWrites } from './valuesChanged'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
@@ -112,7 +107,7 @@ import {
   sweepFileHistory,
   writeBody,
 } from './CRUD/fileHistory'
-import { fileHistoryMenuItems } from '@shared/fileHistoryMenu'
+import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
 import { listBundles } from './provenance'
 import { trashRows } from './CRUD/trashRows'
 import { replayPendingRename } from './CRUD/contextCascade'
@@ -145,10 +140,19 @@ import {
   removeStatusOption,
   clearStatusOption,
 } from './CRUD/optionOps'
-import type { FileConfig, LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
-import type { Option } from '@shared/optionModel'
-import { savedView } from '@shared/views'
-import { LINK_DISPLAYS, NUMBER_FAMILIES, propertyDefinition } from '@shared/properties'
+import type {
+  FileConfig,
+  LinkConfig,
+  NumberConfig,
+  StatusGroup,
+} from '@pommora/core/Properties/properties'
+import type { Option } from '@pommora/core/Properties/optionModel'
+import { savedView } from '@pommora/core/Views/views'
+import {
+  LINK_DISPLAYS,
+  NUMBER_FAMILIES,
+  propertyDefinition,
+} from '@pommora/core/Properties/properties'
 import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
@@ -161,43 +165,46 @@ import { popCardMenu } from './cardMenu'
 import { popCitationMenu } from './citationMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
-import type { TabMenuContext } from '@shared/tabMenu'
+import type { TabMenuContext } from '@pommora/core/Actions/tabMenu'
 import { popTrashColumnMenu, popTrashMenu } from './trashMenu'
-import type { TrashColumnContext, TrashMenuContext } from '@shared/trashMenu'
+import type { TrashColumnContext, TrashMenuContext } from '@pommora/core/Actions/trashMenu'
 import { popNavRowMenu } from './navRowMenu'
-import type { NavRowMenuContext } from '@shared/navRowMenu'
+import type { NavRowMenuContext } from '@pommora/core/Actions/navRowMenu'
 import { popPropertyMenu } from './propertyMenu'
 import { popOptionMenu } from './optionMenu'
 import { popModelMenu, popRowMenu } from './rowMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
-import { iconLabel } from '@shared/toggleLabels'
+import { iconLabel } from '@pommora/core/Actions/toggleLabels'
 import { popViewButtonMenu } from './viewButtonMenu'
 import { popReturningMenu } from './returningMenu'
 import { popViewRowMenu } from './viewRowMenu'
-import type { ViewRowAction } from '@shared/viewRowMenu'
+import type { ViewRowAction } from '@pommora/core/Actions/viewRowMenu'
 import { popEmbedTitleMenu, popEmbedAreaMenu } from './viewEmbedMenu'
 import type {
   EmbedAreaMenuAction,
   EmbedTitleMenuAction,
   ViewButtonMenuAction,
-} from '@shared/viewMenus'
+} from '@pommora/core/Actions/viewMenus'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
   NexusIconAction,
   TitleMenuAction,
-} from '@shared/identityMenus'
-import type { AssetMap, PickFileOptions, TrashMode, ViewButton } from '@shared/types'
+} from '@pommora/core/Actions/identityMenus'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
+import type { PickFileOptions } from '@pommora/core/Contract/bridge'
+import type { TrashMode } from '@pommora/core/Trash/trashRow'
+import type { ViewButton } from '@pommora/core/Views/viewRow'
+import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import {
-  EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
-  coerceScale,
   coerceInterfaceScale,
-  interfaceScaleZoom,
-} from '@shared/types'
+  coerceScale,
+} from '@pommora/core/Settings/personalization'
+import { interfaceScaleZoom } from '@pommora/desktop/Config/interfaceScale'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
-import type { FormatState } from '@shared/editorMenu'
-import { isValidLink, normalizeLinkUrl } from '@shared/links'
+import type { FormatState } from '@pommora/core/Actions/editorMenu'
+import { isValidLink, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { getTitleCache, resolveTitle, type LinkTitleCache } from './linkTitles'
 
 // Opt-in CDP endpoint for headless automation; must be appended before the app is ready.

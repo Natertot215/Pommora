@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DEFAULT_TIME_FORMAT, embedZoom } from '@shared/types'
-import { parentOf } from '@shared/treePatch'
+import { DEFAULT_TIME_FORMAT, embedZoom } from '@pommora/core/Settings/personalization'
+import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'

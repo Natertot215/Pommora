@@ -2,25 +2,29 @@
 
 import { mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import {
   contextKey,
-  normalizeContextValue,
   parseContextKey,
   type ContextsRegistry,
-} from '@shared/contexts'
-import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '@shared/contextResolve'
-import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
-import { mintSeed, NEW_TILE_H } from '@shared/tiles'
+} from '@pommora/core/Properties/contexts'
+import {
+  NO_DEFS,
+  reconcileGovernedRoot,
+  type GovernedWorld,
+} from '@pommora/core/Properties/contextResolve'
+import { contextDirRel, spaceDirRel } from '@pommora/core/Locations/nexusPaths'
+import { mintSeed, NEW_TILE_H } from '@pommora/core/Tiles/tiles'
 import { writeTileDocAt } from '../tileDoc'
-import type { PropertyDefinition } from '@shared/properties'
-import { pageCollectionSidecar } from '@shared/schemas'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 import { getLiveTree } from '../liveTree'
 import { collectionFolderOf } from './assignment'
 import { applyAdoptions } from './optionOps'
 import { readRegistry } from '../IO/propertiesRegistry'
 import { readSidecar } from '../sidecarIO'
-import type { NexusTree, SpaceNode } from '@shared/types'
-import { isColorKey } from '@shared/theme'
+import type { NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
+import { isColorKey } from '@pommora/uix/Theme/theme'
 import { ok, fail, type Result } from '@pommora/core/Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { adoptedId, newId } from '../ids'
@@ -230,10 +234,10 @@ export async function createContextGroup(
   if (!reg.ok) return reg
   // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently
   // share one folder with the existing group.
-  const taken = new Set(reg.value.contexts.map((c) => normalizeContextValue(c.title)))
+  const taken = new Set(reg.value.contexts.map((c) => normalizeTitle(c.title)))
   let title = name
-  for (let n = 2; taken.has(normalizeContextValue(title)) && n <= 50; n++) title = `${name} ${n}`
-  if (taken.has(normalizeContextValue(title))) return fail('exists', `"${name}" already exists.`)
+  for (let n = 2; taken.has(normalizeTitle(title)) && n <= 50; n++) title = `${name} ${n}`
+  if (taken.has(normalizeTitle(title))) return fail('exists', `"${name}" already exists.`)
   const id = newId()
   const written = await mutateRegistryFile(root, (cur) => {
     if (cur.contexts.some((c) => c.title === title)) return cur

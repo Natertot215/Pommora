@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { NumberConfig, NumberFamily } from '@shared/properties'
-import { CURRENCY_CODES } from '@shared/properties'
+import type { NumberConfig, NumberFamily } from '@pommora/core/Properties/properties'
+import { CURRENCY_CODES } from '@pommora/core/Properties/properties'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
 import { numberDivisor } from '@renderer/Properties/Assignment/formatValue'

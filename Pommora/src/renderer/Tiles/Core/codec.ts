@@ -3,7 +3,7 @@
 // tilePatchProblem gates the shape at the IPC boundary, so anything that reached storage is
 // already the tree validateLayout describes.
 
-import { rawLayoutSchema } from '@shared/tiles'
+import { rawLayoutSchema } from '@pommora/core/Tiles/tiles'
 import type { TileLayout } from './model'
 
 /** A stored layout, or null when absent or malformed (the host opens empty). */

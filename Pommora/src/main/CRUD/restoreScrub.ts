@@ -5,14 +5,14 @@
 // So returning content is reconciled against the CURRENT world before it lands, by the one
 // reconcile every governed write runs.
 
-import type { NexusTree } from '@shared/types'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { assignedDefs } from './contextWrite'
 import {
   NO_DEFS,
   reconcileGovernedRoot,
   survivingChanges,
   type GovernedWorld,
-} from '@shared/contextResolve'
+} from '@pommora/core/Properties/contextResolve'
 import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
 import { serializeOnFile } from '../IO/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'

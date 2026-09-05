@@ -6,11 +6,9 @@ import {
   coerceInterfaceScale,
   HISTORY_DAYS,
   HISTORY_INTERVAL,
-  type NavViewMode,
-  type NavViewModes,
   type Personalization,
-  type SubfieldConfig,
-} from '@shared/types'
+} from '@pommora/core/Settings/personalization'
+import type { NavViewMode, NavViewModes, SubfieldConfig } from '@pommora/core/Interface/chrome'
 import type { WatchScope } from './exclusion'
 import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
 import { getLiveTree } from './liveTree'

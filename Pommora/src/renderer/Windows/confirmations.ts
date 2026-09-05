@@ -1,4 +1,4 @@
-import type { MutableKind } from '@shared/mutate'
+import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
 import { useSession } from '@renderer/store'
 import { notifyDeleted } from '@renderer/Interface/notifications'
 

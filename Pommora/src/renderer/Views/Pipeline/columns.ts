@@ -5,9 +5,13 @@
 // {id, kind} — column width and the group/sort hoist before Title are render concerns.
 // Pure: no fs, no React.
 
-import type { ColumnKind, ResolvedColumn } from '@shared/types'
-import type { SavedView } from '@shared/views'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
+import type { ColumnKind, ResolvedColumn } from '@pommora/core/Views/viewRow'
+import type { SavedView } from '@pommora/core/Views/views'
+import {
+  type PropertyDefinition,
+  RESERVED_PROPERTY_ID,
+  STAMP_TYPE,
+} from '@pommora/core/Properties/properties'
 
 function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
   if (id === RESERVED_PROPERTY_ID.title) return 'title'

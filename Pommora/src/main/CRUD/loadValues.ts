@@ -4,9 +4,9 @@
 
 import { join } from 'node:path'
 import { relPosix } from '../paths'
-import { ID_KEY } from '@shared/identity'
-import { pageFrontmatter } from '@shared/schemas'
-import type { PageValues } from '@shared/types'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { pageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { PageValues } from '@pommora/core/Views/viewRow'
 import { idTime } from '../ids'
 import { readPageRecord } from '../readNexus'
 import { folderCorpus } from '../indexSeed'

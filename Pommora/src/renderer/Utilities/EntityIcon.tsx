@@ -4,7 +4,7 @@ import { ICON_PX, type IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useAssetUrl, useSession } from '@renderer/store'
 import type { ResolvedNav } from '@renderer/Navigation/navResolve'
-import type { EntityIconKind } from '@shared/types'
+import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import './entity-icon.css'
 
 type EntityIconProps =

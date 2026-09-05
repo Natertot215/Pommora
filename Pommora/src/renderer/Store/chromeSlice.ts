@@ -1,4 +1,5 @@
-import type { NavViewMode, SelectionState } from '@shared/types'
+import type { NavViewMode } from '@pommora/core/Interface/chrome'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import type { ConfirmRequest } from '@renderer/Windows/confirmations'
 import type { Notification } from '@renderer/Interface/notifications'
 import type { Slice } from './sessionState'

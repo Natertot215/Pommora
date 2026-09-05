@@ -3,14 +3,13 @@
 // owns restore-time reconciliation against the live tree; main strips every ref to bare identity
 // and persists the file as one row.
 
-import { isPlainObject } from '@shared/propertyValue'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
 import {
   EMPTY_WINDOWS,
-  toNavRef,
-  type NavRef,
   type WindowSetRecord,
   type WindowsFile,
-} from '@shared/types'
+} from '@pommora/core/Interface/Windows/windowRecord'
+import { toNavRef, type NavRef } from '@pommora/core/Navigation/navRef'
 import { readValue, writeValue } from '../Database/localState'
 import { isTabRef } from './tabsState'
 

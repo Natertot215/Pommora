@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { linkAlias, urlValueFromRename } from '@shared/linkValue'
+import { linkAlias, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { useSession } from '@renderer/store'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { TextPicker } from '@renderer/DesignSystem/Pickers/TextPicker'

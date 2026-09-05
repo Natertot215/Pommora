@@ -1,6 +1,6 @@
-import type { MutateRequest } from '@shared/mutate'
-import type { PageFrontmatter } from '@shared/schemas'
-import type { ViewRow } from '@shared/types'
+import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { patchOverride, type SetOverrides } from './useValuesEpoch'
 
 /**

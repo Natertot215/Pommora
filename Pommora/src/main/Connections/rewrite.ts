@@ -9,10 +9,14 @@ import {
   pageEmbedText,
   pageLinkPattern,
   titleOf,
-} from '@shared/connections'
-import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from '@shared/links'
-import { linkNamesTitle, readLink } from '@shared/linkValue'
-import { codeMask } from '@shared/markdownCode'
+} from '@pommora/core/Connections/connections'
+import {
+  encodeLinkTarget,
+  markdownLinkRegex,
+  targetNamesTitle,
+} from '@pommora/core/Connections/links'
+import { linkNamesTitle, readLink } from '@pommora/core/Connections/linkValue'
+import { codeMask } from '@pommora/core/Connections/markdownCode'
 
 /** Rewrite every connection, embed AND markdown link naming `oldTitle` (normalized) to `newTitle` —
  *  one sweep, three patterns, so a rename can't break a tile or a `[]()`. Non-matching links and

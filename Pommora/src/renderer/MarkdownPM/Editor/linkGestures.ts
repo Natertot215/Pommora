@@ -1,5 +1,5 @@
 import { StateEffect, StateField } from '@codemirror/state'
-import { linkAt } from '@shared/connections'
+import { linkAt } from '@pommora/core/Connections/connections'
 
 // Two facts about a link that no offset can carry, since both are about the gesture that put the
 // caret where it is, not about where that is. Each is set by the transaction that earns it and

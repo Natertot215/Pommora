@@ -1,4 +1,4 @@
-import type { SavedView } from '@shared/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '@renderer/store'
 
 export interface Notification {

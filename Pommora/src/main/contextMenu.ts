@@ -12,8 +12,8 @@ import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { handleMutate, type MutateDeps } from './mutate'
 import { readRegistryStrict } from './contextsRegistry'
-import { createSpaceLabel } from '@shared/contexts'
-import { containerCreators } from '@shared/mutate'
+import { createSpaceLabel } from '@pommora/core/Properties/contexts'
+import { containerCreators } from '@pommora/core/Pages/mutateRequest'
 import {
   offersMove,
   pageLinkText,
@@ -21,10 +21,15 @@ import {
   pagePathText,
   type PageMetaAction,
   type PageMoveAction,
-} from '@shared/pageMenu'
+} from '@pommora/core/Actions/pageMenu'
 import { rowTemplate } from './rowMenu'
-import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
-import { openLabel } from '@shared/toggleLabels'
+import type {
+  ContextTarget,
+  Creator,
+  MutableKind,
+  MutateRequest,
+} from '@pommora/core/Pages/mutateRequest'
+import { openLabel } from '@pommora/core/Actions/toggleLabels'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
  *  kinds offer none. Collections and Sets route through the shared rule so this menu and the

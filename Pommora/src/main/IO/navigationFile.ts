@@ -4,14 +4,14 @@
 // row. One validation boundary shapes every ref entering or leaving either store.
 
 import { mkdir } from 'node:fs/promises'
-import { isPlainObject } from '@shared/propertyValue'
-import { toNavRef } from '@shared/types'
-import type { NavRef, NavigationState } from '@shared/types'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import { toNavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef, NavigationState } from '@pommora/core/Navigation/navRef'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../paths'
 import { readValue, writeValue } from '../Database/localState'
 import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
-import { parseConnectionText } from '@shared/connections'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
 import { underAssetRoot } from '../assetRoots'
 import { readWatchScope } from '../settings'
 

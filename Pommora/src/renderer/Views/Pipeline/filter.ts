@@ -4,17 +4,17 @@
 // snake_case (on-disk parity). Match modes are all = AND and any = OR at every depth; negation
 // lives on the per-rule operators. Pure: no fs, no React. (See NO_OP below for the abstain rule.)
 
-import type { FilterGroup, FilterRule } from '@shared/views'
-import type { ViewRow } from '@shared/types'
+import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
 import {
   type PropertyDefinition,
   type PropertyType,
   RESERVED_PROPERTY_ID,
-} from '@shared/properties'
-import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
+} from '@pommora/core/Properties/properties'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
-import { linkDisplayText } from '@shared/linkValue'
+import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 
 /** Operator raw strings — snake_case = the on-disk `op` values. */
 export const FILTER_OPS = {

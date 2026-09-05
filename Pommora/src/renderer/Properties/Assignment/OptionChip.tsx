@@ -1,5 +1,5 @@
-import type { ColumnLook } from '@shared/columnStyles'
-import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
+import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
 import { Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
 import { Icon, type IconName, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'

@@ -1,8 +1,8 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 
-import type { ColumnLook } from '@shared/columnStyles'
-import type { OptionAppearance, PropertyDefinition } from '@shared/properties'
+import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { OptionChip } from '@renderer/Properties/Assignment/OptionChip'

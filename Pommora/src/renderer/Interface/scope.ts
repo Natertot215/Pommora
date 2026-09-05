@@ -1,5 +1,5 @@
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import type { BannerOwnerKind } from '@shared/mutate'
+import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
+import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
 
 /** `icon` is the entity's raw stored value, unvalidated — Banner falls back per kind at render.
  *  NavView has its own banner treatment, so it's excluded here. */

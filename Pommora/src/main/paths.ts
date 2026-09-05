@@ -1,9 +1,13 @@
 // Every absolute path main builds, resolved against the nexus root, plus the on-disk names only
 // main ever reads — sidecars, config filenames, the tile host's folder. Names the renderer also
-// speaks are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
+// speaks are the cross-process contract and live in `Core/Locations/nexusPaths`. node:path only; no fs.
 
 import { join, relative, sep } from 'node:path'
-import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from '@shared/nexusPaths'
+import {
+  CONTEXTS_DIR_REL,
+  CONTEXTS_REGISTRY_REL,
+  NEXUS_DIR,
+} from '@pommora/core/Locations/nexusPaths'
 import { rootSegs } from './exclusion'
 
 /** A path under `root`, spelled the way every key in the app spells one: nexus-relative and

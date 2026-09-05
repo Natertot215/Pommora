@@ -1,5 +1,10 @@
 import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
-import { knownTile, type TileEntry, type TileHostRef, type TileType } from '@shared/tiles'
+import {
+  knownTile,
+  type TileEntry,
+  type TileHostRef,
+  type TileType,
+} from '@pommora/core/Tiles/tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'

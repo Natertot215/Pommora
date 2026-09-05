@@ -1,7 +1,7 @@
 import { type RefObject, useContext, useState } from 'react'
 import { useSession } from '../store'
-import type { BannerOwnerKind } from '@shared/mutate'
-import type { Crop } from '@shared/schemas'
+import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
+import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@renderer/Interactions/ghostCreate'
 
 /** The one place a banner band pops its menu. The ghost-suppress Context lets card seats stand

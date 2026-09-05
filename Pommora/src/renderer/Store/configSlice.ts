@@ -1,5 +1,6 @@
-import type { DevicePrefs } from '@shared/devicePrefs'
-import { DEFAULT_COMMANDS, type Personalization } from '@shared/types'
+import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
+import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
+import type { Personalization } from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from '@renderer/DesignSystem/Tokens/personalization'
 import type { Slice } from './sessionState'
 

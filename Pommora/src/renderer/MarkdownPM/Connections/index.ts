@@ -1,6 +1,11 @@
-import { normalizeTitle, type LinkStatus } from '@shared/connections'
-import type { ConnCellApply, ConnEditAction, ConnSurface, ConnUrlAction } from '@shared/connMenu'
-import { isValidLink, targetTitle } from '@shared/links'
+import { normalizeTitle, type LinkStatus } from '@pommora/core/Connections/connections'
+import type {
+  ConnCellApply,
+  ConnEditAction,
+  ConnSurface,
+  ConnUrlAction,
+} from '@pommora/core/Actions/connMenu'
+import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 import { armGlance, type GlanceTarget } from '@renderer/Interface/Glance/glanceAction'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free

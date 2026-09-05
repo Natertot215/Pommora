@@ -1,17 +1,22 @@
 import { join, dirname, basename } from 'node:path'
 import { rename } from 'node:fs/promises'
-import { ID_KEY } from '@shared/identity'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { newContentId } from '../ids'
 import { type PageWrite, writePageFile } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
 import { serializeOnFile } from '../IO/fileLock'
-import { type Adoption, encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { GovernedWorld } from '@shared/contextResolve'
-import { PAGE_MODELED_KEYS } from '@shared/identity'
+import {
+  type Adoption,
+  encodeValue,
+  isBlankValue,
+  type PropertyValue,
+} from '@pommora/core/Properties/propertyValue'
+import type { GovernedWorld } from '@pommora/core/Properties/contextResolve'
+import { PAGE_MODELED_KEYS } from '@pommora/core/Nexus/identityMark'
 import { errText, ok, fail, type Result } from '@pommora/core/Contract/result'
 import { pathExists, invalidName } from './util'
 import { setGovernedRootKeys } from './governedWrite'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 
 const MD = '.md'
 

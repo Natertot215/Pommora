@@ -1,5 +1,5 @@
-import type { PropertyDefinition, PropertyType } from '@shared/properties'
-import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@shared/properties'
+import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
+import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@pommora/core/Properties/properties'
 import {
   asRenderableIcon,
   DEFAULT_ENTITY_ICONS,

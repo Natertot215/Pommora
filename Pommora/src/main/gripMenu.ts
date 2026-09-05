@@ -8,7 +8,7 @@ import {
   LIST_KIND_LABELS,
   type PickNode,
   type ZoomOption,
-} from '@shared/gripMenu'
+} from '@pommora/core/Actions/gripMenu'
 import { popReturningMenu } from './returningMenu'
 
 export function popGripMenu(

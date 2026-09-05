@@ -7,9 +7,9 @@ import type { z } from 'zod'
 import { rmwJsonStrict, pathExists } from '../IO/atomicWrite'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, sidecarPath, type SidecarKind } from '../paths'
 import { updateFolderSidecar } from './folderEntity'
-import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
+import { pageCollectionSidecar, pageSetSidecar } from '@pommora/core/Nexus/schemas'
 import { ok, type Result } from '@pommora/core/Contract/result'
-import type { StateOrderKey, ChildOrderKey } from '@shared/mutate'
+import type { StateOrderKey, ChildOrderKey } from '@pommora/core/Pages/mutateRequest'
 
 export type { StateOrderKey }
 // `page_order` is written on a page move, never a reorderChildren.

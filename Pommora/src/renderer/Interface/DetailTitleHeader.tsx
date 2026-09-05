@@ -1,5 +1,5 @@
 import { type Ref, useState } from 'react'
-import type { TitleMenuAction } from '@shared/identityMenus'
+import type { TitleMenuAction } from '@pommora/core/Actions/identityMenus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { RenamableLabel, base } from '@renderer/DesignSystem/Fields'
 import { cx } from '@renderer/DesignSystem/Util/cx'

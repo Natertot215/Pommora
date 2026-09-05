@@ -1,5 +1,9 @@
 import type { BrowserWindow } from 'electron'
-import { connMenuModel, type ConnMenuAction, type ConnMenuContext } from '@shared/connMenu'
+import {
+  connMenuModel,
+  type ConnMenuAction,
+  type ConnMenuContext,
+} from '@pommora/core/Actions/connMenu'
 import { popModelMenu } from './rowMenu'
 
 // The link right-click menu: main pops the shared model at the cursor and resolves the chosen

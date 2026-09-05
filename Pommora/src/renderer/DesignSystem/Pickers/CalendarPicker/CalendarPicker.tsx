@@ -6,12 +6,12 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import { OverScroll } from '@renderer/Interactions/OverScroll'
-import { clamp } from '@shared/clamp'
 import { PickerMenu, PickerRow } from '../picker-base'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { pad } from '@renderer/DesignSystem/Util/pad'
 import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
 import * as s from './calendar-picker.css'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 

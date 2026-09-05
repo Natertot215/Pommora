@@ -1,5 +1,9 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import { optionMenuModel, type OptionMenuAction, type OptionMenuContext } from '@shared/optionMenu'
+import {
+  optionMenuModel,
+  type OptionMenuAction,
+  type OptionMenuContext,
+} from '@pommora/core/Actions/optionMenu'
 import { popReturningMenu } from './returningMenu'
 
 /** Pop the option menu natively. Remove and Clear resolve unconfirmed — the renderer asks, because

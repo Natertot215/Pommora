@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { PropertyDefinition } from '@shared/properties'
-import { type CardBanner, isCompact, type SavedView, type ViewType } from '@shared/views'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import {
+  type CardBanner,
+  isCompact,
+  type SavedView,
+  type ViewType,
+} from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
   MenuIndex,

@@ -1,6 +1,6 @@
-import type { PropertyDefinition } from '@shared/properties'
-import { RESERVED_PROPERTY_ID } from '@shared/properties'
-import type { ColumnAlign, SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
+import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
 import { declaredType } from '@renderer/Properties/value'
 
 // The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered.

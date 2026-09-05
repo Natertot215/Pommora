@@ -16,22 +16,25 @@ import {
 } from '@renderer/Interactions/ghostCreate'
 import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { contextDirRel } from '@shared/nexusPaths'
+import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
 import { MenuItem, titleInput } from '@renderer/DesignSystem/Menus'
 import { Reveal } from '@renderer/Animation/Reveal'
 import type {
   CollectionNode,
   ContextGroup,
-  FolderPlacement,
   NexusTree,
   PageNode,
-  SelectionState,
   SetNode,
-  SidebarMode,
   SpaceNode,
-} from '@shared/types'
-import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
-import { createSpaceLabel } from '@shared/contexts'
+} from '@pommora/core/Nexus/tree'
+import type { FolderPlacement, SidebarMode } from '@pommora/core/Settings/personalization'
+import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import {
+  DEFAULT_NEW_NAME,
+  type MutableKind,
+  type MutateRequest,
+} from '@pommora/core/Pages/mutateRequest'
+import { createSpaceLabel } from '@pommora/core/Properties/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { registerDiscloseTarget } from '@renderer/Interactions/dragDisclose'

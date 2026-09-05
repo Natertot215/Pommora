@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { kindOf } from '@shared/identity'
+import { kindOf } from '@pommora/core/Nexus/identityMark'
 import { errText, fail, ok, type Result } from '@pommora/core/Contract/result'
 import {
   addSnapshot,

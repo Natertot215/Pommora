@@ -1,13 +1,13 @@
 import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import { clamp } from '@shared/clamp'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
-import type { ConnEditAction } from '@shared/connMenu'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
+import type { ConnEditAction } from '@pommora/core/Actions/connMenu'
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../Connections'
 import { tokenize, type Token } from '../Tokens'
 import { focusRange } from './caretSeat'
 import { restedOnLink } from './linkGestures'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 /** Pure of any editor, because a connection in a resting table cell has none — that cell commits the
  *  pipe and enters with the same span selected. It reads the token's spans rather than the rendered

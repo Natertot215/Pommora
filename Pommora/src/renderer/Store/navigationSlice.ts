@@ -1,15 +1,20 @@
-import { type Creator, DEFAULT_NEW_NAME, type MutateRequest, type RenameHost } from '@shared/mutate'
+import {
+  type Creator,
+  DEFAULT_NEW_NAME,
+  type MutateRequest,
+  type RenameHost,
+} from '@pommora/core/Pages/mutateRequest'
 import { errText, fail, type PommoraError } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
   type NavRef,
-  type PageDetail,
   type SelectionState,
   type SelectTarget,
-  type StoredTabSet,
   type Tab,
   toNavRef,
-} from '@shared/types'
+} from '@pommora/core/Navigation/navRef'
+import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import type { StoredTabSet } from '@pommora/core/Interface/Windows/windowRecord'
 import { type ReconcileIndex, reconcileSelection, reconcileWith } from '@renderer/Actions/selection'
 import { navKeysOf, reconcileIndexOf } from '../treeIndex'
 import {

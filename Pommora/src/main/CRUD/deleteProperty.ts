@@ -5,7 +5,7 @@
 // is Remove (crud/removeProperty); this is the rare one.
 
 import { readFile } from 'node:fs/promises'
-import { contentId } from '@shared/identity'
+import { contentId } from '@pommora/core/Nexus/identityMark'
 import { writePropertyBundle } from '../provenance'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from '../IO/propertiesRegistry'
@@ -16,9 +16,9 @@ import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './pr
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
-import { pageCollectionSidecar } from '@shared/schemas'
+import { pageCollectionSidecar } from '@pommora/core/Nexus/schemas'
 import { splitFrontmatter } from '../readNexus'
-import { isPlainObject } from '@shared/propertyValue'
+import { isPlainObject } from '@pommora/core/Properties/propertyValue'
 import { fail, type Result } from '@pommora/core/Contract/result'
 
 /** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by

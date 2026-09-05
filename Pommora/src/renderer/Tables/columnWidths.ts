@@ -1,5 +1,5 @@
-import type { PropertyDefinition } from '@shared/properties'
-import { defaultStyleFor } from '@shared/columnStyles'
+import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { defaultStyleFor } from '@pommora/core/Properties/columnStyles'
 import { declaredType } from '@renderer/Properties/value'
 import { ICON_PX } from '@renderer/DesignSystem/Tokens/size.css'
 

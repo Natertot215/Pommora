@@ -1,9 +1,9 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { NavRowMenuAction, NavRowMenuContext } from '@shared/navRowMenu'
-import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
+import type { NavRowMenuAction, NavRowMenuContext } from '@pommora/core/Actions/navRowMenu'
+import { pageMetaMenuSubset, pageSendActions } from '@pommora/core/Actions/pageMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
-import { favoriteLabel, openLabel, pinLabel } from '@shared/toggleLabels'
+import { favoriteLabel, openLabel, pinLabel } from '@pommora/core/Actions/toggleLabels'
 
 // The NavWindow row/card menu: Open · Open Preview · the send block a page carries · Pin/Unpin ·
 // Favorite/Unfavorite · Remove, gated by the row's live state.

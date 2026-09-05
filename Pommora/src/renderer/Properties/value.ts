@@ -4,16 +4,16 @@
 // inferred from a value's shape, so a url column always reads url even though both are plain
 // strings on disk. Pure: no fs, no React.
 
-import type { ViewRow } from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import {
   type PropertyDefinition,
   type PropertyType,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@shared/properties'
-import { decodeValue, type PropertyValue } from '@shared/propertyValue'
-import { parseConnectionText } from '@shared/connections'
+} from '@pommora/core/Properties/properties'
+import { decodeValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', the stamps→their

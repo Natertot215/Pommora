@@ -4,7 +4,7 @@ import { GlassSegment } from '@renderer/DesignSystem/Glass'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import * as s from './slider.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { clamp } from '@shared/clamp'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 const decimalsOf = (step: number): number => {
   const str = String(step)

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { Crop } from '@shared/schemas'
+import type { Crop } from '@pommora/core/Nexus/schemas'
 import {
   clampZoom,
   coverRect,
@@ -8,9 +8,8 @@ import {
   dragRect,
   MAX_ZOOM,
   MIN_ZOOM,
-} from '@shared/cropGeometry'
-import { clamp } from '@shared/clamp'
-import { HTTP_URL } from '@shared/nexusPaths'
+} from '@pommora/core/Assets/cropGeometry'
+import { WEB_ADDRESS } from '@pommora/core/Locations/url'
 import { resolveAssetUrl, resolveAssetValue } from '@renderer/Assets/assetUrl'
 import { useSession } from '@renderer/store'
 import { cropFor } from '@renderer/Assets/AssetImage'
@@ -24,6 +23,7 @@ import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { useDismissal } from '@renderer/Interactions/dismissalStack'
 import { usePointerGesture } from '@renderer/Interactions/gesture'
 import * as s from './image-picker.css'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)
 const MIN_W = 220 // KNOB — narrowest the frame gets (a tall seat)
@@ -123,7 +123,7 @@ export function ImagePicker({
     if (!open || !onRepick) return
     const onPaste = (e: ClipboardEvent): void => {
       const text = e.clipboardData?.getData('text').trim()
-      if (text && HTTP_URL.test(text)) {
+      if (text && WEB_ADDRESS.test(text)) {
         settleRepick(text)
         return
       }

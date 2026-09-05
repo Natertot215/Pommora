@@ -7,10 +7,10 @@ import {
   lineOffsetsOf,
   quoteDepthOf,
   type CodeMask,
-} from '@shared/markdownCode'
-import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import type { ListKind } from '@shared/gripMenu'
-export { markdownLinkRegex } from '@shared/links'
+} from '@pommora/core/Connections/markdownCode'
+import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
+import type { ListKind } from '@pommora/core/Actions/gripMenu'
+export { markdownLinkRegex } from '@pommora/core/Connections/links'
 
 export type { ListKind }
 
@@ -34,7 +34,7 @@ export function stripQuotePrefix(line: string): string {
 }
 
 /** The shared line-table and quote-depth primitives under this module's names — every doc-walking layer
- *  reaches them through `detect`, but `@shared/markdownCode` is where they're defined. */
+ *  reaches them through `detect`, but `Core/Connections/markdownCode` is where they're defined. */
 export const quoteDepth = quoteDepthOf
 export const lineOffsets = lineOffsetsOf
 

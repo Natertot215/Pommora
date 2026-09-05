@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { UNGROUPED } from '@shared/types'
+import { UNGROUPED } from '@pommora/core/Views/viewRow'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type {
-  CollectionNode,
   PageValues,
   ResolvedColumn,
   ResolvedGroup,
-  SetNode,
   ViewRow,
-} from '@shared/types'
-import type { PageFrontmatter } from '@shared/schemas'
-import type { ColumnStyle } from '@shared/columnStyles'
-import { isLocationFsOrder, type SavedView } from '@shared/views'
-import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
+} from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
+import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { useSession } from '../store'
 import { useSaveView } from '@renderer/Tiles/ViewTileScope'
 import {

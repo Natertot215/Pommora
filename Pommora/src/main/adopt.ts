@@ -4,7 +4,7 @@
 import { readFile, rename, stat } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { isContentFile, listEntries } from './IO/walk'
-import { admitContentFile, ID_KEY, type ContentKind } from '@shared/identity'
+import { admitContentFile, ID_KEY, type ContentKind } from '@pommora/core/Nexus/identityMark'
 import { contentIdAt, newId } from './ids'
 import {
   readJsonObject,
@@ -15,7 +15,7 @@ import {
 import { readSidecar, writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './IO/pageFile'
 import { asString } from './coerce'
-import { baseSidecar } from '@shared/schemas'
+import { baseSidecar } from '@pommora/core/Nexus/schemas'
 import { recordWrite } from './IO/writeEcho'
 import { shouldSkipDir, type WatchScope } from './exclusion'
 import { readSettingsLeaves, scopeOf } from './readNexus'

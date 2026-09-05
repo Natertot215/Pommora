@@ -6,7 +6,7 @@ import {
   type TrashMenuAction,
   type TrashMenuContext,
   trashMenuLabels,
-} from '@shared/trashMenu'
+} from '@pommora/core/Actions/trashMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
 /** A trashed row's menu. Uses the nesting primitive, since the flat model helper can't express

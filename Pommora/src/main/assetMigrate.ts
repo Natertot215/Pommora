@@ -12,8 +12,8 @@
 import { basename, dirname, extname, join } from 'node:path'
 import { readFile, rm } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
-import { parseConnectionText } from '@shared/connections'
-import { ASSETS_DIR_REL, TRASH_DIR } from '@shared/nexusPaths'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
+import { ASSETS_DIR_REL, TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './IO/pageFile'
 import {
   readJsonObject,

@@ -3,9 +3,9 @@ import { useSession } from '@renderer/store'
 import { duration, ms, paneSlide } from '@renderer/Animation'
 import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
 import { useHeld } from '@renderer/Interactions/useHeld'
-import { clamp } from '@shared/clamp'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './notification-label.css'
+import { clamp } from '@pommora/core/Utilities/clamp'
 
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100

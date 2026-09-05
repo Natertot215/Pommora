@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { type TileHostRef, tileHostKey } from '@shared/tiles'
+import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { useSession } from '@renderer/store'
 import { decodeLayout, encodeLayout } from './Core/codec'
 import { emptyLayout, type TileLayout } from './Core/model'

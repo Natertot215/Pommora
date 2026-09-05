@@ -3,7 +3,7 @@
 // that patch optimistically until the write comes back.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SavedView } from '@shared/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import { type Band, propertyOrderAfterDrop, structuralOrderAfterDrop } from './bandDndModel'
 
 /** Which bands a view is showing — its grouping kind, and the property a property grouping keys on.

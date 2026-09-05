@@ -6,7 +6,7 @@
 // makes a duplicated, hand-made, or relocated config inert bytes instead of a second singleton.
 
 import { join } from 'node:path'
-import { baseSidecar } from '@shared/schemas'
+import { baseSidecar } from '@pommora/core/Nexus/schemas'
 import { pathExists } from './IO/atomicWrite'
 import { listEntries } from './IO/walk'
 import { SIDECAR_FILENAME, type SidecarKind } from './paths'

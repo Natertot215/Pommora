@@ -3,7 +3,7 @@
 // untouched siblings, and one built from a filtered view permanently re-ranks every row the
 // filter was hiding.
 
-import { NEW_PAGE_SLOT } from '@shared/mutate'
+import { NEW_PAGE_SLOT } from '@pommora/core/Pages/mutateRequest'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])

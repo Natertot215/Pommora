@@ -6,8 +6,12 @@
 // is not `undefined`, so a null would write the literal.
 
 import { readFile } from 'node:fs/promises'
-import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from '@shared/contextResolve'
-import type { Adoption } from '@shared/propertyValue'
+import {
+  reconcileGovernedRoot,
+  survivingChanges,
+  type GovernedWorld,
+} from '@pommora/core/Properties/contextResolve'
+import type { Adoption } from '@pommora/core/Properties/propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../readNexus'
