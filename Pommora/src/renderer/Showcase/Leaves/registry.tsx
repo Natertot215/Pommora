@@ -5,7 +5,6 @@ import { IconsLeaf } from './IconsLeaf'
 import { ButtonsLeaf } from './ButtonsLeaf'
 import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
-import { InteractionsLeaf } from './InteractionsLeaf'
 import { PanesLeaf } from './PanesLeaf'
 import { TileLab } from './TileLab'
 
@@ -68,13 +67,6 @@ export const LEAVES: readonly Leaf[] = [
     icon: 'layers',
     section: 'materials',
     render: () => <GlassLeaf />,
-  },
-  {
-    id: 'interactions',
-    label: 'Interaction Lab',
-    icon: 'arrow-up-down',
-    section: 'interactions',
-    render: () => <InteractionsLeaf />,
   },
   {
     id: 'panes',

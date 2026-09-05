@@ -5,7 +5,7 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 
 // Standalone Vite server/build for the design-system showcase — a plain browser
 // site decoupled from Electron. Single page: the design system (served at `/` via
-// the vercel.json rewrite). Dev: `npm run showcase`. Static build: `npm run build:showcase`.
+// the vercel.json rewrite).
 export default defineConfig({
   plugins: [react(), vanillaExtractPlugin()],
   resolve: {
@@ -15,11 +15,6 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      input: {
-        'design-system': resolve('design-system.html'),
-        interactions: resolve('interactions.html'),
-      },
-    },
+    rollupOptions: { input: { 'design-system': resolve('design-system.html') } },
   },
 })

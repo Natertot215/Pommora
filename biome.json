@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!**/graphify-out"]
+    "includes": ["**", "!**/dist", "!**/out", "!**/release", "!**/graphify-out", "!**/.claude"]
   },
   "formatter": {
     "enabled": true,

@@ -8,7 +8,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "paths": { "@shared/*": ["./src/shared/*"] },
+    "paths": {
+      "@shared/*": ["./src/shared/*"],
+      "@pommora/core/*": ["../Core/*"],
+      "@pommora/uix/*": ["../UIX/*"]
+    },
     "types": ["node"],
     "noEmit": true
   },
