@@ -1,9 +1,9 @@
 import { EditorState, Prec } from '@codemirror/state'
-import type { DocScan } from '../Decorations/intent'
-import { docScan } from '../Editor/docCache'
-import { parseListMarkerPrefixed } from '../Detect'
-import { parseDelimiter } from './codec'
-import { decodePayload } from './clipboard'
+import type { DocScan } from '../Engine/docScan'
+import { docScan } from '../docCache'
+import { parseListMarkerPrefixed } from '../Engine/detect'
+import { parseDelimiter } from '../Engine/Tables/codec'
+import { decodePayload } from '../Engine/Tables/clipboard'
 import { tableSelfEdit } from './sync'
 
 // A GFM table is its own block only while a blank line fences it; with the separator gone, two tables

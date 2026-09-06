@@ -3,7 +3,7 @@
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
-import { MarkdownEditor } from '.'
+import { MarkdownEditor } from './MarkdownEditor'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
 

@@ -2,8 +2,8 @@
 // here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
 import { codeMask, codeMaskOf, isInsideCode } from '@pommora/core/Connections/markdownCode'
-import { splitRow } from './Tables/codec'
-import { tokenize } from './Tokens'
+import { splitRow } from './Engine/Tables/codec'
+import { tokenize } from './Engine/tokens'
 import {
   autoPair,
   dashArrow,
@@ -11,16 +11,16 @@ import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
   outdentListOnShiftTab,
-} from './Input'
+} from './Input/edits'
 import { setHeading, setList } from './Input/format'
-import { subBlockAt, renumberOrderedRun } from './Editor/listDragModel'
-import { calloutDeleteVerdict, type GuardVerdict } from './Editor/calloutGuard'
-import { scanOf } from './Editor/docCache'
-import { headingSections } from './Editor/headingScan'
-import { headingSrc } from './Editor/headingScan'
-import { fenceRangesOf } from './Detect'
-import { inCodeAt, scanDoc } from './Decorations/intent'
-import { sliceStartLine } from './Editor/decorations'
+import { subBlockAt, renumberOrderedRun } from './Engine/listDragModel'
+import { calloutDeleteVerdict, type GuardVerdict } from './Guards/calloutGuard'
+import { scanOf } from './Engine/docScan'
+import { headingSections } from './Engine/headingScan'
+import { headingSrc } from './Engine/headingScan'
+import { fenceRangesOf } from './Engine/detect'
+import { inCodeAt, scanDoc } from './Engine/docScan'
+import { sliceStartLine } from './decorations'
 
 describe('isInsideCode — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {

@@ -2,7 +2,7 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { EditorView } from '@codemirror/view'
 import { SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
-import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'
+import { FOLD_SETTLE_MS, expandFoldsAt } from '../folding'
 
 const REVEAL_MARGIN = 12
 

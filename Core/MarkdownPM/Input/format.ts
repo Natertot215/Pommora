@@ -1,4 +1,4 @@
-import { tokenize, type TokenKind } from '../Tokens'
+import { tokenize, type TokenKind } from '../Engine/tokens'
 import {
   blockquotePrefixRe,
   headingParts,
@@ -9,11 +9,11 @@ import {
   parseListMarkerPrefixed,
   stripQuotePrefix,
   type ListMarker,
-} from '../Detect'
+} from '../Engine/detect'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
-import { lineStartAt, lineEndAt } from './index'
-import { emptyTable } from '../Tables/model'
-import { serialize } from '../Tables/codec'
+import { lineStartAt, lineEndAt } from './edits'
+import { emptyTable } from '../Engine/Tables/model'
+import { serialize } from '../Engine/Tables/codec'
 
 export type InlineFormat = keyof typeof WRAP | 'link' | 'connection'
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6

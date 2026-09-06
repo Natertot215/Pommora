@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scanDoc } from '../Decorations/intent'
+import { scanDoc } from '../Engine/docScan'
 import { cellCommitChange as cellCommitIn, structuralEditChange as structuralEditIn } from './sync'
 
 const cellCommitChange = (
@@ -10,9 +10,9 @@ const structuralEditChange = (
   doc: string,
   ...rest: [number, Parameters<typeof structuralEditIn>[2]]
 ): ReturnType<typeof structuralEditIn> => structuralEditIn(scanDoc(doc), ...rest)
-import { insertColumn, moveColumn } from './operations'
-import { parseTable, unescapeCell, serialize } from './codec'
-import { emptyTable } from './model'
+import { insertColumn, moveColumn } from '../Engine/Tables/operations'
+import { parseTable, unescapeCell, serialize } from '../Engine/Tables/codec'
+import { emptyTable } from '../Engine/Tables/model'
 
 describe('cellCommitChange — minimal-diff cell edit (replace just the cell span, focus-safe)', () => {
   const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'

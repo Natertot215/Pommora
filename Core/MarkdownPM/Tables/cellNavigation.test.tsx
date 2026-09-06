@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import type { TableModel } from './model'
+import type { TableModel } from '../Engine/Tables/model'
 
 // jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough — the
 // test asserts focus/activation, not pixel geometry. The flag enables React's act() in this env.

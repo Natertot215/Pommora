@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import type { TableModel } from './model'
+import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connMenu'
 import {
@@ -11,7 +11,7 @@ import {
   type ConnectionsApi,
   type ConnMenuTarget,
   type ConnPage,
-} from '../Connections'
+} from '../Links/connectionsApi'
 import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

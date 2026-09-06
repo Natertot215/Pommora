@@ -3,10 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@pommora/core/Connections/links'
-import { autocompleteQuery, commitEdit } from './autocomplete'
-import { activeTokenIndices, tokenize } from './Tokens'
-import { MD_LINK_CLASS } from './Editor/decorations'
-import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './Connections'
+import { autocompleteQuery, commitEdit } from './Autocomplete/autocomplete'
+import { activeTokenIndices, tokenize } from './Engine/tokens'
+import { MD_LINK_CLASS } from './decorations'
+import {
+  buildPageIndex,
+  resolveMdTarget,
+  type ConnectionsApi,
+  type ConnPage,
+} from './Links/connectionsApi'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
 

@@ -2,7 +2,7 @@
 // drawSelection's all-or-nothing takeover.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
-import { embedTileRanges } from './embedWidget'
+import { embedTileRanges } from '../Embeds/embedWidget'
 
 // A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box
 // itself — so draw where the seat's insertion will land, one line above or below the tile.

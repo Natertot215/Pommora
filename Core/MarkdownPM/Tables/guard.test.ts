@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { scanDoc } from '../Decorations/intent'
-import { citationGuard } from '../Editor/citationGuard'
+import { scanDoc } from '../Engine/docScan'
+import { citationGuard } from '../Guards/citationGuard'
 import { fusedTableCount as fusedIn, tableMergeGuard, tablePasteGuard } from './guard'
 
 const fusedTableCount = (doc: string): number => fusedIn(scanDoc(doc))

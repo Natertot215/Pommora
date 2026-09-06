@@ -5,7 +5,7 @@ import {
   type FormatChordAction,
   keyBindingFor,
 } from '@pommora/core/Actions/editorMenu'
-import { applyEditorAction } from './menu'
+import { applyEditorAction } from '../Menus/menu'
 
 // Formatting shortcuts reuse the same transforms the context menu dispatches (one source of truth).
 // The chords themselves come from FORMAT_CHORDS, which the context menu's accelerators also read —

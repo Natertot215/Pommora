@@ -8,7 +8,7 @@ import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@pommora/uix
 import { gutter } from '@pommora/uix/Menus/menu-base.css'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { retained, toggled } from '../../Utilities/checkSet'
-import { MarkdownEditor } from '../../MarkdownPM'
+import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatValue'
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'

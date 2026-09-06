@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 import { travelTo } from './travel'
-import { foldedRegions, toggleFoldAt } from './folding'
+import { foldedRegions, toggleFoldAt } from '../folding'
 
 class ResizeObserverStub {
   observe(): void {}

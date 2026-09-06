@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TileHostRef } from '@pommora/core/Tiles/tiles'
-import { MarkdownEditor } from '../../MarkdownPM'
-import type { ConnectionsApi } from '../../MarkdownPM/Connections'
-import { nativeEditorMenu } from '../../MarkdownPM/Editor/menu'
+import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import { nativeEditorMenu } from '../../MarkdownPM/Menus/menu'
 import { createBodyWriter } from '../../Session/saveScheduler'
 import { host as dialer } from '../../Platform/dialer'
 

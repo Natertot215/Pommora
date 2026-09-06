@@ -6,7 +6,7 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { MarkdownTable } from './MarkdownTable'
-import type { TableModel } from './model'
+import type { TableModel } from '../Engine/Tables/model'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
