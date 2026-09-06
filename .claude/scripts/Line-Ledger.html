@@ -74,9 +74,7 @@
     letter-spacing: -0.015em;
   }
 
-  .figures { display: flex; align-items: flex-end; gap: 36px; flex-wrap: wrap; }
   .figure { display: flex; flex-direction: column; gap: 3px; padding-top: 4px; }
-  .figure.small .n { font-size: 20px; line-height: 24px; color: var(--ink-control); }
   .figure .n {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
@@ -92,6 +90,13 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-tertiary);
+  }
+  .census { display: flex; gap: 16px; flex-wrap: wrap; font: var(--caption) var(--font); color: var(--ink-tertiary); }
+  .census b {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    color: var(--ink-secondary);
   }
 
   /* ---- chart ---- */
@@ -331,12 +336,8 @@
       <span class="sha" id="sha"></span>
     </div>
     <h1>Pommora Line Ledger</h1>
-    <div class="figures">
-      <div class="figure"><span class="n" id="fTotal"></span><span class="k">Real code lines</span></div>
-      <div class="figure small"><span class="n" id="fSource"></span><span class="k">Source files</span></div>
-      <div class="figure small"><span class="n" id="fTests"></span><span class="k">Test files</span></div>
-      <div class="figure small"><span class="n" id="fConfig"></span><span class="k">Config files</span></div>
-    </div>
+    <div class="figure"><span class="n" id="fTotal"></span><span class="k">Real code lines</span></div>
+    <div class="census" id="census"></div>
   </header>
 
   <div class="plot">
@@ -379,11 +380,11 @@
     <p>
       Counted by <code>.claude/scripts/loc.py</code> across the app's three workspaces. Lines are
       source only: the count drops every comment and blank line, and the deployed component
-      showcase, <code>node_modules</code>, and build output are outside it entirely. The file census
-      splits the same tree three ways — source, tests (anything named <code>*.test.*</code> or sitting
-      under a testing or fixtures folder), and config (build and tooling files, and the
-      <code>*.d.ts</code> shims) — so the figures state what the line total leaves out. Per-system
-      file counts are source files.
+      showcase, <code>node_modules</code>, and build output are outside it entirely. The census
+      splits the same tree three ways — source, tests (a name carrying <code>.test.</code> or
+      <code>.spec.</code>, or a path under a testing or fixtures folder), and config (build and
+      tooling files, and the <code>.d.ts</code> shims) — so it states what the line total leaves out.
+      Per-system file counts are source files.
     </p>
   </footer>
 </div>
@@ -402,13 +403,15 @@
   document.getElementById('sha').textContent = head;
   document.getElementById('fTotal').textContent = fmt(sum(last));
 
-  // A payload written before the census carries no counts; the figures stand down rather than lie.
+  // A payload written before the census carries no counts; the line stays empty rather than lie.
   const areaFiles = D.files ?? [];
   const kinds = D.kinds ?? {};
-  for (const [id, n] of [['fSource', kinds.source], ['fTests', kinds.tests], ['fConfig', kinds.config]]) {
-    document.getElementById(id).parentElement.hidden = n === undefined;
-    document.getElementById(id).textContent = n === undefined ? '' : fmt(n);
-  }
+  document.getElementById('census').innerHTML = [
+    ['source', 'source files'], ['tests', 'test files'], ['config', 'config files'],
+  ]
+    .filter(([key]) => kinds[key] !== undefined)
+    .map(([key, label]) => '<span><b>' + fmt(kinds[key]) + '</b> ' + label + '</span>')
+    .join('');
 
   /* ---------- geometry ---------- */
 
