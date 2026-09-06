@@ -839,6 +839,9 @@ Sequence: dispatch the lane's agents when Task 6 (Fable) dispatches, not before,
 
 ### Rulings
 
+- 09-06-2026 (Nathan): For Task 15, `.tabs-compact` stays — A16's "nothing toggles compact" was wrong; `Core/Interface/Windows/WindowTabStrip.tsx:110` applies it, so window tabs use the compact density. Otherwise A16 (renderer shell dead) and most dead-code citations across A02, A08, A10, A12, A14 are removable as listed. A08 (renderer foundation dead) is taken with salt: most of what it names has a use; folding or simplifying is the right move where it changes nothing, deletion only where the compiler or a grep proves no consumer.
+- 09-06-2026 (Nathan): Defensive code for unreachable states goes entirely at Task 15 (casts for tests without a bridge, catches on envelope channels that cannot reject, `?? []` on values the type proves present, guards on states a union rules out).
+- 09-06-2026 (Nathan): At Task 12, `UIX/Theme/size.css.ts` folds into `theme-vars.css.ts`; `UIX/Theme` ends with a minimal file set, each a clear stylesheet or token module.
 - 09-05-2026 (Nathan): `Core/Testing` collapses. Harnesses live beside what they exercise (editor harness in MarkdownPM, pointer harness in UIX/Interactions, the two Views helpers in Views, `testTree` back in Navigation), the two JSON fixtures in `Core/Views/fixtures/`, and the vitest setup file at Core's root as `vitest.setup.ts`.
 - 09-05-2026 (Nathan): `flavor` leaves the codebase as a word for a variant; `kind` replaces it (Nathan offered Layout, Type, or anything else; `kind` is what the codebase already says for tiles and entities). Executed at Task 10 with the Windows settle; swept at Gate 5.
 - 09-05-2026 (Nathan): The comment ledgers stay; Task 18 repoints them rather than deleting them. Their working-tree deletion earlier today was Nathan's own and is restored.
