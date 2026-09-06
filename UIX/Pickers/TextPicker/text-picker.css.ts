@@ -6,10 +6,10 @@ import { focusRing } from '../../Fields/fieldRing'
 
 const c = vars.color
 
-/** The field left-anchors in the pane so its caret sits at the left edge, never centered. */
+/** Left-anchored so the caret sits at the field's left edge, never centered. */
 export const content = style({ alignItems: 'flex-start' })
 
-/** Bar-number value editing: the shared field chrome as a fixed-width one-line box. Focus lights the accent stroke via :focus-within, since the bare inner input owns no chrome. */
+/** :focus-within lights the accent stroke, since the bare inner input owns no chrome of its own. */
 export const suffixField = style([
   field,
   {
@@ -20,7 +20,7 @@ export const suffixField = style([
   },
 ])
 
-/** No chrome (the wrapper owns the fill + stroke); fills the space left of the pinned hint and scrolls its own overflow. */
+/** No chrome — the wrapper owns the fill + stroke. */
 export const suffixInput = style([
   base,
   {
@@ -48,7 +48,7 @@ export const leading = style({
   lineHeight: font.scale.control.line,
 })
 
-/** The "/ N" out-of hint pinned to the field's right — never scrolling. */
+/** The "/ N" out-of hint — pinned, never scrolling. */
 export const trailing = style({
   flex: '0 0 auto',
   whiteSpace: 'nowrap',
@@ -58,11 +58,11 @@ export const trailing = style({
   lineHeight: font.scale.control.line,
 })
 
-/** The rename field at CalendarPicker's caret metrics (control size; the native caret scales with the font). `field-sizing` grows it to its text between a floor and a cap. A consumer may scope `--accent` on the pane to tint the focus stroke, else it inherits the app accent. */
+/** A consumer may scope `--accent` on the pane to tint the focus stroke, else it inherits the app accent. */
 export const input = style([
   field,
   {
-    // Undo `field`'s div-oriented layout so the bare input lays out its own single-line caret: no flex, no default-height floor, and the caret sized to the control line — not the field's base line-height sized for larger text, which is what left the caret oversized and vertically off.
+    // Undo `field`'s div-oriented layout: the caret sized to the control line, not the field's base line-height, which left it oversized and vertically off.
     display: 'block',
     minHeight: 0,
     lineHeight: font.scale.control.line,
@@ -70,7 +70,7 @@ export const input = style([
     minWidth: '100px',
     maxWidth: '200px',
     fieldSizing: 'content',
-    textAlign: 'left', // caret hard-left in the field — explicit, not the inherited/UA default
+    textAlign: 'left', // caret hard-left — explicit, not the inherited/UA default
     border: 'none',
     outline: 'none',
     fontFamily: 'inherit',

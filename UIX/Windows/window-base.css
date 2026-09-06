@@ -4,26 +4,23 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--app-radius);
-  /* The window CLIPS: a parked panel must never peek past the glass edge. */
+  /* CLIPS: a parked panel must never peek past the glass edge. */
   overflow: hidden;
 
   --window-toolbar-h: 36px; /* KNOB — toolbar strip height */
-  /* KNOB — the ring the panels hold from the window edges. */
+  /* KNOB — the panels' ring off the edges. */
   --window-panel-inset: var(--app-inset);
-  /* KNOB — the clearance an overlay panel holds above its content, added to the panel's own inset. */
+  /* KNOB — an overlay panel's top clearance. */
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
-  /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
+  /* KNOB — the pair's home gap; tracks the inset. */
   --slide-home: calc(var(--window-panel-inset) + 22px);
-  --slide-cluster-w: 36px; /* KNOB — the trailing pair's width (two buttons + gap) */
-  --slide-breathing: calc(
-    var(--surface-inset) *
-    2
-  ); /* KNOB — breathing room off the pane's seam after the swallow */
-  /* Stops a wide title at an open pane's leading edge; the pair lands INSIDE the pane's corner, so clearing only the pair would still overlap it. 62px is the toolbar's right padding plus the trailing cluster. */
+  --slide-cluster-w: 36px; /* KNOB — the trailing pair's width */
+  --slide-breathing: calc(var(--surface-inset) * 2); /* KNOB — breathing room off the pane's seam */
+  /* The pair lands INSIDE the pane's corner; 62px = toolbar right padding + cluster. */
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
   /* Also read by nav-window.css's .navwindow-tabs. */
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px); /* KNOB — past the scan glyph */
@@ -33,7 +30,7 @@
     var(--window-title-squeeze, 0px)
   ); /* KNOB — past the inspector + close pair */
 
-  /* The panel open/close drivers, declared HERE so the app-level --io (styles.css, an inheriting registered property driving the main inspector) can never leak into a floating window. */
+  /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
   --io-l: 0;
   transition:
@@ -46,7 +43,7 @@
 .window.is-panel-left-open {
   --io-l: 1;
 }
-/* The title-bar band. The toolbar strip itself is zero-height and transparent, so the move gesture has no surface to land on — this one spans the top. It comes before the toolbar in the DOM, so `z-index: 0` puts it over the body's flow without outranking anything drawn above. */
+/* The toolbar strip is zero-height, so the move gesture needs this band; `z-index: 0` clears the body's flow without outranking it. */
 .window-drag {
   position: absolute;
   top: 0;
@@ -118,7 +115,7 @@
   align-items: center;
   height: 20px;
   max-width: 60%;
-  /* The strip is click-through; an interactive title (the web link) opts back in. A label title (.page-window-title) keeps its own pointer-events: none. */
+  /* The strip is click-through; an interactive title opts back in. */
   pointer-events: auto;
 }
 
@@ -126,7 +123,7 @@
   min-width: 0;
   pointer-events: none;
   font-size: var(--text-caption-size);
-  --page-window-morph-slide: -12px; /* KNOB — the title's collapse-left travel as the strip grows in */
+  --page-window-morph-slide: -12px; /* KNOB — the title's collapse-left travel */
   transition:
     opacity var(--duration-base) var(--ease-base),
     transform var(--duration-base) var(--ease-base);
@@ -177,7 +174,7 @@
 .window-panel.window-panel-right-overlay,
 .window-panel.window-panel-left-overlay {
   position: absolute;
-  /* The content's top clearance is the PANEL's padding, not its column's — so the empty strip above the first row is the panel itself, and the window's move gesture lands there. */
+  /* The PANEL's padding, not its column's, so the move gesture lands above the first row. */
   padding-top: calc(var(--surface-inset) + var(--window-panel-top));
   top: var(--window-panel-inset);
   bottom: var(--window-panel-inset);
@@ -223,7 +220,7 @@
 .window-panel-right-inflow {
   --pane-w: var(--window-panel-r-w);
 }
-/* The inflow strip is the gap column between panel and body; the doubled class takes the band's own placement back off whatever order the sheets land in. */
+/* The doubled class beats whatever order the sheets land in. */
 .resize-strip.window-panel-left-inflow-resize,
 .resize-strip.window-panel-right-inflow-resize {
   position: static;
@@ -231,7 +228,7 @@
   flex-shrink: 0;
 }
 
-/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window root included (its own driver transitions must not re-animate mid-drag). */
+/* Resize tracks the cursor 1:1; the root's driver transitions must not re-animate mid-drag. */
 .window.is-resizing,
 .window.is-resizing .window-panel-left-inflow,
 .window.is-resizing .window-panel-right-inflow,
@@ -281,6 +278,6 @@
   display: flex;
   align-items: center;
   gap: var(--window-trail-gap);
-  /* A host that reveals the pair drives --window-flow-reveal (its entry nudge); the swallow rides the shared --toolbar-slide, so the two compose instead of clobbering. */
+  /* Two translates, so the host's reveal nudge and the shared swallow compose. */
   transform: translateX(var(--window-flow-reveal, 0px)) translateX(calc(-1 * var(--toolbar-slide)));
 }

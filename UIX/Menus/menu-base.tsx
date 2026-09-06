@@ -42,7 +42,7 @@ export function MenuDropdown({
   })
   const pane = useExitPresence(open)
 
-  // The pane is centered on the button, so the room to its right counts twice; a live rect, since a cluster riding a translate must measure where it sits.
+  // The pane is centered on the button, so the room to its right counts twice; a live rect, since a translated cluster must measure where it sits.
   useLayoutEffect(() => {
     if (!pane.mounted || edgeInset === undefined) return
     // Written to the node, never state (a drag fires this per frame); refs read inside, since a detached node measures zeros.

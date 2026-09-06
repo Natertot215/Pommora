@@ -1,4 +1,4 @@
-// The hit-test rides a window pointermove + elementFromPoint so it works under pointer capture, where pointerenter never fires.
+// elementFromPoint on a window pointermove: pointerenter never fires under pointer capture.
 
 const DWELL_MS = 500
 
@@ -18,9 +18,9 @@ function clearHover(): void {
   }
 }
 
-const SETTLE_MS = 250 // covers the disclosure animation, with slack for its start-of-frame skew
+const SETTLE_MS = 250 // the disclosure animation, plus slack for start-of-frame skew
 
-// Re-aims every frame until the reveal settles: a discrete once-then-settle pair left a gap where a move re-took the snapshot mid-animation and cleared its dirty flag.
+// Every frame until settle: a once-then-settle pair let a move re-take the snapshot mid-animation and clear its dirty flag.
 function scheduleRemeasure(): void {
   if (!remeasure) return
   if (remeasureRaf != null) cancelAnimationFrame(remeasureRaf)

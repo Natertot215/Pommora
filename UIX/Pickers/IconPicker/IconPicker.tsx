@@ -20,7 +20,7 @@ const { CELL, COLS } = s
 export interface IconPickerProps {
   open: boolean
   onClose: () => void
-  /** An icon glyph is an SVG, so `Element`, not just `HTMLElement`. Omit ⇒ PickerMenu anchors to the picker's own mount point. */
+  /** An SVG glyph, so `Element`. Omit ⇒ anchors to the picker's own mount point. */
   triggerRef?: RefObject<Element | null>
   value?: string
   onSelect?: (id: string) => void
@@ -31,7 +31,6 @@ export interface IconPickerProps {
 export type IconFavorites = {
   ids: string[]
   onChange: (next: string[]) => void
-  /** The right-click menu; answers `'toggle'` when the favorite flips. */
   onMenu?: (isFavorite: boolean) => Promise<'toggle' | null>
 }
 
@@ -75,7 +74,6 @@ export function IconPicker({
     [favs, favorites.onChange],
   )
 
-  // Right-click ⇒ the native Favorite/Remove menu (main-owned); the renderer applies the toggle.
   const openContext = useCallback(
     async (e: MouseEvent, id: string) => {
       e.preventDefault()
@@ -84,11 +82,11 @@ export function IconPicker({
     [favs, favorites.onMenu, toggleFav],
   )
 
-  // `scrollEl` is a state-backed callback ref so the virtualizer re-runs the moment the element mounts (else the grid stays empty until the first re-render).
+  // A state-backed callback ref, so the virtualizer re-runs the moment the element mounts.
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
 
-  // Tells the virtualizer how far the list's top sits below the scroll container's top (the favorites strip + separator height).
+  // How far the list's top sits below the scroll container's top.
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
     if (listEl) setScrollMargin(listEl.offsetTop)

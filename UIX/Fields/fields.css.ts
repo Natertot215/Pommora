@@ -18,7 +18,6 @@ export const search = style({
   ...placeholderTone,
 })
 
-/** Any ancestor (or the component's `outline` prop) sets `--field-ring` and the field paints the house inset ring in that color; unset stays ringless. */
 export const field = style([
   text.body.standard,
   {
@@ -36,7 +35,7 @@ export const field = style([
   },
 ])
 
-/** Its resting stroke is the ring CHANNEL's color, never a second shadow — `field` already paints `inset 0 0 0 1px var(--field-ring)`. */
+/** Its resting stroke is the ring CHANNEL's color, never a second shadow. */
 export const borderedField = style([
   field,
   {
@@ -53,7 +52,7 @@ export const borderedField = style([
   },
 ])
 
-/** `--field-ring` is color, not focus state, so killing the native outline here still leaves the semantic ring painted. */
+/** `--field-ring` is color, not focus state — the ring survives the killed outline. */
 export const input = style([
   field,
   {
@@ -63,7 +62,7 @@ export const input = style([
   },
 ])
 
-/** States its own type: an <input> takes its line-height from the browser, and the caret is drawn to that. */
+/** An <input> takes its line-height from the browser, and the caret is drawn to that. */
 export const draftInput = style([
   text.body.standard,
   {
@@ -79,8 +78,8 @@ export const draftInput = style([
   },
 ])
 
-const LEAD_GAP = '6px' // KNOB — a leading glyph's stand-off from the content
-const TRAIL_GAP = '8px' // KNOB — how far a trailing action stands off the content it follows
+const LEAD_GAP = '6px' // KNOB — a leading glyph's stand-off
+const TRAIL_GAP = '8px' // KNOB — a trailing action's stand-off
 
 const slot = {
   display: 'inline-flex',
@@ -91,7 +90,7 @@ const slot = {
 
 export const leading = style({ ...slot, marginRight: LEAD_GAP, color: c.label.secondary })
 
-/** Pinned to the trailing edge but never closer than the gap: a content-sized field still separates the two, and a wide one doesn't strand it mid-way. */
+/** Never closer than the gap, so a content-sized field still separates the two. */
 export const trailing = style({
   ...slot,
   marginLeft: 'auto',
@@ -99,7 +98,7 @@ export const trailing = style({
   color: c.label.tertiary,
 })
 
-/** Room to give way, so the content's own fade eclipses the head rather than the field pushing its row wider. */
+/** Room to give way, so the content's fade eclipses the head rather than widening the row. */
 export const editable = style({
   width: 'auto',
   flex: '0 1 auto',
@@ -107,7 +106,7 @@ export const editable = style({
   ...focusRing('within'),
 })
 
-/** The transparent background is load-bearing: nativeCaret.ts seats the drawn selection pill BEHIND the field's text. `font` is stated because an <input> never inherits it. */
+/** Transparent is load-bearing: nativeCaret.ts seats the drawn selection pill BEHIND the text. `font` because an <input> never inherits it. */
 export const base = style({
   border: 'none',
   outline: 'none',
@@ -121,9 +120,8 @@ export const base = style({
 export const placeholder = style({ color: c.label.tertiary })
 export const fieldTrail = style({ font: 'inherit' })
 
-const CONTENT_FADE = 'var(--fade-base)' // KNOB — the field content row's fade width
+const CONTENT_FADE = 'var(--fade-base)' // KNOB — the content row's fade width
 
-/** The opt-in content row — the flex cap `over-scroll-x over-scroll-cap` scrolls inside. */
 export const contentRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -132,7 +130,7 @@ export const contentRow = style({
   vars: { '--over-scroll-fade': CONTENT_FADE },
 })
 
-// The input overlays a hidden mirror span in ONE grid cell, so the field shrink-wraps to its text through CSS reflow — never a per-keystroke layout read.
+// One grid cell holds input and hidden mirror, so the field shrink-wraps through reflow — never a per-keystroke layout read.
 export const autoSizeWrap = style({ display: 'inline-grid' })
 
 export const autoSizeMirror = style({

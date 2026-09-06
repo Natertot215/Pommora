@@ -10,7 +10,7 @@ import { fieldRing } from '../Fields/fieldRing'
 import { tintAt } from '../Theme/colors'
 const c = colorVars.color
 
-// KNOBS — every ViewFrame tunable, grouped by what it controls.
+// KNOBS — the ViewFrame tunables.
 const SIZE = {
   iconPickerButton: 28,
   dragHighlightRadius: 6,

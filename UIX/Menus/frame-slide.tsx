@@ -14,19 +14,18 @@ export function FrameSlide({
   minWidth,
   minHeight,
 }: {
-  /** false → show root (slot A); true → slide to the detail (slot B). */
   open: boolean
   root: ReactNode
   detail: ReactNode
   minWidth?: number
-  /** Height floor (px) per slot, so a sparse pane's footer still pins to the bottom. */
+  /** Height floor (px) per slot, so a sparse pane's footer pins to the bottom. */
   minHeight?: number
 }): React.JSX.Element {
   const aRef = useRef<HTMLDivElement>(null)
   const bRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ aw: 0, ah: 0, bw: 0, bh: 0 })
   const [enabled, setEnabled] = useState(false)
-  // Measure-then-flip: a frame after the detail mounts, the observer has a target to animate to.
+  // Flipped a frame after the detail mounts, so the observer has a target to animate to.
   const [active, setActive] = useState<'a' | 'b'>('a')
   useEffect(() => {
     if (!open) {
@@ -60,7 +59,7 @@ export function FrameSlide({
   // Armed only after the first paint, so the pane snaps to its measured size instead of growing.
   useEffect(() => setEnabled(true), [])
 
-  // Height eases only across a flip; an in-place resize must track content live, not lag-chase the observer.
+  // Height eases only across a flip; an in-place resize tracks content live.
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
   // Before paint, not after: a passive effect blinks the outgoing slot out at the head of a slide.

@@ -1,4 +1,4 @@
-// Per-extension rather than per-family: a `.ts` and a `.tsx` reading as one glyph loses the distinction a file label exists to make.
+// Per-extension rather than per-family: `.ts` and `.tsx` as one glyph loses the distinction a file label exists to make.
 
 import type { LucideIcon } from 'lucide-react'
 import {

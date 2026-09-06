@@ -13,13 +13,13 @@ import { shadowStandardVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { cx } from '../Utilities/cx'
 
-/** Opt-in beaked geometry — a pane that points at what opened it. `insetRight` aims the beak from the right edge (omitted = centered); `animationClass` rides the frost and the outline together, never a shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and samples nothing). */
+/** `insetRight` omitted = centered. `animationClass` rides the frost and the outline together, never a shared wrapper — an opacity-animated ancestor becomes the frost's backdrop root and samples nothing. */
 interface NotchOptions {
   insetRight?: number
   animationClass?: string
 }
 
-/** The standard menu glass — clear, a step dimmer than a pane; a picker or a menu opening OVER another surface asks for `solid`. */
+/** The standard menu glass — clear, a step dimmer than a pane. */
 export function GlassSurface({
   children,
   style,
@@ -30,7 +30,7 @@ export function GlassSurface({
 }: {
   children?: ReactNode
   ref?: Ref<HTMLDivElement>
-  /** Add the shared body — for a pane that opens OVER another pane, where clear glass on clear glass leaves the rows underneath reading through. */
+  /** For a pane opening OVER another, where clear glass on clear glass leaves the rows underneath reading through. */
   solid?: boolean
   notch?: NotchOptions
 } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
@@ -66,7 +66,7 @@ function NotchedGlass({
   useLayoutEffect(() => {
     const el = popRef.current
     if (!el) return
-    // The RO fires every frame while content animates its height; only a changed integral size re-renders.
+    // The RO fires every frame while content animates; only a changed integral size re-renders.
     const measure = (): void => {
       const w = el.offsetWidth
       const h = el.offsetHeight

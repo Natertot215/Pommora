@@ -5,7 +5,7 @@ import type { IconSize } from '../../Theme/theme-vars.css'
 import { cx } from '../../Utilities/cx'
 import * as s from './nav-trail.css'
 
-/** `onSelect` makes it a button; `ghost` dims a stop past the current one — a path backed out of, still there to re-descend into. */
+/** `ghost` dims a stop past the current one — backed out of, still there to re-descend into. */
 export interface TrailSegment {
   title: string
   icon?: string
@@ -21,7 +21,6 @@ interface NavTrailProps {
   chevronSize?: 'control' | 'caption'
   variant?: 'path' | 'option'
   selected?: boolean
-  /** Hover-scrolls the run as one; off, each segment truncates on its own. */
   overScroll?: boolean
   className?: string
   segmentClassName?: string
@@ -84,7 +83,6 @@ export function NavTrail({
   )
 }
 
-/** One segment per folder, the empties a leading or doubled slash leaves behind dropped. */
 export const pathSegments = (path: string): TrailSegment[] =>
   path
     .split('/')

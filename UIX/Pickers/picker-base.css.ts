@@ -7,7 +7,7 @@ import { item, menuCompact } from '../Menus/menu-base.css'
 
 const c = colorVars.color
 
-/** KNOB — a picker's height ceiling: the list grows to this, then its body scrolls. Lower than the menu's own MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
+/** KNOB — a picker's height ceiling; below MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
 export const PICKER_MAX_HEIGHT = 240
 
 export const treePane = style({
@@ -57,7 +57,7 @@ export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
 
 export const shield = style({ position: 'fixed', inset: 0, zIndex: stack.top.menu })
 
-/** KNOB — the pane's corner radius. `MenuSurface` is the one shell that still wears a beak; this one is a plain rounded rect, so its gutter is even on all four sides. */
+/** KNOB — the pane's corner radius; a plain rounded rect, no beak, so its gutter is even on all four sides. */
 export const PANE_RADIUS = 12
 
 export const pane = style([
@@ -99,7 +99,7 @@ globalStyle(`${option} ${optionCheck}`, { display: 'none' })
 globalStyle(`:root.picker-checked ${pane}:has(${optionSelected}) ${optionCheck}`, {
   display: 'inline-flex',
 })
-// The repeated class outranks the run-unification rules above, which compound `:has()` and a sibling combinator and would otherwise keep painting a ring the mode has stood down.
+// The repeated class outranks the run-unification rules above, which would otherwise keep painting a ring the mode has stood down.
 globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}`, {
   background: 'transparent',
 })

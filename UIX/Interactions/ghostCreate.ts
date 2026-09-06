@@ -1,35 +1,33 @@
 import { createContext, useEffect, useRef, useState } from 'react'
 
-// The dwell is one value across every view's ghost; grace stays per-view.
 export const GHOST_DWELL_MS = 1500 // KNOB
 
-// How long a standing ghost survives the pointer resting on another anchor in its travel zone.
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
-// Watchdog for a closing ghost whose consumer never delivers `closed()`; a stranded `closing` would reopen with no dwell on the next hover.
+// Watchdog for a consumer that never delivers `closed()`; a stranded `closing` reopens with no dwell.
 const GHOST_EXIT_BEAT_MS = 1000
 
-/** Published by a view whose surfaces pop native menus from inside memoized children, which caller-side wrapping can't reach. */
+/** For native menus popped inside memoized children, past caller-side wrapping. */
 export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
 interface GhostAnchorOptions {
   dwellMs: number
   graceMs: number
-  /** Re-read when the dwell timer fires: a suppressor arriving mid-dwell must not leave a ghost armed to snap in the instant it closes. */
+  /** Re-read when the dwell fires: a suppressor arriving mid-dwell must not leave a ghost armed. */
   suppressed: () => boolean
   travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
-/** Every handler is identity-stable for the hook's lifetime, so consumers hand them to contexts and memoized rows directly; only `ghost` changes across renders. */
+/** Handlers are identity-stable for the hook's lifetime, so memoized rows take them directly. */
 export interface GhostAnchor {
   ghost: { anchorId: string; closing: boolean } | null
   onHover: (id: string, entering: boolean) => void
   onGhostEnter: () => void
   onGhostLeave: () => void
-  /** Claims the anchor and unmounts the ghost in one act, so a fast double-click can't create twice. */
+  /** Claims and unmounts in one act, so a fast double-click can't create twice. */
   take: () => string | null
   closed: () => void
-  /** Synchronous full clear, no exit motion — a drag must never measure a grid the ghost occupies. */
+  /** Synchronous, no exit motion — a drag must never measure a grid the ghost occupies. */
   clear: (anchorId?: string) => void
   suppressWrap: <T>(menu: () => Promise<T>) => Promise<T>
 }
@@ -140,8 +138,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   })
 
   useEffect(() => () => handlers.clear(), [handlers])
-  // Stands the ghost down before a drag can freeze item rects over a grid it still occupies. Bound
-  // unconditionally: a press must kill a pending dwell too, or the ghost mounts mid-drag.
+  // Unconditional: a press must kill a pending dwell too, or the ghost mounts over frozen rects.
   useEffect(() => {
     const down = (e: PointerEvent): void => {
       const el = e.target instanceof Element ? e.target : null
@@ -154,8 +151,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   return { ghost, ...handlers }
 }
 
-/** Clears ghost state, not just its render, when the anchor leaves the consumer's pipeline: a
- *  stranded `closing` would reopen with no dwell on the next hover. */
+/** An anchor gone from the consumer's pipeline strands `closing`, which reopens with no dwell. */
 export function useClearStrandedGhost(
   api: GhostAnchor,
   anchors: { has: (anchorId: string) => boolean },

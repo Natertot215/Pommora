@@ -27,7 +27,7 @@ import {
   type DropState,
 } from './shared'
 
-// Extra travel on an interactive control, so a tap-wobble opens it instead of lifting the card.
+// So a tap-wobble opens the control instead of lifting the card.
 const INTERACTIVE_ACTIVATION = 12
 
 type ZoneReg = { ids: string[]; els: Map<string, HTMLElement>; container: HTMLElement | null }
@@ -49,7 +49,7 @@ type GroupValue = {
 }
 const GroupCtx = createContext<GroupValue | null>(null)
 
-// Banded by span overlap: cards top-align at unequal heights, so a center split would flip-flop.
+// Banded by span overlap: cards top-align at unequal heights, so a center split flip-flops.
 type ZoneRows = Array<{ top: number; bottom: number; items: Array<{ i: number; cx: number }> }>
 function rowsOf(rects: Box[], skip: number): ZoneRows {
   const items = rects
@@ -145,7 +145,6 @@ export type DragGroupProps = {
   onCommit: (activeId: string, toZone: string, toIndex: number) => void
   renderOverlay?: (activeId: string, rect: Box) => ReactNode
   zoom?: number
-  /** False pins the drag to its source zone — for a band that can't receive foreign cards. */
   crossZone?: boolean
   /** Null refuses the landing. Must be idempotent: an index it returned maps to itself. */
   resolveIndex?: (zoneId: string, index: number, activeId: string) => number | null
@@ -236,7 +235,7 @@ export function DragGroup({
     return out
   }
 
-  // Snapshotted at activation and on scroll, never per pointermove — that read is the lag source.
+  // Snapshotted at activation and on scroll, never per pointermove — the lag source.
   const bounds = useRef(
     new Map<string, { left: number; right: number; top: number; bottom: number }>(),
   )

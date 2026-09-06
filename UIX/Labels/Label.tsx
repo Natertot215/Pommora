@@ -21,7 +21,7 @@ export type LabelProps = {
   className?: string
 }
 
-/** One label, composed rather than named: a SHAPE says how big and how round, and fill, outline, alignment, tint and content are independent of it and of each other. Every named label is a recipe over these axes, so an unused combination costs a line rather than a class. */
+/** Composed rather than named: fill, outline, alignment, tint and content are axes independent of SHAPE and of each other, so an unused combination costs a line rather than a class. */
 export function Label({
   shape,
   color,

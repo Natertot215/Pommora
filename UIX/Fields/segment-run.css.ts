@@ -1,25 +1,25 @@
-// A divided run of titles inside a field — the honest treatment for a list of plain names that carry no color of their own, where a chip would render as a colorless box pretending to be a value. Spacing is the run's GAP, never margins on the pieces: a divider spaced by its own margins sits evenly only while its neighbors are symmetric, and a trailing affordance on one segment breaks exactly that.
+// Spacing is the run's GAP, never margins on the pieces: a divider spaced by its own margins sits evenly only while its neighbors are symmetric, and a trailing affordance breaks that.
 import { style } from '@vanilla-extract/css'
 import { segment as segmentHairline } from '../Elements/Segment/segment.css'
 
 const SEGMENT_GAP = '4px' // KNOB
 const SEGMENT_DIVIDER_INSET = '4px' // KNOB
 
-/** KNOB — wide enough that the eclipse reads as a dissolve rather than a cut. */
+/** KNOB — the trailing eclipse's fade width. */
 const SEGMENT_FADE = 'var(--fade-strong)'
 
-/** The run. It STRETCHES so the hairline can measure itself against the field. */
+/** STRETCHES so the hairline can measure itself against the field. */
 export const segmentRun = style({
   display: 'inline-flex',
   alignItems: 'stretch',
   alignSelf: 'stretch',
   flex: '1 1 auto',
   gap: SEGMENT_GAP,
-  // The FIELD is what runs out of room, so the eclipse belongs here — one fade at its trailing edge. Per-segment fades would put a gradient mid-field on every title, reading as several broken labels rather than one truncated list; `--label-max` is lifted for the same reason.
+  // The FIELD is what runs out of room, so one fade sits at its trailing edge: per-segment fades would read as several broken labels. `--label-max` is lifted for the same reason.
   vars: { '--over-scroll-fade': SEGMENT_FADE, '--label-max': 'none' },
 })
 
-/** Segments hold their natural width so the RUN is what overflows and fades; letting each one squeeze would truncate every title a little rather than the list as a whole. */
+/** Natural width so the RUN overflows; squeezing would truncate every title a little rather than the list as a whole. */
 export const segment = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -27,10 +27,10 @@ export const segment = style({
   whiteSpace: 'nowrap',
 })
 
-/** The gap beside a segment's leading glyph is the label's — a FileLabel already spaces its glyph — so this states only that a glyph never squeezes. */
+/** The gap beside the glyph is the label's own — a FileLabel already spaces it. */
 export const segmentIcon = style({ flexShrink: 0 })
 
-/** The house segment separator (Segmented), measured against the FIELD rather than given a fixed height, so it stays proportional if the field's type or padding ever moves. */
+/** Measured against the FIELD rather than given a fixed height, so it stays proportional if the field's type or padding moves. */
 export const segmentDivider = style([
   segmentHairline,
   { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },

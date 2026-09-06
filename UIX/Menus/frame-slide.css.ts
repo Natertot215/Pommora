@@ -19,7 +19,7 @@ export const trackAnimated = style({ transition: `transform ${duration.base} ${e
 
 export const slot = style({ flex: '0 0 auto', display: 'flex', flexDirection: 'column' })
 
-/** Hidden rather than unmounted or `display:none`, so the slot keeps the box the size observer reads; only while settled, or the outgoing slot would vanish instead of leaving. */
+/** Hidden, not unmounted, so the slot keeps the box the size observer reads; only while settled, or the outgoing slot would vanish instead of leaving. */
 export const slotIdle = style({ visibility: 'hidden' })
 
 /** The measured box the ResizeObserver watches, so the min floors ride it and never the slot. */

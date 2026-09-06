@@ -1,4 +1,4 @@
-/* A chevron rides directly above the bar, mirroring its height, so the toggle bounces with it instead of overlapping its items. The toggle rests invisible and reveals three ways: the host marks a large surrounding region as "near" so the reveal zone can be generous without an invisible button swallowing clicks to the content beneath, on direct hover, and on keyboard focus. */
+/* The toggle rests invisible and reveals on hover, focus, or a host-marked "near" region — generous without swallowing clicks beneath. */
 .window-footer,
 .subfield-reveal {
   flex: none;

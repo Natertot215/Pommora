@@ -109,7 +109,7 @@ export function WindowBase({
       setGeo(next)
     },
   })
-  // Window-move is reserved to the bare surfaces (the allow-list) — anything else owns its pointer, so row/reorder captures are never stolen mid-press.
+  // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.
   const onWindowDown = (e: React.PointerEvent<HTMLElement>): void => {
     if ((e.target as HTMLElement).matches(surfaces)) frame.start('move')(e)
   }

@@ -26,7 +26,7 @@ import {
   type DropState,
 } from './shared'
 
-// Mutable so pointer/rAF/keydown callbacks read it without stale closures. Every lift installs a whole fresh scratch over `blankDrag()`, so nothing survives from the gesture before it.
+// Mutable so pointer/rAF/keydown callbacks read it without stale closures. Every lift installs a fresh scratch, so nothing survives the gesture before it.
 type DragScratch = {
   id: string
   el: HTMLElement | null
@@ -160,7 +160,7 @@ export function Zone({
     })
     const curDist = Math.hypot(d.rects[d.over].cx - px, d.rects[d.over].cy - py)
     const next = best !== d.over && curDist - bestDist > HYSTERESIS ? best : d.over
-    // Written straight to the element: a delta in context would re-render every item on every pointermove. useZoneItem omits `transform` here so React never clobbers this write.
+    // Written straight to the element: a delta in context would re-render every item per pointermove. useZoneItem omits `transform` so React never clobbers this write.
     if (d.el) d.el.style.transform = `translate3d(${dx + comp.x}px, ${dy + comp.y}px, 0)`
     if (next !== d.over) {
       d.over = next
@@ -218,7 +218,7 @@ export function Zone({
     }
   }
 
-  // Commits on `transitionend`, not a timer: the transition starts a frame later, so a timer fires while gap items are mid-flight and snaps them short. The fallback covers no-transition hosts.
+  // Commits on `transitionend`, not a timer: the transition starts a frame later, so a timer fires mid-flight and snaps the gap items short. The fallback covers no-transition hosts.
   const settle = (targetIndex: number, commit?: () => void): void => {
     setDropState('dropping')
     setOverIndex(targetIndex)
@@ -404,7 +404,7 @@ export function useZoneItem(id: string): DragItem {
   let transform: string | undefined = 'translate3d(0,0,0)'
   if (rects.length && activeIdx !== -1 && index !== -1) {
     if (isDragging) {
-      // On the slot for keyboard and drop; omitted during a live pointer drag so a re-render can't clobber track()'s imperative follow write.
+      // Omitted during a live pointer drag so a re-render can't clobber track()'s imperative write.
       const onSlot = keyboard || dropState === 'dropping'
       const t = onSlot ? (rects[overIndex] ?? rects[activeIdx]) : null
       transform = t
@@ -416,7 +416,7 @@ export function useZoneItem(id: string): DragItem {
     }
   }
 
-  // At rest the inline transition clears entirely: an inline value (even 'none') replaces the element's whole stylesheet transition list and kills its own color/size motion. Safe because an engine item's stylesheet must never transition `transform` — that is the zone contract.
+  // At rest the inline transition clears entirely: an inline value (even 'none') replaces the element's whole stylesheet transition list and kills its own color/size motion. Safe because the zone contract forbids an item's stylesheet from transitioning `transform`.
   const animate = isDragging ? dropState === 'dropping' || keyboard : dropState !== 'idle'
   return {
     setNodeRef: (el) => register(id, el),

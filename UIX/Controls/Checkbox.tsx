@@ -5,7 +5,7 @@ import './checkbox.css'
 
 type CheckboxSize = 'standard' | 'compact'
 
-/** Interactive by default — a role, a label, and keyboard activation the editor's raw widget deliberately has none of; `readOnly` renders the same look as a plain value glyph the row around it toggles. */
+/** `readOnly` draws the same look as a plain value glyph, toggled by the row around it. */
 export function Checkbox({
   state,
   onChange,
@@ -64,7 +64,7 @@ export function Checkbox({
   )
 }
 
-// Drawn rather than pulled from the icon registry: this rides inside a 16px box at a stroke the icon components don't offer, and the editor's widget emits the identical markup as a raw string.
+// Not from the icon registry: a stroke the icons don't offer, and the editor's widget emits this markup as a raw string.
 const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"

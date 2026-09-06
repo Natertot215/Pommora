@@ -27,9 +27,8 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   min?: Partial<Size>
   /** Read live per move when given as a function; the viewport otherwise. */
   max?: Partial<Size> | (() => Partial<Size>)
-  /** The frame holds its origin and grows equally from either side. Otherwise a north or west pull carries the origin with it. */
+  /** Holds its origin and grows equally from either side; otherwise a north or west pull carries the origin. */
   equilateral?: boolean
-  /** The handle chassis eases its stroke to accent while one is hovered or held. */
   outlined?: boolean
   onChange: (next: R, phase: ResizePhase) => void
 }
@@ -37,11 +36,11 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
 interface ResizeFrameHandle {
   start: (grip: ResizeGrip) => (e: ReactPointerEvent<HTMLElement>) => void
   active: ResizeGrip | null
-  /** The handles, rendered as direct children of the box they resize. */
+  /** Rendered as direct children of the box they resize. */
   edges: (edges: readonly ResizeEdge[]) => React.JSX.Element[]
 }
 
-/** A free frame's rect held within the viewport, a grab's worth of it kept on screen. */
+/** A grab's worth of the frame is kept on screen. */
 export function onScreen(r: Rect): Rect {
   const w = Math.min(r.w, window.innerWidth)
   const h = Math.min(r.h, window.innerHeight)
@@ -93,7 +92,7 @@ function pull<R extends Partial<Rect>>(
   return next
 }
 
-/** The host owns the rect and whatever remembers it; the frame clamps, reports each move, and hands back the start rect on Escape. */
+/** The host owns the rect; the frame clamps, reports each move, and hands back the start rect on Escape. */
 export function useResizeFrame<R extends Partial<Rect>>(
   spec: ResizeFrameSpec<R>,
 ): ResizeFrameHandle {

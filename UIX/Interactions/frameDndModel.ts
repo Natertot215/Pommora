@@ -1,4 +1,4 @@
-// The pointer's region decides everything; the rows only refine the insertion slot within it. Slot indexes are in the persisted arrays' without-dragged coordinates.
+// Slot indexes are in the persisted arrays' without-dragged coordinates.
 
 import type { MeasuredRow } from './reorderModel'
 
@@ -7,13 +7,13 @@ export type FrameRow = { id: string; group: 'assigned' | 'all' }
 export type PaneDrop =
   | { kind: 'reorder-assigned'; propId: string; toIndex: number } // → schema.reorder
   | { kind: 'reorder-nexus'; propId: string; toIndex: number } // → registry.reorder
-  | { kind: 'assign'; propId: string; toIndex: number } // all → assigned at the slot
-  | { kind: 'unassign'; propId: string } // assigned → all; area highlight, natural slot
+  | { kind: 'assign'; propId: string; toIndex: number }
+  | { kind: 'unassign'; propId: string }
 
 export type FrameSlot = { drop: PaneDrop; lineY: number | null; highlightAll: boolean }
 export type Region = { top: number; bottom: number }
 
-/** The full order still holds every assigned id, so a raw visible index would land the drop among hidden rows; this anchors on the visible successor's full-order position instead. */
+/** The full order still holds every assigned id, so a raw visible index would land the drop among hidden rows. */
 export function nexusReorderIndex(
   orderedIds: string[],
   visibleIds: string[],
@@ -31,7 +31,6 @@ export function nexusReorderIndex(
 export const withinRegion = (r: Region, pointerY: number): boolean =>
   pointerY >= r.top && pointerY <= r.bottom
 
-/** The midpoint scan both pane models share: the insertion index among one group's rows and the line's Y — the next row's top, the last row's bottom, or the region's top when empty. */
 export function regionScan(
   rows: MeasuredRow[],
   byId: Map<string, FrameRow>,

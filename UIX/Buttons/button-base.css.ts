@@ -7,7 +7,7 @@ const icon = vars.size.icon
 
 const OUTLINE_W = 'var(--width-125)'
 
-// Every button dimension, one place. A `size` class sets the --btn-* bundle; `.button`, the run container, and the divider read it.
+// Every button dimension, one place.
 type SizeSpec = {
   height: string
   padX: string
@@ -98,14 +98,14 @@ export const size = styleVariants(SIZE, (s) => ({
   },
 }))
 
-/** A button inside a Segmented run squares its corners — the run reads as one pill split by dividers, not a row of separate rounded boxes. Defined AFTER `size` so the border-radius wins the cascade tie. */
+/** Defined AFTER `size` so the border-radius wins the cascade tie: a Segmented run reads as one pill split by dividers. */
 export const inRun = style({ borderRadius: 0 })
 
 export const labeled = style({ vars: { '--btn-pad': 'var(--btn-label-pad)' } })
 
 export const dividerBar = style({ height: 'var(--btn-div-h)' })
 
-// The three heights other surfaces align against (a tab row, a sidebar rail), sourced from the same numbers so a button and what rings it can never drift.
+// Exported from the same number so a button and what rings it — a tab row, a sidebar rail — can't drift.
 globalStyle(':root', {
   vars: {
     '--button-large-height': SIZE['button-large'].height,
