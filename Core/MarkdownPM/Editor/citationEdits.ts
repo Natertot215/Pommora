@@ -1,10 +1,5 @@
-// What a footnote gesture writes. Both ends of every act share one definition here — the menu's
-// Delete and backspace at a citation's content start are the same cascade, and a marker's menu
-// Delete and its atomic backspace are the other one.
-//
-// Cascades are keyed to the RANGE, never to the gesture (B-11): a cascade fires only where the
-// deleted range is exactly the construct — stopping a wide sweep from silently taking citations
-// the reader never saw.
+// What a footnote gesture writes. Cascades are keyed to the RANGE, never to the gesture (B-11): one fires only
+// where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
 import { ChangeSet, type ChangeSpec, Text } from '@codemirror/state'
 import {
   type CitationEntry,
@@ -21,14 +16,11 @@ import {
 import { scanDoc } from '../Decorations/intent'
 import { diffAsSingleReplace } from './listDragModel'
 
-/** The slice of a document scan every citation rule reads. The text comes with it so no rule has to
- *  be handed a document length that could disagree with the scan it arrived beside. */
 export type CitationSlice = DocLines & { citations: CitationScan }
 
 const erase = ({ from, to }: { from: number; to: number }): ChangeSpec => ({ from, to, insert: '' })
 
-/** Whole lines, plus the newline that ends them — or the one that precedes them at the document's
- *  end, so removing the last citation leaves no orphaned blank behind it. */
+/** Or the newline that precedes them at the document's end, so removing the last citation leaves no orphaned blank. */
 function lineSpan(scan: CitationSlice, from: number, to: number): { from: number; to: number } {
   const start = scan.lineStarts[from]
   const end = lineEndOf(scan, to)
@@ -37,9 +29,6 @@ function lineSpan(scan: CitationSlice, from: number, to: number): { from: number
     : { from: Math.max(0, start - 1), to: end }
 }
 
-/** Whole citation rows removed. Consecutive rows are cut as ONE span, because per-row spans overlap
- *  on the newline between them and each would claim it; rows with something between them cannot
- *  overlap and are cut separately. */
 function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
   const runs: CitationEntry[][] = []
   for (const e of rows) {
@@ -50,11 +39,9 @@ function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
   return runs.map((run) => erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine)))
 }
 
-/** The definition of what "the footnote" is, so the marker's cascade, the citation's cascade and a
- *  swept run of rows cannot come to disagree about how much of it goes. */
+/** The definition of what "the footnote" is, so the two cascades and a swept run of rows can't disagree about how much goes. */
 function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec[] {
   const labels = [...new Set(entries.map((e) => foldLabel(e.label)))]
-  // Line order, since `cutRows` merges neighbours by line number and a label-grouped list interleaves them.
   const rows = labels
     .flatMap((l) => citationsFor(scan.citations, l))
     .sort((a, b) => a.line - b.line)
@@ -62,24 +49,19 @@ function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec
   return [...markers.map(erase), ...cutRows(scan, rows)]
 }
 
-/** Takes its footnote with it when it was the last reference — a footnote nothing points at is an
- *  orphan, and the gesture that made it one is the one that should answer for it. */
+/** A footnote nothing points at is an orphan, and the gesture that made it one answers for it. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
   if (!entry || !isLastReference(scan.citations, marker)) return [erase(marker)]
   return cutFootnotes(scan, [entry])
 }
 
-/** Every marker bound to the citation goes in the same transaction — the alternative is leaving raw
- *  `[^label]` scattered through prose that used to read as a number. */
 export function deleteCitationChanges(scan: CitationSlice, entry: CitationEntry): ChangeSpec[] {
   return cutFootnotes(scan, [entry])
 }
 
-/** What deleting exactly `[from, to)` means for the footnotes, or null where that range is not
- *  exactly one construct. A caret counts: backspace at a citation's content start is that citation,
- *  and backspace against a marker's trailing edge is that marker, since the marker is atomic and has
- *  no interior to land in. Anything wider returns null and the deletion goes through as a plain removal. */
+/** Null where the range is not exactly one construct, and the deletion goes through as a plain removal. A caret
+ *  counts: a marker is atomic and has no interior to land in. */
 export function citationDeleteIntent(
   scan: CitationSlice,
   from: number,
@@ -94,8 +76,7 @@ export function citationDeleteIntent(
   }
   const marker = c.markers.find((m) => m.from === from && m.to === to)
   if (marker) return deleteMarkerChanges(scan, marker)
-  // Whole citation lines only: every line the range covers must be one this section owns, and the
-  // range must start and end on those lines' own edges.
+  // Every line the range covers must be one this section owns, and the range must start and end on those lines' own edges.
   const covered = c.entries.filter(
     (e) => scan.lineStarts[e.line] >= from && lineEndOf(scan, e.lastLine) <= to,
   )
@@ -109,22 +90,15 @@ export function citationDeleteIntent(
 
 const numericLabel = (label: string): boolean => /^\d+$/.test(label)
 
-/** The whole section rewritten into canonical form: numeric labels renumbered to first-use order,
- *  rows sorted into that order, and the ones holding no position (an orphan, a losing duplicate)
- *  collected below them. Every creation and deletion gesture ends here, so order and labels are
- *  settled in one place. Numeric labels are the gesture's to rewrite; a word label is the user's and
- *  only ever moves.
- *
- *  The result is diffed back rather than derived edit by edit, since a reorder's edits do not commute. */
+/** Numeric labels are the gesture's to rewrite; a word label is the user's and only ever moves. The result is
+ *  diffed back rather than derived edit by edit, since a reorder's edits do not commute. */
 export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
   const { text, lines, lineStarts, citations: c } = scan
   if (c.entries.length === 0) return []
 
   const placed = c.entries.filter((e) => e.ordinal !== null)
   const loose = c.entries.filter((e) => e.ordinal === null)
-  // A number is genuinely occupied only by a row that keeps it: a rename this pass refuses leaves
-  // that row's own number standing, which can occupy the number the next row wanted — so the set is
-  // grown until it stops growing, and no two rows can be renamed onto one label and silently fused.
+  // A rename this pass refuses leaves that row's number standing, which can occupy the number the next row wanted.
   const shadowed = new Set(placed.map((e) => foldLabel(e.label)))
   const held = new Set(
     loose
@@ -167,22 +141,13 @@ export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
   ]
 }
 
-/** A footnote gesture's whole edit: what it writes or removes, composed with the renormalization
- *  that follows it. The three creations and the three deletions all end here, so "renumber and
- *  reorder afterwards" is one fact rather than six, and both halves land in one transaction that
- *  one undo takes back whole.
- *
- *  The second half is derived from the document the first half leaves behind, which is the only
- *  coordinate space its offsets are true in; composing the two is what maps them back. */
+/** Never above `at`: a caret on the empty last line sits past the body's last content, and a citation behind it strands the marker. */
 export function citationGesture(scan: CitationSlice, changes: ChangeSpec[]): ChangeSet {
   const first = ChangeSet.of(changes, scan.text.length)
   const after = first.apply(Text.of(scan.lines)).toString()
   return first.compose(ChangeSet.of(normalizeCitations(scanDoc(after)), after.length))
 }
 
-/** The smallest number no label in the document already spells. A word label can never collide with
- *  one, and an orphan's number is taken like any other; the normalization that follows settles the
- *  order, so the mint only has to be free. */
 export function mintLabel(c: CitationScan): string {
   const taken = new Set([...c.entries, ...c.markers].map((x) => foldLabel(x.label)))
   let n = 1
@@ -190,10 +155,7 @@ export function mintLabel(c: CitationScan): string {
   return String(n)
 }
 
-/** Where a new citation is written: after the section's last row, or after the body where there is
- *  no section yet. Never above `at` — a caret on the empty last line of a document sits past the
- *  body's last content, and a citation seated behind it would leave the marker below the section it
- *  just created, which is the state the whole feature is built to prevent. */
+/** A citation is one paragraph, and a list marker parses at any indent, so a multi-line paste could end the run it was written into. */
 function citationSeat(scan: CitationSlice, at: number): { at: number; lead: string } {
   const { lines, citations: c } = scan
   const last = c.entries[c.entries.length - 1]
@@ -207,9 +169,6 @@ function citationSeat(scan: CitationSlice, at: number): { at: number; lead: stri
   return { at: Math.max(body, at), lead: '\n\n' }
 }
 
-/** A new citation row at the document's end. Its half of every creation gesture — what lands in the
- *  body is the gesture's own, a whole marker for a menu and the closing bracket alone for a label
- *  being typed, and `at` is where that lands. */
 export function citationRowChanges(
   scan: CitationSlice,
   label: string,
@@ -220,8 +179,6 @@ export function citationRowChanges(
   return { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
 }
 
-/** A clipboard shaped into one citation's text: every run of whitespace, blank lines included,
- *  becomes a single space. A citation is one paragraph — a following line continues it only while
- *  nothing on it starts a block, and a list marker parses at any indent, so a paste kept across
- *  several lines is a paste that can end the run it was written into. */
+/** A citation is one paragraph — a following line continues it only while nothing on it starts a block, and a list
+ *  marker parses at any indent, so a multi-line paste could end the run it was written into. */
 export const citationText = (clipboard: string): string => clipboard.trim().replace(/\s+/g, ' ')

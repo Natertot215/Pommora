@@ -7,17 +7,16 @@ import {
   type AcQuery,
   type AutocompleteQuery,
 } from './autocomplete'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { docString } from './Editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
 import { useSession } from '../Session/store'
 import { restedOnLink } from './Editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
-  /** The caret's x — what the panel centers on, not where its edge lands. */
   caretX: number
   caretTop: number
   caretBottom: number
-  /** The surface the panel may slide within, in viewport coords. */
   bounds: { left: number; right: number }
 }
 
@@ -28,8 +27,7 @@ export interface AcCtl {
   close: () => void
 }
 
-/** Both keymaps bind the same arrows + Escape through this binding, so the fall-through
- *  rule lives in one place. */
+/** Both keymaps bind the same arrows and Escape through this, so the fall-through rule lives in one place. */
 export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => (): boolean => {
   if (!ctl.current.open) return false
   drive(ctl.current)
@@ -45,7 +43,6 @@ export interface ConnectionAutocomplete {
   acCtl: RefObject<AcCtl>
 }
 
-// The `[[…]]` connection autocomplete state machine, shared by the page editor and table cells.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   candidatesFor: (q: AcQuery) => AcRow[],
@@ -70,14 +67,12 @@ export function useConnectionAutocomplete(
   const commit = (row: AcRow): void => {
     const view = viewRef.current
     if (!view || !ac) return
-    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless
-    // it's deliberately re-emitted.
+    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless deliberately re-emitted.
     const worn =
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
         : undefined
-    // Only a page the picker itself offered can open an alias slot, and only when that page has
-    // names worth offering — an empty pipe with nothing behind it is a slot the user has to close.
+    // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       ac.form === 'link' && offerAliases && (pageAliases[row.pageId ?? '']?.length ?? 0) > 0
     const { changes, anchor, opensAlias } = commitEdit(ac, row, {
@@ -87,23 +82,18 @@ export function useConnectionAutocomplete(
     view.dispatch({
       changes,
       selection: { anchor },
-      // A finished link rests rendered on its closer, but only because this gesture put the caret
-      // there. A link left open at its alias isn't finished and claims nothing.
+      // A finished link rests rendered on its closer only because this gesture put the caret there.
       ...(opensAlias ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
     })
-    // The panel is NOT cleared here. `detectConnectionQuery` runs on this very dispatch and decides
-    // what the new caret position deserves — closing it afterwards would wipe the alias picker that
-    // an opened slot has just earned.
+    // NOT cleared here: `detectConnectionQuery` runs on this dispatch, and closing afterwards would wipe the alias picker it just earned.
     view.focus()
   }
 
-  // Clamped where it's read, not only where it's moved. Forgetting a row shrinks the list without
-  // touching the query, so the stored index can end up past the end — and an open panel holds Enter
-  // away from the editor while picking nothing at all.
+  // Clamped where it's read: forgetting a row shrinks the list without touching the query, and an open panel
+  // holds Enter away from the editor while picking nothing.
   const selected = Math.min(acIndex, Math.max(candidates.length - 1, 0))
 
-  // The editor's keymap (built once at mount) reads the live panel state through this ref.
   const acCtl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
   acCtl.current = {
     open: ac !== null && candidates.length > 0,
@@ -111,7 +101,7 @@ export function useConnectionAutocomplete(
       const r = candidates[selected]
       if (r) commit(r)
     },
-    move: (d) => setAcIndex((i) => Math.max(0, Math.min(i + d, candidates.length - 1))),
+    move: (d) => setAcIndex((i) => clamp(i + d, 0, candidates.length - 1)),
     close: () => setAc(null),
   }
 
@@ -120,19 +110,13 @@ export function useConnectionAutocomplete(
   return { ac, setAc, candidates, acIndex: selected, commit, acCtl }
 }
 
-/**
- * The surface the panel is bounded by — the editor's nearest SCROLLING ancestor (the detail pane, a
- * floating window's body, a tile's own box). The editor itself never scrolls, so `scrollDOM` is the
- * wrong answer here. */
+/** The editor's nearest SCROLLING ancestor — the editor itself never scrolls, so `scrollDOM` is the wrong answer. */
 const surfaces = new WeakMap<HTMLElement, HTMLElement>()
 function surfaceOf(view: EditorView): HTMLElement {
-  // Containment, not connectedness: a cached surface can still be in the document while the editor
-  // has been re-slotted out of it, and "is that box still on screen" is a different question from
-  // "is this editor still inside it".
+  // Containment, not connectedness: a cached surface can be in the document while the editor has been re-slotted out of it.
   const cached = surfaces.get(view.dom)
   if (cached?.contains(view.dom)) return cached
-  // A detached editor has no surface to walk to, and the answer must not be cached: the loop bottoms
-  // out at the body, which is connected by definition, so nothing would ever re-walk.
+  // The answer must not be cached: the loop bottoms out at the body, which is connected by definition, so nothing would re-walk.
   if (!view.dom.isConnected) return document.body
   let el = view.dom.parentElement
   while (el && el !== document.body) {
@@ -145,8 +129,7 @@ function surfaceOf(view: EditorView): HTMLElement {
   return found
 }
 
-// setAc (a useState setter) is stable, so capturing it once at mount is safe; this is a free
-// function rather than a closure so both editors share one detection path.
+// A free function rather than a closure so both editors share one detection path.
 export function detectConnectionQuery(
   view: EditorView,
   setAc: (s: AcState | null) => void,
@@ -155,8 +138,7 @@ export function detectConnectionQuery(
   const sel = view.state.selection.main
   let next: AcState | null = null
   if (sel.empty) {
-    // docString hits the per-doc-version cache — a raw toString() re-joins the whole rope on
-    // every keystroke/caret-move for a read that only touches the caret's line.
+    // docString hits the per-doc-version cache — a raw toString() re-joins the whole rope for a read that touches one line.
     const q = autocompleteQuery(docString(view.state.doc), sel.head, allowEmbeds)
     const c = q && view.coordsAtPos(sel.head)
     if (q && c) {

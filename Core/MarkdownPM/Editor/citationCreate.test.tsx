@@ -98,9 +98,8 @@ describe('Insert ▸ Footnote writes a complete pair', () => {
   })
 })
 
-// A file ending in a newline has an empty last line, and the caret sits there after any Enter and
-// after a click in the blank area under the text. A citation seated at the last line holding content
-// would land ABOVE the marker — the section standing before the thing that points at it.
+// A citation seated at the last line holding content would land ABOVE the marker — the section standing before
+// the thing that points at it. A file ending in a newline puts the caret on the empty last line.
 describe('the first footnote is never written above its own marker', () => {
   const bodies = ['text\n', 'text\n\n', 'a\nb\n\n', '```\ncode\n```\n', 'text\n \n']
   for (const body of bodies) {
@@ -150,9 +149,8 @@ describe('Jump To Citation On Creation decides where the caret lands', () => {
     expect(doc(view).slice(0, 7)).toBe('one[^1]')
   })
 
-  // The disclosure is the page's own visibility, so a section that was hidden stays hidden when the
-  // setting says not to jump — and a section that did not exist a moment ago arrives hidden too,
-  // which is the case the prior fold state has no answer for.
+  // The disclosure is the page's own visibility, so a section that did not exist a moment ago arrives hidden —
+  // the case the prior fold state has no answer for.
   it('off, the first footnote on a page arrives hidden', async () => {
     settings({ jumpToCitation: false })
     const view = await mountEditor({ initialBody: 'one two' })
@@ -196,9 +194,8 @@ describe('a marker is refused where it could not bind', () => {
     expect(citationSeatAt(view.state)).toBe(false)
   })
 
-  // The marker goes after whatever is selected, so the seat rule has to answer for the selection's
-  // END. Asked of its start, a sweep out of the body and into the section reads as a body seat and
-  // writes the marker inside a citation's text — where the scan never looks, so it can never bind.
+  // Asked of the selection's START, a sweep out of the body into the section reads as a body seat and writes the
+  // marker inside a citation's text, where the scan never looks.
   it('under a selection that runs out of the body and into the section', async () => {
     const body = 'a[^1] b\n\n[^1]: one'
     const view = await mountEditor({ initialBody: body, citationsShown: true })
@@ -253,8 +250,7 @@ describe('Paste As ▸ Footnote', () => {
   })
 })
 
-// Typing a label is a creation gesture like any other. It fires from the input handler and
-// dispatches on its own — the transform chain beside it carries one range, and this writes two.
+// Typing a label fires from the input handler and dispatches on its own — the transform chain beside it carries one range, and this writes two.
 describe('typing a label seeds its citation', () => {
   const key = async (view: EditorView, ch: string): Promise<void> => {
     await act(async () => {
@@ -266,8 +262,6 @@ describe('typing a label seeds its citation', () => {
         })
     })
   }
-  // The input handler is what a keystroke reaches; jsdom cannot produce a real beforeinput, so the
-  // handler is driven the way CodeMirror drives it.
   const type = (view: EditorView, from: number, to: number, ch: string): boolean =>
     view.state
       .facet(EditorView.inputHandler)
@@ -340,8 +334,7 @@ describe('typing a label seeds its citation', () => {
     expect(doc(view)).toBe('[^b]tail[^2]\n\n[^b]: \n[^2]: one')
   })
 
-  // A typed label is a creation like any other, so the setting governs it too — off, which every
-  // other test here runs under, leaves the caret in the sentence being typed.
+  // A typed label is a creation like any other, so the setting governs it too.
   it('with the jump on, the caret lands in the citation it just seeded', async () => {
     settings({})
     const view = await mountEditor({ initialBody: 'see' })
@@ -361,8 +354,7 @@ describe('typing a label seeds its citation', () => {
   })
 })
 
-// A marker binds by label, not by where it sits — so the whole cycle has to close inside the box
-// constructs a page is actually written in.
+// A marker binds by label, not by where it sits, so the cycle has to close inside the box constructs a page is written in.
 describe('the cycle closes inside a callout, a blockquote and a table', () => {
   const ordinalsOf = (view: EditorView): (number | null)[] =>
     citationScan(splitWithOffsets(doc(view)), []).markers.map((m) => m.ordinal)
@@ -392,7 +384,6 @@ describe('the cycle closes inside a callout, a blockquote and a table', () => {
     expect(doc(view)).toBe('| h |\n| --- |\n| cell[^1] |\n\n[^1]: ')
   })
 
-  // Numbering is first-use order reading down the page, and a box construct is not a detour.
   it('markers in all three number in reading order alongside the body', async () => {
     const body =
       'plain[^p]\n\n> [!note] callout[^c]\n\n> quote[^q]\n\n| h |\n| --- |\n| cell[^t] |\n\n[^p]: one\n[^c]: two\n[^q]: three\n[^t]: four'
@@ -417,8 +408,7 @@ describe('the cycle closes inside a callout, a blockquote and a table', () => {
   })
 })
 
-// An orphan is the one row with nowhere to lead: what it hands back is the reference, which is
-// exactly what seeds it into the body again.
+// An orphan is the one row with nowhere to lead: what it hands back is the reference that seeds it into the body again.
 describe('copying an unbound citation', () => {
   it('puts its raw reference on the clipboard', async () => {
     const written: string[] = []
@@ -431,8 +421,7 @@ describe('copying an unbound citation', () => {
   })
 })
 
-// Normalization used to ride only the gestures, so an edit that BOUND a row left the section in
-// whatever order it was already in. Binding is what the order answers to, whoever wrote it.
+// Normalization used to ride only the gestures, so an edit that BOUND a row left the section in whatever order it was in.
 describe('an edit that binds a row reorders the section', () => {
   it('a hand-written marker adopting an orphan lifts its row into first-use order', async () => {
     const body = 'one[^a] two\n\n[^lost]: orphan\n[^a]: first'
@@ -443,7 +432,6 @@ describe('an edit that binds a row reorders the section', () => {
     expect(doc(view)).toBe('one[^a] two[^lost]\n\n[^a]: first\n[^lost]: orphan')
   })
 
-  // The orphan keeps the number it already spells, so the row that stays bound keeps its own too.
   it('and a marker deleted by hand drops its row below the ones still bound', async () => {
     const body = 'one[^1] two[^2]\n\n[^1]: first\n[^2]: second'
     const view = await mountEditor({ initialBody: body })

@@ -14,8 +14,9 @@ import {
 } from './Input'
 import { setHeading, setList } from './Input/format'
 import { subBlockAt, renumberOrderedRun } from './Editor/listDragModel'
-import { calloutDeleteVerdict } from './Editor/calloutGuard'
-import { headingSections } from './Editor/folding'
+import { calloutDeleteVerdict, type GuardVerdict } from './Editor/calloutGuard'
+import { scanOf } from './Editor/docCache'
+import { headingSections } from './Editor/headingScan'
 import { headingSrc } from './Editor/headingScan'
 import { fenceRangesOf } from './Detect'
 import { inCodeAt, scanDoc } from './Decorations/intent'
@@ -28,16 +29,16 @@ describe('isInsideCode — tilde fences + inline spans', () => {
   })
   it('pairs fences by marker char (a ~~~ line inside ``` is content)', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    expect(isInsideCode(9, doc)).toBe(true) // "code" — still inside the ``` fence
-    expect(isInsideCode(18, doc)).toBe(false) // "prose"
+    expect(isInsideCode(9, doc)).toBe(true)
+    expect(isInsideCode(18, doc)).toBe(false)
   })
   it('counts inline spans — including unclosed ones being typed', () => {
-    expect(isInsideCode(10, 'run `npm --x` now')).toBe(true) // inside the span
-    expect(isInsideCode(16, 'run `npm install --')).toBe(true) // unclosed opener
-    expect(isInsideCode(2, 'ab `c`')).toBe(false) // before the span
+    expect(isInsideCode(10, 'run `npm --x` now')).toBe(true)
+    expect(isInsideCode(16, 'run `npm install --')).toBe(true)
+    expect(isInsideCode(2, 'ab `c`')).toBe(false)
   })
   it('treats the closing backtick as a boundary so type-over still works', () => {
-    expect(isInsideCode(5, '`code`')).toBe(false) // AT the closing marker
+    expect(isInsideCode(5, '`code`')).toBe(false)
   })
 })
 
@@ -59,7 +60,7 @@ describe('tokenize — connections/links inside inline code are literal', () => 
 
 describe('autoPair — doubled-marker branch', () => {
   it('does not stack when completing an existing bold', () => {
-    expect(autoPair(scanDoc('**word*'), 7, 7, '*')).toBeNull() // typed closer completes **word**
+    expect(autoPair(scanDoc('**word*'), 7, 7, '*')).toBeNull()
   })
   it('does not pair a doubled marker glued to a word', () => {
     expect(autoPair(scanDoc('snake_'), 6, 6, '_')).toBeNull()
@@ -81,9 +82,9 @@ describe('autoPair — never closes hard against a word', () => {
   const OPENERS = ['(', '[', '`', '"', "'", '*', '_']
   it('stays literal with a word immediately after the caret', () => {
     for (const ch of OPENERS) {
-      expect(autoPair(scanDoc('word'), 0, 0, ch)).toBeNull() // at the word's head
-      expect(autoPair(scanDoc('a word'), 2, 2, ch)).toBeNull() // after a space, still against it
-      expect(autoPair(scanDoc('word'), 2, 2, ch)).toBeNull() // mid-word
+      expect(autoPair(scanDoc('word'), 0, 0, ch)).toBeNull()
+      expect(autoPair(scanDoc('a word'), 2, 2, ch)).toBeNull()
+      expect(autoPair(scanDoc('word'), 2, 2, ch)).toBeNull()
     }
   })
   it('still pairs where nothing follows the caret', () => {
@@ -142,11 +143,11 @@ describe('dashArrow — content guards', () => {
 describe("closeConstructOnEnter — contractions don't poison quote parity", () => {
   it('does not teleport the caret past a prose apostrophe', () => {
     const doc = "it's fine, don't"
-    expect(closeConstructOnEnter(scanDoc(doc), 14, 14)).toBeNull() // caret before don|'t
+    expect(closeConstructOnEnter(scanDoc(doc), 14, 14)).toBeNull()
   })
   it('still closes a real open quote', () => {
     const doc = "'hello'"
-    expect(closeConstructOnEnter(scanDoc(doc), 6, 6)).not.toBeNull() // caret before the closer
+    expect(closeConstructOnEnter(scanDoc(doc), 6, 6)).not.toBeNull()
   })
 })
 
@@ -204,7 +205,7 @@ describe('format transforms — prefix-aware', () => {
   it('setHeading on a callout head edits after the tag — never exposes it', () => {
     const doc = '> [!callout] Title'
     const { changes } = setHeading(doc, 15, 15, 1)
-    expect(changes[0].from).toBe(13) // after `> [!callout] `
+    expect(changes[0].from).toBe(13)
     expect(changes[0].insert).toBe('# Title')
   })
   it('setList on a quoted line lands the marker inside the quote', () => {
@@ -231,21 +232,25 @@ describe('renumberOrderedRun — nested lines are skipped, not terminators', () 
 })
 
 describe('calloutDeleteVerdict — repair, not cancel', () => {
-  const doc = '> [!callout] head\n> body' // body at 18, prefix [18,20)
+  const doc = '> [!callout] head\n> body'
+  const verdict = (from: number, to: number): GuardVerdict => {
+    const s = scanOf(doc)
+    return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts })
+  }
   it('allows a whole-line removal (line + newline)', () => {
-    expect(calloutDeleteVerdict(doc, 18, 25).kind).toBe('ok')
+    expect(verdict(18, 25).kind).toBe('ok')
   })
   it('clamps an in-line delete-to-line-start to the prefix end', () => {
-    expect(calloutDeleteVerdict(doc, 18, 22)).toEqual({ kind: 'clamp', from: 20 })
+    expect(verdict(18, 22)).toEqual({ kind: 'clamp', from: 20 })
   })
   it('extends a forward join to consume the body prefix', () => {
-    expect(calloutDeleteVerdict(doc, 17, 18)).toEqual({ kind: 'extend', to: 20 })
+    expect(verdict(17, 18)).toEqual({ kind: 'extend', to: 20 })
   })
   it('still cancels pure prefix erosion (a delete confined inside the prefix)', () => {
-    expect(calloutDeleteVerdict(doc, 18, 19).kind).toBe('cancel')
+    expect(verdict(18, 19).kind).toBe('cancel')
   })
   it('neutralizes a whole-prefix in-place delete to a zero-width clamp', () => {
-    expect(calloutDeleteVerdict(doc, 19, 20)).toEqual({ kind: 'clamp', from: 20 })
+    expect(verdict(19, 20)).toEqual({ kind: 'clamp', from: 20 })
   })
 })
 
@@ -261,8 +266,8 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
   it('pairs by marker char — a ~~~ line inside ``` is content, not a close', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
     const ranges = fenceRangesOf(scanDoc(doc).fences)
-    expect(ranges.length).toBe(1) // one block, not split at the ~~~ line
-    expect(isInsideCode(9, doc)).toBe(true) // input layer agrees
+    expect(ranges.length).toBe(1)
+    expect(isInsideCode(9, doc)).toBe(true)
   })
 })
 
@@ -277,7 +282,7 @@ describe('a longer fence holds shorter ones — both layers, one block', () => {
   it('a rename can never reach a connection inside the inner block', () => {
     // The one that corrupts a file rather than a render: an under-masked line gets its [[Title]] rewritten.
     expect(isInsideCode(doc.indexOf('[[LivePage]]'), doc)).toBe(true)
-    expect(isInsideCode(doc.lastIndexOf('[[LivePage]]'), doc)).toBe(false) // the prose one stays live
+    expect(isInsideCode(doc.lastIndexOf('[[LivePage]]'), doc)).toBe(false)
   })
 })
 
@@ -298,7 +303,7 @@ describe('headingSections — fence-blind no more', () => {
     const sections = headingSections(headingSrc(doc))
     expect(sections).toHaveLength(1)
     expect(sections[0].key).toBe('Real')
-    expect(sections[0].to).toBe(doc.length) // section runs past the fence, not cut at the comment
+    expect(sections[0].to).toBe(doc.length)
   })
 })
 
@@ -326,10 +331,10 @@ describe('the viewport slice opens where the block context is self-evident', () 
   const scan = scanDoc(doc)
 
   it('resumes past a fence it would otherwise open inside', () => {
-    expect(sliceStartLine(scan, 2)).toBe(4) // content line → past the closer
-    expect(sliceStartLine(scan, 3)).toBe(4) // the closer itself, which would read as an opener
-    expect(sliceStartLine(scan, 1)).toBe(1) // an opener is already unambiguous — stay
-    expect(sliceStartLine(scan, 8)).toBe(11) // inside the ````` block, past its inner ``` lines
+    expect(sliceStartLine(scan, 2)).toBe(4)
+    expect(sliceStartLine(scan, 3)).toBe(4)
+    expect(sliceStartLine(scan, 1)).toBe(1)
+    expect(sliceStartLine(scan, 8)).toBe(11)
   })
 
   it('backs up to the line owning an indented run', () => {

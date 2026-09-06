@@ -1,13 +1,12 @@
-// Drag-to-reorder list items by their `.md-li-glyph`: a press past the ACTIVATION threshold becomes a drag, a
-// release-in-place is a click (checkbox → toggle, else caret). The drop moves the source lines (block + nested
-// descendants) in one transaction, renumbering any ordered run it touched.
+// Drag-to-reorder list items by their `.md-li-glyph`. The drop moves the source lines in one transaction,
+// renumbering any ordered run it touched.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../Detect'
 import { docScan, docString } from './docCache'
 import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { focusAt } from './caretSeat'
+import { focusAt } from './caretPlacement'
 import { lineElementAt } from './lineDom'
 import {
   subBlockAt,
@@ -21,25 +20,22 @@ interface ResolvedSlot extends Slot {
   lineLeft: number
   lineTop: number
   lineWidth: number
-  indent: string // depth the dropped block adopts — the target line's leading whitespace
+  indent: string
 }
 
-// A drop candidate — a visible list line outside the dragged block, measured in viewport coords at
-// drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per
-// pointermove would be pure layout thrash.
+// Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
 interface Cand {
   from: number
   to: number
   top: number
   bottom: number
-  left: number // the line's left follows the item's indent
-  right: number // wrap boundary — the line spans the writing column
+  left: number
+  right: number
   indent: string
 }
 
-// The right edge a drop line reaches: the page wrap boundary, except inside a box (callout/quote),
-// where it's that line's own content-box right — read from the rendered element so the callout's
-// CSS padding owns the width.
+// The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the
+// rendered element so the callout's CSS padding owns the width.
 function lineRightEdge(view: EditorView, from: number, fallback: number): number {
   const n = lineElementAt(view, from)
   if (!n || (!n.classList.contains('md-callout') && !n.classList.contains('md-bq'))) return fallback
@@ -55,7 +51,7 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
   const doc = view.state.doc
   const contentRect = view.contentDOM.getBoundingClientRect()
   const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
-  const gutterRight = contentRect.right - padRight // the wrap boundary — the line spans out to here
+  const gutterRight = contentRect.right - padRight
   // A marker-lookalike inside display math is formula source, never a drop target.
   const maths = docScan(doc).maths
   const out: Cand[] = []
@@ -85,9 +81,7 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
   return out
 }
 
-// Cheap per-move hit-test against the cached candidates. Each candidate offers two insertion
-// boundaries, before and after, so a paragraph between two bullets splits to the nearer edge
-// instead of one bullet owning the whole gap.
+// Each candidate offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
 function slotFrom(
   cands: Cand[],
   clientY: number,
@@ -111,7 +105,6 @@ function slotFrom(
   }
 }
 
-// A glyph CLICK (press released without crossing ACTIVATION): checkbox → toggle; bullet / number → caret.
 function clickAction(view: EditorView, pos: number): void {
   const toggle = checkboxToggleChange(docString(view.state.doc), pos)
   if (toggle) {
@@ -125,8 +118,7 @@ export const listDragExtension: Extension = [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
-    // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't
-    // cancel the compatibility mousedown, so this is needed to stop the drag from also selecting text.
+    // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't cancel the compatibility mousedown.
     mousedown(e) {
       if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-li-glyph')) {
         e.preventDefault()
@@ -143,7 +135,7 @@ export const listDragExtension: Extension = [
       const block = subBlockAt(doc, pos)
       if (!block) return false
 
-      e.preventDefault() // suppress text-selection / caret on the glyph press (numbers are source text)
+      e.preventDefault()
 
       beginRelocateDrag(view, e, block, {
         measure: () => collectCands(view, block),

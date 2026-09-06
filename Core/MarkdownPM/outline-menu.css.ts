@@ -7,5 +7,3 @@ import { style } from '@vanilla-extract/css'
 export const pane = style({
   maxWidth: 'var(--menu-max)',
 })
-
-export { rowDragging } from '@pommora/uix/Menus/menu-base.css'

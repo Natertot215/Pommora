@@ -1,7 +1,5 @@
-// One derivation of the exclusion set (a `$$`, `![[…]]`, or webpage-embed line inside a fence or
-// table region is content there, never a construct). Every layer that must agree on what these
-// lines are — the block resolver, the decoration pass's gates, the drag models, the tile field —
-// reads this one.
+// One derivation of the exclusion set: a `$$`, `![[…]]` or webpage-embed line inside a fence or table region is
+// content there, never a construct. Every layer that must agree on what these lines are reads this one.
 import {
   blockEmbedLines,
   blockMathRanges,
@@ -20,8 +18,7 @@ import {
 } from '@pommora/core/Connections/connections'
 import type { CodeMask } from '@pommora/core/Connections/markdownCode'
 
-/** The construct kinds this pass answers for. `DocScan` extends it rather than restating the
- *  members, so a fifth kind is one edit instead of two that can disagree. */
+/** `DocScan` extends it rather than restating the members, so a fifth kind is one edit instead of two that can disagree. */
 export interface DocLineScan {
   maths: [number, number][]
   embeds: EmbedLine[]
@@ -29,9 +26,7 @@ export interface DocLineScan {
   citations: CitationScan
 }
 
-/** The exclusion set every construct scan reads: the fences and tables the caller already holds,
- *  plus the block math those in turn exclude. Assembled here alone, so two layers never disagree
- *  about what a `$$` or a `[^1]:` inside a table is. */
+/** Assembled here alone, so two layers never disagree about what a `$$` or a `[^1]:` inside a table is. */
 export function constructExclusions(
   d: DocLines,
   fences: [number, number][],
@@ -45,8 +40,7 @@ export function constructExclusions(
   return { maths, excluded: [...base, ...maths] }
 }
 
-/** Every construct kind from the fence/table base the caller already holds — the exclusion set
- *  is assembled once here, so a caller needing several kinds never re-scans the doc per kind. */
+/** The exclusion set is assembled once, so a caller needing several kinds never re-scans the doc per kind. */
 export function docLineScan(
   d: DocLines,
   fences: [number, number][],
@@ -62,16 +56,13 @@ export function docLineScan(
   }
 }
 
-/** Whether a page title can be embedded here: a title the syntax can spell, and one not already
- *  held by a tile in this document or a host above it, which would land the inert duplicate token
- *  or a cycle. The grip menu's pick tree and the `![[` autocomplete pool both read this one rule. */
+/** A title not already held by a tile in this document or a host above it, which would land the inert duplicate or a cycle. */
 export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
   return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
 }
 
-/** The tile-ownership claim: an embed line is claimed when its title resolves to exactly one page
- *  and it's the first line naming that page — a later duplicate stays the inert token, so two
- *  tiles can never edit one page from one document. */
+/** Claimed when its title resolves to exactly one page and it is the first line naming it — a later duplicate stays
+ *  the inert token, so two tiles can never edit one page from one document. */
 export function claimedEmbeds(
   embeds: readonly EmbedLine[],
   statusOf: (title: string) => LinkStatus,

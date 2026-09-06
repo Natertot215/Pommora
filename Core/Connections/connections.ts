@@ -1,7 +1,7 @@
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
-export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/g
+export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 
 // NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a
 // Context value read off disk parses as a YAML scalar and `- 2024` must still match "2024".

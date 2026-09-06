@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are
 // plain strings with no identity but their position — the index IS the key.
-import './widget.css'
+import '../markdown-tables.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
@@ -36,7 +36,6 @@ interface Drag {
   delta: number
 }
 
-// Visual grid positions throughout: row 0 IS the heading row.
 interface GridPos {
   r: number
   c: number
@@ -54,7 +53,6 @@ const normRect = (a: GridPos, h: GridPos): Rect => ({
   c1: Math.max(a.c, h.c),
 })
 
-/** Off the DOM indices — a `td`/`th` knows its position without a geometry lookup. */
 function cellPosOf(target: EventTarget | null): GridPos | null {
   const cell = (target as HTMLElement | null)?.closest?.('td, th') as HTMLTableCellElement | null
   const tr = cell?.parentElement as HTMLTableRowElement | null
@@ -62,8 +60,6 @@ function cellPosOf(target: EventTarget | null): GridPos | null {
   return { r: tr.rowIndex, c: cell.cellIndex }
 }
 
-// A live column-boundary resize: pixel-exact preview of the two adjacent columns while dragging; the dash
-// counts are only recomputed + committed on release.
 interface Resize {
   boundaryIndex: number
   leftPx: number
@@ -115,30 +111,24 @@ export function MarkdownTable({
   readOnly,
 }: {
   model: TableModel
-  /** The document's footnote numbering, serialized as `LABEL=n` pairs. A resting cell's marker is
-   *  drawn from this rather than from its own text, which never holds the number. */
   cites?: string
   headingColumn?: boolean
   onCellCommit: (row: number, col: number, text: string) => void
-  /** Fired when the cell editor demotes — the moment the static cells have to draw what was typed. */
   onSettled?: () => void
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
-  /** Blank the cells a selection rectangle covers (visual rows; 0 = heading). */
   onClearCells?: (r0: number, c0: number, r1: number, c1: number) => void
   onFill?: (row: number, col: number, payload: TablePayload) => void
   onCopyText?: (text: string) => void
   readClipboard?: () => Promise<string>
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
-  /** Go to the citation a marker in a cell binds to — the page around the table owns it. */
   onCite?: (label: string) => void
   onUndo: () => void
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
-  /** Read at event time: editability flips in place through a compartment, never through a rebuild. */
   readOnly?: () => boolean
 }): React.JSX.Element {
   const total =
@@ -150,27 +140,18 @@ export function MarkdownTable({
   const tableRef = useRef<HTMLTableElement>(null)
 
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
-  // A live gesture reads geometry through this ref — a mid-drag re-measure must reach it, and a
-  // state binding would freeze at the pointerdown render (the cfg-ref discipline).
+  // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useRef(geom)
   geomRef.current = geom
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
-  // `caretCoords` carries a click point to the editor so it lands the caret where you clicked (null → caret at end).
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
   const caretCoords = useRef<{ x: number; y: number } | null>(null)
-  // The other way a cell can be entered with a position already in mind: a link menu's Rename or
-  // Edit Link, which enter it only to put the caret over what you came to replace.
   const initialSelect = useRef<[number, number] | null>(null)
-  // A selection swept in from outside the table lands here rather than in the page's document: the
-  // two are separate documents, so the half that reached the cell is the half a shortcut can act on.
-  // Which end of the cell it anchors at is the direction the sweep came from.
   const sweepFrom = useRef<'start' | 'end' | null>(null)
 
   const [sel, setSel] = useState<{ a: GridPos; h: GridPos } | null>(null)
   const [sweeping, setSweeping] = useState(false)
-  // The click ending a sweep would enter the cell it released over and collapse the rectangle it
-  // just drew — spend it before the cells see it.
   const suppressClick = useRef(false)
   const [hover, setHover] = useState<GridPos | null>(null)
 
@@ -179,8 +160,6 @@ export function MarkdownTable({
     const start = cellPosOf(e.target)
     const wrap = wrapRef.current
     if (!start || !wrap) return
-    // A press back into the already-active cell re-hides the append strips — the activation effect
-    // only fires when `active` changes, and this press changes nothing.
     if (active) setAddsHidden(true)
     let b = wrap.getBoundingClientRect()
     let engaged = false
@@ -231,7 +210,6 @@ export function MarkdownTable({
 
   const [addsHidden, setAddsHidden] = useState(false)
 
-  // A cell and a rectangle are exclusive seats — whichever arrives drops the other.
   useEffect(() => {
     if (!active) return
     setSel(null)
@@ -250,7 +228,6 @@ export function MarkdownTable({
 
   const rect = useMemo(() => (sel ? normRect(sel.a, sel.h) : null), [sel])
 
-  // Captured ahead of the page editor, which still holds focus and would answer the same keys.
   useEffect(() => {
     if (!rect) return
     const claim = (e: KeyboardEvent): void => {
@@ -294,7 +271,6 @@ export function MarkdownTable({
     if (at) setHover((cur) => (cur && cur.r === at.r && cur.c === at.c ? cur : at))
   }
 
-  // The numbering, read back into a lookup once per change rather than per cell.
   const ordinalOf = useMemo(() => {
     const map = new Map(
       (cites ?? '')
@@ -308,10 +284,7 @@ export function MarkdownTable({
     return (label: string): number | null => map.get(foldLabel(label)) ?? null
   }, [cites])
 
-  // The measure sweep reads a rect per column and per row, so it runs on the table's SHAPE, never on the
-  // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
-  // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
-  // it changes the table's own box, which the observer below catches.
+  // The measure sweep runs on the table's SHAPE, never the model's identity — re-measuring per keystroke is an O(rows) forced layout.
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
   const measure = useCallback((): void => {
     const table = tableRef.current
@@ -339,13 +312,9 @@ export function MarkdownTable({
     return () => ro.disconnect()
   }, [shape, measure])
 
-  // A reorder permutes row heights while leaving both the shape and the table's own box untouched, so
-  // neither the sweep above nor the observer would fire — the grips and the next drop's slot math would
-  // keep measuring the pre-drop rows. The drop arms this; the model landing spends it.
+  // A reorder permutes row heights while leaving the shape and the table's box untouched, so neither the sweep nor the observer fires.
   const remeasure = useRef(false)
 
-  // updateDOM re-renders in place (no re-mount), so a live drag survives the model update.
-  // Clear when the model changes so the dropped item settles without holding its drag transform.
   useLayoutEffect(() => {
     setDrag(null)
     setResize(null)
@@ -354,11 +323,7 @@ export function MarkdownTable({
     measure()
   }, [model, measure])
 
-  // The widget's source is rebuilt when a cell stops being the live one, never per keystroke: a live
-  // cell owns its own text, and replacing the block decoration on every character makes CodeMirror
-  // re-measure a block whose React content hasn't rendered yet. A cell demotes whether the table lost
-  // the caret entirely or handed it to a sibling, and either way this is the first moment its static
-  // form has to draw what was typed — a sibling move that skipped it would redraw the pre-edit text.
+  // Rebuilt when a cell stops being the live one, never per keystroke: CM would re-measure a block whose React content hasn't rendered.
   const wasActive = useRef<{ row: number; col: number } | null>(null)
   useEffect(() => {
     const prev = wasActive.current
@@ -366,17 +331,12 @@ export function MarkdownTable({
     if (prev && (prev.row !== active?.row || prev.col !== active?.col)) onSettled?.()
   }, [active, onSettled])
 
-  // One editor at a time: a pointer-down anywhere outside the table demotes the active cell back to
-  // static. Cell↔cell moves go through `navigate`/`onActivate` (which set a new active), so this only
-  // fires on a genuine click-away — no blur/focus race.
   useEffect(() => {
     if (!active) return
     const onDown = (e: PointerEvent): void => {
       const wrap = wrapRef.current
       if (!wrap || wrap.contains(e.target as Node)) return
-      // The autocomplete pane is a body-level portal, so it is "outside" by DOM and inside by
-      // intent. Demoting the cell on a pointerdown there tears the editor down before the press
-      // that picked a suggestion can reach it, and the typed characters are left dangling.
+      // The autocomplete pane is a body-level portal — demoting there tears the editor down before the press that picked reaches it.
       if ((e.target as HTMLElement).closest?.('.mdpm-ac')) return
       setActive(null)
     }
@@ -384,20 +344,15 @@ export function MarkdownTable({
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [active])
 
-  // Both grips ride the shared gesture skeleton: activation gate, window-bound listener trio,
-  // deferred capture, Escape/pointercancel abort, teardown. The grip element is re-rendered mid-drag
-  // (setDrag + the ResizeObserver on the transform reflow), which is exactly why the skeleton binds
-  // its listeners on window — a capture-released grip can't strand the drag.
+  // The grip is re-rendered mid-drag, which is why the shared skeleton binds its listeners on window.
   const beginGesture = usePointerGesture()
 
   const startDrag = (e: React.PointerEvent<HTMLDivElement>, axis: Axis, index: number): void => {
-    if (e.button !== 0) return // only the left button drags; a right-press falls through to the context menu
+    if (e.button !== 0) return
     e.preventDefault()
     const wrap = wrapRef.current
     if (!wrap) return
-    // `geom` is wrap-relative and scroll-immune; the pointer is viewport-relative — so the whole
-    // drag runs in wrap space. Re-basing the origin on scroll then corrects the slot AND the
-    // preview delta together, and a release with no further move still resolves fresh.
+    // `geom` is wrap-relative and scroll-immune, the pointer viewport-relative, so the drag runs in wrap space.
     let origin = 0
     const reOrigin = (): void => {
       const b = wrap.getBoundingClientRect()
@@ -419,12 +374,8 @@ export function MarkdownTable({
       el: e.currentTarget,
       event: e,
       onActivate: () => {
-        // The scroll hook serves only the active gesture — a pending-phase scroll (trackpad
-        // inertia settling under a fresh press) is caught up here, like the Detail sibling.
         reOrigin()
         setDrag(current)
-        // A tall or wide table scrolls inside the editor — the edge loop reaches slots past the
-        // fold, axis-matched, and the window scroll hook re-bases off its scrollBy.
         stopScroll = startAutoScroll({
           getPoint: () => last,
           scroller: resolveScroller(wrap, axis === 'col' ? 'x' : 'y'),
@@ -442,7 +393,6 @@ export function MarkdownTable({
         last = { x: ev.clientX, y: ev.clientY }
         resolve()
       },
-      // A real reorder clears drag via the model-change effect; a no-op (same serialization) won't re-render, so clear here.
       onDrop: () => {
         if (current.to === current.from || !onReorder(axis, current.from, current.to)) setDrag(null)
         else remeasure.current = true
@@ -455,8 +405,6 @@ export function MarkdownTable({
     })
   }
 
-  // Preview is pixel-exact (override both <col> widths in px); on release the whole row is re-expressed
-  // as its share of the dash scale, so the boundary keeps the pixels it was dropped on.
   const startResize = (e: React.PointerEvent<HTMLDivElement>, boundaryIndex: number): void => {
     if (e.button !== 0) return
     e.preventDefault()
@@ -491,7 +439,6 @@ export function MarkdownTable({
         const next = widths.map((w, ci) =>
           ci === i ? leftPx : ci === i + 1 ? combinedPx - leftPx : w,
         )
-        // A no-op commit won't re-render → clear the preview here, like reorder's onDrop.
         if (!onResize(next)) setResize(null)
       },
       onAbort: () => setResize(null),
@@ -506,7 +453,7 @@ export function MarkdownTable({
       onExit(target)
       return
     }
-    caretCoords.current = null // keyboard nav lands the caret at the end of the target cell
+    caretCoords.current = null
     initialSelect.current = null
     sweepFrom.current = null
     setActive({ row: target.row, col: target.col })
@@ -531,7 +478,6 @@ export function MarkdownTable({
           onTablePaste={(text) => {
             const payload = decodePayload(text)
             if (!payload) return false
-            // A whole-table payload is inert inside a table — consumed so it can't splat as text.
             if (payload.kind !== 'table') onFill?.(row, col, payload)
             return true
           }}
@@ -549,8 +495,6 @@ export function MarkdownTable({
         readOnly={readOnly}
         onCite={onCite}
         onActivate={(coords, sweep) => {
-          // Activation swaps the cell into its editor — a pending or open glance over the
-          // cell must not hang above the editing seat.
           closeGlance()
           caretCoords.current = coords
           initialSelect.current = null
@@ -559,10 +503,7 @@ export function MarkdownTable({
         }}
         onCommit={(t) => {
           onCellCommit(row, col, t)
-          // Settling is what a demoting cell editor does, and a resting cell never had one to demote
-          // — without this the widget keeps drawing the pre-edit text until something else enters and
-          // leaves a cell. A menu action is one discrete edit, so it costs none of the per-keystroke
-          // re-measure the deferral exists to avoid.
+          // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
           onSettled?.()
         }}
         onSelect={(range) => {
@@ -576,16 +517,12 @@ export function MarkdownTable({
     )
   }
 
-  // Grips swallow mousedown so a click on one (to drag or open the right-click menu) never pulls focus or
-  // moves the editor caret to the click point — the grip is a control, not a text position.
   const swallowCaret = (e: React.MouseEvent): void => e.preventDefault()
 
   const colDragged = (ci: number): boolean => drag?.axis === 'col' && drag.from === ci
   const colW = (ci: number): number => geom.cols[ci]?.width ?? 0
   const rowH = (ri: number): number => geom.rows[ri]?.height ?? 0
 
-  // While resizing, every column is sized in px (the two at the boundary from the live preview, the rest
-  // from their measured widths) so the table total stays fixed; otherwise columns are dash-proportional %.
   const colWidth = (ci: number): string => {
     if (resize) {
       if (ci === resize.boundaryIndex) return `${resize.leftPx}px`
@@ -605,9 +542,7 @@ export function MarkdownTable({
     <div
       className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}${sweeping ? ' mdpm-tbl-sweeping' : ''}${addsHidden ? ' mdpm-tbl-adds-off' : ''}`}
       ref={wrapRef}
-      // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
-      // Inside a glance no menu opens, and the close would shut the pane the gesture was aimed in.
       onContextMenuCapture={(e) => {
         if (!insideGlance(e.currentTarget)) closeGlance()
       }}

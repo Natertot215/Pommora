@@ -7,16 +7,15 @@ import {
   isInlineMathContent,
   parseListMarker,
   indentLevel,
-  embedRegex,
   inlineCodeRegex,
-  markdownLinkRegex,
   calloutLines,
   calloutHeadPrefixLen,
   parseListMarkerPrefixed,
   scanFencedCode,
   splitWithOffsets,
 } from './index'
-import { pageLinkPattern } from '@pommora/core/Connections/connections'
+import { pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { markdownLinkRegex } from '@pommora/core/Connections/links'
 
 describe('thematic break (HR)', () => {
   it('treats ---, ***, ___ as HR; rejects too-short / list lines', () => {
@@ -114,7 +113,7 @@ describe('blockquote', () => {
 
 describe('inline matchers (verbatim regexes)', () => {
   it('image embed ![[name]]', () => {
-    const m = embedRegex().exec('see ![[pic]] here')
+    const m = pageEmbedPattern().exec('see ![[pic]] here')
     expect(m?.[1]).toBe('pic')
   })
   it('inline code `code`', () => {

@@ -10,8 +10,7 @@ import { pasteAs } from './pasteLink'
 
 const URL = 'https://www.example.com/a/b'
 
-// jsdom ships neither ClipboardEvent nor DataTransfer, so the event is fabricated: a plain Event
-// with the one method the handler reads hung off it.
+// jsdom ships neither ClipboardEvent nor DataTransfer, so the event is fabricated with the one method the handler reads.
 function paste(view: EditorView, text: string | null): void {
   const event = new Event('paste', { bubbles: true, cancelable: true })
   Object.defineProperty(event, 'clipboardData', {
@@ -20,11 +19,9 @@ function paste(view: EditorView, text: string | null): void {
   view.contentDOM.dispatchEvent(event)
 }
 
-// The chord carries no clipboard of its own — a keypress has no `clipboardData` — so it reads the
-// system clipboard back over the bridge, which is what this stands in for.
+// A keypress has no `clipboardData`, so the chord reads the system clipboard back over the bridge.
 let clipboard = ''
 
-/** ⌘⇧V, as the default binding spells it. */
 function chord(view: EditorView): void {
   view.contentDOM.dispatchEvent(
     new KeyboardEvent('keydown', {
@@ -43,8 +40,7 @@ const settings = (p: Partial<Personalization>): void => {
 
 beforeEach(() => {
   clipboard = URL
-  // The title never arrives over the bridge: every test that needs one writes it into the shared
-  // cache, which is the only thing the swap watches.
+  // The title never arrives over the bridge: tests write it into the shared cache, the only thing the swap watches.
   stubEditorBridge({
     'clipboard:read': async () => clipboard,
     'linkTitles:fetch': async () => ({ ok: false, error: { code: 'offline' } }),
@@ -78,7 +74,6 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  // Declining hands the event back to CodeMirror, which inserts the text as typed.
   it('leaves a non-address alone', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, 'App.tsx'))
@@ -113,7 +108,6 @@ describe('pasting an address into the editor', () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
-    // Retitle it by hand, the way Format or a plain edit would.
     await act(async () => {
       view.dispatch({ changes: { from: 1, to: 12, insert: 'My Words' } })
     })
@@ -123,9 +117,8 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
   })
 
-  // A site whose <title> IS its domain resolves to text already on the page, so the swap writes
-  // nothing and the validity prune (which only runs on a doc change) never fires — without an
-  // explicit withdrawal the anchor would sit pending forever.
+  // A site whose <title> IS its domain resolves to text already on the page, so the swap writes nothing and
+  // the validity prune never fires — without an explicit withdrawal the anchor would sit pending forever.
   it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
@@ -147,8 +140,7 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
-  // The pair reads together: the same clipboard on the same line lands literal inside a destination
-  // and formats outside one — proof the guard reads the column, not the line.
+  // The same clipboard on the same line lands literal inside a destination and formats outside one — the guard reads the column.
   const LINKED = '[docs]() tail'
 
   it('lands literal inside a link destination', async () => {
@@ -171,7 +163,6 @@ describe('pasting an address into the editor', () => {
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 
-  // A code span or fence renders nothing — a markdown link written there is corrupted code.
   it('lands literal inside a fenced code block', async () => {
     const body = '```\ncurl \n```'
     const view = await mountEditor({ initialBody: body })
@@ -189,8 +180,7 @@ describe('pasting an address into the editor', () => {
   })
 })
 
-// ⌘⇧V does the opposite of ⌘V: with text selected the question is whether a paste wraps it, and
-// without one it's the literal escape from the always-formatted paste.
+// ⌘⇧V does the opposite of ⌘V: with a selection the question is whether a paste wraps it, without one it is the literal escape.
 describe('the inverse chord', () => {
   it('leaves the address where a plain paste would have written a link', async () => {
     const view = await mountEditor({ initialBody: '' })
@@ -205,8 +195,7 @@ describe('the inverse chord', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  // The chord was spent choosing not to wrap; the replacing paste is an ordinary caret paste,
-  // and those format.
+  // The chord was spent choosing not to wrap; the replacing paste is an ordinary caret paste, and those format.
   it('replaces a selection with the formatted link where a plain paste would have wrapped it', async () => {
     settings({ pasteLinkIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
@@ -229,8 +218,7 @@ describe('the inverse chord', () => {
   })
 })
 
-// The two embed forms take a line to themselves, so each is written onto the blank line the caret
-// already sits on and nowhere else.
+// The two embed forms take a line to themselves, so each is written onto the blank line the caret already sits on.
 describe('pasting as an embed', () => {
   const seated = async (body: string, anchor: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })
@@ -251,8 +239,7 @@ describe('pasting as an embed', () => {
     expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
   })
 
-  // An indented token is list continuation to both grammars, so the whole line goes — a caret parked
-  // after stray spaces must not leave the tile un-formed.
+  // An indented token is list continuation to both grammars, so the whole line goes.
   it('takes the whole line, not the caret', async () => {
     const view = await seated('intro\n   \ntail', 9)
     await act(async () => await pasteAs(view, 'embedLink'))
@@ -265,7 +252,6 @@ describe('pasting as an embed', () => {
     expect(view.state.doc.toString()).toBe('intro tail')
   })
 
-  // A blank line inside a fence is code, and a tile line written there is corrupted code.
   it('writes nothing on a blank line inside a fence', async () => {
     const body = '```\n\n```'
     const view = await seated(body, 4)

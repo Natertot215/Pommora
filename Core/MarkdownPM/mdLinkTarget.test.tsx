@@ -32,8 +32,6 @@ const conn: ConnectionsApi = {
 let cellRoot: Root | null = null
 let cellHost: HTMLDivElement | null = null
 
-// renderCellContent returns a node tree rather than a mounted one; this puts it in a real container
-// so the classes it emits can be queried exactly as the editor's are.
 async function renderCell(text: string): Promise<HTMLDivElement> {
   cellHost = document.createElement('div')
   document.body.appendChild(cellHost)
@@ -60,8 +58,7 @@ describe('what a markdown link’s target names', () => {
     expect(t.kind === 'page' && t.page.id).toBe('p1')
   })
 
-  // isValidLink accepts any dotted host, so resolution has to run first or a page called Node.js
-  // becomes permanently unreachable through this syntax.
+  // isValidLink accepts any dotted host, so resolution runs first or a page called Node.js becomes unreachable through this syntax.
   it('a dotted title beats the URL gate', () => {
     const t = resolveMdTarget(conn, 'Node.js')
     expect(t.kind === 'page' && t.page.id).toBe('p2')
@@ -81,8 +78,7 @@ describe('what a markdown link’s target names', () => {
   })
 })
 
-// The two syntaxes must reach the same page, and the two renderers must say the same thing about it
-// — a link colored as a connection in the body and as broken in a cell is one link with two truths.
+// A link colored as a connection in the body and as broken in a cell is one link with two truths.
 describe('both syntaxes and both renderers agree', () => {
   const target = encodeLinkTarget('Work Notes')
 
@@ -133,12 +129,8 @@ describe('following one', () => {
   })
 })
 
-// Naming the target finishes half the link. A markdown link's display text is free — unlike a
-// connection, whose title IS its target — so the press that names the page should leave you typing
-// what the link says, not hunting for the slot.
-//
-// Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom
-// measures nothing, so a panel-driven version of this would only ever test the harness.
+// Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures
+// nothing, so a panel-driven version would only ever test the harness.
 describe('picking a page inside the parens', () => {
   const row = { value: 'Work Notes', label: 'Work Notes', isPage: true }
 
@@ -153,9 +145,8 @@ describe('picking a page inside the parens', () => {
     return { text, after: text.slice(edit.anchor) }
   }
 
-  // A markdown link renders as its label alone, so selecting that label highlights everything the
-  // link shows — picking a page read as though it had selected the whole thing. It rests past the
-  // closer instead, exactly where finishing a connection leaves you.
+  // A markdown link renders as its label alone, so selecting it read as though the whole thing were selected;
+  // it rests past the closer instead, where finishing a connection leaves you.
   it('fills an empty label with the page title and rests past the link', () => {
     const doc = 'see []() end'
     const { text, after } = applied(doc, doc.indexOf('(') + 1)
@@ -170,8 +161,7 @@ describe('picking a page inside the parens', () => {
     expect(after).toBe(' end')
   })
 
-  // The caret lands on the closer, and the link rests rendered there BECAUSE the commit put it
-  // there. Clicking the same spot afterwards reveals the target, as clicking beside any link does.
+  // The link rests rendered on the closer BECAUSE the commit put the caret there.
   it('and the link reads as finished where the commit leaves the caret', () => {
     const doc = 'see [the notes](Work%20Notes) end'
     const tokens = tokenize(doc)
@@ -183,8 +173,7 @@ describe('picking a page inside the parens', () => {
   })
 })
 
-// A connection being typed should read as a link from its first character rather than as prose that
-// happens to turn blue once a title matches.
+// A connection being typed should read as a link from its first character, not as prose that turns blue once a title matches.
 describe('a connection takes its color as it is typed', () => {
   it('an unresolved connection being typed wears the connection color', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wo]] end', connections: conn })
@@ -195,8 +184,7 @@ describe('a connection takes its color as it is typed', () => {
     expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
   })
 
-  // Clicking into a link that names no page is inspecting an unresolved link, and it should look
-  // unresolved. Only writing one earns the color.
+  // Clicking into a link that names no page is inspecting an unresolved link. Only writing one earns the color.
   it('but merely clicking into one leaves it raw', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
     await act(async () => {
@@ -226,9 +214,8 @@ describe('a connection takes its color as it is typed', () => {
   })
 })
 
-// A markdown link naming a page is drawn as a connection, so it owes the same glance. A table cell
-// already raised one for it; the body did not, because the connection handler's hit-test reads
-// wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
+// The body did not raise a glance for a page-naming markdown link, because the connection handler's hit-test
+// reads wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
 describe('an internal markdown link glances like a connection', () => {
   it('arms the page glance on the drawn link', async () => {
     const glance = vi.fn()
@@ -248,8 +235,7 @@ describe('an internal markdown link glances like a connection', () => {
   })
 })
 
-// An empty alias offers its page's names outright — the rule is the shape on the line, not the
-// gesture that produced it. And a revealed alias shows where it points, marked as such.
+// An empty alias offers its page's names outright — the rule is the shape on the line, not the gesture that produced it.
 describe('an alias reveals what it hides', () => {
   const openAt = async (body: string, caret: number) => {
     const view = await mountEditor({ initialBody: body, connections: conn })
@@ -266,14 +252,12 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).not.toBeNull()
   })
 
-  // The glyph is the one part of the opened syntax that says whether the target resolves.
   it('the glyph reports that the target resolves', async () => {
     const view = await openAt('see [[Work Notes|the plan]] end', 20)
     expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
   })
 
-  // Following the PIPE, not the resolution: writing an alias for a page that doesn't exist yet is
-  // still writing a link, and shouldn't wait for a title that happens to match.
+  // Following the PIPE, not the resolution: an alias for a page that doesn't exist yet is still a link.
   it('and appears for a target that resolves to nothing, unresolved', async () => {
     const view = await openAt('see [[No Such Page|the plan]] end', 22)
     expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('No Such Page')
@@ -287,8 +271,7 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
-  // Standing on its own the title IS the link's words, so it keeps their color — but it still earns
-  // the glyph, which is the confirmation that a page answers to it.
+  // Standing on its own the title IS the link's words, but it still earns the glyph confirming a page answers to it.
   it('a link wearing no pipe keeps its title tinted, and still wears the glyph', async () => {
     const view = await openAt('see [[Work Notes]] end', 10)
     expect(view.dom.querySelector('.md-conn-target')).toBeNull()
@@ -301,7 +284,6 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
-  // A markdown link splits the same way: a website reads as a URL, a page as a destination.
   it('an internal markdown link’s target wears the glyph, an external one the URL treatment', async () => {
     const internal = await openAt(`see [x](${encodeLinkTarget('Work Notes')}) end`, 12)
     expect(internal.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
@@ -321,8 +303,7 @@ describe('an alias reveals what it hides', () => {
   })
 })
 
-// A valid external link owes the website glance on the same dwell. Both gates are pinned to
-// the one exported class constant, so the decorator and the arming selector cannot drift apart.
+// Both gates are pinned to the one exported class constant, so the decorator and the arming selector cannot drift.
 describe('a website link previews live', () => {
   it('the decorator marks the link with the class the hover gate reads', async () => {
     const view = await mountEditor({

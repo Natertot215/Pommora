@@ -37,9 +37,7 @@ function apply(view: EditorView, edit: Edit | null): boolean {
   return true
 }
 
-// Enter at a table's bottom boundary lays a blank-line fence: a bare `\n` would put the caret on a line
-// touching the table, and GFM lazy continuation absorbs any non-blank line there as a table row — typed
-// prose would join the table character by character.
+// GFM lazy continuation absorbs any non-blank line touching a table as a row, so Enter at the bottom boundary lays a blank-line fence.
 const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edit | null => {
   if (s.from !== s.to) return null
   const r = scan.tables.find((r) => r.to === s.from)
@@ -49,7 +47,6 @@ const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edi
 const onEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
-  // Close an open construct before list/blockquote continuation, so a caret inside a pair jumps past it.
   return apply(
     view,
     closeConstructOnEnter(scan, s.from, s.to) ??
@@ -59,13 +56,10 @@ const onEnter = (view: EditorView): boolean => {
   )
 }
 
-// Forward-delete at the end of the line above a table would join prose into the header row and
-// dissolve the whole table to raw pipes. Mirror the backspace atomic behavior instead: a boundary
-// delete removes the table as one undoable unit.
-/** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint
- *  sites — its citation and every marker pointing at it — and the edit that chain carries is a
- *  single range. Both delete keys ask here, so a cascade keyed to the range cannot come to depend
- *  on which one removed it. */
+// Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors
+// the backspace atomic behavior instead.
+/** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and
+ *  the edit that chain carries is a single range. Both delete keys ask here. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
   const changes = citationDeleteIntent(docScan(view.state.doc), from, to)
   if (!changes) return false
@@ -76,15 +70,12 @@ const citationCascade = (view: EditorView, from: number, to: number): boolean =>
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
-  // The whole marker sitting under the caret, which is atomic and has no interior to delete into.
   const marker = s.empty ? scan.citations.markers.find((m) => m.from === s.from) : undefined
   const from = marker?.from ?? s.from
   const to = marker?.to ?? s.to
   if (from !== to && citationCascade(view, from, to)) return true
   if (!s.empty) return false
-  // A claimed embed tile refuses its boundary deletes in both directions — the atomic default
-  // would otherwise expand the delete over the whole absorbed range and remove the tile from a
-  // keystroke.
+  // The atomic default would otherwise expand the delete over the whole absorbed range and remove the tile from a keystroke.
   if (embedTileRanges(view.state).some((r) => s.from === r.from - 1 || s.from === r.from))
     return true
   if (scan.text[s.from] !== '\n') return false
@@ -98,13 +89,11 @@ const onBackspace = (view: EditorView): boolean => {
   const s = view.state.selection.main
   if (s.empty && embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to))
     return true
-  // Ahead of the marker chain — a caret against a construct's edge IS that construct.
   if (citationCascade(view, s.from, s.to)) return true
   const scan = docScan(view.state.doc)
   return apply(view, smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to))
 }
 
-// Always returns true so Tab never escapes the editor to focus the sidebar.
 const onTab = (view: EditorView): boolean => {
   const s = view.state.selection.main
   apply(view, indentListOnTab(docString(view.state.doc), s.from, s.to))
@@ -118,20 +107,15 @@ const onShiftTab = (view: EditorView): boolean => {
   return true
 }
 
-/** Whether a keystroke must not land because the caret is inside an alias. `]` would truncate the
- *  link the caret is sitting in — the same treatment `|` gets in a title.
- *
- *  Exported because every surface that authors an alias owes the same refusal: the page editor and
- *  a markdown table cell run different input handlers, and the guard belongs to the alias rather
- *  than to either of them. */
+/** `]` would truncate the link the caret is sitting in — the same treatment `|` gets in a title. Exported
+ *  because the page editor and a table cell run different input handlers, and the guard belongs to the alias. */
 export function refusedInAlias(doc: string, at: number, text: string): boolean {
   if (text !== ']') return false
   const ls = lineStartAt(doc, at)
   return aliasSpanAt(doc.slice(ls, lineEndAt(doc, at)), at - ls) !== null
 }
 
-// Shift+Enter exits a construct (plain newline) — except inside a callout, where it stays in the box. If the
-// caret sits inside an unclosed pair, it closes that first so the break never lands inside the pair.
+// Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.
 const onShiftEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
   const scan = docScan(view.state.doc)
@@ -151,20 +135,17 @@ export const markdownInput = [
       { key: 'Shift-Tab', run: onShiftTab },
       { key: 'Backspace', run: onBackspace },
       { key: 'Delete', run: onForwardDelete },
-      // Shift+Backspace ("Shift+Delete" on Mac) joins like Backspace inside a callout instead of falling to the
-      // default delete, which would erode the body prefix; the guard backstops every other delete combo.
+      // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
       { key: 'Shift-Backspace', run: onBackspace },
     ]),
   ),
   EditorView.inputHandler.of((view, from, to, text) => {
-    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session (CM's own
-    // closeBrackets bails the same way).
+    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
     if (view.composing || view.compositionStarted) return false
-    if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
+    if (text.length !== 1 || from !== to) return false
     const scan = docScan(view.state.doc)
     if (refusedInAlias(scan.text, from, text)) return true
-    // Dispatched on its own: a seed writes a marker and a citation at two disjoint sites, and every
-    // transform in that chain carries one range.
+    // Dispatched on its own: a seed writes at two disjoint sites, and every transform in that chain carries one range.
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,

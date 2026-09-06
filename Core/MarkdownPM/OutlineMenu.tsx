@@ -12,11 +12,12 @@ import { RenamableLabel } from '@pommora/uix/Fields'
 import { pageBody, shownPage, useSession } from '../Session/store'
 import { viewSettingsScope } from '../Interface/Toolbar/viewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../Pages/pageEditor'
-import { headingOutline } from './Editor/folding'
+import { headingOutline } from './Editor/headingScan'
 import { outlineTree, type OutlineNode } from './outlineTree'
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
 import * as s from '../Interface/Toolbar/toolbar-menu.css'
 import * as o from './outline-menu.css'
+import { rowDragging } from '@pommora/uix/Menus/menu-base.css'
 
 type Disclosure = ReturnType<typeof useDisclosureSet>
 
@@ -125,11 +126,7 @@ function OutlineRow({
         setRenaming(node.key)
       }}
       wrap={(row) => (
-        <div
-          ref={drag.ref}
-          {...drag.handle}
-          className={drag.isDragging ? o.rowDragging : undefined}
-        >
+        <div ref={drag.ref} {...drag.handle} className={drag.isDragging ? rowDragging : undefined}>
           {row}
         </div>
       )}

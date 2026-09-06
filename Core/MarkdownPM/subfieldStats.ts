@@ -14,9 +14,7 @@ import {
   parseListMarker,
 } from './Detect'
 
-/** Page document stats for the Subfield. `lines` counts source lines the document actually holds;
- *  `words`/`characters` count the prose the editor actually draws (so `## **Bold**` is one word,
- *  "Bold").*/
+/** `lines` counts source lines the document holds; `words`/`characters` count the prose the editor draws. */
 export interface PageStats {
   lines: number
   words: number
@@ -24,23 +22,16 @@ export interface PageStats {
   citations: number
 }
 
-/** Everything the editor draws as chrome or as a widget is replaced by a NEWLINE rather than a
- *  space. Newlines are already stripped before characters are counted and already separate words,
- *  so a mask can only ever remove source characters — a space placeholder was itself being counted,
- *  which is what made a long fence add a character per line. */
+/** Chrome and widgets are replaced by a NEWLINE rather than a space: newlines are stripped before characters are
+ *  counted, so a space placeholder was itself counted and made a long fence add a character per line. */
 const GONE = '\n'
 
-/** Line-level chrome, read through the editor's own detectors rather than a private regex — the
- *  list-marker parser in particular is the single source every layer reads. A line that IS an
- *  embed is a tile: it draws no prose at all. Resolution isn't checked here, so an unresolved lone
- *  embed is counted as the tile it is trying to be. */
+/** Read through the editor's own detectors rather than a private regex. A line that IS an embed is a tile and draws no prose. */
 function stripLineChrome(line: string): string {
   if (loneEmbedTitle(line) !== null) return ''
   if (loneWebpageEmbed(line)) return ''
 
-  // The same base the editor's own line pass takes: a callout head's prefix INCLUDING its `[!type]`
-  // tag, else the quote run — gated, because `>abc` with no space is prose the renderer never
-  // quotes.
+  // The same base the editor's own line pass takes — gated, because `>abc` with no space is prose the renderer never quotes.
   const base =
     calloutHeadPrefixLen(line) ??
     (isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0].length ?? 0) : 0)
@@ -53,9 +44,7 @@ function stripLineChrome(line: string): string {
   return marker ? inner.slice(marker.contentStart) : inner
 }
 
-/** Inline syntax → what the reader sees. An inline `![[Title]]` is the editor's inert embed token,
- *  whose title stays visible; an inline `![label](url)` keeps its bang, because the editor has no
- *  image renderer and draws it as prose beside an ordinary link. */
+/** An inline `![label](url)` keeps its bang: the editor has no image renderer and draws it as prose beside an ordinary link. */
 function stripInline(text: string): string {
   return text
     .replace(inlineCodeRegex(), GONE)
@@ -64,8 +53,6 @@ function stripInline(text: string): string {
     .replace(/[*_~]/g, '')
 }
 
-/** The widget shows cell text, so the pipes and the padding go, and the delimiter row — which is
- *  not among a region's rows — blanks with the rest of the span. */
 function tableProse(scan: DocScan): Map<number, string> {
   const drawn = new Map<number, string>()
   for (const region of scan.tables) {
@@ -78,15 +65,12 @@ function tableProse(scan: DocScan): Map<number, string> {
   return drawn
 }
 
-/** One answer per body string. A footer mounts two items on a page — the counts and the footnotes
- *  control — and both need the same figures on the same render; the prose pass below walks the whole
- *  document, and running it twice for one body is the cost this exists to remove. */
+/** One answer per body string: the footer mounts two items needing the same figures on one render, and the prose pass walks the whole document. */
 export const pageStats = perText(computeStats)
 
 export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
-  // THE editor's own scan of this very text — one derivation shared with the editor drawing it,
-  // rather than a second, narrower one that could answer a construct differently.
+  // THE editor's own scan of this very text, rather than a second, narrower one that could answer a construct differently.
   const scan = scanOf(body)
   const { lines, fences, citations: cited } = scan
   const drawn = tableProse(scan)
@@ -98,12 +82,10 @@ export function computeStats(body: string): PageStats {
       .join('\n'),
   )
 
-  // Strictly-visible characters: the structural newlines and every mask go, the rest stays.
   const characters = prose.replace(/\n/g, '').length
-  // The one line the character count never sees — and an empty string rather than GONE, so a marker
-  // glued to its word (`sentence[^1].`) stays one word instead of splitting into two.
+  // An empty string rather than GONE, so a marker glued to its word (`sentence[^1].`) stays one word.
   const words = (prose.replace(markerRegex(), '').match(/\S+/g) ?? []).length
-  // A single trailing newline is the terminator, not a phantom empty line — dropped from the count.
+  // A single trailing newline is the terminator, not a phantom empty line.
   const trailing = body.endsWith('\n') ? 1 : 0
   return {
     lines: Math.min(cited.firstLine, lines.length - trailing),

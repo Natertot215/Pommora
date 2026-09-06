@@ -12,7 +12,6 @@ const scanOf = (doc: string): Parameters<typeof citationTailVerdict>[4] => {
   return { ...d, citations: citationScan(d, []) }
 }
 
-/** Drive a document through a real state — with the guard, or pointedly without it. */
 function type(doc: string, at: number, text: string, guarded = true, to = at): string {
   const state = EditorState.create({
     doc,
@@ -31,8 +30,7 @@ describe('the tail guard keeps the section the document’s tail', () => {
     expect(out.trimEnd().endsWith('[^b]: another')).toBe(true)
   })
 
-  // The negative control's other half: unguarded, the same change ends the trailing run, and every
-  // citation in the section goes back to being literal text.
+  // Unguarded, the same change ends the trailing run and every citation in the section goes back to literal text.
   it('and without the guard the same paste literalizes the whole section', () => {
     const out = type(DOC, DOC.length, '\n\npasted prose', false)
     expect(sectionOf(out)).toBe(0)
@@ -86,8 +84,7 @@ describe('an insertion at a citation head’s first offset is clamped past it', 
     expect(sectionOf(out)).toBe(2)
   })
 
-  // Unguarded, the keystroke lands ahead of `[^a]:`, which stops that line being a citation — the
-  // run starts a line later and the citation it dropped goes literal.
+  // Unguarded, the keystroke lands ahead of `[^a]:`, so the run starts a line later and the citation it dropped goes literal.
   it('and without the clamp it writes ahead of the head and drops that citation from the run', () => {
     expect(sectionOf(type(DOC, DOC.indexOf('[^a]:'), 'X', false))).toBe(1)
   })
@@ -99,8 +96,7 @@ describe('an insertion at a citation head’s first offset is clamped past it', 
 })
 
 describe('the verdict and the decoration pass agree on the boundary', () => {
-  // Two derivations of "where does the section start" would eventually disagree; the guard reads
-  // the same cached scan the decorations do. Driven through a sequence of edits, they stay equal.
+  // Two derivations of "where does the section start" would eventually disagree; the guard reads the same cached scan.
   it('after every edit in a sequence, both read the same first line', () => {
     let doc = DOC
     for (const [at, text] of [
@@ -118,10 +114,8 @@ describe('the verdict and the decoration pass agree on the boundary', () => {
   })
 })
 
-// The head-start repair moves a keystroke past the hidden `[^label]:`. A paste is the same shape —
-// a zero-width insertion at a seated caret — so the repair has to answer for what it relocates, not
-// just where. Text carrying a blank line ends the citation's continuation, which ends the trailing
-// run, which literalizes every citation in the section.
+// A paste is the same shape as the head-start repair's keystroke, so the repair has to answer for what it
+// relocates: text carrying a blank line ends the run and literalizes every citation in the section.
 describe('the head-start repair answers for what it moves, not only where', () => {
   const PASTE = 'New paragraph one.\n\nNew paragraph two.'
 
@@ -144,8 +138,7 @@ describe('the head-start repair answers for what it moves, not only where', () =
   })
 })
 
-// The guard sits between every dispatch and the document, the renormalization included. A rewrite
-// that reorders the whole section reaches the tail by definition, so this is the one pairing where a
+// The guard sits between every dispatch and the document, the renormalization included — the one pairing where a
 // repair meant for stray prose could land on the feature's own writes.
 describe('the guard passes a renormalization through untouched', () => {
   const through = (doc: string, changes: ReturnType<typeof citationGesture>): string =>
@@ -183,8 +176,7 @@ describe('the guard passes a renormalization through untouched', () => {
   })
 })
 
-// The relocate arm MOVES text: the swept range has to go where it stood, or the replacement half of
-// the edit is silently dropped and the reader's selection survives an edit that replaced it.
+// The relocate arm MOVES text: the swept range has to go where it stood, or the replacement half is silently dropped.
 describe('a replacement that cannot survive is moved whole, not half', () => {
   const replace = (doc: string, from: number, to: number, text: string): string =>
     EditorState.create({ doc, extensions: [citationGuard] as Extension })
@@ -222,9 +214,8 @@ describe('a replacement that cannot survive is moved whole, not half', () => {
   })
 })
 
-// A file authored anywhere else puts its citations straight under the last line of prose. That line
-// IS the body's end, and text relocated to the start of it lands above the paragraph it was written
-// below — at the top of the document, where the section starts on line 1.
+// A file authored elsewhere puts its citations under the last line of prose, and text relocated to the start of
+// that line lands above the paragraph it was written below.
 describe('the relocated text lands at the end of the body with no blank line above the section', () => {
   const TIGHT = '# Notes\nbody[^a] here\n[^a]: the citation'
 
@@ -247,8 +238,7 @@ describe('the relocated text lands at the end of the body with no blank line abo
   })
 })
 
-// Starting a list at the foot of the section is a keystroke the run cannot hold. What it must not do
-// is manufacture a line in the body out of the whitespace that broke it.
+// Starting a list at the foot of the section must not manufacture a line in the body out of the whitespace that broke it.
 describe('whitespace alone is refused rather than rescued', () => {
   const listStart = `${DOC}\n-`
 
@@ -258,15 +248,13 @@ describe('whitespace alone is refused rather than rescued', () => {
     expect(out.split('\n').some((l) => l !== '' && l.trim() === '')).toBe(false)
   })
 
-  // Blank lines never end the run, so a whitespace-only paste below the section reaches no repair at
-  // all — it is trailing blanks, which the section already owns.
+  // Blank lines never end the run, so a whitespace-only paste below the section reaches no repair at all.
   it('and a whitespace-only paste below the section needs no repair', () => {
     const out = type(DOC, DOC.length, '\n   \n  ')
     expect(out.startsWith(DOC)).toBe(true)
     expect(sectionOf(out)).toBe(2)
   })
 
-  // The control: text that breaks the run still reaches the body, which is the whole rule.
   it('while text that breaks the run still lands in the body', () => {
     const out = type(listStart, listStart.length, ' item')
     expect(out).toContain('item')
