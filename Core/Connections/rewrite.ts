@@ -1,7 +1,3 @@
-// Pure title rewrite: replace every reference to `oldTitle` — in any of the three body syntaxes
-// that can name a page, and in the frontmatter values that name one — with `newTitle`. The
-// rename-cascade primitive.
-
 import {
   connectionText,
   normalizeTitle,
@@ -14,13 +10,9 @@ import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from './links'
 import { linkNamesTitle, readLink } from './linkValue'
 import { codeMask } from './markdownCode'
 
-/** Rewrite every connection, embed AND markdown link naming `oldTitle` (normalized) to `newTitle` —
- *  one sweep, three patterns, so a rename can't break a tile or a `[]()`. Non-matching links and
- *  anything inside code stay untouched — a page documenting `[[Old Title]]` in a fenced block is
- *  showing a sample.
- *
- *  An alias rides through, and so does a markdown link's label: a rename changes which page a link
- *  points at, never the words the author chose to show for it. Pure (string → string). */
+/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a
+ *  sample. An alias and a markdown link's label ride through: a rename changes which page a link
+ *  points at, never the words the author chose to show for it. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
   const oldKey = normalizeTitle(oldTitle)
   const inCode = codeMask(body)
@@ -43,8 +35,8 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
     (match, title: string, offset: number) =>
       !inCodeAfter(offset) && normalizeTitle(title) === oldKey ? pageEmbedText(newTitle) : match,
   )
-  // The markdown form last, over a mask rebuilt for the same reason. Only a target that NAMES a page
-  // moves, so a URL whose last segment happens to match the renamed title is left exactly as written.
+  // Rebuilt for the same reason. Only a target that NAMES a page moves, so a URL whose last
+  // segment happens to match the renamed title is left exactly as written.
   const inCodeFinal = codeMask(afterEmbeds)
   return afterEmbeds.replace(
     markdownLinkRegex(),
@@ -55,10 +47,8 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   )
 }
 
-/** The frontmatter patch a rename needs: every property value naming `oldTitle` rewritten to name
- *  `newTitle`, keyed as the file holds them. Empty when the page's frontmatter names nothing — the
- *  cascade reads that as "no field write", so a page whose links are all in its body is written
- *  exactly as it was before. An alias rides through, as it does everywhere else. */
+/** Empty when the frontmatter names nothing — the cascade reads that as "no field write", so a
+ *  page whose links are all in its body is written exactly as it was before. */
 export function rewriteFrontmatterConnections(
   values: Record<string, unknown>,
   oldKey: string,

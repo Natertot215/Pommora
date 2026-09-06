@@ -7,12 +7,10 @@ import { markdownLinkRegex, targetTitle } from './links'
 import { readLink } from './linkValue'
 import { codeMask } from './markdownCode'
 
-/** Every normalized title this body names in any of the three syntaxes — the one parse the
- *  content index seeds from and the cascade's prefilter answers through, so a title the index
- *  recorded is exactly one the prefilter would affirm. The gate in front is on SYNTAX rather
- *  than any title: a substring test would break the NFC invariant normalizeTitle exists for, so
- *  an NFD-composed body would stop matching the NFC title it names and a rename would skip it
- *  silently. */
+/** The one parse the content index seeds from and the cascade's prefilter answers through, so a
+ *  title the index recorded is exactly one the prefilter would affirm. The gate in front is on
+ *  SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle`
+ *  exists for, and an NFD-composed body would be skipped silently. */
 export function extractMentions(body: string): Set<string> {
   const out = new Set<string>()
   if (!body.includes('[[') && !body.includes('](')) return out
@@ -37,14 +35,12 @@ export function extractMentions(body: string): Set<string> {
   return out
 }
 
-/** The cascade's prefilter: does this body name `title` in any of the three syntaxes? */
 export function mentionsTitle(body: string, normalizedKey: string): boolean {
   return normalizedKey !== '' && extractMentions(body).has(normalizedKey)
 }
 
-/** Every normalized title a page's FRONTMATTER names. A Link property holds a connection as its
- *  whole value, so the page it names is a reference like any in the body — and a rename reaching
- *  only bodies would leave it pointing at a name nothing answers to. */
+/** A Link property holds a connection as its whole value, so the page it names is a reference
+ *  like any in the body — a rename reaching only bodies would leave it pointing at nothing. */
 export function frontmatterMentions(values: Record<string, unknown>): Set<string> {
   const out = new Set<string>()
   for (const value of Object.values(values)) {
