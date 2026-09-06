@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '../Locations/nexusPaths'
+import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import { AMBIGUOUS, buildAssetMap, patchAssetMap, resolveAssetName } from './assetMap'
 
 let root: string

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdir, mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
 import { queryKeyHolders, queryMentions, readIndexedStats } from './contentIndex'
-import { corpusFiles } from '../IO/walk'
+import { corpusFiles } from '../Files/walk'
 import { sweepAdmitsBody } from '../Nexus/util'
 import { seedContentIndex } from './indexSeed'
 

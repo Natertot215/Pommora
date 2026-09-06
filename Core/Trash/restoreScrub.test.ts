@@ -1,13 +1,13 @@
 // A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against, so restore can never reintroduce a governed key nothing stands behind.
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { splitFrontmatter } from '../IO/pageFile'
+import { splitFrontmatter } from '../Files/pageFile'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
-import { contextsDir, contextsRegistryFile } from '../Locations/paths'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
 
 import { closeSession, openSession } from '../Nexus/session'

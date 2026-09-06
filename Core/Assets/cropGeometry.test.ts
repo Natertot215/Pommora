@@ -9,7 +9,7 @@ import {
   MIN_ZOOM,
   panToCrop,
 } from './cropGeometry'
-import { cropKeyFor } from '../Locations/nexusPaths'
+import { cropKeyFor } from '../Paths/nexusPaths'
 import type { Crop } from '../Nexus/schemas'
 
 describe('coverStyle', () => {

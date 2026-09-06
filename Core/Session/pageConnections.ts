@@ -3,7 +3,7 @@ import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { NexusTree } from '../Nexus/tree'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
 import { useSession } from './store'
-import { connectionsFor } from './treeIndex'
+import { connectionsFor } from '../Nexus/treeIndex'
 
 /** A connection opened from inside a window lands in that window's own tab strip. */
 export function useWindowTabConnections(tree: NexusTree | null): ConnectionsApi | undefined {

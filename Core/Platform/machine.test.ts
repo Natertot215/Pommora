@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { installMachine, machine, type DirEntry, type FileStat, type Machine } from './machine'
-import { dirname, join } from '../Locations/posix'
-import { corpusFilesUnder, listEntries } from '../IO/walk'
+import { dirname, join } from '../Paths/posix'
+import { corpusFilesUnder, listEntries } from '../Files/walk'
 import {
   atomicWriteFile,
   readJsonStrict,
@@ -9,7 +9,7 @@ import {
   rewritePageSerialized,
   rewritePreservingTimes,
   writeJson,
-} from '../IO/atomicWrite'
+} from '../Files/atomicWrite'
 
 interface Entry {
   text: string

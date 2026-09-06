@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { invalidContextTitle, invalidName, sweepAdmits, sweepAdmitsBody } from './util'
-import { splitFrontmatter } from '../IO/pageFile'
+import { splitFrontmatter } from '../Files/pageFile'
 
 describe('invalidName', () => {
   it('accepts ordinary titles', () => {

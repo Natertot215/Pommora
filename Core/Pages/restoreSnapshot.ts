@@ -1,6 +1,6 @@
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { flushPageSave } from '../Session/saveScheduler'
-import { livePagePath } from '../Session/treeIndex'
+import { livePagePath } from '../Nexus/treeIndex'
 import { useSession, type WindowTarget } from '../Session/store'
 import { host } from '../Platform/dialer'
 

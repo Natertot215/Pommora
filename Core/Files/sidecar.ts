@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { sidecarPath, type SidecarKind } from '../Locations/paths'
+import { sidecarPath, type SidecarKind } from '../Paths/paths'
 import { parseJsonText, readTextOrNull, writeJson } from './atomicWrite'
 import { machine } from '../Platform/machine'
 

@@ -1,13 +1,13 @@
 // A delete's record must exist on disk BEFORE the step that destroys what it describes. Every assertion here is taken from inside the arm's real code — the collaborators are wrapped, never replaced — because ordering is invisible to an after-the-fact assertion.
 
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { splitFrontmatter } from '../IO/pageFile'
+import { splitFrontmatter } from '../Files/pageFile'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { pathExists, readJsonObject } from '../IO/atomicWrite'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
-import { contextsDir, contextsRegistryFile } from '../Locations/paths'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
 
 import { closeSession, openSession } from '../Nexus/session'

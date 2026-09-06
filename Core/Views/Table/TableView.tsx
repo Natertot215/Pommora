@@ -19,7 +19,7 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { ContextOption } from '../../Properties/contextOptions'
+import type { ContextOption } from '../../Contexts/contextOptions'
 import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
@@ -32,7 +32,7 @@ import type { ViewHostApi } from '../Host/useViewHost'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
-import { findCollectionForSet } from '../../Session/treeIndex'
+import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import type { SetTreeNode } from '../Pipeline/group'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -48,7 +48,7 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { clampWidth, widthFor } from './columnWidths'
 import { alignFor } from '../columnAlign'
-import { useStyleFor } from '../Host/columnStyles'
+import { useStyleFor } from '../Host/useColumnStyles'
 import { reorderColumns } from './columnReorder'
 import { groupKeyToValue } from '../reassign'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -71,7 +71,7 @@ import {
 import { useCellSweep } from './cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { openWebLink } from '../../Platform/openWebLink'
+import { openWebLink } from '../../Web/openWebLink'
 import {
   linkAlias,
   linkEditText,
@@ -81,7 +81,7 @@ import {
 } from '@pommora/core/Connections/linkValue'
 import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25

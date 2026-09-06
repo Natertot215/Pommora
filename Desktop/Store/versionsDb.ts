@@ -4,7 +4,7 @@ import { deflateSync, inflateSync } from 'node:zlib'
 import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'
 import { fileStamp } from '@pommora/core/Trash/bundle'
-import { nexusDir } from '@pommora/core/Locations/paths'
+import { nexusDir } from '@pommora/core/Paths/paths'
 import type { SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'

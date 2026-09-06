@@ -10,7 +10,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Interactions/pointerHarness'
+} from '@pommora/uix/Testing/pointerHarness'
 import { useSession } from '../../Session/store'
 import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot } from '../propsAtRoot'

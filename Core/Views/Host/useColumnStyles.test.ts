@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { styleFor } from './columnStyles'
+import { styleFor } from './useColumnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { savedView, type SavedView } from '@pommora/core/Views/views'
 

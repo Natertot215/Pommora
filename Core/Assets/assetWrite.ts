@@ -1,11 +1,11 @@
-import { basename, extname, join } from '../Locations/posix'
+import { basename, extname, join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { connectionText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
-import { atomicWriteBinary, pathExists } from '../IO/atomicWrite'
+import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
-import { createDisambiguated } from '../Locations/disambiguate'
-import { assetsDir, relPosix } from '../Locations/paths'
+import { createDisambiguated } from '../Paths/disambiguate'
+import { assetsDir, relPosix } from '../Paths/paths'
 
 export async function writeAssetFile(
   root: string,

@@ -17,7 +17,7 @@ import {
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
+import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { MenuItem, titleInput } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import type {
@@ -35,7 +35,7 @@ import {
   type MutableKind,
   type MutateRequest,
 } from '@pommora/core/Pages/mutateRequest'
-import { createSpaceLabel } from '@pommora/core/Properties/contexts'
+import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'

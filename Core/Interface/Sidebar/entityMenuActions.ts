@@ -5,10 +5,10 @@ import {
   type ContextTarget,
   type Creator,
 } from '@pommora/core/Pages/mutateRequest'
-import { createSpaceLabel } from '@pommora/core/Properties/contexts'
+import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
 import { contextTargetToSelect } from '../../Navigation/tabsModel'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageSendAction } from '../Menus/pageMenuActions'

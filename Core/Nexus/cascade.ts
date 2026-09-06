@@ -1,5 +1,5 @@
-import { join } from '../Locations/posix'
-import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
+import { join } from '../Paths/posix'
+import { splitEnvelope, mergeFrontmatter } from '../Files/pageFile'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections, rewriteFrontmatterConnections } from '../Connections/rewrite'

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { sanitizeExclusions } from './settings'
-import { shouldSkipDir, type WatchScope } from '../Locations/exclusion'
+import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
 
 const value = (folders: unknown): string[] => {
   const r = sanitizeExclusions(folders)

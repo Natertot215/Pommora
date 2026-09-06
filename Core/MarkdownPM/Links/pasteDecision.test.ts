@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { decidePaste, pastedUrl, type PasteInput } from './pasteLink'
-import { linkDisplayText } from '../Connections/linkValue'
+import { decidePaste, pastedUrl, type PasteInput } from './pasteDecision'
+import { linkDisplayText } from '../../Connections/linkValue'
 
 const URL = 'https://www.example.com/a/b'
 

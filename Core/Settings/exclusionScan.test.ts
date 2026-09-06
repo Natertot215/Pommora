@@ -97,7 +97,7 @@ describe('excludedArtifacts', () => {
     await d('Plain/Sub')
     await w('Plain/a.md', page('01LLLLLLLLLLLLLLLLLLLLLLLL', ''))
     await w('Plain/Sub/b.md', page('01MMMMMMMMPMMMMMMMMMMMMMMM', ''))
-    const { corpusFilesUnder } = await import('../IO/walk')
+    const { corpusFilesUnder } = await import('../Files/walk')
     const ground = (
       await corpusFilesUnder(root, join(root, 'Plain'), { excluded: [], assetDir: 'file-assets' })
     ).sort()

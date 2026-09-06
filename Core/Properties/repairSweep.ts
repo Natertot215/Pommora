@@ -1,5 +1,9 @@
-import { join } from '../Locations/posix'
-import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './contextResolve'
+import { join } from '../Paths/posix'
+import {
+  reconcileGovernedRoot,
+  survivingChanges,
+  type GovernedWorld,
+} from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
 import { errText } from '../Contract/result'

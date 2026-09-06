@@ -4,9 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
-import { readSidecar } from '../IO/sidecar'
+import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {

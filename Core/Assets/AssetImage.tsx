@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, use
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { coverStyle } from '@pommora/core/Assets/cropGeometry'
-import { cropKeyFor } from '@pommora/core/Locations/nexusPaths'
+import { cropKeyFor } from '@pommora/core/Paths/nexusPaths'
 import { resolveAssetUrl, resolveAssetValue } from './assetUrl'
 import { useSession } from '../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'

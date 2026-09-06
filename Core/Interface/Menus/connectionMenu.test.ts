@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ConnMenuAction } from '@pommora/core/Actions/connMenu'
+import type { ConnMenuAction } from '@pommora/core/MarkdownPM/Links/connMenu'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { showConnectionMenu } from './connectionMenu'

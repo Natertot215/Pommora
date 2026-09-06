@@ -16,7 +16,7 @@ import {
 import { navKey } from '../Navigation/navRecents'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
-import type { ReconcileIndex } from './reconcileSelection'
+import type { ReconcileIndex } from '../Session/reconcileSelection'
 
 /** `id` and `path` are '' for the folderless homepage singleton. */
 interface NodeRecord extends TrailNode {

@@ -2,7 +2,7 @@
 
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
-import { reconcileIndexOf } from './treeIndex'
+import { reconcileIndexOf } from '../Nexus/treeIndex'
 
 export interface ReconcileIndex {
   spaces: ReadonlySet<string>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { reconcileSelection } from './reconcileSelection'

@@ -7,9 +7,9 @@ import type { BrowserWindow, NativeImage } from 'electron'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { ensureIdentity } from '@pommora/core/Nexus/identity'
-import { atomicWriteBinary } from '@pommora/core/IO/atomicWrite'
-import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Locations/nexusPaths'
-import { assetUrl } from '@pommora/core/Platform/assetUrl'
+import { atomicWriteBinary } from '@pommora/core/Files/atomicWrite'
+import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Paths/nexusPaths'
+import { assetUrl } from '@pommora/core/Platform/assetScheme'
 
 const THUMB_WIDTH = 480
 

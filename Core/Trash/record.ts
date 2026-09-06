@@ -1,9 +1,9 @@
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import { z } from 'zod'
-import { hiddenName } from '../Locations/exclusion'
+import { hiddenName } from '../Paths/exclusion'
 import { mintBundle } from './bundle'
-import { readJsonObject, writeJson } from '../IO/atomicWrite'
-import { listEntries } from '../IO/walk'
+import { readJsonObject, writeJson } from '../Files/atomicWrite'
+import { listEntries } from '../Files/walk'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
 const RECORD_FILENAME = '_record.json'

@@ -1,7 +1,7 @@
 // After every maintaining seam fires, the rows it kept current are byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdtemp, rm, mkdir, writeFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

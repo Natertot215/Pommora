@@ -13,7 +13,7 @@ export function optionShapeFor(type: string): LabelShape {
   return type === 'status' ? 'pill' : 'tag'
 }
 
-export function SpaceChip({
+export function NeutralChip({
   title,
   icon,
   ...rest

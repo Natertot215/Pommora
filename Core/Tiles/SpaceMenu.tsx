@@ -15,10 +15,10 @@ import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { IconChoice } from '../Assets/IconChoice'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { findSpace } from '../Session/treeIndex'
+import { findSpace } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import * as s from '../Interface/Toolbar/toolbar-menu.css'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 const PANE_MIN_W = 225

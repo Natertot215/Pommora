@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { contextKey, type ContextsRegistry } from '@pommora/core/Properties/contexts'
-import { resolveContextKeys } from '@pommora/core/Properties/contextResolve'
+import { contextKey, type ContextsRegistry } from '@pommora/core/Contexts/contexts'
+import { resolveContextKeys } from '@pommora/core/Contexts/contextResolve'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
@@ -12,7 +12,7 @@ import {
   contextIdsOf,
   isContextColumnId,
   spaceIdentityOf,
-} from '../contextIdentity'
+} from '../../Contexts/contextIdentity'
 import { resolveFieldValue } from '../value'
 import { buildValueContext, type ValueContext } from '../valueContext'
 import { sharedValueClickAction } from '../Pickers/valueClick'

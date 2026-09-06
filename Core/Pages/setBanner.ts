@@ -1,10 +1,10 @@
 // The adopted file is written to its owner before the replaced one is dropped, so a failed write never points at a deleted file.
 
 import { machine } from '../Platform/machine'
-import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'
-import { readJsonObject, readTextOrNull, rmwJsonStrict, setOrDrop } from '../IO/atomicWrite'
-import { splitFrontmatter } from '../IO/pageFile'
-import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
+import { readJsonObject, readTextOrNull, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
+import { splitFrontmatter } from '../Files/pageFile'
+import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { updateNexusConfig } from '../Settings/settings'

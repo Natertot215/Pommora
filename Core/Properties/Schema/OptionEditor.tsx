@@ -26,7 +26,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
 
 const LIST_ANCHOR = 'options'

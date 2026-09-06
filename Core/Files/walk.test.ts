@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
-import type { WatchScope } from '../Locations/exclusion'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import type { WatchScope } from '../Paths/exclusion'
 
 const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: ASSETS_DIR_REL })
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'

@@ -11,7 +11,7 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { machine } from '../Platform/machine'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import type { PropertyDefinition, PropertyType } from './properties'
 
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({

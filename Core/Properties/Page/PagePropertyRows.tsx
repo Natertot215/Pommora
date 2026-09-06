@@ -27,7 +27,7 @@ import type { WindowTarget } from '../../Session/store'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import * as s from './page-properties.css'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }

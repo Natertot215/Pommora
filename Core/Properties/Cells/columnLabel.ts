@@ -1,5 +1,5 @@
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
-import type { ContextIdentity } from '../contextIdentity'
+import type { ContextIdentity } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
 
 export const RESERVED_LABEL: Readonly<Record<string, string>> = {

@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NexusTree } from './tree'
 import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 
 vi.mock('./readNexus', () => ({ readNexus: vi.fn() }))
-vi.mock('../IO/atomicWrite', () => ({ pathExists: vi.fn() }))
+vi.mock('../Files/atomicWrite', () => ({ pathExists: vi.fn() }))
 
 const walk = vi.mocked(readNexus)
 const exists = vi.mocked(pathExists)

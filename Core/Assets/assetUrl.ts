@@ -1,6 +1,6 @@
-import { assetUrl } from '../Platform/assetUrl'
+import { assetUrl } from '../Platform/assetScheme'
 import { normalizeTitle, parseConnectionText } from '@pommora/core/Connections/connections'
-import { HAS_SCHEME } from '@pommora/core/Locations/url'
+import { HAS_SCHEME } from '@pommora/core/Paths/url'
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 
 type AssetValue =

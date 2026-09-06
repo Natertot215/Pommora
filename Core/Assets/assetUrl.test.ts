@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parseConnectionText } from '@pommora/core/Connections/connections'
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 import { resolveAssetUrl, resolveAssetValue, resolveFileValue } from './assetUrl'
-import { assetUrl } from '../Platform/assetUrl'
+import { assetUrl } from '../Platform/assetScheme'
 
 const map: AssetMap = {
   files: {

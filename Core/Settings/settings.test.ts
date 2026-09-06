@@ -11,7 +11,7 @@ import {
   writePersonalization,
 } from './settings'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {

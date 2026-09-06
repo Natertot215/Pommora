@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readSidecar, writeSidecar } from './sidecar'
-import { SIDECAR_FILENAME } from '../Locations/paths'
+import { SIDECAR_FILENAME } from '../Paths/paths'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 
 let dir: string

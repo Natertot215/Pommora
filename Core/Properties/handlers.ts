@@ -9,7 +9,7 @@ import {
   NEEDS_CONFIG_PATCH,
   NOT_A_PROPERTY_DIR,
 } from '../Contract/validators'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { confirmRegistryWrite } from '../Nexus/confirm'
 import { sessionRoot } from '../Nexus/session'
 import { readWatchScope } from '../Settings/settings'

@@ -1,8 +1,8 @@
 import type { TileDoc } from './tiles'
 import { errText, fail, ok, type Result } from '../Contract/result'
-import { newId } from '../Locations/ids'
-import { readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
-import { tileDocPath } from '../Locations/paths'
+import { newId } from '../Nexus/ids'
+import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
+import { tileDocPath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 
 const EMPTY_DOC: TileDoc = { layout: undefined, tiles: [], locked: false }

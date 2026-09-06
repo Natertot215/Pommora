@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
 import { isAssetPath } from '../Navigation/navigationFile'
 

@@ -1,13 +1,13 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { splitFrontmatter } from '../IO/pageFile'
+import { splitFrontmatter } from '../Files/pageFile'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import type { NexusTree } from '../Nexus/tree'
-import * as atomicWrite from '../IO/atomicWrite'
+import * as atomicWrite from '../Files/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
-import { contextsDir, contextsRegistryFile } from '../Locations/paths'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree } from '../Nexus/liveTree'
@@ -18,8 +18,8 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
 
-vi.mock('../IO/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../IO/atomicWrite')>()
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
   return { ...mod, readJsonStrict: vi.fn(mod.readJsonStrict) }
 })
 const sidecarReads = vi.mocked(atomicWrite.readJsonStrict)

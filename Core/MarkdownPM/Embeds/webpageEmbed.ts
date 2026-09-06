@@ -7,9 +7,9 @@ import {
   hasWebScheme,
   isValidLink,
   unescapeAlias,
-} from '../Connections/links'
-import { linkDisplayText } from '../Connections/linkValue'
-import type { LinkDisplay } from '../Properties/properties'
+} from '../../Connections/links'
+import { linkDisplayText } from '../../Connections/linkValue'
+import type { LinkDisplay } from '../../Properties/properties'
 
 /** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */
 export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {

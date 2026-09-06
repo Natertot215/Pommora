@@ -159,7 +159,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
 | Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
-| SpaceChip  | `SpaceChip`                  | A Space reference — neutral ground, color on border and text.           |
+| NeutralChip | `NeutralChip`               | A neutral-ground tag chip — color on border and text.                   |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
 | FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
 
@@ -389,7 +389,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Utilities
 
-`UIX/Utilities/` — `cx` · `clamp` · `pad` · `moveItem`, with no catalog beyond this line. The two writers that put runtime values on the root live with what they compute: `applyAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Session/personalization.ts`.
+`UIX/Utilities/` — `cx` · `clamp` · `pad` · `moveItem` · `capMap` · `checkSet`, with no catalog beyond this line. The two writers that put runtime values on the root live with what they compute: `applyAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
 
 ### Windows
 

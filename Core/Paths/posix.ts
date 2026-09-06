@@ -52,3 +52,7 @@ export function relative(from: string, to: string): string {
 
 export const relJoin = (parent: string, child: string): string =>
   parent ? `${parent}/${child}` : child
+
+export function basenameNoMd(name: string): string {
+  return name.replace(/\.md$/i, '')
+}

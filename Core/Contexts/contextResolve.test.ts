@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type GovernedWorld, reconcileGovernedRoot, resolveContextKeys } from './contextResolve'
-import type { PropertyDefinition } from './properties'
-import { decodeValue } from './propertyValue'
+import type { PropertyDefinition } from '../Properties/properties'
+import { decodeValue } from '../Properties/propertyValue'
 import type { ContextsRegistry } from './contexts'
 import type { SpaceNode } from '../Nexus/tree'
 

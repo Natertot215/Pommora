@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { readSidecar } from '../IO/sidecar'
+import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
 
@@ -50,7 +50,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   const { removeProperty } = await import('./removeProperty')
   const { createPage, updatePageProperty } = await import('../Nexus/page')
   const { readFile } = await import('node:fs/promises')
-  const { splitFrontmatter } = await import('../IO/pageFile')
+  const { splitFrontmatter } = await import('../Files/pageFile')
   const mk = async (name: string): Promise<string> => {
     const r = await createProperty(root, { id: '', name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')

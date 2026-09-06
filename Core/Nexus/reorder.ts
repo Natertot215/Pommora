@@ -1,14 +1,14 @@
 import { machine } from '../Platform/machine'
 import { readSpaceOrders } from './readNexus'
 import type { z } from 'zod'
-import { rmwJsonStrict, pathExists } from '../IO/atomicWrite'
+import { rmwJsonStrict, pathExists } from '../Files/atomicWrite'
 import {
   nexusDir,
   nexusConfig,
   NEXUS_CONFIG_FILES,
   sidecarPath,
   type SidecarKind,
-} from '../Locations/paths'
+} from '../Paths/paths'
 import { updateFolderSidecar } from './folderEntity'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { ok, type Result } from '../Contract/result'

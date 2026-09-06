@@ -4,12 +4,12 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
-import { assetSubRoot } from '@pommora/core/Locations/nexusPaths'
+import { assetSubRoot } from '@pommora/core/Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 
 export function fileChipIndex(target: EventTarget | null): number | null {
   const el = target instanceof Element ? target.closest(`[${SEGMENT_INDEX_ATTR}]`) : null

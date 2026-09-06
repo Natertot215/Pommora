@@ -6,7 +6,7 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 interface HeaderPage {

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
 import { savedView } from '../Views/views'
 import { ID_KEY } from './identityMark'
-import { readSidecar } from '../IO/sidecar'
+import { readSidecar } from '../Files/sidecar'
 
 const ulidList = z.array(z.string()).optional()
 

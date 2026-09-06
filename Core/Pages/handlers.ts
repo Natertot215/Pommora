@@ -1,8 +1,8 @@
 import { type Handlers, withRoot } from '../Contract/handlers'
 import { fail, NO_NEXUS, ok } from '../Contract/result'
 import { isFiniteNumber, isString } from '../Contract/validators'
-import { readPageDetail } from '../IO/pageFile'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { readPageDetail } from '../Files/pageFile'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { pushValueChanges } from '../Nexus/confirm'
 import { sessionRoot } from '../Nexus/session'
 import {

@@ -2,8 +2,8 @@
 
 import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
-import { readTextOrNull } from '../IO/atomicWrite'
-import { splitFrontmatter } from '../IO/pageFile'
+import { readTextOrNull } from '../Files/atomicWrite'
+import { splitFrontmatter } from '../Files/pageFile'
 
 export async function keyHolderFiles(
   root: string,

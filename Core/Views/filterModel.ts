@@ -7,7 +7,7 @@ import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/vie
 export type { MatchMode }
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { Icon } from '@pommora/uix/Symbols'
-import { contextsByIdOf } from '../Properties/contextIdentity'
+import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import { FILTER_OPS } from './Pipeline/filter'
 import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/Cells/PropertyTypes'

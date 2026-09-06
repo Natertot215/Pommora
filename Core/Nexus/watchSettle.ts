@@ -1,15 +1,15 @@
-import { relative } from '../Locations/posix'
-import { escapes } from '../Locations/pathSafety'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Locations/nexusPaths'
+import { relative } from '../Paths/posix'
+import { escapes } from '../Paths/pathSafety'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Paths/nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
   neverWatched,
   rootSegs,
   type WatchScope,
-} from '../Locations/exclusion'
-import { isMarkdownFile } from '../IO/walk'
-import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '../Locations/paths'
+} from '../Paths/exclusion'
+import { isMarkdownFile } from '../Files/walk'
+import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES, TILE_DOC_FILENAME } from '../Paths/paths'
 import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
 import type { NexusTree, ValueChange } from './tree'
 import { getLiveTree } from './liveTree'

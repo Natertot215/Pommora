@@ -11,7 +11,7 @@ import { embeddable } from '../Engine/embedRanges'
 import { HEADING_FOLD_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
-import { webpageEmbedUrlSpan } from '@pommora/core/Web/webpageEmbed'
+import { webpageEmbedUrlSpan } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
 
 const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']

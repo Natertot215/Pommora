@@ -1,6 +1,6 @@
-import type { ActionItem } from './menuModel'
-import { pageMetaMenuSubset, type PageMetaAction } from './pageMenu'
-import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
+import type { ActionItem } from '../../Actions/menuModel'
+import { pageMetaMenuSubset, type PageMetaAction } from '../../Actions/pageMenu'
+import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../../Properties/properties'
 
 export interface ConnMenuContext {
   surface: ConnSurface

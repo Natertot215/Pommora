@@ -1,6 +1,6 @@
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
-import { nodesOf } from '../../Session/treeIndex'
+import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
+import { nodesOf } from '../../Nexus/treeIndex'
 
 export type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
 export type Entry = {

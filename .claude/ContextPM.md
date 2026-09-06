@@ -102,7 +102,7 @@ Every drag-to-size and drag-to-move gesture on one box — the floating windows,
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
 
-Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `Core/Utilities/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
+Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `UIX/Utilities/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
 
 #### PM-125 || Page File History
 **DATE:** 09-02-2026

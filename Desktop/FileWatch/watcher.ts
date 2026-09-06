@@ -2,7 +2,7 @@
 
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
-import { sameScope, type WatchScope } from '@pommora/core/Locations/exclusion'
+import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
   ignoredUnder,
   isNavPath,
@@ -11,7 +11,7 @@ import {
 } from '@pommora/core/Nexus/watchSettle'
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
-import { isRecentWrite } from '@pommora/core/IO/writeEcho'
+import { isRecentWrite } from '@pommora/core/Files/writeEcho'
 import { push as pushToWindow } from '../Bridge/ipc'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'

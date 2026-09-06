@@ -4,8 +4,11 @@ import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import type { GripMenuAction, GripMenuContext, PickNode } from '@pommora/core/Actions/gripMenu'
-import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
-import type { CitationMenuAction, CitationMenuContext } from '@pommora/core/Actions/citationMenu'
+import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
+import type {
+  CitationMenuAction,
+  CitationMenuContext,
+} from '@pommora/core/MarkdownPM/Citations/citationMenu'
 
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string }

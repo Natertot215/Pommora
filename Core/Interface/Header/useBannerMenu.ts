@@ -4,7 +4,7 @@ import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function useBannerMenu(

@@ -8,7 +8,7 @@ import { ID_KEY, kindOf } from './identityMark'
 import { readNexus } from './readNexus'
 import { stampAdopted } from './adopt'
 import { agendaContext, resolveFolderKind } from './folderKind'
-import { pathExists, readJsonObject } from '../IO/atomicWrite'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { renameCascade } from './cascade'
 import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
@@ -18,7 +18,7 @@ import {
   nexusConfig,
   NEXUS_CONFIG_FILES,
   SIDECAR_FILENAME,
-} from '../Locations/paths'
+} from '../Paths/paths'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
 const deps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }

@@ -5,7 +5,7 @@ import {
   contextsByIdOf,
   type SpaceIdentity,
   spacesByIdOf,
-} from './contextIdentity'
+} from '../Contexts/contextIdentity'
 
 export interface ValueContext {
   schema: PropertyDefinition[]

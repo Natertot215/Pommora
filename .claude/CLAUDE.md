@@ -37,7 +37,7 @@ Pommora is an **Electron** desktop app, organized as workspaces: `Core` (the app
 
 #### Testing Conventions
 
-- **The visual iteration scratchpad** — `Core/Utilities/IterationWindow.tsx`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
+- **The visual iteration scratchpad** — `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
 - **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages and data manipulation are accepted, and the preferred verification when Nathan can't visually confirm; the one requirement is that any change made is reverted when done.
 - **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers every `tsconfig` project. `npm run test` is Vitest; `npm run lint` is `biome check` — the linter AND the formatter — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs one.
 - **Launch the GUI** — copy-paste, from the repo root (HMR + CDP armed on `9333`):

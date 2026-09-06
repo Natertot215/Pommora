@@ -1,9 +1,9 @@
-import { basename, dirname, join, relative } from '../Locations/posix'
-import { escapes } from '../Locations/pathSafety'
+import { basename, dirname, join, relative } from '../Paths/posix'
+import { escapes } from '../Paths/pathSafety'
 import { machine } from '../Platform/machine'
-import { TRASH_DIR } from '../Locations/nexusPaths'
-import { pathExists } from '../IO/atomicWrite'
-import { recordWrite } from '../IO/writeEcho'
+import { TRASH_DIR } from '../Paths/nexusPaths'
+import { pathExists } from '../Files/atomicWrite'
+import { recordWrite } from '../Files/writeEcho'
 
 export const BUNDLE_SUFFIX = '.deleted'
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { splitFrontmatter } from '../IO/pageFile'
+import { splitFrontmatter } from '../Files/pageFile'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
@@ -11,8 +11,8 @@ import {
   readSettingsLeaves,
   scopeOf,
 } from '../Settings/codec'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
-import { corpusFiles } from '../IO/walk'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import { corpusFiles } from '../Files/walk'
 import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colors'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { HISTORY_DAYS } from '../Settings/personalization'

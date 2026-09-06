@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function useNexusIcon() {

@@ -13,7 +13,7 @@ import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
-import { ancestryOf } from '../../Session/treeIndex'
+import { ancestryOf } from '../../Nexus/treeIndex'
 
 import '../tile-base.css'
 import '../tile-title.css'
