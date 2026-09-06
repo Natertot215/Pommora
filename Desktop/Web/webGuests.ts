@@ -1,6 +1,4 @@
-// One owner for the guest-webview story: what an attach is allowed to be, which session guests
-// live on, where their popups go, and how they track the host's zoom. Every embed surface —
-// tiles, the in-app browser, glances — attaches under these rules; none carries its own.
+// One owner for the guest-webview story: the attach gate, the shared session, popup routing, zoom.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
 import { hasWebScheme, isHttpLink } from '@pommora/core/Connections/links'
@@ -8,18 +6,13 @@ import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
 import { push } from '../Bridge/ipc'
 
-/** The sign-in host whose server-side detection additionally trips on the Chrome token; requests
- *  to it carry the suffix-stripped UA variant. */
+/** Its server-side detection additionally trips on the Chrome token. */
 const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
 
-/** The explicit scheme is required on top of the shared validation — `isHttpLink` alone normalizes
- *  a schemeless string to https, which would admit at the trust boundary what the renderer's own
- *  gate refuses. */
+// `isHttpLink` alone normalizes a schemeless string to https, admitting what the renderer refuses.
 const isWebUrl = (url: string): boolean => hasWebScheme(url) && isHttpLink(url)
 
-/** The fallback UA with the tokens that name this as an Electron app removed — Ferdium's recipe,
- *  session-wide. All of it best-effort by decision: the detection is server-side policy, not a UA
- *  sniff. */
+// Best-effort by decision: the detection is server-side policy, not a UA sniff.
 function cleanedUA(): string {
   const name = app.getName().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return app.userAgentFallback
@@ -35,25 +28,19 @@ const hostOf = (url: string): string => {
   }
 }
 
-/** The one session every guest lives on — the wiring stamps it, the wipes clear it. */
 const webSession = (): Session => session.fromPartition(WEB_PARTITION)
 
 const webviewGuests = (): WebContents[] =>
   webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
 
-// The user's web-guest scale (personalization.webZoomFactor) — guests render at their host's
-// factor times this. Not derivable here: settings live per-nexus, so the boot read and the
-// settings write both push the coerced value in.
+// Not derivable here: settings live per-nexus, so the boot read and the settings write push it in.
 let webZoom = WEB_ZOOM_DEFAULT
 
-/** The settings seam: re-stamps every living guest so a changed preference applies in place. */
 export function setWebZoomFactor(factor: number): void {
   webZoom = factor
   syncGuestZoom()
 }
 
-/** A webpage tile's own Scale, keyed by its guest's WebContents — it survives the per-navigation
- *  re-stamp and dies with the guest. 1.0 holds no entry. */
 const tileZooms = new Map<number, number>()
 
 export function setGuestTileZoom(guestId: number, factor: number): void {
@@ -62,15 +49,12 @@ export function setGuestTileZoom(guestId: number, factor: number): void {
   for (const g of webviewGuests()) if (g.id === guestId && !g.isDestroyed()) stampGuestZoom(g)
 }
 
-// One derivation of a guest's factor — its own host's zoom scaled by the preference and the
-// tile's own Scale.
 function stampGuestZoom(g: WebContents): void {
   const factor = g.hostWebContents?.getZoomFactor()
   if (factor) g.setZoomFactor(factor * webZoom * (tileZooms.get(g.id) ?? 1))
 }
 
-// App-level wiring registers exactly once — createWindow re-runs on macOS activate, and a
-// listener registered per window would stack for the process lifetime.
+// createWindow re-runs on macOS activate, and a per-window listener would stack for the process life.
 let appWired = false
 function wireAppLevel(): void {
   if (appWired) return
@@ -80,8 +64,7 @@ function wireAppLevel(): void {
   const baseUA = cleanedUA()
   const googleUA = baseUA.replace(/\sChrome\/[\d.]+/, '')
   ses.setUserAgent(baseUA)
-  // Pre-request, not post-navigation: the sign-in page's server-side check reads the document
-  // request itself, and redirect hops into the host arrive with no navigation event of their own.
+  // Pre-request, not post-navigation: redirect hops into the host carry no navigation event.
   ses.webRequest.onBeforeSendHeaders((details, callback) => {
     if (hostOf(details.url) === GOOGLE_SIGNIN_HOST) details.requestHeaders['User-Agent'] = googleUA
     callback({ requestHeaders: details.requestHeaders })
@@ -90,8 +73,7 @@ function wireAppLevel(): void {
   app.on('web-contents-created', (_event, contents) => {
     if (contents.getType() !== 'webview') return
 
-    // A guest's window.open answers only its own handler. The renderer's one open-link
-    // adjudicator decides where the URL goes; no OS window ever opens from a guest.
+    // The renderer's one open-link adjudicator decides where the URL goes; no OS window ever opens.
     contents.setWindowOpenHandler(({ url }) => {
       const host =
         contents.hostWebContents && BrowserWindow.fromWebContents(contents.hostWebContents)
@@ -99,15 +81,13 @@ function wireAppLevel(): void {
       return { action: 'deny' }
     })
 
-    // The attach gate, re-asserted per navigation — a guest re-aimed at file:/javascript: after
-    // a clean attach would otherwise sail through on the signed-in partition.
+    // Re-asserted per navigation: a guest re-aimed after a clean attach would otherwise sail
+    // through on the signed-in partition.
     contents.on('will-navigate', (event, url) => {
       if (!isWebUrl(url)) event.preventDefault()
     })
 
-    // Guests don't inherit host zoom (per-render-host, and theirs is their own), and their zoom
-    // is per-origin in their session — every commit re-stamps from the embedder's live factor,
-    // so a slow page never renders unscaled while it loads.
+    // Guests inherit no host zoom and theirs is per-origin, so each commit re-stamps live.
     contents.on('did-navigate', () => stampGuestZoom(contents))
     contents.once('destroyed', () => tileZooms.delete(contents.id))
   })
@@ -118,11 +98,8 @@ export function installWebGuests(win: BrowserWindow): void {
 
   win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
     // Validator, not rewriter — spike-proven: `params` edits here don't reach the attach, so the
-    // surfaces carry `partition` (and `allowpopups`, without which a guest's window.open dies
-    // inside Blink before setWindowOpenHandler is consulted) as attributes, and an attach that
-    // doesn't wear the shared partition, carries a hostile src, or asks for its own
-    // webpreferences is denied outright. The renderer's own scheme gate makes all three
-    // unreachable from app code; this is the trust boundary.
+    // surfaces carry `partition` and `allowpopups` as attributes (without the latter a guest's
+    // window.open dies inside Blink). This is the trust boundary.
     const src = params.src ?? ''
     if (
       (src !== '' && !isWebUrl(src)) ||
@@ -139,8 +116,7 @@ export function installWebGuests(win: BrowserWindow): void {
     webPreferences.allowRunningInsecureContent = false
   })
 
-  // Wheel/pinch zoom bypasses the menu seam; Chromium applies it before this event's turn ends,
-  // so the sync reads the settled factor a tick later.
+  // Chromium applies wheel/pinch zoom before this event's turn ends, so the sync defers a tick.
   win.webContents.on('zoom-changed', () =>
     setImmediate(() => {
       if (!win.isDestroyed()) syncGuestZoom()
@@ -152,8 +128,6 @@ function syncGuestZoom(): void {
   for (const g of webviewGuests()) if (!g.isDestroyed()) stampGuestZoom(g)
 }
 
-/** Scrolls a guest from its host's wheel. A guest whose host chrome owns the pointer sees no wheel
- *  of its own, so the event is replayed into it at the position the pointer sits over. */
 export function wheelGuest(
   guestId: number,
   x: number,
@@ -161,8 +135,7 @@ export function wheelGuest(
   deltaX: number,
   deltaY: number,
 ): void {
-  // Numbers off the wire, and only ever a guest: a WebContents of any other type is the app's own,
-  // which no renderer may drive, and a non-finite delta is refused by the send itself.
+  // Numbers off the wire, and only ever a guest: any other WebContents is the app's own.
   if (!Number.isFinite(x) || !Number.isFinite(y)) return
   if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return
   const guest = webContents.fromId(guestId)
@@ -170,8 +143,7 @@ export function wheelGuest(
   guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
 }
 
-// The script is a fixed constant, never renderer-supplied — only a guest id crosses the wire. Run
-// per frame, so an iframe-embedded player (YouTube and the like) pauses, not just the top document.
+// A fixed constant, never renderer-supplied; per frame so an iframe player pauses too.
 const PAUSE_MEDIA = 'document.querySelectorAll("video,audio").forEach((m)=>m.pause())'
 export function pauseGuestMedia(guestId: number): void {
   const guest = webContents.fromId(guestId)
@@ -180,21 +152,17 @@ export function pauseGuestMedia(guestId: number): void {
     void frame.executeJavaScript(PAUSE_MEDIA).catch(() => {})
 }
 
-/** The single seam every host-zoom writer uses; a bare `setZoomFactor` elsewhere leaves guests
- *  at the old scale. */
+/** The single seam: a bare `setZoomFactor` elsewhere leaves guests at the old scale. */
 export function setHostZoom(wc: WebContents, factor: number): void {
   wc.setZoomFactor(factor)
   syncGuestZoom()
 }
 
-// Chromium's visual zoom range; the de-roled step clamps to it where the native roles let the
-// stored level run past the visible cap and go dead on the way back.
+// Chromium's visual zoom range; the native roles let the stored level run past the visible cap.
 const ZOOM_FACTOR_MIN = 0.25
 const ZOOM_FACTOR_MAX = 5
 
-/** ⌘+/⌘− with the stride the native roles had. De-roled because the roles act on whatever
- *  WebContents holds focus — a focused guest would zoom itself, not the host — and their writes
- *  bypass the guest sync. */
+/** De-roled: a role acts on whatever holds focus, so a focused guest would zoom itself. */
 export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
   const factor = wc.getZoomFactor() * 1.2 ** (dir * 0.5)
   setHostZoom(wc, Math.min(ZOOM_FACTOR_MAX, Math.max(ZOOM_FACTOR_MIN, factor)))

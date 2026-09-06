@@ -6,8 +6,6 @@ import { hiddenName } from '../Locations/exclusion'
 import { admitContentFile } from './identityMark'
 import { frontmatterWritable, readFrontmatterFields } from '../IO/pageFile'
 
-export { pathExists } from '../IO/atomicWrite'
-
 /** Rejects path separators, dot dirs, and a trailing managed extension (writers append that
  *  themselves — "Note.md" would otherwise yield "Note.md.md"). Single source across page + folder CRUD. */
 export function invalidName(name: string): boolean {

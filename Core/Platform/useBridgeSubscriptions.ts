@@ -26,9 +26,7 @@ export function useBridgeSubscriptions(): void {
     return dialer().on('begin-rename', ({ path, create, host }) => beginRename(path, create, host))
   }, [beginRename])
 
-  useEffect(() => {
-    return dialer().on('begin-icon', ({ path }) => beginIcon(path))
-  }, [beginIcon])
+  useEffect(() => dialer().on('begin-icon', ({ path }) => beginIcon(path)), [beginIcon])
 
   useEffect(() => {
     return dialer().on(
@@ -62,25 +60,19 @@ export function useBridgeSubscriptions(): void {
     })
   }, [openHistory])
 
-  useEffect(() => {
-    return dialer().on('nexus:changed', (next) => void applyTree(next))
-  }, [applyTree])
+  useEffect(() => dialer().on('nexus:changed', (next) => void applyTree(next)), [applyTree])
 
   const bumpContainerValues = useSession((s) => s.bumpContainerValues)
   useEffect(() => dialer().on('values:changed', bumpContainerValues), [bumpContainerValues])
 
-  useEffect(() => {
-    return dialer().on('nav:changed', (nav) => applyNavChanged(nav))
-  }, [applyNavChanged])
+  useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 
   useEffect(() => {
     void dialer().ask('assets:map').then(applyAssetMap)
     return dialer().on('assets:changed', (map) => applyAssetMap(map))
   }, [applyAssetMap, nexusRoot])
 
-  useEffect(() => {
-    return dialer().on('web:popup', (url) => openWebLink(url))
-  }, [])
+  useEffect(() => dialer().on('web:popup', openWebLink), [])
 
   useEffect(() => {
     return dialer().on('menu:action', (action) => {

@@ -5,13 +5,10 @@ import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
 
-// The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the
-// tab's state. The send items come from the shared page-menu model.
 export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<TabMenuAction | null> {
   return popReturningMenu<TabMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []
-    // A page in a tab can still be opened in the Page Window — the same reach its row has
-    // in the sidebar, so being open somewhere doesn't cost you the gesture.
+    // Being open in a tab doesn't cost the Page Window gesture its row has in the sidebar.
     if (ctx.isPage)
       items.push(
         { label: 'Open Preview', click: pick('window') },

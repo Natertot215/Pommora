@@ -27,16 +27,12 @@ export async function atomicWriteBinary(filePath: string, data: Uint8Array): Pro
   await machine().writeBytes(filePath, data)
 }
 
-function serializeJson(value: unknown): string {
-  return `${stableStringify(value)}\n`
-}
-
 // A leading BOM is encoding, not corruption.
 export const parseJsonText = (text: string): unknown =>
   JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text)
 
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
-  await atomicWriteFile(filePath, serializeJson(value))
+  await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
 }
 
 type StrictRead =

@@ -7,8 +7,6 @@ import {
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 
-// The card's right-click menu — the page-meta items plus an Add Property ▸ submenu of the card's
-// addable properties, with the send block's Move To ▸ tree expanded by the shared page template.
 export function popCardMenu(
   win: BrowserWindow,
   ctx: CardMenuContext,

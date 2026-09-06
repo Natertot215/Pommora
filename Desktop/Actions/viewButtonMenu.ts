@@ -1,5 +1,4 @@
-// The ViewDropdown's right-click native menu. Resolves the picked action to the renderer, which
-// writes it through the one container-config op (view_button).
+// The ViewDropdown's right-click menu; the renderer writes the pick through `view_button`.
 import type { BrowserWindow } from 'electron'
 import type { ViewButton } from '@pommora/core/Views/viewRow'
 import { type ViewButtonMenuAction, viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'

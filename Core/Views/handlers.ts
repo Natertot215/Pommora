@@ -43,7 +43,7 @@ export const viewsHandlers = {
       return fail('operation-failed', 'orderedIds must be a string array.')
     const r = await reorderViews(c.value.folder, c.value.kind, orderedIds)
     if (r.ok) await confirmContainerWrite(ctx, containerPath)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'views:delete': async (ctx, containerPath: unknown, kind: unknown, viewId: unknown) => {
@@ -52,7 +52,7 @@ export const viewsHandlers = {
     if (typeof viewId !== 'string') return fail('operation-failed', 'A view id is required.')
     const r = await deleteView(c.value.folder, c.value.kind, viewId)
     if (r.ok) await confirmContainerWrite(ctx, containerPath)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'container:configure': async (ctx, containerPath: unknown, kind: unknown, patch: unknown) => {
@@ -61,7 +61,7 @@ export const viewsHandlers = {
     if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
     const r = await setContainerConfig(c.value.folder, c.value.kind, patch as ContainerConfigPatch)
     if (r.ok) await confirmContainerWrite(ctx, containerPath)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'view:loadValues': async (_ctx, containerPath: unknown, pageIds: unknown) => {

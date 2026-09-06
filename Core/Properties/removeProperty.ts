@@ -108,7 +108,7 @@ export async function restoreCachedValues(
     const wrote = await machine().lock(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
-      return (await updatePageProperty(file, def, reconciled.value)).ok
+      return (await updatePageProperty(root, file, def, reconciled.value)).ok
     })
     if (wrote) await indexWrittenPage(root, file)
     return wrote

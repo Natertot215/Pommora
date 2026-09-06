@@ -1,7 +1,6 @@
-// Detail-pane thumbnail capture for the Navigation gallery. Captured on entity-open, downscaled,
-// and written under the SYNCED `.nexus/assets/<nexusId>/thumbnails/` tree so a second machine
-// gets real previews. Full-page capturePage then crop (rect × scaleFactor) sidesteps the HiDPI
-// rect-crop bug; JPEG has no alpha (dodges the transparent→black resize bug).
+// Written under the SYNCED thumbnails tree so a second machine gets real previews. Full-page
+// capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the
+// transparent→black resize bug.
 
 import { mkdir, readdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -12,20 +11,18 @@ import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { ensureIdentity } from '@pommora/core/Nexus/identity'
 import { atomicWriteBinary } from '@pommora/core/IO/atomicWrite'
 import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Locations/nexusPaths'
+import { assetUrl } from '@pommora/core/Platform/assetUrl'
 
 const THUMB_WIDTH = 480
 
-/** `#RRGGBB` → `[r, g, b]`. */
 function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
-/** Hide the toolbar chrome overlapping the top of the shot WITHOUT touching the live DOM (no flicker):
- *  overpaint the top `maskTop` band in the captured bitmap. Over a full-bleed banner the band is back-filled
- *  by copying the banner block just below it up over the chrome (chrome gone, banner reads continuous); with
- *  no banner that strip is empty, so it's filled with the window bg. Rebuilt at the same scaleFactor so the
- *  downscale that follows is unchanged. */
+/** Hides the toolbar chrome overlapping the top of the shot WITHOUT touching the live DOM, by
+ *  overpainting the band in the captured bitmap. Over a full-bleed banner it back-fills by copying
+ *  the block below the band up over the chrome, so the banner reads continuous. */
 function maskTopBand(
   img: NativeImage,
   maskTopDip: number,
@@ -52,14 +49,11 @@ function maskTopBand(
   return nativeImage.createFromBitmap(bmp, { width, height, scaleFactor: sf })
 }
 
-/** navKey → filesystem-safe thumbnail key (the colon is illegal on Windows). */
 const thumbsDir = (root: string, nexusId: string): string => join(root, thumbsRel(nexusId))
 
-/** Capture the content-only rect as a downscaled JPEG, overwrite its keyed file, return its asset URL —
- *  or null on a bad/blank capture (the card falls back to a placeholder). `capturePage(rect)` returns an
- *  empty image on HiDPI (the rect-crop bug), so we grab the whole page and crop in device pixels. `rect`
- *  is DIP; `scaleFactor` (the renderer's devicePixelRatio, which folds in both the display scale and any
- *  page zoom) maps it onto the captured image's pixels. */
+/** Null on a bad or blank capture; the card falls back to a placeholder. `capturePage(rect)`
+ *  returns an empty image on HiDPI, so the whole page is grabbed and cropped in device pixels:
+ *  `rect` is DIP, and `scaleFactor` (devicePixelRatio) maps it onto the captured image. */
 export async function captureThumbnail(
   win: BrowserWindow,
   root: string,
@@ -93,12 +87,11 @@ export async function captureThumbnail(
   const rel = thumbRel(nexusId, key)
   await mkdir(dirname(join(root, rel)), { recursive: true })
   await atomicWriteBinary(join(root, rel), buf)
-  return `nexus-asset://nexus/${rel}`
+  return assetUrl(rel)
 }
 
-/** Delete thumbnails whose key isn't in `liveKeys` — the caller passes every navKey that still exists
- *  (∪ recents/pins as a fault guard), so this drops only orphans (a deleted entity's leftover), never a
- *  live cover. No-op when the folder doesn't exist yet. */
+/** The caller passes every navKey that still exists (∪ recents and pins as a fault guard), so only
+ *  orphans are dropped, never a live cover. */
 export async function evictThumbnails(root: string, liveKeys: string[]): Promise<void> {
   const { id: nexusId } = await ensureIdentity(root)
   const dir = thumbsDir(root, nexusId)

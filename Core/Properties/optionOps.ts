@@ -25,6 +25,8 @@ import {
 } from './properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
+const NO_PROPERTY = fail('not-found', 'Property not found.')
+
 /** Applies to Select / Multi-Select only — rejected up front rather than left to the write. */
 function requireOptionType(type: PropertyType): Result<null> {
   return hasSelectOptions(type)
@@ -43,7 +45,7 @@ export function setOptions(
   return serializeSchemaOp(() =>
     mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
-      if (!current) return { result: fail('not-found', 'Property not found.') }
+      if (!current) return { result: NO_PROPERTY }
       const typeCheck = requireOptionType(current.type)
       if (!typeCheck.ok) return { result: typeCheck }
       const check = validateOptionValues(options)
@@ -67,7 +69,7 @@ export function setStatusGroups(
   return serializeSchemaOp(() =>
     mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
-      if (!current) return { result: fail('not-found', 'Property not found.') }
+      if (!current) return { result: NO_PROPERTY }
       if (current.type !== 'status') {
         return {
           result: fail('invalid-property', 'Status groups can only be set on a Status property.'),
@@ -92,7 +94,7 @@ export function addOptionToDef(
 ): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry) => {
     const current = registry.defs[propertyId]
-    if (!current) return { result: fail('not-found', 'Property not found.') }
+    if (!current) return { result: NO_PROPERTY }
     if (current.type !== 'multi_select')
       return { result: fail('invalid-property', 'Only a Multi-Select adopts options.') }
     const options = current.select_options ?? []
@@ -130,7 +132,7 @@ export function dropOptionFromDef(
 ): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry) => {
     const current = registry.defs[propertyId]
-    if (!current) return { result: fail('not-found', 'Property not found.') }
+    if (!current) return { result: NO_PROPERTY }
     const next =
       current.type === 'status'
         ? {
@@ -159,7 +161,7 @@ async function resolveForCascade(
   requireType: RequireType,
 ): Promise<Result<string>> {
   const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return fail('not-found', 'Property not found.')
+  if (!def) return NO_PROPERTY
   const typeCheck = requireType(def.type)
   if (!typeCheck.ok) return typeCheck
   return ok(def.name)
@@ -223,7 +225,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
       const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
       const edit = await mutateRegistry<Result<string>>(root, (registry) => {
         const def = registry.defs[propertyId]
-        if (!def) return { result: fail('not-found', 'Property not found.') }
+        if (!def) return { result: NO_PROPERTY }
         const typeCheck = requireType(def.type)
         if (!typeCheck.ok) return { result: typeCheck }
         const edited = editDef(def, oldValue, newTitle)

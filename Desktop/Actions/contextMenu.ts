@@ -1,8 +1,6 @@
-// Per-kind native context menu for a sidebar entity. The renderer captures the right-click and
-// hands main a ContextTarget; main pops a native Menu whose items run main-side (handleMutate /
-// Finder), then signals the renderer to refetch on change. Rename and Delete are intentionally
-// absent from that main-side set — one needs an inline rename in the renderer, the other the
-// renderer's confirmation.
+// Per-kind native context menu for a sidebar entity: the renderer hands over a ContextTarget, the
+// items run host-side, and the renderer is signalled to refetch on change. Rename and Delete are
+// absent from that host-side set — one needs an inline field, the other a confirmation.
 
 import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
@@ -31,10 +29,8 @@ import type {
 } from '@pommora/core/Pages/mutateRequest'
 import { openLabel } from '@pommora/core/Actions/toggleLabels'
 
-/** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
- *  kinds offer none. Collections and Sets route through the shared rule so this menu and the
- *  subfield's add button can't drift. A Context group offers "New <Singular>", resolved from
- *  the registry by the folder's title. */
+/** Collections and Sets route through the shared rule so this menu and the subfield's add button
+ *  can't drift. A Context group offers "New <Singular>", resolved by the folder's title. */
 async function creatorsFor(
   root: string,
   kind: MutableKind,
@@ -58,9 +54,8 @@ async function creatorsFor(
   }
 }
 
-/** Build + pop the native context menu for `target`, applying actions main-side. `onChanged`
- *  fires after any successful mutation, carrying what ran so the caller can confirm the
- *  live tree the way every renderer-driven mutation is confirmed. */
+/** `onChanged` fires after any successful mutation, carrying what ran so the caller can confirm
+ *  the live tree the way every renderer-driven mutation is confirmed. */
 export async function showContextMenu(
   win: BrowserWindow,
   target: ContextTarget,
@@ -74,7 +69,6 @@ export async function showContextMenu(
     const res = await handleMutate(req, deps)
     if (res.ok) {
       onChanged(req, res.value)
-      // A create lands in its rename field, same as the renderer's own create menus.
       if (res.value.created)
         push(win, 'begin-rename', { path: res.value.created.path, create: true, host: target.host })
     } else
@@ -87,15 +81,14 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
-  // target.path is renderer-supplied, so it resolves through the root guard — an unguarded join
-  // would let `..` reveal a file outside the nexus.
+  // Renderer-supplied, so it resolves through the root guard: an unguarded join would let `..`
+  // reveal a file outside the nexus.
   const reveal = async (): Promise<void> => {
     const r = await resolveUnderRoot(root, target.path)
     if (r.ok) shell.showItemInFolder(r.value)
   }
 
-  /** One page action → what it does. Renderer-side work (a tab, a naming field, a picker, a
-   *  sibling's position) travels as a push, because only the renderer holds the tab set and the
+  /** Renderer-side work travels as a push, because only the renderer holds the tab set and the
    *  sibling order; the rest lands here. */
   const runPageAction = async (action: PageMetaAction | PageMoveAction): Promise<void> => {
     if (action.startsWith('move:'))
@@ -136,10 +129,8 @@ export async function showContextMenu(
     }
   }
 
-  // A page's menu is the shared one, whole: `pageMetaMenuItems` is where the page actions and their
-  // order live, so this menu and the ones the table, the cards and the row grips pop can't drift.
-  // Every other kind builds below — containers offer creators and no page meta, which is a different
-  // menu rather than a subset of this one.
+  // A page's menu is the shared model, whole, so it can't drift from the ones the table, the cards
+  // and the row grips pop. A container's is a different menu, not a subset of it.
   if (target.kind === 'page') {
     items.push(
       ...rowTemplate(
@@ -161,8 +152,7 @@ export async function showContextMenu(
     return
   }
 
-  // Open New Tab — the action runs renderer-side (only the renderer knows the tab set); an
-  // already-open entity reads "Open" and the push-back focuses its tab.
+  // Only the renderer knows the tab set; an already-open entity reads "Open" and focuses its tab.
   if (target.id) {
     items.push({
       label: openLabel(target.alreadyOpen),
@@ -175,8 +165,8 @@ export async function showContextMenu(
   for (const c of creators) items.push({ label: c.label, click: () => void run(c.req) })
   if (creators.length) items.push({ type: 'separator' })
 
-  // Rename is inline in the renderer (native menus can't take text), so this only signals
-  // the renderer to put the matching row into edit mode; the commit goes through mutate.
+  // Native menus can't take text, so this only opens the renderer's inline field; the commit
+  // still goes through mutate.
   items.push({
     label: 'Rename',
     click: () => push(win, 'begin-rename', { path: target.path, host: target.host }),
@@ -198,8 +188,8 @@ export async function showContextMenu(
   }
   items.push({ label: 'Reveal Location', click: () => void reveal() })
 
-  // Resolve on dismissal, not at pop — a fire-and-forget caller ignores it, but a surface
-  // holding a hover affordance down (the ghost's suppress) needs the close to release it.
+  // Resolve on dismissal, not at pop: a surface holding a hover affordance down (the ghost's
+  // suppress) needs the close to release it.
   await new Promise<void>((resolve) => {
     Menu.buildFromTemplate(items).popup({ window: win, callback: resolve })
   })

@@ -1,6 +1,6 @@
-// The editor's native right-click menu. Built from the OS `context-menu` event (so spelling,
-// Share, Speech, and the system edit roles come native) plus Pommora formatting submenus drawn
-// from the renderer's last-pushed FormatState, since Electron's static params can't see CM6 state.
+// Built from the OS `context-menu` event, so spelling, Share, Speech and the edit roles come
+// native, plus formatting submenus drawn from the renderer's last-pushed FormatState — Electron's
+// static params cannot see CM6 state.
 
 import { Menu, clipboard } from 'electron'
 import type {
@@ -25,16 +25,14 @@ export function setFormatState(s: FormatState): void {
   lastState = s
 }
 
-// The renderer flags when the pointer sits on any block grip (set on hover, live before the
-// right-press). Grips are editable content, so the generic editor menu would otherwise fire over
-// them too; this lets each grip's own menu be the only one.
+// Grips are editable content, so the generic editor menu would fire over them too; the renderer
+// flags the hover before the right-press so each grip's own menu is the only one.
 let gripHot = false
 export function setGripHot(on: boolean): void {
   gripHot = on
 }
 
-// The context-menu event hands over a bare WebContents, not a BrowserWindow, so the typed
-// push (which takes a window) can't be used here.
+// The event hands over a bare WebContents, so the typed push (which takes a window) can't be used.
 const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 
@@ -66,10 +64,9 @@ function systemItems(
     { role: 'cut', enabled: f.canCut },
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
-    // Paste As only means anything where a markdown surface is receiving it.
     ...(editorFocused ? pasteAsItems(wc) : []),
-    // The `pasteAndMatchStyle` role would take back ⌘⇧V's accelerator, which now belongs to the
-    // inverse paste command (→ ConfigurationPM §Commands).
+    // The `pasteAndMatchStyle` role would take back ⌘⇧V, which now belongs to the inverse paste
+    // command (→ ConfigurationPM §Commands).
     {
       label: 'Paste Without Formatting',
       enabled: f.canPaste,
@@ -80,7 +77,7 @@ function systemItems(
   return items
 }
 
-// OS sharing/speech — placed last so the Pommora formatting block sits directly under the edit items.
+// Last, so the Pommora formatting block sits directly under the edit items.
 function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions[] {
   if (!params.selectionText) return []
   return [
@@ -90,12 +87,10 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
-/** The FormatState fields a checkbox row can wear a checkmark from. */
 type FormatFlag = {
   [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
 }[keyof FormatState]
 
-/** The Format submenu's rows, in display order. */
 const FORMAT_ROWS: readonly {
   label: string
   action: FormatChordAction
@@ -118,8 +113,7 @@ function pommoraItems(
   const act = (a: string): (() => void) => dispatch(wc, a)
   return [
     { type: 'separator' },
-    // Turns a selected address into a link without retyping it; offered only when the selection IS
-    // one, which is what keeps it apart from Format ▸ Link (an empty target for un-pointed words).
+    // Offered only when the selection IS an address, which keeps it apart from Format ▸ Link.
     ...(isValidLink(selection) ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }] : []),
     {
       label: 'Insert',
@@ -139,8 +133,7 @@ function pommoraItems(
     },
     {
       label: 'Format',
-      // Accelerators are display-only (registerAccelerator: false); the keys are bound in
-      // formatKeymap.ts, from the same FORMAT_CHORDS this reads.
+      // Display-only; the keys are bound in formatKeymap.ts from the same FORMAT_CHORDS.
       submenu: FORMAT_ROWS.map(({ label, action, state }) => ({
         label,
         type: 'checkbox' as const,
@@ -192,10 +185,8 @@ function pommoraItems(
   ]
 }
 
-// What the clipboard could be pasted as, where it holds anything that can become more than itself.
-// The clipboard is read here rather than pushed from the renderer: the offer is decided from its
-// text alone, and the renderer cannot read it in time — main's `context-menu` event fires in the same
-// turn as the right-click that triggers it.
+// The clipboard is read here rather than pushed from the renderer: the `context-menu` event fires
+// in the same turn as the right-click, so the renderer cannot read it in time.
 function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
   const rows = pasteAsRows(
     clipboard.readText(),

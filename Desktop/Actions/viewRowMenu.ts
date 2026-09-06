@@ -6,7 +6,6 @@ import {
 } from '@pommora/core/Actions/viewRowMenu'
 import { popModelMenu } from './rowMenu'
 
-/** A saved view row's right-click menu — the model's rows, nothing else. */
 export function popViewRowMenu(
   win: BrowserWindow,
   ctx: ViewRowMenuContext,

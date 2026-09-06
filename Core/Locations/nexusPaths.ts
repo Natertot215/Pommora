@@ -1,7 +1,5 @@
-// The on-disk names, nexus-relative and POSIX. Both processes build the same strings: main
-// resolves them against the nexus root (`main/paths.ts` holds every absolute-path builder — this
-// module has no node:path and no fs), and the renderer names the same folders in the tree paths it
-// hands back. A path a lock, a watcher rule, and a menu row all speak has to be one spelling.
+// The on-disk names, nexus-relative and POSIX; `paths.ts` beside it holds the absolute-path
+// builders. A path a lock, a watcher rule, and a menu row all speak has to be one spelling.
 
 import { HAS_SCHEME } from './url'
 
@@ -11,50 +9,42 @@ export const NEXUS_DIR = '.nexus'
 /** The deletion record's folder, mirroring the nexus. */
 export const TRASH_DIR = '.trash'
 
-/** The walk skips these, the index refuses to key anything under them, and a mutation refuses to
- *  target them. The watcher is not among the readers — it watches `.nexus` on purpose. */
+/** The walk, the index, and every mutation refuse these. Not the watcher — it watches `.nexus`. */
 export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR])
 
-/** The Contexts registry — the one identity source for every Context (id, title, singular, icon). */
+/** The one identity source for every Context (id, title, singular, icon). */
 export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/contexts.json`
 
-/** Where Contexts live, and its bare name — the watcher matches path segments rather than
- *  prefixes. `.trash` mirrors the nexus, so a trashed Space's frozen chain wears this prefix and the
- *  trash browser strips it back off. */
+/** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
 /** The thumbnail root, and the default value of the user-configurable `asset_directory`. */
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
-/** The asset root a file property's files land under — the configured root, or the subfolder its
- *  Directory names beneath it. An absent subfolder resolves to the root itself. Both processes
- *  compose it: main to aim the write, the renderer to aim the dialog it opens. */
+/** The asset root a file property's files land under; an absent subfolder means the root itself. */
 export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
   return [assetDir, subfolder].filter(Boolean).join('/')
 }
 
-/** A nav key names a thumbnail's file, with its colon flipped to a dash — a colon is legal in a key
- *  and hostile in a filename. Stated here because the writer and every reader must agree on it. */
+/** A colon is legal in a nav key and hostile in a filename. */
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
 
-/** A nexus's synced thumbnail folder, and one thumbnail inside it. Pinned to `ASSETS_DIR_REL`
- *  deliberately: these are Pommora's own derived files, so they stay where the app owns them
- *  rather than following `asset_directory` into a shared folder. */
+/** Pinned to `ASSETS_DIR_REL` deliberately: these are Pommora's own derived files, so they stay
+ *  where the app owns them rather than following `asset_directory` into a shared folder. */
 export const THUMBNAILS_SEGMENT = 'thumbnails'
 export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 
-// One spelling: main keys crops from `assetFilePath`, the renderer from `resolveAssetValue`.
+// One spelling: the write side keys crops from `assetFilePath`, the read side `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {
   const trimmed = raw.trim()
   return rel ?? (HAS_SCHEME.test(trimmed) ? trimmed : null)
 }
 
-/** A Context's own folder — its title names it, which is why a retitle is a folder rename. */
+/** Its title names it, which is why a retitle is a folder rename. */
 export const contextDirRel = (title: string): string => `${CONTEXTS_DIR_REL}/${title}`
 
-/** A Space's folder inside its Context. */
 export const spaceDirRel = (contextTitle: string, name: string): string =>
   `${contextDirRel(contextTitle)}/${name}`

@@ -132,7 +132,7 @@ export const propertiesHandlers = {
       return fail('operation-failed', 'propertyId and newName must be strings.')
     const r = await editProperty(c.value.root, propertyId, { name: newName })
     if (r.ok) await confirmRegistryWrite(ctx)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'schema:reorder': async (ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
@@ -142,7 +142,7 @@ export const propertiesHandlers = {
       return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
     const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
     if (r.ok) await confirmRegistryWrite(ctx, c.value.rel)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'schema:delete': async (ctx, containerPath: unknown, propertyId: unknown) => {
@@ -151,7 +151,7 @@ export const propertiesHandlers = {
     if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
     const r = await removeProperty(c.value.root, c.value.folder, propertyId)
     if (r.ok) await confirmRegistryWrite(ctx, c.value.rel)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'schema:assign': async (ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
@@ -165,7 +165,7 @@ export const propertiesHandlers = {
       typeof toIndex === 'number' ? toIndex : undefined,
     )
     if (r.ok) await confirmRegistryWrite(ctx, c.value.rel)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'registry:reorder': async (ctx, propertyId: unknown, toIndex: unknown) => {
@@ -175,7 +175,7 @@ export const propertiesHandlers = {
       return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
     const r = await reorderRegistry(root, propertyId, toIndex)
     if (r.ok) await confirmRegistryWrite(ctx)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'property:delete': async (ctx, propertyId: unknown) => {
@@ -184,7 +184,7 @@ export const propertiesHandlers = {
     if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
     const r = await deleteProperty(root, propertyId)
     if (r.ok) await confirmRegistryWrite(ctx)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'property:setOptions': async (ctx, propertyId: unknown, options: unknown) => {
@@ -195,7 +195,7 @@ export const propertiesHandlers = {
       return fail('operation-failed', 'Options must be an array of { value, label }.')
     const r = await setOptions(root, propertyId, options)
     if (r.ok) await confirmRegistryWrite(ctx)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'property:setStatusGroups': async (ctx, propertyId: unknown, groups: unknown) => {
@@ -205,7 +205,7 @@ export const propertiesHandlers = {
     if (!Array.isArray(groups)) return fail('operation-failed', 'Status groups must be an array.')
     const r = await setStatusGroups(root, propertyId, groups as StatusGroup[])
     if (r.ok) await confirmRegistryWrite(ctx)
-    return r.ok ? ok(null) : r
+    return r
   },
 
   'property:setLinkConfig': defEditOp(narrowLinkConfig),
