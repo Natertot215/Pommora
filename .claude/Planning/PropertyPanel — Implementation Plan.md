@@ -62,7 +62,14 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 
 **Baseline invariant:** `npm run test` passes with the same test count before and after every phase, plus only the tests these tasks add. No test deleted, weakened, or narrowed.
 
-**No Declared Stops.** Per standing preference, every **Verify — user** box carries to Completion Criteria and is walked once at the end.
+**Declared Stops** *(ratified with the plan)*
+
+- **Gate 1** (after Task 3) — Cards and Table both run on the new picker. Six placement contracts, the two-pane chooser, and the bar-look number field are all things only Nathan can judge, and a wrong call here propagates into the panel.
+- **Gate 2** (after Task 5) — the panel ships and `Page/` is gone. The row shape, the value's truncation choice, and the Add flow are Nathan's to accept before the census runs against them.
+
+Execution halts at each until Nathan closes its boxes.
+
+**Advisor gate (mandatory).** Before folding ANY attack-review or code-review findings, consult the Fable advisor with the findings and the plan's rulings. Its job is to strike, not to add: drop false positives, drop findings resting on unreachable states, and drop anything whose remedy adds a mechanism the codebase does not need. Fold only what survives that pass. This applies at every gate and at closeout.
 
 **Global Constraints (every task inherits these)**
 
