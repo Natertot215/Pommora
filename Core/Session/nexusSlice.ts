@@ -88,7 +88,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
-            // One round of latency; only the raw database reads can reject, so only they catch.
             await Promise.all([
               host()
                 .ask('subfield:get')
