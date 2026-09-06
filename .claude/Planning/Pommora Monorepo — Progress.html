@@ -105,7 +105,7 @@ const DATA = {
     ], gate: { name: "Gate 2", state: "done", hash: "de8c32b8", note: "Two Opus reviewers; −120 gross; a second assetUrl writer and the last sessionRoot reach-in fixed; tests 322 / 3,992." } },
     { name: "Phase 3", title: "Filing inside the domains · review → polish → move, Fable reviews each domain before its re-nest", tasks: [
       { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "done", hash: "48b23960", note: "Review d1e42e19 (+96, the restored asset migration +183), comments 3804eb52 (3,246 → 1,003 lines), move 48b23960 (−284). PagePropertyRows with its variant; one tree index; flavor → kind. Run stands +89 vs base." },
-      { n: 11, title: "MarkdownPM re-nests; the model separates", state: "running", note: "Opus review (rulings 16–18, caretPlacement, markdown-tables.css, the color inventory, comments) in flight; then the re-nest." },
+      { n: 11, title: "MarkdownPM re-nests; the model separates", state: "running", note: "Review a9d737ab (−36; comments 2,214 → 759). Re-nest in flight: Engine/ and the ten folders, MarkdownEditor.tsx + markdown-pm.css at the root; Editor/ keeps only Task 14's host wiring." },
       { n: 12, title: "UIX settles at its root; motion has one definition", state: "pending" },
     ], gate: { name: "Gate 3", state: "pending", note: "One smoke launch." } },
     { name: "Phase 4", title: "The two layers", tasks: [
@@ -146,8 +146,10 @@ const DATA = {
     { at: "3804eb52", label: "Task 10 comments", lines: 69832 },
     { at: "48b23960", label: "Task 10 move", lines: 69548 },
     { at: "9c9b994e", label: "Simplification pass", lines: 69433 },
+    { at: "a9d737ab", label: "Task 11 review", lines: 69398 },
   ],
   gates: [
+    { name: "Task 11 review · a9d737ab", text: "typecheck 0 · test 0 (323 / 4,003) · lint 0 (1,082 files) · build 0\\ncaretSeat → 0 · markdown-tables.css at the root · docBidirMarks → 0 · Tables/index.ts gone · MarkdownPM comments 2,214 → 759, every file ≤ 20\\nrun −61 vs base" },
     { name: "Simplification · 9c9b994e", text: "typecheck 0 · test 0 (323 / 4,003) · lint red only in Core/MarkdownPM (Task 11 in flight) · build 0\\nthree Opus simplifiers, exclusive folders: S1 Views/Tiles/Pages −70 · S2 Interface/Properties/Navigation/Settings/Assets −26 · S3 engine folders + Desktop −17 · comments −151\\nrun now −26 vs base" },
     { name: "Task 10 · 48b23960", text: "typecheck 0 · test 0 (323 / 4,003) · lint 0 (1,083 files) · build 0\\nbuildIndex → 1 · PagePanel → 0 · page-window-insp- → 0 · PagePropertyRows → 7 · flavor → 0 · kind: 'nav' → 2\\nsmoke (agent): page window opened, merged panel rendered 2 rows, body round-tripped, restored" },
     { name: "Gate 2 · de8c32b8", text: "typecheck 0 · test 0 (322 / 3,992) · lint 0 · build 0\\nwindow.nexus in Core → dialer.ts only · ipcMain → Bridge/ipc.ts only · installMachine/installStores one call each · sessionRoot() below handlers → 0" },
@@ -165,6 +167,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Task 11's pre-move review landed (a9d737ab, −36): the three live rulings executed, eight A10 items taken, no literal color anywhere in MarkdownPM (nothing for Task 12 to pull). The re-nest agent dispatched. Found: blockContext rebuilt on every blockAt (for Task 14)." },
     { when: "09-06-2026", text: "Whole-tree simplification pass landed (9c9b994e, −115 code lines): the run is negative against base for the first time (69,433, −26). Task 11's MarkdownPM review still in flight. Nathan ruled the simplifier brief the template for every non-architectural review; Fable's phases stay architecturally scoped." },
     { when: "09-06-2026", text: "The post-compact prompt is written into the plan's Log (section Post-Compact Prompt); it carries a fresh supervisor from any point to the origin push. Nathan asleep; the run continues unattended." },
     { when: "09-06-2026", text: "Overnight: end-to-end without stopping; a post-compact prompt lands in the Log before Phase 4. Closeout on Opus: comment killer → Delivery Claim → verification → attack → simplification; the line ledger redone at the new sources last." },
