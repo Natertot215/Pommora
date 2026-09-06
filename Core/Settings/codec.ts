@@ -4,6 +4,7 @@ import { isColorKey } from '@pommora/uix/Theme/theme'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { DATE_FORMATS } from '../Properties/columnStyles'
 import { LINK_DISPLAYS } from '../Properties/properties'
+import { isPlainObject } from '../Properties/propertyValue'
 import { asString } from '../Locations/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Locations/nexusPaths'
 import { normalizeSeg, rootSegs, type WatchScope } from '../Locations/exclusion'
@@ -37,10 +38,7 @@ function resolveAccent(raw: string | undefined): AccentSetting {
 
 // Per-field: absent/invalid → undefined = the built-in default. Accent is the exception — it resolves to a concrete setting so the row that shows it can never disagree with what paints.
 export function readPersonalization(raw: unknown): Personalization {
-  const p =
-    raw != null && typeof raw === 'object' && !Array.isArray(raw)
-      ? (raw as Record<string, unknown>)
-      : {}
+  const p = isPlainObject(raw) ? raw : {}
   const bool = (v: unknown): boolean | undefined => (typeof v === 'boolean' ? v : undefined)
   const placement = (v: unknown): FolderPlacement | undefined =>
     v === 'top' || v === 'bottom' ? v : undefined
@@ -56,10 +54,7 @@ export function readPersonalization(raw: unknown): Personalization {
   const ribbonOrder = Array.isArray(p.ribbonOrder)
     ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
-  const rawIcons =
-    p.defaultIcons != null && typeof p.defaultIcons === 'object' && !Array.isArray(p.defaultIcons)
-      ? (p.defaultIcons as Record<string, unknown>)
-      : {}
+  const rawIcons = isPlainObject(p.defaultIcons) ? p.defaultIcons : {}
   const defaultIcons: Partial<Record<EntityIconKind, string>> = {}
   for (const k of ENTITY_ICON_KINDS) {
     const v = asString(rawIcons[k])
@@ -126,10 +121,7 @@ export function readPersonalization(raw: unknown): Personalization {
 // String values only, so a malformed entry falls back to the built-in binding instead of poisoning the map.
 export function readCommands(raw: unknown): Record<string, string> {
   const commands = { ...DEFAULT_COMMANDS }
-  const c =
-    raw != null && typeof raw === 'object' && !Array.isArray(raw)
-      ? (raw as Record<string, unknown>)
-      : {}
+  const c = isPlainObject(raw) ? raw : {}
   for (const [key, value] of Object.entries(c)) {
     if (typeof value === 'string' && value.length > 0) commands[key] = value
   }
@@ -189,13 +181,9 @@ function readExcludedLeaf(v: unknown): string[] {
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
-  const rawPersonalization =
-    settings.personalization != null &&
-    typeof settings.personalization === 'object' &&
-    !Array.isArray(settings.personalization)
-      ? (settings.personalization as Record<string, unknown>)
-      : {}
-  const personalization = readPersonalization(rawPersonalization)
+  const personalization = readPersonalization(
+    isPlainObject(settings.personalization) ? settings.personalization : {},
+  )
   return {
     excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),

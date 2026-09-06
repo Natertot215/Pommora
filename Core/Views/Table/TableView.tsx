@@ -1452,13 +1452,13 @@ const DataRow = memo(function DataRow({
             remove={(next) => api.remove(row, c, next)}
           />
         )
-        return i === 0 ? (
+        return (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div
             key={c.id}
             className={cx(
               'data-cell',
-              'cell-lead',
+              i === 0 && 'cell-lead',
               dragShift?.from === i && 'col-dragging',
               sweepCol === c.id && 'cell-sweep',
               stateCx,
@@ -1472,45 +1472,26 @@ const DataRow = memo(function DataRow({
               if (!isDragging) api.click(row, c, e)
             }}
           >
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
-            <span
-              className="row-grip"
-              {...(dragDisabled ? {} : handle)}
-              // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
-              onPointerDown={(e) => {
-                if (e.button === 2) {
-                  e.preventDefault()
-                  return
-                }
-                if (!dragDisabled) handle.onPointerDown?.(e)
-              }}
-              onContextMenu={(e) => api.grip(row, e)}
-              onClick={(e) => e.stopPropagation()}
-              title={dragDisabled ? undefined : 'Drag to reorder'}
-            >
-              <Icon name="grip-vertical" size="body" />
-            </span>
-            {content}
-          </div>
-        ) : (
-          // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          <div
-            key={c.id}
-            className={cx(
-              'data-cell',
-              dragShift?.from === i && 'col-dragging',
-              sweepCol === c.id && 'cell-sweep',
-              stateCx,
+            {i === 0 && (
+              // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
+              <span
+                className="row-grip"
+                {...(dragDisabled ? {} : handle)}
+                // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
+                onPointerDown={(e) => {
+                  if (e.button === 2) {
+                    e.preventDefault()
+                    return
+                  }
+                  if (!dragDisabled) handle.onPointerDown?.(e)
+                }}
+                onContextMenu={(e) => api.grip(row, e)}
+                onClick={(e) => e.stopPropagation()}
+                title={dragDisabled ? undefined : 'Drag to reorder'}
+              >
+                <Icon name="grip-vertical" size="body" />
+              </span>
             )}
-            style={style}
-            onContextMenu={(e) => api.menu(row, c, e)}
-            onPointerDown={(e) => {
-              if (api.sweep(row, c, e)) e.stopPropagation()
-            }}
-            onClick={(e) => {
-              if (!isDragging) api.click(row, c, e)
-            }}
-          >
             {content}
           </div>
         )

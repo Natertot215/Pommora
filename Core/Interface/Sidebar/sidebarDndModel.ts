@@ -43,7 +43,7 @@ export function buildIndex(tree: NexusTree): Index {
 
   const spaceIdsByContext = new Map<string, string[]>()
   const contextGroupIds: string[] = []
-  for (const g of tree.contexts ?? []) {
+  for (const g of tree.contexts) {
     contextGroupIds.push(g.def.id)
     byId.set(g.def.id, {
       id: g.def.id,

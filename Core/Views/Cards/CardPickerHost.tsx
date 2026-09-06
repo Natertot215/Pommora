@@ -125,13 +125,9 @@ export function CardPickerHost({
       rowId: aReq.rowId,
       column: addColumn(entry.id, tree),
       kind:
-        entry.type === 'datetime'
-          ? 'datetime'
-          : entry.type === 'number'
-            ? 'number'
-            : entry.type === 'file'
-              ? 'file'
-              : 'link',
+        entry.type === 'datetime' || entry.type === 'number' || entry.type === 'file'
+          ? entry.type
+          : 'link',
       anchor: aReq.anchor,
       revealOnCommit: true,
     })

@@ -64,7 +64,7 @@ export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
 
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-export async function sweepContextRoots(
+async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
   pageText?: RewriteText,
@@ -94,7 +94,7 @@ function pageLeg(j: RenameJournal): RewriteText | undefined {
   return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
 }
 
-export async function cascadeTitle(
+async function cascadeTitle(
   root: string,
   registry: ContextsRegistry,
   j: RenameJournal,

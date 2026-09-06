@@ -1,5 +1,4 @@
-// A channel with no handler, a handler with no channel, or a mismatched signature is a
-// compile error here, never a runtime discovery.
+// A channel with no handler, or a mismatched signature, is a compile error here.
 
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
 import type { FileHistoryMenuAction } from '../Actions/fileHistoryMenu'
@@ -61,9 +60,7 @@ import type {
   TitleMenuAction,
 } from '../Actions/identityMenus'
 
-/** `dir` is nexus-relative like every path the renderer holds — main joins it, and a folder
- *  that's gone missing opens at the root rather than refusing. `any` widens the filter past
- *  images. */
+/** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
 export interface PickFileOptions {
   dir?: string
   any?: boolean
@@ -271,14 +268,12 @@ export interface Asks {
   }
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
-  // `.trash` is excluded from the watcher, so nothing is ever pushed — the browser asks, and
-  // asks again after every action it takes.
+  // `.trash` is outside the watcher, so the browser asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   'trash:menu': { args: [ctx: TrashMenuContext]; reply: TrashMenuAction | null }
   'trash:columnMenu': { args: [ctx: TrashColumnContext]; reply: TrashColumnAction | null }
-  // What a delete confirmation states about where the artifact goes. Read at the moment of asking
-  // rather than from the renderer's cache, so the sentence can't promise the system trash while
-  // main erases outright.
+  // Read at the moment of asking, never from the renderer's cache, so the confirmation can't
+  // promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: { trashMode: TrashMode; permanentDelete: boolean } }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'trash:report': { args: [message: string, detail: string]; reply: void }
@@ -320,8 +315,7 @@ export interface Asks {
     reply: NexusIconAction | null
   }
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
-  /** Its own channel rather than a field on a write: fusing them would make one IPC perform
-   *  two writes with partial-failure semantics, and forecloses naming a file already in the nexus. */
+  /** Its own channel: fused into a write, one IPC would perform two with partial-failure semantics. */
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: string | null }
   'nexus:bannerMenu': {
@@ -367,8 +361,7 @@ export interface Tells {
 
 export interface Pushes {
   'menu:action': string
-  // `create` marks a just-created entity's naming session — the field opens empty and the
-  // first commit rides the create (disambiguating, cascade-free).
+  // `create` marks a newborn's session: the field opens empty and its first commit rides the create.
   'begin-rename': { path: string; create?: boolean; host?: RenameHost }
   'new-page-adjacent': { path: string; where: 'above' | 'below'; host?: RenameHost }
   // The icon picker anchors to the row the gesture happened on, which only the renderer can find.
@@ -384,7 +377,6 @@ export interface Pushes {
   'values:changed': ValueChange[]
   // A host's document changed on disk under an open host — the host re-reads it.
   'tiles:changed': TileHostRef
-  // A guest webview's window.open, denied main-side and handed to the renderer's one open-link
-  // adjudicator — popups and link clicks can never route differently.
+  // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string
 }

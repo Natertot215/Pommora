@@ -2,12 +2,11 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@pommora/core/Views/views'
-import { MenuRowView, MenuTopRow, MenuSeparator, type MenuRow } from '@pommora/uix/Menus'
-import { Icon } from '@pommora/uix/Symbols'
+import { MenuRowView, MenuTopRow, MenuSeparator } from '@pommora/uix/Menus'
 import { useSaveView } from '../ViewTileScope'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { CustomList, PropertyPreview, optionsOf } from './GroupFrame'
+import { CustomList, PropertyPreview, optionsOf, pickerRow } from './GroupFrame'
 import { bucketOrder } from '../Pipeline/group'
 import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
 import * as gp from './group-frame.css'
@@ -66,21 +65,6 @@ function directionOptions(
       return VALUE_DIRECTIONS
   }
 }
-
-const pickerRow = <T extends string>(
-  glyph: string,
-  label: string,
-  value: T,
-  options: readonly PickerOption<T>[],
-  onPick: (v: T) => void,
-  sub = false,
-): MenuRow => ({
-  kind: 'item',
-  icon: <Icon name={glyph} size="body" />,
-  label: sub ? <span className={gp.subLabel}>{label}</span> : label,
-  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick },
-  className: sub ? gp.subRow : undefined,
-})
 
 interface SortTarget {
   id: string

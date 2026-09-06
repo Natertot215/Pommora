@@ -26,7 +26,7 @@ import { NON_CORPUS_TOP } from '../Locations/nexusPaths'
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { readWatchScope } from '../Settings/settings'
 
-export function extractPageIndex(content: string): PageIndexEntry | null {
+function extractPageIndex(content: string): PageIndexEntry | null {
   if (!sweepAdmitsBody(content)) return null
   const values = frontmatterValues(content)
   const mentions = extractMentions(splitEnvelope(content).body)
