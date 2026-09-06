@@ -1,6 +1,5 @@
 import { style } from '@vanilla-extract/css'
 
-/** The slider's hit strip — hosts the ProgressBar track + the glass knob riding over it. */
 export const strip = style({
   position: 'relative',
   display: 'flex',
@@ -10,7 +9,7 @@ export const strip = style({
   touchAction: 'none',
 })
 
-/** `--slider-knob-scale` is the KNOB — it zooms the whole knob (glass + fill + radius together); a consumer sets it on the slider's container to resize the knob without touching the strip. */
+/** KNOB — `--slider-knob-scale`, set on the container, zooms glass + fill + radius without touching the strip. */
 export const knob = style({
   position: 'absolute',
   display: 'flex',

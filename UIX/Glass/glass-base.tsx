@@ -3,7 +3,6 @@ import { shadowLiftVar, shadowStandardVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { clamp } from '../Utilities/clamp'
 
-/** The Pommora glass recipe — parametric, so each tier is one recipe at its own dim and fill. */
 export interface FrostParams {
   blur: number
   brightness: number
@@ -14,13 +13,13 @@ export interface FrostParams {
   lowerRim: number
   depth: number
   rimBlur: number
-  /** Translucent `--bg-window` fill, 0..1 — panes stay transparent. */
+  /** 0..1 — panes stay transparent. */
   fill?: number
-  /** The drop shadow the stack ends in — standard for resting frost, lift for dragged chrome. */
+  /** Standard for resting frost, lift for dragged chrome. */
   shadow?: string
 }
 
-/** KNOB — how much `--bg-window` sits behind the frost on anything that carries a body. ONE figure: a window and a picker opening over another pane want the same thing for the same reason, and two numbers required to match are two numbers that eventually don't.*/
+/** KNOB — `--bg-window` behind the frost. ONE figure: two numbers required to match eventually don't. */
 const SOLID_FILL = 0.9
 
 export const SURFACE_FROST: FrostParams = {
@@ -35,10 +34,8 @@ export const SURFACE_FROST: FrostParams = {
   rimBlur: 18,
 }
 
-/** `GlassWindow`'s material, and what `GlassSurface` wears for `solid` — the pane's own chrome with only the fill added. */
 export const WINDOW_FROST: FrostParams = { ...SURFACE_FROST, fill: SOLID_FILL }
 
-/** The drag ghost — lighter than a resting surface, so the drop target reads through it. */
 export const GHOST_FROST: FrostParams = {
   blur: 6,
   brightness: 100,
@@ -61,7 +58,7 @@ const hexA = (n: number): string =>
 
 export function frostStyle(p: FrostParams): CSSProperties {
   const filter = `blur(${p.blur}px) brightness(${p.brightness}%)${p.saturate !== 100 ? ` saturate(${p.saturate}%)` : ''}`
-  // Zero-valued edge pieces emit nothing, so an edge-free frost carries no phantom geometry.
+  // Zero-valued pieces emit nothing, so an edge-free frost carries no phantom geometry.
   const edges = [
     p.borderAlpha > 0 && OUTLINE_INSET,
     p.topSpecular > 0 && `inset 0 1px 0 ${PURE_WHITE}${hexA(p.topSpecular)}`,
@@ -84,20 +81,19 @@ export function frostStyle(p: FrostParams): CSSProperties {
   }
 }
 
-/** The outline's second pass, inward: widening the border would shift everything inside it. */
+/** Inward, because widening the border would shift everything inside it. */
 const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
-/** The pane tier — the brightest glass in the app. */
 export const paneMaterial: CSSProperties = frostStyle({ ...SURFACE_FROST, brightness: 95 })
 
-/** KNOB — the beaked shell's corner radius. One writer: the clip path and SVG outline take it from here, and so does a notched surface whose scrolled body has to round to the same arc. */
+/** KNOB — the beaked shell's radius. One writer: clip path, SVG outline, and a notched body all round to it. */
 export const BEAK_RADIUS = 12
-/** The rise is the top inset a notched surface pads its content past, published as `--notch-h`. */
+/** Published as `--notch-h`; a notched surface pads its content past it. */
 export const NOTCH_H = 8
 const NOTCH_W = 34
 const NOTCH_CURVE = 0.25
 
-// One path serves as both the frost clip and the SVG outline — a rect border can't trace a beak.
+// Both the frost clip and the SVG outline — a rect border can't trace a beak.
 function beakPath(w: number, h: number, nx: number): string {
   const r = BEAK_RADIUS
   const half = NOTCH_W / 2

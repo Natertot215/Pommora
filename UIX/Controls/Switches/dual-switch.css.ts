@@ -4,22 +4,19 @@ import { tintAt } from '../../Theme/colors'
 import { duration, easing } from '../../Animations/motion'
 
 const c = colorVars.color
-const ease = `${duration.fast} ${easing.baseEase}` // one motion source for the whole switch
+const ease = `${duration.fast} ${easing.baseEase}`
 const control = 'var(--label-control)'
 
-// The four the knob's travel is measured from; every other number states itself where it's read.
 const TRACK_WIDTH = 43
 const TRACK_BORDER = 1
 const KNOB_WIDTH = 21
 const KNOB_INSET = 2
 
-/** The knob's corner, read by the fill AND by the glass wrapping it — the two are one edge, and stating it twice is what let a resize move one of them alone. */
+/** One edge read by both the fill and the glass around it; stating it twice let a resize move one alone. */
 export const KNOB_RADIUS = 7
 
-// How far the knob slides: the track's inner width, less the knob and the inset it keeps at each end.
 const KNOB_TRAVEL = TRACK_WIDTH - 2 * TRACK_BORDER - KNOB_WIDTH - 2 * KNOB_INSET
 
-/** The "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off) tick. */
 export const track = style({
   position: 'relative',
   width: `${TRACK_WIDTH}px`,
@@ -35,12 +32,12 @@ export const track = style({
 
 export const trackOn = style({ background: tintAt('var(--accent)', 'primary') })
 
-// Vertically centered so the border never offsets it; it shrink-wraps the glass-wrapped fill and slides between off (left) and on (right).
+// Centered on the track so the border never offsets it.
 export const knob = style({
   position: 'absolute',
   top: '50%',
   left: `${KNOB_INSET}px`,
-  display: 'flex', // drops the inline-block baseline descender so translateY centers the glass exactly
+  display: 'flex', // drops the baseline descender so translateY centers exactly
   transform: 'translateY(-50%)',
   transition: `transform ${ease}`,
   selectors: { [`${trackOn} &`]: { transform: `translate(${KNOB_TRAVEL}px, -50%)` } },

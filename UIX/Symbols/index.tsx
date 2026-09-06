@@ -83,7 +83,7 @@ import { fileTypeGlyphs } from './fileTypes'
 import { lucideGlyph } from './allSymbols'
 import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 
-/** Curated icon set — the app's semantic vocabulary. This registry IS the roster: to add an icon, import it above and add a line here. Tabler is a second source, pulled in by name where it is needed — both default to stroke 2. */
+/** This registry IS the roster: to add an icon, import it above and add a line here. */
 export const icons = {
   orbit: Orbit,
   calendar: Calendar,

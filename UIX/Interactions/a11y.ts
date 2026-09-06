@@ -30,7 +30,6 @@ export function announce(message: string): void {
   region.textContent = message
 }
 
-/** The target of every draggable's `aria-describedby`. */
 export function ensureInstructions(): void {
   if (typeof document === 'undefined' || instructions) return
   instructions = document.createElement('div')

@@ -7,7 +7,7 @@ export const hoverRemoveHost = cx(s.host, overScrollHost)
 
 const revealed = (el: Element): boolean => Number.parseFloat(getComputedStyle(el).opacity) > 0.5
 
-/** INERT until revealed: a click only removes once the × is actually visible, so a fast click on an invisible control can't silently delete a value. */
+/** INERT until revealed, so a fast click on an invisible × can't silently delete a value. */
 export function HoverRemove({
   onRemove,
   children,

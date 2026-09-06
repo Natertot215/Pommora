@@ -1,6 +1,6 @@
-/* The tabular chrome every table surface wears. A surface wears `.table` (the token scope, table-tokens.css) and lays its own grid. */
+/* A surface uses `.table` (the token scope, table-tokens.css) and lays its own grid. */
 
-/* Header band and every data row share the column tracks; the final track is the filler. Stretch (not center) so an empty cell's divider matches a filled one's instead of collapsing to a short centered bar. */
+/* Stretch (not center) so an empty cell's divider matches a filled one's instead of collapsing to a short centered bar. */
 .table-head,
 .data-row {
   display: grid;
@@ -8,14 +8,14 @@
   align-items: stretch;
 }
 
-/* A clear heading — no fill, no seam; the segment bars alone divide the columns. A host sets it when its heading already sits under chrome of its own, such as the Trash's inset hairline. */
+/* For a heading that already sits under chrome of its own, such as the Trash's inset hairline. */
 .table.is-clear {
   --heading-fill: none;
   --heading-divider: none;
 }
 
 .table-head {
-  /* The one place a table heading's type is set, so what a heading uses can't drift — TableView's .col-header and the Trash's head both inherit it. */
+  /* The one place a heading's type is set — TableView's .col-header and the Trash's head both inherit it. */
   font-size: var(--text-callout-size);
   line-height: var(--text-callout-line);
   font-weight: var(--weight-emphasized);
@@ -23,7 +23,7 @@
   color: var(--label-secondary);
   border-bottom: var(--heading-divider);
   user-select: none;
-  /* Full-bleeds the fill and seam to both glass edges: the matching padding re-lands the column tracks on the same content width as a data row — an un-padded header would resolve its tracks against a different box and drift every column. */
+  /* Full-bleeds the fill and seam to both glass edges; the matching padding re-lands the tracks on a data row's content width — un-padded, every column drifts. */
   margin-left: calc(-1 * var(--content-inset));
   margin-right: calc(-1 * var(--table-right-inset));
   padding-left: var(--content-inset);
@@ -43,9 +43,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0; /* grid items default to min-width:auto; 0 lets the ellipsis engage */
-  position: relative; /* containing block for the right-edge resize strip */
+  position: relative;
 }
-/* Column smooth-shift: the dragged column slides with the cursor as one opaque band carrying the selected highlight, while the neighbor columns animate open on the shift curve; the dragged column itself tracks the cursor 1:1, with no transition. */
 .table-grid.col-dragging-active .col-header,
 .table-grid.col-dragging-active .data-cell {
   transition: transform var(--col-shift-ease);
@@ -57,7 +56,7 @@
   z-index: 2;
   background-color: var(--col-drag-band);
   background-image: linear-gradient(var(--col-highlight), var(--col-highlight));
-  /* Both edges so the lifted band reads as a bounded column — the right line already comes from the :not(:last-child) divider; this adds the matching left one. */
+  /* The right line already comes from the :not(:last-child) divider; this adds the matching left one. */
   border-left: var(--table-border);
   cursor: grabbing;
   transition: none;
@@ -84,7 +83,7 @@
 .property-editor {
   width: 100%;
 }
-/* Ghosted while the typed value isn't a valid link yet — the field wears the link's color (set inline) faded to the shared ghost opacity, previewing as the link, dimmed, until it snaps solid. */
+/* Ghosted until the typed value is a valid link — the link's color, set inline, dimmed. */
 .property-editor-ghost {
   opacity: var(--state-ghost);
 }
@@ -100,7 +99,7 @@
   flex: 1;
   min-width: 0;
 }
-/* A single-column table (everything hidden but Title) reads as a plain list — no trailing line to bound. */
+/* A single-column table reads as a plain list — no trailing line to bound. */
 .data-cell:not(:last-child) {
   border-right: var(--table-border);
 }
@@ -111,7 +110,7 @@
 .table-grid.single-column .col-header::before {
   content: none;
 }
-/* Heading column dividers — a short, centered, fully-rounded segment bar instead of the data rows' full-height hairline; absolutely placed so they add no track width, with the radius reusing the bar width so the thin caps fully round. */
+/* Absolutely placed so they add no track width; the radius reuses the bar width so the thin caps fully round. */
 .col-header:not(:last-child)::after,
 .col-header:first-child::before,
 .table-segment::after {
@@ -132,7 +131,7 @@
 .col-header:first-child::before {
   left: 0;
 }
-/* The row divider is a TOP border, not bottom, so a line only ever falls between two rows: each group's first row drops it (.row-lead), so a list has none above its first row or below its last. */
+/* A TOP border, not bottom, so a line only ever falls between two rows; `.row-lead` drops it, leaving none above a list's first row or below its last. */
 .data-row {
   border-top: var(--table-border);
   cursor: default;
@@ -152,7 +151,7 @@
   opacity: var(--state-ghost);
 }
 
-/* Hide Borders toggle — the heading row keeps its borders so it stays structured over an otherwise lineless body. */
+/* The heading row keeps its borders so it stays structured over an otherwise lineless body. */
 .table-grid.no-borders .data-row {
   border-top: none;
 }
@@ -160,7 +159,7 @@
   border-right: none;
 }
 
-/* Borderless structure-on-demand — with body lines gone, structure surfaces only while columns change: resizing or reordering fades the vertical dividers back in, and the active cell wears a faint accent ring. */
+/* With body lines gone, structure surfaces only while columns change: resizing or reordering fades the dividers back in. */
 .table-grid.no-borders .data-cell {
   position: relative;
 }
@@ -193,7 +192,7 @@
   opacity: 1;
 }
 
-/* The title is an OverScroll box: icon and text sit inline in one nowrap scroller, so the icon rides the hover-scroll with the title instead of pinning while text slides. The lead cell keeps overflow visible for the gutter grip. */
+/* An OverScroll box: icon and text in one nowrap scroller, so the icon rides the hover-scroll instead of pinning while text slides. */
 .cell-title {
   display: inline-block;
   max-width: 100%;
@@ -229,7 +228,6 @@
 .cell-link-underline {
   text-decoration: underline;
 }
-/* A Link value naming a page reads as the connection it is, in the same color the editor draws one. */
 .cell-connection {
   color: var(--connection);
   text-decoration: none;
@@ -238,7 +236,7 @@
 .cell-control {
   color: var(--label-control);
 }
-/* Scaled to match the Links pane's switch, so a switch cell is never taller than a checkbox cell and a toggle never shifts the row height. */
+/* Scaled to the Links pane's switch, so a toggle never shifts the row height. */
 .cell-switch {
   display: inline-flex;
   align-items: center;

@@ -3,7 +3,7 @@ import { useRef } from 'react'
 const sameKeys = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
   a.size === b.size && [...a].every((k) => b.has(k))
 
-/** Keyed rather than array-identity, so a list rebuilt every render (and a StrictMode double-pass) reports an arrival exactly once; `ready` holds the seed open for a list whose data lands a render behind its mount. */
+/** Keyed rather than array-identity, so a rebuilt list (and StrictMode's double-pass) reports an arrival exactly once; `ready` holds the seed open for data that lands a render behind mount. */
 export function useEntrance<T>(
   items: readonly T[],
   keyOf: (item: T, index: number) => string,

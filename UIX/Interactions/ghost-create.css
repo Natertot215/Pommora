@@ -1,4 +1,4 @@
-/* THE ghost — a hover-born stand-in for something that doesn't exist yet. It rests dimmed and lifts toward presence under the pointer; the dim, the lift target, and the timing live here once rather than in each surface. */
+/* The ghost's dim, lift target, and timing live here once rather than in each surface. */
 [data-ghost-root],
 [data-create] {
   cursor: pointer;

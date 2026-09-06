@@ -44,7 +44,7 @@ const crispRamp =
 const blurRamp =
   'linear-gradient(to right, transparent calc(100% - 18px), var(--system-black) calc(100% - 8px))'
 
-/** A twin sits inside the scroller, so its box rides the WINDOW the label is currently showing while its text stays put — `left` walks the box along, the matching negative indent walks the string back. The ramp then reads in the box it was written for. */
+/** A twin sits inside the scroller, so its box rides the WINDOW the label is showing while its text stays put — `left` walks the box along, the matching negative indent walks the string back. */
 const overWindow = {
   left: 'var(--os-scroll, 0px)',
   textIndent: 'calc(-1 * var(--os-scroll, 0px))',
@@ -52,7 +52,7 @@ const overWindow = {
   WebkitMaskRepeat: 'no-repeat',
 } as const
 
-/** Wears `overScrollUnmasked`: a mask here erases every descendant, the twins included. Pointer-inert, or leaving :hover in the reveal's frame drops its repaint. */
+/** `overScrollUnmasked`: a mask here erases every descendant, the twins included. Pointer-inert, or leaving :hover in the reveal's frame drops the repaint. */
 export const labelBox = style({
   position: 'relative',
   selectors: {
@@ -60,7 +60,7 @@ export const labelBox = style({
   },
 })
 
-// A SIBLING combinator — the × precedes the label in the DOM — flipping OPACITIES only. Any mask-image change on this text computes without painting; static masks + opacity flips don't.
+// A SIBLING combinator — the × precedes the label in the DOM.
 const reveal = `${removeButton}:hover ~ ${labelBox} &`
 
 /** `position: relative` is load-bearing — its own paint layer, or the flip never repaints. No transition: a crossfade would only dim the stack mid-flight. */
@@ -83,7 +83,7 @@ export const labelMelt = style({
   selectors: { [reveal]: { opacity: 1 } },
 })
 
-/** Painted in the GROUND, so the tail melts into the host rather than hazing in the text color. NOT transitioned: a fade on a masked element can strand its final frame as a smear. */
+/** Painted in the GROUND so the tail melts into the host. NOT transitioned: a fade on a masked element can strand its final frame as a smear. */
 export const labelBlur = style({
   position: 'absolute',
   top: 0,

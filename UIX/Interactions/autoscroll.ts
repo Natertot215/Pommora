@@ -7,7 +7,7 @@ export interface Params {
   edge: number // px band from a container edge where scroll engages
   speed: number // px/second at the true edge, at the acceleration floor
   ramp: number // proximity exponent, 2 being quadratic
-  accelStart: number // speed multiplier at the start of a run; must be > 0
+  accelStart: number
   accelMax: number
   accelDist: number // px of accumulated scroll to climb from start → max
 }
@@ -43,7 +43,6 @@ export function scrollableInAxis(
   return x || y
 }
 
-/** Axis-aware so a vertical drag skips an x-only ancestor to reach the real y-scroller. */
 export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLElement | null {
   let n = el?.parentElement ?? null
   while (n) {
@@ -150,7 +149,6 @@ function readParams(el: HTMLElement): Params {
 
 export type { StartCfg }
 
-/** Resolves the scroller up front, so an unscrollable container never enters the loop. */
 export function armAutoScroll(
   dragEl: HTMLElement | null,
   getPoint: () => { x: number; y: number },
@@ -218,7 +216,7 @@ export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams):
   return clamp(Math.abs(distance) / speed, minMs, maxMs)
 }
 
-/** The JS form of `easing.baseSnap` (ease-out quint) — a CSS cubic-bezier can't drive a scrollTop, so the curve is stated twice on purpose. Change them together. */
+/** The JS form of `easing.baseSnap` — a CSS cubic-bezier can't drive a scrollTop, so the curve is stated twice. Change them together. */
 export function easeOutQuint(t: number): number {
   return 1 - (1 - t) ** 5
 }

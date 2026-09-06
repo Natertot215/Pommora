@@ -1,4 +1,4 @@
-/* Each host sets the five --slide-* inputs and declares its own --io, so this one formula tracks whichever driver the host holds. */
+/* Each host declares its own --io and --slide-* inputs, so this one formula tracks whichever driver the host holds. */
 .app-toolbar,
 .window {
   --toolbar-slide: max(

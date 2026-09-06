@@ -8,12 +8,12 @@ const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
 export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
 
-/** The cap without any mask, for a box whose DESCENDANTS must keep painting: a mask erases everything under it, and the removable chip stacks pre-masked twins inside its label. */
+/** No mask, for a box whose DESCENDANTS must keep painting: a mask erases everything under it. */
 export const overScrollUnmasked = 'over-scroll-cap over-scroll-ellipsis'
 
 export const overScrollHost = 'over-scroll-host'
 
-/** The cap under the pointer. A host counts as its own cap's seat and is read BEFORE any cap further up: a pointer-inert label puts the pointer on its host, and an ancestor cap would otherwise answer for it. */
+/** A host is its own cap's seat, read BEFORE any cap further up — else an ancestor cap answers for a pointer-inert label. */
 function capUnder(target: EventTarget | null): HTMLElement | null {
   let node = target instanceof Element ? target : null
   while (node) {
@@ -35,7 +35,7 @@ function hold(cap: HTMLElement | null): void {
   held = cap
 }
 
-/** Wired once for the whole document — a cap is a bare class on markup as often as it is this component, and a pointer-inert label receives no events of its own. A capped label scrolls on ONE axis and a trackpad flick is usually the other one, so the dominant delta drives it; a label already at its end chains the gesture onward. */
+/** Wired once for the document: a cap is often a bare class, and a pointer-inert label gets no events. A trackpad flick is usually off-axis, so the dominant delta drives. */
 function wireCaps(): void {
   const root = document.documentElement
   if (root.dataset.overScroll === 'on') return
@@ -59,12 +59,11 @@ function wireCaps(): void {
   )
 }
 
-/** How far off its start a label sits, for the overlays that have to land on its VISIBLE tail rather than on the content's — a masked twin inside the scroller travels with the text. */
+/** How far off its start a label sits, for overlays that must land on its VISIBLE tail. */
 function markScroll(cap: HTMLElement): void {
   cap.style.setProperty('--os-scroll', `${cap.scrollLeft}px`)
 }
 
-// Guarded: the module is imported by node-environment tests, which have no document.
 if (typeof document !== 'undefined') wireCaps()
 
 /** scrollLeft isn't CSS-transitionable, so this rAF tween replaces it on the duration token. */

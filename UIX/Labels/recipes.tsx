@@ -8,12 +8,11 @@ import { fileChip, fileChipIcon, fileChipUnresolved } from './label-recipes.css'
 
 type Recipe = Omit<LabelProps, 'shape'>
 
-/** One source for the pill-vs-tag choice, so no surface renders a status as an option. */
+/** One source, so no surface renders a status as an option. */
 export function optionShapeFor(type: string): LabelShape {
   return type === 'status' ? 'pill' : 'tag'
 }
 
-/** A Space reference — colorless ground, so it reads as something you can open. */
 export function SpaceChip({
   title,
   icon,
@@ -31,7 +30,7 @@ export function SpaceChip({
   )
 }
 
-/** What a file property's VALUE renders as. It stands beside other values in a cell and takes a box the way they do. Distinct from [[FileLabel]], which names a file inside a FIELD and carries no chrome — a box around it would be a box in a box. */
+/** Distinct from [[FileLabel]], which names a file inside a FIELD — a box around that would be a box in a box. */
 export function FileChip({
   name,
   unresolved,
@@ -54,7 +53,7 @@ export function FileChip({
   )
 }
 
-/** A named file or folder inside a field: a leading glyph and the name, no chrome. `icon` overrides the glyph for callers not reading it off an extension; `false` means no glyph, which is what a path's segments want — one lead icon on the run. */
+/** `icon` overrides the extension-derived glyph; `false` means none, which is what a path's segments want — one lead icon on the run. */
 export function FileLabel({
   name,
   icon,

@@ -1,8 +1,7 @@
 import { useState, useLayoutEffect, type ReactNode } from 'react'
 import { duration as motionDuration, easing } from './motion'
 
-/** `fill` caps content at the container width; without it the implicit column is `max-content`,
- *  which a `nowrap` title balloons to its full length. */
+/** `fill` caps content at the container width; without it the implicit column is `max-content`, which a `nowrap` title balloons to. */
 export function Reveal({
   open,
   fill = false,
@@ -25,7 +24,7 @@ export function Reveal({
   useLayoutEffect(() => {
     if (open) {
       setMounted(true)
-      const id = requestAnimationFrame(() => setExpanded(true)) // next frame, so it animates instead of jumping
+      const id = requestAnimationFrame(() => setExpanded(true)) // next frame, or it jumps
       return () => cancelAnimationFrame(id)
     }
     setExpanded(false)
@@ -45,7 +44,7 @@ export function Reveal({
         gridTemplateColumns: fill ? 'minmax(0, 1fr)' : undefined,
       }}
       onTransitionEnd={(e) => {
-        // Reveals nest and this handler bubbles: a child would settle its parent mid-animation.
+        // Reveals nest: a bubbled child event would settle its parent mid-animation.
         if (e.target !== e.currentTarget) return
         if (e.propertyName !== 'grid-template-rows') return
         if (open) setSettled(true)

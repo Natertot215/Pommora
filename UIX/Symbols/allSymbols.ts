@@ -15,7 +15,7 @@ export interface IconEntry {
   Glyph: LucideIcon
 }
 
-/** The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry (./index), which is the app's semantic vocabulary. Kebab-keyed, de-duped by id, sorted. */
+/** The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry (./index). */
 export const ALL_ICONS: IconEntry[] = (() => {
   const seen = new Set<string>()
   const out: IconEntry[] = []

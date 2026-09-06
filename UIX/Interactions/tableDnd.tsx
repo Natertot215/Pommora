@@ -10,8 +10,6 @@ import { nearestByTop, useInsertionDrag } from './insertionDrag'
 import { type MeasuredRow, nextOrder, slotInGroup } from './reorderModel'
 import { DROP_LINE_INSET } from './shared'
 
-// This file owns the hit-testing only; the commits live in TableView and are passed in.
-
 type Slot = { lineY: number; left: number; width: number; commit: () => void }
 type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
 type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number }
@@ -34,14 +32,13 @@ export function TableRowDnd({
   relocate = () => {},
   children,
 }: {
-  /** The flat visible data-row order + each row's group key. */
   rows: { id: string; groupKey: string }[]
   disabled: boolean
   canReorderWithin: boolean
   canReassign: boolean
   /** True under plain location grouping: the bands ARE folders, so a cross-band drop MOVES the page. */
   canRelocate?: boolean
-  /** The group key lets a caller map a structural group to its on-disk container for the page_order write; `activeId` serves callers whose commit is (active, over)-shaped. */
+  /** The group key maps a structural group to its on-disk container for the page_order write. */
   reorderTo: (orderIds: string[], groupKey: string, activeId: string) => void
   reassign: (activeId: string, targetGroupKey: string) => void
   relocate?: (activeId: string, targetGroupKey: string) => void
@@ -77,7 +74,6 @@ export function TableRowDnd({
       measured.sort((a, b) => a.top - b.top)
       return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left }
     },
-    // The nearest row's group is the target group: above it or below it, the slot sits in that group.
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
@@ -96,7 +92,6 @@ export function TableRowDnd({
         if (next.every((x, i) => x === order[i])) return null
         return { lineY, left, width, commit: () => reorderTo(next, activeGroup, id) }
       }
-      // Under location grouping the bands are folders, so a cross-band drop moves the page.
       if (canRelocate) return { lineY, left, width, commit: () => relocate(id, targetGroup) }
       if (!canReassign) return null
       return { lineY, left, width, commit: () => reassign(id, targetGroup) }

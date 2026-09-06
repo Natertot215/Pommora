@@ -1,4 +1,4 @@
-/* THE over-scroll edge fade — every clipped edge rides this one mechanism. Two progress vars animate along the box's own scroll range, so a box whose content fits has an inactive timeline and the mask collapses to a no-op. */
+/* THE over-scroll edge fade. The progress vars animate along the box's own scroll range, so content that fits leaves an inactive timeline and a no-op mask. */
 @property --os-lead {
   syntax: "<number>";
   inherits: false;
@@ -9,7 +9,7 @@
   inherits: false;
   initial-value: 0;
 }
-/* Non-inheriting so a container tuning its own fade doesn't leak that width into descendant labels (universal syntax keeps var() fallbacks alive). */
+/* Non-inheriting so a container's own fade width doesn't leak into descendant labels (universal syntax keeps var() fallbacks alive). */
 @property --over-scroll-fade {
   syntax: "*";
   inherits: false;
@@ -63,14 +63,14 @@
   animation-timeline: scroll(self block);
 }
 
-/* Tighter than the house width — here the fade IS the truncation signal, read at the scale of a word. */
+/* Here the fade IS the truncation signal, read at the scale of a word. */
 .over-scroll-x {
   --os-fade-default: 16px;
   --os-dir: to right;
   animation-timeline: scroll(self inline);
 }
 
-/* `hidden` still drives the scroll timeline, so the mask resolves in both states. The WIDTH cap is the consumer's: a max-width for labels, the flex parent for rows. */
+/* `hidden` still drives the scroll timeline, so the mask resolves in both states. The WIDTH cap is the consumer's. */
 .over-scroll-cap {
   min-width: 0;
   white-space: nowrap;
@@ -79,14 +79,14 @@
   text-overflow: clip;
   scrollbar-width: none;
 }
-/* Scrolling and the ellipsis are the same switch: an ellipsis marks a tail you can't reach, so it drops the moment the tail becomes reachable. */
+/* An ellipsis marks a tail you can't reach, so it drops the moment the tail becomes reachable. */
 .over-scroll-cap:hover,
 .over-scroll-host:hover .over-scroll-cap {
   overflow-x: auto;
   text-overflow: clip;
 }
 
-/* Hold the leading fade until a full fade-width has actually scrolled past: a first line at rest, or a small autofocus offset, shouldn't fade. */
+/* Hold the leading fade until a full fade-width has scrolled past: a first line at rest shouldn't fade. */
 .over-scroll-gated {
   animation-fill-mode: both;
   animation-range:

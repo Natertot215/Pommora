@@ -4,18 +4,16 @@ import { paneSlide } from '../Animations/paneSlide'
 import { cx } from '../Utilities/cx'
 import { useResizeFrame } from '../Interactions/ResizeFrame'
 
-// The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host owns only the width CSS var its layout math reads, mirrored back through onWidthChange.
-
 export interface WindowPanelBounds {
   min: number
   def: number
   max: number
 }
 
-// Widths persist per window id across remounts, session-only — not written to disk.
+// Session-only; never written to disk.
 const widths = new Map<string, number>()
 
-/** Hosts seed their CSS-var state from this so the first frame already carries the restored width — the mirror effect runs post-mount. */
+/** Seeds a host's CSS var before mount; the mirror effect only runs after it. */
 export const windowPanelWidth = (windowId: string, def: number): number =>
   widths.get(windowId) ?? def
 
@@ -30,7 +28,6 @@ export function WindowPanel({
   onResizingChange,
   children,
 }: {
-  /** One persisted-width slot per hosting window. */
   windowId: string
   side: 'left' | 'right'
   mode: 'overlay' | 'inflow'
@@ -38,12 +35,12 @@ export function WindowPanel({
   open?: boolean
   className?: string
   onWidthChange?: (w: number) => void
-  /** Transitions pause while dragging so the panel tracks 1:1 (the house resize rule). */
+  /** Transitions pause while dragging so the panel tracks 1:1. */
   onResizingChange?: (resizing: boolean) => void
   children?: React.ReactNode
 }): React.JSX.Element {
   const [width, setWidth] = useState(() => windowPanelWidth(windowId, bounds.def))
-  // Layout effect: the host's CSS var updates before paint, so a restored width never flashes.
+  // Before paint, so a restored width never flashes.
   useLayoutEffect(() => {
     onWidthChange?.(width)
   }, [width, onWidthChange])

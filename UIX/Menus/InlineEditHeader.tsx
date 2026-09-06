@@ -24,7 +24,6 @@ export function InlineEditHeader({
   iconOpen?: boolean
   outline?: string
   readOnly?: boolean
-  /** Uncontrolled by default; a host with its own way in drives it so the caret lands here. */
   editing?: boolean
   onEditingChange?: (editing: boolean) => void
 }): React.JSX.Element {
