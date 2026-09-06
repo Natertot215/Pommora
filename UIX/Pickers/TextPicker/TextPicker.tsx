@@ -3,7 +3,7 @@ import { EditableInput } from '../../Fields/EditableInput'
 import { PickerMenu } from '../picker-base'
 import * as s from './text-picker.css'
 
-/** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or blur commit the trimmed text; Escape cancels. `accent` scopes the pane's `--accent` so the focus stroke wears a caller's color. */
+/** `accent` scopes the pane's `--accent` so the focus stroke uses a caller's color. */
 export function TextPicker({
   open,
   onDismiss,
@@ -30,7 +30,7 @@ export function TextPicker({
     <EditableInput
       value={value}
       className={hasAffix ? s.suffixInput : s.input}
-      // The bare variant wears the shared field chrome — fill and ring — so it truncates rather than letting the eclipse dissolve its own box. The affixed variant carries no chrome.
+      // The bare variant takes the shared field chrome so it truncates rather than letting the eclipse dissolve its own box.
       boxed={!hasAffix}
       maxLength={maxLength}
       caretAtEnd

@@ -1,6 +1,6 @@
 import { Button } from '../Buttons/Button'
 
-// The surface's swallow math sizes itself for exactly this pair — stays one component rather than a shape each window re-declares.
+// The surface's swallow math sizes itself for exactly this pair.
 export function WindowActions({
   inspectorOpen,
   onToggleInspector,

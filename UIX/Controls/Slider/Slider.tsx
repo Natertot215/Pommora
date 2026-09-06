@@ -11,8 +11,7 @@ const decimalsOf = (step: number): number => {
   return str.includes('.') ? str.split('.')[1].length : 0
 }
 
-/** Drafts locally while dragging: `onInput` fires per-tick, `onCommit` on release (and on an
- *  arrow-key step) for the persisted write. */
+/** Drafts locally while dragging: `onInput` per tick, `onCommit` on release and on an arrow-key step. */
 export function Slider({
   value,
   min,

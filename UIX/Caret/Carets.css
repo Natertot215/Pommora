@@ -1,18 +1,18 @@
-/* One text-insertion identity for the whole app: the drawn blinking bar (a CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
+/* One text-insertion identity: the drawn blinking bar (a CodeMirror `layer` in editor/caret.ts) paired with the I-beam hover cursor. */
 
 :root {
   --caret-width: 2px;
   --caret-color: var(--label-primary);
   --caret-gap: 1.3s;
   --caret-dim: 0;
-  /* The double-T I-beam: outlined so it reads on any background; hotspot on the stem. */
+  /* Outlined so it reads on any background; hotspot on the stem. */
   --caret-cursor:
     url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="24"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23fff" stroke-width="3"/><path d="M7 5.6V18.4M4.4 4L7 5.6L9.6 4M4.4 20L7 18.4L9.6 20" stroke="%23000" stroke-width="1.4"/></g></svg>')
     7 12,
     text;
 }
 
-/* The browser caret is hidden so nativeCaret.ts (and the editor's own layer) can paint the drawn bar over these at a JS-tracked position. The full `.cm-editor .cm-scroller .cm-content` path is what out-specifies CM's baseTheme. */
+/* The browser caret is hidden so nativeCaret.ts paints the drawn bar at a JS-tracked position instead. The full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme. */
 .cm-editor .cm-scroller .cm-content,
 input:not([type]),
 input[type="text"],

@@ -75,7 +75,7 @@ export function FrameDnd({
       const boxRect = boxEl.getBoundingClientRect()
       const assignedRect = assignedEl.getBoundingClientRect()
       const allRect = allEl.getBoundingClientRect()
-      // Regions own their field, not just their rendered rows, so the empty space around a short list is a legal drop zone.
+      // Regions own their field, not just their rendered rows, so the space around a short list is a legal drop zone.
       return {
         rows: measured,
         byId,
@@ -98,9 +98,8 @@ export function FrameDnd({
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => box.current,
     armFrom: () => box.current,
-    // A row's +, the outline, and rename inputs never arm a drag.
+    // A row's + and the outline never arm a drag.
     alsoBlock: 'button',
-    // An active drag's Escape cancels the drag rather than closing the host menu.
     swallowActiveEscape: true,
     watch: rows,
   })
@@ -135,7 +134,7 @@ export function FrameDnd({
   )
 }
 
-/** The whole row is the drag surface; buttons inside never arm one. */
+/** The whole row is the drag surface. */
 export function RowShell({ id, children }: { id: string; children: ReactNode }): React.JSX.Element {
   const { ref, handle, isDragging } = usePaneDrag(id)
   return (

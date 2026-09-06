@@ -136,8 +136,7 @@ export function Segmented({
       />
     </Fragment>
   ))
-  // display/align stay INLINE: the glass layer's <Glass> root sets its own `display: inline-block` inline, which a class can't beat — so the run's flex centering has to be inline too, or the glass buttons lose vertical centering while the cover keeps it.
-  // glass buttons lose vertical centering while the cover keeps it.
+  // display/align stay INLINE: <Glass>'s root sets `display: inline-block` inline, which a class can't beat.
   const hostProps = {
     className: cx(s.container, s.size[size], className),
     style: { display: 'flex', alignItems: 'center', ...(radius ? { borderRadius: radius } : null) },

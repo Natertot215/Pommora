@@ -1,4 +1,3 @@
-/** An unknown `beforeId` falls back to append. */
 export function nextOrder(current: string[], draggedId: string, beforeId: string | null): string[] {
   const without = current.filter((id) => id !== draggedId)
   const found = beforeId ? without.indexOf(beforeId) : -1
@@ -8,7 +7,7 @@ export function nextOrder(current: string[], draggedId: string, beforeId: string
 
 export type MeasuredRow = { id: string; top: number; bottom: number; mid: number }
 
-/** Top half drops before `over`, bottom half after it, skipping the dragged id so "after" can't resolve to itself. The single source for the slot math every reorder branch shares. */
+/** Top half drops before `over`, bottom half after, skipping the dragged id so "after" can't resolve to itself. */
 export function slotInGroup(
   group: string[],
   over: MeasuredRow,

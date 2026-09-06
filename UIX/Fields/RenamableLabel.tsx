@@ -1,6 +1,6 @@
 import { EditableInput } from './EditableInput'
 
-/** The one inline-rename wrapper: the editing swap, the commit guard (an unchanged or emptied name cancels, never commits), and the caret seat in one place. What's being renamed decides the caret: a `title` opens with the caret at the end; a `row` label opens selected whole. */
+/** A `title` opens with the caret at the end; a `row` label opens selected whole. */
 export function RenamableLabel({
   renames,
   editing,

@@ -16,7 +16,7 @@ export type NativePicker = (
   trigger: HTMLElement | null,
 ) => Promise<string | null>
 
-/** The host's own list, where it has one and the device prefers it; absent, the picker draws its own. */
+/** Absent, the picker draws its own list. */
 export const NativePickerContext = createContext<NativePicker | null>(null)
 
 export const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
@@ -31,7 +31,6 @@ export const factorChoice = (f: number): PickerOption<string> => ({
 export const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-/** Two options toggle in place — never a menu; three+ pop a centered PickerMenu. */
 export function PickerControl<T extends string>({
   ariaLabel,
   value,
@@ -44,9 +43,8 @@ export function PickerControl<T extends string>({
   value: T
   options: readonly PickerOption<T>[]
   onPick: (v: T) => void
-  /** A right press turns the trigger into a field holding `text`, selected, without opening the list. */
+  /** A right press turns the trigger into a field instead of opening the list. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
-  /** Opaque menu surface — for pickers that open over another pane (the tile Scale idiom). */
   solid?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -55,7 +53,7 @@ export function PickerControl<T extends string>({
   const native = useContext(NativePickerContext)
   const isToggle = options.length === 2
 
-  // No leading glyph: a system menu draws its own marks, and the chosen row reads as a checkmark.
+  // No leading glyph: a system menu draws its own marks.
   const popNative = (pop: NativePicker): void => {
     const items = options.map((o) => ({
       label: o.label,
@@ -63,7 +61,7 @@ export function PickerControl<T extends string>({
       checked: o.value === value,
     }))
     void pop(items, ref.current).then((picked) => {
-      // Resolved through the options rather than cast: the reply is a bare string by the time it crosses.
+      // Resolved through the options rather than cast: the reply crosses as a bare string.
       const chosen = options.find((o) => o.value === picked)
       if (chosen) onPick(chosen.value)
     })
@@ -76,7 +74,6 @@ export function PickerControl<T extends string>({
   }
 
   const chevron = <Icon name="chevrons-up-down" size="control" />
-  // The host span outlives the swap, so the menu keeps measuring one box across it.
   const trigger = (
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
@@ -107,7 +104,7 @@ export function PickerControl<T extends string>({
           className={s.trigger}
           aria-label={ariaLabel}
           onClick={onTrigger}
-          // Reaches the trigger whether or not a native list would have taken the left press.
+          // Reaches the trigger even when a native list took the left press.
           onContextMenu={
             typeable
               ? (e) => {

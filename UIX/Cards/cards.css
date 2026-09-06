@@ -1,25 +1,25 @@
 :root {
-  /* KNOB — the shared column-width floor: bigger means fewer, larger columns that grow further before snapping back. `-base` is the unscaled value; a scaling host rebuilds --card-min from it. */
+  /* KNOB — column-width floor; a scaling host rebuilds --card-min from `-base`. */
   --card-min-base: 180px;
   --card-min: var(--card-min-base);
   --card-gap-h: 10px; /* KNOB — inter-card spacing */
   --card-gap-v: 10px;
-  /* KNOB — the reflow thumb's fixed height; the card grows below it. Same `-base` pattern. */
+  /* KNOB — the reflow thumb's fixed height */
   --card-thumb-h-base: 100px;
   --card-thumb-h: var(--card-thumb-h-base);
-  --thumb-share: 65%; /* KNOB — a locked card's image share of its height; it yields whatever the text below needs */
-  --card-preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
-  --card-inset: 8px; /* KNOB — the card's single horizontal inset; the title, the trail, and the trail's divider all start here. */
+  --thumb-share: 65%; /* KNOB — a locked card's image share of its height */
+  --card-preview-zoom: 1.25; /* KNOB — captured-preview zoom; a user-cropped cover never zooms */
+  --card-inset: 8px; /* KNOB — the card's horizontal inset */
   --card-pad-top: 8px; /* KNOB — clearance under the thumb divider */
-  --card-pad-bottom: 6px; /* KNOB — clearance below whatever ends the card */
-  --card-title-gap: 2px; /* KNOB — extra space between the title and the properties */
-  --card-props-trail-gap: 2px; /* KNOB — extra space between the properties and the trail */
+  --card-pad-bottom: 6px; /* KNOB — clearance at the card's bottom */
+  --card-title-gap: 2px; /* KNOB — title → properties */
+  --card-props-trail-gap: 2px; /* KNOB — properties → trail */
   --card-trail-gap: 6px; /* KNOB — divider → trail */
-  /* KNOB — the trail row's reserved height. Held open even on a card with no path, so one row's thumbs never differ by whether a card sits at its collection's root. */
+  /* KNOB — the trail row's reserved height, held open even with no path. */
   --card-trail-h: 14px;
 }
 
-/* auto-fit stretches cards to fill the row (no empty tracks to pad); is-fill holds the empty tracks instead, so a sparse grid keeps its cards card-sized rather than ballooning to fill it. */
+/* is-fill holds the empty tracks instead, so a sparse grid keeps its cards card-sized. */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));

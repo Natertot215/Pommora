@@ -1,4 +1,4 @@
-// CSS can only recolor the native caret and selection, never reshape either, so this paints the same `.mdpm-caret` bar and `.mdpm-sel` pills the editor draws over whichever field is focused.
+// CSS can recolor the native caret but never reshape it, so this paints the editor's bar and pills over the focused field.
 
 // Copied onto the measuring mirror so its text lays out exactly like the field's.
 const MIRROR_PROPS = [
@@ -119,7 +119,7 @@ function fieldCaret(el: Field): CaretRect | null {
   const { m, box } = seatMirror(el)
   const pos = el.selectionStart ?? el.value.length
   m.textContent = el.value.slice(0, pos)
-  // The trailing span's LEFT edge marks the caret; a lone `.` gives it a box at the end of the value. Assumes left-aligned text.
+  // The trailing span's LEFT edge marks the caret; a lone `.` boxes the end. Assumes left-aligned text.
   const span = document.createElement('span')
   span.textContent = el.value.slice(pos) || '.'
   m.appendChild(span)
@@ -128,7 +128,7 @@ function fieldCaret(el: Field): CaretRect | null {
   const x = sr.left - el.scrollLeft
   const y = sr.top - el.scrollTop
   if (box.width === 0 && box.height === 0) return null
-  // Vertically the bar can overhang the border box at rest (negative half-leading), so it need only intersect; horizontally the caret is a point.
+  // The bar can overhang the border box vertically at rest, so it need only intersect; horizontally the caret is a point.
   if (x < box.left - 1 || x > box.right + 1) return null
   if (y + styledH <= box.top || y >= box.bottom) return null
   return { x, y, h: styledH }
@@ -186,7 +186,7 @@ function editableCaret(el: HTMLElement): CaretRect | null {
   return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
 }
 
-// A field row is no stacking context, so a negative z-index sinks past its background; isolating the parent gives that layer a floor.
+// A field row is no stacking context; isolating the parent gives the negative-z layer a floor.
 function ensureHost(): HTMLDivElement | null {
   const parent = active?.parentElement
   if (!parent) return null
@@ -263,7 +263,7 @@ function reposition(): void {
   b.style.left = `${c.x}px`
   b.style.top = `${c.y}px`
   b.style.height = `${c.h}px`
-  // Restarting the fade on every move — the editor's keyframe swap; the name IS the state.
+  // The editor's keyframe swap restarts the fade; the name IS the state.
   b.style.animationName = b.style.animationName === 'mdpm-blink2' ? 'mdpm-blink' : 'mdpm-blink2'
 }
 
@@ -272,7 +272,7 @@ function schedule(): void {
   if (active && !raf) raf = requestAnimationFrame(reposition)
 }
 
-// A pane still animating open when its field takes focus moves in ways no listener above can see — transforms never touch the layout box the ResizeObserver watches — so a fresh focus re-measures every frame until the bar holds still, the deadline capping a host that never settles.
+// A pane animating open moves in ways no listener above sees — transforms never touch the ResizeObserver's box — so a fresh focus re-measures until the bar holds still.
 let settleRaf = 0
 const SETTLE_STILL_FRAMES = 2
 const SETTLE_DEADLINE_MS = 400

@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { track as switchTrack } from './dual-switch.css'
 
-/** The cluster — the clickable chip; the ColorPicker anchors below it. */
+/** Positioned: the ColorPicker anchors below it. */
 export const cluster = style({
   position: 'relative',
   display: 'flex',
@@ -20,5 +20,5 @@ export const chip = style({
 /** The `--sw` fill, doubled so it outranks the DualSwitch track's own background that the swatch composes below. */
 const swatchFill = style({ selectors: { '&&': { background: 'var(--sw)' } } })
 
-/** It composes the switch's real track rather than restating its box, so the two can never drift and the swatch is the track's own size. */
+/** Composes the switch's real track rather than restating its box, so the two can't drift. */
 export const swatch = style([switchTrack, swatchFill])

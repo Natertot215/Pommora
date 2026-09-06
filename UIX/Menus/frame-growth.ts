@@ -1,4 +1,4 @@
-/** The `100%` floor comes first: a bare `max-content` collapses the frame onto its widest row inside a wider host. */
+/** The `100%` floor comes first: a bare `max-content` collapses onto the widest row in a wider host. */
 export const growToContent = (
   maxWidth: string,
 ): { minWidth: string; width: string; maxWidth: string } => ({
