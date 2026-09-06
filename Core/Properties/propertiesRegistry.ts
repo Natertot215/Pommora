@@ -1,5 +1,5 @@
-import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Locations/paths'
-import { readJsonObject, readJsonStrict, writeJson } from '../IO/atomicWrite'
+import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Paths/paths'
+import { readJsonObject, readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
 import { propertyDefinition, type PropertyDefinition } from './properties'

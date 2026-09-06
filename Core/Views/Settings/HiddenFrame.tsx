@@ -13,7 +13,7 @@ import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/colum
 import { useSaveView } from '../ViewTileScope'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { PaneDrop, FrameRow } from '@pommora/uix/Interactions/frameDndModel'
-import { contextIdsOf, contextsByIdOf } from '../../Properties/contextIdentity'
+import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from '../hiddenFrameModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle/EyeToggle'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'

@@ -1,6 +1,6 @@
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useSession } from '../Session/store'
-import { host } from './dialer'
+import { host } from '../Platform/dialer'
 
 export function useNativeMenus(): boolean {
   return useSession((st) => st.devicePrefs.nativeMenus ?? false)

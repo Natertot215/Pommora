@@ -1,7 +1,7 @@
 import { type Handlers, withRoot } from '../Contract/handlers'
 import { fail, NO_NEXUS, ok, type Result } from '../Contract/result'
 import { isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { confirmContainerWrite } from '../Nexus/confirm'
 import { sessionRoot } from '../Nexus/session'
 import { type ContainerConfigPatch, setContainerConfig } from './containerConfig'

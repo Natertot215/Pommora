@@ -1,7 +1,7 @@
 import { NOT_A_PROPERTY_DIR_MESSAGE } from '../Assets/assetRoots'
 import type { ThumbRect } from '../Interface/chrome'
 import type { GlanceSize } from '../Interface/Windows/windowRecord'
-import { rootSegs } from '../Locations/exclusion'
+import { rootSegs } from '../Paths/exclusion'
 import type { Option } from '../Properties/optionModel'
 import {
   type FileConfig,

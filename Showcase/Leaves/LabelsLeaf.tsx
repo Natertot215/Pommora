@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { vars } from '@pommora/uix/Theme'
 import { Label } from '@pommora/uix/Labels/Label'
 import { fill, labelColor, roomy, shape, textCap } from '@pommora/uix/Labels/label-base.css'
-import { SpaceChip, FileChip, FileLabel } from '@pommora/uix/Labels/recipes'
+import { NeutralChip, FileChip, FileLabel } from '@pommora/uix/Labels/recipes'
 import { DualSwitch } from '@pommora/uix/Controls/Switches/DualSwitch'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
 import type { LabelColorName } from '@pommora/uix/Labels/label-base.css'
@@ -182,7 +182,7 @@ function RemovableRow(): React.JSX.Element {
         <Label shape="tag" color="green-4" text="Removable tag" onRemove={drop('tag')} />
       )}
       {live('context') && (
-        <SpaceChip color="purple-4" title="Removable context" onRemove={drop('context')} />
+        <NeutralChip color="purple-4" title="Removable context" onRemove={drop('context')} />
       )}
       {live('file') && <FileChip name="Removable file.pdf" onRemove={drop('file')} />}
       {live('plain') && <FileLabel name="Removable name.md" onRemove={drop('plain')} />}

@@ -18,7 +18,7 @@ import { LinkCell } from './LinkCell'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { CheckboxGlyph } from './checkboxLook'
 import type { ValueContext } from '../valueContext'
-import { FileChip, SpaceChip } from '@pommora/uix/Labels/recipes'
+import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
 
 export function Cell({
   row,
@@ -110,7 +110,7 @@ export function Cell({
           {v.value.map((id) => {
             const c = ctx.contextsById.get(id)
             return (
-              <SpaceChip
+              <NeutralChip
                 key={id}
                 color={labelColorFor(c?.color)}
                 title={c?.title ?? id}

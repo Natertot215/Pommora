@@ -1,7 +1,7 @@
-import { join } from '../Locations/posix'
-import { escapes } from '../Locations/pathSafety'
+import { join } from '../Paths/posix'
+import { escapes } from '../Paths/pathSafety'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
-import { asString, asStringArray } from '../Locations/coerce'
+import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
   assetMatcher,
@@ -9,15 +9,15 @@ import {
   hiddenName,
   sameScope,
   type WatchScope,
-} from '../Locations/exclusion'
-import { adoptedId } from '../Locations/ids'
-import { pathExists, readJsonObject } from '../IO/atomicWrite'
-import { isMarkdownFile } from '../IO/walk'
+} from '../Paths/exclusion'
+import { adoptedId } from './ids'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { isMarkdownFile } from '../Files/walk'
 import { removePathIndex } from '../Index/contentIndex'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { getLiveTree, patchLiveTree } from './liveTree'
-import { resolveOrder } from '../Locations/order'
+import { resolveOrder } from './order'
 import {
   HOMEPAGE_HOST_DIRNAME,
   NEXUS_CONFIG_FILES,
@@ -26,7 +26,7 @@ import {
   TILE_DOC_FILENAME,
   nexusConfig,
   relPosix,
-} from '../Locations/paths'
+} from '../Paths/paths'
 import type { TileHostRef } from '../Tiles/tiles'
 import {
   parseViews,
@@ -48,7 +48,7 @@ import {
   type TreeEntity,
   updateNodeInTree,
 } from './treePatch'
-import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Locations/nexusPaths'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Paths/nexusPaths'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 

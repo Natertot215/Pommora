@@ -1,5 +1,5 @@
 import { fenceWarm } from '../Navigation/warmTabs'
-import { capSet } from '../Utilities/capMap'
+import { capSet } from '../../UIX/Utilities/capMap'
 
 /** The host binds `restore`/`capture` to a (tab, entity) identity at mount time — the mount-once effect freezes that binding, so a capture can never land under the NEXT tab's identity mid-switch. */
 export interface WarmSeam {

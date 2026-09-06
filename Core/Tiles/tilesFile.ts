@@ -1,4 +1,4 @@
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from './tiles'
 import { errText, fail, ok, type Result } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -6,13 +6,13 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { normalizeTitle } from '../Connections/connections'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections } from '../Connections/rewrite'
-import { newId } from '../Locations/ids'
-import { atomicWriteFile, pathExists, readTextOrNull } from '../IO/atomicWrite'
+import { newId } from '../Nexus/ids'
+import { atomicWriteFile, pathExists, readTextOrNull } from '../Files/atomicWrite'
 import { trashFileFlat } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { tileFilePath, tileHostDir } from '../Locations/paths'
+import { tileFilePath, tileHostDir } from '../Paths/paths'
 
 export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
   if (host.kind === 'homepage') return tileHostDir(root)

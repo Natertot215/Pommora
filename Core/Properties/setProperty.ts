@@ -1,7 +1,7 @@
 import { machine } from '../Platform/machine'
-import { splitFrontmatter } from '../IO/pageFile'
-import { resolveUnderRoot } from '../Locations/pathSafety'
-import { readTextOrNull } from '../IO/atomicWrite'
+import { splitFrontmatter } from '../Files/pageFile'
+import { resolveUnderRoot } from '../Paths/pathSafety'
+import { readTextOrNull } from '../Files/atomicWrite'
 import { indexWrittenPage } from '../Index/indexSeed'
 
 import { loadGovernedWorld } from '../Contexts/contextWrite'

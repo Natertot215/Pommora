@@ -1,10 +1,10 @@
 // Mutations serialize on the registry file's own per-file lock, NOT the global schema-op chain — nesting a schema op there would deadlock.
 
-import { contextsRegistry, seededRegistry, type ContextsRegistry } from '../Properties/contexts'
+import { contextsRegistry, seededRegistry, type ContextsRegistry } from './contexts'
 import { fail, ok, type Result } from '../Contract/result'
-import { readJsonStrict, rmwJsonStrict, writeJson } from '../IO/atomicWrite'
-import { newId } from '../Locations/ids'
-import { contextsRegistryFile } from '../Locations/paths'
+import { readJsonStrict, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
+import { newId } from '../Nexus/ids'
+import { contextsRegistryFile } from '../Paths/paths'
 
 /** zod loose keeps unknown fields at both the registry and entry level, so foreign data round-trips every rewrite. */
 function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {

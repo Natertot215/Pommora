@@ -1,4 +1,4 @@
-import { capSet } from '../../Utilities/capMap'
+import { capSet } from '../../../UIX/Utilities/capMap'
 import { codeMaskOf, isInsideInlineCode } from './markdownCode'
 import {
   isThematicBreakLine,

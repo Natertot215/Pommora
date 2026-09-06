@@ -1,8 +1,8 @@
 // A write never displaces a different stranded record — its owed heal outranks the op now starting, which runs unjournaled — and a clear lands only for the caller's own record.
-import { readJsonObject, writeJson } from '../IO/atomicWrite'
-import { recordWrite } from '../IO/writeEcho'
+import { readJsonObject, writeJson } from '../Files/atomicWrite'
+import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
-import { nexusConfig } from '../Locations/paths'
+import { nexusConfig } from '../Paths/paths'
 
 interface JournalSlot<J> {
   read(root: string): Promise<J | null>

@@ -45,7 +45,7 @@ import {
 import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
+import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { editorHost } from '../api'
 
 type ConnGetter = () => ConnectionsApi | undefined

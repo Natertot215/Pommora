@@ -1,8 +1,8 @@
 // Every renderer mutation resolves its session root here and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
 
-import { setOrDrop } from '../IO/atomicWrite'
-import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'
-import { createDisambiguated } from '../Locations/disambiguate'
+import { setOrDrop } from '../Files/atomicWrite'
+import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
+import { createDisambiguated } from '../Paths/disambiguate'
 import { errText, fault, ok, NO_NEXUS, type Result } from '../Contract/result'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'

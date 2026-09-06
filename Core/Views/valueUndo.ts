@@ -1,4 +1,4 @@
-import { matchesCommand } from '@pommora/uix/Interactions/commands'
+import { matchesCommand } from '@pommora/uix/Interactions/chords'
 
 const stack: Array<() => void> = []
 let installed = false

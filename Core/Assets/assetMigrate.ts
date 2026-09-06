@@ -1,19 +1,18 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT, TRASH_DIR } from '../Locations/nexusPaths'
-import { basenameNoMd } from '../Locations/coerce'
-import { basename, dirname, extname, join } from '../Locations/posix'
-import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from '../Locations/paths'
+import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT, TRASH_DIR } from '../Paths/nexusPaths'
+import { basename, basenameNoMd, dirname, extname, join } from '../Paths/posix'
+import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../IO/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
   readJsonObject,
   rewritePageSerialized,
   rmwJsonStrict,
   readTextOrNull,
-} from '../IO/atomicWrite'
-import { corpusFiles, listEntries, listFilesRecursive } from '../IO/walk'
+} from '../Files/atomicWrite'
+import { corpusFiles, listEntries, listFilesRecursive } from '../Files/walk'
 import { trashFileFlat } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import {

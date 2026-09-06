@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import type { ActionItem } from '../../Actions/menuModel'
 
 export type CitationSubject = 'marker' | 'citation'
 

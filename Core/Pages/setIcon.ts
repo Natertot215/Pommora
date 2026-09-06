@@ -1,10 +1,10 @@
 // A page carries its icon in frontmatter, a Context in the registry, a container in its sidecar.
 
 import { machine } from '../Platform/machine'
-import { basename } from '../Locations/posix'
-import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'
-import { readTextOrNull, rmwJsonStrict, setOrDrop } from '../IO/atomicWrite'
-import { sidecarPath } from '../Locations/paths'
+import { basename } from '../Paths/posix'
+import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
+import { readTextOrNull, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
+import { sidecarPath } from '../Paths/paths'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { fault, ok } from '../Contract/result'

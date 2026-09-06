@@ -3,8 +3,8 @@
 import { readContainerSidecar, type ContainerKind } from '../Nexus/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from './views'
 import { ok, fail, type Result } from '../Contract/result'
-import { newId } from '../Locations/ids'
-import { writeSidecar, withSidecarLock } from '../IO/sidecar'
+import { newId } from '../Nexus/ids'
+import { writeSidecar, withSidecarLock } from '../Files/sidecar'
 
 const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views ?? []
 

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useSession } from '../Session/store'
 import type { IconFavorites } from '@pommora/uix/Pickers/IconPicker/IconPicker'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 import { iconFavoriteMenuItems } from '@pommora/core/Actions/identityMenus'
 
 const NONE: string[] = []

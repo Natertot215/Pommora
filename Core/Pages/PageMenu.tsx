@@ -19,7 +19,7 @@ import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 

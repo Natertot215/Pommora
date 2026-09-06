@@ -1,9 +1,13 @@
 import { EditorView } from '@codemirror/view'
-import { decidePaste, pastedUrl, type LinkPaste } from '@pommora/core/Web/pasteLink'
+import {
+  decidePaste,
+  pastedUrl,
+  type LinkPaste,
+} from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
 import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'
-import { linkDestinationAt } from '@pommora/core/Web/webpageEmbed'
-import { matchesCommand } from '@pommora/uix/Interactions/commands'
+import { linkDestinationAt } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
+import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { insertCitation } from '../Citations/citationActions'

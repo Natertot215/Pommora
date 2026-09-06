@@ -1,20 +1,20 @@
-import { basename, dirname, join } from '../Locations/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { isContentFile, listEntries } from '../IO/walk'
+import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
-import { contentIdAt, newId } from '../Locations/ids'
+import { contentIdAt, newId } from './ids'
 import {
   readJsonObject,
   readJsonStrict,
   pathExists,
   rewritePreservingTimes,
-} from '../IO/atomicWrite'
-import { readSidecar, writeSidecar } from '../IO/sidecar'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../IO/pageFile'
-import { asString } from '../Locations/coerce'
+} from '../Files/atomicWrite'
+import { readSidecar, writeSidecar } from '../Files/sidecar'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import { asString } from './coerce'
 import { baseSidecar } from './schemas'
-import { recordWrite } from '../IO/writeEcho'
-import { shouldSkipDir, type WatchScope } from '../Locations/exclusion'
+import { recordWrite } from '../Files/writeEcho'
+import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import {
   AGENDA_SLOTS,
@@ -23,7 +23,7 @@ import {
   type FolderKind,
   type FolderKindContext,
 } from './folderKind'
-import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from '../Locations/paths'
+import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from '../Paths/paths'
 
 async function reHomeRegistered(
   absDir: string,

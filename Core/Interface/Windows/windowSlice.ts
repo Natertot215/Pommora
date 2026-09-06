@@ -5,7 +5,7 @@ import {
 } from '@pommora/core/Interface/Windows/windowRecord'
 import { type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
 import { type ReconcileIndex, reconcileWith } from '../../Session/reconcileSelection'
-import { reconcileIndexOf } from '../../Session/treeIndex'
+import { reconcileIndexOf } from '../../Nexus/treeIndex'
 import { liveTarget, makeTabId } from '../../Navigation/tabsModel'
 import {
   closeTabIn,

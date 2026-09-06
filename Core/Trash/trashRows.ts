@@ -1,7 +1,7 @@
-import { basename, dirname } from '../Locations/posix'
+import { basename, dirname } from '../Paths/posix'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashCrumb, TrashRow } from './trashRow'
-import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Locations/nexusPaths'
+import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { type ArtifactRecord, containerChain, resolveRecord } from './resolve'
 import type { ListedBundle } from './spend'
 

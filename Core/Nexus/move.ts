@@ -1,5 +1,5 @@
-import { dirname } from '../Locations/posix'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { dirname } from '../Paths/posix'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fail, ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'

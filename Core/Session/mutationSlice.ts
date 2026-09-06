@@ -3,10 +3,10 @@ import {
   type MutableKind,
   type RenameHost,
 } from '@pommora/core/Pages/mutateRequest'
-import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
+import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { orderWithSlot } from '../Views/creationOrder'
-import { findContainer, parentPathOf } from './treeIndex'
+import { findContainer, parentPathOf } from '../Nexus/treeIndex'
 import type { Slice } from './sessionState'
 import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
 import { host } from '../Platform/dialer'

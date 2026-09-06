@@ -1,5 +1,5 @@
-import { join, relative } from '../Locations/posix'
-import { escapes } from '../Locations/pathSafety'
+import { join, relative } from '../Paths/posix'
+import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { extractMentions, frontmatterMentions } from '../Connections/scan'
 import { sweepAdmitsBody } from '../Nexus/util'
@@ -20,10 +20,10 @@ import {
   type PageIndexEntry,
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
-import { readTextOrNull } from '../IO/atomicWrite'
-import { splitEnvelope, splitFrontmatter } from '../IO/pageFile'
-import { corpusFiles, corpusFilesUnder, isMarkdownFile } from '../IO/walk'
-import { NON_CORPUS_TOP } from '../Locations/nexusPaths'
+import { readTextOrNull } from '../Files/atomicWrite'
+import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { corpusFiles, corpusFilesUnder, isMarkdownFile } from '../Files/walk'
+import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
 

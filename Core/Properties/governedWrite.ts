@@ -1,10 +1,14 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a key in `govern` absent from `next` is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
-import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './contextResolve'
+import {
+  reconcileGovernedRoot,
+  survivingChanges,
+  type GovernedWorld,
+} from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
-import { atomicWriteFile } from '../IO/atomicWrite'
+import { atomicWriteFile } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 
 import { noteValueWrite } from '../Nexus/valuesChanged'
 

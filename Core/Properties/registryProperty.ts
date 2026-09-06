@@ -1,7 +1,7 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { validateDefinition, validateName } from './schema'
-import { mintPropertyId } from '../Locations/ids'
+import { mintPropertyId } from '../Nexus/ids'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
@@ -13,7 +13,7 @@ import {
   type PropertyDefinition,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
-import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
+import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots } from './governedSweep'

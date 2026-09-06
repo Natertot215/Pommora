@@ -18,8 +18,8 @@ import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
-import { thumbKey, thumbRel } from '@pommora/core/Locations/nexusPaths'
-import { assetUrl } from '../Platform/assetUrl'
+import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
+import { assetUrl } from '../Platform/assetScheme'
 
 export function NavGallery({
   pins,

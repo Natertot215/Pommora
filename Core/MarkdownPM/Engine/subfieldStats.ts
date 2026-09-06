@@ -1,6 +1,6 @@
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { inlineSpans } from './markdownCode'
-import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
+import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { lineIndexAt, perText, scanOf, type DocScan } from './docScan'
 import {
   blockquotePrefixRe,

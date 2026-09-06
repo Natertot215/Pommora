@@ -1,5 +1,5 @@
-import { setOrDrop } from '../IO/atomicWrite'
-import { cropKeyFor } from '../Locations/nexusPaths'
+import { setOrDrop } from '../Files/atomicWrite'
+import { cropKeyFor } from '../Paths/nexusPaths'
 import { updateCrops } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'

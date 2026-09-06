@@ -1,6 +1,6 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { linkMarkdown } from '@pommora/core/Web/pasteLink'
+import { linkMarkdown } from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import { editorHost } from '../api'
 
 // Page Title writes the Short Link first and swaps the label in when the fetch lands. To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.

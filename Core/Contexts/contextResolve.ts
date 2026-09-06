@@ -1,8 +1,13 @@
 import type { ContextsRegistry } from './contexts'
 import { normalizeTitle } from '../Connections/connections'
 import { parseContextKey } from './contexts'
-import type { PropertyDefinition } from './properties'
-import { type Adoption, encodeValue, isBlankValue, reconcilePropertyValue } from './propertyValue'
+import type { PropertyDefinition } from '../Properties/properties'
+import {
+  type Adoption,
+  encodeValue,
+  isBlankValue,
+  reconcilePropertyValue,
+} from '../Properties/propertyValue'
 import type { SpaceNode } from '../Nexus/tree'
 
 type ResolvedLinks = Map<string, string[]>
