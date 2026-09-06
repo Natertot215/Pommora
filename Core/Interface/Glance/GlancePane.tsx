@@ -98,9 +98,7 @@ function scrollGuest(
   try {
     const id = el?.getWebContentsId?.()
     if (id !== undefined) host().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
-  } catch {
-    // a guest that has not attached has nothing to scroll yet
-  }
+  } catch {}
 }
 
 export function GlancePane(): React.JSX.Element {

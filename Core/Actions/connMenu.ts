@@ -48,7 +48,6 @@ const CONN_URL_ACTIONS = [
 ] as const
 export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
 
-/** Ends the menu below a separator; acts on the link's existence rather than how it reads. */
 const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
   { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
   { label: 'Delete', action: 'link:delete' },
@@ -76,7 +75,6 @@ function closingRows(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
   ]
 }
 
-/** A web address reaches no page, so nothing needing one is offered. */
 export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
   const authoring: ActionItem<ConnMenuAction>[] = ctx.editable
     ? [
@@ -113,7 +111,6 @@ export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[
     ]
   }
 
-  // A page already in hand isn't somewhere to be opened, so one showing in both offers neither.
   const opens = pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.open === 'tab').filter(
     (r) =>
       !(r.action === 'title:newtab' && ctx.open === 'detail') &&

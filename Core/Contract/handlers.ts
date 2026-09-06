@@ -12,8 +12,7 @@ interface PickOptions {
   message?: string
 }
 
-/** What a host does that the engine cannot: reach the renderer, the user's dialogs and menus, the
- *  system, and the surfaces only that host draws. Every path handed in is forward-slash. */
+/** What a host does that the engine cannot. Every path handed in is forward-slash. */
 export interface HostContext {
   push<K extends keyof Pushes>(k: K, payload: Pushes[K]): void
   pick(kind: PickKind, opts?: PickOptions): Promise<string | null>
@@ -23,7 +22,6 @@ export interface HostContext {
   openExternal(url: string): Promise<void>
   message(type: 'error' | 'info', message: string, detail: string): Promise<void>
   systemAccent(): string | null
-  /** A host without a native popper answers with the in-app presenter. */
   menu(req: RowMenuRequest): Promise<string | null>
   thumbnails: {
     capture(
@@ -50,7 +48,6 @@ export type Handler<K extends keyof Asks> = (
 
 export type Handlers = { [K in keyof Asks]: Handler<K> }
 
-/** The no-nexus refusal every rooted handler shares: the session root or the one refusal. */
 export const withRoot =
   <A extends unknown[], R>(fn: (root: string, ctx: HostContext, ...args: A) => R) =>
   (ctx: HostContext, ...args: A): R | typeof NO_NEXUS => {

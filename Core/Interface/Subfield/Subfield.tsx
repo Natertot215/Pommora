@@ -12,8 +12,7 @@ export function Subfield({
   inert = false,
 }: {
   page: SubfieldPage | null
-  /** A floating window's crumbs describe location without driving the main pane — no dimmed
-   *  tail, nothing to click. The pane's extend the path to the deepest node visited on it. */
+  /** A floating window's crumbs describe location without driving the main pane — no dimmed tail, nothing to click. */
   inert?: boolean
 }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
@@ -27,8 +26,7 @@ export function Subfield({
   const items = DEFAULT_ITEMS[crumbSelection.kind] ?? []
 
   return (
-    // With no breadcrumb (NavView) the action has nothing to sit opposite, so it leads on the left
-    // instead of being pushed to the far edge.
+    // With no breadcrumb (NavView) the action has nothing to sit opposite, so it leads on the left instead of being pushed to the far edge.
     <div
       className={`subfield ${text.subline.emphasized}${crumbs.length === 0 ? ' subfield-lead' : ''}`}
     >

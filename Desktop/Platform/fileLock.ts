@@ -1,6 +1,4 @@
-// Two spellings of one path are two locks, so a multi-writer file builds its key in one place.
-// Re-taking a held key would queue behind a slot awaiting itself, so it is refused before the
-// chain is read and the file stays usable.
+// Two spellings of one path are two locks, so a multi-writer file builds its key in one place. Re-taking a held key would queue behind a slot awaiting itself, so it is refused before the chain is read and the file stays usable.
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 

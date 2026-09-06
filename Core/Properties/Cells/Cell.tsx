@@ -35,7 +35,6 @@ export function Cell({
   hideIcon: boolean
   style: ColumnStyle
   showFullLink?: boolean
-  /** Only Standard chips wire it — Compact looks clear via their menu instead. */
   remove?: (next: PropertyValue | null) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {

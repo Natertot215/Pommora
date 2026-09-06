@@ -63,8 +63,7 @@ export function useStatusReorder(
           : index === 0
             ? grp.rows[0].top
             : (grp.rows[index - 1].bottom + grp.rows[index].top) / 2
-      // A same-group drop past the original slot shifts down by one (moveStatusOption inserts in the WITHOUT space while the snapshot indexes the WITH space); cross-group needs no shift.
-      // A value the live order no longer holds has no move to make — a delete landing mid-drag leaves the gesture aimed at a row that is gone.
+      // A same-group drop past the original slot shifts down by one (moveStatusOption inserts in the WITHOUT space while the snapshot indexes the WITH space); cross-group needs no shift. A value the live order no longer holds has no move to make.
       const fromGroup = order.find((grp) => grp.values.includes(value))
       if (!fromGroup) return null
       const fromIndex = fromGroup.values.indexOf(value)

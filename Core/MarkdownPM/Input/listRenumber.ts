@@ -2,8 +2,7 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { docString } from '../docCache'
 import { renumberOrderedRun, type ChangeSpec } from '../Engine/listDragModel'
 
-// A deletion that removes a whole line from an ordered run leaves the numbers gapped — 1, 3 where
-// 1, 2 should stand. The renumber rides the same transaction, so one undo takes both.
+// A deletion that removes a whole line from an ordered run leaves the numbers gapped. The renumber rides the same transaction, so one undo takes both.
 export const listRenumberOnDelete: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || !tr.isUserEvent('delete')) return tr
   const startDoc = docString(tr.startState.doc)

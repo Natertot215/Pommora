@@ -1,7 +1,6 @@
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import type { MenuRow } from '@pommora/uix/Menus'
 
-/** A branch row drills rather than resolves; a divider leading the whole list is dropped. */
 export function rowMenuRows<A extends string>(
   items: readonly ActionItem<A>[],
   onPick: (action: A) => void,

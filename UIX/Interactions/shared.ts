@@ -30,8 +30,7 @@ export function suppressNextClick(): void {
   document.addEventListener('click', swallow, { capture: true, once: true })
   window.setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0)
 }
-/** A cancelled drag's release is still coming and must not read as a click; a new press first means
- *  that release was lost to a blur. */
+/** A cancelled drag's release is still coming and must not read as a click; a new press first means that release was lost to a blur. */
 export function suppressReleaseClick(): void {
   const onUp = (): void => {
     document.removeEventListener('pointerdown', onDown, true)

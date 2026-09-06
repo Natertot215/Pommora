@@ -81,8 +81,7 @@ function wireAppLevel(): void {
       return { action: 'deny' }
     })
 
-    // Re-asserted per navigation: a guest re-aimed after a clean attach would otherwise sail
-    // through on the signed-in partition.
+    // Re-asserted per navigation: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.
     contents.on('will-navigate', (event, url) => {
       if (!isWebUrl(url)) event.preventDefault()
     })
@@ -97,9 +96,7 @@ export function installWebGuests(win: BrowserWindow): void {
   wireAppLevel()
 
   win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
-    // Validator, not rewriter — spike-proven: `params` edits here don't reach the attach, so the
-    // surfaces carry `partition` and `allowpopups` as attributes (without the latter a guest's
-    // window.open dies inside Blink). This is the trust boundary.
+    // Validator, not rewriter — spike-proven: `params` edits here don't reach the attach, so the surfaces carry `partition` and `allowpopups` as attributes (without the latter a guest's window.open dies inside Blink). This is the trust boundary.
     const src = params.src ?? ''
     if (
       (src !== '' && !isWebUrl(src)) ||

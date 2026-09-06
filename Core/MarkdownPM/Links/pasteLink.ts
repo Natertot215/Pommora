@@ -12,8 +12,6 @@ import { embedSeatAt } from '../Embeds/embedInsert'
 import { awaitTitle } from './pendingTitle'
 import { editorHost } from '../api'
 
-// Settings are read at paste time rather than closed over, since the extension array is built once at mount.
-
 /** Deciding and writing are separate so a paste can be claimed on the decision alone — claiming after the write would leave the original text pasted alongside the link. */
 function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | null {
   // The read-only change filter drops a doc-changing transaction without a trace, so decline before dispatching.

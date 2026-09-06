@@ -20,9 +20,7 @@ export async function createFolderEntity(
   if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
   await machine().mkdir(folder)
-  // Suppress the new folder's addDir echo (the mkdir doesn't self-suppress like the sidecar
-  // write does) — an un-suppressed watcher swap mid-rename remounts the fresh row and drops
-  // the inline-rename keystrokes.
+  // Suppress the new folder's addDir echo (the mkdir doesn't self-suppress like the sidecar write does) — an un-suppressed watcher swap mid-rename remounts the fresh row and drops the inline-rename keystrokes.
   recordWrite(folder)
   await writeSidecar(folder, kind, { id, ...extra })
   return ok({ id, path: folder })
@@ -36,8 +34,7 @@ export async function renameFolderEntity(
   const target = join(dirname(absFolder), newName)
   if (target === absFolder) return ok({ path: absFolder })
   if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)
-  // The watcher's unlinkDir/addDir echo (and every child event under a folder) must not
-  // buy a second full walk.
+  // The watcher's unlinkDir/addDir echo (and every child event under a folder) must not buy a second full walk.
   recordWrite(absFolder)
   recordWrite(target)
   await machine().rename(absFolder, target)

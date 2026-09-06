@@ -1,7 +1,4 @@
-// View pipeline orchestrator. Composes the pure stages: columns (resolver) + filter → group →
-// sort-within-group. VIEW-SOURCE-AGNOSTIC — `view`, `rows`, `schema`, `setTree` are all passed in,
-// so a future context-dashboard embed reuses this verbatim with its own stored SavedView + a target
-// ref. Never couple the view to its container or read `views[]` here. Pure: no fs, no React.
+// Composes the pure stages: columns (resolver) + filter → group → sort-within-group. VIEW-SOURCE-AGNOSTIC — `view`, `rows`, `schema`, `setTree` are all passed in, so a future context-dashboard embed reuses this verbatim. Never couple the view to its container or read `views[]` here.
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
@@ -26,15 +23,13 @@ export function resolveView(input: {
   view: SavedView
   schema: PropertyDefinition[]
   manualOrder?: string[]
-  /** Cards flatten each top-level set's subtree into one band, so structural grouping resolves
-   *  flat — one group per top set, its whole subtree in items — and a manual reorder spans the band. */
+  /** Cards flatten each top-level set's subtree into one band, so structural grouping resolves flat and a manual reorder spans the band. */
   flattenStructural?: boolean
   /** Registry Context ids (display order) — context columns + their filter typing. */
   contextIds?: readonly string[]
 }): { columns: ResolvedColumn[]; groups: ResolvedGroup[] } {
   const { rows, setTree, view, schema, manualOrder, flattenStructural, contextIds = [] } = input
-  // Sort By: Location (cards) is a reserved sort primary the sorter can't rank; on its Location order
-  // mode it flattens the structural walk into one band (locationFlat).
+  // Sort By: Location (cards) is a reserved sort primary the sorter can't rank; on its Location order mode it flattens the structural walk into one band.
   const locationFsOrder = isLocationFsOrder(view)
   const useLocationFlat =
     (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false

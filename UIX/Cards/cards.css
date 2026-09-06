@@ -1,7 +1,5 @@
 :root {
-  /* KNOB — the shared column-width floor: bigger means fewer, larger columns that grow further
-     before snapping back; smaller means more, tighter ones. `-base` is the unscaled value; a
-     scaling host (CardView's Scale factor) rebuilds --card-min from it. */
+  /* KNOB — the shared column-width floor: bigger means fewer, larger columns that grow further before snapping back. `-base` is the unscaled value; a scaling host rebuilds --card-min from it. */
   --card-min-base: 180px;
   --card-min: var(--card-min-base);
   --card-gap-h: 10px; /* KNOB — inter-card spacing */
@@ -21,8 +19,7 @@
   --card-trail-h: 14px;
 }
 
-/* auto-fit stretches cards to fill the row (no empty tracks to pad); is-fill holds the empty
-   tracks instead, so a sparse grid keeps its cards card-sized rather than ballooning to fill it. */
+/* auto-fit stretches cards to fill the row (no empty tracks to pad); is-fill holds the empty tracks instead, so a sparse grid keeps its cards card-sized rather than ballooning to fill it. */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));

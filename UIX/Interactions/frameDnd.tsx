@@ -75,8 +75,7 @@ export function FrameDnd({
       const boxRect = boxEl.getBoundingClientRect()
       const assignedRect = assignedEl.getBoundingClientRect()
       const allRect = allEl.getBoundingClientRect()
-      // Regions own their field, not just their rendered rows, so the empty space around a short
-      // list is a legal drop zone.
+      // Regions own their field, not just their rendered rows, so the empty space around a short list is a legal drop zone.
       return {
         rows: measured,
         byId,
@@ -146,7 +145,6 @@ export function RowShell({ id, children }: { id: string; children: ReactNode }):
   )
 }
 
-/** `ref` + `handle` spread on the row wrapper. */
 function usePaneDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

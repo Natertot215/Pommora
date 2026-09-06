@@ -1,5 +1,3 @@
-// Drag-to-reorder list items by their `.md-li-glyph`. The drop moves the source lines in one transaction,
-// renumbering any ordered run it touched.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../Engine/detect'
@@ -34,8 +32,7 @@ interface Cand {
   indent: string
 }
 
-// The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the
-// rendered element so the callout's CSS padding owns the width.
+// The page wrap boundary, except inside a box, where it is that line's own content-box right — read from the rendered element so the callout's CSS padding owns the width.
 function lineRightEdge(view: EditorView, from: number, fallback: number): number {
   const n = lineElementAt(view, from)
   if (!n || (!n.classList.contains('md-callout') && !n.classList.contains('md-bq'))) return fallback

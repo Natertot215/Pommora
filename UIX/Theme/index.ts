@@ -17,6 +17,5 @@ export { text }
 /** The tint ladder and the mix it feeds — a consumer names a step, never a percentage. */
 export { mixAt, tintAt, TINT_STEPS }
 export type { TintStep }
-/** The stacking ladders — shell (window frame), local (own siblings), top (fixed / portalled).
- *  Plain CSS reads the same steps as `--z-*`. */
+/** The stacking ladders — shell (window frame), local (own siblings), top (fixed / portalled). Plain CSS reads the same steps as `--z-*`. */
 export { stack } from './stack'

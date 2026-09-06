@@ -35,8 +35,7 @@ export const SURFACE_FROST: FrostParams = {
   rimBlur: 18,
 }
 
-/** `GlassWindow`'s material, and what `GlassSurface` wears for `solid` — the pane's own chrome
- *  with only the fill added. */
+/** `GlassWindow`'s material, and what `GlassSurface` wears for `solid` — the pane's own chrome with only the fill added. */
 export const WINDOW_FROST: FrostParams = { ...SURFACE_FROST, fill: SOLID_FILL }
 
 /** The drag ghost — lighter than a resting surface, so the drop target reads through it. */
@@ -91,10 +90,7 @@ const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 /** The pane tier — the brightest glass in the app. */
 export const paneMaterial: CSSProperties = frostStyle({ ...SURFACE_FROST, brightness: 95 })
 
-// ── The beak — opt-in notched geometry any glass tier can wear (GlassSurface's `notch`) ──
-
-/** KNOB — the beaked shell's corner radius. One writer: the clip path and SVG outline take it from
- *  here, and so does a notched surface whose scrolled body has to round to the same arc. */
+/** KNOB — the beaked shell's corner radius. One writer: the clip path and SVG outline take it from here, and so does a notched surface whose scrolled body has to round to the same arc. */
 export const BEAK_RADIUS = 12
 /** The rise is the top inset a notched surface pads its content past, published as `--notch-h`. */
 export const NOTCH_H = 8

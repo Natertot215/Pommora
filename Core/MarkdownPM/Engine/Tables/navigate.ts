@@ -1,8 +1,7 @@
 export type NavDir = 'next' | 'prev' | 'down'
 type CellNavTarget = { row: number; col: number } | 'before' | 'after'
 
-// Visual-row convention: row 0 = header, rows 1..totalRows-1 = body. 'next' = Tab, 'prev' = Shift-Tab,
-// 'down' = Enter.
+// Visual-row convention: row 0 = header, rows 1..totalRows-1 = body. 'next' = Tab, 'prev' = Shift-Tab, 'down' = Enter.
 export function nextCell(
   totalRows: number,
   cols: number,
@@ -20,7 +19,6 @@ export function nextCell(
     if (row > 0) return { row: row - 1, col: cols - 1 }
     return 'before'
   }
-  // 'down'
   if (row + 1 < totalRows) return { row: row + 1, col }
   return 'after'
 }

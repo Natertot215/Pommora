@@ -16,9 +16,7 @@ import type { StateOrderKey, ChildOrderKey } from '../Pages/mutateRequest'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
-// Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps
-// a real ULID before any write captures them. Strip them so a transient id never lands in a
-// persisted order array.
+// Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps a real ULID before any write captures them. Strip them so a transient id never lands in a persisted order array.
 const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
 
 /** The one `state.json` order writer: both keys go through this file's single lock-taking RMW. */

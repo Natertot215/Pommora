@@ -1,12 +1,7 @@
-/* The tile primitive: the chassis every embedded-tile host keys onto (the grid's tiles and
-   MarkdownPM's embedded pages), with the markdown, page, and webpage body chrome hanging off it. */
-
-/* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here
-   would replace a host's own list instead of merging with it. */
+/* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here would replace a host's own list instead of merging with it. */
 .tile-base {
   --tile-border: var(--width-125); /* one source — hosts' handle/notch math reads it */
-  /* Re-anchored on every chassis because custom properties inherit where border-color wouldn't;
-     host triggers still outrank it at (0,2,0)+ on the same element. */
+  /* Re-anchored on every chassis because custom properties inherit where border-color wouldn't; host triggers still outrank it at (0,2,0)+ on the same element. */
   --tile-border-color: var(--border-base);
   border: var(--tile-border) solid var(--tile-border-color);
   border-radius: 12px;
@@ -18,8 +13,7 @@
   border-radius: inherit;
 }
 
-/* The tile is the CM6 portal, read-only at rest: wheel chains to the page (edge-release) until
-   editing traps it here — matching how view embeds scroll. */
+/* Read-only at rest: wheel chains to the page (edge-release) until editing traps it here — matching how view embeds scroll. */
 .tile-base.is-editing-tile :is(.markdown-tile, .page-tile) {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -33,8 +27,7 @@
 .tile-base:not(.is-editing-tile) :is(.markdown-tile, .page-tile) .cm-content {
   cursor: default;
 }
-/* Portal padding: the editor's boundary-to-first-line standard, never the host page's side
-   insets. */
+/* Portal padding: the editor's boundary-to-first-line standard, never the host page's side insets. */
 :is(.markdown-tile, .page-tile) .mdpm-editor {
   padding-left: 0;
   padding-right: 0;
@@ -56,18 +49,15 @@
 }
 
 .page-tile {
-  /* The detail lane scales off --page-detail-scale (set inline by PageTile from its single Embed Scale
-     setting), so the whole embed's geometry follows one variable. */
+  /* The detail lane scales off --page-detail-scale (set inline by PageTile), so the whole embed's geometry follows one variable. */
   --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
-  /* Re-homes the scroll timeline at the tile (the shell's page-wide scope stands down here) so each
-     nested tile's banner binds to and tracks its own page's scroller. */
+  /* Re-homes the scroll timeline at the tile (the shell's page-wide scope stands down here) so each nested tile's banner binds to its own page's scroller. */
   timeline-scope: --mdpm-scroll;
 }
 
-/* A page:open that fails while the title still resolves — the embed renders its target's name as
-   dim inert text, never an editable blank (whose first keystroke would overwrite the real file). */
+/* A page:open that fails while the title still resolves — the embed renders its target's name as dim inert text, never an editable blank (whose first keystroke would overwrite the real file). */
 .page-tile-failed {
   display: flex;
   align-items: center;
@@ -80,7 +70,6 @@
   padding: calc(16px * var(--page-detail-scale)) calc(14px * var(--page-detail-scale))
     calc(16px * var(--page-detail-scale)) var(--rail-inset);
 }
-/* Lets content ride under floating chrome — the host becomes the one scroller. */
 .page-tile-grows .page-tile,
 .page-tile-grows .page-tile .mdpm-shell,
 .page-tile-grows .mdpm-editor,
@@ -91,8 +80,7 @@
 .page-tile-grows .page-tile .mdpm-shell {
   overflow: visible;
 }
-/* Overrides the app-wide `overscroll-behavior: none` — with nothing to overflow, `none` would eat
-   the wheel instead of chaining it to the host scroller. */
+/* Overrides the app-wide `overscroll-behavior: none` — with nothing to overflow, `none` would eat the wheel instead of chaining it to the host scroller. */
 .page-tile-grows .mdpm-editor .cm-scroller {
   overscroll-behavior: auto;
   overflow: visible;
@@ -116,27 +104,21 @@
   animation-timeline: --mdpm-scroll;
   animation-range: 0 var(--header-zone);
 }
-/* Page-follows header chrome (chrome='page'): the banner sits out of flow, its height reserved as
-   editor padding, because an in-flow band inside this clipped tile would strand the editor past
-   the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height
-   is the whole retarget. */
+/* The banner sits out of flow, its height reserved as editor padding, because an in-flow band inside this clipped tile would strand the editor past the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height is the whole retarget. */
 .page-tile.has-banner .mdpm-editor .cm-content {
   padding-top: calc(var(--embed-banner-h) + 16px * var(--page-detail-scale));
 }
 .page-tile .mdpm-banner-img {
   -webkit-user-drag: none;
 }
-/* Only geometry and --detail-title-size are set here — .detail-title-text already carries weight
-   and color, and this var exists because the embed omits .mdpm-header, which normally supplies
-   it. */
+/* This var exists because the embed omits .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
 .page-tile .mdpm-banner-overlay {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
   left: calc(16px * var(--page-detail-scale));
   right: calc(16px * var(--page-detail-scale));
 }
 
-/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF
-   with a phantom baseline gap). */
+/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with a phantom baseline gap). */
 .web-tile {
   position: relative;
   height: 100%;
@@ -149,14 +131,12 @@
   width: 100%;
   height: 100%;
 }
-/* A retained guest hides rather than unmounts — visibility (never display:none, which tears the
-   guest down) keeps its state alive under the retention cap. */
+/* A retained guest hides rather than unmounts — visibility (never display:none, which tears the guest down) keeps its state alive under the retention cap. */
 /* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
 .web-tile webview.is-retained {
   visibility: hidden;
 }
-/* An inert guest takes no input; the catcher above it owns the engaging click, and wheel bubbles
-   past both so an unengaged tile scrolls the document. */
+/* An inert guest takes no input; the catcher above it owns the engaging click, and wheel bubbles past both so an unengaged tile scrolls the document. */
 /* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
 .web-tile webview.is-inert {
   pointer-events: none;
@@ -166,8 +146,6 @@
   inset: 0;
 }
 
-/* The static faces: a clipped or reloading tile wears the guest's last captured frame, a failed one
-   carries only the site's domain, and a first load with no frame yet is simply blank. */
 .web-tile-face {
   position: absolute;
   inset: 0;

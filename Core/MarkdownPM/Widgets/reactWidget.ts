@@ -6,8 +6,7 @@ export interface ReactDom extends HTMLElement {
   _root?: Root
 }
 
-/** The one React-in-CodeMirror chassis: a widget whose DOM carries a React root that survives
- *  `updateDOM`, so a re-render never re-mounts the tree CodeMirror handed back. */
+/** The one React-in-CodeMirror chassis: a widget whose DOM carries a React root that survives `updateDOM`, so a re-render never re-mounts the tree CodeMirror handed back. */
 export abstract class ReactWidget extends WidgetType {
   protected render(dom: ReactDom, node: ReactNode): void {
     let root = dom._root

@@ -48,7 +48,6 @@ function NavGlyph({
   const profileImage = useSession((s) => s.tree?.nexus?.profileImage ?? null)
   const photoSrc = useAssetUrl(profileImage)
   if (item.kind === 'homepage' && photoSrc) {
-    // The photo branch sizes an element rather than a font, so it needs the step's pixel value.
     const px = size ? ICON_PX[size] : undefined
     return (
       <AssetImage

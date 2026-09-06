@@ -1,5 +1,4 @@
-// Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` stops at a CRLF line's carriage
-// return, while a trailing `$` would fail past it and blank every fence.
+// Unanchored at the end on purpose: `.` excludes `\r`, so `(.*)` stops at a CRLF line's carriage return, while a trailing `$` would fail past it and blank every fence.
 const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(`{3,}|~{3,})[ \t]*(.*)/
 const QUOTE_PREFIX_RE = /^[ \t]*(?:>[ \t]?)*/
 
@@ -58,9 +57,7 @@ interface FenceSpan {
   fence: Fence
 }
 
-// The one fence-pairing pass; a layer pairing fences for itself is how two of them come to
-// disagree about the same document. An unclosed block runs to the document's end or to where
-// its surrounding blockquote stops.
+// The one fence-pairing pass; a layer pairing fences for itself is how two of them come to disagree about the same document. An unclosed block runs to the document's end or to where its surrounding blockquote stops.
 export function fenceSpans(lines: string[]): FenceSpan[] {
   const spans: FenceSpan[] = []
   let i = 0
@@ -93,8 +90,7 @@ function fencedLineMask(lines: string[]): Uint8Array {
   return mask
 }
 
-// Marker positions are boundaries, not interior, so the closing backtick still type-overs. An
-// unclosed opener claims the rest of the line, which is exactly when transforms must stay out.
+// Marker positions are boundaries, not interior, so the closing backtick still type-overs. An unclosed opener claims the rest of the line, which is exactly when transforms must stay out.
 export function inlineSpans(line: string): [number, number][] {
   const spans: [number, number][] = []
   let i = 0

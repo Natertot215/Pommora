@@ -11,7 +11,6 @@ export type GlanceTarget =
   | { kind: 'page'; id: string; path: string }
   | { kind: 'site'; url: string }
 
-/** The native format menu's two directions; a host without one leaves it out and the editor pushes nothing. */
 export interface EditorMenuApi {
   pushState: (s: FormatState) => void
   onAction: (cb: (action: string) => void) => () => void
@@ -27,7 +26,6 @@ export type EditorSettings = Pick<
   | 'defaultLinkFormat'
 > & { pasteInverse: string | undefined }
 
-/** What the editor mounts in place of an embed line; the host owns the tile components. */
 type TileMount =
   | {
       kind: 'page'
@@ -47,7 +45,6 @@ type TileMount =
       refocusHost: () => void
     }
 
-/** Everything the editor reaches outside itself, built once by the surface that mounts it. */
 export interface EditorHost {
   settings(): EditorSettings
   aliases: {

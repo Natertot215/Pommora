@@ -11,8 +11,7 @@ export interface FieldEdit {
   renames?: 'title' | 'row'
   /** A value rather than a name: clearing the field commits the empty string. */
   emptyCommits?: boolean
-  /** Uncontrolled by default: a click opens the field. A host with its own way in — a menu's
-   *  Rename — drives it instead. */
+  /** Uncontrolled by default: a click opens the field. A host with its own way in — a menu's Rename — drives it instead. */
   editing?: boolean
   onEditingChange?: (editing: boolean) => void
 }
@@ -44,8 +43,7 @@ export function InputField({
 }): React.JSX.Element {
   const [ownEditing, setOwnEditing] = useState(false)
   const editing = edit !== undefined && (edit.editing ?? ownEditing)
-  // The width the field had at rest, held for the whole edit so the swap never re-flows the row;
-  // the caret sizes to its text and widens the field only when the value outgrows the pin.
+  // The width the field had at rest, held for the whole edit so the swap never re-flows the row; the caret sizes to its text and widens the field only when the value outgrows the pin.
   const restWidth = useRef(0)
   const setEditing = (next: boolean): void => {
     setOwnEditing(next)

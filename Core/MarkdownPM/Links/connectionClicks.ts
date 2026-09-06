@@ -13,7 +13,6 @@ interface WikiHit {
   title: string
   range: [number, number]
   content: [number, number]
-  /** An opened-but-empty alias doesn't count — there's nothing to rename. */
   aliased: boolean
 }
 
@@ -36,7 +35,6 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
 
 interface ConnHit extends PointerTarget {
   hit: WikiHit
-  /** The page to follow — only ever set for a gesture that touched a resolved link's text. */
   page: ConnPage | null
 }
 

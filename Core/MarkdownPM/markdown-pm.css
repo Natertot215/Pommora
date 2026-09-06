@@ -143,11 +143,7 @@
   color: var(--label-primary);
 }
 
-/* The fold chevron is a masked ::before anchored to the heading line's own layout box, not a CM gutter —
-   a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks
-   (callouts, folds) at a default height and drifts from its heading on scroll. Closed: right-pointing,
-   dim and persistent; open: down-pointing, hover-only. KNOBS: --rail-inset, --fold-chevron-size, motion
-   via --disclosure / --ease-base. */
+/* Anchored to the heading line's own layout box, not a CM gutter — a gutter is positioned from CM's line-height model, which estimates off-screen variable-height blocks at a default height and drifts on scroll. KNOBS: --rail-inset, --fold-chevron-size, motion via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
 }
@@ -178,8 +174,7 @@
   color: var(--label-control);
 }
 
-/* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their
-   padded first row, e.g. a code fence). */
+/* KNOBS: --rail-inset (rail x), --grip-top (first-line offset — box blocks override it for their padded first row). */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
@@ -381,8 +376,7 @@
   line-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height
-     text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
+  /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
   --grip-top: 28px;
 }
 .mdpm-editor .cm-line.mdpm-embed-line .cm-widget-buffer {
@@ -404,10 +398,7 @@
   text-indent: 0;
 }
 
-/* KNOBS: --list-indent (per-level step), --list-gap (marker-to-text space), --bullet-zone /
-   --number-zone / --task-zone (per-list-type gutter width — wider pushes that list's text right),
-   --bullet-size. --number-zone lives on .cm-content rather than .md-li so a citation row, which
-   hangs in the same column but isn't a list line, still gets one. */
+/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. --number-zone lives on .cm-content rather than .md-li so a citation row, which hangs in the same column but isn't a list line, still gets one. */
 .mdpm-editor .cm-line.md-li {
   --list-indent: 20px;
   --bullet-zone: 16px;
@@ -639,8 +630,7 @@
   border-bottom-right-radius: var(--box-radius-r);
 }
 
-/* KNOBS: --bar-width / --bar-color / --bar-radius (left bar), --box-fill / --box-radius-r (fill),
-   --box-gap (breathing room above the first line and below the last). */
+/* KNOBS: --bar-width / --bar-color / --bar-radius, --box-fill / --box-radius-r, --box-gap. */
 .mdpm-editor .cm-line.md-bq {
   --bar-width: 4px;
   --bar-color: var(--label-tertiary);
@@ -684,8 +674,7 @@
   background: transparent;
 }
 
-/* KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter), --callout-gap
-   (separation), --callout-inner-pad (head/foot inner padding past the gap). */
+/* KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad, --callout-gap, --callout-inner-pad. */
 .mdpm-editor .cm-line.md-callout {
   --callout-border: var(--label-tertiary);
   --callout-bw: var(--width-150);

@@ -51,8 +51,7 @@ export async function createPage(
 }
 
 async function relocatePage(absFile: string, target: string): Promise<void> {
-  // Under the SOURCE path's lock, the same key every other write to this page takes: a write
-  // queued behind the move fails not-found rather than recreating the vacated file as a ghost.
+  // Under the SOURCE path's lock, the same key every other write to this page takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost.
   await machine().lock(absFile, async () => {
     recordWrite(absFile)
     recordWrite(target)

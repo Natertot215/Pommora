@@ -4,7 +4,7 @@ import { stack } from '@pommora/uix/Theme/stack'
 
 // ── KNOBS — the toolbar menu button geometry (tune here) ──
 const BUTTON = {
-  padX: '8px', // horizontal padding around the segment (same both states; the label slot carries the gap)
+  padX: '8px',
 }
 
 export const wrapper = style({

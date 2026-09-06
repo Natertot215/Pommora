@@ -31,7 +31,6 @@ function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   return <PropertyTypeIcon type="context" size={s.ICON.doc} />
 }
 
-/** The region keys ('assigned' = shown, 'all' = hidden) are the FrameDnd group names. */
 function VisibilityGroups({
   shownIds,
   hiddenIds,

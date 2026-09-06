@@ -67,7 +67,6 @@ export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): 
   return tabs
 }
 
-/** Callers pass the push's own reconcile index and hold the result, so no read or push ever walks the tree twice. */
 export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null): Tab[] {
   if (!index) return []
   return pinned

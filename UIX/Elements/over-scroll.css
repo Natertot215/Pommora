@@ -1,6 +1,4 @@
-/* THE over-scroll edge fade — every clipped edge rides this one mechanism. Two progress vars
-   animate along the box's own scroll range, so a box whose content fits has an inactive timeline
-   and the mask collapses to a no-op. */
+/* THE over-scroll edge fade — every clipped edge rides this one mechanism. Two progress vars animate along the box's own scroll range, so a box whose content fits has an inactive timeline and the mask collapses to a no-op. */
 @property --os-lead {
   syntax: "<number>";
   inherits: false;
@@ -11,8 +9,7 @@
   inherits: false;
   initial-value: 0;
 }
-/* Non-inheriting so a container tuning its own fade doesn't leak that width into descendant labels
-   (universal syntax keeps var() fallbacks alive). */
+/* Non-inheriting so a container tuning its own fade doesn't leak that width into descendant labels (universal syntax keeps var() fallbacks alive). */
 @property --over-scroll-fade {
   syntax: "*";
   inherits: false;
@@ -44,8 +41,7 @@
   animation-duration: auto;
   animation-timing-function: linear;
   mask-image: linear-gradient(
-    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
-       axis through this var, which no static parse can resolve. */
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own axis through this var, which no static parse can resolve. */
     var(--os-dir, to bottom),
     transparent 0,
     var(--system-black) calc(var(--os-lead) * var(--os-fade-width)),
@@ -53,8 +49,7 @@
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
-    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
-       axis through this var, which no static parse can resolve. */
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: as above. */
     var(--os-dir, to bottom),
     transparent 0,
     var(--system-black) calc(var(--os-lead) * var(--os-fade-width)),
@@ -75,8 +70,7 @@
   animation-timeline: scroll(self inline);
 }
 
-/* `hidden` still drives the scroll timeline, so the mask resolves in both states. The WIDTH cap is
-   the consumer's: a max-width for labels, the flex parent for rows. */
+/* `hidden` still drives the scroll timeline, so the mask resolves in both states. The WIDTH cap is the consumer's: a max-width for labels, the flex parent for rows. */
 .over-scroll-cap {
   min-width: 0;
   white-space: nowrap;
@@ -85,16 +79,14 @@
   text-overflow: clip;
   scrollbar-width: none;
 }
-/* Scrolling and the ellipsis are the same switch: an ellipsis marks a tail you can't reach, so it
-   drops the moment the tail becomes reachable. */
+/* Scrolling and the ellipsis are the same switch: an ellipsis marks a tail you can't reach, so it drops the moment the tail becomes reachable. */
 .over-scroll-cap:hover,
 .over-scroll-host:hover .over-scroll-cap {
   overflow-x: auto;
   text-overflow: clip;
 }
 
-/* Hold the leading fade until a full fade-width has actually scrolled past: a first line at rest,
-   or a small autofocus offset, shouldn't fade. */
+/* Hold the leading fade until a full fade-width has actually scrolled past: a first line at rest, or a small autofocus offset, shouldn't fade. */
 .over-scroll-gated {
   animation-fill-mode: both;
   animation-range:

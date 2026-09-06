@@ -1,4 +1,4 @@
-// Cascades are keyed to the RANGE, never to the gesture (B-11): one fires only where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
+// Cascades are keyed to the RANGE, never to the gesture: one fires only where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
 import { ChangeSet, type ChangeSpec, Text } from '@codemirror/state'
 import {
   type CitationEntry,
@@ -38,7 +38,6 @@ function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
   return runs.map((run) => erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine)))
 }
 
-/** The definition of what "the footnote" is, so the two cascades and a swept run of rows can't disagree about how much goes. */
 function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec[] {
   const labels = [...new Set(entries.map((e) => foldLabel(e.label)))]
   const rows = labels
@@ -48,7 +47,6 @@ function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec
   return [...markers.map(erase), ...cutRows(scan, rows)]
 }
 
-/** A footnote nothing points at is an orphan, and the gesture that made it one answers for it. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
   if (!entry || !isLastReference(scan.citations, marker)) return [erase(marker)]

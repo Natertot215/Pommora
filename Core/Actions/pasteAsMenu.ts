@@ -32,13 +32,11 @@ function wholeWikiLink(s: string): string | null {
 
 export function pasteAsTarget(clipboard: string): PasteAsTarget {
   const s = clipboard.trim()
-  // Every form writes one line, so more than one is prose regardless of the first line.
   if (!s || /[\r\n]/.test(s)) return null
 
   const wiki = wholeWikiLink(s)
   if (wiki !== null) return { kind: 'page', title: wiki }
 
-  // Offered by what its target names, not its syntax — the editor's own link menu rule.
   const md = MD_LINK.exec(s)
   const raw = md ? md[2].trim() : s
   const title = targetTitle(raw)
@@ -70,7 +68,6 @@ function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
   return target.kind === 'page' ? embeddableTitle(target.title) : hasWebScheme(target.url)
 }
 
-/** Empty means no submenu, not one shown empty; each form is gated on its own seat. */
 export function pasteAsRows(
   clipboard: string,
   embedSeat: boolean,
@@ -92,13 +89,11 @@ interface TextPaste {
   text: string
 }
 
-/** The whole line, not the selection: leading whitespace would indent the token into prose. */
 interface LinePaste {
   kind: 'line'
   text: string
 }
 
-/** Null where `target` and `form` don't belong together: a menu can stay open while the clipboard changes. */
 export function pasteAsWrite(
   target: PasteAsTarget,
   form: PasteAsForm,
@@ -119,7 +114,6 @@ export function pasteAsWrite(
     return null
   }
   if (form === 'plain') return { kind: 'text', text: target.url }
-  // Left empty: a pasted address has no words, so display defers to the link format at render.
   if (form === 'embedLink') return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
   if (form === 'connection' || form === 'markdown' || form === 'embedPage') return null
   return linkPaste(target.url, form, title)

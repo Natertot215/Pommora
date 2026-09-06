@@ -1,5 +1,4 @@
-// Modifiers are exact — a spec without shift rejects a shifted press — so overlapping bindings
-// can't double-fire.
+// Modifiers are exact — a spec without shift rejects a shifted press — so overlapping bindings can't double-fire.
 
 interface Chord {
   key: string
@@ -9,8 +8,7 @@ interface Chord {
   shift: boolean
 }
 
-// Parsing per press cost a split, two array passes and an allocation on every keystroke the editor
-// takes.
+// Parsing per press cost a split, two array passes and an allocation on every keystroke the editor takes.
 const chords = new Map<string, Chord | null>()
 
 function chordOf(spec: string): Chord | null {

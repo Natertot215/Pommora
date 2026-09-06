@@ -4,9 +4,7 @@ export interface OutlineNode extends OutlineHeading {
   children: OutlineNode[]
 }
 
-/** Nest a flat heading list by level. Real documents skip levels freely — an H1 followed by an H3, or
- *  a page that opens at H2 — so a heading attaches to the nearest previous heading of a strictly
- *  smaller level rather than assuming its parent sits exactly one level above it. */
+/** Real documents skip levels freely, so a heading attaches to the nearest previous heading of a strictly smaller level rather than assuming its parent sits exactly one level above it. */
 export function outlineTree(headings: readonly OutlineHeading[]): OutlineNode[] {
   const roots: OutlineNode[] = []
   const ancestors: OutlineNode[] = []

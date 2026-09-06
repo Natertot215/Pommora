@@ -1,15 +1,11 @@
-// Order resolution semantics:
-// - no/empty persisted order  -> sort by id ascending (ULIDs are time-sortable)
-// - persisted array           -> known-in-array-order (tombstones dropped),
-//                                then unreferenced appended by title (localeCompare)
+// No persisted order sorts by id ascending (ULIDs are time-sortable); a persisted array takes known-in-array-order with tombstones dropped, then appends the unreferenced by title.
 
 interface Orderable {
   id: string
   title: string
 }
 
-/** `fallback` when there's no persisted order: 'id' (ULID = creation order, the default)
- *  or 'title' (for adopted entities whose ids are hashes). */
+/** `fallback` picks 'id' (ULID = creation order) or 'title', for adopted entities whose ids are hashes. */
 export function resolveOrder<T extends Orderable>(
   items: T[],
   order: string[] | undefined,
@@ -27,7 +23,7 @@ export function resolveOrder<T extends Orderable>(
     const it = byId.get(id)
     if (it) {
       known.push(it)
-      byId.delete(id) // consume so it can't also land in the tail
+      byId.delete(id)
     }
   }
   const rest = [...byId.values()].sort((a, b) => a.title.localeCompare(b.title))

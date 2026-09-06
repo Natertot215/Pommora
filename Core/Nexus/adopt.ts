@@ -105,9 +105,7 @@ async function stampTree(
 ): Promise<number> {
   const singleton = kind === 'tasks-singleton' || kind === 'events-singleton'
   const memberKind = MEMBER_KIND[kind]
-  // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud
-  // placeholder) costs only itself — letting it throw would silently abandon every folder after
-  // it in readdir order.
+  // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud placeholder) costs only itself — letting it throw would silently abandon every folder after it in readdir order.
   let count = !singleton && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
@@ -154,8 +152,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
       stamped += await stampTree(abs, e.name, kind, scope, kindCtx, root).catch(() => 0)
       continue
     }
-    // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that
-    // already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
+    // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
     if (
       !(await pathExists(join(abs, SIDECAR_FILENAME.collection))) &&
       (await isEmptyOfContent(abs, e.name, scope))

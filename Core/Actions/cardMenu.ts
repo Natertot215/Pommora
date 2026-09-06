@@ -12,11 +12,9 @@ interface CardMenuContext extends PageMoveContext {
   /** Blank, addable properties — already ordered by the renderer (pane-kinds first). */
   addable: Array<{ id: string; name: string }>
   alreadyOpen?: boolean
-  /** Image mode with a banner set: Edit Image frames the banner in the picker. */
   editableImage?: boolean
 }
 
-/** Add Property ▸ leads when the card has a blank property to add; absent otherwise. */
 export function cardMenuModel(ctx: CardMenuContext): ActionItem<CardMenuAction>[] {
   const meta = pageMetaMenuItems(ctx.alreadyOpen, {
     newPages: 'single',

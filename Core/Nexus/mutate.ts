@@ -1,5 +1,4 @@
-// The write dispatcher: every renderer mutation resolves its session root here and routes to the
-// module that owns the operation. Arms carrying only a resolve and one module call stay in place.
+// Every renderer mutation resolves its session root here and routes to the module that owns the operation. Arms carrying only a resolve and one module call stay in place.
 
 import { setOrDrop } from '../IO/atomicWrite'
 import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'
@@ -44,7 +43,6 @@ export interface MutateContext {
   deps: MutateDeps
 }
 
-/** The reply for an op whose result the tree patch reads from the request alone. */
 const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
 export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateReply> {

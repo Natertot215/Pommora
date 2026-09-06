@@ -19,7 +19,6 @@ export function linkHalves(tk: Token): { label: [number, number]; address: [numb
   return { label: tk.contentRange, address: [close[0] + 2, close[1] - 1] }
 }
 
-/** Null for the two that seat a caret rather than write. Pure of any editor, because a link in a resting table cell has none. */
 export function linkActionText(
   text: string,
   tk: Token,

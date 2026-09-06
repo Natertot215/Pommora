@@ -1,5 +1,4 @@
-// CM extensions have no unmount hook, and drags run off window listeners, so a destroyed editor would leave a
-// gesture running against a dead view. Include `editorGestureCleanup` in every extension array that starts one.
+// CM extensions have no unmount hook, and drags run off window listeners, so a destroyed editor would leave a gesture running against a dead view. Include `editorGestureCleanup` in every extension array that starts one.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
@@ -10,8 +9,7 @@ import {
 } from '@pommora/uix/Interactions/gesture'
 import { Overlay, setShade } from './dragChrome'
 
-// The cleanup plugin is mounted in every editor (a page can run several), so the handle carries the view that
-// started it — otherwise a sibling's unmount would abort the drag in progress.
+// The cleanup plugin is mounted in every editor (a page can run several), so the handle carries the view that started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
 
 function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): boolean {
@@ -40,7 +38,6 @@ interface RelocateDragSpec<C, S> {
   onTap?: () => void
 }
 
-/** Candidates are measured at activation and re-measured only on scroll, since the document is static during a drag. */
 export function beginRelocateDrag<C, S>(
   view: EditorView,
   e: PointerEvent,
@@ -77,8 +74,7 @@ export function beginRelocateDrag<C, S>(
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
       lastY = ev.clientY
       remeasure()
-      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the native `scroll`,
-      // so off-viewport candidates become targetable as they scroll in.
+      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the native `scroll`, so off-viewport candidates become targetable as they scroll in.
       stopScroll = startAutoScroll({
         getPoint: () => ({ x: 0, y: lastY }),
         scroller: resolveScroller(host, 'y'),

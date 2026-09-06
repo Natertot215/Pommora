@@ -72,7 +72,6 @@ function toggleWrap(
   kind: 'link' | 'wikiLink',
   open: string,
   close: string,
-  /** Where the caret lands on a fresh wrap — inside a link's empty `()`, past a connection's `]]`. */
   caret: (from: number, to: number) => number,
 ): FormatEdit {
   const existing = tokenize(doc).find(
@@ -111,8 +110,7 @@ function listMarkerText(kind: ListKind, n = 1): string {
   }
 }
 
-/** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome,
- *  which preserves the box and keeps the change out of the callout guard's window. */
+/** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome, which preserves the box and keeps the change out of the callout guard's window. */
 export function splitPrefix(line: string): { prefix: string; body: string } {
   const headLen = calloutHeadPrefixLen(line)
   if (headLen !== null) return { prefix: line.slice(0, headLen), body: line.slice(headLen) }
@@ -137,7 +135,6 @@ export function setHeading(doc: string, from: number, to: number, level: Heading
   return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
 
-/** The list marker lands inside the quote/callout, not in place of its chrome. */
 /** Read by every formatter that rewrites a line's marker, so all of them agree on what a line is. */
 interface SelectedLine {
   ls: number
@@ -158,8 +155,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
     if (body.trim() !== '') {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
-      // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so
-      // converting a nested item keeps its level.
+      // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
       const indent = lm ? body.slice(0, lm.markerStart) : stripped.slice(0, stripped.search(/\S|$/))
       out.push({
         ls,
@@ -282,8 +278,7 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       return { changes: [{ from: ls, to: le, insert }], selection: ls + insert.length }
     }
     case 'table': {
-      // A GFM table parses as its own block ONLY when blank lines fence it; without one it merges with an
-      // adjacent table below, whose header and delimiter then become body rows.
+      // A GFM table parses as its own block ONLY when blank lines fence it; without one it merges with an adjacent table below, whose header and delimiter then become body rows.
       const table = serialize(emptyTable(3, 3))
       const before = doc.slice(0, ls)
       const after = doc.slice(le)
@@ -303,7 +298,6 @@ function stripInnerMarkers(body: string): string {
   return h ? h.indent + h.content : body
 }
 
-/** The "reset the line to plain body" step for transforms that replace the whole line, where consuming the chrome is the point. */
 function stripBlockMarkers(line: string): string {
   const lm = parseListMarker(line)
   if (lm) return line.slice(lm.contentStart)

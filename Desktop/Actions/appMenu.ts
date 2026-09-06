@@ -129,8 +129,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
             if (w) setHostZoom(w.webContents, interfaceScaleZoom(scale))
           },
         },
-        // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync.
-        // The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
+        // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
         { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
         {
           label: 'Zoom In',

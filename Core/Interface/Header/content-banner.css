@@ -7,8 +7,7 @@
   border-bottom: var(--detail-divider-width) solid var(--border-base);
 }
 
-/* The empty-title class is doubled: the rename input wears it beside the family reset, whose
-   `font` shorthand sits at the same weight — the title's scale must win on specificity. */
+/* The empty-title class is doubled: the rename input wears it beside the family reset, whose `font` shorthand sits at the same weight — the title's scale must win on specificity. */
 .banner-title,
 .banner-empty-title.banner-empty-title {
   font-size: var(--text-title-small-size);

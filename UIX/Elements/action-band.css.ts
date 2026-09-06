@@ -1,5 +1,4 @@
-// Shared home for toolbar-row affordances — a new band affordance belongs here, not re-rolled at
-// its own surface.
+// Shared home for toolbar-row affordances — a new band affordance belongs here, not re-rolled at its own surface.
 
 import { keyframes, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
@@ -7,9 +6,7 @@ import { text } from '../Theme/typography.css'
 
 const c = colorVars.color
 
-// KNOBS — a segment's box: a fixed height with a wider horizontal padding gives the ViewMenu
-// button's slightly-rectangular ratio at the segment's own (smaller) size. SEGMENT_MIN_W floors the
-// width (0 = sized to content); SEGMENT_ICON is the leading glyph size (px, consumed by components).
+// KNOBS — a segment's box. SEGMENT_MIN_W floors the width (0 = sized to content); SEGMENT_ICON is the leading glyph size (px, consumed by components).
 export const SEGMENT_H = '24px'
 const SEGMENT_PAD_X = '12px'
 const SEGMENT_MIN_W = '0px'
@@ -24,8 +21,7 @@ export const segmentRow = style({
   gap: SEGMENT_GAP,
 })
 
-/** Gap is zero — Button's collapsible `labelSlot` is the sole icon↔title spacing, so the collapsed
- *  state sits pixel-identical to a bare icon segment. */
+/** Gap is zero — Button's collapsible `labelSlot` is the sole icon↔title spacing, so the collapsed state sits pixel-identical to a bare icon segment. */
 export const segment = style([
   text.control.emphasized,
   {
@@ -55,8 +51,7 @@ export const segmentActive = style({
   color: c.label.primary,
 })
 
-// The negative margin swallows the row gap so siblings close up. No house horizontal-list
-// primitive exists; this is the family's own.
+// The negative margin swallows the row gap so siblings close up. No house horizontal-list primitive exists; this is the family's own.
 const segmentIn = keyframes({
   '0%': {
     opacity: 0,
@@ -92,8 +87,7 @@ export const segmentExiting = style({
 /** Carries its own lead-in since the segment's gap is zero. 6px is the house inline gap. */
 export const segmentTrail = style({ marginLeft: '6px' })
 
-/** Hidden at rest; the HOST binds its own reveal scope (tile hover, row hover) with a globalStyle
- *  raising opacity — the scope is the surface's call, the chrome is shared. */
+/** Hidden at rest; the HOST binds its own reveal scope (tile hover, row hover) with a globalStyle raising opacity — the scope is the surface's call, the chrome is shared. */
 export const settingsBtn = style({
   border: 'none',
   background: 'none',

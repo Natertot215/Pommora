@@ -13,17 +13,13 @@ import { shadowStandardVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { cx } from '../Utilities/cx'
 
-/** Opt-in beaked geometry — a pane that points at what opened it. `insetRight` aims the beak from the
- *  right edge (omitted = centered); `animationClass` rides the frost and the outline together, never
- *  a shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and samples
- *  nothing). */
+/** Opt-in beaked geometry — a pane that points at what opened it. `insetRight` aims the beak from the right edge (omitted = centered); `animationClass` rides the frost and the outline together, never a shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and samples nothing). */
 interface NotchOptions {
   insetRight?: number
   animationClass?: string
 }
 
-/** The standard menu glass — clear, a step dimmer than a pane; a picker or a menu opening OVER
- *  another surface asks for `solid`. Pass `notch` for the beaked dropdown geometry. */
+/** The standard menu glass — clear, a step dimmer than a pane; a picker or a menu opening OVER another surface asks for `solid`. */
 export function GlassSurface({
   children,
   style,
@@ -34,11 +30,8 @@ export function GlassSurface({
 }: {
   children?: ReactNode
   ref?: Ref<HTMLDivElement>
-  /** Add the shared body — for a pane that opens OVER another pane, where clear glass on clear glass
-   *  leaves the rows underneath reading through. Adds the fill only; the chrome is already the
-   *  pane's. */
+  /** Add the shared body — for a pane that opens OVER another pane, where clear glass on clear glass leaves the rows underneath reading through. */
   solid?: boolean
-  /** The beaked outline, opt-in. Omitted = a plain rectangular frost. */
   notch?: NotchOptions
 } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   const frost = frostStyle(solid ? WINDOW_FROST : SURFACE_FROST)

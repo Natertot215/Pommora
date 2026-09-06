@@ -1,7 +1,6 @@
 import { icons as lucideIcons, type LucideIcon } from 'lucide-react'
 
-/** Validated against lucide-react's own per-icon dist filenames — the sole outlier is a legacy
- *  alias with no canonical file. */
+/** Validated against lucide-react's own per-icon dist filenames — the sole outlier is a legacy alias with no canonical file. */
 export function toKebabIconId(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
@@ -16,8 +15,7 @@ export interface IconEntry {
   Glyph: LucideIcon
 }
 
-/** The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry
- *  (./index), which is the app's semantic vocabulary. Kebab-keyed, de-duped by id, sorted. */
+/** The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry (./index), which is the app's semantic vocabulary. Kebab-keyed, de-duped by id, sorted. */
 export const ALL_ICONS: IconEntry[] = (() => {
   const seen = new Set<string>()
   const out: IconEntry[] = []

@@ -1,6 +1,4 @@
-// The invariant consumers must keep: an invalidation re-resolves from the last pointer point, and
-// the drop consults `isDirty` before reading its slot, so a commit is never built against geometry
-// that moved.
+// The invariant consumers must keep: an invalidation re-resolves from the last pointer point, and the drop consults `isDirty` before reading its slot, so a commit is never built against geometry that moved.
 
 import { useRef, useState } from 'react'
 

@@ -7,8 +7,7 @@ const icon = vars.size.icon
 
 const OUTLINE_W = 'var(--width-125)'
 
-// § SIZE — every button dimension, one place. A `size` class sets the --btn-* bundle; `.button`, the
-// run container, and the divider read it. `inRun` squares the pill's corners.
+// Every button dimension, one place. A `size` class sets the --btn-* bundle; `.button`, the run container, and the divider read it.
 type SizeSpec = {
   height: string
   padX: string
@@ -88,7 +87,6 @@ export const button = style({
   },
 })
 
-/** The size bundle a button and its run wear — one class carries every --btn-* the geometry reads. */
 export const size = styleVariants(SIZE, (s) => ({
   vars: {
     '--btn-h': s.height,
@@ -100,27 +98,21 @@ export const size = styleVariants(SIZE, (s) => ({
   },
 }))
 
-/** A button inside a Segmented run squares its corners — the run reads as one pill (the container
- *  clips the outer corners) split by dividers, not a row of separate rounded boxes. Defined AFTER
- *  `size` so the border-radius wins the cascade tie. */
+/** A button inside a Segmented run squares its corners — the run reads as one pill split by dividers, not a row of separate rounded boxes. Defined AFTER `size` so the border-radius wins the cascade tie. */
 export const inRun = style({ borderRadius: 0 })
 
-/** A labeled button pads wider than a bare icon. */
 export const labeled = style({ vars: { '--btn-pad': 'var(--btn-label-pad)' } })
 
-/** The run divider, at its size's divider height (inherited from the container's size class). */
 export const dividerBar = style({ height: 'var(--btn-div-h)' })
 
-// The three heights other surfaces align against (a tab row, a sidebar rail), sourced from the same
-// numbers so a button and what rings it can never drift.
+// The three heights other surfaces align against (a tab row, a sidebar rail), sourced from the same numbers so a button and what rings it can never drift.
 globalStyle(':root', {
   vars: {
     '--button-large-height': SIZE['button-large'].height,
   },
 })
 
-/** Held down — a toggle that is on, a trigger whose menu is open. The selected wash holds under
- *  hover so an engaged button doesn't lighten further. */
+/** The selected wash holds under hover so an engaged button doesn't lighten further. */
 export const pressed = style({
   selectors: {
     '&, &:hover:not(:disabled)': {

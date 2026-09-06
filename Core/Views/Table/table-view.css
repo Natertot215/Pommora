@@ -1,9 +1,7 @@
-/* TableView's layer over the Tables chrome: shell width, grid density, hide/slide beat, grip
-   gutter, and group-band rhythm. Values live in Tables/table-tokens.css. */
+/* TableView's layer over the Tables chrome: shell width, grid density, hide/slide beat, grip gutter, and group-band rhythm. Values live in Tables/table-tokens.css. */
 
 .table-view {
-  /* Width is auto so the negative side margins widen the box to both glass edges while the grid's
-     content box (and so every row) stays exactly where it was. */
+  /* Width is auto so the negative side margins widen the box to both glass edges while the grid's content box (and so every row) stays exactly where it was. */
   margin-left: calc(var(--rail-inset) - var(--content-inset));
   margin-right: calc(-1 * var(--content-inset));
   --table-right-inset: var(--content-inset);
@@ -15,12 +13,10 @@
   --table-right-inset: 0px;
 }
 
-/* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the
-   trailing 1fr filler track eat slack. */
+/* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the trailing 1fr filler track eat slack. */
 .table-grid {
   width: 100%;
-  /* Base density (--zoom) × the per-tile Scale (--tile-zoom, absent = 1), so the table scales as one
-     unit within the grid tile's fixed inset. */
+  /* Base density (--zoom) × the per-tile Scale (--tile-zoom, absent = 1), so the table scales as one unit within the grid tile's fixed inset. */
   zoom: calc(var(--zoom) * var(--tile-zoom, 1));
 }
 
@@ -34,7 +30,7 @@
 }
 
 .data-cell.cell-lead {
-  position: relative; /* containing block for the grip */
+  position: relative;
   overflow: visible;
 }
 .data-cell.cell-sweep {
@@ -43,7 +39,6 @@
 :root.native-highlight .data-cell.cell-sweep {
   background: var(--col-highlight);
 }
-/* The views gutter lane the row grip and band chevron both float into. */
 .row-grip,
 .table-view .group-band-drop-outline {
   position: absolute;
@@ -68,19 +63,16 @@
   cursor: grabbing;
 }
 
-/* The shared disclosure head over a group's rows; chrome lives in group-band.css, this scopes the
-   section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
+/* Chrome lives in group-band.css; this scopes the section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
-  /* No zoom of its own — it already scales inside .table-grid's compound zoom; reapplying here would
-     square the factor. */
+  /* No zoom of its own — it already scales inside .table-grid's compound zoom; reapplying here would square the factor. */
   padding-top: var(--band-gap);
 }
 .table-view .group-band.sub-band .group-band-row {
   padding-top: var(--band-clearance);
 }
 .table-view .group-band-head {
-  /* Sticky-left keeps the group label and chevron in the gutter when columns scroll; left:0 is the
-     grid's content start, only pinning once scrolled. */
+  /* Sticky-left keeps the group label and chevron in the gutter when columns scroll; left:0 is the grid's content start, only pinning once scrolled. */
   position: sticky;
   left: 0;
   display: inline-flex;

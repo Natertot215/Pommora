@@ -1,10 +1,8 @@
-// The token lands fenced on its own line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
 import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 
-/** Blank-separated above and below wherever content adjoins, reusing the blank lines already standing. */
 export function embedInsertAfter(
   doc: string,
   blockTo: number,

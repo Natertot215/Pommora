@@ -7,10 +7,7 @@ import { recordWrite } from '../IO/writeEcho'
 
 export const BUNDLE_SUFFIX = '.deleted'
 
-/** The `.trash` directory mirroring the chain a path was deleted from. `.trash` reads as a
- *  shadow of the nexus, so a deleted page shows where it lived. A path that isn't under the
- *  root has no chain to mirror, and following its `..` would write outside the trash entirely —
- *  it lands flat instead. */
+/** `.trash` reads as a shadow of the nexus, so a deleted page shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the trash entirely — it lands flat instead. */
 async function trashChainDir(nexusRoot: string, absPath: string): Promise<string> {
   const rel = relative(nexusRoot, absPath)
   const chain = rel && !escapes(rel) ? dirname(rel) : '.'

@@ -13,27 +13,22 @@ export interface ConfigSlice {
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
-  /** Per-page footnote-section visibility for pages with an explicit answer; a page with no entry
-   *  follows the nexus-wide default. The section's disclosure follows this, never the reverse. */
+  /** Per-page footnote-section visibility for pages with an explicit answer; a page with no entry follows the nexus-wide default. The section's disclosure follows this, never the reverse. */
   citationsShown: Record<string, boolean>
   setCitationsShown: (pageId: string, shown: boolean | null) => void
   toggleCitations: (pageId: string) => void
-  /** Put a page's footnotes at `shown`, clearing the row when that matches the nexus-wide default —
-   *  so nothing that discloses the section can pin a row forever. */
+  /** Clears the row when `shown` matches the nexus-wide default, so nothing that discloses the section can pin a row forever. */
   setCitationsVisible: (pageId: string, shown: boolean) => void
   setAssetDirectory: (dir: string) => Promise<void>
-  /** Returns the channel's Result so the pane can surface a refusal; the stored list arrives back
-   *  through the tree the write patches. */
+  /** Returns the channel's Result so the pane can surface a refusal; the stored list arrives back through the tree the write patches. */
   setExclusions: (folders: string[]) => Promise<Result<string[]>>
 }
 
-/** The nexus-wide footnote-visibility default: an absent key means hidden. `citationsVisible` is
- *  where the fallback happens; the toggle's write compares against it. */
+/** An absent key means hidden. `citationsVisible` is where the fallback happens; the toggle's write compares against it. */
 const citationsDefault = (s: { personalization: Personalization }): boolean =>
   s.personalization.citationsShown ?? false
 
-/** A page's resolved footnote visibility — its own override, else the nexus-wide default. Every
- *  surface that draws a page resolves it here, so they can't disagree about one page. */
+/** Every surface that draws a page resolves its footnote visibility here, so they can't disagree about one page. */
 export const citationsVisible = (
   s: { personalization: Personalization; citationsShown: Record<string, boolean> },
   pageId: string | undefined,
@@ -42,9 +37,7 @@ export const citationsVisible = (
 export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   personalization: {},
   setPersonalization: (key, value) => {
-    // The tree copy re-identifies only for defaultIcons, the one key tree-keyed derivations
-    // (nav icons, context identity) resolve — a new tree identity re-runs every tree memo and
-    // pipeline, a cost a boolean toggle must never pay. Everything else reads the slice.
+    // The tree copy re-identifies only for defaultIcons, the one key tree-keyed derivations resolve — a new tree identity re-runs every tree memo and pipeline, a cost a boolean toggle must never pay. Everything else reads the slice.
     set((s) => ({
       personalization: { ...s.personalization, [key]: value },
       tree:
@@ -83,8 +76,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
     void host().ask('citations:set', pageId, shown)
   },
 
-  // The tree leaf is what the field reads, patched on the write's own confirm — a refusal
-  // needs no local rollback.
+  // The tree leaf is what the field reads, patched on the write's own confirm — a refusal needs no local rollback.
   setAssetDirectory: async (dir) => {
     await host().ask('assets:setDir', dir)
   },

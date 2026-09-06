@@ -2,8 +2,7 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { useSession } from '../Session/store'
 
-/** A blank floating surface summoned by its chord (App.tsx) for previewing a component in
- *  isolation, without wiring it into a real surface first. */
+/** A blank floating surface summoned by its chord (App.tsx) for previewing a component in isolation. */
 export function IterationWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.iterationOpen)
   const closeIteration = useSession((s) => s.closeIteration)

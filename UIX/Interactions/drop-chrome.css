@@ -1,5 +1,4 @@
-/* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost every
-   drop-line surface renders.*/
+/* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost every drop-line surface renders. */
 .drop-line-host {
   position: relative;
 }

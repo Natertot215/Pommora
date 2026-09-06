@@ -195,9 +195,7 @@
   margin-bottom: 14px;
 }
 
-/* Inline rename styling is the menu system's flush titleInput (dimensionally identical to the
-   title text it replaces — the caret alone marks edit mode); `.row-title-input` remains as the
-   query hook only.*/
+/* Inline rename styling is the menu system's flush titleInput — dimensionally identical to the title text it replaces, so the caret alone marks edit mode; `.row-title-input` remains as the query hook only. */
 .row .over-scroll-ellipsis:has(.row-title-input),
 .row .over-scroll-ellipsis > span:has(.row-title-input) {
   display: flex;
@@ -224,9 +222,7 @@
   cursor: grabbing;
 }
 
-/* "Hide Chevrons" personalization (class on <html>): the leading chevron slot collapses to a tunable
-   gutter. KNOB: --chevron-gutter (default 0 = flush with the section header; the glyph is clipped by
-   overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush — bump it for breathing room).*/
+/* "Hide Chevrons" personalization (class on <html>). KNOB: --chevron-gutter — the glyph is clipped by overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush. */
 .hide-chevrons .row > span:has(> [data-drop-outline]),
 .hide-chevrons .row > span:has(> [data-drop-outline-spacer]) {
   --chevron-gutter: 2px;

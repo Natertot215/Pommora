@@ -3,7 +3,6 @@ import { machine } from '../Platform/machine'
 import { NON_CORPUS_TOP, TRASH_DIR } from './nexusPaths'
 import { fail, ok, type Result } from '../Contract/result'
 
-/** The one root-boundary rule: a relative path that climbs out, or an absolute one. */
 export function escapes(rel: string): boolean {
   return rel === '..' || rel.startsWith('../') || isAbsolute(rel)
 }
@@ -15,7 +14,6 @@ export async function resolveUnderRoot(root: string, relPath: unknown): Promise<
   if (isAbsolute(relPath)) {
     return fail('invalid-path', 'Absolute paths are not allowed.')
   }
-  // Fast lexical reject (no fs touch) for an obvious `..` climb.
   if (escapes(relative(root, join(root, relPath)))) {
     return fail('invalid-path', 'Path escapes the nexus root.')
   }
@@ -35,8 +33,7 @@ export async function resolveUnderRoot(root: string, relPath: unknown): Promise<
   return ok(realTarget)
 }
 
-/** The root itself, the folders the nexus owns, and everything already in the trash — addressable
- *  by a resolve, but never a target a mutation may rename, delete, or decorate. */
+/** Addressable by a resolve, but never a target a mutation may rename, delete, or decorate. */
 export async function isReserved(root: string, abs: string): Promise<boolean> {
   const rel = relative(await machine().realpath(root), abs)
   return rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}/`)

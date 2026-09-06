@@ -159,8 +159,7 @@ export const shownDetail = (s: SessionState): PageDetail | null => {
 export const pageBody = (slot: PageSlot | undefined): string =>
   slot?.status === 'ready' ? slot.body : ''
 
-/** A subscriber asking only WHICH pages are loaded must never hold `pages`: a slot re-identifies
- *  at every keystroke, and the record with it. */
+/** A subscriber asking only WHICH pages are loaded must never hold `pages`: a slot re-identifies at every keystroke, and the record with it. */
 export const readyPageIds = (s: SessionState): string =>
   Object.entries(s.pages)
     .filter(([, slot]) => slot.status === 'ready')

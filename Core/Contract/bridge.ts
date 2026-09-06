@@ -58,7 +58,6 @@ export interface Asks {
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
   'history:clear': { args: []; reply: Result<number> }
 
-  // Per-machine scopes (nexus.db rows)
   'folds:get': { args: []; reply: Record<string, string[]> }
   'folds:set': { args: [pageId: string, keys: string[]]; reply: Result<null> }
   'activeViews:get': { args: []; reply: Record<string, string> }
@@ -220,8 +219,7 @@ export interface Asks {
 
   // `.trash` is outside the watcher, so the browser asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
-  // Read at the moment of asking, never from the renderer's cache, so the confirmation can't
-  // promise the system trash while main erases outright.
+  // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: { trashMode: TrashMode; permanentDelete: boolean } }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'trash:report': { args: [message: string, detail: string]; reply: void }
@@ -237,7 +235,6 @@ export interface Asks {
   'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
-  /** Its own channel: fused into a write, one IPC would perform two with partial-failure semantics. */
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: string | null }
   'row-menu': { args: [req: RowMenuRequest]; reply: string | null }

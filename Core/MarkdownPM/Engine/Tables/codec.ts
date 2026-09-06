@@ -7,31 +7,25 @@ export interface CellSpan {
 }
 interface RowSplit {
   cells: CellSpan[]
-  segments: [number, number][] // untrimmed pipe-to-pipe span per cell (one flex item each)
+  segments: [number, number][]
 }
 
-// GFM table-cell escaping: a pipe (and a backslash that would escape one) is backslash-escaped so it
-// round-trips without reading as a column boundary. A backslash carrying anything else is ordinary
-// markdown passing through — doubling it would rewrite `a \* b` into `a \\* b`. Inverse pair — escape
+// GFM table-cell escaping: a pipe (and a backslash that would escape one) is backslash-escaped so it round-trips without reading as a column boundary. A backslash carrying anything else is ordinary markdown passing through — doubling it would rewrite `a \* b` into `a \\* b`.
 // on commit (sync.ts), unescape at the cell-display boundary; model + segments stay in raw source form.
 export const escapeCell = (s: string): string => s.replace(/\\(?=[\\|])|\|/g, (m) => `\\${m}`)
 export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')
 
-// A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would
-// split the row). These pair the escaping with the `<br>` ⇄ newline transform for the full round-trip:
-// cellToSource on commit, cellToDisplay when seeding the cell editor.
+// A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would split the row); model + segments stay in raw source form.
 export const cellToSource = (display: string): string =>
   escapeCell(display).replace(/\r?\n/g, '<br>')
 export const cellToDisplay = (source: string): string =>
   unescapeCell(source).replace(/<br\s*\/?>/gi, '\n')
 
-// Split a row line on UNescaped pipes. Returns trimmed cell text + absolute pipe offsets (line start = `base`).
 export function splitRow(line: string, base: number): RowSplit {
-  const cuts: number[] = [] // relative offsets of the structural pipes
+  const cuts: number[] = []
   for (let i = 0; i < line.length; i++) {
     if (line[i] !== '|') continue
-    // A pipe is structural unless preceded by an ODD run of backslashes (one-char look-behind missed
-    // `\\|`, where the backslash is itself escaped and the pipe is a real boundary — micromark's rule).
+    // A pipe is structural unless preceded by an ODD run of backslashes (one-char look-behind missed `\\|`, where the backslash is itself escaped and the pipe is a real boundary — micromark's rule).
     let bs = 0
     for (let j = i - 1; j >= 0 && line[j] === '\\'; j--) bs++
     if (bs % 2 === 0) cuts.push(i)
@@ -98,7 +92,6 @@ export function delimCell(c: Column): string {
 export const pipeRow = (cells: string[]): string => `| ${cells.join(' | ')} |`
 
 export function serialize(m: TableModel): string {
-  // Cells arrive in source form — a model is only ever built from lines — so the `<br>` rule stays
-  // where the display boundary owns it, in cellToSource.
+  // Cells arrive in source form — a model is only ever built from lines — so the `<br>` rule stays where the display boundary owns it, in cellToSource.
   return [pipeRow(m.header), pipeRow(m.columns.map(delimCell)), ...m.rows.map(pipeRow)].join('\n')
 }

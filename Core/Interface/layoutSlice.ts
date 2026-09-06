@@ -28,8 +28,7 @@ export interface LayoutSlice {
   resetLayout: () => void
 }
 
-// Pane widths live in localStorage rather than nexus.db: an IPC round trip per drag frame is what
-// storing them main-side would cost (Nathan's call).
+// Pane widths live in localStorage rather than nexus.db: an IPC round trip per drag frame is what storing them main-side would cost (Nathan's call).
 export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240, key: 'pommora.sidebarWidth' }
 export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300, key: 'pommora.inspectorWidth' }
 type PaneWidth = typeof SIDEBAR_WIDTH
@@ -76,9 +75,7 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
       try {
         localStorage.setItem(SIDEBAR_WIDTH.key, String(get().sidebarWidth))
         localStorage.setItem(INSPECTOR_WIDTH.key, String(get().inspectorWidth))
-      } catch {
-        // widths just will not persist
-      }
+      } catch {}
     },
 
     ...PER_NEXUS,

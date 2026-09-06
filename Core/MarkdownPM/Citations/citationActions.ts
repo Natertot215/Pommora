@@ -25,7 +25,6 @@ import { editAcrossCitations } from '../folding'
 import { travelTo } from '../travel'
 import { editorHost } from '../api'
 
-/** `reveal` writes the page's visibility rather than folding behind the host's back, so every surface showing that page agrees. */
 interface CitationHost {
   shown: () => boolean
   reveal?: () => void
@@ -35,7 +34,6 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
   combine: (v) => v[0] ?? { shown: () => false },
 })
 
-/** The one arrival point: a resting table cell's marker click ends here too, having no editor to carry a pointer path. */
 export function travelToCitation(view: EditorView, label: string): void {
   const entry = citationFor(docScan(view.state.doc).citations, label)
   if (!entry) return
@@ -106,7 +104,6 @@ export function seedTypedCitation(view: EditorView, at: number): boolean {
   ])
 }
 
-/** Every reordering the section can owe is downstream of this one comparison. */
 function bindingMoved(before: CitationScan, after: CitationScan): boolean {
   if (before.entries.length !== after.entries.length) return true
   return after.entries.some((e, i) => {

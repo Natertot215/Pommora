@@ -1,5 +1,4 @@
-// A null answer means NO INDEX, never "no matches": every query caller falls back to its full scan
-// on null, and an empty array is a genuine empty result it may trust.
+// A null answer means NO INDEX, never "no matches": every query caller falls back to its full scan on null, and an empty array is a genuine empty result it may trust.
 
 import { errText } from '../Contract/result'
 import {

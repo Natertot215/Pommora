@@ -10,7 +10,6 @@ import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
 import { type ActionItem, afterSeparator } from './menuModel'
 
-/** Right-click always opens a menu, never acts; style rows come from the COLUMN, and a `link` cell's look is per-property. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -21,7 +20,6 @@ type CellMenuKind =
       barCapable?: boolean
     }
   | { kind: 'link'; filled: boolean }
-  /** A hit-test fact: only a right-click on a LABEL names a file to replace or remove. */
   | { kind: 'file'; onChip: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
@@ -87,7 +85,6 @@ function baseCellMenu(
   return null
 }
 
-/** The Style ▸ row leads; every other row sits under a divider from it. */
 export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {
   const { style, items } = baseCellMenuModel(ctx)
   if (ctx.hideable && ctx.kind !== 'title')
@@ -126,7 +123,6 @@ function baseCellMenuModel(ctx: CellMenuContext): {
       }
     }
     case 'link':
-      // Rename and Clear are no-ops on an empty cell, so only Edit shows there.
       return {
         items: ctx.filled
           ? [
@@ -137,7 +133,6 @@ function baseCellMenuModel(ctx: CellMenuContext): {
           : [{ label: 'Edit', action: 'cell:edit' }],
       }
     case 'file':
-      // Replace and Remove address the label that was right-clicked; Add addresses the value.
       return {
         items: ctx.onChip
           ? [

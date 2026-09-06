@@ -11,9 +11,7 @@ import {
 import { linkDisplayText } from '../Connections/linkValue'
 import type { LinkDisplay } from '../Properties/properties'
 
-/** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A
- *  mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on
- *  the selection rather than on the grammar. */
+/** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */
 export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
   if (!lineText.startsWith('![')) return null
   const line = lineText.replace(/\s+$/, '')
@@ -25,14 +23,12 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   return { label: unescapeAlias(m[1]), url }
 }
 
-/** The ONLY assembly path: `serializeLink` emits no bang and collapses an empty alias to the
- *  bare URL, so composing through it would write a line the detector refuses. */
+/** The ONLY assembly path: `serializeLink` emits no bang and collapses an empty alias to the bare URL, so composing through it would write a line the detector refuses. */
 export function composeWebpageEmbedLine(label: string, url: string): string {
   return `![${escapeAlias(label)}](${url})`
 }
 
-/** Resolved at render; nothing is written into the document. A hand-written label wins verbatim,
- *  an empty one derives per the nexus's default link format. */
+/** Resolved at render; nothing is written into the document. A hand-written label wins verbatim, an empty one derives per the nexus's default link format. */
 export function webpageTileTitle(
   label: string,
   url: string,
@@ -49,8 +45,7 @@ export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
   return span ? [span[0], span[1]] : null
 }
 
-/** Two shapes count: a complete link, empty halves included (⌘K seats the caret inside `[]()`),
- *  and a destination still open before the caret — the reading the smart-dash guard gives too. */
+/** Two shapes count: a complete link, empty halves included (⌘K seats the caret inside `[]()`), and a destination still open before the caret. */
 export function linkDestinationAt(lineText: string, col: number): boolean {
   for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
     const span = m.indices?.[2]

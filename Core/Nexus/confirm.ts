@@ -39,16 +39,14 @@ export async function confirmContainerWrite(
   )
 }
 
-/** `containerPath` names the one Collection whose assignment list the write also moved; a bare
- *  call is a registry-only def edit, which the confirmer patches without opening a sidecar. */
+/** `containerPath` names the one Collection whose assignment list the write also moved; a bare call is a registry-only def edit, which the confirmer patches without opening a sidecar. */
 export const confirmRegistryWrite = (ctx: HostContext, containerPath?: string): Promise<void> =>
   confirmWrite(ctx, (root) => confirmRegistry(root, containerPath))
 
 export const confirmSettingsWrite = (ctx: HostContext): Promise<void> =>
   confirmWrite(ctx, (root) => confirmBy(root, () => patchSettingsFromDisk(root)))
 
-/** An asset a mutation adopted never reaches the watcher (its own write is echo-suppressed), so
- *  the write's channel is what tells the renderer. */
+/** An asset a mutation adopted never reaches the watcher (its own write is echo-suppressed), so the write's channel is what tells the renderer. */
 export function pushAssetWrites(ctx: HostContext): void {
   const root = sessionRoot()
   if (root === null) return

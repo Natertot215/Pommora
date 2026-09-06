@@ -1,5 +1,4 @@
-// A grip on each draggable block's first line, content-anchored like the fold chevron so it can't drift below
-// callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
+// Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { docScan } from './docCache'
 import type { Extension, Range } from '@codemirror/state'
@@ -8,7 +7,6 @@ import { lineElementAt } from './lineDom'
 
 const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed', 'webpage'])
 
-// Tables are out — their rows carry their own handles.
 const GRIP_BLOCKS = new Set([...GRIP_KINDS, 'callout', 'blockquote'])
 
 // Blockquote can't use the rail `::before` grip (its bar and fill take both pseudos), so its grip is a real element.
@@ -39,8 +37,7 @@ export const blockHandles = EditorView.decorations.compute(['doc'], (state) => {
   return Decoration.set(ranges, true)
 })
 
-// Grips can't self-hover, so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of any line
-// in a grippable block. `onHotChange` reports the HOVERED line, which is what the host's hot-grip flag needs.
+// Grips can't self-hover, so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of any line in a grippable block. `onHotChange` reports the HOVERED line, which is what the host's hot-grip flag needs.
 export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void): Extension {
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {

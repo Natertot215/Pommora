@@ -83,8 +83,7 @@ export function latchBaseline(
   for (const [id, p] of Object.entries(recorded)) {
     if (!(id in out) && !(id in projection.duplicates) && unreadable.has(p.path)) out[id] = p
   }
-  // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior
-  // group and Space as unreadable rather than reading the blank as mass deletion.
+  // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
   if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
     for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out)) out[id] = p
@@ -93,9 +92,7 @@ export function latchBaseline(
   return out
 }
 
-/** With no prior evidence, the claimant the baseline records is the ELDEST file, not whatever the
- *  walk enumerated first: a copy is born after its original and birth time survives a rename, so
- *  a walk-order pick would let the accidental copy keep the identity and re-mint the original. */
+/** With no prior evidence the claimant the baseline records is the ELDEST file, not whatever the walk enumerated first: a copy is born after its original and birth time survives a rename, so a walk-order pick would let the accidental copy keep the identity. */
 async function recordEldest(
   root: string,
   projection: Projection,
@@ -122,16 +119,13 @@ export async function runOpenLedger(root: string): Promise<void> {
     const tree = await readNexus(root)
     const prior = readBaseline()
     const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
-    // The re-mint runs between the walk and the latch — the baseline must record the
-    // re-minted state, or the next open reports every fresh id as a creation.
+    // The re-mint runs between the walk and the latch — the baseline must record the re-minted state, or the next open reports every fresh id as a creation.
     const walked = projectBaseline(tree)
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
     writeBaseline(latchBaseline(projection, unreadablePaths, prior))
-    // This walk observed pre-remint disk, so it may seed the session only when the remint wrote
-    // nothing — otherwise two entities would share an id, colliding every id-keyed store. A
-    // written remint forces the fresh walk; if that fails, the pre-remint tree still serves.
+    // This walk observed pre-remint disk, so it may seed the session only when the remint wrote nothing — otherwise two entities would share an id, colliding every id-keyed store.
     seedLiveTree(tree)
     if (reminted.length > 0) {
       try {

@@ -19,9 +19,7 @@ const { grey, white, black } = primitive.color.system
 const derived = createGlobalTheme(':root', {
   color: {
     solid: { ...SPECTRUM, greyDefault: GREY_DEFAULT },
-    // Label tones — system-white at varying opacity steps (separate from the type ramp). `control` is
-    // the on-control label worn by control chrome — toolbar / subfield / editor / switches / the
-    // table heading — bright but a step under primary.
+    // Label tones — system-white at varying opacity steps (separate from the type ramp). `control` is the on-control label worn by control chrome — bright but a step under primary.
     label: {
       primary: white,
       control: tintAt(white, 80),
@@ -40,8 +38,7 @@ const derived = createGlobalTheme(':root', {
       quaternary: tintAt(grey, 6),
       quinary: tintAt(grey, 4),
     },
-    // Interaction states — system-grey washes, but for `muted`: a de-emphasis veil that dims a
-    // surface a step DARKER, so it derives from system-black rather than the grey the others share.
+    // Interaction states — system-grey washes, but for `muted`: a de-emphasis veil that dims a surface a step DARKER, so it derives from system-black rather than the grey the others share.
     state: {
       hover: tintAt(grey, 2.5),
       selected: tintAt(grey, 5),

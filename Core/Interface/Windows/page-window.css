@@ -1,9 +1,4 @@
-/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowBase surface; what
-   remains here is what only this window has — its custom exits, body scroll model, and the
-   front-matter inspector's rows. */
-
-/* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is
-   suppressed — the window leaves inert on the shared close motion's own pointer-events. */
+/* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is suppressed. */
 .window.closing.page-window.engulfing {
   animation: none;
 }
@@ -22,18 +17,15 @@
   padding-right: calc(14px * var(--page-detail-scale));
 }
 
-/* The window panel's column — the page inspector, and the history window's snapshot list. */
 .window-panel-column {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
-/* The Page History window: the same shell, the snapshots listed in the right slot. */
 .page-history-row {
   --row-pad-trail: 2px;
 }
-/* A snapshot is a record, not a writing surface: the text stays selectable, but no caret ever seats
-   in it and the pointer keeps its arrow. */
+/* A snapshot is a record, not a writing surface: the text stays selectable, but no caret ever seats in it and the pointer keeps its arrow. */
 .page-history-page .mdpm-caret-layer {
   display: none;
 }

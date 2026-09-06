@@ -27,7 +27,6 @@ interface AcCtl {
   close: () => void
 }
 
-/** Both keymaps bind the same arrows and Escape through this, so the fall-through rule lives in one place. */
 export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => (): boolean => {
   if (!ctl.current.open) return false
   drive(ctl.current)

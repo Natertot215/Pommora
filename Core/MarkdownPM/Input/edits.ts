@@ -9,8 +9,7 @@ import {
   isBlockquoteLine,
 } from '../Engine/detect'
 
-// A transform reading more than its own line takes the caller's whole-document scan (one per doc version):
-// the string-form code and callout tests re-split and re-pair every fence per call.
+// A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
 
 export interface Edit {
   from: number
@@ -110,7 +109,6 @@ export function continueBlockquoteOnEnter(
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
 }
 
-// Callouts keep continuing — their exit is caret placement below the box, and stripping a body `> ` would split it.
 export function calloutShorthand(
   doc: string,
   selStart: number,
@@ -173,7 +171,6 @@ export function outdentListOnShiftTab(doc: string, selStart: number, selEnd: num
   }
 }
 
-// Prefix-aware: inside a quote or callout it deletes the INNER marker, and removes the whole `> [!type] ` head cleanly.
 export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
   const doc = scan.text

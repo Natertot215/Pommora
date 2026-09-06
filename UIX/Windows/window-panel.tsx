@@ -4,8 +4,7 @@ import { paneSlide } from '../Animations/paneSlide'
 import { cx } from '../Utilities/cx'
 import { useResizeFrame } from '../Interactions/ResizeFrame'
 
-// The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host
-// owns only the width CSS var its layout math reads, mirrored back through onWidthChange.
+// The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host owns only the width CSS var its layout math reads, mirrored back through onWidthChange.
 
 export interface WindowPanelBounds {
   min: number
@@ -16,8 +15,7 @@ export interface WindowPanelBounds {
 // Widths persist per window id across remounts, session-only — not written to disk.
 const widths = new Map<string, number>()
 
-/** Hosts seed their CSS-var state from this so the first frame already carries the restored
- *  width — the mirror effect runs post-mount. */
+/** Hosts seed their CSS-var state from this so the first frame already carries the restored width — the mirror effect runs post-mount. */
 export const windowPanelWidth = (windowId: string, def: number): number =>
   widths.get(windowId) ?? def
 

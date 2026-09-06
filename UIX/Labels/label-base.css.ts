@@ -49,8 +49,7 @@ export type LabelShape = keyof typeof shape
 const BASE = 'var(--label-base)'
 const FILL = tintAt(BASE, 'primary')
 
-/** `--melt-ground` must be STATED — left unset the declaration drops and the blurred twin inherits
- *  the text color, stacking a crisp duplicate. */
+/** `--melt-ground` must be STATED — left unset the declaration drops and the blurred twin inherits the text color, stacking a crisp duplicate. */
 export const tinted = style({
   background: FILL,
   borderColor: tintAt(BASE, 'secondary'),
@@ -58,8 +57,7 @@ export const tinted = style({
   vars: { '--melt-ground': FILL, '--label-accent': BASE },
 })
 
-/** `outline` is the row's own instead of a mixed one; `accent` the raw color where it differs from
- *  the base — the greyscale row darkens before it tints. */
+/** `outline` is the row's own instead of a mixed one; `accent` the raw color where it differs from the base — the greyscale row darkens before it tints. */
 type Paint = { base: string; outline?: string; accent?: string }
 const variant = ({ base, outline, accent }: Paint): ComplexStyleRule => [
   tinted,
@@ -84,19 +82,16 @@ const cellVariants = Object.fromEntries(
 
 export const labelColor = styleVariants({
   ...cellVariants,
-  // `default` takes grey-4's base color but keeps the plain recipe — and stays its OWN key, since a
-  // grid cell would open the picker ringed on an uncolored value and leave clearing unreachable.
+  // `default` takes grey-4's base color but keeps the plain recipe — and stays its OWN key, since a grid cell would open the picker ringed on an uncolored value and leave clearing unreachable.
   default: variant({ base: cellColor('grey-4') }),
-  // The link-color "Default": the runtime system accent, tinted like any solid. A link seeds to this
-  // (the picker's no-selection state), so it must be a real palette key — not the neutral grey default.
+  // The link-color "Default": the runtime system accent, tinted like any solid. A link seeds to this (the picker's no-selection state), so it must be a real palette key — not the neutral grey default.
   accent: variant({ base: 'var(--system-accent)' }),
 })
 
 /** The label palette keys — the single source consumers (cells, `colorMap`) target. */
 export type LabelColorName = keyof typeof labelColor
 
-// Treatments are named only where they DIFFER from the tint; the doubled selectors are what lets a
-// modifier hold over whatever the tint says.
+// Treatments are named only where they DIFFER from the tint; the doubled selectors are what lets a modifier hold over whatever the tint says.
 export const fill = {
   neutral: style({
     selectors: {
@@ -116,8 +111,7 @@ export const fill = {
 
 export const outline = {
   tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.border.base } } }),
-  // `labelBase` sets border-STYLE and every shape names its width; a chrome-less one has to say
-  // none, or the UA's `medium` paints a rule in the text color.
+  // `labelBase` sets border-STYLE and every shape names its width; a chrome-less one has to say none, or the UA's `medium` paints a rule in the text color.
   none: style({ border: 'none' }),
 } as const
 
@@ -125,8 +119,7 @@ export const alignStart = style({ justifyContent: 'flex-start' })
 
 export const roomy = style({ height: SIZE.roomyHeight, vars: { '--label-pad-x': SIZE.roomyPadX } })
 
-/** The cap lives on the TEXT, not the label — a % width is unreliable in a shrink-to-fit flex box,
- *  and this way the truncation lands at the padding edge instead of floating mid-label. */
+/** The cap lives on the TEXT, not the label — a % width is unreliable in a shrink-to-fit flex box, and this way the truncation lands at the padding edge instead of floating mid-label. */
 export const textCap = style({ maxWidth: `var(--label-max, ${SIZE.textMax})` })
 
 // The gap between chips in a run — a Labels concern, so it lives here and every chip run reads it.
