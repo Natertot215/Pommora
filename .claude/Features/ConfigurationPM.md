@@ -1,10 +1,12 @@
 ## Configuration
 
+**Workspace:** Core · Desktop
+
 Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer that never syncs: the app config beside the application, and the machine-and-Nexus preferences in the Nexus's own database. This document is the one roster of every knob; other documents name a setting by its label and point here.
 
 ### Settings
 
-The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `src/shared/types.ts`), and a row at its default stores no key. Defaults are bold.
+The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `Core/Settings/personalization.ts`), and a row at its default stores no key. Defaults are bold.
 
 #### General
 
@@ -187,7 +189,7 @@ Three more keys sit at the settings root beside `personalization`: `excluded_fol
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory (`src/main/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target — the in-Nexus `.trash` or the system trash. It is never part of a Nexus and never syncs. A second class of machine-local state lives in the Nexus's own database as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target — the in-Nexus `.trash` or the system trash. It is never part of a Nexus and never syncs. A second class of machine-local state lives in the Nexus's own database as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
 
 ---
 

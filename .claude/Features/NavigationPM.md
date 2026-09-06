@@ -1,10 +1,12 @@
 ## Navigation
 
-How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `src/renderer/Navigation/` for the layer, `Tabs/` for the tab model, and `Windows/` for the window.
+**Workspace:** Core
+
+How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `Core/Navigation/` for the layer and the tab model, and `Core/Interface/Windows/` for the window.
 
 ### The Navigation Layer
 
-A per-Nexus, UI-agnostic store of recents, pins, and favorites, plus client-side title search. Everything it persists is a bare identity reference — `{kind, id}` (`NavRef` in `src/shared/types.ts`) — so every title, icon, and path resolves live against the current tree at the moment of use, and a rename or move, even while the app is closed, leaves nothing stale. An entry that no longer resolves is hidden at render but never deleted, so a Nexus switch can't silently wipe pins or favorites.
+A per-Nexus, UI-agnostic store of recents, pins, and favorites, plus client-side title search. Everything it persists is a bare identity reference — `{kind, id}` (`NavRef` in `Core/Navigation/navRef.ts`) — so every title, icon, and path resolves live against the current tree at the moment of use, and a rename or move, even while the app is closed, leaves nothing stale. An entry that no longer resolves is hidden at render but never deleted, so a Nexus switch can't silently wipe pins or favorites.
 
 - **Recents** — an automatic history stream, most recent first, deduplicated, capped at a generous roll-off. A navigation records only when it actually opens a tab, so re-surfacing an entity already open, stepping Back or Forward, and switching tabs record nothing.
 - **Pins** — the durable, user-ordered working set. Pins are the pinned tabs, docked left in the tab bar, and also float to the top of the NavWindow gallery — one set surfaced in two places.
@@ -31,11 +33,11 @@ The tab bar holds the open working set, each tab **warm** — it keeps its own s
 
 ### Back and Forward
 
-Back and Forward walk per-tab history (`Tabs/tabsModel.ts`): each unpinned tab owns its own stack, the toolbar arrows step the active tab, skipping deleted entities, and a history step re-selects without re-recording. A pinned tab's content never changes in place, so it holds no history and the arrows disable there. History persists with the tab set, so Back still works after a relaunch.
+Back and Forward walk per-tab history (`Core/Navigation/tabsModel.ts`): each unpinned tab owns its own stack, the toolbar arrows step the active tab, skipping deleted entities, and a history step re-selects without re-recording. A pinned tab's content never changes in place, so it holds no history and the arrows disable there. History persists with the tab set, so Back still works after a relaunch.
 
 ### NavView
 
-The new-tab page (`Interface/NavView.tsx`): a full-window Recents gallery or list over a search bar, and the empty state — a `+` opens it, a Nexus with no open tabs defaults to it, and closing the last tab lands on it. It shares its gallery and list components with the NavWindow but is its own surface, carrying its own banner (falling back to the Homepage's) with the search field in the banner's title slot. Its List / Gallery toggle lives in the Subfield, and that choice persists per Nexus separately from the NavWindow's. The list shows the pinned group above recents, and the NavWindow's scan glyph promotes its map flavor into NavView.
+The new-tab page (`Core/Navigation/NavView.tsx`): a full-window Recents gallery or list over a search bar, and the empty state — a `+` opens it, a Nexus with no open tabs defaults to it, and closing the last tab lands on it. It shares its gallery and list components with the NavWindow but is its own surface, carrying its own banner (falling back to the Homepage's) with the search field in the banner's title slot. Its List / Gallery toggle lives in the Subfield, and that choice persists per Nexus separately from the NavWindow's. The list shows the pinned group above recents, and the NavWindow's scan glyph promotes its map form into NavView.
 
 ---
 

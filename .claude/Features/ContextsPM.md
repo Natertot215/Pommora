@@ -1,10 +1,12 @@
 ## Contexts & Spaces
 
+**Workspace:** Core
+
 The organization layer. A **Context** is a user-defined group — a fresh nexus seeds Areas, Topics, and Projects on open, as ordinary, fully manageable entries — and a **Space** is an individual member inside one Context. Content relates *to* Spaces; no Context contains or parents another, and an entity tags whichever Spaces fit, independently. Contexts carry no pages and no schema; a Space is a categorical anchor with a tile surface of its own.
 
 ### The Registry Model
 
-Context identity lives in one file, `.nexus/contexts.json`, modeled by `contextsRegistry` in `src/shared/contexts.ts`: each entry carries an `id` (a minted ULID, seeded and user-created alike), a `title`, an optional `singular` (the seeded three carry one, so their create entries read "New Area" rather than "New Space"), and an optional `icon`, with array position as the display order. Everything else about the layer follows from the filesystem and the files that name a Space.
+Context identity lives in one file, `.nexus/contexts.json`, modeled by `contextsRegistry` in `Core/Properties/contexts.ts`: each entry carries an `id` (a minted ULID, seeded and user-created alike), a `title`, an optional `singular` (the seeded three carry one, so their create entries read "New Area" rather than "New Space"), and an optional `icon`, with array position as the display order. Everything else about the layer follows from the filesystem and the files that name a Space.
 
 - **Spaces are folders** at `.nexus/contexts/<Context>/<Space>/`, each gated by a `_space.json` sidecar holding the Space's id, icon, chip color, banner, and its own relation keys. A folder without the sidecar isn't a Space. The Space's Context is its parent folder and nothing else records it, so re-homing a Space is a move, and a Context rename is a folder rename plus a cascade.
 - **Membership lives in member files** as `<Title>` keys at the root, over an array of bare Space titles — the same shape in a page's frontmatter and in a `_space.json`, where JSON quotes the key. Member files carry no ids; the registry resolves titles at read time, and an emptied key is removed rather than written empty.
@@ -18,7 +20,7 @@ Context identity lives in one file, `.nexus/contexts.json`, modeled by `contexts
 
 ### Writes
 
-Every Context write runs through `src/main/CRUD/contextWrite.ts` and `contextCascade.ts`, serialized on the registry file's own lock and under per-file locks for each root it rewrites.
+Every Context write runs through `Core/Contexts/contextWrite.ts` and `contextCascade.ts`, serialized on the registry file's own lock and under per-file locks for each root it rewrites.
 
 - **Membership** — one write per entity kind (a content file, or a Space's sidecar), reconciling the whole root it rewrites. Space-to-Space links take the same shape: a Space tags other Spaces through its own sidecar keys, in its own Context or another.
 - **Renames** are journaled and cascade the title across every context-bearing root — each page's frontmatter and each Space's sidecar — with the registry committed last, so a crash replays forward on the next open and a failed commit reverses the cascade. The key is renamed where it sits, keeping its position and any comment attached to it.

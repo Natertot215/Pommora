@@ -1,6 +1,8 @@
 ## NexusRecord
 
-Pommora answers *where is this now*; the record answers *where was this then*. It has two halves: **Provenance**, a JSON written into every deletion bundle in `.trash` that says where a departed entity belonged and what it carried, and **Baseline**, a per-machine projection of what the last open saw, kept in `nexus.db`. Both join on ids — a rename rots a name, an id survives it — with titles riding along as labels. The code is `src/main/provenance.ts` for the bundle and restore, `src/shared/record.ts` for the baseline's tuple and diff, and `src/main/remint.ts` for duplicate ids.
+**Workspace:** Core
+
+Pommora answers *where is this now*; the record answers *where was this then*. It has two halves: **Provenance**, a JSON written into every deletion bundle in `.trash` that says where a departed entity belonged and what it carried, and **Baseline**, a per-machine projection of what the last open saw, kept in `nexus.db`. Both join on ids — a rename rots a name, an id survives it — with titles riding along as labels. The code is `Core/Trash/bundle.ts` for the bundle and restore, `Core/Nexus/record.ts` for the baseline's tuple and diff, and `Core/Nexus/remint.ts` for duplicate ids.
 
 ### Provenance
 

@@ -4,7 +4,7 @@ Hard-won traps around Electron `<webview>` guests and the React surfaces that ho
 
 ### Mounting & Attributes
 
-- **React drops boolean values for attributes it doesn't recognize.** A bare `allowpopups` JSX prop lands as a property the webview never consults — Blink then kills every guest `window.open` before main's handler is consulted, silently. Only string values reach unknown attributes: write `allowpopups={'' as unknown as boolean}` (the cast rides React's own typing, which claims boolean). `partition` works untouched because it's a string prop.
+- **React drops boolean values for attributes it doesn't recognize.** A bare `allowpopups` JSX prop lands as a property the webview never consults — Blink then kills every guest `window.open` before the host's handler is consulted, silently. Only string values reach unknown attributes: write `allowpopups={'' as unknown as boolean}` (the cast rides React's own typing, which claims boolean). `partition` works untouched because it's a string prop.
 - **A guest mounting inside a hidden subtree may never attach.** Under a `visibility: hidden` or `opacity: 0` ancestor, Chromium defers guest attach erratically — observed at four seconds, or never. Never hide a *mounting* guest to stage a reveal; mount it visible and cover it with host DOM instead (the glance pane's load cover is the standing pattern). An *already-attached* guest survives `visibility: hidden` fine — that's what retention rides on; `display: none` tears it down.
 - **`will-attach-webview` is a validator, not a rewriter.** Edits to `params` never reach the attach. Required attributes ride the elements; the hook's job is to deny what shouldn't attach.
 
