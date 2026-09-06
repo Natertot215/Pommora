@@ -1,12 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-vi.mock('electron', () => ({ BrowserWindow: class {}, ipcMain: { handle: vi.fn(), on: vi.fn() } }))
-
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
-import { scopeGet, scopeSet } from './ipc'
+import { scopeGet, scopeSet } from './handlers'
 
 let root: string
 beforeEach(async () => {
@@ -19,7 +17,8 @@ afterEach(async () => {
 })
 
 const isShown = (v: unknown): v is boolean | null => typeof v === 'boolean' || v === null
-const set = scopeSet('citations', isShown, 'Shown must be a boolean.')
+const write = scopeSet('citations', isShown, 'Shown must be a boolean.')
+const set = (key: string, value: boolean | null) => write(undefined, key, value)
 const get = scopeGet<boolean>('citations')
 
 describe('the citations override refuses what it cannot store and clears on a null', () => {

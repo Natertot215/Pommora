@@ -12,6 +12,8 @@
   },
   "include": [
     "main.ts",
+    "electron.vite.config.ts",
+    "vitest.config.ts",
     "Bridge/**/*",
     "Platform/**/*",
     "Store/**/*",

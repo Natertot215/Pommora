@@ -6,7 +6,7 @@ import { app, session, webContents, BrowserWindow, type Session, type WebContent
 import { hasWebScheme, isHttpLink } from '@pommora/core/Connections/links'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
-import { push } from './ipc'
+import { push } from '../Bridge/ipc'
 
 /** The sign-in host whose server-side detection additionally trips on the Chrome token; requests
  *  to it carry the suffix-stripped UA variant. */

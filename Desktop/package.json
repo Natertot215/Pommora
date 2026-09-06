@@ -1,6 +1,9 @@
 {
   "name": "@pommora/desktop",
+  "version": "0.0.1",
   "private": true,
+  "author": "Naterot",
+  "license": "MIT",
   "main": "./out/main/index.js",
   "exports": {
     "./*": {
