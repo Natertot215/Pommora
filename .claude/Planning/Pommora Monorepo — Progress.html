@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 01:20 PT",
+  updated: "09-06-2026 02:05 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -99,8 +99,8 @@ const DATA = {
       { n: 4, title: "Pure engine domains move whole", state: "done", hash: "e004a49a", note: "−702 lines; raw mode, assetMigrate, bare-Record reader gone; SQLite stores wait in Core/Store for Task 6's seam." },
       { n: 5, title: "Renderer into Core and UIX", state: "done", hash: "7f8452c8", note: "712 files; renderer/ gone; smoke launch green. UIX/Utilities born, UIX/Canvas retired (TileGrid is Tiles'), web window is Core's. One UIX→Core edge (PickerControl → nativeMenus) until Task 13." },
       { n: 6, title: "Platform seam", state: "done", hash: "1cceaae3", note: "Fable. Machine + three store seams in Core/Platform; node:* gone from Core's engine; SQLite bodies in Desktop/Store; Core/Store dissolved; comments on touched files 1,381 → 309. +265 code lines (the seam). Smoke launch green. The lane ran alongside it over all of UIX and Core/{Connections,Utilities}: five commits, −458 gross, nearly all comments." },
-      { n: 7, title: "Dialer replaces the api object", state: "running" },
-      { n: 8, title: "main/index.ts splits by domain", state: "pending", note: "Fable." },
+      { n: 7, title: "Dialer replaces the api object", state: "done", hash: "1c052c1a", note: "Preload 201 → 26 lines; 222 sites in 68 files on host().ask; leaf table 149 rows, 147 pure renames. Non-test −12 (the wider call form ate the savings)." },
+      { n: 8, title: "main/index.ts splits by domain", state: "running", note: "Fable." },
       { n: 9, title: "Dispatcher bodies and the one sweep", state: "pending" },
     ], gate: { name: "Gate 2", state: "pending", note: "One smoke launch." } },
     { name: "Phase 3", title: "Filing inside the domains · review → polish → move, Fable reviews each domain before its re-nest", tasks: [
@@ -138,8 +138,10 @@ const DATA = {
     { at: "26a05524", label: "Lane E", lines: 69557 },
     { at: "36ab5034", label: "Lane D", lines: 69546 },
     { at: "1cceaae3", label: "Task 6", lines: 69811 },
+    { at: "1c052c1a", label: "Task 7", lines: 69826 },
   ],
   gates: [
+    { name: "Task 7 · 1c052c1a", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 · build 0\nrg window.nexus Core outside Platform → 0 · LegacyApi → 0 · preload dir gone\nsmoke (agent): nexus exposes ask/tell/on/openDropped; state open; page:open + updateBody round-tripped; restored" },
     { name: "Task 6 · 1cceaae3", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 (1,058 files) · build 0\nrg node: Core non-test → 0 · Desktop → 13 · SQL in Core → 0 · AsyncLocalStorage Core → 0 · electron Core → 0 · Core/Store gone\nsmoke: built app opened the scratch Nexus, page:open + page:updateBody round-tripped, page restored, killed" },
     { name: "Lane · 50e88ab3 3d35fbce 22ed2423", text: "tsc -p Core 0 · tsc -p UIX 0 · vitest Core/Connections Core/Utilities 0 (6 / 109) · vitest UIX 0 (29 / 258) · biome 0\nnet −12 code lines, −116 gross; root gates at Task 6's commit" },
     { name: "Task 5 · 7f8452c8", text: "typecheck 0 · lint 0 · test 0 (321 / 3,986) · build 0\nsmoke launch: scratch Nexus rendered, killed · test ! -d Pommora/src/renderer · rg @renderer/ → 0 · rg @pommora/desktop Core UIX → 0" },
