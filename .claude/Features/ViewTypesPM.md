@@ -116,7 +116,7 @@ The Cards renderer (`Core/Views/Cards/`) draws Pages as a resizable card grid ov
 
 #### II. Properties on Cards
 
-Cards show every visible property through the shared chip and cell renderers, and each value is interactive on the same gesture rules the table cells use — a click opens the value's picker, a checkbox toggles. Right-clicking a value opens the cell menu with a trailing **Remove** that drops the property from the view; a live link opens the link menu instead. The whole card is a drag handle, so a value's click stops before the card sees it, and only the title and the image band open the page. Pickers mount at one grid-level host so an open picker survives row churn. A two-stage **add-picker** — from empty space in the text area, the location footing, or the card menu's **Add Property ▸** — lists everything not shown on the card and reveals a property on its first committed value.
+Cards show every visible property through the shared chip and cell renderers, and each value is interactive on the same gesture rules the table cells use — a click opens the value's picker, a checkbox toggles. Right-clicking a value opens the cell menu with a trailing **Remove** that drops the property from the view; a live link opens the link menu instead. The whole card is a drag handle, so a value's click stops before the card sees it, and only the title and the image band open the page. The value and add pickers mount at the grid level, so an open picker survives row churn. A two-stage **add-picker** — from empty space in the text area, the location footing, or the card menu's **Add Property ▸** — lists everything not shown on the card and reveals a property on its first committed value.
 
 #### II. Grouping, Location & Set Cards
 
