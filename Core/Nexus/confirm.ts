@@ -8,7 +8,7 @@ import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 
 export function pushConfirmed(ctx: HostContext, tree: NexusTree | null): void {
   if (!tree) return
-  // One macrotask: ask's reply reaches before confirming push.
+  // One macrotask later, so the ask's own reply reaches the renderer before the confirming push.
   setTimeout(() => ctx.push('nexus:changed', tree), 0)
 }
 

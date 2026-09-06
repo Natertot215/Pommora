@@ -71,7 +71,7 @@ async function writeFreshId(
   fresh: string,
 ): Promise<Map<string, string> | null> {
   try {
-    // Pages carry no views: landed write returns empty map, not null.
+    // A page carries no views, so a landed page write returns an empty map, not null — null must keep its single meaning, a refused write.
     if (target.kind === 'page')
       return (await remintPageFile(join(root, target.path), target.id, fresh)) ? new Map() : null
     if (target.kind === 'context') return null
@@ -84,7 +84,7 @@ async function writeFreshId(
 
 async function remintPageFile(absFile: string, oldId: string, fresh: string): Promise<boolean> {
   return rewritePageSerialized(absFile, (content) => {
-    // Read fresh: file holding contested id may move; blind stamp would overwrite unadjudicated identity.
+    // Read fresh inside the lock: a file that no longer carries the contested id moved under us, and a blind stamp would overwrite an identity the walk never adjudicated.
     if (splitFrontmatter(content)[ID_KEY] !== oldId) return null
     return mergeFrontmatter(content, { [ID_KEY]: fresh }, [ID_KEY], splitEnvelope(content).body)
   })
