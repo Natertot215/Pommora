@@ -133,8 +133,6 @@ export function calloutShorthand(
   if (ls !== c - 1 || doc[c - 1] !== '|') return null
   const lineEnd = lineEndAt(doc, c)
   const head = '> [!callout] '
-  // Replaces just the `||` (content already on the line survives as the callout's first-line body). A blank
-  // line separates the new callout from an adjacent blockquote/callout so they read as two boxes, not one.
   const onlyOnLine = c === lineEnd
   const prevIsQuote = ls > 0 && isBlockquoteLine(doc.slice(lineStartAt(doc, ls - 1), ls - 1))
   const nextStart = lineEnd + 1
@@ -151,8 +149,7 @@ export function calloutShorthand(
 // caret placement on the empty line below.
 export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number): Edit {
   const doc = scan.text
-  // A plain `\n` here would drop an un-prefixed line into the run and split the callout. Requires BOTH ends
-  // in the callout — a selection straddling the box edge falls back to plain `\n` so outside text isn't pulled in.
+  // A plain `\n` here would drop an un-prefixed line into the run and split the callout. In the callout — a selection straddling the box edge falls back to plain `\n` so outside text isn't pulled in.
   if (inCalloutAt(scan, selStart) && inCalloutAt(scan, selEnd)) {
     const ls = lineStartAt(doc, selStart)
     const pfx = (
@@ -207,8 +204,7 @@ export function smartBackspace(scan: DocScan, selStart: number, selEnd: number):
     const pfx = blockPrefix(line)
     const headLen = calloutHeadPrefixLen(line)
     if (headLen !== null) {
-      // Backspace anywhere inside the hidden `> [!type] ` head removes the whole callout in one step, so a
-      // caret that wandered into the tag can't corrupt it char-by-char and silently demote the box to a quote.
+      // Backspace anywhere inside the hidden `> [!type] ` head removes the whole callout in one step.
       if (selStart > ls && selStart <= ls + headLen)
         return { from: ls, to: ls + headLen, insert: '', selection: ls }
       return null
@@ -296,10 +292,7 @@ export function autoPair(
   const pair = PAIRS[inserted]
   if (!pair) return null
   // Nothing auto-closes hard against a word: the closer would land buried in the text already ahead of
-  // the caret (`|word` + `(` → `(|)word`), which is never what the keystroke meant. Reads only what
-  // FOLLOWS the caret — what precedes it is GATED_PAIRS' separate rule. The construct's own closer is
-  // exempt because `_` is itself a word char, so without that the type-over paths below would never be
-  // reached for `_` and its doubled form could never promote.
+  // the caret (`|word` + `(` → `(|)word`), which is never what the keystroke meant.
   if (doc[c] !== pair.close && isWordCh(doc[c])) return null
   if (inCodeAt(scan, c)) return null
   const prev = doc[c - 1]
@@ -309,8 +302,7 @@ export function autoPair(
     if (doc[c] === pair.close)
       return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
     // A doubled marker only pairs as a fresh OPENER: not glued to a word (`snake__` stays literal), and
-    // not completing an earlier unmatched double (`**word*` + `*` closes the bold — pairing here would
-    // stack `**word****`). Line-local, minus the prev char the user just typed.
+    // not completing an earlier unmatched double (`**word*` + `*` closes the bold.
     const beforeRun = doc.slice(lineStartAt(doc, c), c - 1)
     const openDoubles = beforeRun.split(inserted + inserted).length - 1
     const glued = doc[c - 2] !== undefined && /\w/.test(doc[c - 2])
@@ -447,9 +439,7 @@ export function dashArrow(
   const c = selStart
   if (inCodeAt(scan, c)) return null
 
-  // em-dash: "--" then a non-dash char (the 3-back check preserves --- HR). Guarded like the en-dash
-  // branch below: a `--` inside a [[title]] or a URL is content — converting it silently retargets the
-  // connection / corrupts the link.
+  // em-dash: "--" then a non-dash char (the 3-back check preserves --- HR).
   if (
     inserted !== '-' &&
     c >= 2 &&

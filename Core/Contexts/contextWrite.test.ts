@@ -12,7 +12,7 @@ import {
 } from './contextWrite'
 import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Locations/paths'
 import { splitFrontmatter } from '../Nexus/readNexus'
 

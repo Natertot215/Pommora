@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/p
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { rewritePageSerialized } from '../IO/atomicWrite'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createProperty, editProperty } from './registryProperty'

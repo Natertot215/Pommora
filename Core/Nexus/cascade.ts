@@ -1,11 +1,4 @@
-// A page rename rewrites every inbound `[[link]]`. The candidate set comes from the content
-// index when one exists — only files whose rows name the old title open, with `mentionsTitle`
-// as the per-file confirmation so a stale row costs one wasted read, never a wrong rewrite —
-// and falls back to a full corpus scan otherwise. Each rewrite lands under its file lock, the
-// same one the cell-write path takes, so a cascade can't clobber a concurrent edit. Per-file,
-// not cross-file atomic: a partly-applied cascade is recoverable by re-running.
-
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
 import { rewritePageSerialized } from '../IO/atomicWrite'
 import { sweepAdmitsBody } from './util'
@@ -19,7 +12,6 @@ import { noteValueWrite } from './valuesChanged'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '../Properties/properties'
 
-/** The caller renames the target's own file and reverts that rename if this throws. */
 export async function renameCascade(
   nexusRoot: string,
   oldTitle: string,

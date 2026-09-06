@@ -1,16 +1,10 @@
-// The tab set — the ordered UNPINNED tabs, the active-tab pointer, and each tab's Back/Forward
-// refs. Pinned tabs are never stored here; they derive from navigation.json's pinned refs.
-// Device-local: two machines with different tabs open have no correct merge, so a machine keeps
-// its own row.
-
 import { isPlainObject } from '../Properties/propertyValue'
 import { toNavRef, type NavRef } from '../Navigation/navRef'
 import type { StoredTab, StoredTabSet } from './Windows/windowRecord'
-import { readValue, writeValue } from '../Store/localState'
+import { readValue, writeValue } from '../Platform/localState'
 
 const TAB_KINDS = new Set(['homepage', 'context', 'space', 'collection', 'set', 'page'])
 
-/** A well-formed stored ref for a tab: a drivable kind, an `id` on every kind but homepage. */
 export function isTabRef(v: unknown): v is NavRef {
   if (!isPlainObject(v)) return false
   const kind = v.kind
@@ -28,9 +22,7 @@ function readTab(v: unknown): StoredTab | null {
   return { id: v.id, target: toNavRef(v.target), navStack, navIndex }
 }
 
-/** Shape-validate and strip a tab-set payload to bare refs — the ONE boundary for the row, shared
- *  by the read below and the `tabs:save` handler. Ids are deduped, since closeTab drops by id and
- *  two tabs sharing one would close together. */
+// Ids are deduped: closeTab drops by id, and two tabs sharing one would close together.
 export function sanitizeTabSet(raw: unknown): StoredTabSet | null {
   if (!isPlainObject(raw) || !Array.isArray(raw.tabs)) return null
   const seen = new Set<string>()
@@ -42,7 +34,6 @@ export function sanitizeTabSet(raw: unknown): StoredTabSet | null {
   return { tabs, activeTabId: typeof raw.activeTabId === 'string' ? raw.activeTabId : '' }
 }
 
-/** The persisted tab set, or null when the nexus has none yet (the store seeds a fresh NavView). */
 export function readTabsState(): StoredTabSet | null {
   return sanitizeTabSet(readValue('tabs'))
 }

@@ -1,16 +1,10 @@
-// The trash browser's read shape. Main owns every parse the renderer would otherwise have to
-// learn, and answers two questions the menu needs before any restore is attempted: what kind
-// this is, and whether the place it came from still exists.
-
-import { basename, dirname } from 'node:path'
+import { basename, dirname } from '../Locations/posix'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashCrumb, TrashRow } from './trashRow'
 import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Locations/nexusPaths'
 import { type ArtifactRecord, containerChain, resolveRecord } from './resolve'
 import type { ListedBundle } from './spend'
 
-/** `fileStamp` writes an ISO instant with `:` and `.` flattened to `-`. The optional counter
- *  that follows de-collides same-instant deletes and carries no time of its own. */
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 
 function deletedAtOf(bundlePath: string): number | null {
@@ -32,8 +26,6 @@ function frozenCrumbs(bundlePath: string): TrashCrumb[] {
   return (inContexts ? segments.slice(contexts.length) : segments).map((title) => ({ title }))
 }
 
-/** Null when the recorded parent resolves to nothing. A Collection and a Context both sit at a
- *  root that cannot go missing, so both resolve to an empty chain rather than to nothing. */
 function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | null {
   if (record.entity === 'context') return []
   if (record.entity === 'space') {
@@ -48,8 +40,6 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | nul
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
 }
 
-/** `id-live` is deliberately not a homeless verdict — the home is there and a destination
- *  cannot fix a duplicate identity. */
 function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: NexusTree): boolean {
   const resolution = resolveRecord(record, artifactName, tree)
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
@@ -73,8 +63,6 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
   }
 }
 
-/** Newest first — what was just lost belongs at the top. A row whose stamp wouldn't parse
- *  still lists; it sorts last rather than disappearing. */
 export function trashRows(bundles: ListedBundle[], tree: NexusTree): TrashRow[] {
   return bundles
     .map((b) => trashRowOf(b, tree))

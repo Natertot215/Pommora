@@ -1,9 +1,5 @@
-// ONE generic CRUD for every folder-shaped entity — Spaces, Page Collections, Page Sets and the
-// agenda configs. Invariants: filename = title; a fresh entity gets a real ULID; foreign
-// sidecar keys are preserved on update.
-
-import { mkdir, rename } from 'node:fs/promises'
-import { join, dirname, basename } from 'node:path'
+import { join, dirname, basename } from '../Locations/posix'
+import { machine } from '../Platform/machine'
 import type { z } from 'zod'
 import { newId } from '../Locations/ids'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
@@ -22,7 +18,7 @@ export async function createFolderEntity(
   const folder = join(parentDir, name)
   if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
-  await mkdir(folder, { recursive: true })
+  await machine().mkdir(folder)
   // Suppress the new folder's addDir echo (the mkdir doesn't self-suppress like the sidecar
   // write does) — an un-suppressed watcher swap mid-rename remounts the fresh row and drops
   // the inline-rename keystrokes.
@@ -43,7 +39,7 @@ export async function renameFolderEntity(
   // buy a second full walk.
   recordWrite(absFolder)
   recordWrite(target)
-  await rename(absFolder, target)
+  await machine().rename(absFolder, target)
   return ok({ path: target })
 }
 
@@ -57,7 +53,7 @@ export async function moveFolderEntity(
     return fail('exists', `"${basename(absFolder)}" already exists there.`)
   recordWrite(absFolder)
   recordWrite(target)
-  await rename(absFolder, target)
+  await machine().rename(absFolder, target)
   return ok({ path: target })
 }
 

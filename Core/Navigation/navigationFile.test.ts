@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { NavRef } from './navRef'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { readNavigationFile, readNavigationState, writeNavigationState } from './navigationFile'
 
 let root: string

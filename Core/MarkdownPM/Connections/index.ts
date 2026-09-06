@@ -11,9 +11,7 @@ import type { GlanceTarget } from '../../Interface/Glance/glanceAction'
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
  *  function, so acting on the result needs a way back into the editor instance clicked — `apply`
  *  is that way, and its absence marks a display-only surface. It closes over the span it was
- *  built for, so no caller can aim an action at a link the menu wasn't popped on. A page link and
- *  a web-address link are different menus, not one menu with absences: the address has no page
- *  to preview, name, or locate. */
+ *  built for, so no caller can aim an action at a link the menu wasn't popped on. */
 export type ConnMenuTarget = {
   surface?: ConnSurface
   hideable?: boolean

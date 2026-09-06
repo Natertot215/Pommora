@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { EMPTY_WINDOWS, type WindowsFile } from './Windows/windowRecord'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
 
 let root: string

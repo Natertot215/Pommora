@@ -1,13 +1,7 @@
-// The single read/write pair for folder sidecars, and the lock every read-modify-write of one
-// runs under. Validates through a zod schema on read (foreign keys retained via looseObject) and
-// writes atomically with stable, sorted JSON. CRUD reads, mutates modeled fields on the returned
-// object (foreign keys ride along), and writes it back — so foreign data is preserved.
-
-import { readFile } from 'node:fs/promises'
 import type { z } from 'zod'
 import { sidecarPath, type SidecarKind } from '../Locations/paths'
-import { parseJsonText, writeJson } from './atomicWrite'
-import { serializeOnFile } from './fileLock'
+import { parseJsonText, readTextOrNull, writeJson } from './atomicWrite'
+import { machine } from '../Platform/machine'
 
 /** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
  *  Views, container config, within-folder orders, property assignment and the Remove cache all
@@ -19,19 +13,19 @@ export function withSidecarLock<T>(
   kind: SidecarKind,
   fn: () => Promise<T>,
 ): Promise<T> {
-  return serializeOnFile(sidecarPath(absFolder, kind), fn)
+  return machine().lock(sidecarPath(absFolder, kind), fn)
 }
 
-/** Read + validate a folder's sidecar with its schema. Returns null when the file is
- *  absent, unparseable, or fails validation (the caller treats that as un-adopted). */
 export async function readSidecar<S extends z.ZodType>(
   absFolder: string,
   kind: SidecarKind,
   schema: S,
 ): Promise<z.infer<S> | null> {
+  const text = await readTextOrNull(sidecarPath(absFolder, kind))
+  if (text === null) return null
   let raw: unknown
   try {
-    raw = parseJsonText(await readFile(sidecarPath(absFolder, kind), 'utf8'))
+    raw = parseJsonText(text)
   } catch {
     return null
   }
@@ -39,8 +33,6 @@ export async function readSidecar<S extends z.ZodType>(
   return parsed.success ? parsed.data : null
 }
 
-/** Write a folder's sidecar atomically (sorted, stable JSON, trailing newline). The
- *  value should already be schema-shaped; any foreign keys on it are written through. */
 export async function writeSidecar(
   absFolder: string,
   kind: SidecarKind,

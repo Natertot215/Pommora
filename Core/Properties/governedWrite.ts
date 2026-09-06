@@ -5,10 +5,10 @@
 // from `next` is deleted**. `null` is not the delete sentinel — the merge sets on anything that
 // is not `undefined`, so a null would write the literal.
 
-import { readFile } from 'node:fs/promises'
 import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './contextResolve'
 import type { Adoption } from './propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
+import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { sessionRoot } from '../Nexus/session'
@@ -20,7 +20,8 @@ export async function setGovernedRootKeys(
   govern: readonly string[],
   world?: GovernedWorld,
 ): Promise<Adoption[]> {
-  const existing = await readFile(absFile, 'utf8')
+  const existing = await machine().readText(absFile)
+  if (existing === null) throw new Error(`Page not found: ${absFile}`)
   const raw = splitFrontmatter(existing)
   const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
   const reconciled = world

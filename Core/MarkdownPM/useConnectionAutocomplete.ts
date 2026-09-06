@@ -45,10 +45,7 @@ export interface ConnectionAutocomplete {
   acCtl: RefObject<AcCtl>
 }
 
-// The `[[…]]` connection autocomplete state machine, shared by the page editor and table cells. The
-// caller supplies the live view + a candidate source and owns where the panel renders and its keymap;
-// this owns query state, index clamping, the commit, the panel anchor, and the `acCtl` ref. Pair it
-// with detectConnectionQuery() in the editor's updateListener.
+// The `[[…]]` connection autocomplete state machine, shared by the page editor and table cells.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   candidatesFor: (q: AcQuery) => AcRow[],
@@ -57,25 +54,15 @@ export function useConnectionAutocomplete(
   const [acIndex, setAcIndex] = useState(0)
   const dropAlias = useSession((s) => s.personalization.removeTitleOnLinkChange !== false)
   const offerAliases = useSession((s) => s.personalization.aliasPickerOnCommit !== false)
-  // The alias form's rows come out of this, and forgetting one has to take its row with it — so the
-  // scan depends on the memory rather than only on what's been typed.
   const pageAliases = useSession((s) => s.pageAliases)
-  // Every caret move rebuilds `ac`, so the scan keys on the query alone — `candidatesFor` is an
-  // inline closure at both call sites and would defeat the memo as a dependency.
   const candidatesForRef = useRef(candidatesFor)
   candidatesForRef.current = candidatesFor
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title
-  // An empty query browses for embeds and aliases — the just-typed opener pops the full list, and a
-  // bare pipe is the one moment a page's remembered names are worth showing unprompted. Only link
-  // stays quiet, because its pool is every page in the nexus.
   const candidates = useMemo(() => {
     if (query === null || (query === '' && form === 'link')) return []
     const found = candidatesForRef.current({ query, form, title })
-    // A sole suggestion identical to what's already written has nothing to offer: accepting it is a
-    // no-op edit, and an open panel holds Enter and the arrow keys away from whatever the caret is
-    // actually doing. Lives here so every surface on this state machine inherits it.
     if (found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)) return []
     return found
   }, [query, form, title, pageAliases])
@@ -84,9 +71,7 @@ export function useConnectionAutocomplete(
     const view = viewRef.current
     if (!view || !ac) return
     // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless
-    // it's deliberately re-emitted. Dropping it is the default — the old words describe the old page
-    // — and the setting is what makes that a preference rather than a law. Authoring an alias
-    // already put it in that page's memory, so the words survive being dropped from here.
+    // it's deliberately re-emitted.
     const worn =
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
@@ -138,9 +123,7 @@ export function useConnectionAutocomplete(
 /**
  * The surface the panel is bounded by — the editor's nearest SCROLLING ancestor (the detail pane, a
  * floating window's body, a tile's own box). The editor itself never scrolls, so `scrollDOM` is the
- * wrong answer here. Only the surface's IDENTITY is cached per editor — its rect is re-read each pass,
- * so a resized pane or a scrolled surface stays honest.
- */
+ * wrong answer here. */
 const surfaces = new WeakMap<HTMLElement, HTMLElement>()
 function surfaceOf(view: EditorView): HTMLElement {
   // Containment, not connectedness: a cached surface can still be in the document while the editor
@@ -149,8 +132,7 @@ function surfaceOf(view: EditorView): HTMLElement {
   const cached = surfaces.get(view.dom)
   if (cached?.contains(view.dom)) return cached
   // A detached editor has no surface to walk to, and the answer must not be cached: the loop bottoms
-  // out at the body, which is connected by definition, so nothing would ever re-walk. The outer
-  // editor detaches tile DOM mid-sync on a re-slot (→ Tiles/tileCache.ts), so this is a real pass.
+  // out at the body, which is connected by definition, so nothing would ever re-walk.
   if (!view.dom.isConnected) return document.body
   let el = view.dom.parentElement
   while (el && el !== document.body) {

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../IO/atomicWrite'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import {
   convertTileToView,
   copyEntry,

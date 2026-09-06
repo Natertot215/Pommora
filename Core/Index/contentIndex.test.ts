@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openDb } from '../Store/driver'
-import { openSessionDb, closeSessionDb, sessionDb } from '../Store/sessionDb'
-import { readScope } from '../Store/localState'
+import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
 import {
   markIndexReady,
   queryKeyHolders,
@@ -97,33 +95,5 @@ describe('the content index', () => {
     expect(queryMentions('beta')).toEqual([])
     expect(queryKeyHolders('Status')).toEqual([])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
-  })
-})
-
-describe('upgrade in place', () => {
-  it('a pre-index database gains the tables on open with its rows intact', async () => {
-    closeSessionDb()
-    await rm(root, { recursive: true, force: true })
-    root = await mkdtemp(join(tmpdir(), 'pom-cindex-v1-'))
-    // A database as the pre-index schema wrote it: meta + local_state alone, stamped v1.
-    const { mkdirSync } = await import('node:fs')
-    mkdirSync(join(root, '.nexus'), { recursive: true })
-    const v1 = openDb(join(root, '.nexus', 'nexus.db')).db
-    if (!v1) throw new Error('fixture db failed to open')
-    v1.exec(`
-      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-      CREATE TABLE local_state (scope TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
-        PRIMARY KEY (scope, key));
-      INSERT INTO meta (key, value) VALUES ('schema_version', '1');
-      INSERT INTO local_state (scope, key, value) VALUES ('folds', 'p1', '["x"]');
-    `)
-    v1.close()
-
-    openSessionDb(root)
-    markIndexReady()
-    expect(readScope('folds')).toEqual({ p1: ['x'] })
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {} }, STAT)
-    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
-    expect(readScope('folds')).toEqual({ p1: ['x'] })
   })
 })

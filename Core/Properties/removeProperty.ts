@@ -1,9 +1,3 @@
-// Remove caches { pageId: raw } + unassigns on the Collection's sidecar FIRST, then strips the
-// property's value from every member page under its file lock — cache-before-strip means an fs
-// failure mid-strip never destroys a value the cache didn't already capture. Re-assigning
-// restores each cached value that still conforms to the def's CURRENT type + options; the global
-// Delete purges these caches.
-
 import { contentId } from '../Nexus/identityMark'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../IO/sidecar'
@@ -13,7 +7,7 @@ import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atom
 import { folderCorpus, indexWrittenPage } from '../Index/indexSeed'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { readFrontmatterFields } from '../IO/pageFile'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { isBlankValue, isPlainObject, reconcilePropertyValue } from './propertyValue'
 import { updatePageProperty } from '../Nexus/page'
@@ -52,8 +46,6 @@ async function removeInner(
     const id = contentId(fields)
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
-    // Only the cache needs identity — an id-less page still gets stripped below, its value
-    // just isn't restorable.
     if (id) values[id] = raw
   }
   // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't
@@ -78,7 +70,6 @@ async function removeInner(
   return ok(null)
 }
 
-/** Shared by both cache writers. The no-empties rule drops an emptied map's key. */
 function patchCacheBlock(
   cur: Record<string, unknown>,
   propertyId: string,
@@ -93,8 +84,6 @@ function patchCacheBlock(
   return next
 }
 
-/** Write each reconciled value back to the page (matched by frontmatter id) that held it;
- *  deleted/moved-out pages drop their entries. Pages first, cache cleared last. */
 export async function restoreCachedValues(
   root: string,
   collectionFolder: string,
@@ -117,14 +106,12 @@ export async function restoreCachedValues(
     const id = contentId(readFrontmatterFields(content))
     if (id) byId.set(id, file)
   }
-  // What didn't restore — a vanished page, a value the def's current type/options reject, a
-  // page whose frontmatter refuses the write — stays cached.
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
     const reconciled = reconcilePropertyValue(def, raw, false)
     if (isBlankValue(reconciled.value)) return false
-    const wrote = await serializeOnFile(file, async () => {
+    const wrote = await machine().lock(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
       return (await updatePageProperty(file, def, reconciled.value)).ok
@@ -132,7 +119,6 @@ export async function restoreCachedValues(
     if (wrote) await indexWrittenPage(root, file)
     return wrote
   })
-  // The page walk above deliberately runs unlocked.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
       cur,

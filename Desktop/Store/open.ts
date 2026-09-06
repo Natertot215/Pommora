@@ -1,6 +1,3 @@
-// The database travels inside the Nexus so a moved or renamed one keeps it, but it is device-local
-// and excluded from the watcher.
-
 import { rmSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { DB_SIBLINGS, openDb, type Db } from './driver'
@@ -12,23 +9,18 @@ import {
   truncateIndex,
   writeMeta,
 } from './schema'
-import { nexusDir } from '../Locations/paths'
+import { nexusDir } from '@pommora/core/Locations/paths'
 
 export const DB_FILENAME = 'nexus.db'
 
-/** Drops the WAL/SHM siblings alongside the file — leaving them orphans a journal that SQLite
- *  would replay into the next database created at this path. */
 function removeDbFiles(dbPath: string): void {
   for (const suffix of DB_SIBLINGS) {
     try {
       rmSync(dbPath + suffix, { force: true })
-    } catch {
-      /* best-effort */
-    }
+    } catch {}
   }
 }
 
-/** Open (creating / resetting as needed) the per-nexus database. null ⇒ no persisted state. */
 export function openNexusDb(nexusRoot: string): Db | null {
   const dir = nexusDir(nexusRoot)
   mkdirSync(dir, { recursive: true })

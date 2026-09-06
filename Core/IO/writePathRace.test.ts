@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { SavedView } from '../Views/views'
 import type { PropertyDefinition } from '../Properties/properties'
-import { serializeOnFile } from './fileLock'
+import { machine } from '../Platform/machine'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageBody, renamePage, updatePageProperty } from '../Nexus/page'
 import { setChildOrder } from '../Nexus/reorder'
@@ -87,7 +87,7 @@ describe('a value write racing a body write on one page', () => {
 
     await Promise.all([
       updatePageBody(p.value.path, 'second'),
-      serializeOnFile(p.value.path, () =>
+      machine().lock(p.value.path, () =>
         updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' }),
       ),
     ])

@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './contextResolve'
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
@@ -8,20 +8,18 @@ import { assignedDefs, loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/co
 import { sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
 import { rereadSinceSeed } from '../Index/indexSeed'
-import { sessionDb } from '../Store/sessionDb'
+import { contentIndexStore } from '../Platform/stores'
 import { readLivePersonalization } from '../Settings/settings'
 
 const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
 
-/** Canonicalize the pages the seed re-read: the reconcile every write runs, over the files that
- *  changed while the app was closed. Best-effort; a failure costs the repair, never the open. */
 export async function runRepairSweep(root: string): Promise<void> {
   const files = rereadSinceSeed()
   if (!files.length || (await readLivePersonalization(root)).repairOnOpen !== true) return
   // A nexus switch mid-open swaps the session's database; a sweep that kept writing would index
   // this root's pages into the other nexus's rows — the seed bails the same way.
-  const db0 = sessionDb()
-  const live = (): boolean => sessionDb() === db0
+  const db0 = contentIndexStore()
+  const live = (): boolean => contentIndexStore() === db0
   try {
     const context = await loadContextWorld(root)
     const base = context.ok ? context.value : NO_CONTEXT_WORLD

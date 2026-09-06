@@ -1,10 +1,3 @@
-// Self-write echo suppression: the watcher exists for EXTERNAL changes — the app's own writes
-// must not re-trigger it, since every tree-relevant in-app write already refetches explicitly.
-// The funnel records every path the app writes, renames, moves, or trashes; the watcher skips
-// events landing inside the window. A recorded FOLDER also suppresses its descendants.
-
-import { sep } from 'node:path'
-
 const recent = new Map<string, number>()
 const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land
@@ -28,11 +21,9 @@ export function isRecentWrite(absPath: string): boolean {
     if (now - t <= WINDOW_MS) return true
     recent.delete(absPath)
   }
-  // The map stays ≤256 entries (pruned on record), so the descendant scan is a bounded
-  // sweep over a hot cache, never an O(vault) walk.
   for (const [p, tp] of recent) {
     if (now - tp > PREFIX_WINDOW_MS) continue
-    if (absPath.startsWith(p + sep)) return true
+    if (absPath.startsWith(`${p}/`)) return true
   }
   return false
 }

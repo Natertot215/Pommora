@@ -1,12 +1,7 @@
-// The floating windows' persistence: the NavWindow flavor's page tabs, the per-origin Page Window
-// sets (keyed by origin page id, re-keyed on re-parent), and which window was open. The renderer
-// owns restore-time reconciliation against the live tree; main strips every ref to bare identity
-// and persists the file as one row.
-
 import { isPlainObject } from '../Properties/propertyValue'
 import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './Windows/windowRecord'
 import { toNavRef, type NavRef } from '../Navigation/navRef'
-import { readValue, writeValue } from '../Store/localState'
+import { readValue, writeValue } from '../Platform/localState'
 import { isTabRef } from './tabsState'
 
 function readRecord(v: unknown): WindowSetRecord | null {
@@ -29,8 +24,6 @@ function readOpen(v: unknown): WindowsFile['open'] {
     : null
 }
 
-/** Shape-validate and strip a windows payload to bare refs — the ONE boundary for the row,
- *  shared by the read below and the `windows:save` handler. */
 export function sanitizeWindows(raw: unknown): WindowsFile | null {
   if (!isPlainObject(raw) || !isPlainObject(raw.origins)) return null
   const origins: Record<string, WindowSetRecord> = {}

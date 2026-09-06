@@ -16,10 +16,6 @@ export type { ListKind }
 
 export const embedRegex = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 export const inlineCodeRegex = (): RegExp => /`([^`\n]+)`/dg
-/** `==highlight==`. Not CommonMark, so no parser node stands behind it — a scan finds it, the way
- *  latex and inline code are found. A run of three or more `=` is a setext rule or a divider
- *  somebody drew, never a mark, so both ends refuse a third; a lone `=` inside the content is
- *  ordinary text and stays. */
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const blockLatexRegex = (): RegExp => /(?<!\$)\$\$([\s\S]+?)\$\$/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
@@ -42,24 +38,14 @@ export interface FenceInfo {
   role: 'open' | 'content' | 'close'
   from: number
   to: number
-  /** The block's quote depth (from its opening fence) — 0 = an unquoted, top-level block. */
   depth: number
-  /** False while the fence is still being typed — an unclosed block claims every line to EOF, so
-   *  treating it as settled code would restyle the whole document below the caret. */
   closed: boolean
-  /** The opening fence's info word (```yaml → 'yaml') — absent on a bare fence. */
   lang?: string
-  /** Where the OPEN line's marker run ends (its whitespace/quote prefix plus the run, line-relative) —
-   *  the info word starts here, whatever the fence's indent and however long its run. */
   markerEnd: number
-  /** A content line's 1-based number within its block — the line-count chrome's source. */
   ordinal?: number
 }
 
-/** The document's line table, computed once and passed down rather than re-derived per scanner.
- *  `lineStarts` carries one entry past the last line, holding the document's end — a walk that runs
- *  off the bottom of `lines` still lands on a real position, and the empty slice it names is the
- *  correct answer for "everything from here on is already accounted for". */
+/** The document's line table, computed once and passed down rather than re-derived per scanner.*/
 export interface DocLines {
   text: string
   lines: string[]
@@ -98,10 +84,7 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
 }
 
 /** The fence blocks' absolute ranges, read back off the per-line scan — an open line carries its
- *  whole block's extent, so the ranges are already in hand wherever the scan is. The decoration
- *  builder drops inline tokens landing inside a fence opened above the viewport, which a
- *  viewport-only tokenize cannot see. `to` reaches the closing fence line's end, or EOF when the
- *  fence is unclosed. */
+ *  whole block's extent, so the ranges are already in hand wherever the scan is.*/
 export function fenceRangesOf(fences: readonly (FenceInfo | undefined)[]): [number, number][] {
   const out: [number, number][] = []
   for (const f of fences) if (f?.role === 'open') out.push([f.from, f.to])
@@ -116,11 +99,7 @@ const inExcluded = (at: number, excluded: [number, number][]): boolean =>
 /** Absolute ranges of display-math blocks: a LONE `$$` line opens, the next lone `$$` line closes,
  *  mirroring how ``` fences pair — never the token layer's span regex, whose lazy pairing a single
  *  stray `$$` in prose or inline code would flip for the whole document below it. Relocating bytes
- *  needs line-anchored pairing; coloring a span doesn't. A delimiter line inside `excluded` (code
- *  fences, table regions) is content, not a delimiter; an unclosed opener claims nothing. Hanging
- *  delimiters (`$$ x=1` … `y $$`) and single-line `$$x$$` stay ordinary lines. `to` is the closing
- *  line's end, exclusive of the trailing newline. `excluded` is required — every caller must state
- *  which regions own their `$$` bytes, or two callers would silently disagree on the math model. */
+ *  needs line-anchored pairing; coloring a span doesn't.*/
 export function blockMathRanges(
   { lines, lineStarts }: DocLines,
   excluded: [number, number][],
@@ -159,12 +138,9 @@ function loneLines<T>(
 export interface CitationEntry {
   /** The `[^label]:` line's index. */
   line: number
-  /** The citation's final continuation line — its own line when it has none. */
   lastLine: number
   label: string
-  /** Absolute offset where the citation's text begins, past `[^label]:` and the spaces after it. */
   contentStart: number
-  /** The positional number, null when nothing binds to it — an orphan, or a duplicate that lost. */
   ordinal: number | null
 }
 
@@ -213,19 +189,13 @@ export function markerEndingAt(text: string): string | null {
 
 /** The case-fold every marker↔citation comparison runs through. Deliberately not the shared title
  *  normalization: GFM defines its own folding for footnote labels, so coupling the two would let a
- *  change to title matching silently move footnote binding. The double case swap is micromark's own,
- *  which is what makes this agree with the parser on characters like ß. */
+ *  change to title matching silently move footnote binding.*/
 export function foldLabel(label: string): string {
   return label.toLowerCase().toUpperCase()
 }
 
 /** The trailing run of citations reaching the document's end, with every body marker bound to it by
- *  case-folded label and numbered in first-use order. The section's boundary is derived HERE and
- *  nowhere else — six layers read it, and a boundary each of them re-derived is one they would
- *  eventually disagree about. Same exclusion contract as its siblings: a `[^1]:` line inside a
- *  fence, table or math region is content there, and `excluded` is required so two callers cannot
- *  silently disagree. A table immediately below a citation ends the run rather than continuing it —
- *  the exclusion set owns those bytes. */
+ *  case-folded label and numbered in first-use order. */
 export function citationScan(
   d: DocLines,
   excluded: [number, number][],
@@ -379,9 +349,7 @@ export function loneEmbedTitle(line: string): string | null {
 /** Lone-line page embeds: a line that IS exactly one `![[Title]]` — trailing whitespace doesn't
  *  break lone-ness, but a leading indent does: an indented line is a list continuation riding its
  *  marker (the same whitespace that would make it "lone" is what glues it to the item above), so it
- *  stays an ordinary line and its `![[…]]` renders as the inert token, exactly like a quoted one.
- *  Same exclusion contract as blockMathRanges: an embed line inside a fence, table, or math region
- *  is content there, and `excluded` is required so two callers can't silently disagree. */
+ *  stays an ordinary line and its `![[…]]` renders as the inert token, exactly like a quoted one.*/
 export function blockEmbedLines(d: DocLines, excluded: [number, number][]): EmbedLine[] {
   return loneLines(d, excluded, (line) => {
     const title = loneEmbedTitle(line)
@@ -600,14 +568,7 @@ export function isHeadingLine(line: string): boolean {
 
 const headingPartsRe = /^([ ]{0,3})(#{1,6})([ \t]+)(.*)$/
 /** Decomposes a heading line into its pieces — level is `hashes.length`, the content start is
- *  `indent+hashes+space`. The one heading-shape regex, and the editor's own answer to "is this a
- *  heading worth treating as one", which is narrower than `isHeadingLine`'s on purpose: a bare `#`
- *  is a valid empty ATX heading to the parser, and this returns null for it. That null is the gate
- *  the heading scan and the render both read, and it is what stops the `#` you have just typed —
- *  before its space — from hiding itself, taking a chevron, opening an empty outline row under an
- *  empty persisted fold key, and swallowing the paragraphs below it into a draggable section. The
- *  indent stays space-only so both agree that a tab-indented `#` is indented code rather than a
- *  heading. */
+ *  `indent+hashes+space`.*/
 export function headingParts(
   line: string,
 ): { indent: string; hashes: string; space: string; content: string } | null {

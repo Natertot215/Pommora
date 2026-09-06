@@ -34,8 +34,9 @@
     "write-file-atomic": "^8.0.0"
   },
   "devDependencies": {
+    "@pommora/desktop": "*",
     "@pommora/uix": "*",
-    "@types/write-file-atomic": "^4.0.3",
-    "@types/node": "^25.9.3"
+    "@types/node": "^25.9.3",
+    "@types/write-file-atomic": "^4.0.3"
   }
 }

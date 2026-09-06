@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,6 +15,7 @@ import { readRecord } from '../Trash/record'
 import { readSidecar } from '../IO/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
+import { installMachine, machine } from '../Platform/machine'
 
 /** The writer takes a definition, and the registry's copy is the ONLY one that addresses the same
  *  key the strip path resolves — a def invented here would write somewhere no cascade ever looks. */
@@ -31,19 +32,17 @@ let tasks: string
  *  pin, taken from inside the real strip path rather than asserted after the fact. */
 let recordedBeforeScrub: boolean | undefined
 
-vi.mock('../IO/fileLock', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../IO/fileLock')>()
-  return {
-    ...actual,
-    serializeOnFile: async (...args: Parameters<typeof actual.serializeOnFile>) => {
-      // Page locks only. Sidecar writes take the same primitive, and an assignment during setup
-      // would otherwise pin this before the act under test has begun.
-      if (args[0].endsWith('.md')) {
-        recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
-      }
-      return actual.serializeOnFile(...args)
-    },
-  }
+const base = machine()
+installMachine({
+  ...base,
+  async lock(key, fn) {
+    // Page locks only. Sidecar writes take the same primitive, and an assignment during setup
+    // would otherwise pin this before the act under test has begun.
+    if (key.endsWith('.md')) {
+      recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
+    }
+    return base.lock(key, fn)
+  },
 })
 
 beforeEach(async () => {

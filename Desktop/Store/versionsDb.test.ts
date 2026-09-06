@@ -17,7 +17,7 @@ import {
   sweepSnapshots,
 } from './versionsDb'
 import type { Db } from './driver'
-import { ignoredUnder } from '../Nexus/watchSettle'
+import { ignoredUnder } from '@pommora/core/Nexus/watchSettle'
 
 let root: string
 let dbPath: string

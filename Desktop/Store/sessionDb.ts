@@ -1,11 +1,9 @@
-// The open nexus's database handle. Operational state — folds, view selection, tabs, windows,
-// recents — lives here, opened on nexus open and closed on switch or quit. Best-effort: a null
-// handle means every operational store no-ops and the session runs without persisted chrome.
-
-import { errText } from '../Contract/result'
+import { errText } from '@pommora/core/Contract/result'
+import { installStores } from '@pommora/core/Platform/stores'
 import { openNexusDb } from './open'
 import { openVersionsDb } from './versionsDb'
 import type { Db } from './driver'
+import { contentIndexStore, keyValueStore, snapshotStore } from './stores'
 
 let db: Db | null = null
 let versionsDb: Db | null = null
@@ -39,14 +37,17 @@ export function openSessionDb(root: string): void {
     () => openVersionsDb(root),
     'versions.db: unavailable — file history will not record:',
   )
+  installStores({
+    keyValue: db && keyValueStore(db),
+    contentIndex: db && contentIndexStore(db),
+    snapshots: versionsDb && snapshotStore(versionsDb),
+  })
 }
 
 const closeQuietly = (handle: Db | null): void => {
   try {
     handle?.close()
-  } catch {
-    /* best-effort — nothing here outlives the session that needs a clean close */
-  }
+  } catch {}
 }
 
 export function closeSessionDb(): void {
@@ -54,4 +55,5 @@ export function closeSessionDb(): void {
   closeQuietly(versionsDb)
   db = null
   versionsDb = null
+  installStores({ keyValue: null, contentIndex: null, snapshots: null })
 }

@@ -1,10 +1,9 @@
-import { join, dirname, basename } from 'node:path'
-import { rename } from 'node:fs/promises'
+import { join, dirname, basename } from '../Locations/posix'
 import { ID_KEY } from './identityMark'
 import { newContentId } from '../Locations/ids'
 import { type PageWrite, writePageFile } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import {
   type Adoption,
   encodeValue,
@@ -20,8 +19,6 @@ import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
 
-/** No context keys — presence is value-driven. Icon, body, and property values land in the
- *  same birth write, so a seeded page is never observable unseeded. Blank values write no key. */
 export async function createPage(
   parentDir: string,
   name: string,
@@ -48,18 +45,16 @@ export async function createPage(
   return ok({ id, path: file })
 }
 
-/** A rename and a move are the same write to disk, so they share one primitive. */
 async function relocatePage(absFile: string, target: string): Promise<void> {
   // Under the SOURCE path's lock, the same key every other write to this page takes: a write
   // queued behind the move fails not-found rather than recreating the vacated file as a ghost.
-  await serializeOnFile(absFile, async () => {
+  await machine().lock(absFile, async () => {
     recordWrite(absFile)
     recordWrite(target)
-    await rename(absFile, target)
+    await machine().rename(absFile, target)
   })
 }
 
-/** Rename a page file (filename = title). No-op when unchanged. */
 export async function renamePage(
   absFile: string,
   newName: string,
@@ -73,9 +68,7 @@ export async function renamePage(
 }
 
 export async function updatePageBody(absFile: string, body: string): Promise<Result<PageWrite>> {
-  // Locked here rather than at the caller: the existence check and the write must sit inside
-  // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
-  return serializeOnFile(absFile, async () => {
+  return machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     try {
       return ok(await writePageFile(absFile, {}, [], body))
@@ -85,8 +78,6 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
   })
 }
 
-/** A Page's Collection membership is its folder location, so its name-keyed values re-join the
- *  destination schema on next read; no strip, no schema logic lives in the move. */
 export async function movePage(
   absFile: string,
   newParentDir: string,
@@ -99,15 +90,7 @@ export async function movePage(
   return ok({ path: target })
 }
 
-/**
- * Governs only that property's own key. A null or empty value removes the key entirely.
- *
- * CALL THIS UNDER THE PAGE'S OWN `serializeOnFile` LOCK. Unlike `updatePageBody` it does not take
- * one for itself: its callers need a WIDER span than the write, since the definition must resolve
- * inside the same slot or a rename sweep passing this page between read and write leaves the
- * value written under a key the sweep already moved past. Taking the lock here would deadlock
- * those callers — the chain is sequential, not reentrant.
- */
+// Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
 export async function updatePageProperty(
   absFile: string,
   def: PropertyDefinition,

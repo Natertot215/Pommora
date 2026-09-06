@@ -1,21 +1,15 @@
-import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../Locations/paths'
 import { readJsonObject, readJsonStrict, writeJson } from '../IO/atomicWrite'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { isPlainObject } from './propertyValue'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 
-/** propId → its nexus-wide definition. The shared registry, `.nexus/properties.json`. */
 export type PropertyRegistry = Record<string, PropertyDefinition>
 
-/** The on-disk registry file: defs + the nexus-wide cosmetic order. */
 export type RegistryFile = { order: string[]; defs: PropertyRegistry }
 
 const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
-/** Normalize a raw registry object: plain-object entries that fail the def schema land in
- *  `unparsed` (raw, by id) instead of the defs map, and the order is element-filtered —
- *  non-strings and ids without defs dropped. */
 function normalizeRegistry(obj: Record<string, unknown>): {
   registry: RegistryFile
   unparsed: Record<string, unknown>
@@ -36,16 +30,12 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   return { registry: { order, defs }, unparsed }
 }
 
-/** Lenient read: absent / corrupt → empty. READ PATH ONLY — `mutateRegistry` below does its
- *  own strict read, so a transiently-unreadable file can never feed a write. */
 export async function readRegistry(root: string): Promise<RegistryFile> {
   const obj = await readJsonObject(registryPath(root))
   if (obj === null) return { order: [], defs: {} }
   return normalizeRegistry(obj).registry
 }
 
-/** Every def in the nexus-wide cosmetic order — order-listed first, unlisted appended. ONE
- *  ordering rule, so a consumer never re-derives it. */
 export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   const listed = new Set(reg.order)
   return [
@@ -56,27 +46,19 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   ]
 }
 
-/** Overwrite the whole registry file — module-private, so every write rides `mutateRegistry` and
- *  therefore the registry file's lock (a bare write outside it can lose a concurrent mutation's
- *  update). */
 async function writeRegistry(
   root: string,
   registry: { order: string[]; defs: Record<string, unknown> },
 ): Promise<void> {
-  await mkdir(nexusDir(root), { recursive: true })
+  await machine().mkdir(nexusDir(root))
   await writeJson(registryPath(root), registry)
 }
 
-/** Read-modify-write of the registry, under that file's own lock. `fn` returns the next registry
- *  to persist (or nothing to leave disk untouched) plus the caller's result. The read is strict:
- *  absent seeds an empty registry, unreadable/corrupt throws, so the file is never replaced by
- *  what a failed read pretended it held. Entries that don't parse as defs ride through the write
- *  untouched, by id — `fn` never sees them, so it can never drop them. */
 export function mutateRegistry<T>(
   root: string,
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
-  return serializeOnFile(registryPath(root), async () => {
+  return machine().lock(registryPath(root), async () => {
     const read = await readJsonStrict(registryPath(root))
     if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
     const { registry, unparsed } = normalizeRegistry(read.ok ? read.value : {})

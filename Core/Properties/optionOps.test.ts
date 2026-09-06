@@ -18,7 +18,7 @@ import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { serializeSchemaOp } from './schemaChain'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
 import { flushValueWrites } from '../Nexus/valuesChanged'
@@ -336,7 +336,7 @@ describe('adoption — a Multi-Select registers an option a page already holds',
 
   it('applyAdoptions resolves from inside a page lock and from inside the schema chain', async () => {
     const id = await mkMulti()
-    await serializeOnFile(join(root, 'any.md'), () =>
+    await machine().lock(join(root, 'any.md'), () =>
       applyAdoptions(root, [
         { propertyId: id, value: 'beta' },
         { propertyId: id, value: 'beta' },

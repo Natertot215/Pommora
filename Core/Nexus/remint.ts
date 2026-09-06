@@ -1,8 +1,4 @@
-// A duplicated id (content or container) stops sharing its twin's identity: the prior
-// session's baseline names the path that legitimately held each id, that claimant keeps it,
-// and every other claimant takes a fresh id plus duplicated device-local rows.
-
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { ID_KEY } from './identityMark'
 import { isPlainObject } from '../Properties/propertyValue'
 import type { EntityRecord, RecordKind } from './record'
@@ -11,7 +7,7 @@ import { copyEntry } from '../Tiles/tilesFile'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { pathExists } from '../IO/atomicWrite'
 import { tileDocPath } from '../Locations/paths'
-import { readKey, writeKey } from '../Store/localState'
+import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from '../Locations/ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, readFrontmatterFields } from '../IO/pageFile'
@@ -20,15 +16,11 @@ import { SIDECAR_FILENAME } from '../Locations/paths'
 import type { Baseline, Projection } from './remintLedger'
 
 export interface RemintTarget {
-  /** The shared id being vacated — the write half mints the replacement. */
   id: string
   kind: RecordKind
   path: string
 }
 
-/** Who keeps a contested id. The baseline's recorded path is the only non-re-derivable fact:
- *  a readable claimant there is the original, every other claimant re-mints. Everything else
- *  defers — no baseline, no entry, an unreadable recorded path, or no claimant at it. */
 export function adjudicate(
   duplicates: Record<string, EntityRecord[]>,
   prior: Baseline | null,
@@ -54,8 +46,6 @@ export interface RemintedEntity {
   newId: string
 }
 
-/** Execute the verdicts: disk writes (identity) first, device-row duplicates (chrome) second,
- *  so a row failure never leaves a half-minted identity. A refused disk write skips that target. */
 export async function runRemintPass(
   root: string,
   projection: Projection,
@@ -74,9 +64,6 @@ export async function runRemintPass(
   return done
 }
 
-/** No duplication mechanism reproduces a registry ENTRY (copying the folder copies the whole
- *  nexus), so a duplicated context id is a hand-edit; it defers rather than rewriting the
- *  registry blind. */
 async function writeFreshId(
   root: string,
   target: RemintTarget,
@@ -115,9 +102,6 @@ async function remintSidecar(
   if (!current.ok || current.value.id !== oldId) return null
   const viewIds = new Map<string, string>()
   const next: Record<string, unknown> = { ...current.value, id: fresh }
-  // A file-copied container duplicated its saved views' ids too — they key per-machine
-  // viewOrder rows, so the copy's views re-mint in the same write. The correspondence travels:
-  // anything device-local that NAMES a view must follow it to the copy's own id.
   if (Array.isArray(next.views))
     next.views = next.views.map((v) => {
       if (!isPlainObject(v)) return v
@@ -126,8 +110,6 @@ async function remintSidecar(
       return { ...v, id: minted }
     })
   await writeJson(file, next)
-  // A copied Space folder carries its document too, and a view tile's config ids are live keys
-  // two boards must never share — each entry passes through the same re-mint every copy uses.
   if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
     const doc = await writeTileDocAt(absFolder, (cur) => ({
       ...cur,
@@ -158,10 +140,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
       const value = readKey(scope, target.id)
       if (value !== null) writeKey(scope, fresh, value)
     }
-    // A row that NAMES a view is not opaque chrome: it travels through the same map that
-    // re-minted the views, so it names the copy's own. One with no counterpart — a stale row
-    // naming a view the container no longer has — does not travel at all. The manual order keys
-    // ON the view; the selection keys on the container and holds a view in its value.
     for (const [old, minted] of viewIds) {
       const order = readKey<string[]>('viewOrder', old)
       if (order !== null) writeKey('viewOrder', minted, order)
@@ -181,10 +159,6 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
   }
 }
 
-/** Fold executed re-mints back into the projection the baseline will latch: each written copy
- *  enters under its fresh id, and an id whose claimants fell to one is no longer a duplicate —
- *  the survivor is the original. The walked tree itself is never mutated (its page nodes are
- *  shared with the parse cache). */
 export function applyRemints(projection: Projection, reminted: RemintedEntity[]): Projection {
   if (reminted.length === 0) return projection
   const entries = { ...projection.entries }

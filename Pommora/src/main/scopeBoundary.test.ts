@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 vi.mock('electron', () => ({ BrowserWindow: class {}, ipcMain: { handle: vi.fn(), on: vi.fn() } }))
 
-import { openSessionDb, closeSessionDb } from '@pommora/core/Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { scopeGet, scopeSet } from './ipc'
 
 let root: string

@@ -13,7 +13,7 @@ import {
   runOpenLedger,
   writeBaseline,
 } from './remintLedger'
-import { closeSessionDb, openSessionDb } from '../Store/sessionDb'
+import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { dropLiveTree, getLiveTree } from './liveTree'
 
 const page = (id: string, title: string, dir: string): PageNode => ({

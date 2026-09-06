@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openNexusDb, DB_FILENAME } from './open'
 import { INDEX_GENERATION, SCHEMA_VERSION, readMeta } from './schema'
-import type { Db } from './driver'
+import { openDb, type Db } from './driver'
+import { closeSessionDb, openSessionDb } from './sessionDb'
+import { readScope } from '@pommora/core/Platform/localState'
+import { markIndexReady, queryMentions, upsertPageIndex } from '@pommora/core/Index/contentIndex'
 
 let root: string
 beforeEach(async () => {
@@ -120,5 +123,32 @@ describe('openNexusDb', () => {
     const db = openNexusDb(root)
     expect(db).toBeNull() // the session runs without persistence
     expect(await readFile(dbPath, 'utf8')).toBe('not a database') // byte-identical
+  })
+})
+
+const STAT = { mtimeMs: 1000, size: 10 }
+
+describe('upgrade in place', () => {
+  it('a pre-index database gains the tables on open with its rows intact', async () => {
+    // A database as the pre-index schema wrote it: meta + local_state alone, stamped v1.
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    const v1 = openDb(join(root, '.nexus', 'nexus.db')).db
+    if (!v1) throw new Error('fixture db failed to open')
+    v1.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      CREATE TABLE local_state (scope TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL,
+        PRIMARY KEY (scope, key));
+      INSERT INTO meta (key, value) VALUES ('schema_version', '1');
+      INSERT INTO local_state (scope, key, value) VALUES ('folds', 'p1', '["x"]');
+    `)
+    v1.close()
+
+    openSessionDb(root)
+    markIndexReady()
+    expect(readScope('folds')).toEqual({ p1: ['x'] })
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {} }, STAT)
+    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
+    expect(readScope('folds')).toEqual({ p1: ['x'] })
+    closeSessionDb()
   })
 })

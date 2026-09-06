@@ -1,8 +1,3 @@
-// The page (.md) file engine. Owns the `---\n<yaml>---\n<body>` envelope and the
-// foreign-preserving write. Foreign frontmatter (plugin/unmodeled keys) AND comments survive
-// a save because the ORIGINAL frontmatter parses into a yaml Document and only `set`/`delete`
-// touches the modeled keys — the object is never reconstructed.
-
 import {
   type Document,
   type Pair,
@@ -12,24 +7,20 @@ import {
   isScalar,
   isSeq,
 } from 'yaml'
-import { readFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, join } from '../Locations/posix'
 import { contentId } from '../Nexus/identityMark'
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { basenameNoMd } from '../Locations/coerce'
 import { adoptedId } from '../Locations/ids'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
+import { machine } from '../Platform/machine'
 
 export interface PageEnvelope {
-  /** Raw frontmatter YAML (between the fences, no trailing fence). */
   frontmatter: string
-  /** Markdown body (the single separator blank line is stripped). */
   body: string
 }
 
-/** Split raw file content into its frontmatter YAML + body. Lenient: no opening
- *  fence ⇒ all body; an unterminated fence ⇒ all body (mirrors the read engine). */
 export function splitEnvelope(content: string): PageEnvelope {
   if (!content.startsWith('---')) return { frontmatter: '', body: content }
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/)
@@ -38,9 +29,6 @@ export function splitEnvelope(content: string): PageEnvelope {
   return { frontmatter: m[1], body }
 }
 
-/** Parse the file's frontmatter into a plain object — for reading modeled fields (id, banner) before
- *  a merge. Unrecoverable YAML reads as empty, the same answer the walk's reader gives: a file
- *  nobody can parse holds no fields, and one such page must never fail the pass around it. */
 export function readFrontmatterFields(content: string): Record<string, unknown> {
   try {
     const obj = parseDocument(splitEnvelope(content).frontmatter).toJSON()
@@ -65,8 +53,6 @@ const serialized = (doc: Document): string | null => {
   }
 }
 
-/** Whether a field write can round-trip this file's frontmatter. A sweep asks before it rewrites
- *  a page, so one unparseable file is skipped rather than failing the fan-out around it. */
 export function frontmatterWritable(content: string): boolean {
   const doc = parseDocument(splitEnvelope(content).frontmatter)
   return mergeable(doc) && serialized(doc) !== null
@@ -82,12 +68,6 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
   return `---\n${lf(fm)}---\n${lf(body)}`
 }
 
-/**
- * Merge modeled fields into the existing file's frontmatter, preserving every
- * foreign key + comment, and reassemble the envelope. For each key in `modeledKeys`:
- * present (and not undefined) in `modeled` ⇒ set; otherwise ⇒ delete. Keys outside
- * `modeledKeys` are never touched. Pure (string → string).
- */
 export function mergeFrontmatter(
   existingContent: string,
   modeled: Record<string, unknown>,
@@ -99,7 +79,6 @@ export function mergeFrontmatter(
   // bytes, and a broken map is passed through rather than re-serialized from what it recovered.
   if (modeledKeys.length === 0)
     return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
-  // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
   if (mergeable(doc)) {
     for (const key of modeledKeys) {
@@ -114,22 +93,10 @@ export function mergeFrontmatter(
   )
 }
 
-/** What a rename does with a page already holding BOTH keys. The two governed renames commit their
- *  registry at opposite ends of their sweep, and that ordering — not taste — decides which side can
- *  possibly be the fresher, so the policy belongs to the caller and is named at its call site by
- *  the ordering that causes it. */
-export type KeyCollision =
-  /** The key already wearing the new name wins; the old one drops. */
-  | 'prefer-new'
-  /** Both value lists survive as one, deduped. */
-  | 'merge'
+export type KeyCollision = 'prefer-new' | 'merge'
 
-/** One frontmatter key and its value, as the parser produced them. */
 type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
 
-/** Fold the rival key's values in front of the renamed key's own and drop the duplicates. Scalars
- *  compare by value and nothing else counts as a duplicate of anything; two values that aren't both
- *  lists have nothing to fold, so the renamed key's own value stands. */
 function foldValues(pair: FrontmatterPair, rival: FrontmatterPair): void {
   const into = pair.value
   const from = rival.value
@@ -139,14 +106,6 @@ function foldValues(pair: FrontmatterPair, rival: FrontmatterPair): void {
   into.items = [...from.items, ...into.items.filter((i) => !(isScalar(i) && held.has(i.value)))]
 }
 
-/**
- * Rename one frontmatter key where it sits, so the key keeps its position and any comment attached
- * to it — a delete-and-re-add moves the pair to the bottom and destroys the comment.
- *
- * `null` means the file is left alone, and both reasons matter: a page not holding `oldKey` is
- * never rewritten and so never re-dated (a key-only rename is not a content edit), and frontmatter
- * that cannot round-trip is skipped rather than allowed to fail the fan-out around it. Pure.
- */
 export function renameFrontmatterKey(
   content: string,
   oldKey: string,
@@ -154,8 +113,6 @@ export function renameFrontmatterKey(
   collision: KeyCollision,
 ): string | null {
   const { frontmatter, body } = splitEnvelope(content)
-  // Parsing directly (the only way to reach a key's position and comments) forfeits the lenient
-  // reader's recovery, so anything it can't take answers null instead of throwing.
   const doc = parseDocument(frontmatter)
   if (doc.errors.length > 0 || !isMap(doc.contents)) return null
   const items = doc.contents.items
@@ -180,37 +137,26 @@ export function renameFrontmatterKey(
 }
 
 export interface PageWrite {
-  /** The file's text before the write; null when the file did not exist. */
   previous: string | null
   written: string
 }
 
-/** Read the existing page, merge modeled fields preserving foreign data, and write back
- *  atomically. Only a missing file starts from empty frontmatter — any other read failure
- *  refuses the write, since rewriting a page that could not be read would drop its frontmatter. */
 export async function writePageFile(
   absPath: string,
   modeled: Record<string, unknown>,
   modeledKeys: readonly string[],
   body: string,
 ): Promise<PageWrite> {
-  let previous: string | null = null
-  try {
-    previous = await readFile(absPath, 'utf8')
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e
-  }
+  const previous = await machine().readText(absPath)
   const written = mergeFrontmatter(previous ?? '', modeled, modeledKeys, body)
   await atomicWriteFile(absPath, written)
   return { previous, written }
 }
 
-/** Read one page's full content. `relPath` is nexus-relative POSIX (as carried on
- *  PageNode.path). Callers must validate `relPath` stays under root before invoking
- *  (the IPC layer does this). */
 export async function readPageDetail(rootPath: string, relPath: string): Promise<PageDetail> {
   const absFile = join(rootPath, relPath)
-  const content = await readFile(absFile, 'utf8')
+  const content = await machine().readText(absFile)
+  if (content === null) throw new Error(`Page not found: ${relPath}`)
   const frontmatter = splitFrontmatter(content)
   return {
     id: contentId(frontmatter) ?? adoptedId(relPath),
