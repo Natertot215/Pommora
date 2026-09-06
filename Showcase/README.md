@@ -4,7 +4,7 @@ The data-driven component-library showcase. It builds the **showcase only** — 
 
 ## What Goes Live
 
-`design-system.html` → the showcase rooted at this folder (`src/renderer/Showcase/`): color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`. The build is decoupled from Electron — `build:showcase` is plain `vite build` (via `vite.config.ts`), not `electron-vite`.
+`design-system.html` → the showcase rooted at this folder: color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`. The build is decoupled from Electron — `build:showcase` is plain `vite build` (via `vite.config.ts`), not `electron-vite`.
 
 ## How the Pointing Works
 

@@ -5,8 +5,7 @@ import { Menu, MenuItem, heading, headingCaps } from '@pommora/uix/Menus'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase, WINDOW_BASE_PANEL } from '@pommora/uix/Windows/window-base'
-import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/core/Settings/SettingsWindow'
-import '@pommora/core/Settings/settings-window.css'
+import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/bounds'
 import './panes-leaf.css'
 
 const CATEGORIES = [
@@ -50,15 +49,15 @@ export function PanesLeaf(): React.JSX.Element {
           onClose={() => undefined}
           bounds={SETTINGS_WIN}
           ariaLabel="Settings"
-          className="settings-window"
+          className="panes-window"
           left={{
             windowId: 'showcase-settings-rail',
             bounds: SETTINGS_RAIL,
             mode: 'inflow',
             open: railOpen,
-            className: 'settings-rail',
+            className: 'panes-rail',
             children: (
-              <Menu className="settings-rail-list over-scroll">
+              <Menu className="panes-rail-list over-scroll">
                 {CATEGORIES.map((c, i) => (
                   <MenuItem
                     key={c.key}
@@ -76,9 +75,9 @@ export function PanesLeaf(): React.JSX.Element {
             bounds: WINDOW_BASE_PANEL,
             mode: 'inflow',
             open: inspectorOpen,
-            className: 'settings-rail',
+            className: 'panes-rail',
             children: (
-              <div className="window-body settings-body panes-inspector">
+              <div className="window-body panes-body panes-inspector">
                 <h3 className={cx(heading, headingCaps)}>Inspector</h3>
                 <span className={cx(text.body.standard, 'panes-dim')}>dateFormat</span>
                 <span className={cx(text.body.standard, 'panes-dim')}>Full Date</span>
@@ -87,9 +86,9 @@ export function PanesLeaf(): React.JSX.Element {
             ),
           }}
         >
-          <div className="window-body settings-body over-scroll">
-            <h2 className={cx('settings-heading', text.headline.emphasized)}>General</h2>
-            <div className="settings-section">
+          <div className="window-body panes-body over-scroll">
+            <h2 className={cx('panes-heading', text.headline.emphasized)}>General</h2>
+            <div className="panes-section">
               {ROWS.map(([label, hint]) => (
                 <MenuItem key={label} subLabel={hint} detail="Full Date">
                   {label}
