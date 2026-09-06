@@ -7,8 +7,6 @@ import { DEFAULT_ACCENT, TINT_STEPS, mixAt, tintAt } from './colors'
 import { stack } from './stack'
 import { font } from './typography.css'
 
-// Icon ladder
-
 export const ICON_PX = {
   titleLarge: 26,
   titleMedium: 22,
@@ -35,8 +33,6 @@ export type IconSize = keyof typeof size.icon
 /** The names are the public knob; the numbers behind each live in button-base.css.ts. */
 export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'button-large'
 
-// Geometry
-
 export const DISCLOSURE_INDENT = 14
 
 export const DROP_LINE_INSET = 2
@@ -56,7 +52,6 @@ const c = colorVars.color
 
 globalStyle(':root', {
   vars: {
-    // Palette
     '--system-black': c.system.black,
     '--bg-window': c.background.window,
     '--surface-primary': c.surface.primary,
@@ -82,19 +77,16 @@ globalStyle(':root', {
     '--error': c.solid.red,
     '--code': `color-mix(in srgb, ${c.solid.red} 85%, transparent)`,
 
-    // Tints
     ...Object.fromEntries(
       Object.entries(TINT_STEPS).map(([step, pct]) => [`--tint-${step}`, `${pct}%`]),
     ),
 
-    // States
     '--state-hover': c.state.hover,
     '--state-selected': c.state.selected,
     '--state-muted': c.state.muted,
     '--state-ghost': STATE_OPACITY.ghost,
     '--state-inactive': STATE_OPACITY.inactive,
 
-    // Accent, links, and checkbox
     '--accent': c.solid[DEFAULT_ACCENT],
     '--accent-fill': 'color-mix(in srgb, var(--accent) var(--tint-quaternary), transparent)',
     '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
@@ -106,7 +98,6 @@ globalStyle(':root', {
     '--checkbox-border': tintAt(CHECKBOX_BASE, 'tertiary'),
     '--checkbox-mark': mixAt(CHECKBOX_BASE, 'quaternary', c.label.primary),
 
-    // Widths and radii
     '--width-100': '1px',
     '--width-125': '1.25px',
     '--width-150': '1.5px',
@@ -114,7 +105,6 @@ globalStyle(':root', {
     '--width-200': '2px',
     '--radius-full': '999px',
 
-    // Lanes and insets
     '--icon-body': size.icon.body,
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     '--rail-inset-base': '20px',
@@ -123,26 +113,22 @@ globalStyle(':root', {
     '--tile-default-height': `${TILE_DEFAULT_PX}px`,
     '--tile-gap': `${TILE_GAP_PX}px`,
 
-    // Drag and drop
     '--drag-line': 'var(--accent)',
     '--drop-slot-fill': tintAt('var(--accent)', 'tertiary'),
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
 
-    // List outline
     '--list-outline-width': '2px',
     '--list-outline-color': 'var(--border-light)',
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': '3px',
 
-    // Fades
     '--fade-light': '12px',
     '--fade-base': '16px',
     '--fade-strong': '20px',
     '--fade-heavy': '24px',
 
-    // Type
     '--font-family': font.family,
     '--font-mono': font.mono,
     '--weight-emphasized': font.weight.emphasized,
@@ -163,14 +149,12 @@ globalStyle(':root', {
     '--fold-chevron-mask': FOLD_CHEVRON_MASK,
     '--conn-link-mask': CONN_LINK_MASK,
 
-    // Motion
     '--duration-fast': duration.fast,
     '--duration-menu': duration.menu,
     '--duration-base': duration.base,
     '--duration-slow': duration.slow,
     '--ease-base': easing.baseEase,
 
-    // Stacking
     '--z-content': `${stack.shell.content}`,
     '--z-sidebar': `${stack.shell.sidebar}`,
     '--z-titlebar': `${stack.shell.titlebar}`,
