@@ -9,7 +9,7 @@ import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 export function pushConfirmed(ctx: HostContext, tree: NexusTree | null): void {
   if (!tree) return
   // One macrotask later, so the ask's own reply reaches the renderer before the confirming push.
-  setImmediate(() => ctx.push('nexus:changed', tree))
+  setTimeout(() => ctx.push('nexus:changed', tree), 0)
 }
 
 export function pushValueChanges(ctx: HostContext, root: string): void {
@@ -24,9 +24,9 @@ export async function confirmWrite(
   const root = sessionRoot()
   if (root === null) return
   pushConfirmed(ctx, await work(root))
-  setImmediate(() => {
+  setTimeout(() => {
     if (sessionRoot() === root) pushValueChanges(ctx, root)
-  })
+  }, 0)
 }
 
 export async function confirmContainerWrite(

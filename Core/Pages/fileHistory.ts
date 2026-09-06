@@ -14,7 +14,7 @@ export const SNAPSHOT_MAX_BYTES = 1_048_576
 
 const lastTs = new Map<string, number>()
 const lastWritten = new Map<string, string>()
-const timers = new Map<string, { source: SnapshotSource; timer: NodeJS.Timeout }>()
+const timers = new Map<string, { source: SnapshotSource; timer: ReturnType<typeof setTimeout> }>()
 
 const bodyHash = (text: string): string => machine().sha256Hex(splitEnvelope(text).body)
 
@@ -92,7 +92,6 @@ async function arm(root: string, pageId: string, source: SnapshotSource): Promis
     timers.delete(pageId)
     void captureFromDisk(root, pageId, source, source === 'edit')
   }, intervalMs)
-  timer.unref()
   timers.set(pageId, { source, timer })
 }
 

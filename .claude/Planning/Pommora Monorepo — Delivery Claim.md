@@ -76,6 +76,7 @@ Each block gives the requirement as the plan states it, the task or tasks that d
 - `ls Desktop/Platform` → `fileLock.test.ts fileLock.ts nodeMachine.ts`
 - `rg -c "interface Dialer" Core/Platform/dialer.ts` → 1 · `rg -c "interface HostContext" Core/Contract/handlers.ts` → 1
 - `rg -l "from 'node:" Core --glob '!*.test.*'` → 0. Control: `rg -l "from 'node:" Desktop` → 17 files.
+- Globals, which an import grep cannot see: `rg -n '\bsetImmediate\b|\bNodeJS\.|\.unref\(|\bprocess\.|\bBuffer\.' Core -g '!*.test.*' -g '!vitest.setup.ts' -g '!**/editorHarness.ts'` → 0.
 - `rg -F 'Buffer.' Core --glob '!*.test.*'` → 0. Control: `rg -F 'TextEncoder' Core` → 2.
 - `rg -F 'AsyncLocalStorage' Core` → 0. Control: `rg -c 'AsyncLocalStorage' Desktop/Platform/fileLock.ts` → 2.
 - `rg -F 'NexusApi' Core UIX Desktop` → 0 · `rg -F 'LegacyApi' Core UIX Desktop` → 0 · `rg -F 'const api = {' Desktop` → 0.
@@ -83,7 +84,7 @@ Each block gives the requirement as the plan states it, the task or tasks that d
 - `ls Core/*/handlers.ts` → thirteen domain handler maps: `Actions Assets Contract Interface Navigation Nexus Pages Properties Settings Tiles Trash Views Web`.
 - `wc -l Desktop/main.ts` → 346 (the Verify's cap is 400) · `rg -F 'ipcMain.handle' Desktop` → 1 site · `rg -F 'BrowserWindow' Core` → 0, control `rg -c 'BrowserWindow' Desktop/main.ts` → 6.
 
-**Ruled outcome:** Task 6's Verify line reads `rg -l "from 'node:" Core` → 0 without a test exclusion; the figure including tests is 69 files. Task 6's Deviations entry rules it: *"Core tests keep `node:` for fixtures (67 files)"* — the seam governs production code, and no non-test Core file imports Node. Task 8's Deviations entry rules `HostContext` wider than the plan's sketch (push, pick, pasteImage, clipboard, reveal, openExternal, message, systemAccent, menu, thumbnails, webGuests, trashMode, fetchTitle, openStores, adopted, watch, applyZoom), because forty-odd channels are Electron-only and Core cannot import Electron.
+**Ruled outcome:** Task 6's Verify line reads `rg -l "from 'node:" Core` → 0 without a test exclusion; the figure including tests is 69 files. Task 6's Deviations entry rules it: *"Core tests keep `node:` for fixtures (67 files)"* — the seam governs production code, and no non-test Core file imports Node. The seam's compile gate is `Core/tsconfig.src.json` — Core's non-test sources typechecked without `node` in `types` (`npx tsc -p Core/tsconfig.src.json` → 0, in the root `typecheck` chain), restored at closeout after the widened `Core/tsconfig.json` had covered the tests' `node:` fixtures. Task 8's Deviations entry rules `HostContext` wider than the plan's sketch (push, pick, pasteImage, clipboard, reveal, openExternal, message, systemAccent, menu, thumbnails, webGuests, trashMode, fetchTitle, openStores, adopted, watch, applyZoom), because forty-odd channels are Electron-only and Core cannot import Electron.
 
 #### Requirement 5
 
