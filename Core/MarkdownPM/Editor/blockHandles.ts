@@ -1,7 +1,5 @@
-// A grip on each draggable block's first line, content-anchored like the fold chevron (a
-// `::before` on the line, so it can't drift below callouts/folds). Headings use the chevron,
-// callouts keep their own grip, and the table widget supplies its own — the rail grip covers
-// every other draggable kind (a list is grabbed at item 1, its block's first line).
+// A grip on each draggable block's first line, content-anchored like the fold chevron so it can't drift below
+// callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { docScan } from './docCache'
 import type { Extension, Range } from '@codemirror/state'
@@ -10,13 +8,10 @@ import { lineElementAt } from './lineDom'
 
 const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed', 'webpage'])
 
-// Blocks whose grip reveals on a gutter hover of any of their lines. Tables are out — their rows
-// carry their own handles.
+// Tables are out — their rows carry their own handles.
 const GRIP_BLOCKS = new Set([...GRIP_KINDS, 'callout', 'blockquote'])
 
-// Blockquote can't use the rail `::before` grip — its quote bar is a `::before` and its fill an
-// `::after`, both taken — so its grip is a real element, dropped into the gutter by CSS. `side: -1`
-// puts it before the line content; `ignoreEvent` false lets the press reach the drag gesture.
+// Blockquote can't use the rail `::before` grip (its bar and fill take both pseudos), so its grip is a real element.
 class GripWidget extends WidgetType {
   eq(): boolean {
     return true
@@ -44,10 +39,8 @@ export const blockHandles = EditorView.decorations.compute(['doc'], (state) => {
   return Decoration.set(ranges, true)
 })
 
-// Grips can't self-hover (a pseudo has no independent `:hover`), so `md-grip-hot` is toggled here
-// whenever the pointer sits in the gutter strip of any line within a grippable block — revealing
-// the grip on that block's first line. `onHotChange` reports the hovered line, not the revealed
-// one — the host's hot-grip flag (the right-click delete menu's seam) needs the grip's own line.
+// Grips can't self-hover, so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of any line
+// in a grippable block. `onHotChange` reports the HOVERED line, which is what the host's hot-grip flag needs.
 export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void): Extension {
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
@@ -65,8 +58,7 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
   // blockAt parses the doc, so resolve the block only when the hovered doc-line changes.
   let cachedFrom = -1
   let cachedFirstFrom = -1
-  // Every line's left edge is the content column's, so one measurement covers the gutter test.
-  // Checked first: past the column edge, no grip is reached without a hit-test or parse.
+  // Every line's left edge is the content column's, so one measurement covers the gutter test, checked before any parse.
   let textLeft = -1
   const columnLeft = (view: EditorView): number => {
     if (textLeft < 0) {
@@ -76,8 +68,7 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
     return textLeft
   }
   return [
-    // The column moves only when the editor's own geometry does, so one cached edge is safe across
-    // a whole hover session.
+    // The column moves only when the editor's geometry does, so one cached edge is safe across a hover session.
     EditorView.updateListener.of((u) => {
       if (u.geometryChanged) textLeft = -1
     }),

@@ -8,15 +8,12 @@ import type {
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 import type { GlanceTarget } from '../../Interface/Glance/glanceAction'
 
-/** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
- *  function, so acting on the result needs a way back into the editor instance clicked — `apply`
- *  is that way, and its absence marks a display-only surface. It closes over the span it was
- *  built for, so no caller can aim an action at a link the menu wasn't popped on. */
+/** `apply` is the way back into the editor instance clicked, and its absence marks a display-only surface.
+ *  It closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on. */
 export type ConnMenuTarget = {
   surface?: ConnSurface
   hideable?: boolean
-  /** The two that act on a property cell's VALUE, kept apart from `apply` because the menu offers
-   *  them only on a cell — an editor host that never sets this never has to refuse them either. */
+  /** Kept apart from `apply`: the menu offers these only on a cell, so an editor host never has to refuse them. */
   onCell?: ConnCellApply
 } & (
   | {
@@ -54,22 +51,17 @@ export interface PageIndex {
 
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
-  /** Optional right-click hook — the host pops the native context menu for the link. */
   menu?: (target: ConnMenuTarget) => void
-  /** ⌘-click takes the OTHER route from `open` (window ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
-  /** Fired on a resolved connection or a valid external link with its live element; its presence
-   *  is what makes a surface armable, so a read-only body that must never glance simply omits it. */
+  /** Its presence is what makes a surface armable, so a read-only body that must never glance simply omits it. */
   glance?: (target: GlanceTarget, el: Element) => void
 }
 
-/** What a markdown link's target turns out to name. One resolver behind the click path and both
- *  renderers, so a link can never be colored as one thing and act as another. */
+/** One resolver behind the click path and both renderers, so a link can never be colored as one thing and act as another. */
 export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
 
-/** Resolve a markdown link's `( )`. Page resolution is tried FIRST and deliberately: `isValidLink`
- *  accepts any dotted host, so `Notes.md` would otherwise read as a website and the page it names
- *  would be unreachable through this syntax entirely. */
+/** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md`
+ *  would read as a website and the page it names would be unreachable through this syntax. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
   const title = targetTitle(rawTarget)
   if (index && title) {
@@ -98,8 +90,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     },
     candidates(query, limit = 20) {
       const q = normalizeTitle(query)
-      // An empty query browses the whole index alphabetically — the just-inserted embed opener's
-      // state; whether an empty query shows anything at all is the autocomplete hook's call.
+      // An empty query browses the whole index alphabetically — the just-inserted embed opener's state.
       if (!q)
         return entries
           .map((x) => x.p)
@@ -119,8 +110,6 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
   }
 }
 
-/** Open a page the way a gesture asks for: ⌘ takes the host's other route when it offers one. The
- *  one modifier branch in the editor. */
 export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
   if (bypass && api.bypass) api.bypass(page)
   else api.open(page)

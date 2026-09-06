@@ -5,9 +5,6 @@ import { lineStartAt, lineEndAt } from './Input'
 import type { ConnPage, PageIndex } from './Connections'
 import { useSession } from '../Session/store'
 
-/** What the picker is filling in: a `[[Title]]` connection, a `![[Title]]` embed, the alias half of
- *  one, or the `( )` of a markdown link. It decides both what a row means and what accepting one
- *  writes. */
 export type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
 
 export interface AutocompleteQuery {
@@ -19,12 +16,9 @@ export interface AutocompleteQuery {
   label?: { from: number; to: number }
 }
 
-/** What a candidate source is asked for — the query itself, stripped of where it sits. */
 export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 
-/** A row the picker offers. `value` is what accepting it writes; `label` is what's drawn. A row that
- *  can be forgotten carries the gesture that forgets it, so the panel itself never has to know what
- *  a page is or where a memory lives. */
+/** A row that can be forgotten carries the gesture that forgets it, so the panel never learns what a page is. */
 export interface AcRow {
   value: string
   label: string
@@ -33,7 +27,6 @@ export interface AcRow {
   forget?: () => void
 }
 
-/** The `( )` containing a line-relative offset, with the label slot that belongs to it. */
 function markdownTargetAt(
   line: string,
   rel: number,
@@ -60,9 +53,8 @@ export function autocompleteQuery(
   const s = linkAt(line, rel)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
-    // Only the TITLE opens the page picker. Accepting a candidate replaces the whole token, so a
-    // caret in the alias would arm a list keyed on the title and discard the alias on Enter —
-    // destroying the very text the caret is sitting in.
+    // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would
+    // arm a list keyed on the title and discard the alias on Enter.
     if (rel >= s.title[0] && rel <= s.title[1])
       return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
@@ -74,8 +66,7 @@ export function autocompleteQuery(
         title,
       }
   }
-  // The `( )` branch, also local: an in-progress link has an EMPTY target and the grammar above
-  // requires at least one character, so it can never answer for the shape ⌘K actually writes.
+  // An in-progress link has an EMPTY target and the grammar above requires a character, so it can never answer for what ⌘K writes.
   const paren = markdownTargetAt(line, rel)
   if (paren)
     return {
@@ -85,9 +76,8 @@ export function autocompleteQuery(
       form: 'target',
       label: { from: lineStart + paren.label[0], to: lineStart + paren.label[1] },
     }
-  // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
-  // consumers depend on that), and `[` doesn't auto-pair after `!`, so an in-progress embed is
-  // usually unclosed: the span runs to the closer when one exists, else to the line end.
+  // A LOCAL match — the connections pattern excludes `![[` by design, and `[` doesn't auto-pair after `!`,
+  // so an in-progress embed is usually unclosed.
   if (allowEmbeds) {
     for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
       const contentStart = idx + 3
@@ -113,9 +103,7 @@ export const pageRow = (p: ConnPage): AcRow => ({
   pageId: p.id,
 })
 
-/** The aliases the page named by `title` has been given, prefix-filtered by what's typed so far.
- *  Each row carries its own forget, so the panel never learns where the memory lives — and an
- *  unresolved or ambiguous title offers nothing, since there's no one page to have remembered it. */
+/** An unresolved or ambiguous title offers nothing: there is no one page to have remembered a name. */
 export function aliasRows(conn: PageIndex, title: string | undefined, query: string): AcRow[] {
   if (!title) return []
   const res = conn.resolve(title)
@@ -129,9 +117,7 @@ export function aliasRows(conn: PageIndex, title: string | undefined, query: str
     .map((a) => ({ value: a, label: a, isPage: false, forget: () => forgetAlias(page.id, a) }))
 }
 
-/** The syntax each form commits. A carried `alias` rides only the link form — `![[ ]]` has no alias
- *  syntax, and an empty one collapses rather than writing a bare pipe. The alias form writes its own
- *  words into a link that already exists, so it brings no syntax with it. */
+/** A carried `alias` rides only the link form — `![[ ]]` has no alias syntax, and the alias form writes into a link that already exists. */
 function formSyntax(value: string, form: ConnectionForm, alias?: string): string {
   switch (form) {
     case 'alias':
@@ -145,7 +131,6 @@ function formSyntax(value: string, form: ConnectionForm, alias?: string): string
   }
 }
 
-/** The committed text and where it leaves the caret. */
 export function connectionInsert(
   value: string,
   from: number,
@@ -162,16 +147,13 @@ export interface CommitEdit {
   anchor: number
 }
 
-/** The edit accepting `row` makes, as data. Pure so the rules below can be read and tested without
- *  an editor: what each form writes, and where each form leaves the caret, is the whole behavior of
- *  the picker and the part a coordinate-less harness otherwise can't reach.*/
+/** Pure so the rules can be read and tested without an editor — the part a coordinate-less harness otherwise can't reach. */
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
   opts: { keepAlias?: string; openAlias?: boolean } = {},
 ): CommitEdit {
-  // Accepting a page whose names are worth offering opens the alias slot rather than finishing the
-  // link, so the picker can hand those names straight back. Governed by `aliasPickerOnCommit`.
+  // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
   if (ac.form === 'link' && opts.openAlias) {
     const text = `[[${row.value}|]]`
     return {
@@ -181,8 +163,7 @@ export function commitEdit(
     }
   }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
-  // Accepting an alias finishes the link it belongs to, rather than leaving the caret inside it for
-  // a second gesture that only ever means "yes, I meant that".
+  // Accepting an alias finishes the link it belongs to, rather than leaving the caret inside it for a second gesture.
   if (ac.form === 'alias')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {

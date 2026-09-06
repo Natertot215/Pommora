@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { headingOutline, headingSections } from './folding'
-import { headingSrc } from './headingScan'
+import { headingOutline, headingSections, headingSrc } from './headingScan'
 
 // `#` is the first keystroke of every heading, and the parser calls it a valid empty heading. The
 // editor does not: it would hide itself to a blank line, take a chevron, open an unnamed outline row

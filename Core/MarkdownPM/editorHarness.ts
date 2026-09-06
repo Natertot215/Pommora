@@ -1,7 +1,5 @@
-// jsdom mounting for MarkdownPM's component suites — one React root per test, torn down through
-// `cleanupEditor`. A claimed embed line mounts a real tile whose PageTile fetches through the
-// bridge, so the read channel is stubbed here; a suite driving its own channels passes them in.
-// Geometry truth stays with the CDP passes, never jsdom (every rect measures zero).
+// jsdom mounting for MarkdownPM's component suites. A claimed embed line mounts a real tile whose PageTile fetches
+// through the bridge, so the read channel is stubbed here. Geometry truth stays with the CDP passes (every rect measures zero).
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
@@ -11,17 +9,13 @@ import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 
-/** The page every mounted editor draws. The footnotes section's disclosure is a page's own state, so
- *  a suite asking for a shown section writes that page's row rather than passing the editor a value
- *  the store would disagree with. */
+/** A suite asking for a shown section writes that page's row rather than passing a value the store would disagree with. */
 export const HARNESS_PAGE_ID = 'harness-page'
 
-/** Props a suite states in its own terms, resolved into the state the editor actually reads. */
 type HarnessProps = Partial<EditorProps> & { initialBody: string; citationsShown?: boolean }
 
 function seed({ citationsShown, ...props }: HarnessProps): EditorProps {
-  // Written every mount, not only when asked for: the row outlives a test otherwise, and the next
-  // suite would mount on whatever the last one left behind.
+  // Written every mount: the row outlives a test otherwise, and the next suite would mount on what the last left behind.
   useSession.setState({
     citationsShown: citationsShown === undefined ? {} : { [HARNESS_PAGE_ID]: citationsShown },
     personalization: { ...useSession.getState().personalization, citationsShown: undefined },
@@ -32,14 +26,11 @@ function seed({ citationsShown, ...props }: HarnessProps): EditorProps {
 let container: HTMLDivElement | null = null
 let root: Root | null = null
 
-/** The bridge a mounted tile reads, plus whatever channels the suite itself drives. Reads only —
- *  no write channel exists here, so nothing a test types can reach a real file. */
+/** Reads only — no write channel exists here, so nothing a test types can reach a real file. */
 export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    // Every editor surface takes the native-menu seam, and it is read at mount.
     'editor:format-state': () => {},
-    // The footnotes section's disclosure is a per-page row the editor writes through the store.
     'citations:get': async () => ({}),
     'citations:set': () => {},
     'menu:action': () => () => {},
@@ -65,15 +56,13 @@ export async function mountEditor(props: HarnessProps): Promise<EditorView> {
   return view
 }
 
-/** Re-render the mounted editor with new props, for the behavior a prop CHANGE carries — a value
- *  that arrives after mount reads differently from the same value passed at mount. */
+/** For the behavior a prop CHANGE carries — a value arriving after mount reads differently from the same value at mount. */
 export async function rerenderEditor(props: HarnessProps): Promise<void> {
   await act(async () => {
     root?.render(createElement(MarkdownEditor, seed(props)))
   })
 }
 
-/** The mounted editor's host element — for assertions that read the rendered DOM directly. */
 export function editorContainer(): HTMLDivElement {
   if (!container) throw new Error('no mounted editor')
   return container

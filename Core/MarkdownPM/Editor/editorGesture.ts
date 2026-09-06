@@ -1,6 +1,5 @@
-// CodeMirror extensions have no unmount hook of their own, and drags run off window listeners,
-// so a destroyed editor would leave a gesture running against a dead view. `editorGestureCleanup`
-// is the abort for that; include it in every extension array that starts a gesture.
+// CM extensions have no unmount hook, and drags run off window listeners, so a destroyed editor would leave a
+// gesture running against a dead view. Include `editorGestureCleanup` in every extension array that starts one.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
@@ -11,9 +10,8 @@ import {
 } from '@pommora/uix/Interactions/gesture'
 import { Overlay, setShade } from './dragChrome'
 
-// Only one editor gesture is live app-wide, but the cleanup plugin is mounted in every editor
-// (a page can run several — embed tile, glance, Page Window), so the handle carries the
-// view that started it — otherwise a sibling's unmount would abort the drag in progress.
+// The cleanup plugin is mounted in every editor (a page can run several), so the handle carries the view that
+// started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
 
 export function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): boolean {
@@ -26,7 +24,7 @@ export const editorGestureCleanup = ViewPlugin.define((view) => ({
   destroy: () => {
     if (live?.view !== view) return
     live.handle.abort()
-    live = null // else the destroyed view is held by the module for the life of the process
+    live = null
   },
 }))
 
@@ -34,20 +32,15 @@ const MIN_LINE_WIDTH = 40
 
 export interface RelocateDragSpec<C, S> {
   measure: () => C[]
-  /** Runs per pointermove, so it must not read layout. */
   pick: (cands: C[], clientY: number) => S | null
   lineFor: (slot: S) => { left: number; top: number; width: number } | null
   commit: (slot: S) => ChangeSpec[] | null
-  /** Fires before the shade lands, so a heading can unfold first and the shade covers the
-   *  unfolded content rather than the folded stub. */
+  /** Fires before the shade lands, so a heading can unfold first and the shade covers the unfolded content. */
   onDragStart?: () => void
   onTap?: () => void
 }
 
-/** Shared drag gesture for relocating a document range: shades the source, tracks a fixed
- *  insertion line, and moves the lines on release. Used by both list-item drag and block-handle
- *  drag via a different `RelocateDragSpec`. Candidates are measured at activation and re-measured
- *  only on scroll, since the document is otherwise static during a drag. */
+/** Candidates are measured at activation and re-measured only on scroll, since the document is static during a drag. */
 export function beginRelocateDrag<C, S>(
   view: EditorView,
   e: PointerEvent,
@@ -84,9 +77,8 @@ export function beginRelocateDrag<C, S>(
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
       lastY = ev.clientY
       remeasure()
-      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the
-      // native `scroll`, reaching onWindowScroll, so off-viewport candidates become targetable
-      // as they scroll in.
+      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the native `scroll`,
+      // so off-viewport candidates become targetable as they scroll in.
       stopScroll = startAutoScroll({
         getPoint: () => ({ x: 0, y: lastY }),
         scroller: resolveScroller(host, 'y'),

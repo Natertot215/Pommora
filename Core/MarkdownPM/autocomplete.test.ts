@@ -7,7 +7,7 @@ const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.
 describe('autocompleteQuery', () => {
   it('detects a non-empty query with the caret inside the brackets', () => {
     const doc = 'see [[Pro]] end'
-    const r = autocompleteQuery(doc, 9)! // caret after "Pro"
+    const r = autocompleteQuery(doc, 9)!
     expect(r.query).toBe('Pro')
     expect(doc.slice(r.from, r.to)).toBe('[[Pro]]')
   })
@@ -51,7 +51,7 @@ describe('autocompleteQuery', () => {
   })
   it('returns null when the caret is outside any wikilink', () => {
     expect(autocompleteQuery('plain text', 5)).toBeNull()
-    expect(autocompleteQuery('[[Pro]] x', 9)).toBeNull() // caret past the closer
+    expect(autocompleteQuery('[[Pro]] x', 9)).toBeNull()
   })
 })
 

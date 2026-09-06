@@ -10,14 +10,7 @@ import {
 import type { Extension, Range, Text } from '@codemirror/state'
 
 import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from '../Tokens'
-import {
-  docBidirMarks,
-  docLineIntentsOf,
-  docScan,
-  docSpanTokens,
-  docString,
-  perDoc,
-} from './docCache'
+import { docLineIntentsOf, docScan, docSpanTokens, docString, perDoc } from './docCache'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
@@ -36,13 +29,8 @@ import { resolveMdTarget, type ConnectionsApi } from '../Connections'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { host } from '../../Platform/dialer'
 
-/** The class a valid external link wears — the hover gate reads the same constant, so the
- *  decorator and the arming selector cannot drift. */
 export const MD_LINK_CLASS = 'md-link'
 
-/** The `link-2` glyph a revealed connection wears in front of its target. It reports whether that
- *  target resolves — the connection color means a page answers to it — which is the one thing the
- *  syntax itself can't say. Worn as a mask so the color comes from the class, not the artwork. */
 class ConnGlyphWidget extends WidgetType {
   constructor(readonly status: LinkStatus) {
     super()
@@ -60,9 +48,6 @@ class ConnGlyphWidget extends WidgetType {
   }
 }
 
-/** The glyph introducing a revealed target, wherever the syntax puts one. `side: -1` binds it to the
- *  left of the position, so the caret sits AFTER it — the glyph introduces the target rather than
- *  interrupting the first keystroke. */
 function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
   return Decoration.widget({ widget: new ConnGlyphWidget(status), side: -1 }).range(at)
 }
@@ -78,7 +63,6 @@ class HrWidget extends WidgetType {
   }
 }
 
-// In-flow, replacing the marker slot through its gap — the visible spacing is the glyph's own margin.
 class BulletWidget extends WidgetType {
   eq(): boolean {
     return true
@@ -89,8 +73,7 @@ class BulletWidget extends WidgetType {
     el.textContent = '•'
     return el
   }
-  // WidgetType.ignoreEvent defaults to true — CM would swallow every event from this DOM, so the listDrag
-  // pointerdown never fires on a bullet glyph. The checkbox widget overrides it for the same reason.
+  // WidgetType.ignoreEvent defaults to true, which would swallow the listDrag pointerdown on a bullet glyph.
   ignoreEvent(): boolean {
     return false
   }
@@ -107,8 +90,6 @@ class CheckboxWidget extends WidgetType {
     return o.checked === this.checked && o.bracketFrom === this.bracketFrom
   }
   toDOM(): HTMLElement {
-    // Toggle-on-click + drag-on-hold are both owned by the listDrag extension via the shared glyph class —
-    // this widget only renders. Keeping the press handler here would flip the box on a press-to-drag.
     const zone = document.createElement('span')
     zone.className = `md-li-marker ${GLYPH_CLASS}`
     const box = document.createElement('span')
@@ -125,8 +106,6 @@ class CheckboxWidget extends WidgetType {
   }
 }
 
-// A non-replacing element pinned at a line's start (side -1) — e.g. the nested-quote bar, which must be a real
-// element to sit OVER the fill with its own rounded caps. Positioned + shaped entirely in CSS by its class.
 class LineWidget extends WidgetType {
   constructor(
     readonly className: string,
@@ -144,16 +123,11 @@ class LineWidget extends WidgetType {
     if (this.text !== undefined) el.textContent = this.text
     return el
   }
-  /** Every glyph of this kind is decoration over a line that is still text, so a press on one
-   *  belongs to that line rather than to the widget. Left at CM's default the widget swallows it,
-   *  and the line's own menu is unreachable from the one part of it drawn rather than written. */
   ignoreEvent(): boolean {
     return false
   }
 }
 
-/** A 24×24 mark, built rather than styled in: a widget is raw DOM with no React under it, and an
- *  `<svg>` carries `currentColor` so each mark takes the tone its own slot names. */
 function mark(body: string, className: string): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', '0 0 24 24')
@@ -167,16 +141,8 @@ function mark(body: string, className: string): SVGSVGElement {
   return svg
 }
 
-/** How long the tag holds its answer before returning to what it was showing. */
 const COPIED_MS = 1000
 
-/** A code block's tag. One rule governs it whatever the block named: a language's own mark rests,
- *  the copy mark takes its place under the pointer, and the check answers a press. A block that
- *  named no language rests as nothing and reveals the same way — the affordance is the hover, not
- *  the language.
- *
- *  The three marks share one fixed slot and are all built once, so which of them shows is an opacity
- *  and never a rebuild. */
 class CodeTagWidget extends WidgetType {
   constructor(readonly name?: string) {
     super()
@@ -191,8 +157,6 @@ class CodeTagWidget extends WidgetType {
     const label = tag?.label === undefined ? this.name : tag.label
     const resting = label ?? ''
 
-    // The zone that arms the mark: the tag is a few characters in the corner, and reaching it means
-    // aiming. A real child rather than a pseudo-element, so the marks paint over it.
     const reach = el.appendChild(document.createElement('span'))
     reach.className = 'md-cb-reach'
     const slot = el.appendChild(document.createElement('span'))
@@ -200,15 +164,11 @@ class CodeTagWidget extends WidgetType {
     if (tag) slot.appendChild(mark(tag.glyph, 'md-cb-mark'))
     slot.appendChild(mark(COPY_GLYPH, 'md-cb-copy'))
     slot.appendChild(mark(CHECK_GLYPH, 'md-cb-done'))
-    // The word the tag carries, and the word it answers a press with. Empty is hidden in CSS, so a
-    // tag with no language to name carries no phantom gap and answers with the check alone.
     const name = el.appendChild(document.createElement('span'))
     name.className = 'md-cb-name'
     name.textContent = resting
 
-    // The arc arms the mark and nothing more: a press inside it is a press on the code it is drawn
-    // over, placed where the pointer actually is. Left to fall through it would land on the widget's
-    // own position instead — the fence line, wherever in the block the press landed.
+    // A press inside the arc is a press on the code it is drawn over; falling through would land on the fence line.
     reach.addEventListener('mousedown', (e) => {
       e.preventDefault()
       const at = view.posAtCoords({ x: e.clientX, y: e.clientY })
@@ -220,8 +180,6 @@ class CodeTagWidget extends WidgetType {
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {
       e.preventDefault()
-      // Read at press time: two blocks in the same language are `eq`, so CM reuses the DOM and a
-      // range baked in at build time would name whichever of them mounted first.
       const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
       if (!text) return
       void host().ask('clipboard:write', text)
@@ -233,24 +191,18 @@ class CodeTagWidget extends WidgetType {
         name.textContent = resting
       }, COPIED_MS)
     }
-    // The press is swallowed rather than allowed through: a caret landing on the fence line is what
-    // trades the tag back for the raw info word, which would unmount the thing being pressed.
+    // Swallowed: a caret on the fence line trades the tag back for the raw info word, unmounting what is being pressed.
     for (const target of [slot, name]) {
       target.addEventListener('mousedown', (e) => e.preventDefault())
       target.addEventListener('click', copy)
     }
     return el
   }
-  /** The press belongs to the tag; every other event belongs to the line under it, so the fence's
-   *  own context menu stays reachable from the chrome drawn over it. */
   ignoreEvent(e: Event): boolean {
     return e.type === 'mousedown' || e.type === 'click'
   }
 }
 
-// One outliner rail: an ancestor-level vertical guide, pinned at the line start (side -1) and positioned +
-// shaped entirely in CSS from --rail-level (its ancestor column) plus the type class (glyph-center offset).
-// first/last carry the run-end caps, so a rail only rounds where its run actually begins/ends.
 class OutlinerRailWidget extends WidgetType {
   constructor(
     readonly level: number,
@@ -277,9 +229,6 @@ class OutlinerRailWidget extends WidgetType {
   }
 }
 
-/** A body marker's number, standing over the `[^label]` the reader never sees. It takes clicks —
- *  jump to the citation, or the construct menu — so it states `ignoreEvent` rather than taking the
- *  default, which would swallow every event before a handler saw it. */
 export class CiteRefWidget extends WidgetType {
   constructor(readonly ordinal: number) {
     super()
@@ -312,16 +261,12 @@ function widgetFor(spec: WidgetSpec): WidgetType {
 }
 
 const hideMarker = Decoration.replace({})
-/** Carries no styling — `atomicRanges` reads only the range, the way the callout prefix's does. */
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
 const INDENTED = /^[ \t]/
 
-/** A slice carries no memory of the lines above it, so it opens on a line whose block context is
- *  self-evident. Resuming inside a fence would read that fence's closer as an opener and invert the
- *  parity of every line below it; opening on a bare indented line reads the indent as an indented code
- *  block, which swallows the emphasis its owning list line would have licensed. */
+/** A slice opens on a line whose block context is self-evident: resuming inside a fence would invert every parity below. */
 export function sliceStartLine(scan: DocScan, line: number): number {
   let i = line
   while (i < scan.lines.length && scan.fences[i] && scan.fences[i]?.role !== 'open') i++
@@ -329,11 +274,7 @@ export function sliceStartLine(scan: DocScan, line: number): number {
   return i
 }
 
-// Tokenize only the on-screen lines, not the whole document — the heavy mdast parse + global-regex
-// passes over the whole document are what made long docs lag and the caret jitter. Tokens are shifted
-// back to absolute offsets; the slice's own fence model suppresses what falls inside a code block.
-// Paired with a rebuild on `viewportChanged` (scroll), and memoized so only a doc edit or a moved
-// viewport pays the parse.
+// On-screen lines only — the whole-document parse is what made long docs lag. Rebuilt on `viewportChanged`.
 function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Token[] {
   const doc = view.state.doc
   const spans: [number, number][] = []
@@ -355,23 +296,13 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   })
 }
 
-/** What the plugin derives in one pass: what to draw, and which of those spans the caret must not
- *  enter. The two travel together because they are the same fact — a marker slot filled by a widget
- *  has interior positions with nothing on screen to stand for them. */
 interface Built {
   deco: DecorationSet
-  /** The marker slots a widget stands in. A list line's `- ` is replaced whole, so the position
-   *  between the dash and its space is a seat with nothing on screen to mark it: the caret can land
-   *  there, the drawn caret renders at the widget's edge instead, and a selection anchored there
-   *  takes marker characters the reader can't see. The callout prefix is guarded this way for the
-   *  same reason. */
+  /** The position inside a replaced `- ` is a seat with nothing on screen to mark it. */
   atomic: DecorationSet
 }
 
-// Every atomic slot in the document, one derivation per doc VERSION. Unlike the drawn chrome this
-// is NOT viewport-scoped: `atomicRanges` decides where a caret or a selection endpoint may land,
-// and a motion resolved against a slot the viewport hasn't reached would seat the caret inside a
-// marker nothing on screen stands for.
+// NOT viewport-scoped: a motion resolved against an unreached slot would seat the caret inside an invisible marker.
 const docAtomics = perDoc((doc) => {
   const ranges: Range<Decoration>[] = []
   for (const line of docLineIntentsOf(doc).perLine)
@@ -380,9 +311,7 @@ const docAtomics = perDoc((doc) => {
   return Decoration.set(ranges, true)
 })
 
-/** The atomic set for a caret position: the whole document's slots, minus the caret's own line —
- *  which reveals its raw source, so its marker is ordinary editable text while the caret is there.
- *  The filter is bounded to that one line, so a caret move never walks the document's slots. */
+/** Minus the caret's own line, which reveals its raw source. Bounded there, so a caret move never walks the document. */
 function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
   const all = docAtomics(doc)
   if (head < 0) return all
@@ -396,17 +325,12 @@ function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
 
 function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const text = docString(view.state.doc)
-  // The whole-doc scan, the caret-free line intents, AND the viewport tokenize are each one derivation
-  // per doc VERSION (docCache) — a caret move or focus flip re-derives only the caret's own affected
-  // lines, never an O(doc) line walk and never the parse.
+  // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
   const focused = view.hasFocus
   const sel = view.state.selection.main
   let tokens = visibleInlineTokens(view, text, scan)
-  // A CLAIMED embed line belongs to the tile field, so its token styling stands down — otherwise the
-  // dim token would underlie the widget. Unclaimed lone-lines (unresolved, ambiguous, or a later
-  // duplicate of a claimed title) keep the token: that dim text IS their rendering. The claim is the
-  // tile field's own predicate — one owner, so the two layers can't disagree.
+  // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
   if (conn && scan.embeds.length > 0) {
     const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
     if (claimed.length > 0)
@@ -423,8 +347,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const typing = focused ? (view.state.field(linkTyping, false) ?? null) : null
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
-  // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,
-  // and CM answers a crashed plugin by deactivating it for good (the page falls back to raw source).
+  // Loop, never spread — a spread into push throws past V8's argument ceiling, and CM deactivates a crashed plugin for good.
   for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head, view.viewport))
     intents.push(it)
   const ranges: Range<Decoration>[] = []
@@ -468,18 +391,13 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
-  // Markdown links by what their target turns out to name. A target resolving to a page wears the
-  // connection color and leads there; a valid URL is md-link; neither is md-link-invalid (dimmed).
-  // Brackets `[ ]`: always shown dimmed for invalid (the broken-link tell), hidden-until-caret otherwise.
-  // The `(url)` stays hidden at rest either way; on caret it reveals (valid → italic+underline, invalid → dimmed).
+  // Brackets: dimmed for invalid (the broken-link tell), hidden-until-caret otherwise.
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'link') return
-    const [open, close] = tk.markerRanges // `[`  and  `](url)`
-    const bracketEnd = close[0] + 1 // the `]`
+    const [open, close] = tk.markerRanges
+    const bracketEnd = close[0] + 1
     const target = resolveMdTarget(conn, linkTarget(text, tk))
     const valid = target.kind !== 'invalid'
-    // What the target turns out to name decides both the words' color and, once revealed, the
-    // treatment of the target itself — so it is decided once here.
     const internal = target.kind === 'page'
     const isActive = active.has(i)
     ranges.push(
@@ -493,20 +411,18 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     )
     const dim = Decoration.mark({ class: valid ? 'md-control' : 'md-unresolved-syntax' })
     if (!valid || isActive) {
-      ranges.push(dim.range(open[0], open[1])) // [
-      ranges.push(dim.range(close[0], bracketEnd)) // ]
+      ranges.push(dim.range(open[0], open[1]))
+      ranges.push(dim.range(close[0], bracketEnd))
     } else {
       ranges.push(hideMarker.range(open[0], open[1]))
       ranges.push(hideMarker.range(close[0], bracketEnd))
     }
     if (isActive) {
-      // The revealed target, treated by what it names. A website reads as a URL; a page reads as a
-      // destination and is introduced by the same glyph a connection wears, since it is one.
       ranges.push(
         Decoration.mark({
           class: internal ? 'md-conn-target' : valid ? 'md-link-url' : 'md-unresolved-syntax',
         }).range(bracketEnd, close[1]),
-      ) // (url)
+      )
       if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
     } else {
       ranges.push(hideMarker.range(bracketEnd, close[1]))
@@ -515,41 +431,24 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   if (conn) {
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
-      // An aliased link shows one string and resolves another; the mark stays on what's displayed.
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const status = conn.resolve(text.slice(rs, re)).status
-      // Open for editing, its syntax showing: it reads as text, so it points like text.
       const open = active.has(i)
-      // The target span of a link that wears a pipe. An alias splits the two meanings apart; a pipe
-      // opened and not yet written leaves the title standing as both, and it is still a target.
       const pipe =
         tk.resolveRange ?? (text[tk.contentRange[1]] === '|' ? tk.contentRange : undefined)
-      // Revealed, a connection wearing a pipe shows both of its meanings at once: the words the
-      // reader sees, and the page they lead to. The target is marked as a target and introduced by
-      // the link glyph, which is the thing that reports whether it resolves — so this follows the
-      // PIPE rather than waiting on a title that happens to match something. Typing an alias for a
-      // page that doesn't exist yet should still look like writing a link.
+      // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.
       if (open && (pipe || status === 'resolved')) {
         ranges.push(connGlyph(status, tk.range[0] + 2))
-        // Only where an alias took the title's place does the title stop being what's shown and
-        // become a destination. Standing on its own, it IS the link's words and keeps their color.
         if (pipe) ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
       }
       if (status === 'phantom') {
-        // A connection that names no page keeps its brackets, and reads as the unresolved link it
-        // is — clicking into one is inspecting an unresolved link, which should look unresolved.
-        //
-        // One being TYPED takes the connection color from its first character instead: the author is
-        // writing a link and the text should say so. It is not resolved, and doesn't claim to be.
-        // Typing is what earns that, not the caret's position, so the field tracks the gesture.
+        // Typing is what earns the connection color, not the caret's position, so the field tracks the gesture.
         const writing = typing === tk.range[0]
         ranges.push(
           Decoration.mark({
             class: writing ? 'md-connection-typing' : 'md-connection-phantom',
           }).range(tk.contentRange[0], tk.contentRange[1]),
         )
-        // Syntax being authored is syntax either way; the rest is the unresolved link's own, and
-        // follows it wherever the setting takes it.
         const bracket = Decoration.mark({
           class: open && (writing || pipe) ? 'md-bracket' : 'md-phantom-syntax',
         })
@@ -565,9 +464,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
   }
-  for (const p of docBidirMarks(view.state.doc))
-    if (view.visibleRanges.some(({ from, to }) => p >= from && p < to))
-      ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
+  const bidir = Decoration.mark({ class: 'dual-direction-arrow' })
+  for (const { from, to } of view.visibleRanges)
+    for (let i = text.indexOf('↔', from); i >= 0 && i < to; i = text.indexOf('↔', i + 1))
+      ranges.push(bidir.range(i, i + 1))
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
@@ -579,8 +479,7 @@ export function markdownDecorations(getConn: () => ConnectionsApi | undefined): 
         this.built = build(view, getConn())
       }
       update(u: ViewUpdate): void {
-        // Inline tokens are viewport-scoped, so scroll (viewportChanged) must rebuild too — newly
-        // revealed lines need their decorations. Line-level chrome still spans the whole doc.
+        // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
         if (
           u.docChanged ||
           u.selectionSet ||

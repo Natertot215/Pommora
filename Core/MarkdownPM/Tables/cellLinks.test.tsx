@@ -29,8 +29,7 @@ const conn: ConnectionsApi = {
   open: (p: ConnPage) => opened(p.id),
 }
 
-// The cell holds an ALIASED connection, so what it draws is "the plan" and what it resolves is
-// "Quarterly Plan" — the case where reading the key off the rendered text would fail.
+// An ALIASED connection: what it draws is "the plan", what it resolves is "Quarterly Plan" — reading the key off the rendered text would fail.
 const model: TableModel = {
   columns: [{ align: null, dashes: 3 }],
   header: ['A'],
@@ -68,8 +67,6 @@ afterEach(async () => {
   container.remove()
 })
 
-/** A real click on the link: pointerdown (the click-away listener watches this), then the mousedown
- *  StaticCell activates on, then the click. */
 async function clickLink(): Promise<HTMLElement> {
   const link = container.querySelector('.md-connection-resolved') as HTMLElement
   await act(async () => {
@@ -90,13 +87,11 @@ describe('a connection in a resting cell behaves like one in the body', () => {
     expect(link.dataset.connTitle).toBe('Quarterly Plan')
   })
 
-  // Without claiming the press the cell swaps itself into an editor first, and the click lands on a
-  // caret inside the syntax instead of navigating.
+  // Without claiming the press the cell swaps into an editor first, and the click lands on a caret inside the syntax.
   it('navigates rather than dropping the caret into its syntax', async () => {
     await mount()
     await clickLink()
     expect(opened).toHaveBeenCalledWith('p1')
-    // And the cell never swapped into its editor on the way.
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 
@@ -119,9 +114,7 @@ describe('a connection in a resting cell behaves like one in the body', () => {
   })
 })
 
-// A resting cell draws external links too, and read one way for too long: they colored as links but
-// followed nothing, previewed nothing, and left an armed dwell behind a menu. They answer to the same
-// two readers the body's pointer path does now.
+// A resting cell's external links colored as links but followed nothing and left an armed dwell behind a menu.
 describe('an external link in a resting cell behaves like one in the body', () => {
   const opener = vi.fn()
   const web: TableModel = {
@@ -153,14 +146,12 @@ describe('an external link in a resting cell behaves like one in the body', () =
       )
     })
     expect(opener).toHaveBeenCalledWith('https://x.test')
-    // And the cell never swapped into its editor on the way.
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 })
 
-// The autocomplete panel is a body-level portal — outside the table by DOM, inside it by intent.
-// Demoting the active cell on a pointerdown there tears the editor down before the press that picked
-// a suggestion can reach it, and the typed characters are left dangling.
+// The autocomplete panel is a body-level portal — demoting the active cell on a pointerdown there tears the
+// editor down before the press that picked a suggestion can reach it.
 describe('the picker survives being clicked', () => {
   it('a pointerdown inside the panel does not demote the cell', async () => {
     await mount()
@@ -213,14 +204,12 @@ describe('the picker survives being clicked', () => {
   })
 })
 
-// A link carries its own menu wherever it is drawn, and a resting cell draws links — so the four
-// actions that only rewrite text must reach it without the cell first becoming an editor.
+// The four actions that only rewrite text must reach a resting cell's link without it first becoming an editor.
 describe('a link’s menu in a resting cell', () => {
   const URL = 'https://www.example.com/a/b'
   const committed = vi.fn()
   const settled = vi.fn()
 
-  /** Mount a table holding one external link, with the menu already resolving to `action`. */
   async function mountLink(action: ConnUrlAction): Promise<void> {
     committed.mockReset()
     settled.mockReset()
@@ -263,16 +252,14 @@ describe('a link’s menu in a resting cell', () => {
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 
-  // Settling is what a demoting cell editor does, and a resting cell never had one to demote —
-  // without it the widget keeps drawing the pre-edit text until something else enters and leaves.
+  // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
   it('settles the table, so the edit is drawn rather than waiting on a visit', async () => {
     await mountLink('link:delete')
     await rightClick()
     expect(settled).toHaveBeenCalled()
   })
 
-  // A native menu can be held open for as long as the user likes, and an undo or an outside write can
-  // move the cell underneath it — the same window the editor's own applier guards against.
+  // A native menu can be held open indefinitely, and an undo can move the cell underneath it.
   it('declines once the cell no longer holds the link the menu was popped on', async () => {
     committed.mockReset()
     container = document.createElement('div')
@@ -301,7 +288,6 @@ describe('a link’s menu in a resting cell', () => {
     await act(async () => {
       link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     })
-    // The cell changes while the menu stands open.
     await render([['something else entirely']])
     const target = popped as ConnMenuTarget | null
     if (target?.kind === 'url') await act(async () => target.apply?.('link:delete'))
@@ -320,7 +306,6 @@ describe('a link’s menu in a resting cell', () => {
     expect(committed).toHaveBeenCalledWith('a  b')
   })
 
-  // The two that put you in position to retype are the two that have to enter the cell.
   it('enters the cell with the label selected on Rename', async () => {
     await mountLink('rename')
     await rightClick()
@@ -339,8 +324,7 @@ describe('a link’s menu in a resting cell', () => {
   })
 })
 
-// One decision about what a right-clicked link is offered, whichever syntax wrote it: the connection
-// gets the page menu it gets in the body, and its authoring pair enters the cell the same way.
+// One decision about what a right-clicked link is offered, whichever syntax wrote it.
 describe('a connection’s menu in a resting cell', () => {
   let target: ConnMenuTarget | null = null
 
@@ -387,8 +371,7 @@ describe('a connection’s menu in a resting cell', () => {
     expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('the plan')
   })
 
-  // A markdown link naming a page is menued as the connection it is drawn as, minus the authoring
-  // pair that belongs to `[[ ]]` — the same subset the body offers it.
+  // Menued as the connection it is drawn as, minus the authoring pair that belongs to `[[ ]]`.
   it('a markdown link naming a page gets the page menu without the authoring pair', async () => {
     await mountConn('[the plan](Quarterly%20Plan)')
     expect(target).toMatchObject({ kind: 'page', editable: false, hasAlias: false })

@@ -1,6 +1,7 @@
 import { tokenize, type TokenKind } from '../Tokens'
 import {
   blockquotePrefixRe,
+  headingParts,
   calloutHeadPrefixLen,
   isBlockquoteLine,
   isCalloutHead,
@@ -18,14 +19,12 @@ export type InlineFormat = keyof typeof WRAP | 'link' | 'connection'
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
-/** A set of source edits + an optional resulting caret, applied as one CM transaction. */
 export interface FormatEdit {
   changes: { from: number; to: number; insert: string }[]
   selection?: number
 }
 
-/** A line carries a plain-quote prefix the quote toggle should strip — true for a real blockquote, but NOT a
- *  callout head (whose `>` is box chrome, stripping it orphans the `[!type]`). */
+/** True for a real blockquote, but NOT a callout head, whose `>` is box chrome — stripping it orphans the `[!type]`. */
 export function isQuoteToggleable(line: string): boolean {
   return isBlockquoteLine(line) && !isCalloutHead(line)
 }
@@ -38,7 +37,6 @@ const WRAP = {
   inlineCode: '`',
 } as const
 
-/** Toggle an inline mark over the selection (caret sits inside the wrap when empty). */
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
   if (fmt === 'link') return toggleLink(doc, from, to)
   if (fmt === 'connection') return toggleConnection(doc, from, to)
@@ -114,10 +112,6 @@ function toggleConnection(doc: string, from: number, to: number): FormatEdit {
   }
 }
 
-const HEADING_PREFIX = /^(\s{0,3})#{1,6}[ \t]+/
-
-/** One list marker's source text, trailing space included — the single spelling of what each kind looks
- *  like on disk, read by the per-line toggle and the whole-block switch alike. */
 export function listMarkerText(kind: ListKind, n = 1): string {
   switch (kind) {
     case 'ordered':
@@ -131,10 +125,8 @@ export function listMarkerText(kind: ListKind, n = 1): string {
   }
 }
 
-/** Split a line into its quote/callout chrome and the inner body the block transforms operate on. For a
- *  callout HEAD the chrome includes the hidden `[!type] ` tag, so a transform can never expose or demote it.
- *  Block transforms edit from AFTER the chrome — the prefix is never touched, which both preserves the box
- *  and keeps the change out of the callout guard's window. */
+/** For a callout HEAD the chrome includes the hidden `[!type] ` tag. Block transforms edit from AFTER the chrome,
+ *  which preserves the box and keeps the change out of the callout guard's window. */
 export function splitPrefix(line: string): { prefix: string; body: string } {
   const headLen = calloutHeadPrefixLen(line)
   if (headLen !== null) return { prefix: line.slice(0, headLen), body: line.slice(headLen) }
@@ -145,10 +137,7 @@ export function splitPrefix(line: string): { prefix: string; body: string } {
   return { prefix: '', body: line }
 }
 
-/** Set the caret line's heading level (0 = paragraph); replaces any existing heading or list marker.
- *  Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
-/** Set every selected line to `level`, or back to plain body at 0. Blank lines keep their seats —
- *  an empty heading is never what selecting across a paragraph gap asked for. */
+/** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. Blank lines keep their seats. */
 export function setHeading(doc: string, from: number, to: number, level: HeadingLevel): FormatEdit {
   const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }
@@ -162,11 +151,8 @@ export function setHeading(doc: string, from: number, to: number, level: Heading
   return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
 
-/** Toggle the caret line into/out of a list kind (re-applying the same kind clears it). Prefix-aware like
- *  setHeading — the list marker lands inside the quote/callout, not in place of its chrome. */
-/** One selected line, split into the parts a marker swap needs: the quote prefix it keeps, the
- *  indentation that decides its level, and the words themselves. Read by every formatter that
- *  rewrites a line's marker — list, heading — so all of them agree on what a line is. */
+/** The list marker lands inside the quote/callout, not in place of its chrome. */
+/** Read by every formatter that rewrites a line's marker, so all of them agree on what a line is. */
 interface SelectedLine {
   ls: number
   le: number
@@ -177,9 +163,6 @@ interface SelectedLine {
   level: number
 }
 
-/** The selected lines a marker can be put on. A blank line is the gap between paragraphs, not an
- *  item or a heading — an empty marker is never what selecting across one asked for — so it keeps
- *  its seat and takes none. */
 function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   const out: SelectedLine[] = []
   for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
@@ -189,9 +172,8 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
     if (body.trim() !== '') {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
-      // An item's indent sits before its marker; a paragraph's is whatever leads its words. Held
-      // apart from the content either way, so converting a nested item keeps its level instead of
-      // flattening it against the margin.
+      // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so
+      // converting a nested item keeps its level.
       const indent = lm ? body.slice(0, lm.markerStart) : stripped.slice(0, stripped.search(/\S|$/))
       out.push({
         ls,
@@ -208,9 +190,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   return out
 }
 
-/** Make every selected line an item of `kind`, or take the marker off all of them where all of them
- *  already read that way — a mixed block becomes one list rather than half a list. Ordered runs count
- *  per indent level, so a nested run restarts while its parent keeps counting. */
+/** A mixed block becomes one list rather than half a list. Ordered runs count per indent level. */
 export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
   const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }
@@ -226,14 +206,11 @@ export function setList(doc: string, from: number, to: number, kind: ListKind): 
     changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
     lastEnd = l.ls + l.prefix.length + next.length
   }
-  // One line keeps the caret at its end, the way every other line transform leaves it. Across
-  // several, the selection is left to map through the edits so it still covers what it covered.
+  // One line keeps the caret at its end; across several the selection maps through the edits so it still covers what it covered.
   return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
 
-/** Every marker-bearing line in `[from, to]`, paired with its start offset — a wrapped item's
- *  continuation lines carry no marker and drop out. Read prefixed, matching the resolver that decided
- *  these lines were one list, so a quoted item's marker is found behind its `>` rather than missed. */
+/** Read prefixed, matching the resolver that decided these lines were one list, so a quoted item's marker is found behind its `>`. */
 function listMarkerLines(
   doc: string,
   from: number,
@@ -247,8 +224,6 @@ function listMarkerLines(
   return out
 }
 
-/** The one kind every marker in `[from, to]` carries, or null where they disagree — the Type menu's
- *  checked state, and null is a block that reads as no single type. */
 export function listKindOf(doc: string, from: number, to: number): ListKind | null {
   let kind: ListKind | null = null
   for (const { marker } of listMarkerLines(doc, from, to)) {
@@ -258,10 +233,7 @@ export function listKindOf(doc: string, from: number, to: number): ListKind | nu
   return kind
 }
 
-/** Rewrite every list marker in `[from, to]` to `kind`, leaving continuation lines untouched. Ordered
- *  runs count per indent level, so a nested run restarts while its parent keeps counting. A marker that
- *  already reads as it should yields no edit — re-picking the current kind changes nothing, and picking
- *  Numbered over a broken sequence repairs it. */
+/** A marker that already reads as it should yields no edit, so picking Numbered over a broken sequence repairs it. */
 export function setListKind(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
   const counters: number[] = []
   const changes: FormatEdit['changes'] = []
@@ -276,9 +248,7 @@ export function setListKind(doc: string, from: number, to: number, kind: ListKin
   return { changes }
 }
 
-/** Every line the selection touches, blanks included, as `[start, end]` pairs. Quoting is the one
- *  line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it
- *  would split one blockquote into two. */
+/** Quoting is the one line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it splits the block. */
 function spannedLines(doc: string, from: number, to: number): { ls: number; le: number }[] {
   const out: { ls: number; le: number }[] = []
   for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
@@ -295,17 +265,14 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
   const line = doc.slice(ls, le)
   switch (fmt) {
     case 'quote': {
-      // Off only where every selected line is already a quote — a mixed block becomes one quote
-      // rather than half of one. Toggling a callout head wraps (never demotes it — stripping would
-      // orphan the `[!type]`).
+      // Off only where every selected line is already a quote. Toggling a callout head wraps rather than demoting it.
       const lines = spannedLines(doc, from, to)
       const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
       const changes: FormatEdit['changes'] = []
       let lastEnd = 0
       for (const { ls: s, le: e } of lines) {
         const text = doc.slice(s, e)
-        // A blank line inside the run takes the bare `>` that keeps the quote one block; trailing
-        // whitespace on it would be the only thing that marker carried.
+        // A blank line takes the bare `>` that keeps the quote one block; trailing whitespace would be all that marker carried.
         const next = strip ? stripQuotePrefix(text) : text === '' ? '>' : `> ${text}`
         changes.push({ from: s, to: e, insert: next })
         lastEnd = s + next.length
@@ -313,13 +280,12 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
       return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
     case 'callout': {
-      if (isCalloutHead(line)) return { changes: [] } // already a callout — nothing to convert
+      if (isCalloutHead(line)) return { changes: [] }
       const next = `> [!callout] ${stripBlockMarkers(line)}`
       return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
     }
     case 'code': {
-      // One fence around the whole selection rather than around its first line — a block of code
-      // pasted in and then fenced is the gesture this exists for.
+      // One fence around the whole selection: a block of code pasted in and then fenced is the gesture this exists for.
       const end = lineEndAt(doc, to)
       const body = doc.slice(ls, end)
       const next = `\`\`\`\n${body}\n\`\`\``
@@ -331,12 +297,10 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
     }
     case 'table': {
       // A GFM table parses as its own block ONLY when blank lines fence it; without one it merges with an
-      // adjacent table below (the first delimiter wins and every other row — including the second table's
-      // header + delimiter — becomes a body row). Guarantee a blank line BEFORE and AFTER the 3×3 table.
-      // The caret lands just after; the user clicks a cell to edit it.
+      // adjacent table below, whose header and delimiter then become body rows.
       const table = serialize(emptyTable(3, 3))
       const before = doc.slice(0, ls)
-      const after = doc.slice(le) // begins with the caret line's newline (or empty at EOF)
+      const after = doc.slice(le)
       const lead = line.length > 0 ? `${line}\n\n` : ls === 0 || before.endsWith('\n\n') ? '' : '\n'
       const trail =
         after.startsWith('\n') && !after.startsWith('\n\n') && after.length > 1 ? '\n' : ''
@@ -346,17 +310,17 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
   }
 }
 
-/** Strip a leading heading or list marker from the INNER line — quote/callout chrome is splitPrefix's job. */
 function stripInnerMarkers(body: string): string {
   const lm = parseListMarker(body)
   if (lm) return body.slice(lm.contentStart)
-  return body.replace(HEADING_PREFIX, '$1')
+  const h = headingParts(body)
+  return h ? h.indent + h.content : body
 }
 
-/** Strip a leading heading, list, or quote marker — the "reset the line to plain body" step for transforms
- *  that replace the whole line (callout conversion), where consuming the chrome is the point. */
+/** The "reset the line to plain body" step for transforms that replace the whole line, where consuming the chrome is the point. */
 function stripBlockMarkers(line: string): string {
   const lm = parseListMarker(line)
   if (lm) return line.slice(lm.contentStart)
-  return stripQuotePrefix(line.replace(HEADING_PREFIX, '$1'))
+  const h = headingParts(line)
+  return stripQuotePrefix(h ? h.indent + h.content : line)
 }

@@ -60,7 +60,7 @@ function seatsOnEmbedLine(t: Awaited<ReturnType<typeof tileView>>): number[] {
       try {
         cmd(t.view)
       } catch {
-        continue // layout-dependent in jsdom
+        continue
       }
       // Motion only — revert any command that edited, so later seats walk the same doc.
       if (t.view.state.doc.toString() !== doc) {

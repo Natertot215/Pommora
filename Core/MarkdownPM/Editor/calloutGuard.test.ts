@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { stripsCalloutPrefix, calloutGuard } from './calloutGuard'
+import { calloutDeleteVerdict, calloutGuard } from './calloutGuard'
+import { scanOf } from './docCache'
 
-describe('calloutGuard — stripsCalloutPrefix (body prefix is uncorruptible)', () => {
+const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean => {
+  const s = scanOf(doc)
+  return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts }).kind !== 'ok'
+}
+
+describe('calloutGuard — a callout body prefix is uncorruptible', () => {
   const doc = '> [!callout] head\n> body' // body line starts at 18, its `> ` prefix is [18, 20)
 
   it('blocks deleting the whole body `> ` in place (the atomic-expanded delete)', () => {

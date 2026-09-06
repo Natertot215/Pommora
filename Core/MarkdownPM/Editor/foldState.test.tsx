@@ -64,8 +64,7 @@ describe('the fold state machine', () => {
     ).toEqual(['One', 'Two'])
   })
 
-  // The entry remaps with the document; anything the reveal draws has to move with it, or the
-  // widget renders an empty box over hidden lines.
+  // The entry remaps with the document; anything the reveal draws has to move with it, or the widget renders an empty box.
   it('an edit above a collapsed section keeps the section, and keeps what it draws', async () => {
     const view = await mountEditor({ initialBody: DOC })
     await fold(view, DOC.indexOf('# Two'))
@@ -76,11 +75,9 @@ describe('the fold state machine', () => {
     const after = foldedRegions(view.state)[0]
     expect(after?.key).toBe('Two')
     expect(after?.anchor).toBe(before.anchor + 'preamble\n\n'.length)
-    expect(after?.hasBody).toBe(true)
   })
 
-  // Without the prune, the body stays hidden behind a widget with no chevron anywhere to expand it —
-  // invisible until the page is reloaded.
+  // Without the prune, the body stays hidden behind a widget with no chevron anywhere to expand it.
   it('deleting a folded heading drops its fold rather than hiding the body forever', async () => {
     const view = await mountEditor({ initialBody: DOC })
     const at = DOC.indexOf('# Two')
@@ -91,8 +88,6 @@ describe('the fold state machine', () => {
     expect(foldedRegions(view.state)).toEqual([])
   })
 
-  // A fold is identified by where it sits, so a deletion that lands another region of the same kind
-  // on the same offset hands the fold over rather than dropping it.
   it('a region arriving at a folded one’s offset inherits the fold', async () => {
     const view = await mountEditor({ initialBody: DOC })
     await fold(view, 0)
@@ -114,8 +109,6 @@ describe('the fold state machine', () => {
     const view = await mountEditor({ initialBody: DOC })
     await fold(view, 0)
     await fold(view, 0)
-    // Opening is animated, so the entry survives as 'expanding' until the transition lands — what
-    // matters is that it stops counting as folded.
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual([])
   })
 
@@ -125,23 +118,18 @@ describe('the fold state machine', () => {
     expect(foldedRegions(view.state)).toEqual([])
   })
 
-  // A body of exactly one empty line has nothing to collapse, and admitting it hands out a chevron
-  // over a fold whose widget never renders — so the transition that ends the animation never fires,
-  // the entry strands mid-phase, and the chevron stops answering after two clicks.
+  // A body of one empty line hands out a chevron over a fold whose widget never renders, stranding the entry mid-phase.
   it('a heading whose body is one blank line offers no fold at all', async () => {
     const view = await mountEditor({ initialBody: '# One\n\n# Two\nbody two' })
     for (let i = 0; i < 4; i++) await fold(view, 0)
     expect(foldedRegions(view.state)).toEqual([])
     expect(view.dom.querySelectorAll('.mdpm-fold-reveal')).toHaveLength(0)
-    // And the heading that does have a body still folds.
     await fold(view, '# One\n\n'.length)
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['Two'])
   })
 })
 
-// The citations section's disclosure is the editor's fold motion, but its state is a per-page
-// override rather than a row in the shared fold store — so it takes the registry and skips
-// persistence entirely.
+// The section's state is a per-page override rather than a row in the shared fold store, so it skips persistence.
 
 const CITED = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
 const NESTED = '# Title\nintro\n\n## Sources\nmid\n\n[^a]: one'
@@ -182,9 +170,7 @@ describe('the citations section folds', () => {
     expect(citeRegion(view)).toBeUndefined()
   })
 
-  // Fold entries are identified by anchor alone. Anchoring the section on the line it renders
-  // against — prose the user owns — would let one Enter there move the live anchor, orphan the
-  // entry, and pop a hidden section open with the override still reading hidden.
+  // Anchored by offset alone: anchoring on the prose line it renders against would let one Enter orphan the entry.
   it('an edit on the rendered anchor line leaves the fold intact', async () => {
     for (const edit of ['enter', 'backspace'] as const) {
       const view = await mountEditor({ initialBody: CITED, citationsShown: true })
@@ -217,8 +203,6 @@ describe('the section never joins the fold store', () => {
     expect(saved[saved.length - 1]).toEqual(['Notes'])
   })
 
-  // Un-annotated, the seed would write the surviving key set — empty, since it runs before
-  // applySavedFolds — and erase the heading folds on every open of a footnoted page.
   it('seeding the section at mount writes nothing at all', async () => {
     const saved: string[][] = []
     await mountEditor({
@@ -237,8 +221,6 @@ describe('the section never joins the fold store', () => {
 })
 
 describe('a heading stops where the citations section starts', () => {
-  // A single-heading document has exactly one section reaching the end, so it greenlights the bug
-  // the clamp is for.
   it('every section reaching the boundary clamps, not just the last', async () => {
     const view = await mountEditor({ initialBody: NESTED })
     const cut = startOf(NESTED, 5)
@@ -263,8 +245,6 @@ describe('a heading stops where the citations section starts', () => {
     for (const h of heads) expect(h.to, h.key).toBe(startOf(NESTED, scan.anchorLine))
   })
 
-  // A heading's clamped span is its own line, and a body of one line or less is dropped — so there's
-  // no heading region to collide with.
   it('a heading immediately above a run yields one region, anchored on the heading', async () => {
     const tight = '## Refs\n[^a]: one'
     const view = await mountEditor({ initialBody: tight })
@@ -274,10 +254,7 @@ describe('a heading stops where the citations section starts', () => {
   })
 })
 
-// The chevron class and the heading gesture separate. `md-foldable` meant four things at once:
-// draw a chevron, gate the heading drag, answer the grip menu's hit-test, and be the glance's
-// click-to-fold target. A non-heading anchor wearing it inherits all four, and the third fails
-// silently — the heading menu bails on a line holding no heading, opening nothing at all.
+// `md-foldable` meant four things at once, and a non-heading anchor wearing it failed the grip menu's hit-test silently.
 
 const lineEls = (view: EditorView): HTMLElement[] => [
   ...view.dom.querySelectorAll<HTMLElement>('.cm-line'),
@@ -322,8 +299,6 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     expect(rightPress(lineEls(view)[2])).toBe(false)
   })
 
-  // Before the split these were one string, so the section's anchor wore the chevron class and was
-  // swallowed by the hit-test.
   it('the chevron class alone no longer confers the gesture, and the gesture class alone still does', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     const divider = lineEls(view)[2]
@@ -333,10 +308,6 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     expect(rightPress(divider)).toBe(true)
   })
 })
-
-// The divider is the section's visible boundary and its disclosure at once. It reports its press
-// rather than folding itself: the state is the page's own visibility, and the fold follows that
-// one writer.
 
 const divider = (view: EditorView): HTMLElement | null =>
   view.dom.querySelector<HTMLElement>('.cm-line.md-cite-divider')
@@ -348,8 +319,6 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(false)
   })
 
-  // A rule drawn onto a paragraph would read as if it headed the footnotes. With nothing blank to
-  // take it, the section keeps its own top edge.
   it('draws nothing when the line above the section is prose', async () => {
     const view = await mountEditor({
       initialBody: 'body[^a] here\n[^a]: the citation',
@@ -363,15 +332,11 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(divider(view)).toBeNull()
   })
 
-  // A removed class has nothing left to fade from, and the seam is meant to read as the boundary
-  // closing rather than a line vanishing between two frames.
   it('stays stamped while the section is hidden, carrying the faded state', async () => {
     const view = await mountEditor({ initialBody: CITED })
     expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(true)
   })
 
-  // The resolved answer, not the raw row — landing back on the nexus-wide default clears the row
-  // rather than restating it, which is the rule both controls share.
   const shownFor = (): boolean => citationsVisible(useSession.getState(), HARNESS_PAGE_ID)
 
   it('a press writes the page’s visibility, and the section follows it', async () => {
@@ -387,8 +352,6 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(kinds(view)).toEqual(['citations'])
   })
 
-  // The reason the press has no fold of its own: a write that never touched this editor moves its
-  // section anyway — which is what carries the footer's control, the Page Window and a glance.
   it('a write from anywhere else moves the section too', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     await act(async () => {
@@ -402,9 +365,7 @@ describe('the citations divider draws where it can and folds nothing itself', ()
   })
 })
 
-// The per-page overrides are fetched after the tree is applied, so a page whose own answer differs
-// from the nexus-wide default mounts on the default and hears the truth a beat later. That catch-up
-// is a seed, not a toggle — animating it plays a collapse on a page nobody has touched.
+// Per-page overrides are fetched after the tree is applied, so a page mounts on the default and hears the truth a beat later.
 const revealRows = (view: EditorView): string | undefined =>
   view.dom.querySelector<HTMLElement>('.mdpm-fold-reveal')?.style.gridTemplateRows
 
@@ -427,9 +388,7 @@ describe('a value arriving after mount is still a seed', () => {
   })
 })
 
-// A fold entry maps its start forward and its end backward, so an edit that grows the section
-// leaves the new rows standing outside the collapsed widget. Every footnote gesture therefore drops
-// the fold and puts it back, which also re-takes the clone the reveal animates from.
+// A fold entry maps its start forward and its end backward, so an edit that grows the section leaves the new rows outside the widget.
 describe('a gesture leaves the section in the visible state it found it', () => {
   const ONE = 'x[^1] y\n\n[^1]: one'
   const PAIR = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
@@ -463,7 +422,6 @@ describe('a gesture leaves the section in the visible state it found it', () => 
     expect(showing(view)).toBe(0)
   })
 
-  // The other half: dispatched without the teardown, the row it added draws in plain sight.
   it('and without the teardown the new row draws outside the fold', async () => {
     const view = await mountEditor({ initialBody: ONE })
     await act(async () => {

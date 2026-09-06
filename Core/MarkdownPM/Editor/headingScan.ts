@@ -1,5 +1,4 @@
-// What counts as a heading, its foldable section span, and the outline, over one walk. Kept apart
-// from the fold state machine so the block resolver can ask what a heading is without importing it.
+// Kept apart from the fold state machine so the block resolver can ask what a heading is without importing it.
 import {
   headingParts,
   isHeadingLine,
@@ -8,18 +7,14 @@ import {
   type FenceInfo,
 } from '../Detect'
 
-/** What a heading scan reads. `DocScan` satisfies it structurally, so a caller already holding the
- *  cached whole-document scan asks without re-splitting the text. */
+/** `DocScan` satisfies it structurally, so a caller holding the cached whole-document scan asks without re-splitting. */
 export interface HeadingSrc {
   lines: string[]
   lineStarts: number[]
   headings: readonly boolean[]
-  /** Per line, set where a fenced block has claimed it — a `# comment` inside code is not a heading. */
   fences: readonly (FenceInfo | undefined)[]
 }
 
-/** The same source built from a bare string, for callers outside the editor holding a body rather
- *  than a live document. */
 export function headingSrc(text: string): HeadingSrc {
   const { lines, lineStarts } = splitWithOffsets(text)
   return {
@@ -32,32 +27,26 @@ export function headingSrc(text: string): HeadingSrc {
 
 export interface HeadingSection {
   from: number
-  /** End of the heading line's text — the body to fold begins on the next line. */
   lineEnd: number
   level: number
-  /** Ordinal-disambiguated key for the saved fold set (stable across heading-level changes). */
   key: string
-  /** End of the section: the last line before the next equal-or-higher heading (or document end). */
   to: number
 }
 
 interface ScannedHeading {
   idx: number
   level: number
-  /** The heading's own text, markers stripped. */
   text: string
   /** Ordinal-disambiguated identity — duplicate text stays tellable apart across renders and folds. */
   key: string
 }
 
-/** Every heading line in document order. THE heading scan — the fold sections and the outline both
- *  read it, so the two can never disagree about what counts as a heading. */
+/** THE heading scan — the fold sections and the outline both read it, so the two can never disagree. */
 function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[] {
   const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
   for (let i = 0; i < lines.length; i++) {
-    // A `# comment` inside a code block is code, not a heading — treating it as one gives it a
-    // chevron, corrupts heading-drag extents, and poisons the persisted fold keys.
+    // A `# comment` inside a code block is code: treating it as a heading corrupts drag extents and poisons the persisted fold keys.
     if (fences[i] || !headings[i]) continue
     const m = headingParts(lines[i])
     if (!m) continue
@@ -70,15 +59,13 @@ function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[]
 }
 
 export interface OutlineHeading {
-  /** Offset of the heading line's start — what a jump scrolls to. */
   from: number
   level: number
   text: string
   key: string
 }
 
-/** Every heading, body-less ones included. `headingSections` drops those because there is nothing to
- *  fold; an outline still has to list them, or two consecutive headings would show only the second. */
+/** `headingSections` drops body-less headings; an outline still lists them, or two consecutive headings would show only the second. */
 export function headingOutline(doc: string): OutlineHeading[] {
   const src = headingSrc(doc)
   return scanHeadings(src).map((h) => ({
@@ -89,9 +76,7 @@ export function headingOutline(doc: string): OutlineHeading[] {
   }))
 }
 
-/** Exclusive end index of the section heading `start` owns — the first later heading of
- *  equal-or-higher level, or the array end. Levels alone decide the span, so any level-bearing
- *  heading list works. */
+/** Levels alone decide the span, so any level-bearing heading list works. */
 export function sectionEnd(headings: readonly { level: number }[], start: number): number {
   for (let n = start + 1; n < headings.length; n++)
     if (headings[n].level <= headings[start].level) return n
@@ -100,9 +85,7 @@ export function sectionEnd(headings: readonly { level: number }[], start: number
 
 const sectionCache = new WeakMap<HeadingSrc, HeadingSection[]>()
 
-/** Every heading's foldable section. A section reaching no body lines is dropped (nothing to fold),
- *  but still consumes its ordinal so duplicate-text keys stay stable. Held against the source it was
- *  read from — one derivation per document version, wherever the sections are asked for. */
+/** A section reaching no body lines is dropped but still consumes its ordinal, so duplicate-text keys stay stable. */
 export function headingSections(src: HeadingSrc): HeadingSection[] {
   const held = sectionCache.get(src)
   if (held) return held
@@ -117,8 +100,7 @@ export function headingSections(src: HeadingSrc): HeadingSection[] {
     const from = starts[idx]
     const lineEnd = from + lines[idx].length
     const to = starts[endLine] + lines[endLine].length
-    // Strictly more than one line past the heading: a body of exactly one empty line has nothing
-    // to collapse, and admitting it hands out a chevron over a fold whose widget never renders.
+    // Strictly more than one line past the heading: a body of one empty line hands out a chevron over a fold whose widget never renders.
     if (to > lineEnd + 1) out.push({ from, lineEnd, level, key, to })
   }
   sectionCache.set(src, out)

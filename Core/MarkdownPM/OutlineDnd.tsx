@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
-import { sectionEnd, type OutlineHeading } from './Editor/folding'
+import { sectionEnd, type OutlineHeading } from './Editor/headingScan'
 import { moveHeadingSection } from '../Pages/pageEditor'
 
 // A flat insertion line marks the drop — the outline re-nests the moved section by level once the
