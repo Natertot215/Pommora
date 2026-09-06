@@ -23,22 +23,19 @@ import {
 } from '../Input/format'
 import { host } from '../../Platform/dialer'
 
-/** Native context-menu seam — pushes editor state to main, receives chosen actions back. */
 export interface EditorMenuApi {
   pushState: (s: FormatState) => void
   onAction: (cb: (action: string) => void) => () => void
 }
 
-/** The seam over the real bridge. The bridge's listener is per-caller, so every mounted editor
- *  hears every action; both directions answer to `subject` below. */
+/** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
 export const nativeEditorMenu: EditorMenuApi = {
   pushState: (s) => host().tell('editor:format-state', s),
   onAction: (cb) => host().on('menu:action', cb),
 }
 
-/** The editor the native menu is about. Latched when focus lands rather than read live: a native
- *  menu can hold the document's focus while it's open, so `hasFocus` reads false at exactly the
- *  moment the chosen action comes back. */
+/** Latched when focus lands rather than read live: a native menu holds the document's focus, so `hasFocus` reads
+ *  false at exactly the moment the chosen action comes back. */
 let subject: EditorView | null = null
 
 export const claimEditorMenu = (view: EditorView): void => {
@@ -68,8 +65,7 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
   }
 }
 
-/** Wrap a selected address in the link syntax, pointing at itself. The selected words stay the
- *  label, so a schemeless address keeps its bare form while its target gains the scheme. */
+/** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
 function insertLinkOverSelection(view: EditorView): boolean {
   const sel = view.state.selection.main
   const text = view.state.sliceDoc(sel.from, sel.to).trim()
@@ -84,20 +80,15 @@ function insertLinkOverSelection(view: EditorView): boolean {
   return true
 }
 
-/** Apply a `mdpm:*` menu action to the editor; ignores actions from other `menu:action` senders.
- *  Applies to whatever view is handed in — only the broadcast menu subscription has to ask
- *  `ownsEditorMenu` first. */
+/** Applies to whatever view is handed in — only the broadcast menu subscription has to ask `ownsEditorMenu` first. */
 export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
-  // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
-  // A footnote is a pair at two disjoint sites, not a block whose format changes, so it sits here
-  // rather than inside the format union's exhaustive switch.
+  // A footnote is a pair at two disjoint sites, not a block whose format changes, so it sits outside the format union.
   if (action === 'block:citation') return insertCitation(view)
-  // Paste As reads the clipboard back over the bridge, so it finishes a turn later than the rest.
   if (action.startsWith(PASTE_AS_PREFIX)) {
     void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     return true

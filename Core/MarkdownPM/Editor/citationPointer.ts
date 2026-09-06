@@ -1,6 +1,5 @@
-// A marker's pointer gestures. The factory owns the hover intent, the press latch, the right-button
-// claim and the caret-seat clamp; a marker is a third spec over it rather than a third copy of any
-// of that. The jump itself is `travelTo`; this only supplies a target.
+// A marker's pointer gestures — a third spec over the shared factory rather than a third copy of the hover
+// intent, press latch and caret clamp. The jump itself is `travelTo`; this only supplies a target.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { resolveMdTarget, type ConnectionsApi } from '../Connections'
@@ -13,17 +12,12 @@ import { travelTo } from './travel'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 import { host } from '../../Platform/dialer'
 
-/** The hover gate, the click's hit-test and the resting table cell's own handler all ask for the
- *  same element. */
 export const CITE_GLYPH = '.md-cite-ref'
 
-/** Drawn over hidden source rather than written, so it is the one element a press on the row can be
- *  aimed at. */
+/** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
 export const CITE_ROW_GLYPH = '.md-cite-num'
 
-/** What a citation's whole content is, when that content is exactly one link or one Connection —
- *  trailing text or a stray period means it is not that, and the click jumps to the citation like
- *  any other. Exported pure for tests. */
+/** Trailing text or a stray period means it is not that, and the click jumps to the citation like any other. */
 export function loneTarget(
   content: string,
 ): { kind: 'link'; url: string } | { kind: 'connection'; title: string } | null {
@@ -40,8 +34,6 @@ export function loneTarget(
   return url ? { kind: 'link', url } : null
 }
 
-/** What it binds to is read back by label on arrival, so nothing here has to hold a citation the
- *  document may have moved since. */
 interface CiteSpot {
   from: number
   to: number
@@ -51,9 +43,7 @@ interface CiteSpot {
 
 interface CiteHit extends CiteSpot, PointerTarget {}
 
-/** Derived once per document version, since a pointer path that re-derived it would tokenize a
- *  citation on every mousemove over a marker. An unmatched marker is literal prose and never
- *  appears here. */
+/** Derived once per document version — a pointer path that re-derived it would tokenize a citation on every mousemove. */
 const citationTargets = perDoc((doc) => {
   const scan = docScan(doc)
   const text = docString(doc)
@@ -73,9 +63,7 @@ const citationTargets = perDoc((doc) => {
   return out
 })
 
-/** Only where the pointer is on the glyph — a marker's offsets are the two seats either side of it,
- *  so an offset test alone would claim a press aimed at the space beside it, where a caret goes to
- *  delete the thing. */
+/** A marker's offsets are the two seats either side of it, so an offset test alone would claim a press aimed at the space beside it. */
 function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   if (!(event.target as HTMLElement).closest?.(CITE_GLYPH)) return null
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
@@ -86,12 +74,9 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   return { range: [hit.from, hit.to], onText: true, hidesSyntax: true, pos, ...hit }
 }
 
-/** Opening a hidden section on arrival is the host's `reveal`, read off the same facet a creation
- *  reads, so a jump and an insert can never disagree about what showing the section means. */
 export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
-    // A glance over a marker is a Prospect, so nothing here ever arms a dwell.
     armable: () => false,
     hitAt: citeHitAt,
     follow: (hit, view, event) => () => {
@@ -127,14 +112,11 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
   })
 }
 
-/** Read back on arrival like a marker's, so nothing here holds a position the document may have
- *  moved since. */
 interface RowHit extends PointerTarget {
   label: string
 }
 
-/** The row's prefix is hidden and atomic, so a coordinate read would land at the line's start
- *  whether the press hit the glyph or the text beside it; the line it sits on names the citation. */
+/** The row's prefix is hidden and atomic, so a coordinate read lands at the line's start either way; the line names the citation. */
 function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
   const glyph = (event.target as HTMLElement).closest?.(CITE_ROW_GLYPH)
   const line = glyph?.closest('.cm-line')
@@ -147,9 +129,7 @@ function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
   return { range: [from, from], onText: true, hidesSyntax: true, pos: from, label: entry.label }
 }
 
-/** Inverted from the marker's: a body glyph leads to its citation, so a citation's glyph leads back
- *  to the first marker bound to it. A row bound to nothing offers the reference itself to copy
- *  instead. The whole-line right-press stays `citationRowMenu`'s, so this arms no menu of its own. */
+/** Inverted from the marker's: a citation's glyph leads back to the first marker bound to it. The whole-line right-press stays `citationRowMenu`'s. */
 export function citationRowPointer(): Extension {
   return pointerHandlers<RowHit>({
     hoverGate: CITE_ROW_GLYPH,
@@ -165,8 +145,6 @@ export function citationRowPointer(): Extension {
   })
 }
 
-/** A whole line rather than an inline token, so it takes a plain handler instead of the inline
- *  pointer path — the same division the grip menu keeps. */
 export function citationRowMenu(): Extension {
   return EditorView.domEventHandlers({
     contextmenu(event, view) {

@@ -1,7 +1,5 @@
-// What a footnote gesture writes, and where every one of them lands. A native menu stays open as long
-// as the reader likes and an undo or an outside write can move the document under it, so every action
-// re-finds its target in the live document and matches it against what the menu was built from before
-// it writes — the discipline the connection and heading menus already keep.
+// A native menu stays open as long as the reader likes and an undo can move the document under it, so every
+// action re-finds its target in the live document and matches it against what the menu was built from.
 import {
   type ChangeSet,
   type ChangeSpec,
@@ -14,7 +12,7 @@ import type { CitationMenuAction } from '@pommora/core/Actions/citationMenu'
 import { isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
 import { useSession } from '../../Session/store'
 import { citationFor, markerEndingAt, markersFor } from '../Detect'
-import { focusRange } from './caretSeat'
+import { focusRange } from './caretPlacement'
 import type { CitationScan } from '../Detect'
 import {
   citationGesture,
@@ -29,9 +27,7 @@ import { editAcrossCitations } from './folding'
 import { travelTo } from './travel'
 import { host } from '../../Platform/dialer'
 
-/** `reveal` opens a hidden section by writing the page's visibility rather than folding behind the
- *  host's back, so every surface showing that page reads the same row. A surface with no page at all
- *  writes nothing, and the section stays at the nexus-wide default. */
+/** `reveal` writes the page's visibility rather than folding behind the host's back, so every surface showing that page agrees. */
 export interface CitationHost {
   shown: () => boolean
   reveal?: () => void
@@ -41,8 +37,7 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
   combine: (v) => v[0] ?? { shown: () => false },
 })
 
-/** The one arrival point: the body's own marker click ends here, and so does one in a resting table
- *  cell, which has no editor of its own to carry a pointer path. */
+/** The one arrival point: a resting table cell's marker click ends here too, having no editor to carry a pointer path. */
 export function travelToCitation(view: EditorView, label: string): void {
   const entry = citationFor(docScan(view.state.doc).citations, label)
   if (!entry) return
@@ -50,12 +45,8 @@ export function travelToCitation(view: EditorView, label: string): void {
   travelTo(view, entry.contentStart)
 }
 
-/** Whether a marker may be written where the selection ends — a footnote annotates the words it
- *  follows, so that offset is where every creation puts it. The seat is outside the section, whose own
- *  `[^1]` stays literal, and outside code, where the syntax is characters rather than a reference.
- *
- *  Answers on every caret move, so both halves come off the cached scan or the caret's own line; a
- *  whole-document form would split the text and pair every fence from the top each time. */
+/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker —
+ *  outside the section and outside code. Both halves come off the cached scan; a whole-document form would re-pair every fence. */
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
   const at = state.selection.main.to
@@ -65,9 +56,7 @@ export function citationSeatAt(state: EditorState): boolean {
   return !isInsideInlineCode(line.text, at - line.from)
 }
 
-/** The edit, the renormalization it triggers, and the fold teardown the section's rewrite needs, all
- *  as one transaction so one undo takes the whole act. Returns what landed in the original document's
- *  coordinates, so a caller can find what it just wrote. */
+/** One transaction, so one undo takes the whole act. Returns what landed in the original document's coordinates. */
 export function commitCitation(
   view: EditorView,
   changes: ChangeSpec[],
@@ -80,10 +69,8 @@ export function commitCitation(
   return set
 }
 
-/** Jump To Citation On Creation decides between the new citation and the marker just written.
- *
- *  The pair is found again in the finished document rather than assumed: a minted label is free, not
- *  final, and the normalization riding in the same transaction may well have renumbered it. */
+/** The pair is found again in the finished document rather than assumed: a minted label is free, not final, and
+ *  the normalization riding the same transaction may have renumbered it. */
 function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec[]): boolean {
   const set = commitCitation(view, changes, 'input')
   if (!set) return false
@@ -100,8 +87,6 @@ function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec
   return true
 }
 
-/** Insert ▸ Footnote and Paste As ▸ Footnote: a complete pair in one transaction. The marker goes
- *  after whatever is selected, and the citation lands at the document's end. */
 export function insertCitation(view: EditorView, text = ''): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
   const scan = docScan(view.state.doc)
@@ -113,16 +98,9 @@ export function insertCitation(view: EditorView, text = ''): boolean {
   ])
 }
 
-/** A label finished by typing `]`. Typing a fresh one is a creation gesture like any other and seeds
- *  its citation; typing one that already has a citation adopts it and rewrites nothing, which is the
- *  whole of how a footnote comes to be shared by hand.
- *
- *  A typed label is a creation like any other, so Jump To Citation On Creation governs it too — the
- *  setting is the one place a reader decides whether creating a footnote takes them to it.
- *
- *  It cannot be a link in the typing chain: every transform there returns one range, and this writes
- *  at two disjoint sites. The closing bracket is typed OVER the one `[` auto-paired rather than
- *  doubled beside it. */
+/** Typing a label that already has a citation adopts it and rewrites nothing, which is how a footnote comes to be
+ *  shared by hand. It cannot be a link in the typing chain: every transform there returns one range, and this
+ *  writes at two disjoint sites. */
 export function seedTypedCitation(view: EditorView, at: number): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
   const scan = docScan(view.state.doc)
@@ -134,9 +112,7 @@ export function seedTypedCitation(view: EditorView, at: number): boolean {
   ])
 }
 
-/** Whether the document's binding picture moved — which row holds which position, and which holds
- *  none. Every reordering the section can owe is downstream of this one comparison, and nothing else
- *  in an edit warrants rewriting rows the reader is not looking at. */
+/** Every reordering the section can owe is downstream of this one comparison. */
 function bindingMoved(before: CitationScan, after: CitationScan): boolean {
   if (before.entries.length !== after.entries.length) return true
   return after.entries.some((e, i) => {
@@ -145,13 +121,8 @@ function bindingMoved(before: CitationScan, after: CitationScan): boolean {
   })
 }
 
-/** The section's order, kept by an edit that was never a footnote gesture. Pasting a reference, or
- *  typing one that adopts a citation already written, binds a row that held no position a moment
- *  ago — and the section a reader sees is first-use order or it is nothing. The rewrite rides the
- *  same transaction, so one undo takes the paste and the reorder together.
- *
- *  It reads the scan both states already owe their decorations, and asks for the rewrite only where
- *  the binding picture actually moved: an ordinary keystroke pays one comparison over the rows. */
+/** Pasting a reference binds a row that held no position a moment ago, and the section a reader sees is first-use
+ *  order or it is nothing. The rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. */
 export const citationOrder: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
   const after = docScan(tr.newDoc)
@@ -160,8 +131,7 @@ export const citationOrder: Extension = EditorState.transactionFilter.of((tr) =>
   return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
 })
 
-/** Which construct the menu was popped on, identified by the label it carried — an offset alone
- *  would name whatever moved into that seat while the menu stood open. */
+/** Identified by the label it carried — an offset alone would name whatever moved into that seat while the menu stood open. */
 export type CitationSubject =
   | { kind: 'marker'; marker: { from: number; to: number; label: string } }
   | { kind: 'citation'; label: string }
@@ -180,17 +150,14 @@ export function applyCitationAction(
           (m) => m.from === subject.marker.from && m.to === subject.marker.to,
         )
       : undefined
-  // The document no longer holds what the menu was built from.
   if (subject.kind === 'marker' ? !marker : !entry) return
 
   switch (action) {
     case 'cite:edit':
-      // Only a marker offers it, and only a citation can receive it.
       if (entry) focusRange(view, entry.contentStart)
       return
     case 'cite:copy':
-      // The raw reference, not the citation's text: pasting it back in the page IS the second
-      // reference, and that is the whole of how a footnote comes to be shared.
+      // The raw reference, not the citation's text: pasting it back IS the second reference.
       void host().ask('clipboard:write', `[^${(marker ?? entry)?.label ?? ''}]`)
       return
     case 'cite:delete': {

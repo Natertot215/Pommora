@@ -1,8 +1,5 @@
-// The unified block resolver for block-drag: what top-level block owns a line, its extent, its kind.
-// Pure source-string logic (no CM6 / DOM), and the drag layer reads boundaries through it alone.
-//
-// `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to / headingSections.to / TableRegion.to,
-// which the drag's self-drop guard relies on.
+// The unified block resolver for block-drag. `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to /
+// headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
 import { fenceRangesOf, parseListMarkerPrefixed, type CalloutLine } from '../Detect'
 import type { DocScan } from '../Decorations/intent'
 import { headingSections } from './headingScan'
@@ -22,13 +19,11 @@ export type BlockKind =
 
 export interface Block {
   from: number
-  to: number // line end of the block's last line, exclusive of the trailing newline
+  to: number
   kind: BlockKind
 }
 
-// Per-line classification shared by blockAt + blockStarts, built once. `kindAt(i)` returns the
-// membership kind of line i (paragraph means "claimed by nothing else") or null on a blank line;
-// `claimed` is the paragraph-boundary test.
+// Per-line classification shared by blockAt and blockStarts, built once.
 interface BlockContext {
   lines: string[]
   n: number
@@ -61,11 +56,8 @@ function blockContext(scan: DocScan): BlockContext {
   const inEmbed = spanned(embeds)
   const inWebpage = spanned(webpages)
 
-  // List membership: marker lines plus their indented continuations, but only where a run actually
-  // holds a marker, so a bare indented paragraph isn't swept in. A blank line breaks a run, so
-  // blank-separated "loose" items split into separate list blocks (V1). A math range whose opener
-  // joined the run rides the run whole, so a bullet's formula always moves with the bullet; a range
-  // whose opener sits outside the run never gets pulled in.
+  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A blank line breaks
+  // a run. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
   const isMarker = (i: number): boolean => parseListMarkerPrefixed(lines[i]) !== null
   const isListCont = (i: number): boolean => lines[i].trim() !== '' && /^[ \t]/.test(lines[i])
   const mathOpenLine = maths.map(([f]) => starts.indexOf(f))
@@ -96,9 +88,8 @@ function blockContext(scan: DocScan): BlockContext {
     i = j + 1
   }
 
-  // A closed top-level fence owns its bytes outright, so a `>` inside one is code text rather than a
-  // quote — matching the decoration pass's rule, so a grip can never drag two lines out of a code
-  // block. A quoted fence keeps its box: the `>` is real there.
+  // A closed top-level fence owns its bytes outright, so a `>` inside one is code text — a grip can never drag
+  // two lines out of a code block. A quoted fence keeps its box: the `>` is real there.
   const literalCode = (i: number): boolean => {
     const f = fenceAt[i]
     return f?.closed === true && f.depth === 0
@@ -108,8 +99,8 @@ function blockContext(scan: DocScan): BlockContext {
   const heading = scan.headings
   const hr = scan.breaks
   const bq = scan.quotes.map((q, i) => q && !literalCode(i))
-  // The citations section owns no block — reusing the unowned-line (blank-line) state costs two
-  // lines here, where a BlockKind of its own would span five sites the compiler wouldn't all check.
+  // The citations section owns no block — reusing the unowned-line state costs two lines, where a BlockKind of
+  // its own would span five sites the compiler wouldn't all check.
   const cited = (i: number): boolean => scan.citations.mask[i] === 1
   const claimed = (i: number): boolean =>
     i < 0 ||
@@ -127,12 +118,10 @@ function blockContext(scan: DocScan): BlockContext {
     listMember[i] ||
     hr[i]
 
-  // Box-first precedence: callout/quote resolves to its box (so quoted math stays box content);
-  // code/table/math beat heading/list so a `#`/`-` inside one of those spans isn't mis-read; hr beats
-  // paragraph so it's never absorbed. A blank line inside a math/fence range still resolves via the
-  // range (see `claimed`), so it doesn't split the range into two paragraphs.
+  // Box-first precedence: code/table/math beat heading/list so a `#` inside one isn't mis-read, and hr beats
+  // paragraph so it's never absorbed. A blank line inside a math or fence range still resolves via the range.
   const kindAt = (i: number): BlockKind | null => {
-    if (i < 0 || i >= n) return null // a neighbor-lookup off either doc edge owns no block
+    if (i < 0 || i >= n) return null
     if (lines[i].trim() === '' || cited(i)) return null
     if (callout[i]) return 'callout'
     if (bq[i]) return 'blockquote'
@@ -150,7 +139,6 @@ function blockContext(scan: DocScan): BlockContext {
   return { lines, n, starts, ends, callout, listMember, fences, tables, maths, claimed, kindAt }
 }
 
-/** The top-level block owning the line at `pos`, or null on a blank/unowned line (nothing to grab). */
 export function blockAt(scan: DocScan, pos: number): Block | null {
   const ctx = blockContext(scan)
   const { n, starts, ends, callout, listMember } = ctx
@@ -194,9 +182,8 @@ export function blockAt(scan: DocScan, pos: number): Block | null {
     }
     case 'heading': {
       const sec = headingSections(scan).find((s) => s.from === starts[li])
-      // The section's `to` reaches the blank line before the next heading — the fold wants that span,
-      // a block doesn't: the drag's mover re-fences with one blank, so a trailing blank here would
-      // compound on every reorder (the outline's mover applies the same trim).
+      // The section's `to` reaches the blank before the next heading — the fold wants that span, a block
+      // doesn't: the mover re-fences with one blank, so a trailing blank here compounds on every reorder.
       return sec
         ? {
             from: sec.from,
@@ -231,9 +218,7 @@ export interface BlockStart {
   kind: BlockKind
 }
 
-/** Every draggable block's first-line offset + kind, in document order — the shared basis for where handles
- *  render and where a drag can drop. Single pass over the shared block context; a per-line `blockAt` call
- *  would be O(n²). */
+/** Single pass over the shared block context; a per-line `blockAt` call would be O(n²). */
 export function blockStarts(scan: DocScan): BlockStart[] {
   const ctx = blockContext(scan)
   const { n, starts, callout, listMember } = ctx
@@ -241,10 +226,8 @@ export function blockStarts(scan: DocScan): BlockStart[] {
   for (let i = 0; i < n; i++) {
     const kind = ctx.kindAt(i)
     if (kind === null) continue
-    // Range-backed kinds test by range identity, never by the previous line's kind — a neighbor test
-    // would double-start a block whose interior holds a blank line (kindAt is null there, so the next
-    // line reads as a fresh start inside a code fence) and would swallow the second of two glued
-    // blocks (the previous line is the first block's closer, same kind).
+    // Range-backed kinds test by range identity, never the previous line's kind: a neighbor test would
+    // double-start a block whose interior holds a blank line, and swallow the second of two glued blocks.
     let first: boolean
     switch (kind) {
       case 'callout':
@@ -269,7 +252,7 @@ export function blockStarts(scan: DocScan): BlockStart[] {
         first = ctx.claimed(i - 1)
         break
       default:
-        first = true // heading, hr, and the embed kinds are always single-line block starts
+        first = true
     }
     if (first) out.push({ from: starts[i], kind })
   }

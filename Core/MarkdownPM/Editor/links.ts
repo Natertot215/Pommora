@@ -13,14 +13,11 @@ type GetApi = () => ConnectionsApi | undefined
 
 interface LinkHit extends PointerTarget {
   url: string
-  /** What the target names — a page to navigate to, a URL to hand the system, or neither. */
   target: MdTarget
 }
 
-// The external markdown link under a pointer gesture. `posAtCoords` clamps to the nearest rendered
-// position, and a valid link's `[` and `](url)` are replaced to zero width, so a click past a short
-// label resolves back onto its last character — following that would launch the browser for a link
-// never touched. An invalid link draws its whole syntax, so there's nothing beside it to clamp from.
+// `posAtCoords` clamps to the nearest rendered position, and a valid link's markers are replaced to zero width, so
+// a click past a short label resolves onto its last character — following that would launch the browser untouched.
 function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
@@ -33,7 +30,6 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   const url = linkTarget(line.text, tk)
   if (!url) return null
   const target = resolveMdTarget(getApi(), url)
-  // An internal target is drawn as a connection, so it answers to that class too.
   const el = (event.target as HTMLElement).closest?.(
     `.${MD_LINK_CLASS}, .md-link-invalid, .md-connection-resolved`,
   )
@@ -47,9 +43,8 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   }
 }
 
-/** Where a link leads — the one answer the body's click path, the wikilink's, and a resting table
- *  cell's all read. Null when it names nothing to follow, and null for anything inside a glance:
- *  the pane is a glance surface by contract, so neither a page nor a website follows there. */
+/** The one answer the body's click path, the wikilink's, and a resting table cell's all read. Null inside a glance:
+ *  the pane is a glance surface by contract, so nothing follows there. */
 export function followTarget(
   target: MdTarget,
   url: string,
@@ -66,9 +61,7 @@ export function followTarget(
   return () => openWebLink(url)
 }
 
-/** What a dwell over a markdown link arms — a page glance for a target naming a page, a live site
- *  glance for a web address. The attach gate refuses anything but http(s), so a mailto: arms
- *  nothing rather than a blank pane. */
+/** The attach gate refuses anything but http(s), so a mailto: arms nothing rather than a blank pane. */
 export function dwellTarget(
   target: MdTarget,
   url: string,
@@ -85,8 +78,7 @@ export function dwellTarget(
   return hasWebScheme(web) ? () => glance({ kind: 'site', url: web }, el) : null
 }
 
-// Follow a markdown link on a plain single-click, on the shared pointer path. A link naming a page
-// is drawn as a connection and raises the same glance — the connection handler can't do it, because
+// A link naming a page is drawn as a connection and raises the same glance — the connection handler can't, because
 // its hit-test reads wikiLink tokens and this is a `link`.
 export function markdownLinkClicks(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
@@ -110,8 +102,7 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
             : {
                 kind: 'url',
                 url: hit.url,
-                // The way back into this editor, closed over the span the menu was popped on. Its
-                // absence is what a read-only surface offers instead of a refusal.
+                // The way back into this editor, closed over the span the menu was popped on.
                 apply: view.state.readOnly
                   ? undefined
                   : (action) => applyUrlLinkAction(view, action, hit.range),

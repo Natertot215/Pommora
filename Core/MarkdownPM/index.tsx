@@ -6,7 +6,11 @@ import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownDecorations } from './Editor/decorations'
 import { markdownInput } from './Editor/input'
-import { tableWidgetExtension, applySavedHeadingCols, type TableHeadingColsApi } from './Tables'
+import {
+  tableWidgetExtension,
+  applySavedHeadingCols,
+  type TableHeadingColsApi,
+} from './Tables/widget'
 import { listDragExtension } from './Editor/listDrag'
 import { listRenumberOnDelete } from './Editor/listRenumber'
 import { blockHandles, blockGripHover } from './Editor/blockHandles'
@@ -84,33 +88,23 @@ interface Props {
   path?: string
   cover?: string
   onEditIcon?: () => void
-  /** The page's glyph and whether its header draws it — chrome, so the host owns the flag. */
   icon?: string
   iconHidden?: boolean
   onToggleIcon?: () => void
   zoom?: number
   connections?: ConnectionsApi
-  /** The embed-host chain above this editor — feeds the tile facet (cycle guard + nesting depth). */
   embedAncestors?: readonly string[]
-  /** Per-machine tile heights for this page; absent (window, blocks) hides the resize handle. */
   embedHeights?: EmbedHeightsApi
   embedZooms?: EmbedHeightsApi
   folds?: FoldsApi
-  /** Which page this editor draws. Footnote disclosure state for that page is resolved and written
-   *  through the store's one row rather than per-host copies. Absent takes the nexus-wide default. */
   pageId?: string
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
   autoFocus?: boolean
   readOnly?: boolean
   edgeFade?: boolean
-  /** Warm-tab state seam — page editors only; embeds/blocks mount cold. */
   warm?: WarmSeam
-  /** Whether this editor's tab is the shown one. Absent = active; a parked tab (false) pauses its
-   *  webpage guests' media when the preference is on. */
   active?: boolean
-  /** Handle registration for hosts that reach into this editor programmatically (the page
-   *  surface's outline seam): the live view at mount, null at teardown. */
   register?: (view: EditorView | null) => void
 }
 
@@ -142,7 +136,6 @@ export function MarkdownEditor({
   active = true,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
-  /** Seeds the readOnly compartment at mount; compared on change to tell a real flip from a re-render. */
   const lastReadOnly = useRef(readOnly)
   const host = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
@@ -172,15 +165,11 @@ export function MarkdownEditor({
   registerRef.current = register
   const lastFormatRef = useRef<FormatState | null>(null)
 
-  // Connection colors and embed tiles resolve against the live page index, but decorations rebuild
-  // only on editor updates — dispatch an empty transaction on real tree changes (echo pushes keep
-  // object identity) so a rename/delete/restore doesn't wait for the next caret move.
+  // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
   useEffect(() => {
     if (connections) viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
   }, [connections])
 
-  // The line-count flip rewraps code lines from CSS alone — CM never hears it, so re-measure or a
-  // stale height map mis-seats clicks on wrapped lines.
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
   useEffect(() => {
     viewRef.current?.requestMeasure()
@@ -191,16 +180,12 @@ export function MarkdownEditor({
     if (view) rerenderWebTiles(view)
   }, [active])
 
-  // Read from the live slice, not the tree, so flipping the setting reaches an open page immediately
-  // and every surface drawing this page agrees.
   const citesShown = useSession((s) => citationsVisible(s, pageId))
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
   const pageIdRef = useRef(pageId)
   pageIdRef.current = pageId
-  // Mount seeds on the nexus-wide default (per-page overrides fetch after); the first change this
-  // effect carries to the live view is still that seed settling in, not a user toggle — animating it
-  // would play a collapse on a page nobody touched.
+  // The first change this effect carries is the nexus-wide seed settling in, not a user toggle.
   const followed = useRef(false)
   useEffect(() => {
     const view = viewRef.current
@@ -209,9 +194,6 @@ export function MarkdownEditor({
     followed.current = true
   }, [citesShown])
 
-  // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
-  // autocomplete state machine is shared with table cells; this editor supplies the candidate source
-  // (embed form over-fetches its pool to survive its filter) and the inline pane below.
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
     (q) => {
@@ -233,15 +215,10 @@ export function MarkdownEditor({
     const parent = host.current
     if (!parent) return
     const extensions = [
-      // Editable stays true even in the read-only portal: MarkdownPM renders selection natively (no
-      // drawSelection layer), so the at-rest embed must remain a focusable contenteditable to be
-      // selectable at all — never blocked by a non-editable DOM.
+      // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
       EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      // EditorState.readOnly is ADVISORY — it stops the view's own input pipeline but NOT a
-      // programmatic view.dispatch({changes}) (formatKeymap, the list/table/checkbox commands). With a
-      // focusable read-only portal that would let Cmd+B edit + autosave a read-only surface, so drop
-      // every doc-changing transaction while read-only at the one sink that catches them all.
+      // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       Prec.highest(
@@ -255,13 +232,10 @@ export function MarkdownEditor({
       markdownInput,
       formatKeymap,
       keymap.of([...defaultKeymap, ...historyKeymap]),
-      // Language/parse support ONLY — its default keymap and paste-as-link rewriting are disabled
-      // because they ignore this editor's own conventions and settings; `pasteLink` owns that instead.
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
       EditorView.lineWrapping,
-      // iOS soft-keyboard hints — no-ops on desktop; keep the on-screen keyboard from
-      // auto-capitalizing and "correcting" Markdown / [[wikilinks]].
+      // iOS soft-keyboard hints, no-ops on desktop — mobile scaffolding.
       EditorView.contentAttributes.of({
         autocapitalize: 'sentences',
         autocorrect: 'off',
@@ -269,13 +243,10 @@ export function MarkdownEditor({
         enterkeyhint: 'enter',
       }),
       markdownDecorations(() => connectionsRef.current),
-      // The connections getter lets `[[…]]` render + autocomplete inside table cells.
       tableWidgetExtension(
         () => connectionsRef.current,
         (indices) => tableHeadingColsRef.current?.save(indices),
       ),
-      // A claimed lone-line ![[Title]] renders as a live page tile (its own StateField — the
-      // decoration ViewPlugin never reaches CM's height map).
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
@@ -287,8 +258,6 @@ export function MarkdownEditor({
       listDragExtension,
       listRenumberOnDelete,
       blockHandles,
-      // Reveal a grip only while the pointer is in its gutter strip, not over the line's text; the
-      // hot-line callback tells main to stand its generic editor menu down there.
       blockGripHover((line) =>
         dialer().tell(
           'editor:grip-hot',
@@ -296,16 +265,12 @@ export function MarkdownEditor({
         ),
       ),
       blockDragExtension,
-      // Callout and blockquote grips drag their own box, gated on the head/first line.
       calloutDragExtension,
       blockquoteDragExtension,
-      // Right-press a block grip for its native menu (the flag above suppresses the generic one there).
       gripMenu,
       customCaret,
       customSelection,
-      // The hidden `> [!type] ` callout head is atomic — caret can't enter it, so the tag can't be corrupted.
       calloutAtomic,
-      // Reject any delete that would erode a callout body line's `>` prefix in place (drop it out of the box).
       calloutGuard,
       citationGuard,
       connectionClicks(() => connectionsRef.current),
@@ -326,8 +291,6 @@ export function MarkdownEditor({
       aliasOnLeave(() => connectionsRef.current),
       linkRest,
       linkTyping,
-      // Close the autocomplete when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
-      // editor has the same handler; without it the pane floats over unrelated UI.
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
@@ -342,17 +305,13 @@ export function MarkdownEditor({
         },
       ),
       EditorView.updateListener.of((u) => {
-        if (!(u.docChanged || u.selectionSet || u.focusChanged)) return // skip scroll/geometry-only updates
-        // Focus landing here makes this editor the menu's subject, for the state it pushes and the
-        // action it gets back. Parked tabs and resting embeds stay mounted and hear both.
+        if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
         if (u.focusChanged && u.view.hasFocus) claimEditorMenu(u.view)
         const doc = docString(u.state.doc)
         if (u.docChanged) onChangeRef.current(doc)
 
         if (ownsEditorMenu(u.view)) {
           const sel = u.state.selection.main
-          // FormatState is flat primitives — a field compare beats allocating a JSON string per
-          // caret move just to diff it.
           const fs = readFormatState(
             doc,
             sel.from,
@@ -370,15 +329,11 @@ export function MarkdownEditor({
           }
         }
 
-        // Read-only mounts never autocomplete: a click seating the caret inside a rendered
-        // [[Title]] would otherwise pop the picker over a surface that can't accept an edit —
-        // a locked embed, or the glance gazing at its own links.
+        // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly)
           detectConnectionQuery(u.view, setAc, true)
       }),
     ]
-    // Warm rehydration seeds the mount from cached state (doc + selection + undo history; folds
-    // persist separately). A corrupt or cross-version payload falls back to a cold mount.
     const saved = warm?.restore()
     let warmState: EditorState | null = null
     if (saved?.editorState !== undefined) {
@@ -397,14 +352,11 @@ export function MarkdownEditor({
     )
     viewRef.current = view
     registerRef.current?.(view)
-    // Track scroll continuously for the unmount capture — at cleanup time React may have already
-    // detached the DOM, where reading scrollTop yields 0 and would wipe the saved position.
+    // At cleanup time React may have already detached the DOM, where reading scrollTop yields 0 and would wipe the saved position.
     let lastScrollTop = saved?.scrollTop ?? 0
     const onWarmScroll = (): void => {
       lastScrollTop = view.scrollDOM.scrollTop
     }
-    // A host that re-slots this editor's DOM wipes scroll without firing a scroll event; the heal
-    // registry runs this self-check pre-paint and reasserts if the scroller reads 0 but the tracker doesn't.
     let unregisterHeal: (() => void) | null = null
     if (warm) {
       view.scrollDOM.addEventListener('scroll', onWarmScroll, { passive: true })
@@ -413,28 +365,18 @@ export function MarkdownEditor({
           view.scrollDOM.scrollTop = lastScrollTop
       })
     }
-    // The top fade is gated to need a full fade-height of real scroll first, so a first line at rest
-    // — or CM's autofocus scroll offset — never blurs.
     if (edgeFade) view.scrollDOM.classList.add('over-scroll', 'over-scroll-gated')
-    // Click-to-edit surfaces (block tiles) mount THIS editor in response to a click
-    // that landed on the at-rest render — without a focus the caret goes nowhere.
     if (autoFocus && !lastReadOnly.current) view.focus()
     applyCitationsVisibility(view, citesShownRef.current, false)
-    // Restore this page's saved folds once the view's lines exist (the widget clones them). The warm
-    // scroll restores AFTER folds settle — folding changes content height, so restoring first would
-    // land on a pre-fold offset.
+    // The warm scroll restores AFTER folds settle: folding changes content height, so restoring first lands on a pre-fold offset.
     const restoreScroll = (): void => {
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
       if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
     }
-    // Embed heights load alongside — tile heights move content by hundreds of px, so a scroll
-    // restored before they land would anchor the wrong content.
     const foldsLoad = foldsRef.current?.load()
     const heightsLoad = embedHeightsRef.current?.load()
     const zoomsLoad = embedZoomsRef.current?.load()
     if (foldsLoad || heightsLoad || zoomsLoad)
-      // allSettled, never all — one load failing must not drop the others' results, and the scroll
-      // restore runs regardless (a preference that can't be read degrades to defaults, not a hang).
       void Promise.allSettled([foldsLoad, heightsLoad, zoomsLoad]).then(([keys, h, z]) => {
         if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
         if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
@@ -451,7 +393,6 @@ export function MarkdownEditor({
       })
     else requestAnimationFrame(restoreScroll)
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
-    // The header parks on scroll via a CSS scroll-driven animation (Styles.css) — no JS scroll handler.
     const unsubMenu = menuRef.current?.onAction((action) => {
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
     })
@@ -473,7 +414,6 @@ export function MarkdownEditor({
     // Mount once per page — the host keys on path; initialBody is the seed, not a live binding.
   }, [])
 
-  // Reconfigure the read-only gate on the live view — no remount, same doc and decorations.
   useEffect(() => {
     const view = viewRef.current
     if (!view || readOnly === lastReadOnly.current) {
@@ -484,18 +424,14 @@ export function MarkdownEditor({
     view.dispatch({
       effects: readOnlyGate.current.reconfigure(EditorState.readOnly.of(readOnly)),
     })
-    // A press inside the surface is what flips it, and that press already seated a caret — but
-    // `focus()` writes the state's own selection back over whatever the DOM holds, discarding it
-    // and costing a second click. Focus is taken only for an entry from outside the surface.
+    // The press that flips this already seated a caret, and `focus()` would write the state's selection back over it.
     if (!readOnly && autoFocus && !view.hasFocus) view.focus()
   }, [readOnly, autoFocus])
 
-  // Body top-padding tracks the header height, so toggling the banner resizes the gutter automatically.
   useEffect(() => {
     const header = titleRef.current
     const shell = shellRef.current
     if (!header || !shell) return
-    // --header-zone lives on the shell so both the body's top padding and the header's scroll-park range read it.
     const apply = (): void => shell.style.setProperty('--header-zone', `${header.offsetHeight}px`)
     apply()
     const ro = new ResizeObserver(apply)

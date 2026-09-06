@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view'
-import { headingOutline, sectionEnd } from '../MarkdownPM/Editor/folding'
+import { headingOutline, sectionEnd } from '../MarkdownPM/Editor/headingScan'
 import { travelTo } from '../MarkdownPM/Editor/travel'
 import { blockMoveChanges } from '../MarkdownPM/Editor/listDragModel'
 import { headingParts } from '../MarkdownPM/Detect'

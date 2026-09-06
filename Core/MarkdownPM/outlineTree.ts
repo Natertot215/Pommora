@@ -1,4 +1,4 @@
-import type { OutlineHeading } from './Editor/folding'
+import type { OutlineHeading } from './Editor/headingScan'
 
 export interface OutlineNode extends OutlineHeading {
   children: OutlineNode[]

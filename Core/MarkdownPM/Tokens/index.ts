@@ -2,17 +2,16 @@
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from '../Parser'
 import { codeMask } from '@pommora/core/Connections/markdownCode'
+import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import {
   isInlineMathContent,
-  embedRegex,
-  markdownLinkRegex,
   inlineCodeRegex,
   highlightRegex,
   blockLatexRegex,
   inlineLatexRegex,
   markerRegex,
 } from '../Detect'
-import { linkSpans, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
 
 export type TokenKind =
   | 'italic'
@@ -35,13 +34,11 @@ export interface Token {
   markerRanges: [number, number][]
 }
 
-/** What a `link` token's `( )` holds, still encoded.*/
 export function linkTarget(text: string, tk: Token): string {
   const [, close] = tk.markerRanges
   return text.slice(close[0] + 2, close[1] - 1)
 }
 
-/** Re-base a token onto absolute document offsets.*/
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
   return {
@@ -71,7 +68,7 @@ function childSpan(node: MdNode): Span | null {
   return start != null && end != null ? [start, end] : null
 }
 
-// Marker spans come from the tighter of (delimiter width) and (child span), robust when an inner node abuts the run.
+// Marker spans come from the tighter of delimiter width and child span, robust when an inner node abuts the run.
 function pushEmphasis(
   node: MdNode,
   kind: 'italic' | 'bold' | 'strikethrough',
@@ -143,9 +140,7 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     const s = linkSpans(m)
     if (!s || inCode(s.full[0])) continue
     const [fs, fe] = s.full
-    // An alias pulls the two meanings apart — the words shown and the key resolved. The leading
-    // marker swallows `[[Title|`. An opened-but-empty one shows nothing, so it stays a plain link
-    // until something is written in it.
+    // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
     const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
     const shown = alias ?? s.title
     tokens.push({
@@ -153,9 +148,7 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
       range: [fs, fe],
       contentRange: shown,
       ...(alias ? { resolveRange: s.title } : {}),
-      // Everything either side of what's shown, so the markers tile the whole token — a renderer
-      // drawing only the content span can't disagree with one hiding markers. A pipe with nothing
-      // after it rides the closer.
+      // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
       markerRanges: [
         [fs, shown[0]],
         [shown[1], fe],
@@ -169,22 +162,19 @@ export function tokenize(text: string): Token[] {
   const ast = parse(text)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
-  // One mask per body, queried per match — the per-offset form re-walks the text for every one.
   const inCode = codeMask(text)
   const scan = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
-  // Code tokenizes FIRST so connections and links inside spans are dropped — a [[link]] in code
-  // must render (and click) as literal code, not a live connection.
+  // Code tokenizes FIRST so a [[link]] in code renders and clicks as literal code, not a live connection.
   const code = scan({ kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
   const embeds = scan({
     kind: 'embed',
-    re: embedRegex(),
+    re: pageEmbedPattern(),
     open: 3,
     close: 2,
   })
-  // `[[Title]](target)` stays a connection trailed by literal parens, matching what Obsidian shows.
-  // CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't
-  // match, so renaming its target would rot it silently.
+  // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read
+  // it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
   const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
   const links = scan({
     kind: 'link',
@@ -229,9 +219,7 @@ export function tokenize(text: string): Token[] {
   return tokens
 }
 
-/** Which tokens reveal their syntax. `restingAt` is where a link was just FINISHED, if anywhere —
- *  the one caret position that leaves a link rendered, only because the finishing gesture put the
- *  caret there. */
+/** `restingAt` is where a link was just FINISHED — the one caret position that leaves a link rendered. */
 export function activeTokenIndices(
   tokens: Token[],
   selStart: number,
@@ -240,8 +228,7 @@ export function activeTokenIndices(
 ): Set<number> {
   const active = new Set<number>()
   tokens.forEach((tk, i) => {
-    // A marker never reveals its syntax at any caret position — its label is invisible plumbing,
-    // and showing `[^7]` under a glyph reading 2 is the contradiction this opt-out exists to prevent.
+    // A marker never reveals its syntax: showing `[^7]` under a glyph reading 2 is the contradiction this opt-out prevents.
     if (tk.kind === 'citationRef') return
     const [s, e] = tk.range
     if (selStart !== selEnd) {
@@ -249,7 +236,6 @@ export function activeTokenIndices(
       return
     }
     const caret = selStart
-    // A link just finished leaves the caret on its closer and stays rendered there.
     if (caret === e && caret === restingAt && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
     if (caret >= s && caret <= e) active.add(i)
   })
