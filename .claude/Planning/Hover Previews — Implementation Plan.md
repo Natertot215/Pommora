@@ -636,7 +636,7 @@ useEffect(() => {
 - [ ] **Phase 1** — One setting owns persistence · base `38a4d8e2c`
   - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `c80e39af1`
   - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `3a03a5ef6`
-  - [x] Task 3 — Picker replaces slider (hazard window) · `PENDING3`
+  - [x] Task 3 — Picker replaces slider (hazard window) · `3fd05f8f3`
 - [ ] **Phase 2** — Dwell slots
   - [ ] Task 4 — `detail`/`views` dwell values · `<commit>`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
