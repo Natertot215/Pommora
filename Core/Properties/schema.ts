@@ -5,6 +5,7 @@ import {
   type PropertyDefinition,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
+import { normalizeTitle } from '../Connections/connections'
 
 /** Empty and reserved-prefix names are refused before this — `invalidPropertyName` owns that gate at the callers. */
 export function validateName(
@@ -13,8 +14,8 @@ export function validateName(
   excludeId?: string,
 ): Result<null> {
   const trimmed = name.trim()
-  const lower = trimmed.toLowerCase()
-  const clash = existing.some((d) => d.id !== excludeId && d.name.trim().toLowerCase() === lower)
+  const lower = normalizeTitle(trimmed)
+  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.name) === lower)
   if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(trimmed))
   return ok(null)
 }

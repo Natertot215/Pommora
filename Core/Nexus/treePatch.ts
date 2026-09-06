@@ -1,7 +1,7 @@
 // The one set of tree transforms both processes apply — the renderer optimistically, main as
 // canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
-import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '../Pages/mutateRequest'
+import { NEW_PAGE_SLOT, type MutateRequest } from '../Pages/mutateRequest'
 import { titleFromPath } from '../Connections/connections'
 import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
@@ -495,10 +495,6 @@ export function patchNodeInTree(
 /** Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
 export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   return reorderById(arr, order, (item) => item.id)
-}
-
-export function reorderTopInTree(tree: NexusTree, _key: StateOrderKey, order: string[]): NexusTree {
-  return { ...tree, collections: byOrder(tree.collections, order) }
 }
 
 export function reorderChildrenInTree(

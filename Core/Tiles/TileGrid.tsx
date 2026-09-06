@@ -21,7 +21,7 @@ import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import './tile-base.css'
 import './tile-grid.css'
 
-export interface TileGridProps {
+interface TileGridProps {
   layout: TileLayout
   onLayoutChange: (layout: TileLayout) => void
   renderTile: (id: string, rect: Rect) => React.ReactNode

@@ -51,7 +51,7 @@ const selectOption = z.looseObject({
 })
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
-export const statusGroupId = z.string()
+const statusGroupId = z.string()
 export type StatusGroupId = z.infer<typeof statusGroupId>
 
 const statusOption = z.looseObject({
@@ -137,7 +137,7 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
-export const RESERVED_NAME_PREFIX = '$'
+const RESERVED_NAME_PREFIX = '$'
 // The retired key and stamp names stay refused: a user property under any of them would collide with the vault's own history.
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
   ...RETIRED_ID_KEYS,

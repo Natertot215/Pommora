@@ -10,7 +10,6 @@ import {
   renameNodeInTree,
   reorderChildrenInTree,
   reorderPagesInTree,
-  reorderTopInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
@@ -103,40 +102,27 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 }),
               host()
                 .ask('citations:get')
-                .then((all) => set({ citationsShown: all }))
-                .catch(() => undefined), // every page falls back to the nexus-wide default
+                .then((all) => set({ citationsShown: all })),
               host()
                 .ask('linkTitles:get')
-                .then((titles) => set({ linkTitles: titles }))
-                .catch(() => undefined), // url cells fall back to the domain
+                .then((titles) => set({ linkTitles: titles })),
               host()
                 .ask('activeViews:get')
-                .then((views) => set({ activeViews: views }))
-                .catch(() => undefined), // surfaces fall back to the first saved view
+                .then((views) => set({ activeViews: views })),
               host()
                 .ask('aliases:get')
-                .then((aliases) => set({ pageAliases: aliases }))
-                .catch(() => undefined), // the picker offers titles only
+                .then((aliases) => set({ pageAliases: aliases })),
             ])
             // A refetch must not re-read the sidecar: its debounced write trails the live tab set.
             if (get().activeTabId === '') {
               // Disk leads only here and on the external-edit push, never again mid-session.
               const [read, windows, stored] = await Promise.all([
-                host()
-                  .ask('nav:read')
-                  .catch(() => null),
-                host()
-                  .ask('windows:load')
-                  .catch(() => null),
-                host()
-                  .ask('tabs:load')
-                  .catch(() => null),
+                host().ask('nav:read'),
+                host().ask('windows:load'),
+                host().ask('tabs:load'),
               ])
-              if (windows?.ok) set({ windowsFile: windows.value })
-              get().restoreNavigation(
-                read?.ok ? read.value : null,
-                stored?.ok ? stored.value : null,
-              )
+              if (windows.ok) set({ windowsFile: windows.value })
+              get().restoreNavigation(read.ok ? read.value : null, stored.ok ? stored.value : null)
             }
             break
           case 'empty':
@@ -221,7 +207,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             patched = reorderChildrenInTree(cur, req.parentPath, req.order)
             break
           case 'reorderTop':
-            patched = reorderTopInTree(cur, req.key, req.order)
+            patched = reorderChildrenInTree(cur, '', req.order) ?? cur
             break
           case 'setIcon':
             patched = patchNodeInTree(cur, req.path, { icon: req.icon })

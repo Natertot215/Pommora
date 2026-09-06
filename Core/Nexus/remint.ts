@@ -10,12 +10,12 @@ import { tileDocPath } from '../Locations/paths'
 import { readKey, writeKey } from '../Platform/localState'
 import { newContentId, newId } from '../Locations/ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
-import { mergeFrontmatter, splitEnvelope, readFrontmatterFields } from '../IO/pageFile'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { readWindowsState, writeWindowsState } from '../Interface/windowState'
 import { SIDECAR_FILENAME } from '../Locations/paths'
 import type { Baseline, Projection } from './remintLedger'
 
-export interface RemintTarget {
+interface RemintTarget {
   id: string
   kind: RecordKind
   path: string
@@ -41,7 +41,7 @@ export function adjudicate(
   return { remint, defer }
 }
 
-export interface RemintedEntity {
+interface RemintedEntity {
   target: RemintTarget
   newId: string
 }
@@ -86,7 +86,7 @@ async function remintPageFile(absFile: string, oldId: string, fresh: string): Pr
   return rewritePageSerialized(absFile, (content) => {
     // Read fresh inside the lock: a file that no longer carries the contested id moved under
     // us, and a blind stamp would overwrite an identity the walk never adjudicated.
-    if (readFrontmatterFields(content)[ID_KEY] !== oldId) return null
+    if (splitFrontmatter(content)[ID_KEY] !== oldId) return null
     return mergeFrontmatter(content, { [ID_KEY]: fresh }, [ID_KEY], splitEnvelope(content).body)
   })
 }

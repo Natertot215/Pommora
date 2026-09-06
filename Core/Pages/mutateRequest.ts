@@ -20,7 +20,7 @@ export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
 
 export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'navview' | 'page'
 
-export type MutableContainerKind = 'collection' | 'set'
+type MutableContainerKind = 'collection' | 'set'
 
 /** Checked against the write path's own matrix: a contradicting claim is refused as malformed. */
 export interface RestoreDestination {
@@ -54,9 +54,6 @@ export type MutateRequest =
   | { op: 'emptyBundle'; bundlePath: string }
   | { op: 'setProfileImage'; source: string | null }
   | { op: 'setProfileIcon'; icon: string | null }
-  // ≤30 chars, enforced. Parked: the sidebar NexusHeader that edited it is gone (ribbon rework);
-  // retained for the eventual homepage/settings surface — NOT dead code.
-  | { op: 'setProfileSubtitle'; subtitle: string }
   | { op: 'setBanner'; path: string; kind: BannerOwnerKind; source: string | null }
   | { op: 'setCrop'; image: string; crop: Crop | null }
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }

@@ -11,7 +11,7 @@ import {
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 
-export type LinkValue = { url: string; alias?: string }
+type LinkValue = { url: string; alias?: string }
 
 export type ResolveTitle = (rawTitle: string) => string | null
 

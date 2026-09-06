@@ -37,7 +37,7 @@ import { mergeStyleRecords } from '../viewMerge'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
 import { sameIds } from '../creationOrder'
 
-export interface ViewHostUpward {
+interface ViewHostUpward {
   foldOverrides: { current: (v: SavedView) => SavedView }
   bandBucket: { current: (key: string) => string | null }
   viewRootRef: { current: HTMLElement | null }

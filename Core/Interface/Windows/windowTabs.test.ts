@@ -276,10 +276,8 @@ describe('windowTabs — the NavWindow kind entry (H-2/H-3)', () => {
     ])
   })
 
-  it('the B-2 override toggle persists in the windows file', () => {
+  it('the B-2 override defaults on when the windows file does not name it', () => {
     expect(useSession.getState().windowsFile.navOverride ?? true).toBe(true)
-    useSession.getState().setNavOverride(false)
-    expect(useSession.getState().windowsFile.navOverride).toBe(false)
   })
 })
 

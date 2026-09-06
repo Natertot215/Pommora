@@ -21,7 +21,7 @@ const Ctx = createContext<ViewTileScopeValue | null>(null)
 export const ViewTileScopeProvider = Ctx.Provider
 export const useViewTileScope = (): ViewTileScopeValue | null => useContext(Ctx)
 
-export type ViewWrite =
+type ViewWrite =
   | { kind: 'config'; view: SavedView }
   | { kind: 'state'; state: ViewState }
   | { kind: 'refused' }

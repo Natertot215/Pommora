@@ -256,7 +256,7 @@ function railIntents(
   return rails
 }
 
-export interface CachedLineIntents {
+interface CachedLineIntents {
   perLine: DecoIntent[][]
   /** Held apart from `perLine` because the caret's own line re-derives, and a rail folded in there would go with it. */
   rails: DecoIntent[][]

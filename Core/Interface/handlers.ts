@@ -37,7 +37,6 @@ export function scopeSet<T>(
   expected: string,
 ): (ctx: unknown, key: string, value: T) => Result<null> {
   return (_ctx, key, value) => {
-    if (typeof key !== 'string') return fail('operation-failed', 'A key is required.')
     if (!valid(value)) return fail('operation-failed', expected)
     if (!writeKey(scope, key, isEmptyValue(value) ? null : value)) return NO_NEXUS
     return ok(null)

@@ -3,7 +3,7 @@ import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
 
-export interface RowMenuPending {
+interface RowMenuPending {
   id: number
   items: readonly ActionItem<string>[]
   at: MenuAnchor

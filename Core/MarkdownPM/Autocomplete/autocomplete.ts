@@ -5,7 +5,7 @@ import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
 import type { ConnPage, PageIndex } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 
-export type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
+type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
 
 export interface AutocompleteQuery {
   query: string
@@ -157,7 +157,7 @@ export function connectionInsert(
   return { insert, caret: from + insert.length }
 }
 
-export interface CommitEdit {
+interface CommitEdit {
   changes: { from: number; to: number; insert: string }[]
   opensAlias?: boolean
   anchor: number

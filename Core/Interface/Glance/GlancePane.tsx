@@ -3,13 +3,12 @@ import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
 import { PickerMenu, type PickerDirection } from '@pommora/uix/Pickers/picker-base'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
-import type { WarmSeam } from '../../MarkdownPM/warmSeam'
+import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/ResizeFrame'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
-import { resolveOnlyConnections } from '../../Session/treeIndex'
+import { connectionsFor } from '../../Session/treeIndex'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
-import { fenceWarm } from '../../Navigation/warmTabs'
 import { useSession } from '../../Session/store'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
@@ -74,21 +73,7 @@ export function setGlanceSize(next: GlanceSize): void {
 const warm = new Map<string, { editorState: unknown; scrollTop: number }>()
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
-  return {
-    restore: () => {
-      const kept = fenceWarm(warm.get(id), readPageDetail(path)?.body)
-      if (!kept) warm.delete(id)
-      return kept
-    },
-    capture: (state) => {
-      warm.delete(id)
-      warm.set(id, state)
-      for (const key of warm.keys()) {
-        if (warm.size <= GLANCE_WARM_CAP) break
-        warm.delete(key)
-      }
-    },
-  }
+  return mapWarmSeam(warm, id, () => readPageDetail(path)?.body, GLANCE_WARM_CAP)
 }
 
 const inRect = (r: DOMRect, x: number, y: number): boolean =>
@@ -263,7 +248,7 @@ export function GlancePane(): React.JSX.Element {
   const graceMs = linger !== undefined ? linger * 1000 : LEAVE_GRACE_MS
 
   const tree = useSession((s) => s.tree)
-  const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
+  const resolveOnly = useMemo(() => connectionsFor(tree, { open: () => {} }), [tree])
 
   const focusBefore = useRef<Element | null>(null)
 

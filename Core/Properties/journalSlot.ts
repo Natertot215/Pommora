@@ -4,7 +4,7 @@ import { recordWrite } from '../IO/writeEcho'
 import { machine } from '../Platform/machine'
 import { nexusConfig } from '../Locations/paths'
 
-export interface JournalSlot<J> {
+interface JournalSlot<J> {
   read(root: string): Promise<J | null>
   write(root: string, j: J): Promise<void>
   clear(root: string, own: J): Promise<void>

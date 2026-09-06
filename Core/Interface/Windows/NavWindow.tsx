@@ -8,12 +8,11 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
-import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { showConnectionMenu } from '../Menus/connectionMenu'
 import { moveByKey } from '../../Navigation/navRecents'
-import { pageIndexOf, resolveIndexOf } from '../../Session/treeIndex'
+import { connectionsFor, resolveIndexOf } from '../../Session/treeIndex'
 import { windowTargetOf, useSession } from '../../Session/store'
-import { splitSearch, useNavData } from '../../Navigation/useNavData'
+import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
@@ -82,7 +81,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   }, [])
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
+  const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavRef): void => go(target, onSelected)
@@ -123,17 +122,16 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
   const warmSeam = useWindowWarm(pageScrollRef, pageTarget?.path)
-  const connections = useMemo<ConnectionsApi | undefined>(() => {
-    if (!tree) return undefined
-    const idx = pageIndexOf(tree)
-    return {
-      ...idx,
-      open: (page) => openWindowTab({ id: page.id, path: page.path }),
-      bypass: (page) =>
-        void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      menu: showConnectionMenu,
-    }
-  }, [tree, openWindowTab, select])
+  const connections = useMemo(
+    () =>
+      connectionsFor(tree, {
+        open: (page) => openWindowTab({ id: page.id, path: page.path }),
+        bypass: (page) =>
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
+        menu: showConnectionMenu,
+      }),
+    [tree, openWindowTab, select],
+  )
 
   return (
     <WindowBase
@@ -220,7 +218,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               {viewMode === 'gallery' ? (
                 <NavGallery
                   pins={results ? [] : resolvedPins}
-                  items={results ? results.items : shownRecents}
+                  items={results ? results : shownRecents}
                   frozenLayout={!!results}
                   {...(results ? {} : { onReorderRecent: reorderShownRecent })}
                   onSelect={goClose}
@@ -229,7 +227,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               ) : (
                 <NavList
                   {...(results
-                    ? { items: results.items, extras: results.extras }
+                    ? { items: results }
                     : {
                         pins: resolvedPins,
                         items: shownRecents,

@@ -7,7 +7,7 @@ import { readJsonObject, rmwJsonStrict } from '@pommora/core/IO/atomicWrite'
 import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow'
 import { TRASH_DIR } from '@pommora/core/Locations/nexusPaths'
 
-export interface AppConfig {
+interface AppConfig {
   lastNexusPath?: string
   recents?: string[]
   trashMode?: TrashMode

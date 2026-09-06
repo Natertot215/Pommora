@@ -12,9 +12,9 @@ import type { StoredTab } from '@pommora/core/Interface/Windows/windowRecord'
 import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { navKey } from './navRecents'
-import { reconcileWith, type ReconcileIndex } from '../Session/selection'
+import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 
-export const NEWTAB: TabTarget = { kind: 'newtab' }
+const NEWTAB: TabTarget = { kind: 'newtab' }
 
 /** The newtab sentinel collapses to a single 'newtab' key so dedup keeps at most one NavView tab. */
 export function tabKey(target: TabTarget | NavRef | NewTabSentinel): string {
@@ -136,7 +136,7 @@ export function newTabTab(id: string): Tab {
   return { id, target: NEWTAB, navStack: [], navIndex: -1 }
 }
 
-export interface OpenResult {
+interface OpenResult {
   tabs: Tab[]
   activeTabId: string
 }
@@ -183,7 +183,7 @@ export function pushMru(mru: string[], id: string): string[] {
   return [id, ...mru.filter((m) => m !== id)]
 }
 
-export interface CloseResult {
+interface CloseResult {
   tabs: Tab[]
   activeTabId: string
   mru: string[]
@@ -228,7 +228,7 @@ export function insertUnpinned(tabs: Tab[], activeTabId: string, tab: Tab): Tab[
   return [...tabs.slice(0, at), tab, ...tabs.slice(at)]
 }
 
-export interface ReconcileTabsResult {
+interface ReconcileTabsResult {
   tabs: Tab[]
   activeTabId: string
   mru: string[]

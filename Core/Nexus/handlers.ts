@@ -1,5 +1,5 @@
-import type { Handlers, HostContext } from '../Contract/handlers'
-import { caught, errText, fail, NO_NEXUS, ok } from '../Contract/result'
+import { type Handlers, type HostContext, withRoot } from '../Contract/handlers'
+import { caught, errText, fail, ok } from '../Contract/result'
 import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -91,7 +91,7 @@ export async function adoptNexus(
   }
 }
 
-export async function mutateDeps(ctx: HostContext): Promise<MutateDeps> {
+async function mutateDeps(ctx: HostContext): Promise<MutateDeps> {
   const root = sessionRoot()
   return {
     trashMode: await ctx.trashMode(),
@@ -133,9 +133,7 @@ export const nexusHandlers = {
 
   // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session,
   // stores, watcher, and recents at the new path.
-  'nexus:rename': async (ctx, newName: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'nexus:rename': withRoot(async (root, ctx, newName: unknown) => {
     if (typeof newName !== 'string') return fail('operation-failed', 'A name is required.')
     const trimmed = newName.trim()
     if (trimmed.length === 0) return fail('operation-failed', 'The name can’t be empty.')
@@ -151,7 +149,7 @@ export const nexusHandlers = {
     await adoptNexus(ctx, newRoot, false)
     pushConfirmed(ctx, getLiveTree())
     return ok(null)
-  },
+  }),
 
   'path:reveal': async (ctx, p: unknown) => {
     const root = sessionRoot()

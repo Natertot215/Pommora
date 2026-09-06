@@ -4,7 +4,7 @@ import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, type CellSpan } from './codec'
 
-export interface RowGeom {
+interface RowGeom {
   cells: CellSpan[]
   segments: [number, number][]
   /** The row line's own span — what a commit replaces when the cell it names has no segment,

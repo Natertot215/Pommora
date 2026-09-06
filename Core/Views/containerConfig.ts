@@ -1,21 +1,13 @@
 // open_in is collection-owned; a Set write is refused.
 
-import { pageCollectionSidecar, pageSetSidecar } from '../Nexus/schemas'
+import { readContainerSidecar, type ContainerKind } from '../Nexus/schemas'
 import type { OpenIn, ViewButton } from './viewRow'
 import { ok, fail, type Result } from '../Contract/result'
-import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
-
-type ContainerKind = 'collection' | 'set'
+import { writeSidecar, withSidecarLock } from '../IO/sidecar'
 
 export type ContainerConfigPatch = {
   open_in?: OpenIn
   view_button?: ViewButton
-}
-
-function readCfgSidecar(folder: string, kind: ContainerKind) {
-  return kind === 'collection'
-    ? readSidecar(folder, 'collection', pageCollectionSidecar)
-    : readSidecar(folder, 'set', pageSetSidecar)
 }
 
 /** Spread only the patch's defined keys, so an explicit `undefined` can't wipe an existing value. */
@@ -34,7 +26,7 @@ export async function setContainerConfig(
     return fail('operation-failed', 'Open In is collection-owned.')
   }
   return withSidecarLock(folder, kind, async () => {
-    const sidecar = await readCfgSidecar(folder, kind)
+    const sidecar = await readContainerSidecar(folder, kind)
     if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
     await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch) })
     return ok(null)

@@ -15,29 +15,12 @@ import { filterNav, type SearchEntry } from './navSearch'
 /** A stable empty index — a fresh literal per render would churn the search callback's deps. */
 const NO_ENTRIES: SearchEntry[] = []
 
-export interface SearchResult {
-  entry: SearchEntry
-  resolved: ResolvedNav | null
-}
-
-export function splitSearch(results: SearchResult[]): {
-  items: ResolvedNav[]
-  extras: { key: string; title: string; kind: string }[]
-} {
-  return {
-    items: results.map((r) => r.resolved).filter((r): r is ResolvedNav => r !== null),
-    extras: results
-      .filter((r) => r.resolved === null)
-      .map((r) => ({ key: r.entry.key, title: r.entry.title, kind: r.entry.target.kind })),
-  }
-}
-
 /** The tree index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {
   resolvedRecents: ResolvedNav[]
   resolvedFavorites: ResolvedNav[]
   resolvedPins: ResolvedNav[]
-  search: (query: string) => SearchResult[]
+  search: (query: string) => ResolvedNav[]
   go: (target: NavRef, onDone?: () => void, opts?: { newTab?: boolean }) => void
 } {
   const tree = useSession((s) => s.tree)
@@ -67,12 +50,11 @@ export function useNavData(): {
   )
 
   const search = useCallback(
-    (query: string): SearchResult[] => {
+    (query: string): ResolvedNav[] => {
       if (!resolveIndex || !query.trim()) return []
-      return filterNav(searchIndex, query).map((entry) => ({
-        entry,
-        resolved: resolveWith(resolveIndex, entry.target),
-      }))
+      return filterNav(searchIndex, query)
+        .map((entry) => resolveWith(resolveIndex, entry.target))
+        .filter((r): r is ResolvedNav => r !== null)
     },
     [searchIndex, resolveIndex],
   )

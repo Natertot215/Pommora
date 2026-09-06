@@ -14,7 +14,7 @@ import {
   type Raw,
   type Rewrite,
   type RewriteText,
-  type SweepResult as GovernedSweepResult,
+  type SweepResult,
   sweepGovernedRoots,
 } from '../Properties/governedSweep'
 import { loadContextWorld } from './contextWrite'
@@ -60,26 +60,18 @@ export interface SweepCapture {
   values: string[]
 }
 
-export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
-
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-async function sweepContextRoots(
+const sweepContextRoots = (
   root: string,
-  rewrite: (raw: Raw, file: string) => Raw | null,
+  raw: Rewrite,
   pageText?: RewriteText,
-): Promise<SweepResult> {
-  const raw: Rewrite<never> = (r, file) => {
-    const next = rewrite(r, file)
-    return next === null ? null : { next }
-  }
-  const { touched, skipped, refused } = await sweepGovernedRoots<never>(
+): Promise<SweepResult> =>
+  sweepGovernedRoots(
     root,
     { kind: 'nexus' },
     pageText ? { text: pageText, sidecars: raw } : { raw },
   )
-  return { touched, skipped, refused }
-}
 
 function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR

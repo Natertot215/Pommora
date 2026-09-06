@@ -22,8 +22,7 @@ import { useSession } from '../../Session/store'
 import { useSaveView } from '../ViewTileScope'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
-import { LayoutToggles } from './LayoutToggles'
-import { CardsOptions } from './CardsOptions'
+import { switchRows, type SwitchEntry } from './switchRows'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
@@ -33,6 +32,45 @@ import { iconForTypeSwitch } from '../viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
+
+const TABLE_SWITCHES: SwitchEntry[] = [
+  {
+    icon: 'columns-3-cog',
+    label: 'Column Icons',
+    key: 'hide_column_icons',
+    invert: true,
+    defaultOn: true,
+  },
+  { icon: 'table', label: 'Hide Borders', key: 'hide_borders' },
+  { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
+]
+
+const CARD_SWITCHES: SwitchEntry[] = [
+  { icon: 'map', label: 'Hide Location', key: 'hide_location' },
+  { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
+  { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
+  { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
+]
+
+function ViewSwitches({
+  source,
+  view,
+  switches,
+  separated,
+}: {
+  source: CollectionNode | SetNode
+  view: SavedView
+  switches: SwitchEntry[]
+  separated?: boolean
+}): React.JSX.Element {
+  const saveView = useSaveView(source)
+  return (
+    <>
+      {separated ? <MenuSeparator flush /> : null}
+      <MenuIndex sections={[{ rows: switchRows(switches, view, (next) => void saveView(next)) }]} />
+    </>
+  )
+}
 
 const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 const TYPE_GLYPH: Record<ViewType, IconName> = {
@@ -162,7 +200,7 @@ export function LayoutFrame({
           header={<MenuTopRow label="Views" current="Layout" onBack={() => setFrame(null)} />}
           maxHeight={VIEWSETTINGS_MAX_HEIGHT}
         >
-          <CardsOptions source={source} view={view} />
+          <ViewSwitches source={source} view={view} switches={CARD_SWITCHES} />
         </MenuScrollFrame>
       ) : (
         <VisibilityList
@@ -173,7 +211,7 @@ export function LayoutFrame({
           current="Layout"
           maxHeight={VIEWSETTINGS_MAX_HEIGHT}
           onBack={() => setFrame(null)}
-          footer={<LayoutToggles source={source} view={view} />}
+          footer={<ViewSwitches source={source} view={view} switches={TABLE_SWITCHES} separated />}
         />
       )
     ) : frame === 'group' ? (
@@ -259,12 +297,9 @@ export function LayoutFrame({
           ]}
         />
       ) : view.type === 'table' ? (
-        <LayoutToggles source={source} view={view} />
+        <ViewSwitches source={source} view={view} switches={TABLE_SWITCHES} separated />
       ) : (
-        <>
-          <MenuSeparator flush />
-          <CardsOptions source={source} view={view} />
-        </>
+        <ViewSwitches source={source} view={view} switches={CARD_SWITCHES} separated />
       )}
     </MenuScrollFrame>
   )

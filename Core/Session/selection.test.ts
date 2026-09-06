@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
-import { reconcileSelection } from './selection'
+import { reconcileSelection } from './reconcileSelection'
 
 function tree(pages: { id: string; path: string }[]): NexusTree {
   return {

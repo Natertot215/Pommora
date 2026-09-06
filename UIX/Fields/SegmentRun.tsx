@@ -8,7 +8,7 @@ import { FileLabel } from '../Labels/recipes'
  *  three files, one attribute, so it is spelled once. */
 export const SEGMENT_INDEX_ATTR = 'data-segment-index'
 
-export interface SegmentEntry {
+interface SegmentEntry {
   key: string
   label: string
   /** Rendered before the label, overriding whatever the label's own name would derive. A run whose

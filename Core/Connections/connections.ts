@@ -18,7 +18,7 @@ export function pageLinkPattern(): RegExp {
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-export interface LinkSpans {
+interface LinkSpans {
   full: [number, number]
   title: [number, number]
   alias: [number, number] | null

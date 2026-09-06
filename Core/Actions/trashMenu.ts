@@ -2,16 +2,11 @@
 
 import type { ActionItem } from './menuModel'
 import { destinationRows, type MoveTarget } from './pageMenu'
-import type { DateFormat } from '../Properties/columnStyles'
+import { DATE_FORMAT_LABELS, type DateFormat } from '../Properties/columnStyles'
 
-export type TrashMenuAction =
-  | 'restore'
-  | 'delete'
-  | 'restoreAll'
-  | 'deleteAll'
-  | `restoreTo:${string}`
+type TrashMenuAction = 'restore' | 'delete' | 'restoreAll' | 'deleteAll' | `restoreTo:${string}`
 
-export interface TrashMenuContext {
+interface TrashMenuContext {
   /** The renderer decides: a right-click on an unchecked row acts on that row alone, whatever else is checked. */
   batch: boolean
   /** Absent means the recorded home resolves and Restore acts without asking. */
@@ -19,7 +14,7 @@ export interface TrashMenuContext {
 }
 
 /** A count in the label would be the first anywhere in the app; the plural says as much. */
-export function trashMenuLabels(batch: boolean): { restore: string; delete: string } {
+function trashMenuLabels(batch: boolean): { restore: string; delete: string } {
   return batch
     ? { restore: 'Restore All', delete: 'Delete All' }
     : { restore: 'Restore', delete: 'Delete' }
@@ -43,14 +38,11 @@ export function trashMenuItems(ctx: TrashMenuContext): ActionItem<TrashMenuActio
 }
 
 /** A hand-edited settings file may still name any other `DateFormat`, and the column honors it. */
-export const TRASH_DATE_FORMATS: { value: DateFormat; label: string }[] = [
-  { value: 'monthDayYear', label: 'Short Date' },
-  { value: 'full', label: 'Full Date' },
-]
+const TRASH_DATE_FORMATS = ['monthDayYear', 'full'] as const satisfies readonly DateFormat[]
 
-export type TrashColumnAction = `format:${DateFormat}` | 'toggleTime'
+type TrashColumnAction = `format:${DateFormat}` | 'toggleTime'
 
-export interface TrashColumnContext {
+interface TrashColumnContext {
   format: DateFormat
   /** Whether the clock currently shows — the action names the state it moves to. */
   timeShown: boolean
@@ -61,11 +53,11 @@ export function trashColumnMenuItems(ctx: TrashColumnContext): ActionItem<TrashC
   return [
     {
       label: 'Format',
-      action: `format:${TRASH_DATE_FORMATS[0].value}`,
+      action: `format:${TRASH_DATE_FORMATS[0]}`,
       submenu: TRASH_DATE_FORMATS.map((f) => ({
-        label: f.label,
-        action: `format:${f.value}`,
-        checked: f.value === ctx.format,
+        label: DATE_FORMAT_LABELS[f],
+        action: `format:${f}`,
+        checked: f === ctx.format,
       })),
     },
     { label: ctx.timeShown ? 'Hide Time' : 'Show Time', action: 'toggleTime' },

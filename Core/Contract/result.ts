@@ -3,7 +3,7 @@
 
 /** The finite vocabulary of failure codes — a closed union so the renderer can switch on
  *  it exhaustively (and a typo'd code is a compile error, not a silent runtime miss). */
-export type ErrorCode =
+type ErrorCode =
   | 'not-found'
   | 'exists'
   | 'invalid-name'

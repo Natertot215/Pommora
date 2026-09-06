@@ -1,7 +1,7 @@
 import type { Crop } from '../Nexus/schemas'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-export interface CoverStyle {
+interface CoverStyle {
   backgroundSize: string
   backgroundPosition: string
   backgroundColor: string
@@ -33,7 +33,7 @@ export function panToCrop(crop: Crop, dx: number, dy: number): Crop {
   return { ...crop, x: clamp(crop.x + dx, 0, 1), y: clamp(crop.y + dy, 0, 1) }
 }
 
-export interface CoverRect {
+interface CoverRect {
   left: number
   top: number
   width: number

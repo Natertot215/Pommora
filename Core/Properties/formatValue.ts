@@ -11,26 +11,20 @@ import type { NumberConfig } from '@pommora/core/Properties/properties'
 import { pad } from '@pommora/uix/Utilities/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.
-const numFmtCache = new Map<string, Intl.NumberFormat>()
-const dateFmtCache = new Map<string, Intl.DateTimeFormat>()
-function numFmt(opts: Intl.NumberFormatOptions): Intl.NumberFormat {
-  const key = JSON.stringify(opts)
-  let f = numFmtCache.get(key)
-  if (!f) {
-    f = new Intl.NumberFormat('en-US', opts)
-    numFmtCache.set(key, f)
+const memoFmt = <O, F>(make: (opts: O) => F): ((opts: O) => F) => {
+  const cache = new Map<string, F>()
+  return (opts) => {
+    const key = JSON.stringify(opts)
+    let f = cache.get(key)
+    if (!f) {
+      f = make(opts)
+      cache.set(key, f)
+    }
+    return f
   }
-  return f
 }
-function dateFmt(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const key = JSON.stringify(opts)
-  let f = dateFmtCache.get(key)
-  if (!f) {
-    f = new Intl.DateTimeFormat('en-US', opts)
-    dateFmtCache.set(key, f)
-  }
-  return f
-}
+const numFmt = memoFmt((o: Intl.NumberFormatOptions) => new Intl.NumberFormat('en-US', o))
+const dateFmt = memoFmt((o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', o))
 
 function ordinal(day: number): string {
   if (day % 100 >= 11 && day % 100 <= 13) return `${day}th`

@@ -6,9 +6,9 @@ import {
 } from './pageMenu'
 import { type ActionItem, afterSeparator } from './menuModel'
 
-export type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction | 'image:edit'
+type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction | 'image:edit'
 
-export interface CardMenuContext extends PageMoveContext {
+interface CardMenuContext extends PageMoveContext {
   /** Blank, addable properties — already ordered by the renderer (pane-kinds first). */
   addable: Array<{ id: string; name: string }>
   alreadyOpen?: boolean

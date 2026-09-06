@@ -43,13 +43,6 @@ describe('listMarkdownFiles', () => {
     ])
   })
 
-  it('skips named top-level dirs', async () => {
-    expect(rels(await listMarkdownFiles(root, { skipTopLevel: ['.nexus', '.trash'] }))).toEqual([
-      'a.md',
-      'sub/b.md',
-    ])
-  })
-
   it('returns [] for a missing dir', async () => {
     expect(await listMarkdownFiles(join(root, 'nope'))).toEqual([])
   })

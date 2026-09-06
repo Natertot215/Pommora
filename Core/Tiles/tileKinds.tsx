@@ -26,7 +26,7 @@ export interface TileRenderContext {
   mutateEntry: MutateEntry
 }
 
-export interface TileSurface<E extends TileEntry = TileEntry> {
+interface TileSurface<E extends TileEntry = TileEntry> {
   render: (ctx: TileRenderContext & { entry: E }) => React.ReactNode
   sourceInfo?: (entry: E, pagesById: ReadonlyMap<string, ConnPage>) => ConnPage | undefined
 }

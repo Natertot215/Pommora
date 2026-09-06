@@ -2,7 +2,7 @@
 import { capSet } from '../Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 
-export interface CacheEntry {
+interface CacheEntry {
   editorState?: unknown
   scrollTop?: number
   pageDetail?: PageDetail

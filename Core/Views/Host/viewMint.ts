@@ -14,7 +14,7 @@ export function wireViewAdopted(fn: (containerId: string, viewId: string) => voi
   onViewAdopted = fn
 }
 
-export const pendingViewMint = (containerId: string): Promise<string> | undefined =>
+const pendingViewMint = (containerId: string): Promise<string> | undefined =>
   inFlight.get(containerId)
 
 export function ensureContainerView(

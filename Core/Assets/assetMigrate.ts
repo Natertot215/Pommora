@@ -6,7 +6,7 @@ import { basenameNoMd } from '../Locations/coerce'
 import { basename, dirname, extname, join } from '../Locations/posix'
 import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from '../Locations/paths'
 import { machine } from '../Platform/machine'
-import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from '../IO/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../IO/pageFile'
 import {
   readJsonObject,
   rewritePageSerialized,
@@ -21,7 +21,7 @@ import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './a
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 
-export interface AssetMigration {
+interface AssetMigration {
   moved: { from: string; to: string }[]
   rewritten: number
   skipped: { store: string; why: string }[]
@@ -93,7 +93,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     refs.push({
       store: rel,
       owner: `${basenameNoMd(basename(rel))} Banner`,
-      read: async () => readFrontmatterFields((await readTextOrNull(file)) ?? '').banner,
+      read: async () => splitFrontmatter((await readTextOrNull(file)) ?? '').banner,
       write: (link) =>
         rewritePageSerialized(file, (content) => {
           const { body } = splitEnvelope(content)

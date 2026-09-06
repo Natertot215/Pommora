@@ -20,7 +20,6 @@ export interface LayoutSlice {
   navViewMode: NavViewMode
   setNavViewMode: (mode: NavViewMode) => void
   settingsOpen: boolean
-  openSettings: () => void
   closeSettings: () => void
   toggleSettings: () => void
   iterationOpen: boolean
@@ -97,7 +96,6 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     },
 
     settingsOpen: false,
-    openSettings: () => set({ settingsOpen: true }),
     closeSettings: () => set({ settingsOpen: false }),
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 

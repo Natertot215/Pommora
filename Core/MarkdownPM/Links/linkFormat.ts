@@ -8,7 +8,7 @@ import { focusRange } from '../caretPlacement'
 import { awaitTitle } from './pendingTitle'
 import { type EditorHost, editorHost } from '../api'
 
-export interface LinkActionText {
+interface LinkActionText {
   insert: string
   url: string
   wantsTitle: boolean

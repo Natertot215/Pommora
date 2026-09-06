@@ -37,7 +37,7 @@ export async function runRepairSweep(root: string): Promise<void> {
     if (!live()) return
     // The sweep canonicalizes shape and never removes a value: a key the reconcile would delete stays as written, for the user to settle on the page.
     const adoptions: Adoption[] = []
-    const raw: Rewrite<never> = (fm, file) => {
+    const raw: Rewrite = (fm, file) => {
       const world = worlds.get(file)
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(fm, world)
@@ -46,7 +46,7 @@ export async function runRepairSweep(root: string): Promise<void> {
       for (const key of Object.keys(surviving)) {
         if (memberCount(surviving[key]) < memberCount(fm[key])) delete surviving[key]
       }
-      return { next: { ...fm, ...surviving } }
+      return { ...fm, ...surviving }
     }
     await sweepGovernedRoots(root, { kind: 'files', files: [...worlds.keys()] }, { raw })
     await applyAdoptions(root, adoptions)

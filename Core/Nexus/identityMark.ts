@@ -32,7 +32,7 @@ export function kindOf(id: string): ContentKind | null {
   return MARK_KIND.get(id[MARK_INDEX]) ?? null
 }
 
-export type Admission =
+type Admission =
   | { state: 'member'; id: string }
   | { state: 'missing' }
   | { state: 'unknown'; reason: 'contradicting' | 'malformed' }

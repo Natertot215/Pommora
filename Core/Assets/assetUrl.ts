@@ -3,7 +3,7 @@ import { normalizeTitle, parseConnectionText } from '@pommora/core/Connections/c
 import { HAS_SCHEME } from '@pommora/core/Locations/url'
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 
-export type AssetValue =
+type AssetValue =
   | { kind: 'asset'; rel: string }
   | { kind: 'external'; url: string }
   | { kind: 'unresolved' }
@@ -24,7 +24,7 @@ function namedAsset(raw: string, map: AssetMap): FileValue | null {
   return rel ? { kind: 'asset', rel } : { kind: 'unresolved' }
 }
 
-export type FileValue = Exclude<AssetValue, { kind: 'external' }>
+type FileValue = Exclude<AssetValue, { kind: 'external' }>
 
 export function resolveFileValue(value: string, map: AssetMap): FileValue {
   return namedAsset(value.trim(), map) ?? { kind: 'unresolved' }

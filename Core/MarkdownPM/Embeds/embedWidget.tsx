@@ -46,7 +46,7 @@ const embedHost = Facet.define<EmbedHost, EmbedHost>({
   combine: (v) => v[0] ?? { getConn: () => undefined, ancestors: [] },
 })
 
-export const setEmbedEditing = StateEffect.define<string | null>()
+const setEmbedEditing = StateEffect.define<string | null>()
 
 export const setWebLinkSeat = StateEffect.define<number | null>()
 
@@ -61,7 +61,7 @@ export interface EmbedHeightsApi {
   save: (heights: Record<string, number>) => void
 }
 
-export type TileRange =
+type TileRange =
   | { kind: 'page'; from: number; to: number; path: string; title: string }
   | { kind: 'webpage'; from: number; to: number; url: string; label: string }
 

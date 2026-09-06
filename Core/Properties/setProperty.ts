@@ -1,8 +1,9 @@
 import { machine } from '../Platform/machine'
+import { splitFrontmatter } from '../IO/pageFile'
 import { resolveUnderRoot } from '../Locations/pathSafety'
 import { readTextOrNull } from '../IO/atomicWrite'
 import { indexWrittenPage } from '../Index/indexSeed'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { loadGovernedWorld } from '../Contexts/contextWrite'
 import { updatePageProperty } from '../Nexus/page'
 import { fail, ok } from '../Contract/result'

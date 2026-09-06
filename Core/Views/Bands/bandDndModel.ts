@@ -39,20 +39,6 @@ export function flattenBands(groups: ResolvedGroup[], collapsed: Set<string>): B
   return out
 }
 
-/** Collapsed subtrees INCLUDED — the id universe order writes must merge against so hidden siblings survive. */
-export function allStructuralIds(groups: ResolvedGroup[]): string[] {
-  const out: string[] = []
-  const walk = (gs: ResolvedGroup[]): void => {
-    for (const g of gs) {
-      if (g.kind !== 'structural-set') continue
-      out.push(g.key)
-      if (g.children) walk(g.children)
-    }
-  }
-  walk(groups)
-  return out
-}
-
 export function canNest(draggedId: string, targetId: string, bands: Band[]): boolean {
   const byId = new Map(bands.map((b) => [b.id, b]))
   return byId.get(targetId)?.kind === 'set' && !walksTo(targetId, draggedId, byId)

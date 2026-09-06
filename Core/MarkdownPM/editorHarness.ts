@@ -10,7 +10,7 @@ import { stubDialer } from '../vitest.setup'
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 
 /** The pieces of the host a suite steers; everything left out is an inert stand-in. */
-export interface HarnessHost {
+interface HarnessHost {
   settings?: Partial<EditorSettings>
   aliases?: Record<string, string[]>
   linkTitles?: Record<string, string>
@@ -27,7 +27,7 @@ type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
 }
 
 /** The harness's own store: one host per mount, its state living in these maps. */
-export interface HarnessState {
+interface HarnessState {
   settings: EditorSettings
   aliases: Record<string, string[]>
   linkTitles: Record<string, string>

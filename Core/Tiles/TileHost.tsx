@@ -10,10 +10,10 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
-import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
+import type { ConnPage } from '../MarkdownPM/Links/connectionsApi'
 import {
   containersByPathOf,
-  pageIndexOf,
+  connectionsFor,
   pagesByIdOf,
   type ContainerCore,
 } from '../Session/treeIndex'
@@ -142,20 +142,19 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const openWindow = useSession((s) => s.openWindow)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
-  const connections = useMemo<ConnectionsApi | undefined>(() => {
-    if (!tree) return undefined
-    const idx = pageIndexOf(tree)
-    return {
-      ...idx,
-      open: (page) =>
-        openInWindow
-          ? openWindow({ id: page.id, path: page.path })
-          : void select({ kind: 'page', id: page.id, path: page.path }),
-      bypass: (page) =>
-        void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      menu: showConnectionMenu,
-    }
-  }, [tree, select, openWindow, openInWindow])
+  const connections = useMemo(
+    () =>
+      connectionsFor(tree, {
+        open: (page) =>
+          openInWindow
+            ? openWindow({ id: page.id, path: page.path })
+            : void select({ kind: 'page', id: page.id, path: page.path }),
+        bypass: (page) =>
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
+        menu: showConnectionMenu,
+      }),
+    [tree, select, openWindow, openInWindow],
+  )
 
   useEffect(() => {
     if (!editingId) return

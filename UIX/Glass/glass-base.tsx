@@ -21,7 +21,7 @@ export interface FrostParams {
 }
 
 /** KNOB — how much `--bg-window` sits behind the frost on anything that carries a body. ONE figure: a window and a picker opening over another pane want the same thing for the same reason, and two numbers required to match are two numbers that eventually don't.*/
-export const SOLID_FILL = 0.9
+const SOLID_FILL = 0.9
 
 export const SURFACE_FROST: FrostParams = {
   blur: 6,
@@ -86,7 +86,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
 }
 
 /** The outline's second pass, inward: widening the border would shift everything inside it. */
-export const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
+const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
 /** The pane tier — the brightest glass in the app. */
 export const paneMaterial: CSSProperties = frostStyle({ ...SURFACE_FROST, brightness: 95 })

@@ -23,7 +23,7 @@ export type PasteAsForm =
 
 export const PASTE_AS_PREFIX = 'pasteAs:'
 
-export type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: string } | null
+type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: string } | null
 
 function wholeWikiLink(s: string): string | null {
   const m = pageLinkPattern().exec(s)
@@ -46,7 +46,7 @@ export function pasteAsTarget(clipboard: string): PasteAsTarget {
   return isValidLink(raw) ? { kind: 'url', url: raw } : null
 }
 
-export interface PasteAsRow {
+interface PasteAsRow {
   label: string
   form: PasteAsForm
 }
@@ -87,13 +87,13 @@ export function pasteAsRows(
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }
 
-export interface TextPaste {
+interface TextPaste {
   kind: 'text'
   text: string
 }
 
 /** The whole line, not the selection: leading whitespace would indent the token into prose. */
-export interface LinePaste {
+interface LinePaste {
   kind: 'line'
   text: string
 }

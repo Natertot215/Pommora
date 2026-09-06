@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { splitFrontmatter } from '../IO/pageFile'
 import { mkdtemp, rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,7 +15,6 @@ import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Locations/paths'
-import { splitFrontmatter } from '../Nexus/readNexus'
 
 let root: string
 beforeEach(async () => {

@@ -5,7 +5,7 @@ import { resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, lineEndOf, markersFor } from '../Engine/detect'
 import { linkTarget, tokenize } from '../Engine/tokens'
 import { docScan, docString, perDoc } from '../docCache'
-import { followTarget } from '../Links/links'
+import { followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
@@ -14,7 +14,7 @@ import { editorHost } from '../api'
 export const CITE_GLYPH = '.md-cite-ref'
 
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
-export const CITE_ROW_GLYPH = '.md-cite-num'
+const CITE_ROW_GLYPH = '.md-cite-num'
 
 /** Trailing text or a stray period means it is not that, and the click jumps to the citation like any other. */
 export function loneTarget(

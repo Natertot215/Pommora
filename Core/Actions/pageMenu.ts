@@ -27,7 +27,7 @@ export type PageMetaAction =
   | 'title:delete'
 
 /** A submenu rather than an act: a leaf resolves as the move itself. */
-export const PAGE_MOVE_ROW = 'title:moveto' as const
+const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
 
@@ -45,7 +45,7 @@ export interface PageMoveContext {
   currentParentPath?: string
 }
 
-export function offersMove(ctx: PageMoveContext): boolean {
+function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
@@ -85,7 +85,7 @@ function moveRow(ctx: PageMoveContext): ActionItem<PageMetaAction | PageMoveActi
   }
 }
 
-export type PageReachAction = Extract<
+type PageReachAction = Extract<
   PageMetaAction,
   'title:copylink' | 'title:copypath' | 'title:history'
 >

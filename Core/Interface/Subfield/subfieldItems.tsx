@@ -5,13 +5,13 @@ import { type PageTarget, useSession } from '../../Session/store'
 import { findCollection } from '../../Session/treeIndex'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 
-export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
+type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
 export interface SubfieldPage {
   target: PageTarget
   body: string
 }
-export interface SubfieldItemProps {
+interface SubfieldItemProps {
   page: SubfieldPage | null
 }
 

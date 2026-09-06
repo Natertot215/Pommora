@@ -9,7 +9,7 @@ import { MenuRowView, type MenuRow, type Trailing } from '@pommora/uix/Menus'
 import { pickerValue } from '@pommora/uix/Pickers/PickerControl'
 import * as s from './number-editor.css'
 
-export type NumberLook = 'number' | 'bar'
+type NumberLook = 'number' | 'bar'
 
 const FAMILY_OPTIONS: PickerOption<NumberFamily>[] = [
   { value: 'number', label: 'Number' },

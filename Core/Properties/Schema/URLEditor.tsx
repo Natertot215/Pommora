@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import type { LinkConfig, LinkDisplay } from '@pommora/core/Properties/properties'
 import { MenuIndex } from '@pommora/uix/Menus'
-import { LINK_FORMAT_OPTIONS } from './linkFormat'
+import { LINK_FORMAT_OPTIONS } from './linkFormatOptions'
 import * as s from '@pommora/uix/Menus/frames.css'
 
 export function URLEditor({

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { stampAdopted } from './adopt'
 import { readSidecar } from '../IO/sidecar'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { isUlid, idTime } from '../Locations/ids'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Locations/paths'
@@ -53,13 +53,11 @@ describe('stampAdopted', () => {
   it('stamps a frontmatter-less page id and preserves foreign frontmatter', async () => {
     await stampAdopted(root)
 
-    const note1 = readFrontmatterFields(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
+    const note1 = splitFrontmatter(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
     expect(typeof note1[ID_KEY] === 'string' && isUlid(note1[ID_KEY])).toBeTruthy()
     expect(note1.aliases).toEqual(['foo'])
 
-    const day1 = readFrontmatterFields(
-      await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'),
-    )
+    const day1 = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'))
     expect(typeof day1[ID_KEY] === 'string' && isUlid(day1[ID_KEY])).toBeTruthy()
   })
 
@@ -68,7 +66,7 @@ describe('stampAdopted', () => {
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(file, past, past)
     await stampAdopted(root)
-    const id = readFrontmatterFields(await readFile(file, 'utf8'))[ID_KEY] as string
+    const id = splitFrontmatter(await readFile(file, 'utf8'))[ID_KEY] as string
     expect(Math.floor(idTime(id)! / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 

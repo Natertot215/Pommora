@@ -16,21 +16,21 @@ export type ConnSurface = 'editor' | 'cell'
 export type ConnEditAction = 'rename' | 'editLink'
 export type ConnCellAction = 'link:clear' | 'link:hide'
 export type ConnCellApply = (action: ConnCellAction) => void
-export type ConnOpenAction = Extract<PageMetaAction, 'title:window' | 'title:newtab'>
+type ConnOpenAction = Extract<PageMetaAction, 'title:window' | 'title:newtab'>
 
 const CONN_OPEN_ACTIONS = [
   'title:window',
   'title:newtab',
 ] as const satisfies readonly ConnOpenAction[]
 
-export type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
+type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
 
 const CONN_COPY_ACTIONS = [
   'title:copylink',
   'title:copypath',
 ] as const satisfies readonly ConnCopyAction[]
 
-export type ConnSiteAction = 'link:window' | 'link:browser'
+type ConnSiteAction = 'link:window' | 'link:browser'
 
 const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
   { label: 'Open Preview', action: 'link:window' },

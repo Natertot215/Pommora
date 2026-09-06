@@ -1,5 +1,5 @@
 export type NavDir = 'next' | 'prev' | 'down'
-export type CellNavTarget = { row: number; col: number } | 'before' | 'after'
+type CellNavTarget = { row: number; col: number } | 'before' | 'after'
 
 // Visual-row convention: row 0 = header, rows 1..totalRows-1 = body. 'next' = Tab, 'prev' = Shift-Tab,
 // 'down' = Enter.

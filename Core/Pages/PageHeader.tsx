@@ -9,7 +9,7 @@ import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
 import { popRowMenu } from '../Platform/nativeMenus'
 import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
-export interface HeaderPage {
+interface HeaderPage {
   path: string
   title: string
   cover?: string

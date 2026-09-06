@@ -5,7 +5,7 @@ import { capSet } from '../../Utilities/capMap'
 // KNOB — how many hidden guests stay alive beyond the visible ones.
 export const WEB_RETAINED_MAX = 5
 
-export interface WebRetention {
+interface WebRetention {
   hide(id: symbol, evict: () => void): void
   show(id: symbol): void
   drop(id: symbol): void

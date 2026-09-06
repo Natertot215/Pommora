@@ -147,7 +147,7 @@ export function RowShell({ id, children }: { id: string; children: ReactNode }):
 }
 
 /** `ref` + `handle` spread on the row wrapper. */
-export function usePaneDrag(id: string): {
+function usePaneDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }
   isDragging: boolean

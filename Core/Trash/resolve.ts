@@ -2,6 +2,7 @@
 // refusal that says why it cannot be placed.
 
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Locations/nexusPaths'
+import { normalizeTitle } from '../Connections/connections'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { RecordFile } from './record'
@@ -19,17 +20,15 @@ export interface Placement {
 }
 
 export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
-export type Resolution = { place: Placement } | { refuse: Refusal }
+type Resolution = { place: Placement } | { refuse: Refusal }
 
 /** The property shape is artifact-less — there is nothing to place. */
 export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
 
-const fold = (s: string): string => s.normalize('NFC').toLowerCase()
-
 /** The create convention: a name already held — case- and form-insensitively — gains a counter. */
 const disambiguate = (base: string, taken: string[]): string => {
-  const held = taken.map(fold)
-  const isTaken = (title: string): boolean => held.includes(fold(title))
+  const held = taken.map(normalizeTitle)
+  const isTaken = (title: string): boolean => held.includes(normalizeTitle(title))
   if (!isTaken(base)) return base
   let n = 2
   while (isTaken(`${base} ${n}`)) n++

@@ -19,7 +19,7 @@ export function reorder<T extends { id: string }>(
   return moveItem(items, from, to)
 }
 
-export type SortableZoneProps = {
+type SortableZoneProps = {
   id?: string
   items: string[]
   onReorder?: (activeId: string, overId: string) => void

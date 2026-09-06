@@ -17,7 +17,7 @@ export const AGENDA_SLOTS = [
   seedName: string
 }[]
 
-export type AgendaSlot = (typeof AGENDA_SLOTS)[number]['slot']
+type AgendaSlot = (typeof AGENDA_SLOTS)[number]['slot']
 
 export type AgendaRegistration = Partial<Record<AgendaSlot, string>>
 

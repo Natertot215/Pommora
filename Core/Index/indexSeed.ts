@@ -1,4 +1,5 @@
-import { isAbsolute, join, relative } from '../Locations/posix'
+import { join, relative } from '../Locations/posix'
+import { escapes } from '../Locations/pathSafety'
 import { errText } from '../Contract/result'
 import { extractMentions, frontmatterMentions } from '../Connections/scan'
 import { sweepAdmitsBody } from '../Nexus/util'
@@ -20,10 +21,10 @@ import {
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../IO/atomicWrite'
-import { splitEnvelope } from '../IO/pageFile'
+import { splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { corpusFiles, corpusFilesUnder, isMarkdownFile } from '../IO/walk'
 import { NON_CORPUS_TOP } from '../Locations/nexusPaths'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { readWatchScope } from '../Settings/settings'
 
 function extractPageIndex(content: string): PageIndexEntry | null {
@@ -55,7 +56,7 @@ export async function folderCorpus(root: string, absFolder: string): Promise<str
 
 function relCorpusPath(root: string, abs: string): string | null {
   const rel = relative(root, abs)
-  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
+  if (!rel || escapes(rel)) return null
   const segs = rel.split('/')
   if (NON_CORPUS_TOP.has(segs[0])) return null
   return segs.join('/')

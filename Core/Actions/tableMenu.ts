@@ -2,7 +2,7 @@ import type { ActionItem } from './menuModel'
 import { alignRows } from './columnMenu'
 import type { ColumnAlign } from '../Views/views'
 
-export type TableMenuKind = 'column' | 'row' | 'header'
+type TableMenuKind = 'column' | 'row' | 'header'
 
 // `index` is the column index (kind 'column') or the visual row index (kind 'row'; 0 = header → kind 'header').
 export interface TableMenuContext {

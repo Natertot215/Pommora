@@ -22,7 +22,7 @@ import type { RowMenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
-export interface PickFileOptions {
+interface PickFileOptions {
   dir?: string
   any?: boolean
 }

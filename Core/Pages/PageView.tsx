@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { useSession } from '../Session/store'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
-import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { pageIndexOf } from '../Session/treeIndex'
+import { connectionsFor } from '../Session/treeIndex'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -89,20 +88,19 @@ export function PageView({
     void host().ask('headingIcon:set', pageId, next)
   }
 
-  const connections = useMemo<ConnectionsApi | undefined>(() => {
-    if (!tree) return undefined
-    const idx = pageIndexOf(tree)
-    return {
-      ...idx,
-      open: (page) =>
-        openInWindow
-          ? openWindow({ id: page.id, path: page.path })
-          : void select({ kind: 'page', id: page.id, path: page.path }),
-      bypass: (page) =>
-        void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      menu: showConnectionMenu,
-    }
-  }, [tree, select, openWindow, openInWindow])
+  const connections = useMemo(
+    () =>
+      connectionsFor(tree, {
+        open: (page) =>
+          openInWindow
+            ? openWindow({ id: page.id, path: page.path })
+            : void select({ kind: 'page', id: page.id, path: page.path }),
+        bypass: (page) =>
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
+        menu: showConnectionMenu,
+      }),
+    [tree, select, openWindow, openInWindow],
+  )
   const editorHost = useEditorHost({ pageId, connections })
 
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown path flushes there, so a pending write survives without per-host flush machinery.

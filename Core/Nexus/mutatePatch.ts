@@ -18,7 +18,6 @@ import {
   repointRegistryInTree,
   reorderChildrenInTree,
   reorderPagesInTree,
-  reorderTopInTree,
 } from './treePatch'
 import { isAdoptedId } from '../Locations/ids'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
@@ -72,7 +71,7 @@ function patchForMutation(
     case 'reorderChildren':
       return reorderChildrenInTree(tree, req.parentPath, req.order)
     case 'reorderTop':
-      return reorderTopInTree(tree, req.key, req.order)
+      return reorderChildrenInTree(tree, '', req.order)
     case 'renameContext':
     case 'renameSpace':
     case 'setSpaceColor':
@@ -154,7 +153,6 @@ async function routeMutation(
       return patchCropsFromDisk(root)
     }
     case 'setProfileIcon':
-    case 'setProfileSubtitle':
       return patchSettingsFromDisk(root)
     case 'restore':
       return 'refresh' // placement resolution is the restore path's own business

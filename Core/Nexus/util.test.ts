@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { invalidContextTitle, invalidName, sweepAdmits, sweepAdmitsBody } from './util'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 
 describe('invalidName', () => {
   it('accepts ordinary titles', () => {
@@ -42,7 +42,7 @@ const HEALTHY = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n
 
 describe('sweepAdmits — the field-write gate', () => {
   it('an unresolvable alias reads as empty rather than throwing', () => {
-    expect(readFrontmatterFields(ALIAS)).toEqual({})
+    expect(splitFrontmatter(ALIAS)).toEqual({})
   })
 
   it('refuses both shapes of unwritable frontmatter', () => {

@@ -3,7 +3,8 @@ import { machine } from '../Platform/machine'
 import { NON_CORPUS_TOP, TRASH_DIR } from './nexusPaths'
 import { fail, ok, type Result } from '../Contract/result'
 
-function escapes(rel: string): boolean {
+/** The one root-boundary rule: a relative path that climbs out, or an absolute one. */
+export function escapes(rel: string): boolean {
   return rel === '..' || rel.startsWith('../') || isAbsolute(rel)
 }
 

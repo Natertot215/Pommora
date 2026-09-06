@@ -115,8 +115,6 @@ export const dividerBar = style({ height: 'var(--btn-div-h)' })
 // numbers so a button and what rings it can never drift.
 globalStyle(':root', {
   vars: {
-    '--button-small-height': SIZE['button-small'].height,
-    '--button-medium-height': SIZE['button-medium'].height,
     '--button-large-height': SIZE['button-large'].height,
   },
 })
