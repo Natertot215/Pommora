@@ -27,8 +27,8 @@ describe('edgeVelocity — proximity ramp', () => {
     expect(edgeVelocity(0, 300, 5, P)).toBeLessThan(0)
   })
   it('ramps up as the point gets closer to the edge', () => {
-    const near = Math.abs(edgeVelocity(0, 300, 299, P)) // 1px from edge
-    const far = Math.abs(edgeVelocity(0, 300, 260, P)) // ~40px in
+    const near = Math.abs(edgeVelocity(0, 300, 299, P))
+    const far = Math.abs(edgeVelocity(0, 300, 260, P))
     expect(near).toBeGreaterThan(far)
   })
   it('caps at full speed past the edge (no viewport clamp needed)', () => {
@@ -67,11 +67,11 @@ describe('clampToLimit — no churn at a maxed edge', () => {
 
 describe('stepPixels — sub-pixel accumulation', () => {
   it('carries the fractional remainder so a slow ramp eventually scrolls', () => {
-    const a = stepPixels(30, 16, 0) // 30px/s * 0.016s = 0.48px → 0px, 0.48 carried
+    const a = stepPixels(30, 16, 0) // 0.48px → 0px, 0.48 carried
     expect(a.px).toBe(0)
-    const b = stepPixels(30, 16, a.frac) // 0.48 + 0.48 = 0.96 → 0px, 0.96 carried
+    const b = stepPixels(30, 16, a.frac)
     expect(b.px).toBe(0)
-    const c = stepPixels(30, 16, b.frac) // 0.96 + 0.48 = 1.44 → 1px scrolls
+    const c = stepPixels(30, 16, b.frac) // 1.44 accumulated → 1px scrolls
     expect(c.px).toBe(1)
   })
 })
@@ -80,7 +80,7 @@ describe('gateIntent — direction-intent', () => {
   it('blocks a direction until the pointer has left that band once', () => {
     const intent: Intent = { up: false, down: false, left: false, right: false }
     expect(gateIntent(intent, 0, 10).vy).toBe(0) // pinned at the bottom edge — down not yet armed
-    gateIntent(intent, 0, -10) // moves up out of the band — arms down
+    gateIntent(intent, 0, -10) // out of the band — arms down
     expect(gateIntent(intent, 0, 10).vy).toBe(10)
   })
 })
@@ -103,8 +103,7 @@ describe('scrollableInAxis', () => {
 })
 
 describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
-  // A faithful rAF fake: cancelAnimationFrame actually removes the callback (a no-op cancel would
-  // hide the one-driver invariant). The clock is MONOTONIC so dt is always positive.
+  // cancelAnimationFrame must really remove the callback, or the one-driver invariant goes untested.
   let rafMap: Map<number, (ts: number) => void>
   let rafId: number
   let clock: number
@@ -165,9 +164,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     vi.unstubAllGlobals()
   })
 
-  // Direction-intent means a drag that STARTS pinned at the edge never scrolls — the pointer must have
-  // been out of that band once. Every test that needs actual scrolling starts at y=150 (out of the
-  // bottom band, arms `down`), then moves to y=299 (into it) and holds past the dampen window.
+  // A drag starting pinned at the edge never scrolls, so tests start at y=150 to arm `down`.
   const doc = document.documentElement
 
   it('scrolls the fixed scroller toward the edge the point holds near', () => {
@@ -226,9 +223,8 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     flush(20)
     const aBeforeReplace = a.scrolls()
     expect(aBeforeReplace).toBeGreaterThan(400)
-    // Replace with B — a fresh loop with fresh intent, so re-arm it out of the band, then into it.
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
-    expect(rafMap.size).toBe(1) // the one-driver invariant: A's rAF was actually canceled, not orphaned
+    expect(rafMap.size).toBe(1) // A's rAF was canceled, not orphaned
     y = 150
     flush(3)
     y = 299
@@ -249,7 +245,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
       axis: 'y',
     })
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
-    stopA() // stale handle from A — must be a no-op, not a stop of B
+    stopA() // stale handle — must be a no-op, not a stop of B
     y = 150
     flush(3)
     y = 299
@@ -258,7 +254,6 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
   })
 
   it('accelerates over a sustained scroll — a later window covers more distance than an early one', () => {
-    // A tall scroller (no limit reached) so only acceleration, not clamping, moves the delta.
     let top = 0
     const el = {
       getBoundingClientRect: () => ({
@@ -286,14 +281,14 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     } as unknown as HTMLElement
     let y = 150
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
-    flush(3) // arm intent
+    flush(3)
     y = 299
     const s0 = top
     flush(10)
-    const early = top - s0 // distance covered in the first 10 scrolling frames
+    const early = top - s0
     const s1 = top
     flush(10)
-    const later = top - s1 // …in the next 10 — more distance accumulated → faster
+    const later = top - s1 // more distance accumulated → faster
     expect(later).toBeGreaterThan(early)
   })
 
@@ -330,11 +325,10 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     flush(30) // build up acceleration
     y = 150 // leave the band → resets the run
     flush(5)
-    y = 299 // re-enter — should ease in from the floor again
+    y = 299 // re-enter, easing from the floor again
     const s0 = top
     flush(3)
     const afterReset = top - s0
-    // A fresh 3-frame window after re-entry is near the floor, well under the accelerated steady rate.
     expect(afterReset).toBeLessThan(60)
   })
 
@@ -344,11 +338,11 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
     flush(3)
     y = 299
-    flush(5) // scrolling at steady state
+    flush(5)
     const beforeStall = scrolls()
-    flush(1, 5000) // one frame after a 5-second main-thread stall
+    flush(1, 5000) // one frame after a 5-second stall
     const jump = scrolls() - beforeStall
-    // Clamped to MAX_FRAME_MS: well under 100px. Without the clamp it'd be thousands.
+    // Clamped to MAX_FRAME_MS; without it this would be thousands of px.
     expect(jump).toBeGreaterThan(0)
     expect(jump).toBeLessThan(100)
   })
@@ -438,8 +432,8 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     const el = makeScroller()
     let want = 600
     scrollGlide(el, () => want, G)
-    flush(3) // underway against the first estimate
-    want = 900 // the host measured the real content and the destination sharpened
+    flush(3)
+    want = 900 // the host measured the real content
     flush(40)
     expect(el.scrollTop).toBe(900)
   })
@@ -448,7 +442,7 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     const el = makeScroller()
     scrollGlide(el, 99_999, G)
     flush(40)
-    expect(el.scrollTop).toBe(9500) // scrollHeight - clientHeight
+    expect(el.scrollTop).toBe(9500)
   })
 
   it('a drag claims the scroller from a travel in flight', () => {

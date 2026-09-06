@@ -4,8 +4,7 @@ import { cx } from '../Utilities/cx'
 import { GHOST_FROST, frostStyle } from '../Glass/glass-base'
 import { text } from '../Theme/typography.css'
 
-/** Portaled to body so it paints ABOVE any pane frost — without it, a drag's only visual is the
- *  source row dimmed in place, which melts into the glass and reads as "dragging behind the pane." */
+/** Portaled to body so it paints above any pane frost; inside one it reads as dragging behind the pane. */
 export function DragGhost({
   x,
   y,

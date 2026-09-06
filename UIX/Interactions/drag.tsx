@@ -5,7 +5,6 @@ import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from '.
 import type { DragItem, DragNotify, Modifier } from './shared'
 import { moveItem } from '../Utilities/moveItem'
 
-export type Row = { id: string; label: string }
 export type Layout = 'list' | 'grid' | 'table'
 export type { DragItem, DragNotify, DragGroupProps, Modifier }
 export { DragGroup, useGroupedDragItem, useDropSlot }
@@ -19,15 +18,6 @@ export function reorder<T extends { id: string }>(
   const to = items.findIndex((i) => i.id === overId)
   if (from === -1 || to === -1 || from === to) return items
   return moveItem(items, from, to)
-}
-
-export function arraySwap<T extends { id: string }>(items: T[], aId: string, bId: string): T[] {
-  const a = items.findIndex((i) => i.id === aId)
-  const b = items.findIndex((i) => i.id === bId)
-  if (a === -1 || b === -1 || a === b) return items
-  const next = items.slice()
-  ;[next[a], next[b]] = [next[b], next[a]]
-  return next
 }
 
 export type SortableZoneProps = DragNotify & {

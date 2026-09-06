@@ -19,9 +19,9 @@ export function keyboardNext(rects: Box[], over: number, dir: Dir): number {
     const dx = r.cx - c.cx
     const dy = r.cy - c.cy
     const along = dx * dir.x + dy * dir.y
-    if (along <= 0) return // not ahead in the arrow direction
+    if (along <= 0) return
     const perp = Math.abs(dx * dir.y - dy * dir.x)
-    const cost = along + perp * 2 // bias toward aligned neighbors (grid rows/columns)
+    const cost = along + perp * 2 // biased toward aligned neighbors
     if (cost < bestCost) {
       bestCost = cost
       best = i

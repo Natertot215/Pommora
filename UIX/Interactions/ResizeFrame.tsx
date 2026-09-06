@@ -26,12 +26,12 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   /** Read at press when given as a function — for a box whose size is measured, not held. */
   rect: R | (() => R)
   min?: Partial<Size>
-  /** The ceiling — read live per move when given as a function; the viewport otherwise. */
+  /** Read live per move when given as a function; the viewport otherwise. */
   max?: Partial<Size> | (() => Partial<Size>)
-  /** The frame holds its origin and grows the same size from either side. Otherwise a pull on the
-   *  north or west edge carries the origin with it, and `move` carries the origin alone. */
+  /** The frame holds its origin and grows equally from either side. Otherwise a north or west pull
+   *  carries the origin with it. */
   equilateral?: boolean
-  /** The chassis the handles sit in eases its stroke to accent while one is hovered or held. */
+  /** The handle chassis eases its stroke to accent while one is hovered or held. */
   outlined?: boolean
   onChange: (next: R, phase: ResizePhase) => void
 }
@@ -95,8 +95,8 @@ function pull<R extends Partial<Rect>>(
   return next
 }
 
-/** Every drag-to-size and drag-to-move gesture in the app. The host owns the rect and whatever
- *  remembers it; the frame clamps, reports each move, and hands back the start rect on Escape. */
+/** The host owns the rect and whatever remembers it; the frame clamps, reports each move, and
+ *  hands back the start rect on Escape. */
 export function useResizeFrame<R extends Partial<Rect>>(
   spec: ResizeFrameSpec<R>,
 ): ResizeFrameHandle {
@@ -136,7 +136,7 @@ export function useResizeFrame<R extends Partial<Rect>>(
         },
         onAbort: () => spec.onChange(from, 'abort'),
       })
-      // A press that took the gesture is not a selection, a focus change, or a native drag.
+      // A press that took the gesture is not a selection, focus change, or native drag.
       if (started) e.preventDefault()
     }
 

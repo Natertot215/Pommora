@@ -4,29 +4,26 @@ import { beginDragDisclose, endDragDisclose } from './dragDisclose'
 
 export type PointerGestureSpec = {
   el: HTMLElement
-  /** React's synthetic press or a native one — a CodeMirror extension has no synthetic event to
-   *  hand over, and the skeleton reads only the fields both carry. */
+  /** A CodeMirror extension has no synthetic event to hand over, and only the shared fields are read. */
   event: ReactPointerEvent | PointerEvent
   activation?: number
   capture?: boolean
   onActivate: (e: PointerEvent) => boolean | undefined
   onDragMove: (e: PointerEvent) => void
   onDrop: () => void
-  /** Release BEFORE activation — the press was a click, not a drag. A cancel is not a tap, so
-   *  pointercancel, Escape, blur and a lost release all still route to `onAbort`. */
+  /** Release before activation. A cancel is not a tap: pointercancel, Escape, blur and a lost
+   *  release all route to `onAbort`. */
   onTap?: () => void
   onAbort?: () => void
   teardown?: () => void
   onWindowScroll?: (e: Event) => void
   scrollTarget?: () => Element | null
   onDisclose?: () => void
-  /** Bind Escape in the capture phase and swallow it while ACTIVE — for a surface living inside a
-   *  dismissable host whose own Escape must not fire mid-drag. */
+  /** For a surface inside a dismissable host whose own Escape must not fire mid-drag. */
   swallowActiveEscape?: boolean
 }
 
-/** Whether a capture-phase window scroll actually shifted `el` — only an ancestor scroller moves
- *  it. An unrelated inner scroller (a row's own hover marquee) must never cost a re-measure. */
+/** Only an ancestor scroller shifts `el`; an unrelated inner scroller must not cost a re-measure. */
 function scrollMoved(ev: Event, el: Element | null | undefined): boolean {
   return !(ev.target instanceof Element) || !el || ev.target.contains(el)
 }
@@ -44,7 +41,7 @@ type LiveGesture = {
   }
 }
 
-// One pointer, one gesture — a module singleton, so a begin during a live gesture is refused.
+// One pointer, one gesture: a begin during a live one is refused.
 let live: LiveGesture | null = null
 
 function detach(g: LiveGesture): void {
@@ -60,7 +57,7 @@ function detach(g: LiveGesture): void {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
   } catch {}
   if (g.spec.onDisclose) endDragDisclose()
-  // The lock clears even when a teardown throws — a stranded `live` refuses every future drag.
+  // The lock clears even when a teardown throws: a stranded `live` refuses every future drag.
   try {
     g.spec.teardown?.()
   } catch (err) {
@@ -70,13 +67,12 @@ function detach(g: LiveGesture): void {
   }
 }
 
-/** A live gesture's owner handle — `abort()` tears it down ONLY if it is still the live one
- *  (a component unmounting mid-drag must never kill a sibling's gesture). */
+/** `abort()` tears the gesture down only if it is still the live one, so a component unmounting
+ *  mid-drag can't kill a sibling's. */
 export type GestureHandle = { abort: () => void }
 
-/** Window listeners drive the whole gesture — capture (if enabled) is deferred to activation so
- *  a sub-threshold tap keeps its click. A callback that throws aborts its own gesture rather
- *  than wedging the singleton. */
+/** Pointer capture is deferred to activation so a sub-threshold tap keeps its click. A callback
+ *  that throws aborts its own gesture rather than wedging the singleton. */
 export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | null {
   const e = spec.event
   if (live || e.button !== 0 || !e.isPrimary) return null
@@ -90,8 +86,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
     handlers: {
       move: (ev: PointerEvent) => {
         if (ev.pointerId !== e.pointerId) return
-        // Zero buttons on a move means the release never reached us (focus steal, missed up) —
-        // abort rather than drag a phantom press forever.
+        // Zero buttons means the release never reached us — abort rather than drag a phantom press.
         if (ev.buttons === 0) {
           g.handlers.cancel()
           return
@@ -177,9 +172,8 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   }
 }
 
-/** Honors the refusal rule: a refused begin (already live) must never overwrite this hook's
- *  handle, or the unmount abort would leak the ACTIVE gesture's listeners instead. Returns
- *  whether the gesture actually started. */
+/** A refused begin must never overwrite the stored handle, or the unmount abort would leak the
+ *  live gesture's listeners instead. Returns whether the gesture started. */
 export function usePointerGesture(): (spec: PointerGestureSpec) => boolean {
   const handle = useRef<GestureHandle | null>(null)
   useEffect(() => () => handle.current?.abort(), [])

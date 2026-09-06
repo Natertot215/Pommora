@@ -28,9 +28,8 @@ import {
   type Modifier,
 } from './shared'
 
-// Mutable drag scratch — read inside pointer/rAF/keydown callbacks without stale closures. Every
-// lift installs a WHOLE fresh scratch over `blankDrag()`, so a press and a keyboard lift each state
-// only what they actually know; nothing survives from the gesture before it.
+// Mutable so pointer/rAF/keydown callbacks read it without stale closures. Every lift installs a
+// whole fresh scratch over `blankDrag()`, so nothing survives from the gesture before it.
 type DragScratch = {
   id: string
   pid: number
@@ -139,8 +138,7 @@ export function Zone({
 
   const drag = useRef(blankDrag())
 
-  // This Zone's auto-scroll stopper (instance-scoped). detach() calls it rather than the global
-  // stop, so a sibling Zone's unmount can't halt THIS Zone's live drag.
+  // Instance-scoped, so a sibling Zone's unmount can't halt this Zone's live drag.
   const stopScroll = useRef<(() => void) | null>(null)
 
   const labelOf = (id: string): string => labelRef.current?.(id) ?? id
@@ -194,9 +192,8 @@ export function Zone({
     })
     const curDist = Math.hypot(d.rects[d.over].cx - px, d.rects[d.over].cy - py)
     const next = best !== d.over && curDist - bestDist > HYSTERESIS ? best : d.over
-    // Written straight to the element, never through React state: a delta in context would re-render
-    // EVERY item on EVERY pointermove (O(N) reflow each → O(N²) per frame). useZoneItem omits
-    // `transform` for the pointer-following item so React never clobbers this write.
+    // Written straight to the element: a delta in context would re-render every item on every
+    // pointermove. useZoneItem omits `transform` here so React never clobbers this write.
     if (d.el) d.el.style.transform = `translate3d(${dx + comp.x}px, ${dy + comp.y}px, 0)`
     if (next !== d.over) {
       d.over = next
@@ -213,7 +210,7 @@ export function Zone({
       const activeIdx = idsRef.current.indexOf(d.id)
       if (!measured || activeIdx === -1) {
         detach()
-        return // can't drag without a complete layout snapshot
+        return
       }
       d.active = true
       d.activeIdx = activeIdx
@@ -229,8 +226,8 @@ export function Zone({
       setDropState('dragging')
       notifyRef.current.onDragStart?.({ activeId: d.id })
       announce(`Picked up ${labelOf(d.id)}.`)
-      // The activation commit strips React's managed transform — re-assert it on the next frame so
-      // the item can't paint at origin before the imperative follow takes over.
+      // The activation commit strips React's managed transform; re-assert before the item can
+      // paint at origin.
       requestAnimationFrame(() => {
         if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
       })
@@ -268,10 +265,8 @@ export function Zone({
     }
   }
 
-  // Commits on the lifted item's `transitionend` — NOT a blind timer — because the CSS transition
-  // starts a frame after a timer would, so a timer fires while gap items are still mid-flight and
-  // snaps them short (the jerk). The lifted item's transition starts last, so its end means every
-  // item has settled. Fallback timer covers the no-transition case.
+  // Commits on `transitionend`, not a timer: the transition starts a frame later, so a timer fires
+  // while gap items are mid-flight and snaps them short. The fallback covers no-transition hosts.
   const settle = (targetIndex: number, commit: () => void): void => {
     setDropState('dropping')
     setOverIndex(targetIndex)
@@ -315,7 +310,7 @@ export function Zone({
         if (kbdEl) requestAnimationFrame(() => kbdEl.focus())
       })
     if (over === activeIdx) {
-      apply(false) // dropped on its own slot — animate home, no reorder
+      apply(false)
       return
     }
     const verdict = cbRef.current.canReorder?.(activeId2, overId) ?? true
@@ -330,7 +325,7 @@ export function Zone({
   const onUp = (): void => {
     detach()
     const d = drag.current
-    if (!d.active) return // never passed activation — it was a click, not a drag
+    if (!d.active) return // never passed activation — a click, not a drag
     resolveDrop(d.over, d.activeIdx, d.id, null)
   }
 
@@ -344,7 +339,7 @@ export function Zone({
 
   const begin = (id: string, e: ReactPointerEvent): void => {
     if (disabled || e.button !== 0 || !e.isPrimary) return
-    if (drag.current.active) return // a drag is in progress or still committing
+    if (drag.current.active) return
     const el = els.current.get(id) ?? null
     if (!el) return
     const handlers = { move: onMove, up: onUp, cancel: onCancel }
@@ -379,7 +374,7 @@ export function Zone({
         announce(`Moved to position ${next + 1} of ${d.rects.length}.`)
       }
     } else if (e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') {
-      // Space/Enter/Tab all drop (dnd-kit parity) — Tab must commit, not tab focus away mid-drag.
+      // Tab drops too: it must commit, not tab focus away mid-drag.
       e.preventDefault()
       detach()
       resolveDrop(d.over, d.activeIdx, d.id, d.el)
@@ -397,8 +392,7 @@ export function Zone({
     }
   }
 
-  // Listens on the document for arrows/Space/Esc after lifting — the lift keydown itself won't
-  // re-fire into this new listener (listeners added mid-dispatch skip the current event).
+  // The lift keydown won't re-fire into this listener: one added mid-dispatch skips the current event.
   const liftKeyboard = (id: string): void => {
     if (disabled || drag.current.active) return
     const el = els.current.get(id) ?? null
@@ -497,9 +491,8 @@ export function useZoneItem(id: string): DragItem {
   let transform: string | undefined = 'translate3d(0,0,0)'
   if (rects.length && activeIdx !== -1 && index !== -1) {
     if (isDragging) {
-      // The lifted item sits on the over-slot for keyboard (eases each arrow step) or on drop; during
-      // a live pointer drag, transform is omitted here so a re-render can't clobber track()'s
-      // imperative follow write. (On the slot, no scroll comp — the slot scrolled with the item too.)
+      // On the slot for keyboard and drop; omitted during a live pointer drag so a re-render can't
+      // clobber track()'s imperative follow write.
       const onSlot = keyboard || dropState === 'dropping'
       const t = onSlot ? (rects[overIndex] ?? rects[activeIdx]) : null
       transform = t
@@ -514,13 +507,9 @@ export function useZoneItem(id: string): DragItem {
     }
   }
 
-  // Non-active items ease the gap; the active item eases on drop and on every keyboard arrow step
-  // (but follows the pointer with no transition during a pointer drag). At rest (idle) the inline
-  // transition clears ENTIRELY — an inline value (even 'none') replaces the element's whole
-  // stylesheet transition list, silently killing its own color/size motion (the tab bar's open/close
-  // slide died this way). The commit still snaps pixel-identically because an engine item's
-  // stylesheet must never transition `transform` — that's the zone contract; hover-pop and friends
-  // live on an inner layer.
+  // At rest the inline transition clears entirely: an inline value (even 'none') replaces the
+  // element's whole stylesheet transition list and kills its own color/size motion. Safe because an
+  // engine item's stylesheet must never transition `transform` — that is the zone contract.
   const animate = isDragging ? dropState === 'dropping' || keyboard : dropState !== 'idle'
   return {
     setNodeRef: (el) => register(id, el),

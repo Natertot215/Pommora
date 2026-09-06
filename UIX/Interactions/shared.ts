@@ -28,8 +28,8 @@ export type DragItem = {
   isDragging: boolean
 }
 
-export const ACTIVATION = 5 // px the pointer must travel before a drag starts (vs. a click)
-// The inset's one source is the size tokens — the CSS side reads it as `--drop-line-inset`.
+export const ACTIVATION = 5 // px the pointer must travel before a drag starts
+// The CSS side reads this same token as `--drop-line-inset`.
 export { DROP_LINE_INSET } from '../Theme/size.css'
 export const GHOST_OFFSET = { x: 12, y: 8 }
 export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
@@ -43,7 +43,7 @@ export function suppressNextClick(): void {
   window.setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0)
 }
 /** A cancelled drag's release is still coming and must not read as a click; a new press first means
- *  that release was lost (the cancel came from a blur). */
+ *  that release was lost to a blur. */
 export function suppressReleaseClick(): void {
   const onUp = (): void => {
     document.removeEventListener('pointerdown', onDown, true)
@@ -53,8 +53,8 @@ export function suppressReleaseClick(): void {
   document.addEventListener('pointerup', onUp, { once: true })
   document.addEventListener('pointerdown', onDown, { capture: true, once: true })
 }
-export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch — kills flicker
-export const SETTLE_FALLBACK = 80 // ms slack past the transition for the commit fallback (paint-start delay)
+export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch
+export const SETTLE_FALLBACK = 80 // ms slack past the transition, covering the paint-start delay
 
 export function toBox(el: HTMLElement): Box {
   const r = el.getBoundingClientRect()
@@ -68,5 +68,5 @@ export function toBox(el: HTMLElement): Box {
   }
 }
 
-/** Integer-ish px for transforms — `.toFixed(1)` keeps sub-pixel sharpness on Retina without blur. */
+/** `.toFixed(1)` keeps sub-pixel sharpness on Retina without blur. */
 export const px = (n: number): string => `${n.toFixed(1)}px`

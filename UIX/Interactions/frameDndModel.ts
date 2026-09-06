@@ -1,7 +1,5 @@
-// Pure model behind the Properties frame's two-region drag — no React, no DOM. The pointer's
-// region decides everything; the rows only refine the insertion slot within it. Slot indexes
-// land in the persisted arrays' without-dragged coordinates — the filter-then-splice idiom
-// both reorder ops share.
+// The pointer's region decides everything; the rows only refine the insertion slot within it.
+// Slot indexes are in the persisted arrays' without-dragged coordinates.
 
 import type { MeasuredRow } from './reorderModel'
 
@@ -16,10 +14,8 @@ export type PaneDrop =
 export type FrameSlot = { drop: PaneDrop; lineY: number | null; highlightAll: boolean }
 export type Region = { top: number; bottom: number }
 
-/** Translate an All-Properties visible slot (counted over unassigned rows only) into the FULL
- *  nexus-order index `registry:reorder` splices at — the full order still holds every assigned
- *  id, so the raw visible index would land the drop among hidden rows. Anchors on
- *  the visible successor's full-order position; past the last visible row appends after it. */
+/** The full order still holds every assigned id, so a raw visible index would land the drop among
+ *  hidden rows; this anchors on the visible successor's full-order position instead. */
 export function nexusReorderIndex(
   orderedIds: string[],
   visibleIds: string[],
@@ -37,9 +33,8 @@ export function nexusReorderIndex(
 export const withinRegion = (r: Region, pointerY: number): boolean =>
   pointerY >= r.top && pointerY <= r.bottom
 
-/** The midpoint scan both pane models share: the insertion index among one group's rows (the
- *  dragged row excluded) and the line's Y — the next row's top, the last row's bottom, or the
- *  region's own top when the group is empty. */
+/** The midpoint scan both pane models share: the insertion index among one group's rows and the
+ *  line's Y — the next row's top, the last row's bottom, or the region's top when empty. */
 export function regionScan(
   rows: MeasuredRow[],
   byId: Map<string, FrameRow>,
@@ -70,7 +65,7 @@ export function frameSlot(
     : withinRegion(regions.all, pointerY)
       ? 'all'
       : null
-  if (region === null) return null // outside both — release is a no-op
+  if (region === null) return null
 
   if (region === 'all' && dragged.group === 'assigned') {
     return { drop: { kind: 'unassign', propId: draggedId }, lineY: null, highlightAll: true }
