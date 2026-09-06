@@ -56,7 +56,7 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount. */
 export function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
-  const state = (): ReturnType<typeof useSession.getState> => useSession.getState()
+  const state = useSession.getState
   return {
     settings: () => {
       const { personalization: p, commands } = state()
