@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 00:10 PT",
+  updated: "09-06-2026 01:20 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -98,8 +98,8 @@ const DATA = {
     { name: "Phase 2", title: "The engine out of Electron", tasks: [
       { n: 4, title: "Pure engine domains move whole", state: "done", hash: "e004a49a", note: "−702 lines; raw mode, assetMigrate, bare-Record reader gone; SQLite stores wait in Core/Store for Task 6's seam." },
       { n: 5, title: "Renderer into Core and UIX", state: "done", hash: "7f8452c8", note: "712 files; renderer/ gone; smoke launch green. UIX/Utilities born, UIX/Canvas retired (TileGrid is Tiles'), web window is Core's. One UIX→Core edge (PickerControl → nativeMenus) until Task 13." },
-      { n: 6, title: "Platform seam", state: "running", note: "Fable. The comment-killer pre-pass was killed in flight and left nothing; skipped. The lane closed alongside it in three commits (50e88ab3, 3d35fbce, 22ed2423; −12 code lines)." },
-      { n: 7, title: "Dialer replaces the api object", state: "pending" },
+      { n: 6, title: "Platform seam", state: "done", hash: "1cceaae3", note: "Fable. Machine + three store seams in Core/Platform; node:* gone from Core's engine; SQLite bodies in Desktop/Store; Core/Store dissolved; comments on touched files 1,381 → 309. +265 code lines (the seam). Smoke launch green. The lane ran alongside it over all of UIX and Core/{Connections,Utilities}: five commits, −458 gross, nearly all comments." },
+      { n: 7, title: "Dialer replaces the api object", state: "running" },
       { n: 8, title: "main/index.ts splits by domain", state: "pending", note: "Fable." },
       { n: 9, title: "Dispatcher bodies and the one sweep", state: "pending" },
     ], gate: { name: "Gate 2", state: "pending", note: "One smoke launch." } },
@@ -135,8 +135,12 @@ const DATA = {
     { at: "50e88ab3", label: "Lane C", lines: 69571 },
     { at: "3d35fbce", label: "Lane A", lines: 69561 },
     { at: "22ed2423", label: "Lane B", lines: 69557 },
+    { at: "26a05524", label: "Lane E", lines: 69557 },
+    { at: "36ab5034", label: "Lane D", lines: 69546 },
+    { at: "1cceaae3", label: "Task 6", lines: 69811 },
   ],
   gates: [
+    { name: "Task 6 · 1cceaae3", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 (1,058 files) · build 0\nrg node: Core non-test → 0 · Desktop → 13 · SQL in Core → 0 · AsyncLocalStorage Core → 0 · electron Core → 0 · Core/Store gone\nsmoke: built app opened the scratch Nexus, page:open + page:updateBody round-tripped, page restored, killed" },
     { name: "Lane · 50e88ab3 3d35fbce 22ed2423", text: "tsc -p Core 0 · tsc -p UIX 0 · vitest Core/Connections Core/Utilities 0 (6 / 109) · vitest UIX 0 (29 / 258) · biome 0\nnet −12 code lines, −116 gross; root gates at Task 6's commit" },
     { name: "Task 5 · 7f8452c8", text: "typecheck 0 · lint 0 · test 0 (321 / 3,986) · build 0\nsmoke launch: scratch Nexus rendered, killed · test ! -d Pommora/src/renderer · rg @renderer/ → 0 · rg @pommora/desktop Core UIX → 0" },
     { name: "Task 4 · e004a49a", text: "typecheck 0 · lint 0 · test 0 (320 / 3,986: −1 file, −20 cases, each named) · build 0\nrg electron Core → 0 · rg @pommora/desktop Core UIX → 0" },
