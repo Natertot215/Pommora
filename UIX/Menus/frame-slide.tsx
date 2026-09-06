@@ -4,21 +4,10 @@ import { duration, ms } from '../Animations'
 import { useExitPresence } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
 
-// The slide runs on `base`; a close holds the detail mounted exactly that long (below) so it slides
-// OUT at full size instead of vanishing — a collapsing empty slot fed the ResizeObserver mid-slide,
-// which was the slide-out jitter.
 const SLIDE_MS = ms(duration.base)
 
-/**
- * The one slide primitive every pane rides, so no surface hand-rolls its own push/back state.
- * Nesting composes: a detail may itself be a FrameSlide (each only slides + resizes, so the
- * inner height change just feeds the outer's ResizeObserver).
- *
- * The slider ONLY slides + resizes — it never caps or scrolls a slot. A slot that needs a ceiling or a
- * pinned footer wraps its content in a `MenuScrollFrame` (the single cap/scroll/footer source); the
- * slider just animates to the frame's already-capped height. This keeps the two mechanisms from
- * fighting (a slot scrolling AND a frame body scrolling was the double-container that broke the slide).
- */
+/** Slides and resizes only, never caps or scrolls a slot — a slot that needs a ceiling or a pinned
+ *  footer wraps its content in a `MenuScrollFrame`, and two scrolling containers break the slide. */
 export function FrameSlide({
   open,
   root,
@@ -38,9 +27,7 @@ export function FrameSlide({
   const bRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ aw: 0, ah: 0, bw: 0, bh: 0 })
   const [enabled, setEnabled] = useState(false)
-  // The measure-then-flip: the detail mounts (slot B) the same render `open` turns true, so a frame
-  // later the ResizeObserver has its height and the viewport animates to a known target instead of
-  // snapping from `auto`. Back (open→false) flips immediately so the slide-out isn't held a frame.
+  // Measure-then-flip: a frame after the detail mounts, the observer has a target to animate to.
   const [active, setActive] = useState<'a' | 'b'>('a')
   useEffect(() => {
     if (!open) {
@@ -51,10 +38,8 @@ export function FrameSlide({
     return () => cancelAnimationFrame(raf)
   }, [open])
 
-  // Hold the outgoing detail mounted through the slide-out: `open` flips false and `active` flips to
-  // 'a' immediately (the slide starts), but the caller nulls `detail` the same render — so latch the
-  // last real detail and keep rendering it until the slide lands, then drop it. The slot keeps its
-  // measured box the whole way, so the ResizeObserver reads a stable size instead of a collapsing one.
+  // The caller nulls `detail` the same render the slide-out starts; latching keeps the slot's
+  // measured box stable so the observer doesn't read a collapsing one mid-slide.
   const { mounted } = useExitPresence(open, SLIDE_MS)
   const latchedDetail = useRef<ReactNode>(null)
   if (open) latchedDetail.current = detail
@@ -64,8 +49,7 @@ export function FrameSlide({
     const a = aRef.current
     const b = bRef.current
     if (!a || !b) return
-    // Layout box, never a client rect: the surface opens on a scale, and a transformed rect would
-    // read that mid-animation size as the pane's real one.
+    // Layout box, never a client rect: the surface opens on a scale.
     const measure = (): void =>
       setSize({ aw: a.offsetWidth, ah: a.offsetHeight, bw: b.offsetWidth, bh: b.offsetHeight })
     measure()
@@ -75,18 +59,14 @@ export function FrameSlide({
     return () => ro.disconnect()
   }, [])
 
-  // Arm the transitions only after the first paint, so the pane snaps to its measured size on open
-  // instead of growing from 0 / sliding from an arbitrary start.
+  // Armed only after the first paint, so the pane snaps to its measured size instead of growing.
   useEffect(() => setEnabled(true), [])
 
-  // Height eases only across a navigation flip; between flips it stays untransitioned so an
-  // in-place resize (a child Reveal, spacer collapse) tracks content live instead of lag-chasing
-  // a ResizeObserver that fires every animating frame (the bounce).
+  // Height eases only across a flip; between flips an in-place resize must track content live
+  // rather than lag-chase an observer firing every animating frame.
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
-  // Before paint, not after: the idle slot stops painting off this flag, and a passive effect would
-  // let the frame where `active` has already moved paint with the outgoing slot hidden — a blink at
-  // the head of every slide.
+  // Before paint, not after: a passive effect blinks the outgoing slot out at the head of a slide.
   useLayoutEffect(() => {
     if (firstFlip.current) {
       firstFlip.current = false

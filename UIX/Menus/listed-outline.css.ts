@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 
-export const RAIL_W = 12
+const RAIL_W = 12
 const RAIL_CENTER_X = `calc(var(--row-width-standard) + ${RAIL_W / 2}px)`
 
 export const dropOutline = style({

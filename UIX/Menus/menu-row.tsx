@@ -39,8 +39,7 @@ export function MenuTopRow({
         }
         trailing={right}
         onClick={onBack}
-        // A press must not steal focus: the value panes commit-on-blur, so an unguarded mousedown here
-        // would commit-and-dismiss before this row's click (Back) ever lands.
+        // The value panes commit-on-blur, so an unguarded mousedown commits before Back lands.
         onPointerDown={(e) => e.preventDefault()}
       >
         <span className={s.topBarLeadingLabel}>{label}</span>

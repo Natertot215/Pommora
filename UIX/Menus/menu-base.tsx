@@ -4,13 +4,8 @@ import { useDismissal } from '../Interactions/dismissalStack'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { MenuSurface } from './menu-surface'
 
-/** A trigger button with a pane hanging under it: the open state, the outside-dismiss, and the
- *  retract beat, stated once. `MenuSurface` stays state-free on purpose — the toolbar trio shares one
- *  dismiss region across two panes and owns that state itself — so the state belongs to this shell
- *  rather than to the surface underneath it.
- *
- *  Carries no styling. Every class comes from the caller, which keeps surface-specific geometry (the
- *  toolbar's swallow shift, its drag-region opt-out) with the surface that means it. */
+/** The open state lives here and not in `MenuSurface`, which stays state-free so the toolbar trio
+ *  can share one dismiss region across two panes. Every class comes from the caller. */
 export function MenuDropdown({
   icon,
   title,
@@ -48,15 +43,12 @@ export function MenuDropdown({
   })
   const pane = useExitPresence(open)
 
-  // The pane is centered on the button, so the room to that button's right counts twice. Measured from
-  // a live rect rather than offsetWidth because the comparison is against the window: a cluster riding
-  // a translate puts the on-screen position exactly where the transform contributes.
+  // The pane is centered on the button, so the room to its right counts twice; a live rect rather
+  // than offsetWidth because a cluster riding a translate must measure where it actually sits.
   useLayoutEffect(() => {
     if (!pane.mounted || edgeInset === undefined) return
-    // Written straight to the node, never held as state: nothing renders from it, and a resize fires
-    // per frame while the window is dragged — routing it through React would re-render every row on
-    // each one. Refs are read inside the callback, never captured: a detached node measures all zeros,
-    // which reads as a successful measurement and silently uncaps the pane.
+    // Written to the node, never state: a drag fires this per frame. Refs read inside, never
+    // captured: a detached node measures zeros, which reads as success and uncaps the pane.
     const measure = (): void => {
       const wrap = wrapRef.current
       const anchor = anchorRef.current

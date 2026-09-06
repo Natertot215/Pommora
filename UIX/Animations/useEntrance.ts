@@ -3,10 +3,9 @@ import { useRef } from 'react'
 const sameKeys = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
   a.size === b.size && [...a].every((k) => b.has(k))
 
-/** Which rows arrived since the last render, so a list can hand `enterOnMount` to the ones that are
- *  actually new. Compares by key rather than array identity, so a list rebuilt every render (and a
- *  StrictMode double-pass) reports an arrival exactly once. `ready` holds the seed open for a list
- *  whose data lands a render behind its mount — an opening surface presents, it doesn't cascade. */
+/** Which rows arrived since the last render. Keyed rather than array-identity, so a list rebuilt
+ *  every render (and a StrictMode double-pass) reports an arrival exactly once; `ready` holds the
+ *  seed open for a list whose data lands a render behind its mount. */
 export function useEntrance<T>(
   items: readonly T[],
   keyOf: (item: T, index: number) => string,

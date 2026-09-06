@@ -1,9 +1,5 @@
-/* The toolbar-cluster swallow, one formula for both hosts. As a side panel opens (--io → 1) the
-   trailing cluster slides left to land inside the panel's corner. Each host — the main shell toolbar
-   and every floating window — sets the five --slide-* inputs (the panel's width, the ring inset, the
-   cluster's home gap off the edge, the cluster's own width, and its breathing room past the seam)
-   and reads --toolbar-slide. --io is declared per host, so the shared formula tracks whichever driver
-   the host holds.*/
+/* Each host sets the five --slide-* inputs and declares its own --io, so this one formula tracks
+   whichever driver the host holds. */
 .app-toolbar,
 .window {
   --toolbar-slide: max(
