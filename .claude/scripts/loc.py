@@ -17,6 +17,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from typing import NamedTuple
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WORKSPACES = ["Core", "UIX", "Desktop"]
@@ -121,16 +122,31 @@ def area_of(rel: str) -> str | None:
     return None
 
 
-def countable(rel: str) -> bool:
+# A file's kind, for the census beside the line count. Only `source` is measured in lines; the other
+# two are counted so the page states what the line total leaves out rather than hiding it.
+TEST_DIRS = {"Testing", "fixtures", "__tests__"}
+CONFIG_NAMES = {"package.json", "biome.json", "vercel.json"}
+CONFIG_EXT = (".yml", ".yaml")
+
+
+def classify(rel: str) -> str | None:
     base = os.path.basename(rel)
-    if not rel.endswith(EXT):
-        return False
-    if ".test." in base or ".spec." in base or base.endswith(".d.ts"):
-        return False
-    if base.endswith(".config.ts") or base == "vitest.setup.ts":
-        return False
-    parts = rel.split("/")
-    return not any(p in SKIP_DIR for p in parts)
+    if any(p in SKIP_DIR for p in rel.split("/")):
+        return None
+    if (
+        any(p in TEST_DIRS for p in rel.split("/"))
+        or ".test." in base
+        or ".spec." in base
+        or base == "vitest.setup.ts"
+    ):
+        return "tests"
+    if (
+        base.endswith((".d.ts", ".config.ts", *CONFIG_EXT))
+        or base in CONFIG_NAMES
+        or (base.startswith("tsconfig") and base.endswith(".json"))
+    ):
+        return "config"
+    return "source" if rel.endswith(EXT) else None
 
 
 BLOCK_OPEN = re.compile(r"/\*")
@@ -165,9 +181,17 @@ def code_lines(text: str) -> int:
     return n
 
 
-def measure_tree(base: str) -> dict[str, int]:
+class Census(NamedTuple):
+    lines: dict[str, int]
+    files: dict[str, int]
+    kinds: dict[str, int]
+
+
+def measure_tree(base: str) -> Census:
     """base holds a checkout: the workspaces at its root, or the pre-monorepo Pommora/src."""
-    totals: dict[str, int] = {name: 0 for name in ORDER}
+    lines: dict[str, int] = {name: 0 for name in ORDER}
+    files: dict[str, int] = {name: 0 for name in ORDER}
+    kinds: dict[str, int] = {"source": 0, "tests": 0, "config": 0}
     for root in [*WORKSPACES, LEGACY_ROOT]:
         top = os.path.join(base, root)
         if not os.path.isdir(top):
@@ -177,14 +201,17 @@ def measure_tree(base: str) -> dict[str, int]:
             for f in filenames:
                 full = os.path.join(dirpath, f)
                 rel = os.path.relpath(full, base)
-                if not countable(rel):
-                    continue
+                kind = classify(rel)
                 area = area_of(rel)
-                if area is None:
+                if kind is None or area is None:
                     continue
+                kinds[kind] += 1
+                if kind != "source":
+                    continue
+                files[area] += 1
                 with open(full, encoding="utf-8", errors="ignore") as fh:
-                    totals[area] += code_lines(fh.read())
-    return totals
+                    lines[area] += code_lines(fh.read())
+    return Census(lines, files, kinds)
 
 
 def git(*args: str) -> str:
@@ -221,11 +248,11 @@ def history() -> list[dict]:
             except subprocess.CalledProcessError:
                 continue
             subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
-            totals = measure_tree(tmp)
-        if sum(totals.values()) == 0:
+            lines = measure_tree(tmp).lines
+        if sum(lines.values()) == 0:
             continue
-        out.append({"d": date, "v": [totals[a] for a in ORDER]})
-        print(f"  {date}  {sum(totals.values()):>7}", file=sys.stderr)
+        out.append({"d": date, "v": [lines[a] for a in ORDER]})
+        print(f"  {date}  {sum(lines.values()):>7}", file=sys.stderr)
     return out
 
 
@@ -236,7 +263,7 @@ DATA_TAG = re.compile(r'(<script id="data" type="application/json">).*?(</script
 LEDGER_URL = "https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401"
 
 
-def measure_commit(rev: str) -> dict[str, int]:
+def measure_commit(rev: str) -> Census:
     """The tree as that commit recorded it — never the working one, which may hold anyone's
     uncommitted work and would attribute it to a commit that doesn't contain it."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -245,6 +272,11 @@ def measure_commit(rev: str) -> dict[str, int]:
         )
         subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
         return measure_tree(tmp)
+
+
+def census_payload(census: Census) -> dict:
+    """The file census as the page reads it: per-area source files, and the three kinds whole."""
+    return {"files": [census.files[a] for a in ORDER], "kinds": census.kinds}
 
 
 def migrate(payload: dict) -> dict:
@@ -273,16 +305,19 @@ def update() -> str:
     """
     date = git("log", "-1", "--format=%ad", "--date=short", "HEAD").strip()
     head = git("rev-parse", "--short", "HEAD").strip()
-    totals = measure_commit("HEAD")
-    row = {"d": date, "v": [totals[a] for a in ORDER]}
+    census = measure_commit("HEAD")
+    row = {"d": date, "v": [census.lines[a] for a in ORDER]}
+    counts = census_payload(census)
 
     with open(HISTORY_JSON, encoding="utf-8") as fh:
         payload = migrate(json.load(fh))
     # A commit that moved no code leaves the page alone. Rewriting it just to stamp a new SHA would
     # dirty the tree on every commit forever — including the commit that carries the refresh — so
     # `head` means the commit these numbers were measured at, which is the truthful reading anyway.
-    if payload["areas"] == ORDER and any(
-        s["d"] == date and s["v"] == row["v"] for s in payload["series"]
+    if (
+        payload["areas"] == ORDER
+        and all(payload.get(k) == v for k, v in counts.items())
+        and any(s["d"] == date and s["v"] == row["v"] for s in payload["series"])
     ):
         return f"{date}  {head}  unchanged"
     series = [s for s in payload["series"] if s["d"] != date]
@@ -290,9 +325,10 @@ def update() -> str:
     series.sort(key=lambda s: s["d"])
     payload["series"] = series
     payload["head"] = head
+    payload.update(counts)
 
     write_payload(payload)
-    return f"{date}  {head}  {sum(totals.values())} lines"
+    return f"{date}  {head}  {sum(census.lines.values())} lines"
 
 
 def write_payload(payload: dict) -> None:
@@ -315,6 +351,7 @@ if __name__ == "__main__":
                 "colors": COLORS,
                 "series": history(),
                 "head": git("rev-parse", "--short", "HEAD").strip(),
+                **census_payload(measure_commit("HEAD")),
             }
         )
         print("line ledger: rebuilt from the branch's history")
@@ -329,13 +366,15 @@ if __name__ == "__main__":
             "colors": COLORS,
             "series": history(),
             "head": git("rev-parse", "--short", "HEAD").strip(),
+            **census_payload(measure_commit("HEAD")),
         }
     else:
-        totals = measure_tree(ROOT)
+        census = measure_tree(ROOT)
         payload = {
             "areas": ORDER,
             "head": git("rev-parse", "--short", "HEAD").strip(),
-            "totals": [totals[a] for a in ORDER],
-            "total": sum(totals.values()),
+            "totals": [census.lines[a] for a in ORDER],
+            "total": sum(census.lines.values()),
+            **census_payload(census),
         }
     print(json.dumps(payload))
