@@ -8,6 +8,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'
 import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
+import { host } from '../Platform/dialer'
 
 const inFlight = new Map<string, Promise<string>>()
 
@@ -27,7 +28,7 @@ export function ensureContainerView(
 ): void {
   if ((source.views?.length ?? 0) > 0 || inFlight.has(source.id)) return
   const mint = (async () => {
-    const res = await window.nexus.views.save(source.path, source.kind, mintDefaultView(schema))
+    const res = await host().ask('views:save', source.path, source.kind, mintDefaultView(schema))
     if (!res.ok) throw new Error(res.error.message)
     return res.value.id
   })()
@@ -47,10 +48,10 @@ export async function saveViewAdopting(
     const minted = await pendingViewMint(source.id)?.catch(() => undefined)
     if (minted) toSave = { ...view, id: minted }
   }
-  const res = await window.nexus.views.save(source.path, source.kind, toSave)
+  const res = await host().ask('views:save', source.path, source.kind, toSave)
   if (res.ok) {
     if (wasSentinel) {
-      await window.nexus.activeViews.set(source.id, res.value.id)
+      await host().ask('activeViews:set', source.id, res.value.id)
       onViewAdopted(source.id, res.value.id)
     }
   }

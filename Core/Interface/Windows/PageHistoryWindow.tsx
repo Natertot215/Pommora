@@ -16,6 +16,7 @@ import { livePagePath, resolveOnlyConnections, trailOf } from '../../Session/tre
 import { useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
+import { host } from '../../Platform/dialer'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
@@ -52,9 +53,9 @@ function PageHistoryBody({
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {
-    const list = await window.nexus.listHistory(target.id)
+    const list = await host().ask('history:list', target.id)
     if (!list.ok) {
-      window.nexus.showError(list.error.message)
+      host().ask('error:show', list.error.message)
       return
     }
     setRows(list.value)
@@ -69,10 +70,12 @@ function PageHistoryBody({
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   useEffect(() => {
     let live = true
-    void window.nexus.loadValues(parentOf(livePath), [target.id]).then((values) => {
-      const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
-      if (live) setModifiedAt(stamp ? new Date(stamp).getTime() : null)
-    })
+    void host()
+      .ask('view:loadValues', parentOf(livePath), [target.id])
+      .then((values) => {
+        const stamp = values.ok ? values.value[target.id]?.modifiedAt : null
+        if (live) setModifiedAt(stamp ? new Date(stamp).getTime() : null)
+      })
     return () => {
       live = false
     }
@@ -85,7 +88,9 @@ function PageHistoryBody({
     const read =
       shown === null
         ? fetchPageDetail(livePath).then((d) => d?.body ?? null)
-        : window.nexus.readSnapshot(target.id, shown).then((r) => (r.ok ? r.value : null))
+        : host()
+            .ask('history:read', target.id, shown)
+            .then((r) => (r.ok ? r.value : null))
     void read.then((b) => {
       if (live) setBody(b)
     })
@@ -102,7 +107,7 @@ function PageHistoryBody({
   const restore = async (ts: number): Promise<void> => {
     if (!(await askRestoreSnapshot())) return
     const r = await restoreSnapshot(target, ts)
-    if (!r.ok) window.nexus.showError(r.error.message)
+    if (!r.ok) host().ask('error:show', r.error.message)
     else {
       setChecked((prev) => (prev.has(ts) ? toggled(prev, ts) : prev))
       setShown(null)
@@ -112,13 +117,13 @@ function PageHistoryBody({
   }
   const remove = async (ts: readonly number[]): Promise<void> => {
     if (!(await askDeleteSnapshots())) return
-    const r = await window.nexus.deleteSnapshots(target.id, [...ts])
-    if (!r.ok) window.nexus.showError(r.error.message)
+    const r = await host().ask('history:delete', target.id, [...ts])
+    if (!r.ok) host().ask('error:show', r.error.message)
     await refresh()
   }
   const openMenu = async (ts: number): Promise<void> => {
     const keys = checked.has(ts) ? [...checked] : [ts]
-    const action = await window.nexus.historyMenu({ batch: keys.length > 1 })
+    const action = await host().ask('history:menu', { batch: keys.length > 1 })
     if (action === 'restore') await restore(ts)
     else if (action === 'delete') await remove(keys)
   }

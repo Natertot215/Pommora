@@ -3,10 +3,11 @@
 // place and missed in another.
 import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
 import { useSession } from '../Session/store'
+import { host } from './dialer'
 
 /** Opens a web address where the user said links go: the system browser by default, Pommora's
  *  floating browser when `openLinksInApp` is on. */
 export function openWebLink(url: string): void {
   if (useSession.getState().personalization.openLinksInApp) openInAppBrowser(url)
-  else void window.nexus.openExternal(url)
+  else void host().ask('link:open', url)
 }

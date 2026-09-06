@@ -77,6 +77,7 @@ import {
 } from '@pommora/core/Connections/linkValue'
 import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
+import { host as dialer } from '../../Platform/dialer'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
@@ -498,7 +499,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       t !== undefined && t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }
         : undefined
-    const action = await window.nexus.columnMenu({
+    const action = await dialer().ask('column-menu', {
       align: colAlign(id),
       alignable: !isTitle,
       hideable: !isTitle,
@@ -852,7 +853,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             ...pageMoveContext(tree, row.path),
           }
         : base
-    const action = await holdGhost(() => window.nexus.cellMenu(ctx))
+    const action = await holdGhost(() => dialer().ask('cell-menu', ctx))
     if (!action) return
     if (runPageSendAction(action, row)) return
     if (

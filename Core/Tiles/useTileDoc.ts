@@ -3,6 +3,7 @@ import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { useSession } from '../Session/store'
 import { decodeLayout, encodeLayout } from './layout/codec'
 import { emptyLayout, type TileLayout } from './layout/model'
+import { host as dialer } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 300
 
@@ -64,9 +65,11 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   )
   useEffect(() => {
     let canceled = false
-    void window.nexus.tiles.get(hostRef.current).then((r) => {
-      if (!canceled && r.ok) adopt(hostRef.current, r.value)
-    })
+    void dialer()
+      .ask('tiles:get', hostRef.current)
+      .then((r) => {
+        if (!canceled && r.ok) adopt(hostRef.current, r.value)
+      })
     return () => {
       canceled = true
     }
@@ -74,14 +77,14 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   useEffect(() => {
     if (storeLock === undefined || docLock.current === null || storeLock === docLock.current) return
     docLock.current = storeLock
-    lastSave.current = window.nexus.tiles.save(hostRef.current, { locked: storeLock })
+    lastSave.current = dialer().ask('tiles:save', hostRef.current, { locked: storeLock })
   }, [storeLock])
 
   const flush = useCallback(() => {
     const p = pending.current
     if (p.timer) clearTimeout(p.timer)
     if (p.layout)
-      lastSave.current = window.nexus.tiles.save(hostRef.current, {
+      lastSave.current = dialer().ask('tiles:save', hostRef.current, {
         layout: encodeLayout(p.layout),
       })
     pending.current = { timer: null, layout: null }
@@ -97,7 +100,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     flush()
     const saved = lastSave.current
     await saved
-    const r = await window.nexus.tiles.get(target)
+    const r = await dialer().ask('tiles:get', target)
     // A host swapped in place, or a local edit issued during the read (written or still in its
     // debounce), leaves what came back stale — that edit's own echo pushes again, so dropping this
     // one loses nothing.
@@ -116,7 +119,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   }, [flush, adopt])
   useEffect(
     () =>
-      window.nexus.onTilesChanged((host) => {
+      dialer().on('tiles:changed', (host) => {
         if (tileHostKey(host) !== tileHostKey(hostRef.current)) return
         if (busy.current) heldPush.current = true
         else void reload()
@@ -157,16 +160,18 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   )
 
   const refreshEntries = useCallback(() => {
-    void window.nexus.tiles.get(hostRef.current).then((r) => {
-      if (r.ok) setState((s) => ({ ...s, tiles: r.value.tiles }))
-    })
+    void dialer()
+      .ask('tiles:get', hostRef.current)
+      .then((r) => {
+        if (r.ok) setState((s) => ({ ...s, tiles: r.value.tiles }))
+      })
   }, [])
 
   const saveTiles = useCallback((update: unknown[] | ((cur: unknown[]) => unknown[])) => {
     const next = typeof update === 'function' ? update(liveTiles.current) : update
     liveTiles.current = next
     setState((s) => ({ ...s, tiles: next }))
-    lastSave.current = window.nexus.tiles.save(hostRef.current, { tiles: next })
+    lastSave.current = dialer().ask('tiles:save', hostRef.current, { tiles: next })
   }, [])
 
   return { ...state, setLayout, commitLayout, refreshEntries, saveTiles, setBusy }

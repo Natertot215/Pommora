@@ -4,6 +4,7 @@ import { MarkdownEditor } from '../../MarkdownPM'
 import type { ConnectionsApi } from '../../MarkdownPM/Connections'
 import { nativeEditorMenu } from '../../MarkdownPM/Editor/menu'
 import { createBodyWriter } from '../../Session/saveScheduler'
+import { host as dialer } from '../../Platform/dialer'
 
 const saves = createBodyWriter()
 
@@ -30,9 +31,11 @@ export function MarkdownTile({
 
   useEffect(() => {
     let live = true
-    void window.nexus.tiles.readMarkdown(host, tileId).then((r) => {
-      if (live) setBody(r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null)
-    })
+    void dialer()
+      .ask('tiles:readMarkdown', host, tileId)
+      .then((r) => {
+        if (live) setBody(r.ok ? r.value.body : r.error.code === 'not-found' ? '' : null)
+      })
     return () => {
       live = false
     }
@@ -53,7 +56,7 @@ export function MarkdownTile({
     saves.schedule(tileId, next, () =>
       suppressRef.current?.(tileId)
         ? Promise.resolve({ ok: true })
-        : window.nexus.tiles.writeMarkdown(host, tileId, next),
+        : dialer().ask('tiles:writeMarkdown', host, tileId, next),
     )
 
   if (body === null) return <div className="markdown-tile" />

@@ -3,6 +3,7 @@ import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { pageBody, shownPage, useSession } from '../Session/store'
 import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
+import { host } from '../Platform/dialer'
 
 // `.content-pane` fills the window; the sidebar and inspector are floating overlays carved off its
 // edges (skipped when parked off-screen). The toolbar is NOT carved — the banner is full-bleed under
@@ -62,7 +63,8 @@ export function useNavThumbnails(): void {
         scopeCaptured(s.tree?.nexus.id ?? null)
         const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return
-        const res = await window.nexus.capture.thumbnail(
+        const res = await host().ask(
+          'capture:thumbnail',
           key,
           contentRect(pane),
           window.devicePixelRatio,

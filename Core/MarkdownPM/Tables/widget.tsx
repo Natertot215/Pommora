@@ -41,6 +41,7 @@ import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from './model'
 import type { ConnectionsApi } from '../Connections'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
+import { host } from '../../Platform/dialer'
 
 type ConnGetter = () => ConnectionsApi | undefined
 // The connections getter reaches each cell's nested editor through a facet, so `[[…]]` render styled and
@@ -242,48 +243,50 @@ class TableWidget extends WidgetType {
             : m,
       )
     }
-    const toClipboard = (text: string): void => void window.nexus.writeClipboard(text)
+    const toClipboard = (text: string): void => void host().ask('clipboard:write', text)
     // The heading-row action grip drags the whole table block (left-press → block drag; right-click → menu).
     const tableDrag = (e: PointerEvent): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
-      void window.nexus.tableMenu(ctx).then((action) => {
-        if (!action) return
-        // Heading column is a `.nexus/`-persisted visual, not a source edit — toggle the field, which
-        // rebuilds this table's widget (and the persist listener writes it to disk).
-        if (action === 'col:toggle-heading') {
-          view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
-          return
-        }
-        const scan = docScan(view.state.doc)
-        const region = scan.tables[this.tableIndex]
-        if (!region) return
-        const copy = copyTextFor(
-          action,
-          ctx.index,
-          scan.text.slice(region.from, region.to),
-          modelFromRegion(region),
-        )
-        if (copy !== null) {
-          toClipboard(copy)
-          return
-        }
-        // Delete Table, or deleting the LAST column (deleting it would leave a 0-column table that no longer
-        // parses) → remove the whole region. Every other action is a model transform over the region.
-        if (
-          action === 'table:delete' ||
-          (action === 'col:delete' && modelFromRegion(region).columns.length <= 1)
-        ) {
-          view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
-          return
-        }
-        const transform = transformFor(action, ctx.index)
-        if (!transform) return
-        const change = structuralEditChange(scan, this.tableIndex, transform)
-        if (change) view.dispatch({ changes: change })
-      })
+      void host()
+        .ask('table-menu', ctx)
+        .then((action) => {
+          if (!action) return
+          // Heading column is a `.nexus/`-persisted visual, not a source edit — toggle the field, which
+          // rebuilds this table's widget (and the persist listener writes it to disk).
+          if (action === 'col:toggle-heading') {
+            view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
+            return
+          }
+          const scan = docScan(view.state.doc)
+          const region = scan.tables[this.tableIndex]
+          if (!region) return
+          const copy = copyTextFor(
+            action,
+            ctx.index,
+            scan.text.slice(region.from, region.to),
+            modelFromRegion(region),
+          )
+          if (copy !== null) {
+            toClipboard(copy)
+            return
+          }
+          // Delete Table, or deleting the LAST column (deleting it would leave a 0-column table that no longer
+          // parses) → remove the whole region. Every other action is a model transform over the region.
+          if (
+            action === 'table:delete' ||
+            (action === 'col:delete' && modelFromRegion(region).columns.length <= 1)
+          ) {
+            view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
+            return
+          }
+          const transform = transformFor(action, ctx.index)
+          if (!transform) return
+          const change = structuralEditChange(scan, this.tableIndex, transform)
+          if (change) view.dispatch({ changes: change })
+        })
     }
     // The observer reads the box off the DOM rather than closing over one, so the widget that
     // replaces this one keeps being measured through the same node.
@@ -315,7 +318,7 @@ class TableWidget extends WidgetType {
         onClearCells={clearCells}
         onFill={fill}
         onCopyText={toClipboard}
-        readClipboard={() => window.nexus.readClipboard()}
+        readClipboard={() => host().ask('clipboard:read')}
         onMenu={onMenu}
         onTableDrag={tableDrag}
         onCite={(label) => travelToCitation(view, label)}

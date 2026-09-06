@@ -18,6 +18,7 @@ import { applyPersonalization } from './personalization'
 import { reconcileIndexOf } from './treeIndex'
 import { flushAllPageSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
+import { host } from '../Platform/dialer'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -82,37 +83,43 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // Only the first load shows the full-screen loading state — a mutation refetch keeps the
       // tree mounted so the sidebar's expand/collapse + selection survive.
       if (!get().tree) set({ status: 'loading', error: undefined })
-      void window.nexus.systemAccent().then((c) => {
-        systemAccentCache = c
-      })
+      void host()
+        .ask('theme:systemAccent')
+        .then((c) => {
+          systemAccentCache = c
+        })
       try {
-        const res = await window.nexus.state()
+        const res = await host().ask('nexus:state')
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
             // Independent fetches, one round of latency; the raw database reads keep a catch,
             // since the envelope channels structurally cannot reject.
             await Promise.all([
-              window.nexus.subfield.get().then((cfg) => {
-                if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
-              }),
-              window.nexus.navViewModes.get().then((modes) => {
-                if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
-              }),
-              window.nexus.citations
-                .get()
+              host()
+                .ask('subfield:get')
+                .then((cfg) => {
+                  if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
+                }),
+              host()
+                .ask('navViewModes:get')
+                .then((modes) => {
+                  if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
+                }),
+              host()
+                .ask('citations:get')
                 .then((all) => set({ citationsShown: all }))
                 .catch(() => undefined), // every page falls back to the nexus-wide default
-              window.nexus.linkTitles
-                .get()
+              host()
+                .ask('linkTitles:get')
                 .then((titles) => set({ linkTitles: titles }))
                 .catch(() => undefined), // url cells fall back to the domain
-              window.nexus.activeViews
-                .get()
+              host()
+                .ask('activeViews:get')
                 .then((views) => set({ activeViews: views }))
                 .catch(() => undefined), // surfaces fall back to the first saved view
-              window.nexus.aliases
-                .get()
+              host()
+                .ask('aliases:get')
                 .then((aliases) => set({ pageAliases: aliases }))
                 .catch(() => undefined), // the picker offers titles only
             ])
@@ -122,9 +129,15 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
               // Disk leads only here and on the external-edit push; navigation is never re-read
               // mid-session, so a just-made change can't roll back.
               const [read, windows, stored] = await Promise.all([
-                window.nexus.nav.read().catch(() => null),
-                window.nexus.windows?.load().catch(() => null),
-                window.nexus.tabs.load().catch(() => null),
+                host()
+                  .ask('nav:read')
+                  .catch(() => null),
+                host()
+                  .ask('windows:load')
+                  .catch(() => null),
+                host()
+                  .ask('tabs:load')
+                  .catch(() => null),
               ])
               if (windows?.ok) set({ windowsFile: windows.value })
               get().restoreNavigation(
@@ -158,11 +171,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       get().reconcileWindow(index)
       // Read from the module cache, not an awaited IPC call — a round-trip here would gate the
       // whole reconcile behind it. Each pass refreshes the cache fire-and-forget.
-      if (systemAccentCache === undefined) systemAccentCache = await window.nexus.systemAccent()
+      if (systemAccentCache === undefined)
+        systemAccentCache = await host().ask('theme:systemAccent')
       else
-        void window.nexus.systemAccent().then((c) => {
-          systemAccentCache = c
-        })
+        void host()
+          .ask('theme:systemAccent')
+          .then((c) => {
+            systemAccentCache = c
+          })
       const systemColor = systemAccentCache
       applyAccent(tree.accent, systemColor)
       applySystemAccent(systemColor)
@@ -170,18 +186,18 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       applyPersonalization(tree.personalization)
       if (!devicePrefsLoaded) {
         devicePrefsLoaded = true
-        const prefs = await window.nexus.devicePrefs.load()
+        const prefs = await host().ask('devicePrefs:load')
         if (prefs.ok) set({ devicePrefs: prefs.value ?? {} })
       }
     },
 
-    choose: () => openVia(() => window.nexus.choose()),
-    openDropped: (file) => openVia(() => window.nexus.openDropped(file)),
+    choose: () => openVia(() => host().ask('nexus:choose')),
+    openDropped: (file) => openVia(() => host().openDropped(file)),
 
     mutate: async (req, onCreated, onAdopted, onTrashed) => {
-      const res = await window.nexus.mutate(req)
+      const res = await host().ask('mutate', req)
       if (!res.ok) {
-        await window.nexus.showError(res.error.message)
+        await host().ask('error:show', res.error.message)
         return false
       }
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.

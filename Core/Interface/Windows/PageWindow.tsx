@@ -39,6 +39,7 @@ import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import { usePropertyRows, type Editing } from '../../Properties/Page/usePropertyRows'
 import { propertyIcon } from '../../Properties/Cells/PropertyTypes'
 import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { host } from '../../Platform/dialer'
 import './page-window.css'
 
 const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
@@ -332,7 +333,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
-    const action = await window.nexus.propertyMenu({
+    const action = await host().ask('property-menu', {
       kind: 'page-value',
       name,
       filled: !isBlankValue(value),

@@ -58,6 +58,7 @@ import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { askClearExclusions, askClearHistory } from '../Interface/confirmations'
+import { host } from '../Platform/dialer'
 import './settings-window.css'
 
 const DRAG_SURFACES =
@@ -140,21 +141,21 @@ const PIXELS: NumberUnit = { scale: 1, suffix: 'px' }
 const TABS: NumberUnit = { scale: 1, suffix: ' Tabs' }
 
 const clearExclusions = async (): Promise<boolean> => {
-  const count = await window.nexus.countExclusions()
+  const count = await host().ask('exclusions:count')
   if (!count.ok) {
-    window.nexus.showError(count.error.message)
+    host().ask('error:show', count.error.message)
     return false
   }
   if (count.value === 0 || !(await askClearExclusions(count.value))) return false
-  const r = await window.nexus.clearExclusions()
-  if (!r.ok) window.nexus.showError(r.error.message)
+  const r = await host().ask('exclusions:clear')
+  if (!r.ok) host().ask('error:show', r.error.message)
   return r.ok && r.value !== null
 }
 
 const clearHistory = async (): Promise<boolean> => {
   if (!(await askClearHistory())) return false
-  const r = await window.nexus.clearHistory()
-  if (!r.ok) window.nexus.showError(r.error.message)
+  const r = await host().ask('history:clear')
+  if (!r.ok) host().ask('error:show', r.error.message)
   return r.ok
 }
 

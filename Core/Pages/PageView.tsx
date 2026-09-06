@@ -14,6 +14,7 @@ import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, fenceWarm, readCache } from '../Navigation/warmTabs'
 import { registerPageEditor } from './pageEditor'
 import { schedulePageSave } from '../Session/saveScheduler'
+import { host } from '../Platform/dialer'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
@@ -75,9 +76,11 @@ export function PageView({
     let alive = true
     // Hidden unless this page says otherwise — a page opts into showing its glyph, unlike a
     // Collection or Space, which shows one by default.
-    void window.nexus.headingIcon.get().then((all) => {
-      if (alive) setIconHidden(all[pageId] ?? true)
-    })
+    void host()
+      .ask('headingIcon:get')
+      .then((all) => {
+        if (alive) setIconHidden(all[pageId] ?? true)
+      })
     return () => {
       alive = false
     }
@@ -94,7 +97,7 @@ export function PageView({
   const toggleHeadingIcon = (): void => {
     const next = !iconHidden
     setIconHidden(next)
-    void window.nexus.headingIcon.set(pageId, next)
+    void host().ask('headingIcon:set', pageId, next)
   }
 
   const connections = useMemo<ConnectionsApi | undefined>(() => {
@@ -162,21 +165,21 @@ export function PageView({
         connections={connections}
         embedAncestors={[pageDetail.path]}
         folds={{
-          load: async () => (await window.nexus.folds.get())[pageDetail.id] ?? [],
-          save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),
+          load: async () => (await host().ask('folds:get'))[pageDetail.id] ?? [],
+          save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
         }}
         pageId={pageId}
         embedHeights={{
-          load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
-          save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),
+          load: async () => (await host().ask('embedHeights:get'))[pageDetail.id] ?? {},
+          save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
         }}
         embedZooms={{
-          load: async () => (await window.nexus.embedZooms.get())[pageDetail.id] ?? {},
-          save: (zooms) => void window.nexus.embedZooms.set(pageDetail.id, zooms),
+          load: async () => (await host().ask('embedZooms:get'))[pageDetail.id] ?? {},
+          save: (zooms) => void host().ask('embedZooms:set', pageDetail.id, zooms),
         }}
         tableHeadingColumns={{
-          load: async () => (await window.nexus.tableHeadingColumns.get())[pageDetail.id] ?? [],
-          save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),
+          load: async () => (await host().ask('tableHeadingCols:get'))[pageDetail.id] ?? [],
+          save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
         }}
         menu={nativeEditorMenu}
         register={(view) => {

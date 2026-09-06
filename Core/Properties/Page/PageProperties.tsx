@@ -22,6 +22,7 @@ import { Reveal, useEntrance } from '@pommora/uix/Animations'
 import { shownDetail, useSession } from '../../Session/store'
 import * as s from './page-properties.css'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
+import { host } from '../../Platform/dialer'
 
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
@@ -114,7 +115,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
-    const action = await window.nexus.propertyMenu({
+    const action = await host().ask('property-menu', {
       kind: 'page-value',
       name,
       filled: !isBlankValue(value),

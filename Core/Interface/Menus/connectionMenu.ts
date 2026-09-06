@@ -14,6 +14,7 @@ import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
 import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession } from '../../Session/store'
+import { host } from '../../Platform/dialer'
 
 /** main pops the native menu at the cursor; the chosen action runs renderer-side (the sidebar
  *  contextMenu contract). Shared by every ConnectionsApi host and by the Link property's cells, so
@@ -33,14 +34,16 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
       hasAlias: target.hasAlias ?? false,
       external: true,
     }
-    void window.nexus.connMenu(ctx).then((action) => {
-      if (action === null) return
-      if (action === 'link:window') openInAppBrowser(target.url)
-      else if (action === 'link:browser') void window.nexus.openExternal(target.url)
-      else if (action === 'title:copylink') void window.nexus.writeClipboard(target.url)
-      else if (isConnCellAction(action)) target.onCell?.(action)
-      else if (isConnUrlAction(action)) apply?.(action)
-    })
+    void host()
+      .ask('conn-menu', ctx)
+      .then((action) => {
+        if (action === null) return
+        if (action === 'link:window') openInAppBrowser(target.url)
+        else if (action === 'link:browser') void host().ask('link:open', target.url)
+        else if (action === 'title:copylink') void host().ask('clipboard:write', target.url)
+        else if (isConnCellAction(action)) target.onCell?.(action)
+        else if (isConnUrlAction(action)) apply?.(action)
+      })
     return
   }
   const page = target.page
@@ -60,33 +63,35 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
           : 'closed',
     windowed: deriveTarget(pageWindow)?.id === page.id,
   }
-  void window.nexus.connMenu(ctx).then((action) => {
-    switch (action) {
-      case null:
-        return
-      case 'title:window':
-        useSession.getState().openWindow({ id: page.id, path: page.path })
-        return
-      case 'title:newtab':
-        void useSession.getState().select(ref, { newTab: true })
-        return
-      case 'title:copylink':
-        void window.nexus.writeClipboard(pageLinkText(page.title))
-        return
-      case 'title:copypath':
-        void window.nexus.writeClipboard(pagePathText(page.path))
-        return
-      // Named rather than caught: the action vocabulary is wider than any one menu, and an item
-      // this context never offered has no span or value here to act on.
-      case 'rename':
-      case 'editLink':
-        target.apply?.(action)
-        return
-      case 'link:clear':
-      case 'link:hide':
-        target.onCell?.(action)
-    }
-  })
+  void host()
+    .ask('conn-menu', ctx)
+    .then((action) => {
+      switch (action) {
+        case null:
+          return
+        case 'title:window':
+          useSession.getState().openWindow({ id: page.id, path: page.path })
+          return
+        case 'title:newtab':
+          void useSession.getState().select(ref, { newTab: true })
+          return
+        case 'title:copylink':
+          void host().ask('clipboard:write', pageLinkText(page.title))
+          return
+        case 'title:copypath':
+          void host().ask('clipboard:write', pagePathText(page.path))
+          return
+        // Named rather than caught: the action vocabulary is wider than any one menu, and an item
+        // this context never offered has no span or value here to act on.
+        case 'rename':
+        case 'editLink':
+          target.apply?.(action)
+          return
+        case 'link:clear':
+        case 'link:hide':
+          target.onCell?.(action)
+      }
+    })
 }
 
 /** What a Link property cell can be told to do — the four its own surface answers, out of the wider

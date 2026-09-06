@@ -18,6 +18,7 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { findSpace } from '../Session/treeIndex'
 import { useSession } from '../Session/store'
 import * as s from '../Interface/Toolbar/toolbar-menu.css'
+import { host } from '../Platform/dialer'
 
 const PANE_MIN_W = 225
 const PANE_MIN_H = 245
@@ -51,7 +52,7 @@ export function SpaceMenu(): React.JSX.Element | null {
     if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
     e.preventDefault()
     e.stopPropagation()
-    const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden })
+    const action = await host().ask('nexus:titleMenu', { toggleIcon: true, iconHidden })
     if (action === 'rename') setRenaming(true)
     else if (action === 'editIcon') setPickerOpen(true)
     else if (action === 'toggleIcon')

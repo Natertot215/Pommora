@@ -62,6 +62,7 @@ import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { askDestroyProperty } from '../../Interface/confirmations'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
+import { host } from '../../Platform/dialer'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
@@ -242,54 +243,54 @@ export function PropertyFrame({
 
   const commit = async (res: WriteResult): Promise<boolean> => {
     if (!res.ok) {
-      await window.nexus.showError(res.error.message)
+      await host().ask('error:show', res.error.message)
       return false
     }
     return true
   }
 
   const create = async (type: PropertyType): Promise<void> => {
-    const res = await window.nexus.schema.add(collectionPath, {
+    const res = await host().ask('schema:add', collectionPath, {
       id: '',
       name: `New ${propertyTypeLabel(type)}`,
       type,
     })
     if (res.ok) {
       openDetail({ kind: 'edit', id: res.value.id })
-    } else await window.nexus.showError(res.error.message)
+    } else await host().ask('error:show', res.error.message)
   }
   const rename = async (id: string, name: string): Promise<void> => {
     const before = registry.find((d) => d.id === id)?.name
     const after = normalizePropertyName(name)
-    if (await commit(await window.nexus.schema.rename(collectionPath, id, name)))
+    if (await commit(await host().ask('schema:rename', collectionPath, id, name)))
       if (before !== undefined && before !== after) bumpValuesEpoch(before, after)
   }
   const remove = async (id: string): Promise<void> => {
-    if (await commit(await window.nexus.schema.delete(collectionPath, id))) backToList()
+    if (await commit(await host().ask('schema:delete', collectionPath, id))) backToList()
   }
   const assign = async (id: string): Promise<void> => {
-    await commit(await window.nexus.schema.assign(collectionPath, id))
+    await commit(await host().ask('schema:assign', collectionPath, id))
   }
   const saveOptions = async (id: string, next: Option[]): Promise<void> => {
-    await commit(await window.nexus.property.setOptions(id, next))
+    await commit(await host().ask('property:setOptions', id, next))
   }
   const saveStatusGroups = async (id: string, next: StatusGroup[]): Promise<void> => {
-    await commit(await window.nexus.property.setStatusGroups(id, next))
+    await commit(await host().ask('property:setStatusGroups', id, next))
   }
   const saveLinkConfig = async (id: string, patch: LinkConfig): Promise<void> => {
-    await commit(await window.nexus.property.setLinkConfig(id, patch))
+    await commit(await host().ask('property:setLinkConfig', id, patch))
   }
   const saveCheckboxColor = async (id: string, color: string | undefined): Promise<void> => {
-    await commit(await window.nexus.property.setCheckboxColor(id, color))
+    await commit(await host().ask('property:setCheckboxColor', id, color))
   }
   const saveNumberFormat = async (id: string, patch: Partial<NumberConfig>): Promise<void> => {
-    await commit(await window.nexus.property.setNumberFormat(id, patch))
+    await commit(await host().ask('property:setNumberFormat', id, patch))
   }
   const saveFileDirectory = async (id: string, dir: string): Promise<void> => {
-    await commit(await window.nexus.property.setFileDirectory(id, { file_directory: dir }))
+    await commit(await host().ask('property:setFileDirectory', id, { file_directory: dir }))
   }
   const savePropertyIcon = async (id: string, icon: string): Promise<void> => {
-    await commit(await window.nexus.property.setIcon(id, icon))
+    await commit(await host().ask('property:setIcon', id, icon))
   }
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const next = { ...activeView.column_styles?.[propId], ...patch }
@@ -297,36 +298,37 @@ export function PropertyFrame({
       ...activeView,
       column_styles: { ...activeView.column_styles, [propId]: next },
     })
-    if (!res.ok) await window.nexus.showError(res.error.message)
+    if (!res.ok) await host().ask('error:show', res.error.message)
   }
   const renameOption = async (id: string, oldValue: string, newTitle: string): Promise<void> => {
-    await commit(await window.nexus.property.renameOption(id, oldValue, newTitle))
+    await commit(await host().ask('property:renameOption', id, oldValue, newTitle))
   }
   const removeOption = async (id: string, value: string): Promise<void> => {
-    await commit(await window.nexus.property.removeOption(id, value))
+    await commit(await host().ask('property:removeOption', id, value))
   }
   const clearOption = async (id: string, value: string): Promise<void> => {
-    await commit(await window.nexus.property.clearOption(id, value))
+    await commit(await host().ask('property:clearOption', id, value))
   }
   const renameStatusOption = async (
     id: string,
     oldValue: string,
     newTitle: string,
   ): Promise<void> => {
-    await commit(await window.nexus.property.renameStatusOption(id, oldValue, newTitle))
+    await commit(await host().ask('property:renameStatusOption', id, oldValue, newTitle))
   }
   const removeStatusOption = async (id: string, value: string): Promise<void> => {
-    await commit(await window.nexus.property.removeStatusOption(id, value))
+    await commit(await host().ask('property:removeStatusOption', id, value))
   }
   const clearStatusOption = async (id: string, value: string): Promise<void> => {
-    await commit(await window.nexus.property.clearStatusOption(id, value))
+    await commit(await host().ask('property:clearStatusOption', id, value))
   }
   const handleDrop = async (drop: PaneDrop): Promise<void> => {
     const r =
       drop.kind === 'reorder-assigned'
-        ? await window.nexus.schema.reorder(collectionPath, drop.propId, drop.toIndex)
+        ? await host().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
         : drop.kind === 'reorder-nexus'
-          ? await window.nexus.registry.reorder(
+          ? await host().ask(
+              'registry:reorder',
               drop.propId,
               nexusReorderIndex(
                 registry.map((d) => d.id),
@@ -336,8 +338,8 @@ export function PropertyFrame({
               ),
             )
           : drop.kind === 'assign'
-            ? await window.nexus.schema.assign(collectionPath, drop.propId, drop.toIndex)
-            : await window.nexus.schema.delete(collectionPath, drop.propId)
+            ? await host().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
+            : await host().ask('schema:delete', collectionPath, drop.propId)
     await commit(r)
   }
 
@@ -352,23 +354,23 @@ export function PropertyFrame({
     )
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
-    const action = await window.nexus.propertyMenu({ kind: 'editor', name: def.name })
+    const action = await host().ask('property-menu', { kind: 'editor', name: def.name })
     if (action === 'property:remove') await remove(def.id)
     else if (
       action === 'property:destroy' &&
       (await askDestroyProperty(def.name)) &&
-      (await commit(await window.nexus.property.delete(def.id)))
+      (await commit(await host().ask('property:delete', def.id)))
     )
       backToList()
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
-    const action = await window.nexus.propertyMenu({
+    const action = await host().ask('property-menu', {
       kind: group === 'assigned' ? 'assigned-row' : 'registry-row',
       name: d.name,
     })
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
-      await commit(await window.nexus.schema.delete(collectionPath, d.id))
+      await commit(await host().ask('schema:delete', collectionPath, d.id))
   }
 
   const typePicker = (
@@ -495,9 +497,12 @@ export function PropertyFrame({
             directory={def.file_directory}
             onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
             onBrowse={() => {
-              void window.nexus.chooseAssetDir('property', def.file_directory).then((picked) => {
-                if (picked.ok && picked.value !== null) void saveFileDirectory(def.id, picked.value)
-              })
+              void host()
+                .ask('assets:chooseDir', 'property', def.file_directory)
+                .then((picked) => {
+                  if (picked.ok && picked.value !== null)
+                    void saveFileDirectory(def.id, picked.value)
+                })
             }}
           />
         ) : (

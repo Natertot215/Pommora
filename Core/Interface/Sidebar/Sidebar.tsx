@@ -51,6 +51,7 @@ import {
   dropOutlineOpen,
   dropOutlineSpacer,
 } from '@pommora/uix/Menus/listed-outline.css'
+import { host } from '../../Platform/dialer'
 
 function showContextFor(node: {
   kind: MutableKind
@@ -61,7 +62,7 @@ function showContextFor(node: {
 }): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
-  return window.nexus.contextMenu({
+  return host().ask('context-menu', {
     kind: node.kind,
     id: node.id,
     path: node.path,
@@ -708,7 +709,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       persistKey={`context:${group.def.id}`}
       dragId={group.def.id}
       onContextMenu={() =>
-        void window.nexus.contextMenu({
+        void host().ask('context-menu', {
           kind: 'context',
           path,
           title: group.def.title,

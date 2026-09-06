@@ -33,6 +33,7 @@ import { IconPicker } from '../Assets/IconPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from './ViewTileScope'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
+import { host } from '../Platform/dialer'
 
 type FrameId =
   | 'configuration'
@@ -109,7 +110,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const openInValue: OpenIn = schemaCollection?.openIn ?? 'full-page'
   const setOpenIn = async (v: OpenIn): Promise<void> => {
     if (!schemaCollection) return
-    await window.nexus.container.configure(schemaCollection.path, 'collection', { open_in: v })
+    await host().ask('container:configure', schemaCollection.path, 'collection', { open_in: v })
   }
   const toggleOpenIn = (): void => {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')

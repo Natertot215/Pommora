@@ -24,6 +24,7 @@ import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
+import { host } from '../../Platform/dialer'
 
 export function CardValue({
   row,
@@ -145,7 +146,7 @@ export function CardValue({
       onChip: chip !== null,
     })
     if (!menuCtx) return
-    const action = await holdGhost(() => window.nexus.cellMenu(menuCtx))
+    const action = await holdGhost(() => host().ask('cell-menu', menuCtx))
     if (!action) return
     if (runFileMenuAction(action, schemaDef, v, chip, commit)) return
     if (action === 'cell:clear') commit(null)

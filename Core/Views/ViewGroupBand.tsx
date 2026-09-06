@@ -6,6 +6,7 @@ import { GroupBand, resolveBandHead } from './GroupBand'
 import { bandShowsAdd } from './CardView/cardsBand'
 import { useBandDrag } from './BandDnd'
 import type { ResolveContext } from '../Properties/resolveContext'
+import { host } from '../Platform/dialer'
 
 /** The band adapter every view renders: it holds the `useBandDrag` hook (which throws outside
  *  `<BandDnd>`, so it can't live in the shared presentational GroupBand) and the native Set context
@@ -53,7 +54,7 @@ export function ViewGroupBand({
     ? (e: React.MouseEvent): void => {
         e.preventDefault()
         e.stopPropagation()
-        void window.nexus.contextMenu({
+        void host().ask('context-menu', {
           kind: 'set',
           path: setPath,
           title: setNames.get(group.key) ?? group.key,

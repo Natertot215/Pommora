@@ -12,6 +12,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Platform/openWebLink'
 import { webGuestRetention } from './webRetention'
+import { host } from '../../Platform/dialer'
 import '../tile-base.css'
 import '../tile-title.css'
 
@@ -138,7 +139,7 @@ export function WebTile({
     const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
-      void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
+      void host().ask('webGuestZoom:set', wv.getWebContentsId(), zoom)
     } catch {}
   }, [zoom, loaded])
 
@@ -148,7 +149,7 @@ export function WebTile({
     const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
     try {
-      void window.nexus.webGuestMedia.pause(wv.getWebContentsId())
+      void host().ask('webGuestMedia:pause', wv.getWebContentsId())
     } catch {}
   }, [tabInactive, pauseOnTabSwitch, loaded])
 

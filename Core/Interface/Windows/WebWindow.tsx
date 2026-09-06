@@ -12,6 +12,7 @@ import { linkDomain } from '../../Connections/links'
 import { WEB_PARTITION } from '../../Web/partition'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../../Session/store'
+import { host } from '../../Platform/dialer'
 import './web-window.css'
 
 const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
@@ -122,7 +123,7 @@ function WebWindowBody({
           type="button"
           className={cx('window-toolbar-title', 'wbrowser-title', text.footnote.standard)}
           title="Open in system browser"
-          onClick={() => void window.nexus.openExternal(current)}
+          onClick={() => void host().ask('link:open', current)}
         >
           <span className="wbrowser-title-domain">{linkDomain(current)}</span>
           {title ? (

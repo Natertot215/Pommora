@@ -1,6 +1,7 @@
 import { PathField } from '@pommora/uix/Fields'
 import { MenuRowView } from '@pommora/uix/Menus'
 import { useSession } from '../Session/store'
+import { host } from '../Platform/dialer'
 
 export function AssetDirectoryRow({
   label,
@@ -27,9 +28,11 @@ export function AssetDirectoryRow({
               empty="No folder"
               onCommit={(next) => void setAssetDirectory(next)}
               onBrowse={() =>
-                void window.nexus.chooseAssetDir().then((picked) => {
-                  if (picked.ok && picked.value !== null) void setAssetDirectory(picked.value)
-                })
+                void host()
+                  .ask('assets:chooseDir')
+                  .then((picked) => {
+                    if (picked.ok && picked.value !== null) void setAssetDirectory(picked.value)
+                  })
               }
             />
           ),

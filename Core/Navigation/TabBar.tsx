@@ -17,6 +17,7 @@ import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Session/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
+import { host } from '../Platform/dialer'
 import './tab-base.css'
 
 const BASE_MS = ms(duration.base)
@@ -146,7 +147,7 @@ function TabBarBody({
       e.preventDefault()
       e.stopPropagation()
       const isPage = target.kind === 'page'
-      const action = await window.nexus.tabMenu({
+      const action = await host().ask('tab-menu', {
         pinned,
         isNewTab: target.kind === 'newtab',
         isPage,
@@ -171,7 +172,7 @@ function TabBarBody({
     let travel = 0
     const move = (ev: PointerEvent): void => {
       travel += Math.abs(ev.screenX - last.x) + Math.abs(ev.screenY - last.y)
-      window.nexus.winDragBy(ev.screenX - last.x, ev.screenY - last.y)
+      host().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
       last = { x: ev.screenX, y: ev.screenY }
     }
     const end = (): void => {
@@ -188,7 +189,7 @@ function TabBarBody({
   }
   const onBarDoubleClick = (e: React.MouseEvent): void => {
     if ((e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
-    window.nexus.winZoom()
+    host().tell('win:zoom')
   }
 
   return (

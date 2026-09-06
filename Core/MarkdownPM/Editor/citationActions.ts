@@ -27,6 +27,7 @@ import {
 import { docScan } from './docCache'
 import { editAcrossCitations } from './folding'
 import { travelTo } from './travel'
+import { host } from '../../Platform/dialer'
 
 /** `reveal` opens a hidden section by writing the page's visibility rather than folding behind the
  *  host's back, so every surface showing that page reads the same row. A surface with no page at all
@@ -190,7 +191,7 @@ export function applyCitationAction(
     case 'cite:copy':
       // The raw reference, not the citation's text: pasting it back in the page IS the second
       // reference, and that is the whole of how a footnote comes to be shared.
-      void window.nexus?.writeClipboard?.(`[^${(marker ?? entry)?.label ?? ''}]`)
+      void host().ask('clipboard:write', `[^${(marker ?? entry)?.label ?? ''}]`)
       return
     case 'cite:delete': {
       const changes = marker

@@ -2,6 +2,7 @@ import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 import { type AssetMap, EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import type { Slice } from './sessionState'
+import { host } from '../Platform/dialer'
 
 export interface CacheSlice {
   linkTitles: Record<string, string>
@@ -36,7 +37,7 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
       else delete map[pageId]
       return { pageAliases: map }
     })
-    void window.nexus.aliases.set(pageId, next)
+    void host().ask('aliases:set', pageId, next)
   }
 
   return {
@@ -44,8 +45,8 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
     resolveLinkTitle: (url) => {
       if (inFlightTitles.has(url) || failedTitles.has(url) || get().linkTitles[url]) return
       inFlightTitles.add(url)
-      window.nexus.linkTitles
-        .fetch(url)
+      host()
+        .ask('linkTitles:fetch', url)
         .then((res) => {
           // A late fetch resolving after a nexus switch merges harmlessly: a URL's <title> is
           // identical in any nexus, and main won't persist it cross-nexus.
@@ -59,7 +60,7 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
 
     activeViews: {},
     setActiveView: async (containerId, viewId) => {
-      await window.nexus.activeViews.set(containerId, viewId)
+      await host().ask('activeViews:set', containerId, viewId)
       set((s) => ({ activeViews: { ...s.activeViews, [containerId]: viewId } }))
     },
 
