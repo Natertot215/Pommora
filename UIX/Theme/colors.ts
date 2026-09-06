@@ -1,7 +1,5 @@
 // Every color value the app declares. A plain module rather than a *.css.ts so it can export functions and so the main process, which reads no CSS var, shares the same constants.
 
-// Palette
-
 export const SYSTEM = {
   grey: '#71717A',
   white: '#E8E8E8',
@@ -40,8 +38,6 @@ export const PURE_WHITE = '#FFFFFF'
 export const SHADOW_BASE = '0 8px 25px #00000040'
 export const SHADOW_STRONG = '0 12px 30px #00000065'
 
-// Tints
-
 export const TINT_STEPS = {
   primary: 60,
   secondary: 40,
@@ -66,8 +62,6 @@ export const mixAt = (
 
 export const tintAt = (base: string, amount: TintStep | number): string =>
   mixAt(base, amount, 'transparent')
-
-// Stored colors
 
 export const RAMP_FAMILIES = [
   'red',

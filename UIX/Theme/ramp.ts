@@ -21,8 +21,6 @@ const c = colorVars.color
 const WHITE = c.system.white
 const BLACK = c.system.black
 
-// Rows
-
 type Row = readonly [string, string, string, string, string, string, string, string]
 
 /** KNOB — how far each step moves from its anchor. */
@@ -104,8 +102,6 @@ export const ANCHOR_CELLS: Record<keyof typeof SPECTRUM, CellKey> = {
   grey: 'grey-6',
 }
 
-// Reading a cell
-
 const parse = (key: CellKey): { family: RampFamily; step: RampStep } => {
   const cut = key.lastIndexOf('-')
   return {
@@ -138,8 +134,6 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
 export const cellRing = (key: CellKey): string =>
   cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')
 
-// Stored colors
-
 const ANCHORS: Readonly<Record<string, CellKey>> = ANCHOR_CELLS
 
 export function labelColorFor(color: string | undefined): CellKey | 'default' {
@@ -164,8 +158,6 @@ export function resolveColor(
   if (!color) return { name: 'accent', css: fallback }
   return { name: labelColorFor(color), css: solidColorCss(color) }
 }
-
-// The accent
 
 const accentCell = (setting: string): string => {
   const key = labelColorFor(setting)
