@@ -1,7 +1,4 @@
-// Language-typed codeblocks: a fence's info word (```yaml) selects a nested parse, and the
-// highlighter maps its tokens to classes — colors live in markdown-pm.css, scoped under .md-cb so a
-// stray tag outside a fence styles nothing. A bare fence selects no language and stays the plain
-// mono block.
+// Colors live in markdown-pm.css, scoped under .md-cb so a stray tag outside a fence styles nothing. A bare fence selects no language and stays the plain mono block.
 import {
   HighlightStyle,
   LanguageDescription,
@@ -16,10 +13,7 @@ import { CODE_LANGS } from './Engine/codeLangs'
 const stream = (mode: Promise<unknown>): Promise<LanguageSupport> =>
   mode.then((m) => new LanguageSupport(StreamLanguage.define(m as never)))
 
-/** How each language's parser arrives, keyed by the name the roster gives it. The specifier is
- *  written out per entry rather than built from the name: only a literal one is a chunk the bundler
- *  can split — from a template, all thirty-odd modes would land in the main bundle regardless of
- *  whether a page ever fences one. */
+/** The specifier is written out per entry rather than built from the name: only a literal one is a chunk the bundler can split — from a template, all thirty-odd modes would land in the main bundle. */
 const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
   JavaScript: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true })),
   TypeScript: () =>
@@ -67,9 +61,7 @@ const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
     stream(import('@codemirror/legacy-modes/mode/properties').then((m) => m.properties)),
 }
 
-/** The roster, each name paired with the loader that answers for it. A name the loaders don't know
- *  would be a language the fence recognizes and then fails to parse, so the pairing is tested
- *  rather than trusted. */
+/** A name the loaders don't know would be a language the fence recognizes and then fails to parse, so the pairing is tested rather than trusted. */
 export const codeLanguages = CODE_LANGS.map(({ name, alias }) =>
   LanguageDescription.of({ name, alias: [...alias], load: LOADERS[name] }),
 )

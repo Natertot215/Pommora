@@ -84,7 +84,6 @@ describe('view persistence CRUD', () => {
     await writeCollectionSidecar({ views: [view({ id: 'a' }), view({ id: 'b' })] })
     expect((await deleteView(folder, 'collection', 'a')).ok).toBe(true)
     expect((await readRaw('_pagecollection.json')).views).toHaveLength(1)
-    // now only one view remains → refuse
     const last = await deleteView(folder, 'collection', 'b')
     expect(last.ok).toBe(false)
     if (!last.ok) expect(last.error.code).toBe('operation-failed')

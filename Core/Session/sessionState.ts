@@ -8,9 +8,7 @@ import type { NexusSlice } from './nexusSlice'
 import type { WindowSlice } from '../Interface/Windows/windowSlice'
 import type { RenameSlice } from './mutationSlice'
 
-/** The renderer's one shared room: every slice sees the whole state, so features react to each
- *  other without private channels. A slice owns its fields and their writers; what it needs of
- *  another slice it asks for through that slice's actions. */
+/** Every slice sees the whole state, so features react to each other without private channels. A slice owns its fields and their writers; what it needs of another slice it asks for through that slice's actions. */
 export type SessionState = NexusSlice &
   NavigationSlice &
   WindowSlice &

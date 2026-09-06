@@ -30,8 +30,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   askConfirm: (req) =>
     new Promise((resolve) => {
       get().pendingConfirm?.settle(false)
-      // Identity-guarded: a question that was already displaced must not take down the one
-      // standing in its place.
+      // Identity-guarded: a question that was already displaced must not take down the one standing in its place.
       const settle = (confirmed: boolean): void => {
         set((s) => (s.pendingConfirm?.settle === settle ? { pendingConfirm: null } : {}))
         resolve(confirmed)

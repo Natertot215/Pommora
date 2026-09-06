@@ -3,17 +3,13 @@ export interface ActionItem<A> {
   action: A
   /** Leading separators are the caller's to drop — a divider at the top of a menu separates nothing. */
   separatorBefore?: boolean
-  /** Shown and refused rather than absent; absent reads as available. */
   disabled?: boolean
-  /** Resolves only on confirm; whoever pops the menu owns the dialog. */
   confirm?: boolean
-  /** The row in force, out of a set where exactly one is. */
   checked?: boolean
   /** A branch's own `action` is never resolved — the leaf a person lands on is. */
   submenu?: ActionItem<A>[]
 }
 
-/** The rows as a section: the first opens under a divider, so a block reads apart from the rows above it. */
 export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>[] {
   return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
 }

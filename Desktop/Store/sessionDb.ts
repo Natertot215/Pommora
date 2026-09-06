@@ -25,8 +25,7 @@ const openQuietly = (open: () => Db | null, note: string): Db | null => {
   }
 }
 
-/** Open the databases for `root`, replacing any prior handles. Never throws: opening a nexus on
- *  read-only media must leave it browsable, not fail the adopt half-way through. */
+/** Never throws: opening a nexus on read-only media must leave it browsable, not fail the adopt half-way through. */
 export function openSessionDb(root: string): void {
   closeSessionDb()
   db = openQuietly(

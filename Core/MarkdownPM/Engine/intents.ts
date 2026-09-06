@@ -32,21 +32,17 @@ export type WidgetSpec =
   | { type: 'hr' }
   | { type: 'bullet' }
   | { type: 'checkbox'; bracketFrom: number; checked: boolean }
-  /** A body marker, drawn as the number its position earns rather than the label it holds — which
-   *  is why it is a widget over hidden source and not a class on the source itself. */
+  /** Drawn as the number its position earns rather than the label it holds — which is why it is a widget over hidden source and not a class on the source itself. */
   | { type: 'citeRef'; ordinal: number }
 
 export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
-  /** A span the caret must not enter, because a widget stands where its characters would be. Carried
-   *  as its own intent rather than inferred from the replaces: a marker's slot is the run from its
-   *  first character through the gap before its text, which no single replace spans. */
+  /** Carried as its own intent rather than inferred from the replaces: a marker's slot is the run from its first character through the gap before its text, which no single replace spans. */
   | { kind: 'atomic'; from: number; to: number }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
-  /** A code block's top-right tag. `name` is the language it resolved to, absent when the fence
-   *  named none the roster answers to — the copy affordance the tag carries is the same either way. */
+  /** `name` is absent when the fence named none the roster answers to — the copy affordance the tag carries is the same either way. */
   | { kind: 'codeTag'; from: number; name?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
   | {
@@ -306,7 +302,6 @@ export function assembleLineIntents(
   return intents
 }
 
-/** The reference the assembled path must match (the equivalence pin). The live build assembles from the cache. */
 export function decorationsFor(
   text: string,
   tokens: Token[],

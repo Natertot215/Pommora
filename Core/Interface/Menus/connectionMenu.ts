@@ -105,7 +105,6 @@ export function linkValueMenuTarget(
     const page = resolveConnection(useSession.getState().tree, value.title)
     return page ? { ...base, kind: 'page', page, apply } : null
   }
-  // The rest belong to a link sitting in prose, where there is a span to rewrite.
   return isValidLink(value.url)
     ? {
         ...base,

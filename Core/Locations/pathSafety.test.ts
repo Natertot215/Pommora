@@ -59,8 +59,7 @@ describe('resolveUnderRoot', () => {
 
   it('rejects an in-nexus symlink that resolves OUTSIDE the root', async () => {
     await writeFile(join(outside, 'secret.txt'), 'top secret')
-    // A symlink inside the nexus pointing at the outside dir — lexically `link/...`
-    // looks contained; only realpath sees it escapes.
+    // A symlink inside the nexus pointing at the outside dir — lexically `link/...` looks contained; only realpath sees it escapes.
     await symlink(outside, join(root, 'link'))
     const r = await resolveUnderRoot(root, 'link/secret.txt')
     expect(r.ok).toBe(false)

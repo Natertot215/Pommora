@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { computeStats } from './subfieldStats'
 
-/** Every masking substitution the counter makes must only ever REMOVE source characters. A
- *  placeholder that survives into the character count is the bug this suite pins. */
+/** Every masking substitution the counter makes must only ever REMOVE source characters; a placeholder that survives into the character count is the bug this suite pins. */
 describe('computeStats — masked constructs add no characters', () => {
   it('a fenced block contributes nothing but still counts its raw lines', () => {
     expect(computeStats('```\na\nb\n```')).toEqual({
@@ -20,7 +19,6 @@ describe('computeStats — masked constructs add no characters', () => {
   })
 
   it('inline code removes exactly its own span', () => {
-    // 'x `code` y' is 10 chars; the span is 6; nothing is added back.
     expect(computeStats('x `code` y').characters).toBe(4)
   })
 
@@ -34,8 +32,7 @@ describe('computeStats — masked constructs add no characters', () => {
   })
 })
 
-// Tables are the known exception — their pipes and delimiter row still count as source. See the
-// note in subfieldStats.ts.
+// Tables are the known exception — their pipes and delimiter row still count as source.
 describe('computeStats — the counter agrees with what the editor draws', () => {
   it('a lone page embed is a tile, not prose', () => {
     expect(computeStats('![[Page]]')).toEqual({ lines: 1, words: 0, characters: 0, citations: 0 })

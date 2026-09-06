@@ -39,7 +39,6 @@ export async function assetFileToDelete(root: string, value: unknown): Promise<s
 export const NOT_A_PROPERTY_DIR_MESSAGE = 'That folder can’t hold this property’s files.'
 
 export function validPropertyDir(subfolder: string, assetDir: string): boolean {
-  // No subfolder IS the asset root, which is always where files may land, and `underAssetRoot` reads strictly below its root.
   if (!subfolder) return true
   const rel = assetSubRoot(assetDir, subfolder)
   return underAssetRoot(rel, assetDir) && indexable(rel, assetDir)

@@ -1,4 +1,3 @@
-// Not a `.css.ts`: vanilla-extract stylesheets may only export plain values, never a builder.
 import type { StyleRule } from '@vanilla-extract/css'
 
 /** KNOB — the trigger → pane distance; PickerMenu reads it too, so its portal placement lands at the same gap. */

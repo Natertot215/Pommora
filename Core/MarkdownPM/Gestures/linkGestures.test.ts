@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { linkRest, linkTyping, restedOnLink } from './linkGestures'
 
-// Finishing a link leaves the caret on its closer and the link rendered. Clicking that same spot is
-// aiming at the syntax and must reveal it — so what the decoration reads is not where the caret is
-// but whether the gesture that put it there was a finishing one.
+// Finishing a link leaves the caret on its closer and the link rendered; clicking that same spot is aiming at the syntax and must reveal it — so what the decoration reads is the gesture, not the offset.
 const seed = (): EditorState => EditorState.create({ doc: 'a [[Alpha]] b', extensions: [linkRest] })
 
 describe('a link rests only where a gesture left it', () => {
@@ -38,9 +36,7 @@ describe('a link rests only where a gesture left it', () => {
   })
 })
 
-// A connection takes the connection color as it is written. Clicking into one that names no page is
-// inspecting an unresolved link, and it should look unresolved — so the field follows the typing,
-// not the caret.
+// Clicking into a connection that names no page is inspecting an unresolved link, and it should look unresolved — so the field follows the typing, not the caret.
 describe('a connection is only "being typed" while it is being typed', () => {
   const state = (doc: string): EditorState => EditorState.create({ doc, extensions: [linkTyping] })
 
@@ -55,7 +51,6 @@ describe('a connection is only "being typed" while it is being typed', () => {
     expect(s.update({ changes: { from: 0, insert: 'x' } }).state.field(linkTyping)).toBeNull()
   })
 
-  // The click case: moving into a link without editing it must not light it up.
   it('a bare caret move ends it, so clicking into a link marks nothing', () => {
     const s = state('a [[Alph]] b')
     const typed = s.update({ changes: { from: 8, insert: 'a' }, selection: { anchor: 9 } }).state

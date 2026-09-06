@@ -117,7 +117,6 @@ describe('confirmMutation', () => {
     await refreshTree(root)
     expect(getLiveTree()?.collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     walkSpy.mockClear()
-    // The real delete trashes the folder and unlinks the value from every member.
     await rm(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true, force: true })
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
     const pushed = await confirmMutation(

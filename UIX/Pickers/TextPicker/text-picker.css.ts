@@ -6,13 +6,10 @@ import { focusRing } from '../../Fields/fieldRing'
 
 const c = vars.color
 
-/** The field left-anchors in the pane so its caret sits at the left edge, never centered. The gutter
- *  is the shared surface's. */
+/** The field left-anchors in the pane so its caret sits at the left edge, never centered. */
 export const content = style({ alignItems: 'flex-start' })
 
-/** Bar-number value editing: the shared field chrome as a fixed-width one-line box — the value fills the
- *  left and the "/ N" out-of hint pins to the right. Focus lights the accent stroke via :focus-within,
- *  since the bare inner input owns no chrome. */
+/** Bar-number value editing: the shared field chrome as a fixed-width one-line box. Focus lights the accent stroke via :focus-within, since the bare inner input owns no chrome. */
 export const suffixField = style([
   field,
   {
@@ -23,9 +20,7 @@ export const suffixField = style([
   },
 ])
 
-/** The bare inner value input — no chrome (the wrapper owns the fill + stroke); fills the space left of
- *  the pinned hint and scrolls its own overflow. The fade is the shared over-scroll every unboxed
- *  `EditableInput` wears. */
+/** No chrome (the wrapper owns the fill + stroke); fills the space left of the pinned hint and scrolls its own overflow. */
 export const suffixInput = style([
   base,
   {
@@ -63,18 +58,11 @@ export const trailing = style({
   lineHeight: font.scale.control.line,
 })
 
-/** The rename field — the shared input-field chrome at CalendarPicker's caret metrics (control size;
- *  the native caret scales with the font). `field-sizing` grows it to its text between a floor and a
- *  cap, then it scrolls internally. Focused, an `--accent` stroke fades
- *  in over duration-fast; a consumer may scope `--accent` on the pane to tint it (a link wears its own
- *  color), else it inherits the app accent. */
+/** The rename field at CalendarPicker's caret metrics (control size; the native caret scales with the font). `field-sizing` grows it to its text between a floor and a cap. A consumer may scope `--accent` on the pane to tint the focus stroke, else it inherits the app accent. */
 export const input = style([
   field,
   {
-    // Undo `field`'s div-oriented layout so the bare input lays out its own single-line caret (the
-    // CalendarPicker model): no flex, no default-height floor, and the caret sized to the control line —
-    // not the field's base line-height sized for larger text, which is what left the caret oversized
-    // + vertically off.
+    // Undo `field`'s div-oriented layout so the bare input lays out its own single-line caret: no flex, no default-height floor, and the caret sized to the control line — not the field's base line-height sized for larger text, which is what left the caret oversized and vertically off.
     display: 'block',
     minHeight: 0,
     lineHeight: font.scale.control.line,

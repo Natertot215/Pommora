@@ -7,14 +7,13 @@ describe('toKebabIconId', () => {
     expect(toKebabIconId('ClockPlus')).toBe('clock-plus')
     expect(toKebabIconId('ArrowUpDown')).toBe('arrow-up-down')
     expect(toKebabIconId('Columns3Cog')).toBe('columns-3-cog')
-    expect(toKebabIconId('Grid3x3')).toBe('grid-3-x-3') // digits split from letters on BOTH sides
-    expect(toKebabIconId('AArrowDown')).toBe('a-arrow-down') // consecutive capitals
+    expect(toKebabIconId('Grid3x3')).toBe('grid-3-x-3')
+    expect(toKebabIconId('AArrowDown')).toBe('a-arrow-down')
     expect(toKebabIconId('ALargeSmall')).toBe('a-large-small')
   })
 
   it('reproduces the curated registry id for every plain-Lucide curated entry', () => {
-    // The curated set carries app aliases (`table`) + custom glyphs whose id ISN'T the Lucide kebab;
-    // for the rest, the registry key must equal toKebabIconId(the component's Lucide display name).
+    // The curated set carries app aliases (`table`) + custom glyphs whose id ISN'T the Lucide kebab; for the rest, the registry key must equal toKebabIconId(the component's Lucide display name).
     for (const [id, Glyph] of Object.entries(icons)) {
       const displayName = (Glyph as { displayName?: string }).displayName
       if (!displayName || toKebabIconId(displayName) !== id) continue

@@ -9,7 +9,6 @@ import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 
-/** The pieces of the host a suite steers; everything left out is an inert stand-in. */
 interface HarnessHost {
   settings?: Partial<EditorSettings>
   aliases?: Record<string, string[]>
@@ -26,7 +25,6 @@ type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
   host?: HarnessHost
 }
 
-/** The harness's own store: one host per mount, its state living in these maps. */
 interface HarnessState {
   settings: EditorSettings
   aliases: Record<string, string[]>
@@ -98,7 +96,6 @@ function harnessHost(
   return state
 }
 
-/** A host with no mounter behind it, for a suite that mounts a table or a pane on its own. */
 export const testHost = (spec: HarnessHost = {}): EditorHost =>
   harnessHost(
     spec,
@@ -112,7 +109,6 @@ let mounted: HarnessState | null = null
 let stateSlot: ((s: HarnessState) => void) | null = null
 let seeded: HarnessHost = {}
 
-/** A suite-wide host spec every later mount starts from; a mount's own `host` layers over it. */
 export function seedHost(spec: HarnessHost): void {
   seeded = spec
 }
@@ -137,7 +133,6 @@ export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
   })
 }
 
-/** The harness's mounter: its host re-identifies on the writes a real mounter's store would echo. */
 function Harnessed({ citationsShown, host: spec, ...props }: HarnessProps): React.JSX.Element {
   const [shown, setShown] = useState(citationsShown ?? false)
   const seen = useRef(citationsShown)
@@ -176,13 +171,11 @@ export async function mountEditor(props: HarnessProps): Promise<EditorView> {
   return view
 }
 
-/** The mounted host's own state, for a suite that writes what another surface would. */
 export function harnessState(): HarnessState {
   if (!mounted) throw new Error('no mounted editor')
   return mounted
 }
 
-/** Announces a title the way the store's fetch would, so every pending anchor in the editor picks it up. */
 export async function settleTitle(url: string, title: string): Promise<void> {
   const s = harnessState()
   s.linkTitles[url] = title
@@ -191,7 +184,6 @@ export async function settleTitle(url: string, title: string): Promise<void> {
   })
 }
 
-/** For the behavior a prop CHANGE carries — a value arriving after mount reads differently from the same value at mount. */
 export async function rerenderEditor(props: HarnessProps): Promise<void> {
   await act(async () => {
     root?.render(createElement(Harnessed, props))

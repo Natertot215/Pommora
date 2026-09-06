@@ -41,9 +41,7 @@ const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
-// After the fake-timer debounce fires, the settle's apply work runs on real time — poll for
-// the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can
-// overrun; a no-outcome caller gets the ceiling's worth of quiet.
+// After the fake-timer debounce fires, the settle's apply work runs on real time — poll for the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can overrun.
 const settleAll = async (until?: () => boolean): Promise<void> => {
   await vi.advanceTimersByTimeAsync(250)
   vi.useRealTimers()

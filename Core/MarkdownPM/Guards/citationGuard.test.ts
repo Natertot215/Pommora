@@ -30,7 +30,6 @@ describe('the tail guard keeps the section the document’s tail', () => {
     expect(out.trimEnd().endsWith('[^b]: another')).toBe(true)
   })
 
-  // Unguarded, the same change ends the trailing run and every citation in the section goes back to literal text.
   it('and without the guard the same paste literalizes the whole section', () => {
     const out = type(DOC, DOC.length, '\n\npasted prose', false)
     expect(sectionOf(out)).toBe(0)
@@ -84,7 +83,6 @@ describe('an insertion at a citation head’s first offset is clamped past it', 
     expect(sectionOf(out)).toBe(2)
   })
 
-  // Unguarded, the keystroke lands ahead of `[^a]:`, so the run starts a line later and the citation it dropped goes literal.
   it('and without the clamp it writes ahead of the head and drops that citation from the run', () => {
     expect(sectionOf(type(DOC, DOC.indexOf('[^a]:'), 'X', false))).toBe(1)
   })
@@ -114,8 +112,7 @@ describe('the verdict and the decoration pass agree on the boundary', () => {
   })
 })
 
-// A paste is the same shape as the head-start repair's keystroke, so the repair has to answer for what it
-// relocates: text carrying a blank line ends the run and literalizes every citation in the section.
+// A paste is the same shape as the head-start repair's keystroke, so the repair has to answer for what it relocates: text carrying a blank line ends the run and literalizes every citation in the section.
 describe('the head-start repair answers for what it moves, not only where', () => {
   const PASTE = 'New paragraph one.\n\nNew paragraph two.'
 
@@ -138,8 +135,7 @@ describe('the head-start repair answers for what it moves, not only where', () =
   })
 })
 
-// The guard sits between every dispatch and the document, the renormalization included — the one pairing where a
-// repair meant for stray prose could land on the feature's own writes.
+// The guard sits between every dispatch and the document, the renormalization included — the one pairing where a repair meant for stray prose could land on the feature's own writes.
 describe('the guard passes a renormalization through untouched', () => {
   const through = (doc: string, changes: ReturnType<typeof citationGesture>): string =>
     EditorState.create({ doc, extensions: [citationGuard] as Extension })
@@ -214,8 +210,7 @@ describe('a replacement that cannot survive is moved whole, not half', () => {
   })
 })
 
-// A file authored elsewhere puts its citations under the last line of prose, and text relocated to the start of
-// that line lands above the paragraph it was written below.
+// A file authored elsewhere puts its citations under the last line of prose, and text relocated to the start of that line lands above the paragraph it was written below.
 describe('the relocated text lands at the end of the body with no blank line above the section', () => {
   const TIGHT = '# Notes\nbody[^a] here\n[^a]: the citation'
 
@@ -238,7 +233,6 @@ describe('the relocated text lands at the end of the body with no blank line abo
   })
 })
 
-// Starting a list at the foot of the section must not manufacture a line in the body out of the whitespace that broke it.
 describe('whitespace alone is refused rather than rescued', () => {
   const listStart = `${DOC}\n-`
 
@@ -248,7 +242,6 @@ describe('whitespace alone is refused rather than rescued', () => {
     expect(out.split('\n').some((l) => l !== '' && l.trim() === '')).toBe(false)
   })
 
-  // Blank lines never end the run, so a whitespace-only paste below the section reaches no repair at all.
   it('and a whitespace-only paste below the section needs no repair', () => {
     const out = type(DOC, DOC.length, '\n   \n  ')
     expect(out.startsWith(DOC)).toBe(true)

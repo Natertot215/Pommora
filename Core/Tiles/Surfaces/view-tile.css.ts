@@ -14,9 +14,7 @@ const c = colorVars.color
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
 
-// KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole
-// toolbar and dissolve at the title divider (not just under its lower half), matching the switcher's
-// full height.
+// KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole toolbar and dissolve at the title divider, matching the switcher's full height.
 const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
 
 export const tile = style({

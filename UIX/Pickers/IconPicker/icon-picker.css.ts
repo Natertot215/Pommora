@@ -41,8 +41,7 @@ export const favScroll = style({
   vars: { '--over-scroll-fade': 'var(--fade-base)' },
 })
 
-/** Explicit width so `cols` measures a real box — a bare flex item collapses to its absolute rows'
- *  zero width. */
+/** Explicit width so `cols` measures a real box — a bare flex item collapses to its absolute rows' zero width. */
 export const grid = style({
   position: 'relative',
   display: 'flex',

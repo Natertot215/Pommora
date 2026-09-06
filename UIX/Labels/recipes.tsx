@@ -31,13 +31,7 @@ export function SpaceChip({
   )
 }
 
-/**
- * What a file property's VALUE renders as. It stands beside other values in a cell and takes a box
- * the way they do; the empty middle says the box names a file rather than holding a color.
- *
- * Distinct from [[FileLabel]], which names a file inside a FIELD and carries no chrome — a name
- * inside a field is that field's content, and a box around it would be a box in a box.
- */
+/** What a file property's VALUE renders as. It stands beside other values in a cell and takes a box the way they do. Distinct from [[FileLabel]], which names a file inside a FIELD and carries no chrome — a box around it would be a box in a box. */
 export function FileChip({
   name,
   unresolved,
@@ -60,12 +54,7 @@ export function FileChip({
   )
 }
 
-/**
- * A named file or folder inside a field: a leading glyph and the name, no chrome.
- *
- * `icon` overrides the glyph for callers not reading it off an extension — a Set title naming its
- * own. `false` means no glyph, which is what a path's segments want: one lead icon on the run.
- */
+/** A named file or folder inside a field: a leading glyph and the name, no chrome. `icon` overrides the glyph for callers not reading it off an extension; `false` means no glyph, which is what a path's segments want — one lead icon on the run. */
 export function FileLabel({
   name,
   icon,

@@ -2,7 +2,6 @@ import type { ListKind } from './gripMenu'
 
 /** Pushed renderer→main on selection/focus change: main cannot see CM6 state. */
 export interface FormatState {
-  /** The CM editor (not the title/rename field) holds focus — gates the Pommora formatting submenus. */
   focused: boolean
   hasSelection: boolean
   bold: boolean
@@ -15,9 +14,7 @@ export interface FormatState {
   heading: number // 0 = paragraph, 1–6
   list: ListKind | null
   block: 'quote' | null
-  /** The caret sits on a blank line a lone-line embed may be written on. */
   embedSeat: boolean
-  /** The caret sits where a footnote marker may be written — outside the citations section and code. */
   citeSeat: boolean
 }
 

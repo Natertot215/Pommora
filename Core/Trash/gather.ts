@@ -92,8 +92,7 @@ export async function gatherContextEvidence(
     const sidecar = join(abs, d.name, SPACE_SIDECAR)
     const raw = await readJsonObject(sidecar)
     if (typeof raw?.id === 'string') spaceIds.set(d.name, raw.id)
-    // Absent sidecar = a plain folder, silent; present-but-unusable marks the evidence
-    // incomplete rather than silently thinning the membership join.
+    // Absent sidecar = a plain folder, silent; present-but-unusable marks the evidence incomplete rather than silently thinning the membership join.
     else if (await pathExists(sidecar)) unresolved = true
   }
   return { entry: { ...entry }, spaceIds, unresolved }

@@ -1,6 +1,4 @@
-// The per-extension file glyphs — Tabler's `file-type-*` set. Per-extension rather than
-// per-family: a `.ts` and a `.tsx` reading as one glyph loses the distinction a file label exists
-// to make.
+// Per-extension rather than per-family: a `.ts` and a `.tsx` reading as one glyph loses the distinction a file label exists to make.
 
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -74,8 +72,7 @@ export const fileTypeGlyphs = Object.fromEntries(
   FILE_TYPE_EXTS.map((ext) => [`file-type-${ext}`, asTablerGlyph(TABLER_FILE_TYPES[ext])]),
 ) as Record<`file-type-${FileTypeExt}`, LucideIcon>
 
-/** The leading-dot guard is load-bearing: without it a bare `ts` slices to its own name and glyphs
- *  as TypeScript. */
+/** The leading-dot guard is load-bearing: without it a bare `ts` slices to its own name and glyphs as TypeScript. */
 export function fileTypeIcon(name: string): string {
   const dot = name.lastIndexOf('.')
   if (dot <= 0) return FILE_TYPE_FALLBACK

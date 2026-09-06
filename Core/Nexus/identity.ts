@@ -9,9 +9,7 @@ import { AGENDA_SLOTS, type AgendaRegistration } from './folderKind'
 export async function ensureIdentity(root: string): Promise<{ id: string; created: boolean }> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
   const read = await readJsonStrict(path)
-  // A nexus.json that exists but can't be read must not be re-minted over — the id it holds
-  // keys the asset folders. The session runs on a throwaway id, nothing is written, and the
-  // next open reads the real one.
+  // A nexus.json that exists but can't be read must not be re-minted over — the id it holds keys the asset folders. The session runs on a throwaway id, nothing is written, and the next open reads the real one.
   if (!read.ok && read.error.code !== 'not-found') return { id: newId(), created: false }
   const existing = read.ok ? read.value : null
   const existingId = existing && asString(existing.id)
@@ -19,12 +17,9 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
 
   await machine().mkdir(nexusDir(root))
   const id = newId()
-  // Stamped once, not per write: the second write below lands after the folders are seeded, and
-  // re-reading the clock there would record the end of seeding as the nexus's creation moment.
+  // Stamped once, not per write: the second write below lands after the folders are seeded, and re-reading the clock there would record the end of seeding as the nexus's creation moment.
   const createdAt = new Date().toISOString()
-  // A file that EXISTS but carries no readable id is an established nexus with a damaged
-  // identity, not a new one: mint an id over it and seed nothing, or folders its owner deleted
-  // would be recreated and every asset keyed to the old id orphaned.
+  // An id-less file is a damaged identity, not a new nexus: mint an id over it and seed nothing, or folders its owner deleted would be recreated and every asset keyed to the old id orphaned.
   if (existing) {
     await writeJson(path, { ...existing, id, createdAt })
     return { id, created: false }

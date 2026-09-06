@@ -13,7 +13,6 @@ import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageSendAction } from '../Menus/pageMenuActions'
 
-/** Routed through the shared rule so this menu and the subfield's add button can't drift. */
 function creatorsFor(target: ContextTarget): Creator[] {
   switch (target.kind) {
     case 'collection':

@@ -18,8 +18,7 @@ export const search = style({
   ...placeholderTone,
 })
 
-/** The rounded input surface. Any ancestor (or the component's `outline` prop) sets `--field-ring`
- *  and the field paints the house inset ring in that color; unset stays ringless. */
+/** Any ancestor (or the component's `outline` prop) sets `--field-ring` and the field paints the house inset ring in that color; unset stays ringless. */
 export const field = style([
   text.body.standard,
   {
@@ -37,8 +36,7 @@ export const field = style([
   },
 ])
 
-/** The bordered cell variant. Its resting stroke is the ring CHANNEL's color, never a second
- *  shadow — `field` already paints `inset 0 0 0 1px var(--field-ring)`. */
+/** Its resting stroke is the ring CHANNEL's color, never a second shadow — `field` already paints `inset 0 0 0 1px var(--field-ring)`. */
 export const borderedField = style([
   field,
   {
@@ -55,8 +53,7 @@ export const borderedField = style([
   },
 ])
 
-/** The bare <input> variant. `--field-ring` is color, not focus state, so killing the native
- *  outline here still leaves the semantic ring painted. */
+/** `--field-ring` is color, not focus state, so killing the native outline here still leaves the semantic ring painted. */
 export const input = style([
   field,
   {
@@ -66,8 +63,7 @@ export const input = style([
   },
 ])
 
-/** The draft caret a press-to-edit field swaps in. States its own type: an <input> takes its
- *  line-height from the browser, and the caret is drawn to that. */
+/** States its own type: an <input> takes its line-height from the browser, and the caret is drawn to that. */
 export const draftInput = style([
   text.body.standard,
   {
@@ -95,8 +91,7 @@ const slot = {
 
 export const leading = style({ ...slot, marginRight: LEAD_GAP, color: c.label.secondary })
 
-/** Pinned to the trailing edge but never closer than the gap: a content-sized field still
- *  separates the two, and a wide one doesn't strand it mid-way. */
+/** Pinned to the trailing edge but never closer than the gap: a content-sized field still separates the two, and a wide one doesn't strand it mid-way. */
 export const trailing = style({
   ...slot,
   marginLeft: 'auto',
@@ -104,8 +99,7 @@ export const trailing = style({
   color: c.label.tertiary,
 })
 
-/** Room to give way, so the content's own fade eclipses the head rather than the field pushing
- *  its row wider. */
+/** Room to give way, so the content's own fade eclipses the head rather than the field pushing its row wider. */
 export const editable = style({
   width: 'auto',
   flex: '0 1 auto',
@@ -113,9 +107,7 @@ export const editable = style({
   ...focusRing('within'),
 })
 
-/** The in-place caret's reset — the UA's box is chrome around a field meant to read as the text it
- *  replaced. The transparent background is load-bearing: nativeCaret.ts seats the drawn selection
- *  pill BEHIND the field's text. `font` is stated because an <input> never inherits it. */
+/** The transparent background is load-bearing: nativeCaret.ts seats the drawn selection pill BEHIND the field's text. `font` is stated because an <input> never inherits it. */
 export const base = style({
   border: 'none',
   outline: 'none',
@@ -140,8 +132,7 @@ export const contentRow = style({
   vars: { '--over-scroll-fade': CONTENT_FADE },
 })
 
-// The input overlays a hidden mirror span in ONE grid cell, so the field shrink-wraps to its text
-// through CSS reflow — never a per-keystroke layout read.
+// The input overlays a hidden mirror span in ONE grid cell, so the field shrink-wraps to its text through CSS reflow — never a per-keystroke layout read.
 export const autoSizeWrap = style({ display: 'inline-grid' })
 
 export const autoSizeMirror = style({

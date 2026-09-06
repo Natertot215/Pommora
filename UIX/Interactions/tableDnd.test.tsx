@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level gesture tests over the pointer harness — geometry truth lives in the CDP pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -125,8 +124,7 @@ describe('table row drag — Esc abort', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    // Fresh rects put 40 below r3's midline → r1 lands after it. A frozen snapshot still holds
-    // the dead r2 and resolves a no-op, so the drop goes silent.
+    // Fresh rects put 40 below r3's midline → r1 lands after it. A frozen snapshot still holds the dead r2 and resolves a no-op, so the drop goes silent.
     expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
   })
 

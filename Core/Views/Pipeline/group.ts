@@ -129,7 +129,7 @@ export function flattenContainer(
 /** UTC arithmetic, so adding days never crosses a DST boundary. A week belongs to the year of its Thursday; weeks start Monday. */
 function isoWeek(year: number, month: number, day: number): [year: number, week: number] {
   const d = new Date(Date.UTC(year, month, day))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)) // shift to this week's Thursday
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
   const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1)
   const week = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7)
   return [d.getUTCFullYear(), week]

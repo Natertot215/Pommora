@@ -37,7 +37,6 @@ export function serializeLink(v: LinkValue): string {
   return v.alias ? `[${escapeAlias(v.alias)}](${v.url})` : v.url
 }
 
-// A title no page answers to names nothing, so the commit is refused as a malformed address is.
 function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
   const named = (rawTitle: string, alias?: string): string | null => {
     const title = resolve?.(rawTitle)
@@ -73,8 +72,7 @@ export function linkAlias(raw: string): string | undefined {
   return readLink(raw).alias
 }
 
-// `null` clears, `undefined` refuses the commit. Only an address carries its alias through an
-// edit: its field shows the bare URL, so an alias left off the typed text was never on screen.
+// `null` clears, `undefined` refuses the commit. Only an address carries its alias through an edit: its field shows the bare URL, so an alias left off the typed text was never on screen.
 export function urlValueFromEdit(
   raw: string,
   current: string | undefined,

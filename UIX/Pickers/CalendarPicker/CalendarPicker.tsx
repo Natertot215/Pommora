@@ -22,8 +22,7 @@ const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 /** KNOB — the dropdown list's ceiling. */
 const DROPDOWN_MAX_HEIGHT = 136
 
-/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two
- *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
+/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two read as one title, so the pair sits a word-space apart rather than two pills apart. */
 const TITLE_PAD_X = '2px'
 
 type Anchor = { x: number; y: number; h: number; el: HTMLElement }
@@ -32,8 +31,7 @@ const anchorOf = (el: HTMLElement): Anchor => {
   return { x: r.left + r.width / 2, y: r.top, h: r.height, el }
 }
 
-// Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
-// formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
+// Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
 const dataKey = (el: Element | null | undefined): string | null =>
@@ -221,8 +219,7 @@ export function CalendarPicker({
         setStart(d.start)
         setEnd(d.end)
       },
-      // The engine swallows the click after any activated release, so a wobble that never left
-      // the cell still has to pick here.
+      // The engine swallows the click after any activated release, so a wobble that never left the cell still has to pick here.
       onDrop: () => {
         if (!d.moved) pick(k)
       },

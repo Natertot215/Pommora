@@ -9,8 +9,7 @@ function safeCodePoint(cp: number): string {
   }
 }
 
-/** Decode the handful of entities a real <title> carries. `&amp;` is decoded LAST so `&amp;#60;`
- *  (a literal `&#60;`) can't double-decode into `<`. */
+/** `&amp;` is decoded LAST so `&amp;#60;` (a literal `&#60;`) can't double-decode into `<`. */
 function decodeEntities(s: string): string {
   return s
     .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeCodePoint(parseInt(h, 16)))

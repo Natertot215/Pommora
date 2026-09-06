@@ -57,7 +57,6 @@ describe('resolveAssetValue', () => {
       kind: 'asset',
       rel: '.nexus/assets/nx1/banner-a.jpg',
     })
-    // A bare filename is a path, not a website — the dotted-host reading would break every asset.
     expect(resolveAssetValue('Banner.png', map)).toEqual({ kind: 'asset', rel: 'Banner.png' })
   })
 
@@ -69,7 +68,6 @@ describe('resolveAssetValue', () => {
   })
 
   it('agrees with parseConnectionText about what a whole-string wikilink is', () => {
-    // An asset value and a Link property value are read by the same grammar; a spelling one accepts and the other rejects would be a silent divergence.
     for (const raw of ['[[Banner.png]]', '[[Banner.png|alias]]', '  [[Banner.png]]  '])
       expect(parseConnectionText(raw) !== null).toBe(resolveAssetValue(raw, map).kind === 'asset')
     for (const raw of ['[[Banner.png', 'Banner.png]]', 'https://x.test/a.png', ''])
@@ -117,7 +115,6 @@ describe('resolveFileValue', () => {
   })
 
   it('a bare filename is unresolved, never read as a path', () => {
-    // A hand-edit writing `- Report.pdf` under the key would otherwise read as resolved while naming a file that is not there.
     expect(resolveFileValue('file-assets/Banner.png', map)).toEqual({ kind: 'unresolved' })
     expect(resolveAssetValue('file-assets/Banner.png', map)).toEqual({
       kind: 'asset',

@@ -11,7 +11,6 @@ import { favoriteLabel, openLabel, pinLabel } from './toggleLabels'
 export interface NavRowMenuContext extends PageMoveContext {
   canOpenNewTab: boolean
   alreadyOpen: boolean
-  /** Only pages offer Open Preview. */
   isPage: boolean
   isPinned: boolean
   isFavorite: boolean

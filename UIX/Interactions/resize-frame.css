@@ -1,6 +1,4 @@
-/* The frame's handles: invisible bands straddling the edges of the positioned box they sit in,
-   corners over the bands. A strip is the same band seated by its host, which supplies only where
-   it hangs and its z-index. */
+/* Invisible bands straddling the edges of the positioned box they sit in, corners over the bands. A strip is the same band seated by its host, which supplies only where it hangs and its z-index. */
 .resize-edge,
 .resize-strip {
   position: absolute;
@@ -64,8 +62,7 @@
   cursor: nesw-resize;
 }
 
-/* An outlined frame's chassis eases its stroke to accent while a handle is hovered or held; both
-   properties ease together, or a stroke easing beside an edge that snapped flashes white. */
+/* An outlined frame's chassis eases its stroke to accent while a handle is hovered or held; both properties ease together, or a stroke easing beside an edge that snapped flashes white. */
 :has(> .resize-outlined) {
   transition:
     border-color var(--duration-base) var(--ease-base),

@@ -327,8 +327,7 @@ class TableWidget extends ReactWidget {
 
   destroy(dom: HTMLElement): void {
     this.destroyed = true
-    // Only a node that is genuinely being dropped reaches here — a widget replaced over a reused DOM
-    // is never destroyed — so the observer measuring it goes with it rather than outliving the table.
+    // Only a node that is genuinely being dropped reaches here — a widget replaced over a reused DOM is never destroyed — so the observer measuring it goes with it rather than outliving the table.
     ;(dom as TableDom)._ro?.disconnect()
     this.unmountSoon(dom as TableDom)
   }

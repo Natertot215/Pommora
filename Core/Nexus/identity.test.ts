@@ -59,9 +59,7 @@ describe('ensureIdentity', () => {
     expect(await readFile(idPath(), 'utf8')).toBe('{ corrupt')
   })
 
-  // A file that EXISTS but carries no readable id is an established nexus with damaged identity,
-  // not a new one — so it is repaired, not created. Reporting it as a creation would seed agenda
-  // folders into a populated nexus and orphan every asset keyed to the old id.
+  // A file that EXISTS but carries no readable id is an established nexus with damaged identity, not a new one — reporting it as a creation would seed agenda folders into a populated nexus and orphan every asset keyed to the old id.
   it('mints over a readable id-less file as a REPAIR, preserving its foreign keys', async () => {
     await writeId({ note: 'keep me' })
     const r = await ensureIdentity(root)
@@ -112,8 +110,7 @@ describe('the agenda singleton seed', () => {
     expect((await cfg('Tasks', SIDECAR_FILENAME.taskConfig)).id).toBe(firstTaskId)
   })
 
-  // Existing nexuses gain their pair when Agenda is actually built — seeding one here would
-  // silently recreate folders a user deliberately removed.
+  // Existing nexuses gain their pair when Agenda is actually built — seeding one here would silently recreate folders a user deliberately removed.
   it('never retro-seeds a nexus that already carries an identity', async () => {
     await writeId({ id: '01KVGMT8BFP350FZZXAMG1QDRC' })
     await ensureIdentity(root)
@@ -122,9 +119,7 @@ describe('the agenda singleton seed', () => {
     expect((await readId()).agenda_singletons).toBeUndefined()
   })
 
-  // Opening a plain folder as a nexus takes the create branch, so a user's own `Tasks/` of notes
-  // is reachable here. Claiming it would stamp an agenda config into their content and drop the
-  // whole folder out of Collections.
+  // Opening a plain folder as a nexus takes the create branch, so a user's own `Tasks/` of notes is reachable here; claiming it would stamp an agenda config into their content and drop the whole folder out of Collections.
   it('never claims a folder that already exists, and registers nothing for it', async () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', 'Note.md'), '# mine')
@@ -132,6 +127,6 @@ describe('the agenda singleton seed', () => {
     const reg = (await readId()).agenda_singletons as Record<string, unknown> | undefined
     expect(await pathExists(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig))).toBe(false)
     expect(reg?.tasks).toBeUndefined()
-    expect(typeof reg?.events).toBe('string') // the untaken slot still seeds
+    expect(typeof reg?.events).toBe('string')
   })
 })

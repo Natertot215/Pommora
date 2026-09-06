@@ -32,7 +32,6 @@ const NAV_KINDS = new Set<string>([
   'event',
 ])
 
-/** A tab never seats an Agenda entity. */
 export const TAB_KINDS = new Set<string>(
   [...NAV_KINDS].filter((k) => k !== 'task' && k !== 'event'),
 )

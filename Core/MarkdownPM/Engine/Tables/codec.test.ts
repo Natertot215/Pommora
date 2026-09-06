@@ -28,8 +28,8 @@ describe('codec', () => {
 
   it('splitRow returns full inter-pipe segments (untrimmed) — one flex item per cell', () => {
     expect(splitRow('| a | b |', 0).segments).toEqual([
-      [1, 4], // ' a ' incl. padding
-      [5, 8], // ' b ' incl. padding
+      [1, 4],
+      [5, 8],
     ])
   })
 
@@ -50,13 +50,11 @@ describe('codec', () => {
     for (const s of ['a|b', 'a\\b', 'a\\|b', 'plain', '|||', '\\\\', 'C:\\path']) {
       expect(unescapeCell(escapeCell(s))).toBe(s)
     }
-    expect(escapeCell('a|b')).toBe('a\\|b') // a literal pipe escapes
-    expect(escapeCell('a\\|b')).toBe('a\\\\\\|b') // a literal backslash AND pipe both escape
+    expect(escapeCell('a|b')).toBe('a\\|b')
+    expect(escapeCell('a\\|b')).toBe('a\\\\\\|b')
   })
 
-  // The other direction: a cell written by hand, read in, and committed back must come out as it
-  // went in. A backslash escaping anything but a pipe is ordinary markdown passing through, and
-  // doubling it rewrites the file for every other reader.
+  // A backslash escaping anything but a pipe is ordinary markdown passing through, and doubling it rewrites the file for every other reader.
   it('a hand-authored cell survives a round trip through the editor', () => {
     for (const source of ['a \\* b', 'C:\\path', 'a \\_x_ b', 'a \\| b', 'plain']) {
       expect(escapeCell(unescapeCell(source))).toBe(source)
@@ -64,17 +62,17 @@ describe('codec', () => {
   })
 
   it('cellToSource / cellToDisplay round-trip in-cell newlines as <br> (and still escape pipes)', () => {
-    expect(cellToSource('a\nb')).toBe('a<br>b') // newline → <br> so the row never splits
-    expect(cellToSource('a|b\nc')).toBe('a\\|b<br>c') // pipe escaped AND newline serialized
-    expect(cellToDisplay('a<br>b')).toBe('a\nb') // <br> → newline for the multi-line cell editor
+    expect(cellToSource('a\nb')).toBe('a<br>b')
+    expect(cellToSource('a|b\nc')).toBe('a\\|b<br>c')
+    expect(cellToDisplay('a<br>b')).toBe('a\nb')
     for (const s of ['a\nb', 'a|b', 'line1\nline2|x', 'plain', 'a\nb\nc'])
-      expect(cellToDisplay(cellToSource(s))).toBe(s) // full display→source→display round-trip
+      expect(cellToDisplay(cellToSource(s))).toBe(s)
   })
 
   it('parseTable keeps raw escaped cell text; unescapeCell renders the literal for display', () => {
     const m = parseTable('| a\\|b | c |\n| --- | --- |')!
-    expect(m.header[0]).toBe('a\\|b') // raw source form (matches splitRow contract)
-    expect(unescapeCell(m.header[0])).toBe('a|b') // display form — the backslash is gone
+    expect(m.header[0]).toBe('a\\|b')
+    expect(unescapeCell(m.header[0])).toBe('a|b')
   })
 
   it('round-trips canonical GFM with widths + alignment', () => {

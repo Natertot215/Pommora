@@ -18,7 +18,6 @@ import { WebTile } from '../Tiles/Surfaces/WebTile'
 interface EditorHostOptions {
   pageId?: string
   connections?: ConnectionsApi
-  /** A surface that only shows a document neither glances nor drives the native format menu. */
   inert?: boolean
 }
 
@@ -44,8 +43,7 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
   ],
 })
 
-/** Every member reads the store when called, so one host serves an editor for its whole mount;
- *  the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
+/** Every member reads the store when called, so one host serves an editor for its whole mount; the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
 function buildEditorHost(
   { pageId, inert }: EditorHostOptions,
   connRef: { readonly current: ConnectionsApi | undefined },

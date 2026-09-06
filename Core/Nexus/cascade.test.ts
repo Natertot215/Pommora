@@ -74,8 +74,7 @@ describe('renameCascade', () => {
 describe('the cascade queries the index', () => {
   const hidden = (): string => join(root, 'Hidden', 'Secret.md')
 
-  /** 40 pages, 3 of them mentioning — one in an un-adopted folder — plus an EXCLUDED note
-   *  that also mentions and must stay unread and byte-untouched (Requirement 9). */
+  /** 40 pages, 3 of them mentioning — one in an un-adopted folder — plus an EXCLUDED note that also mentions and must stay unread and byte-untouched. */
   const seedFixture = async (): Promise<void> => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(

@@ -87,7 +87,6 @@ export async function liveAssetMap(root: string): Promise<AssetMap> {
 export async function refreshAssetMap(root: string): Promise<AssetMap> {
   const prior = held?.root === root ? held.map : null
   const { assetDir } = await readWatchScope(root)
-  // Stabilized against what was held, so a walk that moved nothing leaves the map's identity alone and settle has nothing to push.
   const map = stabilize(await buildAssetMap(root, assetDir), prior)
   held = { root, assetDir, map }
   return map

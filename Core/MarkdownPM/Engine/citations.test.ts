@@ -11,8 +11,7 @@ import {
 } from './detect'
 import { tableRegions } from './Tables/regions'
 
-/** The house exclusion set — fences and tables — assembled the way `docLineScan` assembles it, so
- *  these cases read the document exactly as the editor's own scan does. */
+/** The house exclusion set — fences and tables — assembled the way `docLineScan` assembles it, so these cases read the document exactly as the editor's own scan does. */
 function scan(text: string): CitationScan {
   const d = splitWithOffsets(text)
   const fences = scanFencedCode(d.lines, d.lineStarts)

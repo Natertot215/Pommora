@@ -31,7 +31,6 @@ export type TableMenuAction =
   | 'table:clear'
   | 'table:delete'
 
-/** The heading-column toggle is offered on the first column alone, since only it can read as the header. */
 export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuAction>[] {
   if (ctx.kind === 'header')
     return [

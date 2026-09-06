@@ -18,13 +18,12 @@ import { navKey } from '../Navigation/navRecents'
 import { clearCache } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
 
-// Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist,
-// the mutation gateway, the applyTree accent read) so it runs in isolation.
+// Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the applyTree accent read) so it runs in isolation.
 let channels: Record<string, ReturnType<typeof vi.fn>>
 const openPage = (): ReturnType<typeof vi.fn> => channels['page:open']
 
 beforeEach(() => {
-  clearCache() // module state — never leaks across tests
+  clearCache()
   channels = {
     'page:open': vi.fn(async () => ({ ok: true, value: {} })),
     'nav:write': vi.fn(async () => ({ ok: true, value: null })),
@@ -76,7 +75,7 @@ describe('store — tab wiring (Phase 0)', () => {
     const s = useSession.getState()
     expect(s.activeTabId).toBe('t2')
     expect(s.selection).toEqual({ kind: 'context', id: 'b' })
-    expect(s.recents).toEqual([]) // a plain activate never records
+    expect(s.recents).toEqual([])
     expect(s.tabMru[0]).toBe('t2')
   })
 
@@ -98,8 +97,7 @@ describe('store — tab wiring (Phase 0)', () => {
   })
 
   it('re-selecting the shown entity after Back is a dedup no-op — Forward preserved', async () => {
-    // target must move in lockstep with navIndex: after Back to b, clicking b in the sidebar must
-    // dedup against the LIVE shown entity (not the pre-Back target) and leave the Forward stack alone.
+    // target must move in lockstep with navIndex: after Back to b, clicking b in the sidebar must dedup against the LIVE shown entity (not the pre-Back target) and leave the Forward stack alone.
     seed({ tabs: [uTab('t1', ctx('c'), [ctx('a'), ctx('b'), ctx('c')], 2)], activeTabId: 't1' })
     useSession.getState().goBack()
     expect(useSession.getState().tabs[0].target).toEqual(ctx('b'))
@@ -107,7 +105,7 @@ describe('store — tab wiring (Phase 0)', () => {
     let s = useSession.getState()
     expect(s.tabs[0].navStack).toEqual([ctx('a'), ctx('b'), ctx('c')])
     expect(s.tabs[0].navIndex).toBe(1)
-    expect(s.recents).toEqual([]) // a dedup-focus never records
+    expect(s.recents).toEqual([])
     useSession.getState().goForward()
     s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'context', id: 'c' })
@@ -206,8 +204,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   })
 
   it('a stale cold fetch resolving after a warm switch-back never clobbers the shown page', async () => {
-    // Warm-instant finishes synchronously, so an earlier in-flight fetch resolves LAST — the fence
-    // must drop it or the wrong file renders (and autosaves) under the wrong tab.
+    // Warm-instant finishes synchronously, so an earlier in-flight fetch resolves LAST — the fence must drop it or the wrong file renders (and autosaves) under the wrong tab.
     const resolveB = pauseFetchOfB()
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
@@ -215,13 +212,13 @@ describe('store — warm tabs (B-2/B-3)', () => {
       selection: pg('a'),
       pages: { a: ready('a') },
     })
-    useSession.getState().activateTab('t2') // cold fetch of /b now in flight
-    useSession.getState().activateTab('t1') // instant back to A's slot
+    useSession.getState().activateTab('t2')
+    useSession.getState().activateTab('t1')
     expect(shownDetail(useSession.getState())?.id).toBe('a')
-    resolveB({ ok: true, value: detail('b') }) // the stale response lands last
+    resolveB({ ok: true, value: detail('b') })
     await new Promise((r) => setTimeout(r, 0))
     const s = useSession.getState()
-    expect(shownDetail(s)?.id).toBe('a') // fence held — B never clobbered the shown page
+    expect(shownDetail(s)?.id).toBe('a')
     expect(s.pages.b).toBeUndefined()
     expect(s.selection).toEqual(pg('a'))
   })
@@ -236,15 +233,15 @@ describe('store — warm tabs (B-2/B-3)', () => {
     })
     const p = useSession.getState().select(pg('b'))
     let s = useSession.getState()
-    expect(s.selection).toEqual(pg('a')) // outgoing view still shown
-    expect(shownPage(s)?.status).toBe('ready') // its slot survives the pause
-    expect(frozenOf(s)).toBe(true) // ...but it's a held frame, not a live surface
+    expect(s.selection).toEqual(pg('a'))
+    expect(shownPage(s)?.status).toBe('ready')
+    expect(frozenOf(s)).toBe(true)
     resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
     expect(s.selection).toEqual(pg('b'))
     expect(shownDetail(s)?.id).toBe('b')
-    expect(s.pages.a).toBeUndefined() // nothing points at A any more
+    expect(s.pages.a).toBeUndefined()
     expect(frozenOf(s)).toBe(false)
   })
 
@@ -256,15 +253,15 @@ describe('store — warm tabs (B-2/B-3)', () => {
       selection: pg('a'),
       pages: { a: ready('a') },
     })
-    const p = useSession.getState().select(pg('b')) // paused on A
-    await useSession.getState().select({ kind: 'homepage' }) // user moves on mid-pause
+    const p = useSession.getState().select(pg('b'))
+    await useSession.getState().select({ kind: 'homepage' })
     let s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'homepage' })
     expect(frozenOf(s)).toBe(false)
     resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
-    expect(s.selection).toEqual({ kind: 'homepage' }) // the stale B response was dropped
+    expect(s.selection).toEqual({ kind: 'homepage' })
     expect(s.pages).toEqual({})
   })
 
@@ -280,7 +277,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
       })
       const p = useSession.getState().select(pg('b'))
       expect(frozenOf(useSession.getState())).toBe(true)
-      vi.advanceTimersByTime(300) // past the deadline — the loading view takes over
+      vi.advanceTimersByTime(300)
       let s = useSession.getState()
       expect(s.selection).toEqual(pg('b'))
       expect(shownPage(s)).toBeUndefined()
@@ -352,7 +349,7 @@ describe('store — page slots', () => {
     })
     const p = useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/moved.md' }]))
     let s = useSession.getState()
-    expect(s.pages.a?.status).toBe('ready') // the pause holds on the old slot
+    expect(s.pages.a?.status).toBe('ready')
     expect(frozenOf(s)).toBe(true)
     expect(openPage()).toHaveBeenCalledWith('Notes/moved.md')
     resolveA({ ok: true, value: detail('a', 'Notes/moved.md') })
@@ -404,13 +401,11 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
     }
     seed({ tabs: [t1, t2], activeTabId: 't1', tabMru: ['t1', 't2'] })
 
-    // Rename: page b moves — the inactive t2 refreshes in place, the active tab stays put.
     await useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/Renamed.md' }]))
     let s = useSession.getState()
     expect(s.activeTabId).toBe('t1')
     expect(s.tabs.find((t) => t.id === 't2')?.target).toEqual(page('b', 'Notes/Renamed.md'))
 
-    // Delete: page b is gone — the inactive unpinned t2 closes; the active tab is untouched.
     await useSession.getState().applyTree(treeWith([]))
     s = useSession.getState()
     expect(s.tabs.map((t) => t.id)).toEqual(['t1'])
@@ -475,7 +470,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     const s = useSession.getState()
     expect(s.pageWindow).toBeNull()
     expect(s.windowsFile).toEqual({ navSet: null, origins: {}, open: null })
-    expect(s.activeTabId).toBe('') // the once-per-nexus load gate re-opens
+    expect(s.activeTabId).toBe('')
   })
 
   it('a summon reconciles the remembered set against the live tree (H-10 restore)', async () => {
@@ -547,8 +542,7 @@ describe('store — recents reorder + batched close', () => {
   })
 })
 
-// The memory is a slice rather than a tree-keyed derivation because neither gesture pushes a tree:
-// what these assert is that a write and a forget are visible immediately, with no reload between.
+// The memory is a slice rather than a tree-keyed derivation because neither gesture pushes a tree: what these assert is that a write and a forget are visible immediately, with no reload between.
 describe('store — the aliases a page has been given', () => {
   const aliasWrites = (): ReturnType<typeof vi.fn> => channels['aliases:set']
 

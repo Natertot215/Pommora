@@ -137,8 +137,7 @@ describe('delete replay', () => {
     closeSession()
     dropLiveTree()
 
-    // The crash state: bundle minted, journal written, page A stripped, then death — the def,
-    // the assignment, and page B all still standing.
+    // The crash state: bundle minted, journal written, page A stripped, then death — the def, the assignment, and page B all still standing.
     const crashed = await seedNexus()
     const def = (await readRegistry(crashed)).defs.prop_s
     await writePropertyBundle(crashed, {

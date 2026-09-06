@@ -1,5 +1,3 @@
-/* ─── Mechanism ─────────────────────────────────────────────────────────────── */
-
 .tab {
   --tab-max-absolute: 450px; /* KNOB — the trailing tab's grow ceiling */
   position: relative;
@@ -129,8 +127,6 @@
   padding: 0;
 }
 
-/* ─── Variants ──────────────────────────────────────────────────────────────── */
-
 .tabs-standard {
   --tab-min: var(--tab-min-user, 70px);
   --tab-max: var(--tab-max-user, 250px);
@@ -149,8 +145,6 @@
   --tab-pad-x: 10px;
 }
 
-/* ─── Shared scroller + strip ───────────────────────────────────────────────── */
-
 .tab-scroll {
   position: relative;
   flex: 1;
@@ -168,8 +162,6 @@
   height: 100%;
   padding-right: var(--tab-plus-gutter, 0px);
 }
-
-/* ─── Toolbar tab chrome (Standard host) ────────────────────────────────────── */
 
 .tab-bar {
   flex: 1;

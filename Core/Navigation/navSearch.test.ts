@@ -16,7 +16,7 @@ describe('filterNav', () => {
   })
 
   it('is case-insensitive and fuzzy (subsequence)', () => {
-    const hits = filterNav(index(), 'nb') // subsequence of "Nested Beta"
+    const hits = filterNav(index(), 'nb')
     expect(hits.map((h) => h.title)).toContain('Nested Beta')
   })
 

@@ -164,12 +164,7 @@ export function TrashFrame(): React.JSX.Element {
   }
 
   const openMenu = async (row: TrashRow): Promise<void> => {
-    // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked
-    // set is a deliberate construction, and a menu that silently retargeted it would spend it on a
-    // click that never named it.
-    // The batch is what the menu will actually act on — the CHECKED rows still in view. Deriving
-    // its voice from the unfiltered selection would let a filtered right-click read "Restore All",
-    // act on one row, and withhold the destination picker that row was owed.
+    // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked set is a deliberate construction. The batch is what the menu will actually act on: the CHECKED rows STILL IN VIEW, since deriving it from the unfiltered selection would let a filtered right-click read "Restore All", act on one row, and withhold the destination picker that row was owed.
     const inSet = checked.has(row.bundlePath) ? shown.filter((r) => checked.has(r.bundlePath)) : []
     const batch = inSet.length > 1
     const targets = batch ? inSet : [row]

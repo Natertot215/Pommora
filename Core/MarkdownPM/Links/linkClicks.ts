@@ -105,7 +105,6 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
             : {
                 kind: 'url',
                 url: hit.url,
-                // The way back into this editor, closed over the span the menu was popped on.
                 apply: view.state.readOnly
                   ? undefined
                   : (action) => applyUrlLinkAction(view, action, hit.range),

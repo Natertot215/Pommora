@@ -7,8 +7,7 @@ import { splitRow, parseDelimiter, type CellSpan } from './codec'
 interface RowGeom {
   cells: CellSpan[]
   segments: [number, number][]
-  /** The row line's own span — what a commit replaces when the cell it names has no segment,
-   *  which is every cell a ragged row is short of. */
+  /** The row line's own span — what a commit replaces when the cell it names has no segment, which is every cell a ragged row is short of. */
   from: number
   to: number
 }
@@ -25,9 +24,7 @@ function isTable(block: string): boolean {
   return tree.children.length === 1 && tree.children[0].type === 'table'
 }
 
-/** Every table's source geometry. Pure on the document's line table, and read per keystroke by the
- *  guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc
- *  version (`docCache.docScan`), so the micromark confirmations here are paid once. */
+/** Read per keystroke by the guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc version (`docCache.docScan`), so the micromark confirmations here are paid once. */
 export function tableRegions(
   { text, lines, lineStarts }: DocLines,
   inCode: CodeMask = codeMask(text),
@@ -53,9 +50,7 @@ export function tableRegions(
       i++
       continue
     }
-    // Grab the contiguous non-blank block lexically, then confirm with a SINGLE parse — shrinking only
-    // if a non-table line is glued on without a blank separator (rare). Keeps the common case to one
-    // micromark parse per table instead of a per-line re-check.
+    // Grab the contiguous non-blank block lexically, then confirm with a SINGLE parse — shrinking only if a non-table line is glued on without a blank separator. Keeps the common case to one micromark parse per table.
     let last = i
     while (last + 1 < lines.length && lines[last + 1].trim() !== '') last++
     while (last > i && !isTable(text.slice(lineStarts[i - 1], lineTo(last)))) last--

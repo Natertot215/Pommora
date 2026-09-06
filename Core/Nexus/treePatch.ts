@@ -1,5 +1,4 @@
-// The one set of tree transforms both processes apply — the renderer optimistically, main as
-// canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
+// The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
 import { NEW_PAGE_SLOT, type MutateRequest } from '../Pages/mutateRequest'
 import { titleFromPath } from '../Connections/connections'
@@ -16,9 +15,7 @@ export const parentOf = (path: string): string => {
 }
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
-// The walk's literal node shapes, stated once: every producer builds here, so a transform-built
-// node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by
-// reference identity. Never fold the factories together, and never drop a possibly-undefined key.
+// The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
 export function makePageNode(f: {
   id: string
@@ -214,7 +211,7 @@ export function relocateNodeInTree(
   path: string,
   newParentPath: string,
 ): NexusTree | null {
-  if (parentOf(path) === newParentPath) return null // already there
+  if (parentOf(path) === newParentPath) return null
   const newPath = joinPath(newParentPath, basename(path))
   const pulled = extract(tree.collections, path)
   if (!pulled.node) return null
@@ -303,8 +300,7 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Keeps one def reference-identical in both homes (`tree.registry` and each Collection's
- *  `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
+/** Keeps one def reference-identical in both homes (`tree.registry` and each Collection's `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
 export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
   const defs = stabilize(registry, tree.registry)
   const byId = new Map(defs.map((d) => [d.id, d]))
@@ -389,7 +385,6 @@ function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T
 
 export type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
 
-/** `fn` returns the replacement, or null to remove the node. */
 export function updateNodeInTree(
   tree: NexusTree,
   path: string,
@@ -492,7 +487,6 @@ export function patchNodeInTree(
   })
 }
 
-/** Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
 export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   return reorderById(arr, order, (item) => item.id)
 }

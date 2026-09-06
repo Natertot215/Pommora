@@ -22,7 +22,6 @@ describe('entityIcon — the one glyph resolution', () => {
     )
   })
 
-  // The two gates disagree on purpose: an override must be CURATED, where an entity's own icon may be any Lucide id.
   it('one uncurated-but-real glyph: rejected as an override, kept as an own icon', () => {
     expect(entityIcon('context', undefined, { context: 'anchor' })).toBe(
       DEFAULT_ENTITY_ICONS.context,

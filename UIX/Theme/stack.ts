@@ -1,8 +1,4 @@
-// A z-index only competes inside its OWN stacking context, so these are separate ladders, never
-// one number line: `shell` orders the window frame's pieces against each other, `local` lifts an
-// element over its own siblings wherever it happens to live, and `top` orders the fixed and
-// body-portalled surfaces that all land in the root context together. A step from one group is
-// not comparable to a step from another.
+// A z-index only competes inside its OWN stacking context, so these are separate ladders, never one number line: `shell` orders the window frame's pieces against each other, `local` lifts an element over its own siblings wherever it happens to live, and `top` orders the fixed and body-portalled surfaces that all land in the root context together. A step from one group is not comparable to a step from another.
 
 export const stack = {
   /** The window frame, back to front — every step here is a child of the shell. */

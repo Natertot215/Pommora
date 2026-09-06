@@ -50,16 +50,14 @@ describe('ColorPicker', () => {
     expect(cells.some((c) => c.getAttribute('aria-label')?.startsWith('grey'))).toBe(true)
   })
 
-  // The negative control's other half: withholding the row must actually remove it, and the
-  // assertion must be able to go red — with `greyscale` left off, the count returns to 64.
+  // The negative control's other half: withholding the row must actually remove it, and the assertion must be able to go red — with `greyscale` left off, the count returns to 64.
   it('withholds the greyscale row when a surface paints the raw color', () => {
     const cells = mount(false)
     expect(cells).toHaveLength(56)
     expect(cells.some((c) => c.getAttribute('aria-label')?.startsWith('grey'))).toBe(false)
   })
 
-  // Clearing is bound to clicking the ringed cell, so withholding the row a stored value lives in
-  // would strand that value: visible in the table, unclearable in its own picker.
+  // Clearing is bound to clicking the ringed cell, so withholding the row a stored value lives in would strand that value: visible in the table, unclearable in its own picker.
   it('still shows the greyscale row when the stored value lives there', () => {
     const cells = mount(false, 'grey-4')
     expect(cells).toHaveLength(64)

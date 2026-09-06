@@ -33,8 +33,7 @@ import {
   type Slot,
 } from './listDragModel'
 
-/** Drop the item whose line contains `grab` so it starts at the line containing `dropLine` — returns the
- *  resulting doc string. `at` is resolved to the start of the line that contains `dropLine`. */
+/** Drop the item whose line contains `grab` so it starts at the line containing `dropLine`. */
 function drop(doc: string, grab: number, at: number): string {
   const block = subBlockAt(doc, grab)
   if (!block) throw new Error('grab not on a list line')
@@ -64,7 +63,6 @@ describe('subBlockAt', () => {
 describe('drag reorders source lines', () => {
   it('moves a bullet item down past a sibling', () => {
     const doc = '- a\n- b\n- c'
-    // grab "a", drop after "b" → start of "c" line
     const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '- c'))
     expect(out).toBe('- b\n- a\n- c')
   })
@@ -78,7 +76,6 @@ describe('drag reorders source lines', () => {
 describe('ordered list renumbers after a move', () => {
   it('renumbers source + destination runs', () => {
     const doc = '1. a\n2. b\n3. c'
-    // grab "3. c", drop it at the very start (before "1. a")
     const out = drop(doc, lineStart(doc, 'c'), 0)
     expect(out).toBe('1. c\n2. a\n3. b')
   })
@@ -100,7 +97,6 @@ describe('checkbox state preserved across a move', () => {
 describe('nested sub-block moves as a unit', () => {
   it('carries descendants with the parent', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
-    // move "a" (+ a1, a2) to after "b"
     const out = drop(doc, lineStart(doc, '- a'), doc.length)
     expect(out).toBe('- b\n- a\n\t- a1\n\t- a2')
   })
@@ -157,7 +153,7 @@ describe('drag inside a callout (prefix-aware)', () => {
     expect(applyChanges(doc, changes)).toBe('> [!callout] head\n> - two\n> - one')
   })
   it('subBlockAt does NOT swallow a top-level indented sibling across the box boundary', () => {
-    const doc = '> - a\n\t- x' // a callout/quote bullet then a top-level nested bullet
+    const doc = '> - a\n\t- x'
     const block = subBlockAt(doc, doc.indexOf('a'))!
     expect(block.to).toBe(doc.indexOf('\n')) // block is just `> - a`, not the `\t- x` line
   })
@@ -231,8 +227,7 @@ describe('blockMoveChanges (blank-separated block move)', () => {
     expect(blockMoveChanges('only', { from: 0, to: 4 }, { at: 4 })).toBeNull()
   })
 
-  // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on
-  // a drop — the move has to re-blank-separate both new seams.
+  // A glue-adjacent seam (two blockStarts-distinct blocks with no blank between) must not fuse on a drop — the move has to re-blank-separate both new seams.
   it('does not lazily-continue a list when a block drops under it (no blank below the list)', () => {
     const doc = '- a\n- b\npara X\n\nmover'
     expect(apply(doc, { from: doc.indexOf('mover'), to: doc.length }, doc.indexOf('para X'))).toBe(

@@ -2,7 +2,6 @@ import type { ActionItem } from './menuModel'
 
 export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
 
-/** A `title`-bearing node is a page leaf; a `children`-bearing one drills. */
 export interface PickNode {
   label: string
   title?: string
@@ -14,7 +13,6 @@ interface ZoomOption {
   factor: number
 }
 
-/** A heading chevron's Delete drops the heading line but keeps its body. */
 export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'webpage'; zoomSteps: readonly ZoomOption[]; zoom: number | null }
@@ -31,7 +29,6 @@ export type GripMenuAction =
   | `size:${number}`
   | 'delete'
 
-/** Named once for both the editor's Format ▸ Heading submenu and the heading grip's Size submenu. */
 export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
   { level: 0, label: 'Paragraph' },
   { level: 1, label: 'Heading 1' },
@@ -53,7 +50,6 @@ const source = (n: PickNode): ActionItem<GripMenuAction> =>
     ? { label: n.label, action: `source:${n.label}`, submenu: n.children.map(source) }
     : { label: n.label, action: `source:${n.title ?? n.label}` }
 
-/** An unresolved token has no tile to scale — the arm waits for the claim. */
 const scaleRow = (ctx: {
   zoomSteps: readonly ZoomOption[]
   zoom: number | null

@@ -24,12 +24,11 @@ export function splitEnvelope(content: string): PageEnvelope {
   if (!content.startsWith('---')) return { frontmatter: '', body: content }
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/)
   if (!m) return { frontmatter: '', body: content }
-  const body = content.slice(m[0].length).replace(/^\r?\n/, '') // strip one separator line
+  const body = content.slice(m[0].length).replace(/^\r?\n/, '')
   return { frontmatter: m[1], body }
 }
 
-/** The one frontmatter parse. Anything that isn't a YAML map — an array, a scalar, unrecoverable
- *  YAML — reads as an empty map, and the file is still a valid page. */
+/** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. */
 export function splitFrontmatter(content: string): Record<string, unknown> {
   try {
     const parsed: unknown = parseDocument(splitEnvelope(content).frontmatter).toJSON()
@@ -41,10 +40,7 @@ export function splitFrontmatter(content: string): Record<string, unknown> {
   }
 }
 
-/** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser
- *  recovered, so writing it back destroys the rest. Broken is anything that can't round-trip:
- *  parse errors, a non-map, or a doc that parses clean yet refuses to serialize (an alias token
- *  like `*word` is exactly that). */
+/** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser recovered, so writing it back destroys the rest. Broken is anything that can't round-trip, an alias token like `*word` included. */
 const mergeable = (doc: Document): boolean =>
   doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))
 
@@ -61,10 +57,7 @@ export function frontmatterWritable(content: string): boolean {
   return mergeable(doc) && serialized(doc) !== null
 }
 
-/** Assemble canonical envelope bytes: `---\n<fm>---\n<body>` (fm must end in \n).
- *  No separator blank line — a note must never open with an empty line under
- *  Obsidian's properties panel. splitEnvelope still strips one legacy separator,
- *  so a body can't round-trip a leading blank line; that's the intended shape. */
+/** `---\n<fm>---\n<body>` (fm must end in \n). No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips one legacy separator. */
 export function assembleEnvelope(frontmatterYaml: string, body: string): string {
   const lf = (s: string): string => s.replaceAll('\r\n', '\n')
   const fm = frontmatterYaml.endsWith('\n') ? frontmatterYaml : `${frontmatterYaml}\n`
@@ -78,8 +71,7 @@ export function mergeFrontmatter(
   body: string,
 ): string {
   const { frontmatter } = splitEnvelope(existingContent)
-  // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own
-  // bytes, and a broken map is passed through rather than re-serialized from what it recovered.
+  // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own bytes, and a broken map is passed through rather than re-serialized from what it recovered.
   if (modeledKeys.length === 0)
     return frontmatter === '' ? body : assembleEnvelope(frontmatter, body)
   const doc = parseDocument(frontmatter)

@@ -8,17 +8,12 @@ const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
 export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
 
-/** The cap without any mask, for a box whose DESCENDANTS must keep painting: a mask erases
- *  everything under it, and the removable chip stacks pre-masked twins inside its label. */
+/** The cap without any mask, for a box whose DESCENDANTS must keep painting: a mask erases everything under it, and the removable chip stacks pre-masked twins inside its label. */
 export const overScrollUnmasked = 'over-scroll-cap over-scroll-ellipsis'
 
 export const overScrollHost = 'over-scroll-host'
 
-/**
- * The cap under the pointer. A host counts as its own cap's seat and is read BEFORE any cap
- * further up: a pointer-inert label (the removable chip's) puts the pointer on its host, and an
- * ancestor cap — the cell box the chip sits in — would otherwise answer for it.
- */
+/** The cap under the pointer. A host counts as its own cap's seat and is read BEFORE any cap further up: a pointer-inert label puts the pointer on its host, and an ancestor cap would otherwise answer for it. */
 function capUnder(target: EventTarget | null): HTMLElement | null {
   let node = target instanceof Element ? target : null
   while (node) {
@@ -40,15 +35,7 @@ function hold(cap: HTMLElement | null): void {
   held = cap
 }
 
-/**
- * Gesture and return for every cap, wired once for the whole document — a cap is a bare class on
- * markup as often as it is this component, and a pointer-inert label receives no events of its own
- * to hang them off.
- *
- * A capped label scrolls on ONE axis and a trackpad flick is usually the other one, so the dominant
- * delta drives it whichever way it points. Any cap this resolves is under the pointer by
- * construction, which is what opens it; a label already at its end chains the gesture onward.
- */
+/** Wired once for the whole document — a cap is a bare class on markup as often as it is this component, and a pointer-inert label receives no events of its own. A capped label scrolls on ONE axis and a trackpad flick is usually the other one, so the dominant delta drives it; a label already at its end chains the gesture onward. */
 function wireCaps(): void {
   const root = document.documentElement
   if (root.dataset.overScroll === 'on') return
@@ -72,8 +59,7 @@ function wireCaps(): void {
   )
 }
 
-/** How far off its start a label sits, for the overlays that have to land on its VISIBLE tail
- *  rather than on the content's — a masked twin inside the scroller travels with the text. */
+/** How far off its start a label sits, for the overlays that have to land on its VISIBLE tail rather than on the content's — a masked twin inside the scroller travels with the text. */
 function markScroll(cap: HTMLElement): void {
   cap.style.setProperty('--os-scroll', `${cap.scrollLeft}px`)
 }

@@ -1,7 +1,6 @@
 import { style } from '@vanilla-extract/css'
 
-/** The pane's growth ceiling: the surface widens with its longest row until this stops it and the row's own truncation takes over.
- *  The bound can't be written in CSS at all, since it depends on where the button sits on screen — the shell measures it into `--menu-max`. */
+/** The growth ceiling can't be written in CSS at all, since it depends on where the button sits on screen — the shell measures it into `--menu-max`. */
 export const pane = style({
   maxWidth: 'var(--menu-max)',
 })

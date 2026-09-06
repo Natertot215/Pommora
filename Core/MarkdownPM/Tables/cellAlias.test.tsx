@@ -32,7 +32,6 @@ afterEach(async () => {
   container.remove()
 })
 
-/** Activates the body cell and hands back its live editor. */
 async function cellEditor(): Promise<EditorView> {
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -65,7 +64,6 @@ async function cellEditor(): Promise<EditorView> {
   return view
 }
 
-/** What CodeMirror does with a typed character: the first input handler to claim it wins. */
 const typed = (view: EditorView, at: number, text: string): boolean =>
   view.state
     .facet(EditorView.inputHandler)

@@ -32,7 +32,6 @@ describe('atomicWriteFile', () => {
 })
 
 describe('rewritePageSerialized', () => {
-  // A rewrite is a write the user did not make to that page, and mtime is Last Modified.
   it("keeps the file's modification time — a same-size rewrite included", async () => {
     const file = join(dir, 'p.md')
     await writeFile(file, '---\nStatus: Old\n---\nbody\n')
@@ -139,7 +138,6 @@ describe('mintBundle', () => {
     expect(dirname(bundle)).toBe(join(dir, '.trash', 'Notes', 'Daily'))
     expect(basename(bundle).endsWith('__Beta.md.deleted')).toBe(true)
     expect((await stat(bundle)).isDirectory()).toBe(true)
-    // Nothing destructive has happened yet — that is the whole point of minting first.
     expect(await readFile(p, 'utf8')).toBe('bye')
   })
 

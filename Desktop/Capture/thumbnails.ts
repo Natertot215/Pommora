@@ -1,6 +1,4 @@
-// Written under the SYNCED thumbnails tree so a second machine gets real previews. Full-page
-// capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the
-// transparent→black resize bug.
+// Written under the SYNCED thumbnails tree so a second machine gets real previews. Full-page capturePage then crop sidesteps the HiDPI rect-crop bug; JPEG has no alpha, dodging the transparent→black resize bug.
 
 import { mkdir, readdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -20,9 +18,7 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
-/** Hides the toolbar chrome overlapping the top of the shot WITHOUT touching the live DOM, by
- *  overpainting the band in the captured bitmap. Over a full-bleed banner it back-fills by copying
- *  the block below the band up over the chrome, so the banner reads continuous. */
+/** Hides the toolbar chrome overlapping the top of the shot WITHOUT touching the live DOM, by overpainting the band in the captured bitmap. Over a full-bleed banner it back-fills by copying the block below the band up over the chrome. */
 function maskTopBand(
   img: NativeImage,
   maskTopDip: number,
@@ -51,9 +47,7 @@ function maskTopBand(
 
 const thumbsDir = (root: string, nexusId: string): string => join(root, thumbsRel(nexusId))
 
-/** Null on a bad or blank capture; the card falls back to a placeholder. `capturePage(rect)`
- *  returns an empty image on HiDPI, so the whole page is grabbed and cropped in device pixels:
- *  `rect` is DIP, and `scaleFactor` (devicePixelRatio) maps it onto the captured image. */
+/** Null on a bad or blank capture. `capturePage(rect)` returns an empty image on HiDPI, so the whole page is grabbed and cropped in device pixels: `rect` is DIP, and `scaleFactor` maps it onto the captured image. */
 export async function captureThumbnail(
   win: BrowserWindow,
   root: string,
@@ -90,8 +84,7 @@ export async function captureThumbnail(
   return assetUrl(rel)
 }
 
-/** The caller passes every navKey that still exists (∪ recents and pins as a fault guard), so only
- *  orphans are dropped, never a live cover. */
+/** The caller passes every navKey that still exists (∪ recents and pins as a fault guard), so only orphans are dropped, never a live cover. */
 export async function evictThumbnails(root: string, liveKeys: string[]): Promise<void> {
   const { id: nexusId } = await ensureIdentity(root)
   const dir = thumbsDir(root, nexusId)

@@ -16,9 +16,7 @@ interface BaseNode {
   icon?: string
 }
 
-/** A node backed by a real file or folder on disk, carrying its nexus-relative POSIX path so a
- *  mutation can address it: the renderer sends `path` back and main resolves it under the
- *  session root — the renderer must never reconstruct the on-disk path itself. */
+/** Carries its nexus-relative POSIX path so a mutation can address it: the renderer sends `path` back and main resolves it under the session root — the renderer must never reconstruct the on-disk path itself. */
 interface PathNode extends BaseNode {
   path: string
   /** From the sidecar; a page's banner rides its own frontmatter key instead. */
@@ -46,7 +44,6 @@ export interface ContextGroup {
 
 export interface SetNode extends PathNode {
   kind: 'set'
-  /** Optional so a container read that stops short of the recursion still types. */
   sets?: SetNode[]
   pages: PageNode[]
   views?: SavedView[]
@@ -56,7 +53,7 @@ export interface SetNode extends PathNode {
 
 export interface CollectionNode extends PathNode {
   kind: 'collection'
-  sets: SetNode[] // rendered before pages
+  sets: SetNode[]
   pages: PageNode[]
   properties?: PropertyDefinition[]
   views?: SavedView[]
@@ -65,16 +62,13 @@ export interface CollectionNode extends PathNode {
   disclosureLocked?: boolean
 }
 
-/** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes
- *  the first while a delete refuses to choose and an unlink has something to promote. `version`
- *  moves on every change, so a re-save under an unchanged name is re-requested. */
+/** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. `version` moves on every change, so a re-save under an unchanged name is re-requested. */
 export interface AssetMap {
   files: Record<string, string[]>
   version: number
 }
 
-/** What both processes stand in for a map with no listing behind it — main before a nexus is
- *  open, the renderer before the first push lands. */
+/** What both processes stand in for a map with no listing behind it — main before a nexus is open, the renderer before the first push lands. */
 export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 
 export interface ValueChange {
@@ -88,9 +82,7 @@ export type ValuesEpoch = { n: number } & (
 )
 
 export interface NexusTree {
-  /** `name` is the root folder's basename. `profileImage` names an image in the asset directory
-   *  as a `[[Name.ext]]` wikilink — or, in a nexus the migration hasn't run against, a
-   *  nexus-relative path. Both come from `.nexus/settings.json`. */
+  /** `profileImage` names an image in the asset directory as a `[[Name.ext]]` wikilink — or, in a nexus the migration hasn't run against, a nexus-relative path. */
   nexus: {
     id: string
     rootPath: string
@@ -115,8 +107,7 @@ export interface NexusTree {
   unreadable?: { path: string }[]
 }
 
-/** `empty` = no nexus open (show the empty state, not an error); `open` = open + read OK;
- *  `error` = a nexus is open but its tree couldn't be read. */
+/** `empty` = no nexus open (show the empty state, not an error); `open` = open + read OK; `error` = a nexus is open but its tree couldn't be read. */
 export type NexusState =
   | { status: 'empty' }
   | { status: 'open'; tree: NexusTree }

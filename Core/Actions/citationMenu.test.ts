@@ -31,7 +31,6 @@ describe('the rows group themselves', () => {
         .filter((r) => r.separatorBefore)
         .map((r) => r.label)
     expect(dividers({ subject: 'marker', editable: true })).toEqual(['Delete'])
-    // Two rows need no dividing — Copy sits alone above Delete.
     expect(dividers({ subject: 'citation', editable: true })).toEqual([])
     expect(dividers({ subject: 'marker', editable: false })).toEqual([])
   })

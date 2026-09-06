@@ -10,16 +10,13 @@ type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size
 
 type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
 
-/** The full six, unlike the block grip's picker: an embed title is chrome, not document structure. */
 const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
-/** Checkboxes rather than radios: the pair reads as two states of one setting. */
 const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
   { label: 'Dropdown', style: 'dropdown' },
   { label: 'Toolbar', style: 'toolbar' },
 ]
 
-/** A branch row never resolves its own action, so it carries the leading leaf's. */
 function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> {
   return {
     label: 'Style',
@@ -33,7 +30,6 @@ function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> 
   }
 }
 
-/** Edit Icon appears only while an icon is shown, since it has nothing to change otherwise. */
 export function embedTitleMenuItems(
   iconShown: boolean,
   level: number,
@@ -54,7 +50,6 @@ export function embedTitleMenuItems(
   ]
 }
 
-/** Show Title surfaces only while the title row is hidden — with the row gone, so is its own target. */
 export function embedAreaMenuItems(current: {
   viewStyle: ViewStyle
   titleShown: boolean

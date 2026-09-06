@@ -202,8 +202,7 @@ interface WebTileDom extends ReactDom {
   _obs?: WebObservers
 }
 
-// KNOB — the fit cap's breathing room below the port edges: a tile taller than the port minus
-// this margin can never read fully-visible, and a never-fully-visible tile never goes live.
+// KNOB — the fit cap's breathing room below the port edges: a tile taller than the port minus this margin can never read fully-visible, and a never-fully-visible tile never goes live.
 const WEB_FIT_MARGIN = 96
 const WEB_FULL_RATIO = 0.99
 

@@ -137,8 +137,7 @@ async function openBundle(root: string, bundleAbs: string): Promise<Result<Recor
   return record ? ok(record) : fail('operation-failed', 'That deletion record is unreadable.')
 }
 
-// Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing
-// skips, where the reverse order would orphan a live artifact.
+// Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
 export async function emptyBundle(
   root: string,
   bundleAbs: string,
@@ -211,9 +210,7 @@ export async function restoreArtifact(
   const { dir, finalName, finalTitle } = resolution.place
 
   const targetAbs = join(root, dir, finalName)
-  // Records are plain user-visible JSON — shape validation is not safety validation. The final
-  // name must be a plain basename landing exactly in the resolver's chosen directory, inside
-  // the nexus and outside the trash; anything else is a recorded title steering the move.
+  // Records are plain user-visible JSON — shape validation is not safety validation. The final name must be a plain basename landing exactly in the resolver's chosen directory, inside the nexus and outside the trash; anything else is a recorded title steering the move.
   const targetRel = relative(root, targetAbs)
   if (
     targetRel.startsWith('..') ||
@@ -223,8 +220,7 @@ export async function restoreArtifact(
     basename(targetAbs) !== finalName
   )
     return fail('operation-failed', 'That restore record points outside the nexus.')
-  // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter)
-  // could still occupy the target — refuse rather than clobber what nothing adjudicated.
+  // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
   const owner =
@@ -240,9 +236,7 @@ export async function restoreArtifact(
     owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
     record.entity === 'context' ? contextKey(record.registry.title) : undefined,
   )
-  // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything
-  // moves: a refused write leaves the bundle intact — the restore is retryable — where an
-  // append after the move would destroy the evidence on failure and reply ok.
+  // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an append after the move would destroy the evidence on failure and reply ok.
   const title = finalTitle ?? finalName
   if (record.entity === 'context') {
     const committed = await mutateRegistryFile(root, (cur) => ({
@@ -257,8 +251,7 @@ export async function restoreArtifact(
     await machine().mkdir(dirname(targetAbs))
     await machine().rename(artifactAbs, targetAbs)
   } catch (e) {
-    // The move is the irreversible half; the append is the reversible one. Reversing it keeps
-    // the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
+    // The move is the irreversible half; the append is the reversible one. Reversing it keeps the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
     if (record.entity === 'context')
       await mutateRegistryFile(root, (cur) => ({
         contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),

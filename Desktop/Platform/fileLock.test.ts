@@ -31,7 +31,7 @@ describe('serializeOnFile', () => {
       order.push('b')
     })
     await Promise.all([a, b])
-    expect(order).toEqual(['a', 'b']) // b waited for the slow a, though b was ready first
+    expect(order).toEqual(['a', 'b'])
   })
 
   it('does NOT serialize different paths (they run concurrently)', async () => {
@@ -44,7 +44,7 @@ describe('serializeOnFile', () => {
       order.push('fast')
     })
     await Promise.all([slow, fast])
-    expect(order).toEqual(['fast', 'slow']) // the other path didn't wait
+    expect(order).toEqual(['fast', 'slow'])
   })
 
   it('a rejected op does not wedge the chain — the next op still runs', async () => {

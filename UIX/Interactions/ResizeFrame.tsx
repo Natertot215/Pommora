@@ -19,7 +19,6 @@ export interface Rect extends Size {
 
 export const CORNERS: readonly ResizeEdge[] = ['nw', 'ne', 'sw', 'se']
 
-// How much of a moved frame stays on screen.
 const MOVE_KEEP: Size = { w: 80, h: 40 }
 
 export interface ResizeFrameSpec<R extends Partial<Rect>> {
@@ -28,8 +27,7 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   min?: Partial<Size>
   /** Read live per move when given as a function; the viewport otherwise. */
   max?: Partial<Size> | (() => Partial<Size>)
-  /** The frame holds its origin and grows equally from either side. Otherwise a north or west pull
-   *  carries the origin with it. */
+  /** The frame holds its origin and grows equally from either side. Otherwise a north or west pull carries the origin with it. */
   equilateral?: boolean
   /** The handle chassis eases its stroke to accent while one is hovered or held. */
   outlined?: boolean
@@ -95,8 +93,7 @@ function pull<R extends Partial<Rect>>(
   return next
 }
 
-/** The host owns the rect and whatever remembers it; the frame clamps, reports each move, and
- *  hands back the start rect on Escape. */
+/** The host owns the rect and whatever remembers it; the frame clamps, reports each move, and hands back the start rect on Escape. */
 export function useResizeFrame<R extends Partial<Rect>>(
   spec: ResizeFrameSpec<R>,
 ): ResizeFrameHandle {

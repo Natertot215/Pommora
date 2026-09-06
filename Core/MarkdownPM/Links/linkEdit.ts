@@ -116,8 +116,7 @@ function leaveAlias(
   else collapseAt(view, pipe)
 }
 
-/** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret.
- *  Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
+/** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
 export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
   return [
     EditorView.domEventHandlers({

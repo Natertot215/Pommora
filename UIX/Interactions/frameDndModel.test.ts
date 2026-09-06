@@ -47,7 +47,7 @@ describe('frameSlot — region-owned classification (E-4)', () => {
 
   it('outside both regions → null (release is a no-op)', () => {
     expect(slot(200, 'a1')).toBeNull()
-    expect(slot(60, 'a1')).toBeNull() // the gap between the regions
+    expect(slot(60, 'a1')).toBeNull()
   })
 
   it('an empty target region still yields the slot at its top (assign into a bare collection)', () => {
@@ -71,15 +71,15 @@ describe('nexusReorderIndex — visible All-Properties slot → FULL nexus-order
   const visible = ['C', 'D', 'E']
 
   it('dropping E at the visible top lands just before C in the full order — never ahead of the assigned ids', () => {
-    expect(nexusReorderIndex(order, visible, 'E', 0)).toBe(2) // without-E [A,B,C,D] → before C
+    expect(nexusReorderIndex(order, visible, 'E', 0)).toBe(2)
   })
 
   it('dropping E between visible C and D lands between them in the full order', () => {
-    expect(nexusReorderIndex(order, visible, 'E', 1)).toBe(3) // before D
+    expect(nexusReorderIndex(order, visible, 'E', 1)).toBe(3)
   })
 
   it('dropping C past the last visible row appends after E', () => {
-    expect(nexusReorderIndex(order, visible, 'C', 2)).toBe(4) // without-C [A,B,D,E] → after E
+    expect(nexusReorderIndex(order, visible, 'C', 2)).toBe(4)
   })
 
   it('no visible rows → append to the full order end', () => {

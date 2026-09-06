@@ -44,7 +44,6 @@ describe('seedContentIndex', () => {
     for (const rel of corpus) expect(stats?.has(rel)).toBe(true)
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
-    // The excluded note is unread and unrepresented — no rows, no stat gate entry.
     expect(stats?.has('Hidden/Secret.md')).toBe(false)
   })
 
@@ -65,7 +64,6 @@ describe('seedContentIndex', () => {
     sessionDb()?.prepare('DELETE FROM mentions WHERE path = ?').run('Notes/A.md')
     await seedContentIndex(root)
     expect(queryMentions('target')).toEqual(['Loose/Note.md'])
-    // Move the file's stat; the re-read heals the sabotaged rows.
     await utimes(abs('Notes', 'A.md'), new Date(), new Date(Date.now() + 5000))
     await seedContentIndex(root)
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])

@@ -1,5 +1,4 @@
-// After a successful write the matching change lands on the live tree, by pure transform or a
-// one-file re-read. A write with no patch degrades to a walk, never a silently stale tree.
+// After a successful write the matching change lands on the live tree, by pure transform or a one-file re-read. A write with no patch degrades to a walk, never a silently stale tree.
 
 import type {
   BannerOwnerKind,
@@ -124,19 +123,16 @@ async function routeMutation(
   // The unlink cascades into every member's frontmatter; only the walk re-derives contextValues.
   if (req.op === 'delete' && (req.kind === 'space' || req.kind === 'context')) return 'refresh'
   switch (req.op) {
-    // Field writes land through the writer's own normalization, so confirm by re-reading the one
-    // file that changed (a Context's icon lives in its registry, a structural walk input).
+    // Field writes land through the writer's own normalization, so confirm by re-reading the one file that changed (a Context's icon lives in its registry, a structural walk input).
     case 'setIcon':
     case 'setDisclosureLock':
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
-    // A banner replace drops the old crop through dropReplacedAsset, a crops.json write the
-    // watcher never sees, so the writer re-reads that leaf itself.
+    // A banner replace drops the old crop through dropReplacedAsset, a crops.json write the watcher never sees, so the writer re-reads that leaf itself.
     case 'setBanner':
     case 'setHeadingIconHidden': {
       let own: 'ok' | 'refresh'
       if (req.kind === 'homepage') own = await patchHomepageFromDisk(root)
-      else if (req.kind === 'navview')
-        own = 'ok' // navigation.json is a file the walk never reads
+      else if (req.kind === 'navview') own = 'ok'
       else own = (await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh'
       if (own === 'refresh') return 'refresh'
       return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
@@ -155,12 +151,11 @@ async function routeMutation(
     case 'setProfileIcon':
       return patchSettingsFromDisk(root)
     case 'restore':
-      return 'refresh' // placement resolution is the restore path's own business
+      return 'refresh'
     default: {
       const tree = getLiveTree()
       if (!tree) return 'refresh'
-      // An adopted id hashes the very path a rename or move changes, so an affected subtree walks
-      // rather than hold an id the next walk could never produce.
+      // An adopted id hashes the very path a rename or move changes, so an affected subtree walks rather than hold an id the next walk could never produce.
       if (
         (req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
         subtreeHoldsAdoptedId(tree, req.path)
@@ -170,8 +165,7 @@ async function routeMutation(
       if (patched === 'no-change') return 'ok'
       if (patched === null) return 'refresh'
       if (applyPatch(root, () => patched) === 'refresh') return 'refresh'
-      // The landed position derives from an order file the transform never read: it ranks unlisted
-      // entities by order where the walk ranks by title, so one targeted read pins it.
+      // The landed position derives from an order file the transform never read: it ranks unlisted entities by order where the walk ranks by title, so one targeted read pins it.
       switch (req.op) {
         case 'createPage':
           return req.order ? 'ok' : patchContainerFromDisk(root, req.parentPath)
@@ -203,8 +197,7 @@ export const confirmMutation = (
   reply: MutateOutcome,
 ): Promise<NexusTree | null> => confirmBy(root, () => routeMutation(root, req, reply))
 
-/** Re-reads `properties.json` rather than trusting request values, which the writers normalize
- *  before writing. `containerPath` names the one Collection sidecar the write also touched. */
+/** Re-reads `properties.json` rather than trusting request values, which the writers normalize before writing. `containerPath` names the one Collection sidecar the write also touched. */
 export const confirmRegistry = (root: string, containerPath?: string): Promise<NexusTree | null> =>
   confirmBy(root, () => routeRegistry(root, containerPath))
 
@@ -217,7 +210,6 @@ async function routeRegistry(root: string, containerPath?: string): Promise<'ok'
   return patchContainerFromDisk(root, containerPath)
 }
 
-/** Run the targeted confirmer, degrade to a walk on refusal, hand back the tree when it moved. */
 export async function confirmBy(
   root: string,
   work: () => Promise<'ok' | 'refresh'>,

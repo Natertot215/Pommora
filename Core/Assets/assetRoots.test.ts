@@ -29,7 +29,6 @@ describe('underAssetRoot', () => {
   })
 
   it('agrees with the banner gate over the same strings', () => {
-    // The protocol serves what the gate admits; a disagreement is a hole neither test sees.
     for (const rel of [
       'file-assets/a.png',
       `${ASSETS_DIR_REL}/nx/banner.jpg`,
@@ -72,14 +71,12 @@ describe('assetFileToDelete', () => {
   })
 
   it('deletes a wikilink resolving inside the default root, before one is configured', async () => {
-    // The wikilink arm is live exactly while the asset root IS `.nexus/assets` — the migration window.
     await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify({}))
     await put(...ASSETS_DIR_REL.split('/'), 'Minted.png')
     expect(await assetFileToDelete(root, '[[Minted.png]]')).toBe(`${ASSETS_DIR_REL}/Minted.png`)
   })
 
   it("never deletes a file in the user's own asset folder", async () => {
-    // The folder is shared: a file there may be referenced from an Obsidian note this app cannot see, so nothing is trashed on this path.
     await put('file-assets', 'Theirs.png')
     expect(await assetFileToDelete(root, '[[Theirs.png]]')).toBeNull()
     expect(await assetFileToDelete(root, 'file-assets/Theirs.png')).toBeNull()
@@ -110,7 +107,6 @@ describe('validPropertyDir — a file property names where its files land', () =
   it('accepts a subfolder under the asset root, and the root itself', () => {
     expect(validPropertyDir('Attachments', DIR)).toBe(true)
     expect(validPropertyDir('Attachments/Specs', DIR)).toBe(true)
-    // No subfolder IS the root — always somewhere files may land.
     expect(validPropertyDir('', DIR)).toBe(true)
   })
 
@@ -120,7 +116,6 @@ describe('validPropertyDir — a file property names where its files land', () =
   })
 
   it('refuses a folder the map could never index — containment alone would admit it', () => {
-    // The negative control for the second predicate: `.private` passes containment and answers a valid-looking reference, while `indexable` drops it from the map forever.
     expect(underAssetRoot(`${DIR}/.private`, DIR)).toBe(true)
     expect(validPropertyDir('.private', DIR)).toBe(false)
     expect(validPropertyDir('Specs/.private', DIR)).toBe(false)
@@ -128,7 +123,6 @@ describe('validPropertyDir — a file property names where its files land', () =
   })
 
   it("a dot in the ROOT's own name is the root's business, not a subfolder's", () => {
-    // A nexus whose asset root is `.attachments` is the case indexable's root exemption exists for; a subfolder under it still answers on its own segments.
     expect(validPropertyDir('Specs', '.attachments')).toBe(true)
     expect(validPropertyDir('.hidden', '.attachments')).toBe(false)
   })

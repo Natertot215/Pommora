@@ -118,14 +118,10 @@ export function classifyEvent(
   if (rel === null) return { kind: 'full-refresh' }
   const segs = rel.split('/')
   const name = segs[segs.length - 1]
-  // First of every arm, so `excluded_folders` means the content corpus and nothing more: a
-  // shared attachments folder is usually named there already, and every other arm below —
-  // the exclusion match, the unreadable list, the `.nexus` branch — would otherwise claim it.
+  // First of every arm, so `excluded_folders` means the content corpus and nothing more: a shared attachments folder is usually named there already, and every other arm below would otherwise claim it.
   if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel, event: ev.event }
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
-  // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or
-  // transition) — only the walk may adjudicate it. Container and Space sidecars record their
-  // OWNER directory there, so the parent is checked too.
+  // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or transition) — only the walk may adjudicate it. Container and Space sidecars record their OWNER directory there, so the parent is checked too.
   const dirRel = parentOf(rel)
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
@@ -203,9 +199,7 @@ export async function applyWatchEvents(
   return 'patched'
 }
 
-/** Null from the transform means the patch could not land — degrade to the walk, never drift.
- *  The root pin closes a confirm that outlived its session: a switch mid-apply installs the
- *  NEW nexus's tree, and an old-root write must never patch into it. */
+/** Null from the transform means the patch could not land — degrade to the walk, never drift. The root pin closes a confirm that outlived its session: a switch mid-apply installs the NEW nexus's tree, and an old-root write must never patch into it. */
 export const applyPatch = (
   root: string,
   fn: (t: NexusTree) => NexusTree | null,
@@ -313,7 +307,7 @@ export async function patchContainerFromDisk(
   const node = findContainer(tree, dirRel)
   if (!node) return 'refresh'
   const id = asString(meta.id) ?? adoptedId(dirRel)
-  if (id !== node.id) return 'refresh' // an identity move is the record's business
+  if (id !== node.id) return 'refresh'
   const shared = {
     id,
     title: node.title,

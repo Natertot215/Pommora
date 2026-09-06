@@ -16,7 +16,6 @@ describe('normalizeTitle', () => {
   })
 })
 
-// Where a typed `]` is refused: it would close the link early and truncate the alias being written.
 describe('aliasSpanAt', () => {
   const line = 'see [[Q3 Plan|the plan]] end'
   it('finds the alias span from anywhere inside it', () => {

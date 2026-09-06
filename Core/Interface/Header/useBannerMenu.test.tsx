@@ -131,7 +131,6 @@ describe('useBannerMenu', () => {
       undefined,
       expect.any(Function),
     )
-    // onDone advances a page cover's value so the picker's Save-hold can't dead-end
     expect(onDone).toHaveBeenCalled()
   })
 })

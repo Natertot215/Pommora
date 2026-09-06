@@ -37,10 +37,10 @@ describe('loneWebpageEmbed — what a webpage-embed line is', () => {
 
   it('refuses the degenerate and the non-lone shapes', () => {
     expect(loneWebpageEmbed('![]()')).toBeNull()
-    expect(loneWebpageEmbed(`  ![](${URL})`)).toBeNull() // indented — list continuation
+    expect(loneWebpageEmbed(`  ![](${URL})`)).toBeNull()
     expect(loneWebpageEmbed(`![](${URL}) tail`)).toBeNull()
     expect(loneWebpageEmbed(`lead ![](${URL})`)).toBeNull()
-    expect(loneWebpageEmbed(`[](${URL})`)).toBeNull() // no bang — an ordinary link
+    expect(loneWebpageEmbed(`[](${URL})`)).toBeNull()
   })
 
   it('refuses a label whose ] is unescaped, and an unbalanced destination', () => {
@@ -86,12 +86,10 @@ describe('webpageTileTitle — display-only resolution', () => {
 
 describe('linkDestinationAt — is the caret inside a destination', () => {
   it('sees the empty embed pair the door seats the caret in', () => {
-    // `![]()` — the caret lands at col 4, between the parens.
     expect(linkDestinationAt('![]()', 4)).toBe(true)
   })
 
   it('sees an empty destination behind a written label', () => {
-    // `[label]()` — col 8 is between the parens.
     expect(linkDestinationAt('[label]()', 8)).toBe(true)
   })
 
@@ -107,9 +105,9 @@ describe('linkDestinationAt — is the caret inside a destination', () => {
   it('says no everywhere else on the same line', () => {
     const line = '[docs](https://example.com) tail'
     expect(linkDestinationAt(line, 0)).toBe(false)
-    expect(linkDestinationAt(line, 2)).toBe(false) // inside the label
-    expect(linkDestinationAt(line, line.indexOf('('))).toBe(false) // before the paren
-    expect(linkDestinationAt(line, line.length)).toBe(false) // in the tail
+    expect(linkDestinationAt(line, 2)).toBe(false)
+    expect(linkDestinationAt(line, line.indexOf('('))).toBe(false)
+    expect(linkDestinationAt(line, line.length)).toBe(false)
   })
 
   it('says no on a line with no link at all', () => {

@@ -8,7 +8,6 @@ export interface SearchEntry {
   lower: string
 }
 
-/** Exported for surfaces outside navigation whose subjects carry no `NavRef` to put in a `SearchEntry` — one scorer, however the caller holds its rows. */
 export function fuzzyScore(t: string, q: string): number | null {
   let ti = 0
   let score = 0
@@ -26,7 +25,7 @@ export function fuzzyScore(t: string, q: string): number | null {
     if (idx === 0 || t[idx - 1] === ' ') score += 3
     ti = idx + 1
   }
-  return score - t.length * 0.01 // gentle tiebreak toward shorter titles
+  return score - t.length * 0.01
 }
 
 export function filterNav(index: SearchEntry[], query: string, limit = 50): SearchEntry[] {

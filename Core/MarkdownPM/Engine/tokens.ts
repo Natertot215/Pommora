@@ -126,7 +126,6 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
   return tokens
 }
 
-/** The run-length pairing the code mask reads, so a ``code`` span is styled exactly where it is masked. */
 function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): Token[] {
   const tokens: Token[] = []
   let lineStart = 0
@@ -152,7 +151,6 @@ function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): To
   return tokens
 }
 
-/** Display math is the block model's pairing projected onto tokens: the `$$` lines bound it, nothing else does. */
 function blockLatexTokens(text: string, maths: readonly [number, number][]): Token[] {
   return maths.map(([f, t]) => {
     const open = text.indexOf('$$', f) + 2
@@ -209,8 +207,7 @@ export function tokenize(text: string, maths: readonly [number, number][] = []):
     open: 3,
     close: 2,
   })
-  // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read
-  // it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
+  // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
   const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
   const links = scan({
     kind: 'link',

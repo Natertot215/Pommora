@@ -36,7 +36,6 @@ const assigns = async (folder: string, id: string): Promise<boolean> => {
 const valueOn = async (absPage: string, name: string): Promise<unknown> =>
   splitFrontmatter(await readFile(absPage, 'utf8'))[name]
 
-/** Create Priority, assign it to both collections, and return its id. */
 async function seedPriority(): Promise<string> {
   const c = await createProperty(root, {
     id: '',
@@ -102,7 +101,6 @@ describe('restoring a deleted property', () => {
     expect(await assigns(tasks, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
-    // The bundle is spent.
     expect(await listBundles(root)).toHaveLength(0)
   })
 
@@ -119,7 +117,6 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
-    // Still spendable once the live one is renamed.
     expect(await listBundles(root)).toHaveLength(1)
   })
 
@@ -157,7 +154,6 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const r = await handleMutate({ op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    // The valid one returns; the one that can't be a Priority does not.
     expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
   })

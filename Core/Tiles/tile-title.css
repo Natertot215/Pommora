@@ -1,5 +1,4 @@
-/* One shared hover-revealed treatment for both the page embed's breadcrumb and a webpage tile's
-   title: centered at the top, hidden until the tile is hovered. */
+/* One shared hover-revealed treatment for both the page embed's breadcrumb and a webpage tile's title. */
 .page-tile-crumbs,
 .web-tile-title {
   position: absolute;
@@ -17,8 +16,7 @@
   opacity: 1;
 }
 
-/* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it
-   stays clickable whether or not the tile is engaged. */
+/* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it stays clickable whether or not the tile is engaged. */
 .web-tile-title {
   z-index: 4;
   border: none;

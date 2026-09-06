@@ -40,8 +40,7 @@ const tabStops = (root: HTMLElement): HTMLElement[] =>
 
 export type PickerDirection = 'down' | 'up' | 'left' | 'right'
 
-/** KNOB — how far past the trigger's center the pane's near edge sits, and with it where the Bloom
- *  starts, so a pane still zooms out of the point nearest what opened it. */
+/** KNOB — how far past the trigger's center the pane's near edge sits, and with it where the Bloom starts, so a pane still zooms out of the point nearest what opened it. */
 const ANCHOR_RESERVE = 30
 
 const CORNER_CLEAR = s.PANE_RADIUS + 2
@@ -98,8 +97,7 @@ export function PickerMenu({
   maxHeight?: number
   bareSurface?: boolean
   manageFocus?: boolean
-  /** Whether the pane owns outside clicks and Escape while it stands, so the host under it stays;
-   *  a glance surface passes false and lets the app's own dismissals through. */
+  /** Whether the pane owns outside clicks and Escape while it stands; a glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
   contentClassName?: string
   style?: CSSProperties
@@ -159,8 +157,7 @@ export function PickerMenu({
   }, [mounted])
 
   useLayoutEffect(() => {
-    // Freeze the pane's position through the Bloom-out: once `open` drops, a detached or moved
-    // trigger must not re-measure to zeros and snap the fading pane away.
+    // Freeze the pane's position through the Bloom-out: once `open` drops, a detached or moved trigger must not re-measure to zeros and snap the fading pane away.
     if (!mounted || open !== true) return
     const point =
       anchorX !== undefined && anchorY !== undefined

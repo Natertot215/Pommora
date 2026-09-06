@@ -1,4 +1,3 @@
-// A third spec over the shared pointer factory rather than a third copy of the hover intent, press latch and caret clamp.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
@@ -16,7 +15,6 @@ export const CITE_GLYPH = '.md-cite-ref'
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
 const CITE_ROW_GLYPH = '.md-cite-num'
 
-/** Trailing text or a stray period means it is not that, and the click jumps to the citation like any other. */
 export function loneTarget(
   content: string,
 ): { kind: 'link'; url: string } | { kind: 'connection'; title: string } | null {

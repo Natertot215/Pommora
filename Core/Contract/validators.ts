@@ -32,8 +32,7 @@ export const isOptionArray = (v: unknown): v is Option[] =>
   Array.isArray(v) &&
   v.every((o) => isPlainObject(o) && typeof o.value === 'string' && typeof o.label === 'string')
 
-/** An `in` check, not truthiness: absent means "leave it", present-and-undefined means
- *  "back to the default". */
+/** An `in` check, not truthiness: absent means "leave it", present-and-undefined means "back to the default". */
 const asPatch = (payload: unknown): Record<string, unknown> | null =>
   isPlainObject(payload) ? payload : null
 
@@ -49,8 +48,7 @@ export const narrowLinkConfig = (payload: unknown): LinkConfig | null => {
   return changes
 }
 
-/** Stored relative to the asset ROOT; an empty result means the root itself — the absence
- *  of the field, not a stored empty string. */
+/** Stored relative to the asset ROOT; an empty result means the root itself — the absence of the field, not a stored empty string. */
 export const narrowFileConfig = (payload: unknown): FileConfig | null => {
   const p = asPatch(payload)
   if (!p || !('file_directory' in p)) return null

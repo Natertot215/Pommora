@@ -17,8 +17,7 @@ const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {
 
 let root: string
 
-/** Every bundle directory under .trash, recursively — never descending into one, exactly as
- *  the listing walks. */
+/** Every bundle directory under .trash, recursively — never descending into one, exactly as the listing walks. */
 async function bundleDirs(dir: string): Promise<string[]> {
   const out: string[] = []
   let entries: import('node:fs').Dirent[]
@@ -154,8 +153,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
         }[]
       }
     ).membership
-    // The outside page is the only membership root — the in-Context Sapphire is a passenger
-    // whose own links ride the trash intact.
+    // The outside page is the only membership root — the in-Context Sapphire is a passenger whose own links ride the trash intact.
     expect(membership).toHaveLength(1)
     expect(membership[0].root).toEqual({ id: PAGE_A, kind: 'page' })
     expect(membership[0].spaces).toEqual([{ id: 'sp-pom', title: 'Pommora' }])
@@ -178,10 +176,8 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    // A recordless folder is not a bundle — the listing never offers it, and it degrades to
-    // hand-restore rather than to a record restore would trust.
+    // A recordless folder is not a bundle — the listing never offers it, and it degrades to hand-restore rather than to a record restore would trust.
     expect(await listBundles(root)).toHaveLength(0)
-    // The artifact itself still trashed recoverably.
     expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
   })
 
@@ -286,8 +282,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('the record shares a folder with the artifact and can never collide with it', async () => {
-    // The one name that would collide if the record wore a plain one. `invalidName` lets a user
-    // choose it; the record's `_` prefix is what keeps the two namespaces apart.
+    // The one name that would collide if the record wore a plain one. `invalidName` lets a user choose it; the record's `_` prefix is what keeps the two namespaces apart.
     await mkdir(join(root, 'record.json'), { recursive: true })
     await writeFile(
       join(root, 'record.json', '_pagecollection.json'),
@@ -316,7 +311,6 @@ describe('listBundles — what the trash offers', () => {
   it('a bundle’s interior is trashed content, never trash structure', async () => {
     await handleMutate({ op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
     const [dir] = await bundleDirs(join(root, '.trash'))
-    // A user's own folder named like a bundle, riding inside the trashed Collection.
     const phantom = join(dir, 'Notes', 'Archive.deleted')
     await mkdir(phantom, { recursive: true })
     await writeFile(
@@ -329,8 +323,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('a chain folder that merely wears the name is walked through, not read as a deletion', async () => {
-    // A Collection a user genuinely named "Archive.deleted" — its mirrored chain folder in
-    // .trash carries the same name and holds the real bundle.
+    // A Collection a user genuinely named "Archive.deleted" — its mirrored chain folder in .trash carries the same name and holds the real bundle.
     await mkdir(join(root, 'Archive.deleted'), { recursive: true })
     await writeFile(
       join(root, 'Archive.deleted', '_pagecollection.json'),
@@ -351,8 +344,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('old-format trash entries are invisible', async () => {
-    // Both shapes the retired primitive left: a stamped file with a sibling pair, and a stamped
-    // FOLDER for a container delete.
+    // Both shapes the retired primitive left: a stamped file with a sibling pair, and a stamped FOLDER for a container delete.
     const old = join(root, '.trash', 'Notes')
     await mkdir(join(old, '2026-01-01T00-00-00-000Z__Journal'), { recursive: true })
     await writeFile(join(old, '2026-01-01T00-00-00-000Z__Old.md'), 'body')
@@ -550,7 +542,6 @@ describe('restore — the record spends, headless', () => {
     const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await readFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'utf8')).toContain(PAGE_A)
-    // The spent bundle leaves nothing behind.
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
@@ -602,7 +593,6 @@ describe('restore — the record spends, headless', () => {
         '<Projects>'
       ],
     ).toEqual(['Pommora'])
-    // The passenger Space returned intact, its own links untouched by the round-trip.
     const sap = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
     )
@@ -701,7 +691,6 @@ describe('restore — the gate-four pins', () => {
   })
 
   it('a property whose definition can no longer stand does not return, and its record stays', async () => {
-    // A record the registry refuses — here a definition with no name at all.
     const bundle = await writePropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
@@ -821,8 +810,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('refuses a chain folder that merely wears the suffix, bundles and all', async () => {
-    // `.trash` mirrors the nexus, so a user's own folder can wear the bundle name anywhere in the
-    // chain. Path, root and suffix all pass here; only the record test refuses it.
+    // `.trash` mirrors the nexus, so a user's own folder can wear the bundle name anywhere in the chain. Path, root and suffix all pass here; only the record test refuses it.
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     const [listed] = await listBundles(root)
     const chain = join(root, '.trash', 'Archive.deleted')
@@ -858,9 +846,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
-    // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy
-    // reads as no artifact at all. Removing the folder anyway would destroy the file with the
-    // switch OFF — the setting that promises the operating system keeps the last undo.
+    // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
     const handed: string[] = []
     const deps: MutateDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
@@ -889,7 +875,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
 })
 
 describe('restore — into a chosen destination', () => {
-  /** The bundle for the one thing deleted last. */
   const lastBundle = async (name: string): Promise<string> => {
     const hit = (await listBundles(root)).find((b) => b.artifactName === name)
     expect(hit).toBeDefined()
@@ -977,8 +962,7 @@ describe('restore — into a chosen destination', () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
-    // The Space's own id, offered as a container — the same answer `movesInto` gives a page
-    // dragged onto a Space folder.
+    // The Space's own id, offered as a container — the same answer `movesInto` gives a page dragged onto a Space folder.
     const r = await handleMutate(
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'sp-pom' } },
       nexusDeps,
@@ -996,9 +980,7 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('refuses a destination whose own label contradicts the id it carries', async () => {
-    // A live Context id, arriving labeled as a container. Honoring it would place the Space
-    // correctly by accident on a message that is malformed — the label is the sender's claim, and
-    // a claim that disagrees with its own id is not a claim this path acts on.
+    // A live Context id, arriving labeled as a container. Honoring it would place the Space correctly by accident on a message that is malformed — a claim that disagrees with its own id is not a claim this path acts on.
     await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -1059,7 +1041,6 @@ describe('restore — into a chosen destination', () => {
   it('a live identity still refuses, destination or not', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
-    // The same ID back in the tree under another name.
     await writeFile(join(root, 'Notes', 'Twin.md'), `---\nID: ${PAGE_A}\n---\nbody`)
     const r = await handleMutate(
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
@@ -1069,7 +1050,6 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('a relocation is reconciled against the schema it lands in, not the one it left', async () => {
-    // Two Collections, only one of which assigns the property the page carries.
     await writeFile(
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
@@ -1106,8 +1086,7 @@ describe('restore — into a chosen destination', () => {
     )
     expect(r.ok).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Beta.md'), 'utf8')
-    // The value traveled as the page's own frontmatter; the destination's schema decides only
-    // what it displays.
+    // The value traveled as the page's own frontmatter; the destination's schema decides only what it displays.
     expect(landed.includes('Status: live')).toBe(true)
     expect(landed.includes('ID:')).toBe(true)
   })

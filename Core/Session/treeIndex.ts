@@ -1,7 +1,4 @@
-// One walk per tree; every table below is a lazy projection of its records, cached on the tree
-// object (stabilize keeps identity across echo pushes). A new lookup belongs here, never as its
-// own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still
-// answer "ambiguous"; the keyed projections collapse them last-wins.
+// One walk per tree; every table below is a lazy projection of its records, cached on the tree object. A new lookup belongs here, never as its own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still answer "ambiguous"; the keyed projections collapse them last-wins.
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
@@ -32,7 +29,6 @@ interface NodeRecord extends TrailNode {
 
 export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   kind: 'homepage' | 'context' | 'space' | 'collection' | 'set' | 'page'
-  /** The user's own icon if renderable, else the nexus default. */
   icon: string
 }
 
@@ -273,16 +269,14 @@ export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, Contain
   return ix.containers
 }
 
-/** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the
- *  records are the complete universe of capturable keys. */
+/** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records are the complete universe of capturable keys. */
 export function navKeysOf(tree: NexusTree): string[] {
   const ix = indexFor(tree)
   if (!ix.navKeys) ix.navKeys = ix.nodes.map((r) => r.key)
   return ix.navKeys
 }
 
-/** Null when no page answers the title, or more than one does. Behind both a Link property's paste
- *  gate and the connection a Link cell draws, so a cell can't show a link the index wouldn't reach. */
+/** Null when no page answers the title, or more than one does. Behind both a Link property's paste gate and the connection a Link cell draws, so a cell can't show a link the index wouldn't reach. */
 export function resolveConnection(tree: NexusTree | null, rawTitle: string): ConnPage | null {
   if (!tree) return null
   const res = pageIndexOf(tree).resolve(rawTitle)
@@ -296,7 +290,6 @@ export interface BannerOwner {
   name: string
   banner?: string
   icon?: string
-  /** The banner-heading icon is hidden (show/hide). Absent/false = shown. */
   headingIconHidden?: boolean
 }
 
@@ -310,7 +303,6 @@ export function findSet(tree: NexusTree | null, id: string): SetNode | undefined
   return hit && hit.kind === 'set' ? hit : undefined
 }
 
-/** The Collection a Set inherits its schema from; a Set has none of its own. */
 export function findCollectionForSet(
   tree: NexusTree | null,
   setId: string,
@@ -331,8 +323,7 @@ export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
 }
 
-/** A direct child of a Collection carries views. Tested, not trusted: a reparent plus a Back-nav
- *  replay can surface either depth as a `set` selection. */
+/** Tested, not trusted: a reparent plus a Back-nav replay can surface either depth as a `set` selection. */
 export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
   const col = findCollectionForSet(tree, setId)
   return !!col && col.sets.some((s) => s.id === setId)
@@ -368,7 +359,6 @@ export function containerOwner(node: CollectionNode | SetNode): BannerOwner {
 
 export const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
 
-/** Depth-first over collections and their nested sets; callers match on whichever key they hold. */
 export function findContainer(
   tree: NexusTree,
   match: (node: CollectionNode | SetNode) => boolean,

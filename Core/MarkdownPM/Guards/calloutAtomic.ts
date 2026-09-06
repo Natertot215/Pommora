@@ -1,13 +1,4 @@
-// Every hidden range the caret must not enter, in one whole-document walk: a callout line's prefix
-// (the head's `> [!type] ` and each body line's `> `) and every resolved footnote marker, whose
-// four-odd characters stand behind a number widget. The walk is whole-document on purpose — the
-// decoration pass is viewport-scoped, so a marker taking its atomicity from there would delete one
-// way on screen and another above the fold.
-//
-// The caret can't land inside a range, so no delete variant can corrupt it char-by-char: it either
-// removes the whole range or leaves it untouched. The custom Backspace handler still runs first
-// (Prec.high) for its join behavior — atomic ranges don't block a programmatic dispatch, only CM's
-// own default cursor-motion/deletion.
+// The walk is whole-document on purpose — the decoration pass is viewport-scoped, so a marker taking its atomicity from there would delete one way on screen and another above the fold. The custom Backspace handler still runs first (Prec.high) for its join behavior — atomic ranges don't block a programmatic dispatch, only CM's own default cursor-motion/deletion.
 import { EditorView, Decoration } from '@codemirror/view'
 import { RangeSetBuilder, type RangeSet } from '@codemirror/state'
 import { docScan } from '../docCache'

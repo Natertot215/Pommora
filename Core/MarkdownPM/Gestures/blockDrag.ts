@@ -1,5 +1,4 @@
-// `createBlockDragGesture` parameterizes only the hit-test class, so the rail grips, the heading chevron, the
-// callout head and the quote grip all share one gesture.
+// `createBlockDragGesture` parameterizes only the hit-test class, so the rail grips, the heading chevron, the callout head and the quote grip all share one gesture.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from '../Engine/blockModel'
@@ -9,7 +8,6 @@ import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt } from '../lineDom'
 import { blockMoveChanges } from '../Engine/listDragModel'
 
-// Skipping blank lines, so the line sits outside a box rather than inside it.
 function bottomAbove(view: EditorView, at: number): number | null {
   if (at === 0) return null
   let line = view.state.doc.lineAt(at - 1)
@@ -17,8 +15,7 @@ function bottomAbove(view: EditorView, at: number): number | null {
   return lineElementAt(view, line.from)?.getBoundingClientRect().bottom ?? null
 }
 
-// Each block offers two boundaries, so the line snaps to the nearer edge and flips at the midpoint. The dragged
-// block's own edges stay hittable but draw no line, so a release there cancels in place.
+// Each block offers two boundaries, so the line snaps to the nearer edge and flips at the midpoint. The dragged block's own edges stay hittable but draw no line, so a release there cancels in place.
 type Cand = Boundary<{ left: number; right: number }>
 interface BlockShape {
   starts: number[]

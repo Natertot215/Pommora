@@ -312,8 +312,7 @@ export function foldedRegions(
     })
 }
 
-// A chevron anchored to its line in the content layer, not a CM gutter: the gutter is positioned from CM's
-// line-height model and would drift by a scroll-dependent amount below an off-screen variable-height block.
+// A chevron anchored to its line in the content layer, not a CM gutter: the gutter is positioned from CM's line-height model and would drift by a scroll-dependent amount below an off-screen variable-height block.
 const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) => {
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
@@ -337,8 +336,7 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
   return Decoration.set(ranges, true)
 })
 
-/** The mount annotation is not optional: the persist listener writes the whole surviving key set on any
- *  un-annotated fold effect, and this runs before `applySavedFolds`. */
+/** The mount annotation is not optional: the persist listener writes the whole surviving key set on any un-annotated fold effect, and this runs before `applySavedFolds`. */
 export function applyCitationsVisibility(view: EditorView, shown: boolean, animate = true): void {
   const r = citationsRegion(view.state.doc)
   if (!r) return

@@ -41,8 +41,7 @@ export function TableRowDnd({
   canReassign: boolean
   /** True under plain location grouping: the bands ARE folders, so a cross-band drop MOVES the page. */
   canRelocate?: boolean
-  /** The group key lets a caller map a structural group to its on-disk container for the
-   *  page_order write; `activeId` serves callers whose commit is (active, over)-shaped. */
+  /** The group key lets a caller map a structural group to its on-disk container for the page_order write; `activeId` serves callers whose commit is (active, over)-shaped. */
   reorderTo: (orderIds: string[], groupKey: string, activeId: string) => void
   reassign: (activeId: string, targetGroupKey: string) => void
   relocate?: (activeId: string, targetGroupKey: string) => void
@@ -62,8 +61,7 @@ export function TableRowDnd({
         const el = els.current.get(r.id)
         if (!el) continue
         const rect = el.getBoundingClientRect()
-        // The row spans a trailing 1fr filler, so rect.right would run the line into the empty
-        // gutter past the last column.
+        // The row spans a trailing 1fr filler, so rect.right would run the line into the empty gutter past the last column.
         const filler = el.querySelector('.cell-filler')
         const contentRight = filler ? filler.getBoundingClientRect().left : rect.right
         measured.push({

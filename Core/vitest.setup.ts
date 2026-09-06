@@ -5,8 +5,7 @@ import type { Dialer } from './Platform/dialer'
 
 installMachine(nodeMachine)
 
-/** The dialer a suite installs on the window: its own channel table, dispatched the way the preload
- *  dispatches the real one. An unstubbed channel answers undefined rather than throwing. */
+/** The dialer a suite installs on the window: its own channel table, dispatched the way the preload dispatches the real one. An unstubbed channel answers undefined rather than throwing. */
 export function stubDialer(channels: Record<string, unknown>): Dialer {
   const call = (k: string, ...args: unknown[]): unknown =>
     (channels[k] as ((...a: unknown[]) => unknown) | undefined)?.(...args)

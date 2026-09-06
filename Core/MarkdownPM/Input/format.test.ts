@@ -33,8 +33,7 @@ describe('toggleInline', () => {
     const doc = 'a [[Page]] b'
     expect(apply(doc, toggleInline(doc, 5, 5, 'connection'))).toBe('a Page b')
   })
-  // Unwrapping leaves the words that were in the sentence. For an aliased link those are the alias,
-  // not the title — removing a link shouldn't rewrite the prose to a name the reader never saw.
+  // Unwrapping leaves the words that were in the sentence; for an aliased link those are the alias, not the title — removing a link shouldn't rewrite the prose to a name the reader never saw.
   it('unwrapping an aliased connection leaves the alias behind, not the title', () => {
     const doc = 'a [[Q3 Plan|the plan]] b'
     expect(apply(doc, toggleInline(doc, 14, 14, 'connection'))).toBe('a the plan b')
@@ -76,7 +75,6 @@ describe('setList', () => {
     expect(apply('1. item', setList('1. item', 3, 3, 'checkbox'))).toBe('- [ ] item')
   })
 
-  // The reported bug: a selection spanning several lines marked only the first of them.
   const three = 'one\ntwo\nthree'
   it('makes every selected line its own item', () => {
     expect(apply(three, setList(three, 0, three.length, 'bullet'))).toBe('- one\n- two\n- three')
@@ -92,7 +90,6 @@ describe('setList', () => {
     const mixed = '- one\ntwo'
     expect(apply(mixed, setList(mixed, 0, mixed.length, 'bullet'))).toBe('- one\n- two')
   })
-  // A blank line is the gap between paragraphs; an empty bullet is not what selecting across it asked for.
   it('leaves a blank line unmarked', () => {
     const gapped = 'one\n\ntwo'
     expect(apply(gapped, setList(gapped, 0, gapped.length, 'bullet'))).toBe('- one\n\n- two')
@@ -169,8 +166,7 @@ describe('setBlock', () => {
   it('callout insert uses the `[!callout]` default (matches the `||` shorthand)', () => {
     expect(apply('hi', setBlock('hi', 0, 2, 'callout'))).toBe('> [!callout] hi')
   })
-  // The dispatcher hands a line formatter the whole selection now, so these read the way the gesture
-  // does: quoting a block of prose makes one blockquote, not a quoted first line.
+  // The dispatcher hands a line formatter the whole selection, so quoting a block of prose makes one blockquote, not a quoted first line.
   const three = 'one\ntwo\nthree'
   it('quotes every selected line', () => {
     expect(apply(three, setBlock(three, 0, three.length, 'quote'))).toBe('> one\n> two\n> three')
@@ -195,18 +191,16 @@ describe('setBlock', () => {
   })
   it('inserts a 3×3 GFM table, blank-line separated as its own block', () => {
     const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
-    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(t) // empty doc → table at the top
-    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}`) // keep the line, blank, then table
+    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(t)
+    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}`)
   })
 
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {
     const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
     const below = '| A | B |\n| --- | --- |\n| 1 | 2 |'
-    // caret on the blank line directly above a table → table fenced by a blank line on each side
     expect(apply(`text\n\n${below}`, setBlock(`text\n\n${below}`, 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,
     )
-    // a blank line already follows → not doubled
     expect(apply(`text\n\n\n${below}`, setBlock(`text\n\n\n${below}`, 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,
     )

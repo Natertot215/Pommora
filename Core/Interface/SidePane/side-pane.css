@@ -1,5 +1,3 @@
-/* Trailing inspector pane — the right-side twin of the sidebar's .surface-glass. A full-height
-   GlassPane seam aligned with the sidebar; slides off the right edge when closed. */
 .inspector-glass {
   position: absolute;
   top: var(--app-inset);

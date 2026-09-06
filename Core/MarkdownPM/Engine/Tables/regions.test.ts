@@ -9,7 +9,7 @@ describe('regions', () => {
   it('finds a top-level table and its row/pipe geometry; excludes the delimiter from rows', () => {
     const doc = 'intro\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nafter'
     const [r] = tableRegions(doc)
-    expect(r.rows.length).toBe(2) // header + 1 body
+    expect(r.rows.length).toBe(2)
     expect(r.delimiter.columns.length).toBe(2)
     expect(doc.slice(r.from, r.to)).toBe('| a | b |\n|---|---|\n| 1 | 2 |')
   })
@@ -27,8 +27,8 @@ describe('regions', () => {
     for (const table of [
       '| a | b |\n|---|---|\n| 1 | 2 |',
       '| h1 | h2 | h3 |\n| :--- | :-: | ---: |\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |',
-      '| a\\|b | c |\n| ---- | -- |\n| x | y |', // escaped pipe + uneven dash widths
-      '| only header |\n| --- |', // header-only, no body rows
+      '| a\\|b | c |\n| ---- | -- |\n| x | y |',
+      '| only header |\n| --- |',
     ]) {
       const [r] = tableRegions(table)
       expect(modelFromRegion(r)).toEqual(parseTable(table))

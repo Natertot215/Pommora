@@ -3,8 +3,7 @@ import { forwardRef } from 'react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
 import { IconProgressCheck } from '@tabler/icons-react'
 
-// Tabler glyphs read slightly smaller than Lucide at the same box; this bump sits them at the same
-// visual size (tunable). Numeric sizes scale directly; the `1em` seam path scales via calc.
+// Tabler glyphs read slightly smaller than Lucide at the same box; this bump sits them at the same visual size. Numeric sizes scale directly; the `1em` seam path scales via calc.
 const TABLER_SCALE = 1.1
 const scaleTabler = (size: LucideProps['size']): LucideProps['size'] =>
   typeof size === 'number' ? size * TABLER_SCALE : `calc(${size ?? '1em'} * ${TABLER_SCALE})`

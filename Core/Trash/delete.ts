@@ -26,8 +26,7 @@ export async function deleteOp(
   const abs = resolved.value
   if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
-  // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact
-  // moves LAST, so a delete cut short leaves evidence rather than silence.
+  // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact moves LAST, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
@@ -46,8 +45,7 @@ export async function deleteOp(
       : null
     if (write && evidence) await write(buildContextRecord(evidence, null))
     const swept = await unlinkContextKey(root, title, abs)
-    // By id, never by title: the gather already resolved which entry this is, and two entries
-    // sharing a title would otherwise erase both while only one folder is trashed.
+    // By id, never by title: the gather already resolved which entry this is, and two entries sharing a title would otherwise erase both while only one folder is trashed.
     await mutateRegistryFile(root, (cur) => {
       const id = evidence?.entry.id ?? cur.contexts.find((c) => c.title === title)?.id
       return id ? { contexts: cur.contexts.filter((c) => c.id !== id) } : cur

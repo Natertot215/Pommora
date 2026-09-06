@@ -1,7 +1,6 @@
 import type { EntityIconKind } from '../Settings/personalization'
 
-/** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live
- *  entity. */
+/** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 export interface TrashCrumb {
   kind?: EntityIconKind
   title: string
@@ -13,8 +12,7 @@ export interface ClearReport {
   refused: number
 }
 
-/** A `.trash` bundle as the trash browser reads it. Main owns the parse: the renderer never sees
- *  a `.deleted` suffix, a folder stamp, or the record union. */
+/** Main owns the parse: the renderer never sees a `.deleted` suffix, a folder stamp, or the record union. */
 export interface TrashRow {
   bundlePath: string
   kind: EntityIconKind
@@ -29,8 +27,7 @@ export interface TrashRow {
   homeResolves: boolean
 }
 
-/** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
- *  macOS system Trash. Device-level since system Trash isn't portable nexus data. */
+/** The in-nexus `.trash` (portable, index-aware) or the macOS system Trash. Device-level since system Trash isn't portable nexus data. */
 export type TrashMode = 'nexus' | 'system'
 
 export const DEFAULT_TRASH_MODE: TrashMode = 'nexus'

@@ -9,20 +9,16 @@ afterEach(cleanupEditor)
 
 const mount = (initialBody: string): Promise<EditorView> => mountEditor({ initialBody })
 
-/** Where a cursor motion actually lands — the same path the arrow keys take, so this exercises the
- *  atomic ranges rather than asserting they exist. */
+/** Where a cursor motion actually lands — the same path the arrow keys take, so this exercises the atomic ranges rather than asserting they exist. */
 const stepLeft = (view: EditorView, from: number): number =>
   view.moveByChar(EditorSelection.cursor(from), false).head
 
 const stepRight = (view: EditorView, from: number): number =>
   view.moveByChar(EditorSelection.cursor(from), true).head
 
-// A hidden marker slot has interior positions with nothing on screen to stand for them. The caret
-// reaching one renders at the widget's edge instead of where it sits, and a selection anchored there
-// takes marker characters the reader can't see.
+// A hidden marker slot has interior positions with nothing on screen to stand for them: the caret reaching one renders at the widget's edge, and a selection anchored there takes marker characters the reader can't see.
 describe('a list marker holds no seats the reader cannot see', () => {
   it('steps from the start of text past the whole `- ` slot, never into it', async () => {
-    // `- foo`: the dash is 0, its space 1, the text starts at 2.
     const view = await mount('- foo')
     expect(stepLeft(view, 2)).toBe(0)
   })
@@ -33,7 +29,6 @@ describe('a list marker holds no seats the reader cannot see', () => {
   })
 
   it('holds for a checkbox, whose slot is wider', async () => {
-    // `- [ ] foo`: the text starts at 6.
     const view = await mount('- [ ] foo')
     expect(stepLeft(view, 6)).toBe(0)
   })
@@ -47,8 +42,7 @@ describe('a list marker holds no seats the reader cannot see', () => {
 
   it('lets the caret into the marker once the line reveals its raw source', async () => {
     const view = await mount('- foo')
-    // The reveal is the caret's own AND only while the editor holds focus — an unfocused editor
-    // shows every marker as its glyph, so the slot stays whole.
+    // The reveal is the caret's own AND only while the editor holds focus — an unfocused editor shows every marker as its glyph, so the slot stays whole.
     view.focus()
     view.dispatch({ selection: EditorSelection.cursor(0) })
     expect(stepRight(view, 0)).toBe(1)
@@ -61,13 +55,10 @@ describe('a list marker holds no seats the reader cannot see', () => {
   })
 })
 
-// A footnote marker is a widget over source the reader never sees, so the same rule holds: no seat
-// inside it. The unbound marker is the other half of the control — nothing draws over it, so every
-// one of its positions is real.
+// A footnote marker is a widget over source the reader never sees, so the same rule holds. The unbound marker is the other half of the control — nothing draws over it, so every one of its positions is real.
 describe('a footnote marker holds no seats the reader cannot see', () => {
   const BOUND = 'a [^1] b\n\n[^1]: one'
   const UNBOUND = 'a [^9] b\n\n[^1]: one'
-  // `a [^1] b`: the marker runs 2..6.
 
   it('steps across the whole marker in one move, from either side', async () => {
     const view = await mount(BOUND)
@@ -98,8 +89,7 @@ describe('a footnote marker holds no seats the reader cannot see', () => {
   })
 
   it('draws nothing in a fence, in inline code, or on citation syntax that is prose', async () => {
-    // The mid-document `[^1]:` line is live prose per the model, and the trailing run's own text
-    // holds a `[^1]` that stays literal — markers draw in the body and in cells, never in a row.
+    // The mid-document `[^1]:` line is live prose per the model, and the trailing run's own text holds a `[^1]` that stays literal — markers draw in the body and in cells, never in a row.
     await mount('```\n[^1]\n```\n\n`[^1]`\n\n[^1]: mid-doc\n\nprose\n\n[^1]: text [^1]')
     expect(editorContainer().querySelectorAll('.md-cite-ref')).toHaveLength(0)
   })

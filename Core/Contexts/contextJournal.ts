@@ -1,13 +1,9 @@
-// A title rename commits this record FIRST, cascades, commits the registry, then clears it; a
-// crash at any point leaves an exact old→new record that replays idempotently on the next open.
-// A record's identity is its rename — the skip list is settle state, so persisting it updates
-// the held record rather than displacing it.
+// A title rename commits this record FIRST, cascades, commits the registry, then clears it; a crash at any point leaves an exact old→new record that replays idempotently on the next open. A record's identity is its rename, so persisting the skip list updates the held record rather than displacing it.
 
 import { journalSlot } from '../Properties/journalSlot'
 
 export interface RenameJournal {
   contextId: string
-  /** Present for a Space rename; absent for a Context rename. */
   spaceId?: string
   oldTitle: string
   newTitle: string

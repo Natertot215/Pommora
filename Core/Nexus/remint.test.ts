@@ -203,8 +203,7 @@ describe('the re-mint writes', () => {
     expect(windows.origins[PAGE]).toBeDefined()
     expect(windows.origins[fresh]).toBeDefined()
 
-    // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off
-    // disk, through admission, into the projection — not through the in-memory fix-up.
+    // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off disk, through admission, into the projection — not through the in-memory fix-up.
     await runOpenLedger(root)
     const rewalked = readBaseline()!
     expect(rewalked[fresh]).toMatchObject({
@@ -262,14 +261,12 @@ describe('the re-mint writes', () => {
     expect(isUlidShaped(copySpace.id)).toBe(true)
     expect(copySpace.keep_me).toBe('foreign')
 
-    // The selection follows the view it names into the copy's own id namespace — asserting the
-    // SECOND view is what makes this a proof of the map rather than a coincidence.
+    // The selection follows the view it names into the copy's own id namespace — asserting the SECOND view is what makes this a proof of the map rather than a coincidence.
     expect(readKey('activeView', SET)).toBe('view-2')
     expect(readKey('activeView', copySet.id)).toBe(copySet.views[1].id)
     expect(readKey('activeView', copySet.id)).not.toBe('view-2')
 
-    // The manual order keys ON the view, so it crosses under the copy's own view id — the
-    // original's row is left exactly where it was.
+    // The manual order keys ON the view, so it crosses under the copy's own view id — the original's row is left exactly where it was.
     expect(readKey('viewOrder', 'view-2')).toEqual(['page-b', 'page-a'])
     expect(readKey('viewOrder', copySet.views[1].id)).toEqual(['page-b', 'page-a'])
 
@@ -286,8 +283,7 @@ describe('the re-mint writes', () => {
   })
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {
-    // The copy must not inherit a reference it cannot resolve — copying it anyway is precisely
-    // the dangling row this join exists to prevent.
+    // The copy must not inherit a reference it cannot resolve — copying it anyway is precisely the dangling row this join exists to prevent.
     writeKey('activeView', SET, 'view-ghost')
     const bytes = await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8')
     await mkdir(join(root, 'Library', 'Fiction copy'), { recursive: true })
@@ -309,7 +305,6 @@ describe('the re-mint writes', () => {
     await writeFile(join(root, 'Library', 'Notes copy.md'), bytes)
 
     await runOpenLedger(root)
-    // No prior evidence: nothing written, one claimant recorded.
     expect(await readFile(join(root, 'Library', 'Notes copy.md'), 'utf8')).toBe(bytes)
     const recorded = readBaseline()![PAGE]
 

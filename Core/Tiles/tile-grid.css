@@ -4,9 +4,7 @@
   min-height: 120px;
 }
 
-/* The chassis geometry (border, radius, body clip) is the shared tile-base; what's here is
-   the grid's own layer — placement, motion, and the state selectors that drive the chassis's
-   --tile-border-color. */
+/* The chassis geometry (border, radius, body clip) is the shared tile-base; what's here is the grid's own layer — placement, motion, and the state selectors that drive --tile-border-color. */
 .tile {
   position: absolute;
   top: 0;
@@ -31,8 +29,7 @@
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }
 
-/* The border tints accent on edge hover or during resize, never while dragged. --tile-border-hot
-   sets the highlight thickness (defaults to the cell border; bump it for a heavier highlight). */
+/* The border tints accent on edge hover or during resize, never while dragged. --tile-border-hot sets the highlight thickness. */
 .tile.is-resizing,
 .tile:has(> .tile-edge:hover) {
   --tile-border-color: var(--accent-stroke-hot);
@@ -44,9 +41,7 @@
   --drop-slot-radius: 16px;
 }
 
-/* The tile drag handle is a bordered chip notched into the left border: its own rounded border is
-   the curve, its --main-bg fill erases the straight border line behind it, and its border-color
-   inherits the tile's so the accent resize/lift highlight flows through. */
+/* A bordered chip notched into the left border: its own rounded border is the curve, its --main-bg fill erases the straight border line behind it, and its border-color inherits the tile's so the accent highlight flows through. */
 .tile-handle {
   position: absolute;
   top: 16px;
@@ -88,8 +83,7 @@
   opacity: 1;
 }
 
-/* The wash is its own layer so it fades on duration-base instead of snapping — a swapped
-   background can't interpolate. */
+/* The wash is its own layer so it fades on duration-base instead of snapping — a swapped background can't interpolate. */
 .tile-handle::after {
   content: "";
   position: absolute;
@@ -112,18 +106,14 @@
   background: var(--state-selected);
   opacity: 1;
 }
-/* The chassis hides until you reach for it — the border (and the notch with it) returns on
-   border/handle hover, while dragging or resizing, and while its handle menu is open so the menu
-   reads as attached to a visible tile. */
+/* The border (and the notch with it) returns on border/handle hover, while dragging or resizing, and while its handle menu is open so the menu reads as attached to a visible tile. */
 .tile.is-borderless:not(.is-lifted):not(.is-resizing):not(.handle-pinned):not(
   :has(> .tile-edge:hover)
 ):not(:has(> .tile-handle:hover)) {
   --tile-border-color: transparent;
 }
 
-/* An embedded PAGE reads as one at a glance: an accent border (accent @ tint-secondary) while the
-   pointer is over it OR the caret is inside it — the grid's location carrier is the handle menu,
-   so the border only signals "this is an embed."*/
+/* An embedded PAGE reads as one at a glance: an accent border while the pointer is over it OR the caret is inside it — the grid's location carrier is the handle menu, so the border only signals "this is an embed." */
 .tile-host:not(.is-host-locked)
 .tile.tile:not(.is-locked):has(.page-tile):hover:not(.is-resizing):not(:has(> .tile-edge:hover)),
 .tile-host:not(.is-host-locked)
@@ -133,9 +123,7 @@
   --tile-border-color: var(--accent-stroke);
 }
 
-/* A locked tile or host is a geometry lock, not a full freeze — the edges and handle just drop
-   their grab/resize cursors; tile content stays editable and borderless tiles still reveal on
-   hover. */
+/* A locked tile or host is a geometry lock, not a full freeze — the edges and handle just drop their grab/resize cursors; tile content stays editable and borderless tiles still reveal on hover. */
 .tile.is-locked .tile-edge,
 .tile.is-locked .tile-handle,
 .tile-host.is-host-locked .tile-edge,

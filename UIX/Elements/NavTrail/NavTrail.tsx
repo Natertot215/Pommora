@@ -5,8 +5,7 @@ import type { IconSize } from '../../Theme/theme-vars.css'
 import { cx } from '../../Utilities/cx'
 import * as s from './nav-trail.css'
 
-/** One stop on a location trail. `onSelect` makes it a button; `ghost` dims a stop past the current
- *  one — a path backed out of, still there to re-descend into. */
+/** `onSelect` makes it a button; `ghost` dims a stop past the current one — a path backed out of, still there to re-descend into. */
 export interface TrailSegment {
   title: string
   icon?: string
@@ -85,8 +84,7 @@ export function NavTrail({
   )
 }
 
-/** A filesystem path as a trail — one segment per folder, the empties a leading or doubled slash
- *  leaves behind dropped. */
+/** One segment per folder, the empties a leading or doubled slash leaves behind dropped. */
 export const pathSegments = (path: string): TrailSegment[] =>
   path
     .split('/')

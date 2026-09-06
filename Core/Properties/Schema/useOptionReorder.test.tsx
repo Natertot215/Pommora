@@ -102,8 +102,7 @@ describe('option reorder gesture', () => {
     expect(reorderSpy).not.toHaveBeenCalled()
   })
 
-  // Identity, not counts — the historical leak removed a DIFFERENT scroll listener than it added.
-  // A completed drag first, so the drag's closures no longer come from the mount render.
+  // Identity, not counts — the historical leak removed a DIFFERENT scroll listener than it added. A completed drag first, so the drag's closures no longer come from the mount render.
   it('an unmount mid-drag removes the exact window listeners it added', async () => {
     await drag('a', 12, 40)
     await act(async () => {

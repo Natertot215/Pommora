@@ -72,8 +72,7 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
   return strictResult(await readJsonStrictly(absPath), absPath)
 }
 
-// Absent is a fact the seed may replace; unreadable (an evicted cloud placeholder, a corrupt file)
-// is ignorance, so it fails with NO write — never a fallback-to-empty clobber.
+// Absent is a fact the seed may replace; unreadable (an evicted cloud placeholder, a corrupt file) is ignorance, so it fails with NO write — never a fallback-to-empty clobber.
 export function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
@@ -95,8 +94,6 @@ export function rmwJsonStrict(
   })
 }
 
-/** A JSON field written when the value is truthy and removed when it is not — the shape every
- *  sidecar and config RMW wants. */
 export function setOrDrop(
   cur: Record<string, unknown>,
   key: string,
@@ -130,8 +127,7 @@ export async function readTextOrNull(absPath: string): Promise<string | null> {
   }
 }
 
-// READ PATH ONLY: null conflates absent with unreadable, so a write based on it would clobber a
-// file it merely failed to read.
+// READ PATH ONLY: null conflates absent with unreadable, so a write based on it would clobber a file it merely failed to read.
 export async function readJsonObject(absPath: string): Promise<Record<string, unknown> | null> {
   try {
     const text = await machine().readText(absPath)

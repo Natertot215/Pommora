@@ -1,6 +1,4 @@
-/** A Map kept as an insertion-ordered bounded cache: writing a key moves it to newest (the first
- *  key is always the stalest), and an overflow evicts the oldest key(s), running `onEvict` on each
- *  evicted value. */
+/** A Map kept as an insertion-ordered bounded cache: writing a key moves it to newest (the first key is always the stalest), and an overflow evicts the oldest key(s), running `onEvict` on each. */
 export function capSet<K, V>(
   map: Map<K, V>,
   key: K,

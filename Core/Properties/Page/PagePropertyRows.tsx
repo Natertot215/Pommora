@@ -32,8 +32,7 @@ import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
-/** The page variant reads the shown page's live detail; the panel variant addresses a window's own
- *  target and fetches it. Their Context rows differ in kind: set-aside there, assigned here. */
+/** The page variant reads the shown page's live detail; the panel variant addresses a window's own target and fetches it. Their Context rows differ in kind: set-aside there, assigned here. */
 type Props =
   | { variant: 'page'; page: PageDetail; onBack: () => void }
   | { variant: 'panel'; page: WindowTarget }

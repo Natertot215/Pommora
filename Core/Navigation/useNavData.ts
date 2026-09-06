@@ -15,7 +15,6 @@ import { filterNav, type SearchEntry } from './navSearch'
 /** A stable empty index — a fresh literal per render would churn the search callback's deps. */
 const NO_ENTRIES: SearchEntry[] = []
 
-/** The tree index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {
   resolvedRecents: ResolvedNav[]
   resolvedFavorites: ResolvedNav[]

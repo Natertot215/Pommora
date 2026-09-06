@@ -1,21 +1,16 @@
-// The tag is a CodeMirror widget building raw DOM, so it mounts an <svg> rather than a React icon —
-// path data is inlined for the handful of languages that carry a mark. A language absent here draws
-// its name alone, which is the intended look: the brand sets have no mark for a Ruby or a Haskell.
+// A CodeMirror widget building raw DOM, so it mounts an <svg> rather than a React icon. A language absent here draws its name alone, which is the intended look: the brand sets have no mark for a Ruby or a Haskell.
 
-/** One language's tag. The glyph is the body of a 24×24 viewBox; `label` overrides the name shown,
- *  and `null` shows none at all — for a mark that already draws the wordmark itself. */
+/** The glyph is the body of a 24×24 viewBox; `label` overrides the name shown, and `null` shows none at all — for a mark that already draws the wordmark itself. */
 interface CodeTag {
   glyph: string
   label?: string | null
 }
 
-/** The tag's own chrome, belonging to no language: the copy affordance every block carries, and the
- *  check that answers a press. Same 24×24 body as a language mark. */
+/** The tag's own chrome, belonging to no language. Same 24×24 body as a language mark. */
 export const COPY_GLYPH =
   '<path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/>'
 export const CHECK_GLYPH = '<path d="M5 12l5 5l10 -10"/>'
 
-/** Keyed by the name a language's roster entry carries. */
 export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
   JavaScript: {
     glyph:

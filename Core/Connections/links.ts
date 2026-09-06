@@ -7,10 +7,7 @@ export const LINK_RESOLVE_TIMEOUT_MS = 6000
 
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 
-// The label's cap is load-bearing: reading escapes makes it an alternation under a quantifier,
-// which backtracks quadratically on a long run of unclosed `[`. A label may not open with `^`
-// because GFM reads `[^1](url)` as a footnote reference. The target admits parentheses nested two
-// deep, what cmark renders.
+// The label's cap is load-bearing: reading escapes makes it an alternation under a quantifier, which backtracks quadratically on a long run of unclosed `[`. A label may not open with `^` because GFM reads `[^1](url)` as a footnote reference. The target admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
 const LINK_DEST = (min: 0 | 1): string =>
   `((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){${min},2048})`
@@ -29,9 +26,7 @@ export function unescapeAlias(alias: string): string {
   return alias.replace(/\\(.)/g, '$1')
 }
 
-// `encodeURI` leaves parens and colons alone; a raw colon declares a target a URL and a lone `(`
-// leaves the link untokenizable, so both are escaped on top. A lone surrogate makes encodeURI
-// throw, and the rename cascade calls this unwrapped.
+// `encodeURI` leaves parens and colons alone; a raw colon declares a target a URL and a lone `(` leaves the link untokenizable, so both are escaped on top. A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped.
 export function encodeLinkTarget(target: string): string {
   try {
     return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/:/g, '%3A')
@@ -49,8 +44,7 @@ export function decodeLinkTarget(target: string): string {
   }
 }
 
-// Read on the raw target: a URL's scheme and separators are literal, while an encoded page title
-// spells them out.
+// Read on the raw target: a URL's scheme and separators are literal, while an encoded page title spells them out.
 export function targetTitle(rawTarget: string): string | null {
   const raw = rawTarget.trim()
   if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null

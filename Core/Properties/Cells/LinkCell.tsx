@@ -79,7 +79,7 @@ function ConnectionCell({
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          if (e.ctrlKey || !page) return // Ctrl+Click = macOS secondary-click; let the menu win
+          if (e.ctrlKey || !page) return
           void select({ kind: 'page', id: page.id, path: page.path }, { newTab: e.metaKey })
         }}
       >

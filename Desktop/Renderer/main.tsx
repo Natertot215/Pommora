@@ -26,8 +26,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
 // One global drawn caret for every native text field (CodeMirror surfaces have their own).
 initNativeCaret()
 
-// Dev-only CDP drive seam: agents verify UI headlessly by calling store actions (never synthetic
-// clicks near an editor — those risk real-Nexus writes).
+// Dev-only CDP drive seam: agents verify UI headlessly by calling store actions (never synthetic clicks near an editor — those risk real-Nexus writes).
 if (import.meta.env.DEV) {
   void import('@pommora/core/Session/store').then(({ useSession }) => {
     ;(window as unknown as { __pommora: unknown }).__pommora = useSession

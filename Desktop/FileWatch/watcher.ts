@@ -45,8 +45,7 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
   const onEvent =
     (event: WatchEventName) =>
     (path: string): void => {
-      // Nav events skip the echo suppression below: one never touches the tree, so a hand-edit
-      // landing right after the app's own write is not swallowed.
+      // Nav events skip the echo suppression below: one never touches the tree, so a hand-edit landing right after the app's own write is not swallowed.
       if (isNavPath(root, path)) {
         if (navDebounce) clearTimeout(navDebounce)
         navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
@@ -64,12 +63,10 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     .on('unlink', onEvent('unlink'))
     .on('addDir', onEvent('addDir'))
     .on('unlinkDir', onEvent('unlinkDir'))
-    // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main process
-    // (EMFILE/ENOSPC, EPERM, a watched dir vanishing). Log + no-op; ⌘R Reload recovers.
+    // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main process (EMFILE/ENOSPC, EPERM, a watched dir vanishing). Log + no-op; ⌘R Reload recovers.
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 
-/** Safe to call when not watching. */
 export function stopWatcher(): void {
   if (debounce) {
     clearTimeout(debounce)
@@ -86,8 +83,7 @@ export function stopWatcher(): void {
   batch = []
 }
 
-/** Patch what classifies, walk for the rest. Pushes only when the tree object moved — an
- *  index-only batch changes nothing anyone renders. */
+/** Patch what classifies, walk for the rest. Pushes only when the tree object moved — an index-only batch changes nothing anyone renders. */
 async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   const events = batch
@@ -102,8 +98,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
       await refreshAssetMap(root)
       tree = await refreshAfterWrite(root)
     }
-    // A session that switched mid-settle must not receive the OLD root's walked tree — a
-    // superseded walk still returns it to its awaiters.
+    // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
     const changed = valueChangesOf(events, root, scope, outcome === 'refresh' ? null : tree)
@@ -116,9 +111,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     // The corpus may have moved in ways no arm named; the stat-gated seed costs the walk's stats.
     if (touchesCorpus(root, events, scope)) await seedContentIndex(root)
     if (sessionRoot() !== root || win.isDestroyed()) return
-    // The armed scope is spent state: the classifier and chokidar's ignore filter would keep
-    // reading the stale capture, and a changed scope moves the corpus, so its disowned rows are
-    // reconciled before the fresh watcher arms.
+    // The armed scope is spent state: the classifier and chokidar's ignore filter would keep reading the stale capture, and a changed scope moves the corpus, so its disowned rows are reconciled before the fresh watcher arms.
     if (!sameScope(await readWatchScope(root), scope)) {
       await seedContentIndex(root)
       if (sessionRoot() !== root || win.isDestroyed()) return
@@ -129,8 +122,7 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
   }
 }
 
-/** Fires on ANY navigation.json change, the app's own included, so an external or synced-in edit
- *  surfaces live. */
+/** Fires on ANY navigation.json change, the app's own included, so an external or synced-in edit surfaces live. */
 async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {

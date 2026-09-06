@@ -67,11 +67,11 @@ describe('clampToLimit — no churn at a maxed edge', () => {
 
 describe('stepPixels — sub-pixel accumulation', () => {
   it('carries the fractional remainder so a slow ramp eventually scrolls', () => {
-    const a = stepPixels(30, 16, 0) // 0.48px → 0px, 0.48 carried
+    const a = stepPixels(30, 16, 0)
     expect(a.px).toBe(0)
     const b = stepPixels(30, 16, a.frac)
     expect(b.px).toBe(0)
-    const c = stepPixels(30, 16, b.frac) // 1.44 accumulated → 1px scrolls
+    const c = stepPixels(30, 16, b.frac)
     expect(c.px).toBe(1)
   })
 })
@@ -79,8 +79,8 @@ describe('stepPixels — sub-pixel accumulation', () => {
 describe('gateIntent — direction-intent', () => {
   it('blocks a direction until the pointer has left that band once', () => {
     const intent: Intent = { up: false, down: false, left: false, right: false }
-    expect(gateIntent(intent, 0, 10).vy).toBe(0) // pinned at the bottom edge — down not yet armed
-    gateIntent(intent, 0, -10) // out of the band — arms down
+    expect(gateIntent(intent, 0, 10).vy).toBe(0)
+    gateIntent(intent, 0, -10)
     expect(gateIntent(intent, 0, 10).vy).toBe(10)
   })
 })
@@ -224,7 +224,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const aBeforeReplace = a.scrolls()
     expect(aBeforeReplace).toBeGreaterThan(400)
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
-    expect(rafMap.size).toBe(1) // A's rAF was canceled, not orphaned
+    expect(rafMap.size).toBe(1)
     y = 150
     flush(3)
     y = 299
@@ -245,7 +245,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
       axis: 'y',
     })
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
-    stopA() // stale handle — must be a no-op, not a stop of B
+    stopA()
     y = 150
     flush(3)
     y = 299
@@ -288,7 +288,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const early = top - s0
     const s1 = top
     flush(10)
-    const later = top - s1 // more distance accumulated → faster
+    const later = top - s1
     expect(later).toBeGreaterThan(early)
   })
 
@@ -322,10 +322,10 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
     flush(3)
     y = 299
-    flush(30) // build up acceleration
-    y = 150 // leave the band → resets the run
+    flush(30)
+    y = 150
     flush(5)
-    y = 299 // re-enter, easing from the floor again
+    y = 299
     const s0 = top
     flush(3)
     const afterReset = top - s0
@@ -340,7 +340,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     y = 299
     flush(5)
     const beforeStall = scrolls()
-    flush(1, 5000) // one frame after a 5-second stall
+    flush(1, 5000)
     const jump = scrolls() - beforeStall
     // Clamped to MAX_FRAME_MS; without it this would be thousands of px.
     expect(jump).toBeGreaterThan(0)
@@ -433,7 +433,7 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     let want = 600
     scrollGlide(el, () => want, G)
     flush(3)
-    want = 900 // the host measured the real content
+    want = 900
     flush(40)
     expect(el.scrollTop).toBe(900)
   })

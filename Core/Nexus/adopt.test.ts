@@ -12,8 +12,7 @@ import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../
 
 let root: string
 
-// A raw, sidecar-less nexus: a top folder (→ Collection), a nested folder (→ Set), a deeper
-// one (→ Sub-Set), a page carrying foreign frontmatter but no id, and an excluded folder.
+// A raw, sidecar-less nexus: a top folder (→ Collection), a nested folder (→ Set), a deeper one (→ Sub-Set), a page carrying foreign frontmatter but no id, and an excluded folder.
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-adopt-'))
   await mkdir(join(root, 'Notes', 'Daily', 'Deep'), { recursive: true })
@@ -93,9 +92,7 @@ describe('stampAdopted', () => {
     expect(await set(join(root, 'Excluded'))).toBeNull()
   })
 
-  // Unregistered, so this is not the singleton — it is the weaker guarantee that carrying an
-  // agenda config is enough to keep a folder out of Collections. The registered case is pinned
-  // in admission.test.ts, where a nexus records the id.
+  // Unregistered, so this is the weaker guarantee that carrying an agenda config is enough to keep a folder out of Collections; the registered case is pinned in admission.test.ts.
   it('never fabricates a Collection on a folder carrying an agenda config', async () => {
     await mkdir(join(root, 'My Tasks'), { recursive: true })
     await writeFile(join(root, 'My Tasks', '_taskconfig.json'), '{}')
@@ -122,7 +119,6 @@ describe('stampAdopted', () => {
     await writeFile(sidecar, '{ corrupt', 'utf8')
     await stampAdopted(root)
     expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt')
-    // The children are independent entities, so they adopt regardless of the parent's state.
     const daily = await set(join(root, 'Notes', 'Daily'))
     expect(daily?.id).toBeTruthy()
   })

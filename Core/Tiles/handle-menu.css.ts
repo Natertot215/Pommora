@@ -5,9 +5,7 @@ import { item } from '@pommora/uix/Menus/menu-base.css'
 
 const c = colorVars.color
 
-// ── KNOB — the picker's ONE pane width. The slider viewport follows the active slot's
-// measured width, so unequal panes would shift the anchored picker on every slide;
-// locking every pane to one width kills the shift and sets the menu's footprint.
+// KNOB — the picker's ONE pane width. The slider viewport follows the active slot's measured width, so unequal panes would shift the anchored picker on every slide.
 const PANE_W = 120
 const PANE_MAX_W = 180 // KNOB
 

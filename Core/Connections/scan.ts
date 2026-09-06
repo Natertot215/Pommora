@@ -1,16 +1,11 @@
-// The rename cascade's prefilter. `[[ ]]` is the only connection syntax; anything inside code is
-// a sample. `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename
-// reaches them without giving them a link-graph edge — one predicate answers for both syntaxes.
+// `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them without giving them a link-graph edge — one predicate answers for both syntaxes.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { markdownLinkRegex, targetTitle } from './links'
 import { readLink } from './linkValue'
 import { codeMask } from './markdownCode'
 
-/** The one parse the content index seeds from and the cascade's prefilter answers through, so a
- *  title the index recorded is exactly one the prefilter would affirm. The gate in front is on
- *  SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle`
- *  exists for, and an NFD-composed body would be skipped silently. */
+/** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. */
 export function extractMentions(body: string): Set<string> {
   const out = new Set<string>()
   if (!body.includes('[[') && !body.includes('](')) return out
@@ -39,8 +34,7 @@ export function mentionsTitle(body: string, normalizedKey: string): boolean {
   return normalizedKey !== '' && extractMentions(body).has(normalizedKey)
 }
 
-/** A Link property holds a connection as its whole value, so the page it names is a reference
- *  like any in the body — a rename reaching only bodies would leave it pointing at nothing. */
+/** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
 export function frontmatterMentions(values: Record<string, unknown>): Set<string> {
   const out = new Set<string>()
   for (const value of Object.values(values)) {

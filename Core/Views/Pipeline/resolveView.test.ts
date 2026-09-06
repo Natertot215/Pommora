@@ -63,7 +63,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
     })
     const { groups } = resolveView({ rows, setTree, view, schema: [], flattenStructural: true })
     expect(groups.map((g) => g.kind)).toEqual(['ungrouped'])
-    expect(groups[0].items.map((r) => r.id)).toEqual(['p_a', 'p_root']) // set page, then the root tail
+    expect(groups[0].items.map((r) => r.id)).toEqual(['p_a', 'p_root'])
   })
 
   it('the reserved location primary contributes nothing to a table (no flattenStructural)', () => {
@@ -73,8 +73,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
       sort: [{ property_id: LOCATION_SORT, direction: 'ascending' }],
       structural_order_mode: 'location',
     })
-    // Without flattenStructural the location flatten never engages — flat() yields one band, but the
-    // pipeline never routes through the structural walk (the table can't be flattened by this field).
+    // Without flattenStructural the location flatten never engages — flat() yields one band, but the pipeline never routes through the structural walk.
     const { groups } = resolveView({ rows, setTree, view, schema: [] })
     expect(groups.map((g) => g.kind)).toEqual(['ungrouped'])
   })
@@ -105,7 +104,6 @@ describe('resolveView — full pipeline over the fixture', () => {
     })
 
     expect(columns[0].id).toBe('prop_status')
-    // prop_when is in the schema but in neither list → the allowlist keeps it off the table
     expect(columns.map((c) => c.id)).toEqual([
       'prop_status',
       '_title',
@@ -307,7 +305,6 @@ describe('resolveView — group_order', () => {
       schema,
     })
     expect(located.groups.map((g) => g.key)).toEqual(['_ungrouped', 's1', 's2'])
-    // The sub-group buckets inside the structural fallback exactly as under real Location grouping.
     const subbed = resolveView({
       rows,
       setTree,
@@ -482,7 +479,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), selValues)
     return { rows, setTree, schema: selectSchema }
   }
-  // sOuter holds p_outer and nests sInner (p_inner); sB holds p_b.
   const nested: CollectionNode = {
     kind: 'collection',
     id: 'col',
@@ -620,7 +616,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       ...selInput(),
       view: view({ group: propertyGroup(), hide_empty_groups: true }),
     })
-    expect(keys(prop.groups)).toEqual(['Alpha', 'Beta']) // Gamma holds nothing
+    expect(keys(prop.groups)).toEqual(['Alpha', 'Beta'])
     const { rows, setTree } = flattenContainer(nested, {})
     const structural = resolveView({
       rows,
@@ -628,7 +624,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       view: view({ hide_empty_groups: true }),
       schema: [],
     })
-    expect(keys(structural.groups)).toEqual(['sOuter', 'sB']) // sInner kept — it holds p_inner
+    expect(keys(structural.groups)).toEqual(['sOuter', 'sB'])
   })
 
   it('the config-level flag still bites as fallback; an explicit view-level false overrides it', () => {

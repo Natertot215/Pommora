@@ -3,8 +3,7 @@ import { Button } from '../../Buttons/Button'
 import { cx } from '../../Utilities/cx'
 import * as s from './eye-toggle.css'
 
-/** The visibility eye — rest shows the current state's glyph, hover previews the toggle: a hidden
- *  subject runs the same pair in reverse. Both glyphs mount; CSS swaps them. */
+/** Rest shows the current state's glyph, hover previews the toggle: a hidden subject runs the same pair in reverse. Both glyphs mount; CSS swaps them. */
 export function EyeToggle({
   hidden,
   name,

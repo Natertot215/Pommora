@@ -10,9 +10,7 @@ export const strip = style({
   touchAction: 'none',
 })
 
-/** The knob slot — positioned on the fill edge; holds the glass-wrapped fill.
- *  `--slider-knob-scale` is the KNOB — it zooms the whole knob (glass + fill + radius together);
- *  a consumer sets it on the slider's container to resize the knob without touching the strip. */
+/** `--slider-knob-scale` is the KNOB — it zooms the whole knob (glass + fill + radius together); a consumer sets it on the slider's container to resize the knob without touching the strip. */
 export const knob = style({
   position: 'absolute',
   display: 'flex',

@@ -60,7 +60,7 @@ describe('createContextGroup', () => {
     const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     const entry = reg.contexts.find((c: { title: string }) => c.title === 'Clients')
     expect(entry.id).toBe(r.value.id)
-    expect(entry.singular).toBeUndefined() // user-minted: no singular, so its create entry reads "New Space"
+    expect(entry.singular).toBeUndefined()
     const entries = await readdir(join(contextsDir(root), 'Clients'))
     expect(entries).toEqual([])
   })
@@ -93,7 +93,7 @@ describe('createSpace', () => {
     expect(typeof sc.id).toBe('string')
     expect(sc.icon).toBeUndefined()
     expect(sc.color).toBeUndefined()
-    expect(sc.tiles).toBeUndefined() // the document is its own file, not the sidecar's business
+    expect(sc.tiles).toBeUndefined()
     const doc = await readTileDocAt(join(contextsDir(root), 'Projects', 'Sapphire'))
     expect(doc.tiles).toHaveLength(4)
     expect((doc.tiles as { type: string }[]).map((b) => b.type)).toEqual(Array(4).fill('markdown'))
@@ -141,12 +141,11 @@ describe('setPageContext', () => {
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['<Classes>']).toEqual(['CS 161'])
-    expect(fm['<Projects>']).toEqual(['Pommora']) // untargeted sibling repaired on the same write
+    expect(fm['<Projects>']).toEqual(['Pommora'])
   })
 
   it('fails without writing when ANY space sidecar is unreadable (never strips siblings)', async () => {
-    // An unreadable sibling sidecar (evicted cloud placeholder) must fail the world load —
-    // a world missing that Space would make the reconcile drop its valid tags.
+    // An unreadable sibling sidecar (evicted cloud placeholder) must fail the world load — a world missing that Space would make the reconcile drop its valid tags.
     await rm(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     await mkdir(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
@@ -200,15 +199,12 @@ describe('setSpaceColor', () => {
     expect((await setSpaceColor(root, 'sp-pom', 'magenta')).ok).toBe(false)
   })
 
-  // The guard's positive half: a ramp cell must provably reach disk, written verbatim — the write
-  // path never normalizes, so what the picker emits is what the sidecar holds.
   it('writes a ramp cell through verbatim', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'blue-6')).ok).toBe(true)
     expect((await sidecar()).color).toBe('blue-6')
     expect('modified_at' in (await sidecar())).toBe(false)
   })
 
-  // Its negative half: removing the guard makes these pass, which is what makes them worth having.
   it('refuses keys outside the grammar', async () => {
     for (const bad of ['blue-8', 'chartreuse', '']) {
       expect((await setSpaceColor(root, 'sp-pom', bad)).ok).toBe(false)

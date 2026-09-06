@@ -13,13 +13,13 @@ describe('session — open/close', () => {
 
   it('opens then closes', async () => {
     await openSession('/Users/x/Nexus')
-    expect(sessionRoot()).toBe('/Users/x/Nexus') // non-existent → falls back to the raw path
+    expect(sessionRoot()).toBe('/Users/x/Nexus')
     closeSession()
     expect(sessionRoot()).toBeNull()
   })
 
   it('canonicalizes the root via realpath (so its lock key matches resolveUnderRoot)', async () => {
-    const raw = mkdtempSync(join(tmpdir(), 'pom-sess-')) // macOS: /var/… symlinks to /private/var/…
+    const raw = mkdtempSync(join(tmpdir(), 'pom-sess-'))
     await openSession(raw)
     expect(sessionRoot()).toBe(realpathSync(raw))
     closeSession()

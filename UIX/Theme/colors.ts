@@ -1,7 +1,4 @@
-// Every color value the app declares; nothing else in Core, UIX or Desktop states one. A PLAIN
-// module (not a *.css.ts) both so it can export functions and so the main process — which reads
-// neither renderer CSS vars nor a vanilla-extract token — shares the constants the tokens are
-// built from.
+// Every color value the app declares; nothing else in Core, UIX or Desktop states one. A PLAIN module (not a *.css.ts) both so it can export functions and so the main process — which reads neither renderer CSS vars nor a vanilla-extract token — shares the constants the tokens are built from.
 
 /** The base system palette: the single source for every derived tone. */
 export const SYSTEM = {

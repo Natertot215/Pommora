@@ -11,9 +11,7 @@ const PAGE_ULID = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
 let root: string
 
-// A sidecar-mode nexus with one Collection and one Context group — the "before" state the
-// create transforms are applied against. The entities the second walk finds on disk are
-// written between the walks by the test itself.
+// A sidecar-mode nexus with one Collection and one Context group — the "before" state the create transforms are applied against. The entities the second walk finds on disk are written between the walks by the test itself.
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-shape-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
@@ -71,8 +69,7 @@ describe('transform-built nodes carry the walk key shape', () => {
     )
     expect(patched).not.toBeNull()
 
-    // Deep-equality alone is not the claim — stabilize must return the PATCHED tree object
-    // itself, which requires every key set to match the walk's literals exactly.
+    // Deep-equality alone is not the claim — stabilize must return the PATCHED tree object itself, which requires every key set to match the walk's literals exactly.
     expect(stabilize(walked, patched)).toBe(patched)
   })
 })

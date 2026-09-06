@@ -1,5 +1,4 @@
-// Every push the host bridge makes into the running session — menu actions, tree and asset
-// changes. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
+// Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
 import { useSession } from '../Session/store'
 import { openWebLink } from './openWebLink'

@@ -82,9 +82,7 @@
   transition: none;
 }
 
-/* The footnotes disclosure faces the bar's own chevron across the same band and wears its spacing:
-   the label sits on the inset a page's breadcrumb lands on, with the chevron's own padding around
-   it, so the hover pill reads as the same control on the other side of the bar. */
+/* The footnotes disclosure faces the bar's own chevron across the same band and wears its spacing, so the hover pill reads as the same control on the other side of the bar. */
 .footnotes-toggle {
   left: 0;
   z-index: 2;

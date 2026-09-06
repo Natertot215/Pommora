@@ -11,9 +11,7 @@ import {
   targetTitle,
 } from './links'
 
-// CommonMark's link destination admits balanced parentheses, and a great many real addresses use
-// them. One grammar serves the editor tokenizer, `detect`, the rename scanner and the rename
-// rewriter, so what this pins is what all four agree a link is.
+// CommonMark's link destination admits balanced parentheses. One grammar serves the editor tokenizer, `detect`, the rename scanner and the rename rewriter, so what this pins is what all four agree a link is.
 describe('markdownLinkRegex — the balanced-parens destination', () => {
   const target = (s: string): string | undefined => markdownLinkRegex().exec(s)?.[2]
 
@@ -46,27 +44,21 @@ describe('markdownLinkRegex — the balanced-parens destination', () => {
     expect(target('[t](https://a.com/x))')).toBe('https://a.com/x')
   })
 
-  // An unmatched `(` in a bare destination is invalid CommonMark, so the whole thing is prose.
   it('refuses a target holding an unmatched opening paren', () => {
     expect(target('[t](https://a.com/a_(b)')).toBeUndefined()
   })
 
-  // The ruled depth. A third level is prose rather than a truncated address, which is the same
-  // trade the unmatched-open case makes.
   it('stops at two levels of nesting', () => {
     expect(target('[t](https://a.com/a_(b_(c_(d)_e)_f))')).toBeUndefined()
   })
 
-  // Two forms of one grammar: this scans a body, MD_LINK reads a whole stored value. A cell and the
-  // editor disagreeing about where a link ends is how one renders a link the other cannot follow.
+  // Two forms of one grammar: this scans a body, MD_LINK reads a whole stored value. Disagreeing about where a link ends is how one surface renders a link the other cannot follow.
   it('agrees with MD_LINK about where a parenthesized target ends', () => {
     const s = '[x](https://a.com/a_(b))'
     expect(target(s)).toBe(MD_LINK.exec(s)?.[2])
   })
 
-  // The label's cap exists against quadratic backtracking on a long unclosed run; the destination's
-  // alternatives are disjoint on their first character, which is what keeps the nesting from adding
-  // a second such run. These assert a result — a hang fails them by timeout, not by a threshold.
+  // These assert a result — a backtracking hang fails them by timeout, not by a threshold.
   it('returns immediately on the shapes that could backtrack', () => {
     expect(markdownLinkRegex().exec(`[x](${'('.repeat(2000)}`)).toBeNull()
     expect(markdownLinkRegex().exec('['.repeat(5000))).toBeNull()
@@ -132,8 +124,7 @@ describe('isHttpLink (the title-fetch gate — http(s) only)', () => {
   })
 })
 
-// The `( )` of a markdown link naming a page. Both halves are shared with main, which runs the same
-// decode inside the rename cascade — a throw there reverts the rename rather than skipping a link.
+// Both halves are shared with main, which runs the same decode inside the rename cascade — a throw there reverts the rename rather than skipping a link.
 describe('the page-target codec', () => {
   it('round-trips a title through the parens', () => {
     for (const title of ['Notes', 'Work Notes', 'Atomic Habits (Book)', 'Q3 — Plan', '100% Done']) {
@@ -141,8 +132,7 @@ describe('the page-target codec', () => {
     }
   })
 
-  // A title's parens need not balance, and a lone one leaves the link untokenizable — so they are
-  // escaped rather than trusted to the destination grammar's nesting.
+  // A title's parens need not balance, and a lone one leaves the link untokenizable — so they are escaped rather than trusted to the destination grammar's nesting.
   it('escapes parens, which neither built-in encoder touches', () => {
     expect(encodeLinkTarget('Atomic Habits (Book)')).toBe('Atomic%20Habits%20%28Book%29')
     expect(encodeLinkTarget('Atomic Habits (Book)')).not.toContain('(')
@@ -161,14 +151,12 @@ describe('targetTitle — what a markdown link names', () => {
     expect(targetTitle('Work%20Notes')).toBe('Work Notes')
   })
 
-  // isValidLink accepts any dotted host, so these two would open a browser and make the pages they
-  // name unreachable if resolution didn't run first.
+  // isValidLink accepts any dotted host, so these two would open a browser and make the pages they name unreachable if resolution didn't run first.
   it('a dotted title is still a title', () => {
     expect(targetTitle('Node.js')).toBe('Node.js')
     expect(targetTitle('Notes.md')).toBe('Notes')
   })
 
-  // Without this a URL would reach a page by its last path segment.
   it('anything addressing the outside names no page', () => {
     expect(targetTitle('https://example.com/Notes')).toBeNull()
     expect(targetTitle('example.com/Notes')).toBeNull()
@@ -177,8 +165,6 @@ describe('targetTitle — what a markdown link names', () => {
   })
 })
 
-// The encoder and the reader are two halves of one contract: anything the app writes must be
-// something it can read back. These pin the characters where that nearly broke.
 describe('the codec reads back everything it writes', () => {
   const titles = [
     'Notes',
@@ -201,17 +187,13 @@ describe('the codec reads back everything it writes', () => {
     }
   })
 
-  // A colon is legal in a page name and is also how a target declares itself an address, so it is
-  // spelled out — otherwise `Meeting: Notes` encodes to something targetTitle refuses, and the app
-  // writes a link it cannot itself follow.
+  // A colon is legal in a page name and is also how a target declares itself an address, so it is spelled out — otherwise `Meeting: Notes` encodes to something targetTitle refuses.
   it('spells out a colon so a title is never read as a scheme', () => {
     expect(encodeLinkTarget('Meeting: Notes')).toBe('Meeting%3A%20Notes')
     expect(targetTitle('Meeting%3A%20Notes')).toBe('Meeting: Notes')
     expect(targetTitle('https://example.com')).toBeNull()
   })
 
-  // The cascade calls this unwrapped, where a throw becomes a reverted rename rather than a
-  // skipped link.
   it('never throws, even on input encodeURI refuses', () => {
     expect(() => encodeLinkTarget('A\uD800B')).not.toThrow()
   })

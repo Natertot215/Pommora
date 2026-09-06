@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { nextCell } from './navigate'
 
-// Visual-row convention: row 0 = header, rows 1..totalRows-1 = body. totalRows counts the header.
-// A 2-column, 3-visual-row table (header + 2 body) → totalRows = 3, cols = 2.
 describe('nextCell — cell-to-cell navigation', () => {
   it('Tab moves right, then wraps to the start of the next row', () => {
     expect(nextCell(3, 2, 0, 0, 'next')).toEqual({ row: 0, col: 1 })

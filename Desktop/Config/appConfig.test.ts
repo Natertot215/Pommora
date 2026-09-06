@@ -86,7 +86,7 @@ describe('addRecent', () => {
     const result = addRecent(ten, 'new')
     expect(result).toHaveLength(10)
     expect(result[0]).toBe('new')
-    expect(result).not.toContain('p9') // the oldest fell off
+    expect(result).not.toContain('p9')
   })
 
   it('is idempotent for the same path (no duplicates, stays at front)', () => {
@@ -172,7 +172,7 @@ describe('pruneRecents', () => {
 
   it('drops an entry that resolves into the trash even if it exists', async () => {
     const trashed = join(dir, '.Trash', 'Nexus')
-    mkdtempSync(join(tmpdir(), 'pom-x-')) // noise
+    mkdtempSync(join(tmpdir(), 'pom-x-'))
     expect(await pruneRecents([trashed])).toEqual([])
   })
 

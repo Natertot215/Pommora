@@ -37,11 +37,9 @@ interface ScannedHeading {
   idx: number
   level: number
   text: string
-  /** Ordinal-disambiguated identity — duplicate text stays tellable apart across renders and folds. */
   key: string
 }
 
-/** THE heading scan — the fold sections and the outline both read it, so the two can never disagree. */
 function scanHeadings({ lines, headings, fences }: HeadingSrc): ScannedHeading[] {
   const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
@@ -76,7 +74,6 @@ export function headingOutline(doc: string): OutlineHeading[] {
   }))
 }
 
-/** Levels alone decide the span, so any level-bearing heading list works. */
 export function sectionEnd(headings: readonly { level: number }[], start: number): number {
   for (let n = start + 1; n < headings.length; n++)
     if (headings[n].level <= headings[start].level) return n

@@ -17,10 +17,8 @@ export const chip = style({
   display: 'flex',
 })
 
-/** The `--sw` fill, doubled so it outranks the DualSwitch track's own background that the swatch
- *  composes below. */
+/** The `--sw` fill, doubled so it outranks the DualSwitch track's own background that the swatch composes below. */
 const swatchFill = style({ selectors: { '&&': { background: 'var(--sw)' } } })
 
-/** The chosen color, worn as the Switch's own shell — it composes the switch's real track rather
- *  than restating its box, so the two can never drift and the swatch is the track's own size. */
+/** It composes the switch's real track rather than restating its box, so the two can never drift and the swatch is the track's own size. */
 export const swatch = style([switchTrack, swatchFill])

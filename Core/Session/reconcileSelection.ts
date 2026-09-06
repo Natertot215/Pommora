@@ -1,11 +1,9 @@
-// After a mutation refetch, the prior selection can be stale: the entity was deleted (its id is
-// gone) or renamed/moved (its id survives but its path changed).
+// After a mutation refetch the prior selection can be stale: the entity was deleted (its id is gone) or renamed/moved (its id survives but its path changed).
 
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { reconcileIndexOf } from './treeIndex'
 
-/** Existence + live-path lookup per entity kind — projected from the tree's records once per push. */
 export interface ReconcileIndex {
   spaces: ReadonlySet<string>
   collections: ReadonlySet<string>
@@ -38,8 +36,7 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
   }
 }
 
-/** One-shot reconcile (a single selection against a tree) — the index behind it is cached per
- *  tree, so this is a lookup, never a walk. */
+/** The index behind it is cached per tree, so this is a lookup, never a walk. */
 export function reconcileSelection(tree: NexusTree, selection: SelectionState): SelectionState {
   return reconcileWith(reconcileIndexOf(tree), selection)
 }

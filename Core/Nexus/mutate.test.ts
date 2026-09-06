@@ -200,8 +200,7 @@ describe('handleMutate — rename', () => {
   })
 
   it('a fromCreate rename skips the link cascade — inbound [[links]] to the old title stay put', async () => {
-    // Alpha links [[Beta]]; a from-create rename of Beta must NOT rewrite it (an ordinary
-    // rename does — the test above goes red if the skip were unconditional).
+    // Alpha links [[Beta]]; a from-create rename of Beta must NOT rewrite it (an ordinary rename does — the test above goes red if the skip were unconditional).
     const r = await handleMutate(
       {
         op: 'rename',
@@ -246,8 +245,7 @@ describe('handleMutate — delete', () => {
     )
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
-    // .trash mirrors the nexus, so a deleted page shows where it lived; the stamped leaf is a
-    // bundle folder, and the artifact sits inside it under the name it always had.
+    // .trash mirrors the nexus, so a deleted page shows where it lived; the stamped leaf is a bundle folder, and the artifact sits inside it under the name it always had.
     const trashed = await readdir(join(root, '.trash', 'Notes', 'Daily'))
     const bundle = trashed.find((f) => f.endsWith('__Beta.md.deleted'))
     expect(bundle).toBeDefined()
@@ -306,8 +304,6 @@ describe('handleMutate — move + guards', () => {
   })
 
   it('round-trip: in-set reorder writes page_order to a foreign-keyed sidecar AND readNexus applies it', async () => {
-    // Replicate the real on-disk shape: a set sidecar with views and
-    // NO page_order, plus a third page.
     await writeFile(
       join(root, 'Notes', 'Daily', '_pageset.json'),
       JSON.stringify({
@@ -330,12 +326,10 @@ describe('handleMutate — move + guards', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    // page_order written; views preserved (loose sidecar); file not moved
     const sc = JSON.parse(await read('Notes/Daily/_pageset.json'))
     expect(sc.page_order).toEqual([G_ID, B_ID, A_ID])
     expect(sc.views).toHaveLength(1)
     expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
-    // readNexus applies it: Daily's pages come back in the persisted order
     const tree = await readNexus(root)
     const daily = tree.collections
       .find((c) => c.title === 'Notes')
@@ -531,7 +525,6 @@ describe('handleMutate — review-round hardening', () => {
     await handleMutate({ op: 'setProfileImage', source: await pickImage('First.png') }, nexusDeps)
     await handleMutate({ op: 'setProfileImage', source: await pickImage('Second.png') }, nexusDeps)
     expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(false)
-    // configured root (file-assets): shared, so a replaced file survives
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
@@ -607,7 +600,7 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.ok).toBe(true)
     const cfg = JSON.parse(await read('.nexus/homepage.json'))
     expect(cfg.banner).toBe('[[Pick.png]]')
-    expect(cfg.blocks).toEqual([{ t: 'x' }]) // foreign blocks round-trip untouched
+    expect(cfg.blocks).toEqual([{ t: 'x' }])
     expect(cfg.icon).toBe('house')
     expect(cfg.outside_field).toBe(2)
   })
@@ -652,10 +645,10 @@ describe('handleMutate — review-round hardening', () => {
         nexusDeps,
       )
       expect(r.ok).toBe(false)
-      expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true) // reverted
+      expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
       expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(false)
     } finally {
-      await chmod(join(root, 'Notes', 'Locked'), 0o755) // restore so afterEach cleanup works
+      await chmod(join(root, 'Notes', 'Locked'), 0o755)
     }
   })
 })
@@ -699,7 +692,7 @@ describe('handleMutate — setBanner', () => {
     expect(r.ok).toBe(true)
     expect(await bannerOf()).toBe('[[Sunset.png]]')
     expect(await pathExists(join(assets, 'Sunset.png'))).toBe(true)
-    expect(JSON.parse(await read('Notes/_pagecollection.json')).id).toBe('pt') // keys untouched
+    expect(JSON.parse(await read('Notes/_pagecollection.json')).id).toBe('pt')
   })
 
   it('a file already inside the asset root is referenced, never copied', async () => {
@@ -711,7 +704,6 @@ describe('handleMutate — setBanner', () => {
   })
 
   it('a name several files inside the asset root answer to is refused, writing nothing', async () => {
-    // Referencing it would spell exactly what the resolver refuses to answer.
     const assets = await withAssetDir([
       ['a', 'Twin.png'],
       ['b', 'Twin.png'],
@@ -747,8 +739,7 @@ describe('handleMutate — setBanner', () => {
   })
 
   it('a name held ANYWHERE under the root steps aside, not just one in the same folder', async () => {
-    // A basename answers nexus-wide, so landing a second `Sunset.png` at the root would make the
-    // stored link ambiguous — the very reference adoption refuses to author.
+    // A basename answers nexus-wide, so landing a second `Sunset.png` at the root would make the stored link ambiguous — the very reference adoption refuses to author.
     const assets = await withAssetDir([['sub', 'Sunset.png']])
     const r = await setBanner(await pick('Sunset.png', 'picked-bytes'))
     expect(r.ok).toBe(true)
@@ -764,7 +755,6 @@ describe('handleMutate — setBanner', () => {
   })
 
   it('a name carrying an alias separator is refused', async () => {
-    // `[[Sun|set.png]]` reads as title `Sun` with alias `set.png` — a link that means nothing.
     await withAssetDir()
     const r = await setBanner(await pick('Sun|set.png'))
     expect(r.ok).toBe(false)
@@ -785,12 +775,10 @@ describe('handleMutate — setBanner', () => {
     expect(await bannerOf()).toBeUndefined()
   })
 
-  // The defect this shape exists to catch: `atomicWriteBinary` records its own write and the
-  // watcher drops the echo, so a test that rebuilds the map from the directory passes while the
-  // app renders blank. The adopted value must resolve against the map main is HOLDING.
+  // `atomicWriteBinary` records its own write and the watcher drops the echo, so a test that rebuilds the map from the directory passes while the app renders blank. The adopted value must resolve against the map main is HOLDING.
   it('the adopted value resolves against the map main holds, and that map is owed a push', async () => {
     await withAssetDir()
-    await liveAssetMap(root) // the map as the running app holds it, before the write
+    await liveAssetMap(root)
     const r = await setBanner(await pick('Live.png'))
     expect(r.ok).toBe(true)
     const pushed = takeAssetMapPush(sessionRoot()!)
@@ -799,8 +787,7 @@ describe('handleMutate — setBanner', () => {
   })
 
   it("a replaced banner in the user's own asset folder is never deleted", async () => {
-    // The folder is shared — a file there may be referenced from an Obsidian note this app cannot
-    // see, and nothing on this path is trashed. Replacing a banner is not consent to destroy it.
+    // The folder is shared — a file there may be referenced from an Obsidian note this app cannot see, and nothing on this path is trashed. Replacing a banner is not consent to destroy it.
     const assets = await withAssetDir([['Solo.png']])
     await writeFile(
       join(root, 'Notes', '_pagecollection.json'),
@@ -826,7 +813,6 @@ describe('handleMutate — setBanner', () => {
   })
 
   it('a replaced banner Pommora minted under .nexus/assets is still cleaned up', async () => {
-    // No asset_directory: the default root is Pommora's own, and what it minted there is its own.
     expect((await setBanner(await pick('First.png'))).ok).toBe(true)
     expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(true)
     expect((await setBanner(await pick('Second.png'))).ok).toBe(true)
@@ -971,9 +957,7 @@ describe('handleMutate — setCrop', () => {
     expect(JSON.parse(await read('.nexus/crops.json')).plugin_field).toBe('keep')
   })
 
-  // Negative control: replacing a page's cover clears the old cover's crop (dropReplacedAsset),
-  // and leaves every other key untouched. Remove the updateCrops call in dropReplacedAsset and
-  // the first assertion goes red.
+  // Negative control: replacing a page's cover clears the old cover's crop (dropReplacedAsset) and leaves every other key untouched. Remove the updateCrops call in dropReplacedAsset and the first assertion goes red.
   it('a replaced cover clears its old crop and leaves other keys untouched', async () => {
     await setBannerPage(await pick('Cover.png'))
     await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 2 })
@@ -986,12 +970,11 @@ describe('handleMutate — setCrop', () => {
 
   it('a corrupt crops.json does not fail a banner replace (best-effort crop cleanup)', async () => {
     await setBannerPage(await pick('Cover.png'))
-    await writeFile(join(root, '.nexus', 'crops.json'), '[]') // valid JSON, not an object
+    await writeFile(join(root, '.nexus', 'crops.json'), '[]')
     expect((await setBannerPage(await pick('Next.png'))).ok).toBe(true)
   })
 
-  // Main-side half of the must-agree; the renderer-side (resolveAssetValue → cropKeyFor) is
-  // asserted in AssetImage.test — a single test can't import both across the process boundary.
+  // Main-side half of the must-agree; the renderer-side (resolveAssetValue → cropKeyFor) is asserted in AssetImage.test — a single test can't import both across the process boundary.
   it('keys the image main-side by its resolved nexus-relative path', async () => {
     await setBannerPage(await pick('Cover.png'))
     const value = '[[Cover.png]]'
@@ -1000,8 +983,7 @@ describe('handleMutate — setCrop', () => {
 })
 
 describe('handleMutate — setProperty (the D-4 cross-group reassignment write)', () => {
-  // A value only writes for a property the registry knows — the key carries a name, and an
-  // unknown name is inert by construction.
+  // A value only writes for a property the registry knows — the key carries a name, and an unknown name is inert by construction.
   beforeEach(async () => {
     await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
     await createProperty(root, { id: 'prop_m', name: 'Tags', type: 'multi_select' })
@@ -1166,8 +1148,7 @@ describe('adoptFile — the shared adoption seam', () => {
   })
 
   it('a name the link grammar cannot spell is refused whatever the caller allows', async () => {
-    // `|` splits off an alias and `]` closes the link early, so either one silently retargets the
-    // reference at something that is not the file. Widening the extension gate must not reach this.
+    // `|` splits off an alias and `]` closes the link early, so either one silently retargets the reference at something that is not the file. Widening the extension gate must not reach this.
     for (const name of ['Q3|draft.pdf', 'Summary]].pdf'])
       expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({ ok: false })
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
@@ -1198,9 +1179,7 @@ describe('adoptFile — the shared adoption seam', () => {
   })
 
   it('refuses a subfolder that climbs out of the asset root, writing nothing', async () => {
-    // `rootSegs` drops empty segments but NOT `..`, and `join` then collapses them straight past
-    // the root — so an unrefused destination is an arbitrary-file-write primitive: `'../..'` lands
-    // in the nexus root, `'../../..'` outside the nexus entirely.
+    // `rootSegs` drops empty segments but NOT `..`, and `join` then collapses them straight past the root — so an unrefused destination is an arbitrary-file-write primitive: `'../..'` lands in the nexus root, `'../../..'` outside the nexus entirely.
     for (const subfolder of ['..', '../..', '../../..', 'a/../..', '/etc', '.\\..'])
       expect(
         await adoptFile(root, await pick('Evil.pdf'), { allow: 'any', subfolder }),
@@ -1213,8 +1192,7 @@ describe('adoptFile — the shared adoption seam', () => {
   })
 
   it('refuses a subfolder the map could never index', async () => {
-    // `.private` is contained, mkdirs, writes, and answers a valid-looking reference — while the
-    // map drops it forever, leaving an unresolved label and no error anywhere.
+    // `.private` is contained, mkdirs, writes, and answers a valid-looking reference — while the map drops it forever, leaving an unresolved label and no error anywhere.
     const r = await adoptFile(root, await pick('Hidden.pdf'), {
       allow: 'any',
       subfolder: '.private',
@@ -1224,17 +1202,14 @@ describe('adoptFile — the shared adoption seam', () => {
   })
 
   it('refuses a name that cannot be written as a link and read back', async () => {
-    // The reference pattern is single-line, so a name carrying a break mints one that writes and
-    // never parses — the same permanent blank the bracket and pipe refusals exist to prevent.
+    // The reference pattern is single-line, so a name carrying a break mints one that writes and never parses — the same permanent blank the bracket and pipe refusals exist to prevent.
     for (const name of ['line\nbreak.pdf', 'Q3|draft.pdf', 'Summary]].pdf'])
       expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({ ok: false })
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
   })
 
   it('refuses a subfolder that is a symlink INTO the nexus — the lexical check cannot see it', async () => {
-    // A linked attachments folder is ordinary in a vault. Containment passes, and `resolveUnderRoot`
-    // bounds the NEXUS, which a link at the content tree satisfies — so the bytes would land among
-    // the user's pages, under a name `buildAssetMap` never walks into and can never resolve again.
+    // A linked attachments folder is ordinary in a vault. Containment passes, and `resolveUnderRoot` bounds the NEXUS, which a link at the content tree satisfies — so the bytes would land among the user's pages, under a name `buildAssetMap` never walks into and can never resolve again.
     await mkdir(join(root, 'Projects', 'Secret'), { recursive: true })
     await symlink(join(root, 'Projects', 'Secret'), join(root, 'file-assets', 'Linked'))
 
@@ -1245,8 +1220,7 @@ describe('adoptFile — the shared adoption seam', () => {
   })
 
   it('a pick from a hidden folder UNDER the root is copied out, never referenced in place', async () => {
-    // `underAssetRoot` admits the dot-prefixed segment `indexable` drops, so an in-place reference
-    // here would name a file the map can never hold — resolvable by nothing, with no error anywhere.
+    // `underAssetRoot` admits the dot-prefixed segment `indexable` drops, so an in-place reference here would name a file the map can never hold — resolvable by nothing, with no error anywhere.
     await mkdir(join(root, 'file-assets', '.archive'), { recursive: true })
     await writeFile(join(root, 'file-assets', '.archive', 'Buried.pdf'), 'buried-bytes')
 
@@ -1272,10 +1246,7 @@ describe('adoptFile — the shared adoption seam', () => {
 })
 
 describe('a file value never destroys what it stops naming', () => {
-  // The seam dedups, so two pages picking the same source share ONE file on disk. A Replace that
-  // ever learned to delete would destroy what another page's reference names, unrecoverably — and
-  // the deleting path (`dropReplacedAsset`) is safe for banners only because they are singletons.
-  // This asserts the FILE, not the absence of a call: a call-spy passes with zero implementation.
+  // The seam dedups, so two pages picking the same source share ONE file on disk; a Replace that ever learned to delete would destroy what another page's reference names. This asserts the FILE, not the absence of a call: a call-spy passes with zero implementation.
   beforeEach(async () => {
     await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
     await writeFile(
@@ -1317,9 +1288,7 @@ describe('a file value never destroys what it stops naming', () => {
 })
 
 describe('the acceptance chain, read raw off the disk at every step', () => {
-  // The per-step facts each have their own test; this is the one that crosses them the way a
-  // session does — pick, add, add, replace, remove, clear — asserting the page's actual bytes,
-  // since the criterion is what an outside tool sees, not what the decoder answers.
+  // The one that crosses the per-step facts the way a session does — pick, add, add, replace, remove, clear — asserting the page's actual bytes, since the criterion is what an outside tool sees, not what the decoder answers.
   let outside: string
   beforeEach(async () => {
     outside = await mkdtemp(join(tmpdir(), 'pom-chain-'))

@@ -24,9 +24,7 @@ describe('pastedUrl — what counts as a pasted address', () => {
     expect(pastedUrl(`  ${URL}  `)).toBe(URL)
   })
 
-  // The regression this predicate exists for. `isValidLink` asks whether something WOULD open, and
-  // says yes to all of these — so gating on it turned a filename copied out of a terminal into a
-  // link, and `3.14` into a label reading `3.0.0.14`.
+  // `isValidLink` asks whether something WOULD open, and says yes to all of these — so gating on it turned a filename copied out of a terminal into a link, and `3.14` into a label reading `3.0.0.14`.
   it('refuses a dotted token that is not an address', () => {
     for (const s of ['App.tsx', 'readme.md', 'package.json', 'Node.js', '3.14', 'v1.2'])
       expect(pastedUrl(s), s).toBeNull()
@@ -74,9 +72,7 @@ describe('decidePaste — a selection, the wrap axis', () => {
     expect(textOf(at({ ...sel, pasteIntoText: false, inverse: true }))).toBe(`[the docs](${URL})`)
   })
 
-  // Not wrapping means the selection is replaced, which is an ordinary paste at a caret — and a
-  // caret paste formats. The inverse was already spent choosing the axis, so it does not flip the
-  // format a second time.
+  // Not wrapping means the selection is replaced, which is an ordinary paste at a caret — and a caret paste formats. The inverse was already spent choosing the axis, so it does not flip the format a second time.
   it('formats when it does not wrap', () => {
     expect(textOf(at({ ...sel, pasteIntoText: false }))).toBe(`[${URL}](${URL})`)
     expect(textOf(at({ ...sel, pasteIntoText: true, inverse: true }))).toBe(`[${URL}](${URL})`)
@@ -88,16 +84,14 @@ describe('decidePaste — a selection, the wrap axis', () => {
     )
   })
 
-  // A multi-line selection is not a label — the link would straddle a line break and stop being one.
-  // The selection is replaced by the caret paste's formatted link instead.
+  // A multi-line selection is not a label — the link would straddle a line break and stop being one. The selection is replaced by the caret paste's formatted link instead.
   it('does not wrap a selection spanning a line break', () => {
     expect(textOf(at({ selectionText: 'two\nlines', pasteIntoText: true }))).toBe(
       `[${URL}](${URL})`,
     )
   })
 
-  // The whole point of the wrap: your words are the label, so the nexus-wide format has nothing to
-  // say about it.
+  // The whole point of the wrap: your words are the label, so the nexus-wide format has nothing to say about it.
   it('ignores the default format when wrapping', () => {
     expect(textOf(at({ ...sel, pasteIntoText: true, format: 'link-short' }))).toBe(
       `[the docs](${URL})`,
@@ -139,8 +133,7 @@ describe('decidePaste — which form the label takes', () => {
   })
 })
 
-// One formatter, or a pasted link and the same URL in a property cell read differently. If the paste
-// path ever grows its own domain-stripping, this is what catches it.
+// One formatter, or a pasted link and the same URL in a property cell read differently. If the paste path ever grows its own domain-stripping, this is what catches it.
 describe('the label agrees with the property cell', () => {
   it('matches linkDisplayText for every form', () => {
     for (const format of ['link-full', 'link-short', 'link-title'] as const) {

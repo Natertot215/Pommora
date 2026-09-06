@@ -3,11 +3,7 @@ import { sidecarPath, type SidecarKind } from '../Locations/paths'
 import { parseJsonText, readTextOrNull, writeJson } from './atomicWrite'
 import { machine } from '../Platform/machine'
 
-/** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
- *  Views, container config, within-folder orders, property assignment and the Remove cache all
- *  rewrite the same file whole, so they queue on one key or the last writer back silently drops
- *  whatever the others just set. The banner and icon patches reach the same key without coming
- *  through here — `rmwJsonStrict` derives it from the path they hand it. */
+/** Reads FRESH inside the lock. Views, container config, within-folder orders, property assignment and the Remove cache all rewrite the same file whole, so they queue on one key or the last writer back silently drops whatever the others just set. */
 export function withSidecarLock<T>(
   absFolder: string,
   kind: SidecarKind,

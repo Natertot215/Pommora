@@ -131,7 +131,7 @@ const pageEntry = z.looseObject({
 // Elements are looseObjects too — a strict element shape would strip nested foreign keys.
 const embeddedView = z.looseObject({
   source_id: z.string().min(1),
-  config: z.unknown().optional(), // zod 4 treats a bare unknown() key as required
+  config: z.unknown().optional(),
 })
 const viewEntry = z.looseObject({
   ...chassisFields,

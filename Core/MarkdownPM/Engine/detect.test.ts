@@ -84,7 +84,7 @@ describe('parseListMarker (single marker source)', () => {
   it('returns null for non-list lines and markers with no trailing space', () => {
     expect(parseListMarker('plain')).toBeNull()
     expect(parseListMarker('-[x]done')).toBeNull()
-    expect(parseListMarker('→go')).toBeNull() // arrow needs a trailing space, like every other marker
+    expect(parseListMarker('→go')).toBeNull()
   })
   it('indentLevel: tabs + ⌊spaces/2⌋, capped at the max', () => {
     expect(indentLevel('')).toBe(0)
@@ -274,7 +274,6 @@ describe('fence run length — a longer fence holds shorter ones', () => {
 })
 
 describe('the markdown-link label', () => {
-  // The label group reads escapes, so a title carrying `]` can be named in this form at all.
   it('an escaped label tokenizes rather than producing nothing', () => {
     const doc = 'see [Notes \\[WIP\\] final](Target) end'
     const link = tokenize(doc).find((t) => t.kind === 'link')
@@ -282,8 +281,7 @@ describe('the markdown-link label', () => {
     expect(doc.slice(link!.contentRange[0], link!.contentRange[1])).toBe('Notes \\[WIP\\] final')
   })
 
-  // Obsidian shows this as a connection followed by literal parens, and a shared vault is the
-  // reason both syntaxes exist at all.
+  // Obsidian shows this as a connection followed by literal parens, and a shared vault is the reason both syntaxes exist at all.
   it('a wikilink followed by parens stays a connection', () => {
     const tokens = tokenize('see [[Notes]](Target) end')
     expect(tokens.some((t) => t.kind === 'wikiLink')).toBe(true)

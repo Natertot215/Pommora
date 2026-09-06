@@ -75,9 +75,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
     if (await pathExists(dir)) {
       for (const e of await listEntries(dir)) {
         if (e.kind !== 'dir') continue
-        // STRICT per sidecar: a folder without one simply isn't a Space, but an
-        // unreadable/corrupt sidecar fails the whole load — a world missing a real Space
-        // would make the reconcile silently strip that Space's valid tags from every file it touches.
+        // STRICT per sidecar: a folder without one simply isn't a Space, but an unreadable/corrupt one fails the whole load — a world missing a real Space would make the reconcile silently strip that Space's valid tags from every file it touches.
         const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
         if (!sc.ok) {
           if (sc.error.code === 'not-found') continue
@@ -219,16 +217,14 @@ export async function createContextGroup(
   if (invalidContextTitle(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
-  // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently
-  // share one folder with the existing group.
+  // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently share one folder with the existing group.
   const taken = new Set(reg.value.contexts.map((c) => normalizeTitle(c.title)))
   return createDisambiguated(name, async (title) => {
     if (taken.has(normalizeTitle(title))) return fail('exists', `"${title}" already exists.`)
     const id = newId()
     const written = await mutateRegistryFile(root, (cur) => {
       if (cur.contexts.some((c) => c.title === title)) return cur
-      // No icon: a fresh group resolves to the kind's glyph and follows a nexus default.
-      // Stamping one would outrank that override forever.
+      // No icon: a fresh group resolves to the kind's glyph and follows a nexus default; stamping one would outrank that override forever.
       return { contexts: [...cur.contexts, { id, title }] }
     })
     if (!written.ok) return written

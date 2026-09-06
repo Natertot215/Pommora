@@ -32,7 +32,7 @@ export function DetailTitleHeader({
 
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    e.stopPropagation() // don't also trip the banner's Change/Remove menu underneath
+    e.stopPropagation()
     const action = await requestMenu()
     if (action === 'rename') setEditing(true)
     else if (action === 'editIcon') onEditIcon()
