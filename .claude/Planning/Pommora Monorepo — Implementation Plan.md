@@ -818,6 +818,25 @@ The run board at `// Planning // Pommora Monorepo — Progress.html` is republis
   - [ ] Task 19 — Docs sweep
   - [ ] Task 20 — Rules, Architecture split, Mobile plan
 
+### Parallel Simplification Lane
+
+Ruled 09-05-2026. Folders whose location is final and which no remaining main-line task rewrites may take an architecture-free simplification pass from Opus agents while Phase 2 continues. The lane runs only while the main line is on Tasks 6–9; it closes before Task 10 opens. The post-compact prompt that drives it:
+
+```
+Pommora monorepo run, repo /Users/nathantaichman/The Studio/Projects/Project Pommora. Read .claude/Planning/Pommora Monorepo — Implementation Plan.md (Global Constraints, Rulings, Deviations, this section) and the run board's DATA block for where the main line stands. Tasks 0–5 are committed; Pommora/src/shared and Pommora/src/renderer no longer exist; Core/, UIX/, Desktop/ hold their files at their final locations.
+
+The lane. These folders are set in stone (location final, no remaining task moves or rewrites their contents) and get a simplification pass now, in parallel with the main line:
+  UIX: Buttons, Cards, Caret, Controls, Elements, Fields, Glass, Labels, Symbols, Table, Theme, Utilities, Windows, and Pickers except Pickers/PickerControl (Task 13 severs its Core edge).
+  Core: Connections, Utilities.
+Not in the lane, because a later task rewrites or re-nests them: every Core folder with a node: import (Task 6), Core/Session and every surface that calls window.nexus (Task 7), Pommora/src/main (Task 8), Core/Nexus/mutate.ts (Task 9), Core/{Interface,Views,Properties,Tiles,Navigation,Settings} (Task 10, Fable's review first), Core/MarkdownPM (Tasks 11 and 14), UIX/{Animations,Interactions,Menus} (Task 12's motion and pointer work, Task 13's menus), Core/{Actions,Contract,Platform} (Tasks 6, 7, 13).
+
+Protocol. At most three lane agents at once, each with an exclusive folder list; a folder appears in one agent's list only. The main-line implementer's brief names the lane folders as off-limits for the duration. A lane agent runs `npx tsc -p UIX` (or `-p Core`) and `npx vitest run <its folders>` for its own loop, never the full root gates: another agent's half-finished edit would read as its red. When a lane agent reports, the supervisor waits for the tree to be still (no agent mid-edit), runs the four root gates, and commits that agent's paths alone with `git add -- <folders>`; never `git add -A`, never stash, never reset. Exit codes read directly.
+
+Each lane agent's brief: code-simplifier, Opus, no sub-agents, no worktree, no commits. Behavior identical; no file moves or renames; variable, function, and export names unchanged; no new abstractions, barrels, or index files. Cut: duplicate logic within the folder, one-caller exports (inline them), forwarding re-exports, dead branches the type gate proves unreachable, hand-rolled parallels to what UIX/Utilities or UIX/Theme already provides. Collapse a stylesheet of about fifteen lines or fewer into the component's sibling .css.ts or its element's own style (card-add-picker's single --row-pad-y class is the type case). Comments: very aggressive, delete by default, keep only a why the code cannot state, one per case; KNOB and (Nathan's call) markers survive byte-for-byte. Rulings that bind: the Glass recipes for Controls and Segment are identical on purpose and stay two; nothing on the never-delete list goes. Report per folder: each cut as file → what → lines; any non-simplicity bug seen (report, do not fix); the folder's typecheck and test exits; `git diff HEAD --stat` for its folders only.
+
+Sequence: dispatch the lane's agents when Task 6 (Fable) dispatches, not before, so the comment killer's commit is their base. Close the lane (all agents reported, committed, gates green) before Task 10's review begins. Record each lane commit under Deviations with its hash and line delta, and add its number to the board's code-line series.
+```
+
 ### Rulings
 
 - 09-05-2026 (Nathan): `Core/Testing` collapses. Harnesses live beside what they exercise (editor harness in MarkdownPM, pointer harness in UIX/Interactions, the two Views helpers in Views, `testTree` back in Navigation), the two JSON fixtures in `Core/Views/fixtures/`, and the vitest setup file at Core's root as `vitest.setup.ts`.
