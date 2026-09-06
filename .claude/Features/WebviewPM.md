@@ -5,7 +5,7 @@ Pommora's web layer: live websites embedded in Page bodies, an in-app browser, o
 
 ### Webpage Embeds
 
-A markdown link alone on its own line with an explicit http(s) scheme is a webpage embed: `![Label](url)`, recognized by the grammar in `Core/Web/webpageEmbed.ts` and rendered as a live website tile on the shared embed framework, height-draggable and persisted per host and address like a page tile. The document stays plain CommonMark; a shared vault reads the line as an image reference pointing at a URL. Formation is deliberate: a line the selection sits on stays raw text, and the tile forms when the selection departs, so typing an address never pulls a tile in under the caret. A tile is created through the context menu's **Embed ▸ Webpage**, through **Paste As ▸ Embedded Link** where a copied address meets a blank line, or by hand.
+A markdown link alone on its own line with an explicit http(s) scheme is a webpage embed: `![Label](url)`, recognized by the grammar in `Core/MarkdownPM/Embeds/webpageEmbed.ts` and rendered as a live website tile on the shared embed framework, height-draggable and persisted per host and address like a page tile. The document stays plain CommonMark; a shared vault reads the line as an image reference pointing at a URL. Formation is deliberate: a line the selection sits on stays raw text, and the tile forms when the selection departs, so typing an address never pulls a tile in under the caret. A tile is created through the context menu's **Embed ▸ Webpage**, through **Paste As ▸ Embedded Link** where a copied address meets a blank line, or by hand.
 
 A guest is live only while its tile is fully visible in the scrollport, since a partially clipped webview paints outside its own box; a tile scrolled out keeps its last frame painted on its face, a failed load shows the site's domain, and re-entry retries a failed site. Tile titles are display-only and resolved at render — a hand-written label wins, and an empty one derives through the Nexus's default link format, sharing the fetched-title path the cells use. The tile's grip menu carries **Edit Link**, which returns the tile to its raw address with the address selected, re-forming the tile when the line is left.
 
@@ -15,7 +15,7 @@ A live tile is inert until clicked in: wheel and pointer pass to the document, a
 
 ### Link Opening
 
-One renderer adjudicator, `Core/Platform/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser. A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
+One renderer adjudicator, `Core/Web/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser. A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
 
 ### Web Sessions
 

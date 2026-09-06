@@ -31,7 +31,7 @@ Clicking a connection opens the page, routed by **Open Connections In Preview** 
 
 ### The Link Menu
 
-Right-clicking any link, wherever it sits, opens one native menu built from one model (`Core/Actions/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
+Right-clicking any link, wherever it sits, opens one native menu built from one model (`Core/MarkdownPM/Links/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
 
 | Action | Page Connection | Website Link |
 | --- | --- | --- |
