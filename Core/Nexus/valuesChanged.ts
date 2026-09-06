@@ -1,4 +1,4 @@
-// Main's own page writes are invisible to the watcher (the echo window), so every writer notes the page it touched and one flush per operation pushes them, grouped by container, with page ids resolved from the live tree.
+// Page writes are invisible to watcher, so writers note touched pages and flush per operation, grouped by container.
 
 import { getLiveTree } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
@@ -6,7 +6,7 @@ import { parentOf } from './treePatch'
 import { relPosix } from '../Paths/paths'
 import type { NexusTree, ValueChange } from './tree'
 
-// One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
+// One root at a time: moved sessions leave unflushed writes unreachable.
 let ledger: { root: string; byRel: Map<string, Set<string>> } | null = null
 
 export function noteValueWrite(root: string | null, absFile: string): void {

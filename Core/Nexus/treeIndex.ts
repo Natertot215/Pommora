@@ -1,4 +1,4 @@
-// One walk per tree; every table below is a lazy projection of its records, cached on the tree object. A new lookup belongs here, never as its own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still answer "ambiguous"; the keyed projections collapse them last-wins.
+// One walk per tree; every table is cached on the tree. Record LIST is source; keyed projections collapse duplicates last-wins.
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'

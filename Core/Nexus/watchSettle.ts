@@ -22,7 +22,7 @@ export function isNavPath(root: string, path: string): boolean {
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
-// We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
+// We DO watch .nexus/ — Contexts and settings live there. Checks path below root, so root's dot-segments can't blank watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)

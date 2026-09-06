@@ -32,7 +32,7 @@ export const baseSidecar = z.looseObject({
   icon: z.string().optional(),
 })
 
-// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
+// Properties live in `.nexus/properties.json`; readNexus joins ids→defs.
 export const pageCollectionSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   set_order: ulidList,
@@ -61,7 +61,7 @@ export const pageFrontmatter = z.looseObject({
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 
-/** A container's sidecar is read through this table, never by naming the schema at the call site. */
+/** A container's sidecar is read here, not named at call site. */
 export type ContainerKind = 'collection' | 'set'
 type ContainerSidecar = z.infer<typeof pageCollectionSidecar> | z.infer<typeof pageSetSidecar>
 export const readContainerSidecar = (

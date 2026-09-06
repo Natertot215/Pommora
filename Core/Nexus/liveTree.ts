@@ -17,7 +17,7 @@ export function getLiveTree(): NexusTree | null {
   return tree
 }
 
-/** Null — no tree held, or the patch can't resolve — tells the caller to fall back to `refreshTree`. Every call marks disk as moved, so an in-flight walk that started earlier discards its result and re-walks. */
+/** Null if no tree held or patch can't resolve; every call marks disk moved. */
 export function patchLiveTree(fn: (t: NexusTree) => NexusTree | null): NexusTree | null {
   epoch++
   if (!tree) return null
@@ -27,7 +27,7 @@ export function patchLiveTree(fn: (t: NexusTree) => NexusTree | null): NexusTree
   return next
 }
 
-/** The epoch bump comes first because `refreshTree` joins any in-flight walk, and one that started before the change would otherwise install pre-change disk as canon with nothing scheduled to correct it. */
+/** The epoch bump comes first: in-flight walks started before change would install pre-change disk. */
 export function refreshAfterWrite(root: string): Promise<NexusTree> {
   epoch++
   return refreshTree(root)
