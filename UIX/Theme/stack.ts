@@ -1,29 +1,27 @@
-// A z-index only competes inside its OWN stacking context, so these are separate ladders, never one number line: `shell` orders the window frame's pieces against each other, `local` lifts an element over its own siblings wherever it happens to live, and `top` orders the fixed and body-portalled surfaces that all land in the root context together. A step from one group is not comparable to a step from another.
+// A z-index competes only inside its own stacking context, so these are separate ladders: a step from one group is never comparable to a step from another.
 
 export const stack = {
-  /** The window frame, back to front — every step here is a child of the shell. */
+  /** The window frame, back to front. */
   shell: {
-    content: 0, // the editor pane, held in its own context so nothing inside it escapes over the frame
+    content: 0,
     sidebar: 1,
     titlebar: 2,
-    sidebarToggle: 3, // over the title-bar strips
+    sidebarToggle: 3,
     sidebarResize: 4,
-    inspector: 4, // it never overlaps the sidebar's strip, so the shared step is coincidence rather than a contract
-    inspectorResize: 5, // over its own glass
-    toolbar: 6, // over every panel
+    inspector: 4,
+    inspectorResize: 5,
+    toolbar: 6,
   },
-  /** In-context lifts. Consumers sit in DIFFERENT stacking contexts, so a step ranks a thing against
-   *  its own siblings and never against another surface's. */
+  /** Lifts over an element's own siblings, wherever it lives. */
   local: {
     lifted: 10,
-    overlay: 20, // over the lifted
+    overlay: 20,
   },
-  /** The top layer — fixed or body-portalled surfaces. The one group whose steps genuinely rank
-   *  against each other, because they all resolve in the root context. */
+  /** Fixed and body-portalled surfaces, which all resolve in the root context. */
   top: {
-    dropPreview: 999, // one step under the ghost being dragged
+    dropPreview: 999,
     floating: 1000,
-    menu: 1100, // a portalled popup and, before it in DOM order, the shield the base popup draws
-    caret: 2147483647, // over every layer, deliberately unbeatable
+    menu: 1100,
+    caret: 2147483647,
   },
 } as const

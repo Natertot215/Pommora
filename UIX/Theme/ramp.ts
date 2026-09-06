@@ -1,10 +1,8 @@
-// The palette grid and everything that reads it: a stored color string resolves through here to the
-// cell it names and the CSS that cell paints. Every seat is a token from color.css, never a value.
+// The palette grid and everything that reads it: a stored color string resolves here to the cell it names and the CSS that cell paints. Every seat is a token from color.css, never a value.
 import {
   type AccentSetting,
   type CellKey,
   DEFAULT_ACCENT,
-  PINK,
   RAMP_FAMILIES,
   RAMP_STEPS,
   type RampFamily,
@@ -23,9 +21,11 @@ const c = colorVars.color
 const WHITE = c.system.white
 const BLACK = c.system.black
 
+// Rows
+
 type Row = readonly [string, string, string, string, string, string, string, string]
 
-/** The shading knob — each step moves this far from the anchor. */
+/** KNOB — how far each step moves from its anchor. */
 const RAMP_STEP = 15
 const shade = (i: number): number => 100 - RAMP_STEP * i
 
@@ -40,7 +40,7 @@ const single = (hex: string): Row => [
   mixAt(hex, shade(4), WHITE),
 ]
 
-/** oklch, so the passage between two anchors keeps its chroma instead of greying out. */
+/** oklch keeps the passage between two anchors chromatic instead of greying out. */
 const blend = (light: string, pct: number, dark: string): string => mixAt(light, pct, dark, 'oklch')
 
 const pair = (dark: string, light: string): Row => [
@@ -54,19 +54,19 @@ const pair = (dark: string, light: string): Row => [
   mixAt(light, shade(2), WHITE),
 ]
 
-/** Three seats — purple → lavender → pink. Its amounts were settled by eye, so the row states them. */
+/** Purple → lavender → pink; the amounts were settled by eye. */
 const purpleRow: Row = [
   mixAt(c.solid.purple, 70, BLACK),
   c.solid.purple,
   blend(c.solid.lavender, 50, c.solid.purple),
   c.solid.lavender,
-  blend(PINK, 50, c.solid.lavender),
-  PINK,
-  mixAt(PINK, 80, WHITE),
-  mixAt(PINK, 60, WHITE),
+  blend(c.solid.pink, 50, c.solid.lavender),
+  c.solid.pink,
+  mixAt(c.solid.pink, 80, WHITE),
+  mixAt(c.solid.pink, 60, WHITE),
 ]
 
-/** The app's own grey tokens, window substrate up to system white — a token ladder, never computed. */
+/** The app's own greys, window substrate up to system white. */
 const greyRow: Row = [
   c.background.window,
   c.surface.primary,
@@ -89,7 +89,7 @@ const RAMP: Record<RampFamily, Row> = {
   grey: greyRow,
 }
 
-/** The back-compat seam: a bare `red` on disk resolves through here instead of being migrated. */
+/** Where each spectrum solid sits on the grid; a bare `red` on disk resolves through here rather than migrating. */
 export const ANCHOR_CELLS: Record<keyof typeof SPECTRUM, CellKey> = {
   red: 'red-3',
   orange: 'orange-3',
@@ -100,8 +100,11 @@ export const ANCHOR_CELLS: Record<keyof typeof SPECTRUM, CellKey> = {
   lightBlue: 'blue-5',
   purple: 'purple-1',
   lavender: 'purple-3',
+  pink: 'purple-5',
   grey: 'grey-6',
 }
+
+// Reading a cell
 
 const parse = (key: CellKey): { family: RampFamily; step: RampStep } => {
   const cut = key.lastIndexOf('-')
@@ -116,10 +119,10 @@ export const cellColor = (key: CellKey): string => {
   return RAMP[family][step]
 }
 
-/** The brightest greys tint from a darkness offset so their wash still carries the light text. A separate knob from RAMP_STEP: the two retune on different axes. */
+/** KNOB — how far the two brightest greys darken so their light text still reads. */
 const DARKNESS_STEP = 15
 
-/** Greyscale borders ride label-tertiary — the row has no chroma of its own to outline with. */
+/** The grey row has no chroma to outline with, so its borders ride label-tertiary. */
 const GREY_OUTLINES = [35, 45, 55, 65, 75, 85, 95, 100].map((pct) => tintAt(c.label.tertiary, pct))
 
 export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
@@ -132,11 +135,11 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   }
 }
 
-/** On the grey row the ring and the chip's border are one thing; every other row rings at tint-primary. */
 export const cellRing = (key: CellKey): string =>
   cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')
 
-// The one crossing from a stored color string to a render key; it absorbs the legacy vocabulary.
+// Stored colors
+
 const ANCHORS: Readonly<Record<string, CellKey>> = ANCHOR_CELLS
 
 export function labelColorFor(color: string | undefined): CellKey | 'default' {
@@ -146,14 +149,14 @@ export function labelColorFor(color: string | undefined): CellKey | 'default' {
   return isColorKey(color) ? (color as CellKey) : 'default'
 }
 
-/** The CSS color a palette key resolves to: its stored cell, or the runtime system accent when unset ("Default"). One source for the link cell/editor AND the checkbox cell/editor. */
+/** A stored cell's CSS, or the runtime system accent when unset. */
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--system-accent)'
   const key = labelColorFor(color)
   return cellColor(key === 'default' ? 'grey-4' : key)
 }
 
-/** `fallback` is what an unset color follows and resolves to no cell, so the picker rings nothing and the accent's own cell stays assignable. */
+/** `fallback` resolves to no cell, so the picker rings nothing and the accent's own cell stays assignable. */
 export function resolveColor(
   color: string | undefined,
   fallback: string,
@@ -162,7 +165,8 @@ export function resolveColor(
   return { name: labelColorFor(color), css: solidColorCss(color) }
 }
 
-/** There is no separate "accent" color — it is always a cell of the ramp, resolved as a chip is. */
+// The accent
+
 const accentCell = (setting: string): string => {
   const key = labelColorFor(setting)
   return cellColor(key === 'default' ? ANCHOR_CELLS[DEFAULT_ACCENT] : key)
@@ -173,20 +177,19 @@ export function accentValue(setting: AccentSetting, systemColor: string | null):
   return accentCell(setting)
 }
 
-/** Every accented surface derives from `--accent`, so this one property recolors all of them. */
 export function applyAccent(setting: AccentSetting, systemColor: string | null): void {
   if (typeof document === 'undefined') return
   document.documentElement.style.setProperty('--accent', accentValue(setting, systemColor))
 }
 
-/** Independent of the `--accent` setting. External `[text](url)` links bind to `--system-accent`; internal connections bind to `--accent`. */
+/** External `[text](url)` links bind to `--system-accent`, independent of the `--accent` setting. */
 export function applySystemAccent(systemColor: string | null): void {
   if (typeof document === 'undefined') return
   const value = systemColor ?? readCssAccentColor() ?? accentCell(DEFAULT_ACCENT)
   document.documentElement.style.setProperty('--system-accent', value)
 }
 
-/** Fallback for contexts without Electron's native accent (e.g. the showcase). */
+/** For contexts without Electron's native accent, such as the showcase. */
 export function readCssAccentColor(): string | null {
   if (typeof document === 'undefined') return null
   const probe = document.createElement('span')
