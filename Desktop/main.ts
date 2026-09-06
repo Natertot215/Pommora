@@ -29,10 +29,9 @@ import {
 } from '@pommora/core/Settings/personalization'
 import { readLivePersonalization, readWatchScope } from '@pommora/core/Settings/settings'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
-import { showContextMenu } from './Actions/contextMenu'
+import { installAppMenu } from './Actions/appMenu'
 import { installEditorContextMenu, setFormatState, setGripHot } from './Actions/editorMenu'
-import { installAppMenu } from './Actions/menu'
-import { poppers } from './Actions/poppers'
+import { popRowMenu } from './Actions/rowMenu'
 import { push, serveIpc, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
 import {
@@ -233,9 +232,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
         return null
       }
     },
-    menu: (k, ...args) => (win ? poppers[k](win, ...args) : Promise.resolve(null as never)),
-    contextMenu: (target, deps, onChanged) =>
-      win ? showContextMenu(win, target, deps, onChanged) : Promise.resolve(),
+    menu: (req) => (win ? popRowMenu(win, req) : Promise.resolve(null)),
     thumbnails: {
       capture: (root, navKey, rect, scaleFactor) =>
         win ? captureThumbnail(win, root, navKey, rect, scaleFactor) : Promise.resolve(null),

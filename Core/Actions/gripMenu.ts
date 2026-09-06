@@ -1,3 +1,5 @@
+import type { ActionItem } from './menuModel'
+
 export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
 
 /** A `title`-bearing node is a page leaf; a `children`-bearing one drills. */
@@ -21,13 +23,13 @@ export type GripMenuContext =
   | { kind: 'plain' }
 
 export type GripMenuAction =
-  | { action: 'source'; title: string }
-  | { action: 'editLink' }
-  | { action: 'zoom'; factor: number }
-  | { action: 'listKind'; kind: ListKind }
-  | { action: 'rename' }
-  | { action: 'size'; level: number }
-  | { action: 'delete' }
+  | `source:${string}`
+  | 'editLink'
+  | `zoom:${number}`
+  | `listKind:${ListKind}`
+  | 'rename'
+  | `size:${number}`
+  | 'delete'
 
 /** Named once for both the editor's Format ▸ Heading submenu and the heading grip's Size submenu. */
 export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
@@ -45,3 +47,71 @@ export const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
   { kind: 'checkbox', label: 'Checklist' },
   { kind: 'arrow', label: 'Arrowed' },
 ]
+
+const source = (n: PickNode): ActionItem<GripMenuAction> =>
+  n.children
+    ? { label: n.label, action: `source:${n.label}`, submenu: n.children.map(source) }
+    : { label: n.label, action: `source:${n.title ?? n.label}` }
+
+/** An unresolved token has no tile to scale — the arm waits for the claim. */
+const scaleRow = (ctx: {
+  zoomSteps: readonly ZoomOption[]
+  zoom: number | null
+}): ActionItem<GripMenuAction> =>
+  ctx.zoom === null
+    ? { label: 'Scale', action: 'zoom:1', disabled: true }
+    : {
+        label: 'Scale',
+        action: 'zoom:1',
+        submenu: ctx.zoomSteps.map(({ label, factor }) => ({
+          label,
+          action: `zoom:${factor}`,
+          checked: factor === ctx.zoom,
+        })),
+      }
+
+function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
+  switch (ctx.kind) {
+    case 'embed':
+      return [
+        ctx.tree.length > 0
+          ? { label: 'Source', action: 'source:', submenu: ctx.tree.map(source) }
+          : { label: 'Source', action: 'source:', disabled: true },
+        scaleRow(ctx),
+      ]
+    case 'webpage':
+      return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx)]
+    case 'list':
+      return [
+        {
+          label: 'Type',
+          action: 'listKind:ordered',
+          submenu: LIST_KIND_LABELS.map(({ kind, label }) => ({
+            label,
+            action: `listKind:${kind}`,
+            checked: ctx.current === kind,
+          })),
+        },
+      ]
+    case 'heading':
+      return [
+        { label: 'Rename', action: 'rename' },
+        {
+          label: 'Size',
+          action: 'size:0',
+          submenu: HEADING_LEVELS.map(({ level, label }) => ({
+            label,
+            action: `size:${level}`,
+            checked: ctx.level === level,
+          })),
+        },
+      ]
+    case 'plain':
+      return []
+  }
+}
+
+export function gripMenuItems(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
+  const own = ownRows(ctx)
+  return [...own, { label: 'Delete', action: 'delete', separatorBefore: own.length > 0 }]
+}

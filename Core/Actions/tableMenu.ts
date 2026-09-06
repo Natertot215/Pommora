@@ -1,5 +1,6 @@
 import type { ActionItem } from './menuModel'
-import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
+import { alignRows } from './columnMenu'
+import type { ColumnAlign } from '../Views/views'
 
 export type TableMenuKind = 'column' | 'row' | 'header'
 
@@ -12,9 +13,7 @@ export interface TableMenuContext {
 }
 
 export type TableMenuAction =
-  | 'align:left'
-  | 'align:center'
-  | 'align:right'
+  | `align:${ColumnAlign}`
   | 'col:copy'
   | 'col:insert-left'
   | 'col:insert-right'
@@ -52,16 +51,7 @@ export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuActio
     ]
   return [
     { label: 'Copy', action: 'col:copy' },
-    {
-      separatorBefore: true,
-      label: 'Align',
-      action: 'align:left',
-      submenu: COLUMN_ALIGNS.map((a) => ({
-        label: `${a[0].toUpperCase()}${a.slice(1)}`,
-        action: `align:${a}` as TableMenuAction,
-        checked: ctx.align === a,
-      })),
-    },
+    { separatorBefore: true, label: 'Align', action: 'align:left', submenu: alignRows(ctx.align) },
     // A Pommora-only visual: the .md stays a plain table.
     ...(ctx.index === 0
       ? [

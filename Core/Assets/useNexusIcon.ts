@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 
 /** A photo outranks a glyph in display; a glyph outranks the default placeholder. */
 export function useNexusIcon() {
@@ -15,10 +17,9 @@ export function useNexusIcon() {
   const closeEditor = (): void => setEditing(false)
 
   const openMenu = async (): Promise<void> => {
-    const action = await host().ask('nexus:iconMenu', {
-      hasPhoto: !!profileImage,
-      hasGlyph: !!profileIcon,
-    })
+    const action = await popRowMenu(
+      nexusIconMenuItems({ hasPhoto: !!profileImage, hasGlyph: !!profileIcon }),
+    )
     if (action === 'changeIcon') setPickerOpen(true)
     else if (action === 'addPhoto') {
       const source = await host().ask('nexus:pickFile')

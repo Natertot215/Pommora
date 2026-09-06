@@ -23,6 +23,9 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/commands'
 import { useBridgeSubscriptions } from '../Platform/useBridgeSubscriptions'
+import { popRowMenu, useNativeMenus } from '../Platform/nativeMenus'
+import { NativePickerContext } from '@pommora/uix/Pickers/PickerControl'
+import { RowMenuHost } from './Menus/RowMenuHost'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -69,6 +72,7 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useBridgeSubscriptions()
+  const nativePicker = useNativeMenus() ? popRowMenu : null
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -91,100 +95,103 @@ export function App(): React.JSX.Element {
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control
-    <div
-      className={
-        'shell' +
-        (sidebarHidden ? ' sidebar-hidden' : '') +
-        (ribbonVisible ? '' : ' ribbon-hidden') +
-        (inspectorOpen ? ' inspector-open' : '') +
-        (resizing ? ' is-resizing' : '')
-      }
-      style={
-        {
-          '--sidebar-width': `${sidebarWidth}px`,
-          '--inspector-width': `${inspectorWidth}px`,
-        } as CSSProperties
-      }
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault()
-        const file = e.dataTransfer.files[0]
-        if (file) void openDropped(file)
-      }}
-    >
-      <div className="titlebar" />
-      {status === 'ready' && (
-        <Toolbar
-          inspectorOpen={inspectorOpen}
-          onToggleInspector={() => setInspectorOpen((v) => !v)}
-        />
-      )}
-      <main className="content-pane">
-        <ContentView />
-      </main>
-      <Surface className={paneSlide({ side: 'left', mode: 'overlay' })}>
-        {status === 'ready' && tree && <Ribbon />}
+    <NativePickerContext.Provider value={nativePicker}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control */}
+      <div
+        className={
+          'shell' +
+          (sidebarHidden ? ' sidebar-hidden' : '') +
+          (ribbonVisible ? '' : ' ribbon-hidden') +
+          (inspectorOpen ? ' inspector-open' : '') +
+          (resizing ? ' is-resizing' : '')
+        }
+        style={
+          {
+            '--sidebar-width': `${sidebarWidth}px`,
+            '--inspector-width': `${inspectorWidth}px`,
+          } as CSSProperties
+        }
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault()
+          const file = e.dataTransfer.files[0]
+          if (file) void openDropped(file)
+        }}
+      >
+        <div className="titlebar" />
+        {status === 'ready' && (
+          <Toolbar
+            inspectorOpen={inspectorOpen}
+            onToggleInspector={() => setInspectorOpen((v) => !v)}
+          />
+        )}
+        <main className="content-pane">
+          <ContentView />
+        </main>
+        <Surface className={paneSlide({ side: 'left', mode: 'overlay' })}>
+          {status === 'ready' && tree && <Ribbon />}
+          <Button
+            size="button-large"
+            paddingX="0"
+            className="sidebar-toggle sidebar-collapse"
+            onClick={toggleSidebar}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            <Icon name="log-out" size="titleSmall" className="flip-x" />
+          </Button>
+          {status === 'loading' && <div className="state">Loading Nexus…</div>}
+          {status === 'empty' && (
+            <div className="state">
+              No Nexus Open
+              <Button label="Open Folder…" className="open-btn" onClick={() => void choose()} />
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="state state-error">
+              Couldn’t Open Nexus
+              <span className="state-detail">{error?.message}</span>
+            </div>
+          )}
+          {status === 'ready' && tree && <Sidebar tree={tree} />}
+        </Surface>
+        {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
+        {!sidebarHidden && (
+          <div
+            className="resize-strip sidebar-resize"
+            onPointerDown={sidebarFrame.start('e')}
+            aria-hidden="true"
+          />
+        )}
         <Button
           size="button-large"
           paddingX="0"
-          className="sidebar-toggle sidebar-collapse"
+          className="sidebar-toggle sidebar-expand"
           onClick={toggleSidebar}
-          aria-label="Collapse sidebar"
-          title="Collapse sidebar"
+          aria-label="Show sidebar"
+          title="Show sidebar"
         >
-          <Icon name="log-out" size="titleSmall" className="flip-x" />
+          <Icon name="log-out" size="titleSmall" />
         </Button>
-        {status === 'loading' && <div className="state">Loading Nexus…</div>}
-        {status === 'empty' && (
-          <div className="state">
-            No Nexus Open
-            <Button label="Open Folder…" className="open-btn" onClick={() => void choose()} />
-          </div>
+        {status === 'ready' && <InspectorPane open={inspectorOpen} />}
+        {status === 'ready' && <NavWindow />}
+        {status === 'ready' && <PageWindow />}
+        {status === 'ready' && <PageHistoryWindow />}
+        {status === 'ready' && <WebWindow />}
+        {status === 'ready' && <SettingsWindow />}
+        {status === 'ready' && <IterationWindow />}
+        <ConfirmationWindow />
+        <RowMenuHost />
+        <NotificationLabel />
+        {status === 'ready' && <GlancePane />}
+        {status === 'ready' && inspectorOpen && (
+          <div
+            className="resize-strip inspector-resize"
+            onPointerDown={inspectorFrame.start('w')}
+            aria-hidden="true"
+          />
         )}
-        {status === 'error' && (
-          <div className="state state-error">
-            Couldn’t Open Nexus
-            <span className="state-detail">{error?.message}</span>
-          </div>
-        )}
-        {status === 'ready' && tree && <Sidebar tree={tree} />}
-      </Surface>
-      {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
-      {!sidebarHidden && (
-        <div
-          className="resize-strip sidebar-resize"
-          onPointerDown={sidebarFrame.start('e')}
-          aria-hidden="true"
-        />
-      )}
-      <Button
-        size="button-large"
-        paddingX="0"
-        className="sidebar-toggle sidebar-expand"
-        onClick={toggleSidebar}
-        aria-label="Show sidebar"
-        title="Show sidebar"
-      >
-        <Icon name="log-out" size="titleSmall" />
-      </Button>
-      {status === 'ready' && <InspectorPane open={inspectorOpen} />}
-      {status === 'ready' && <NavWindow />}
-      {status === 'ready' && <PageWindow />}
-      {status === 'ready' && <PageHistoryWindow />}
-      {status === 'ready' && <WebWindow />}
-      {status === 'ready' && <SettingsWindow />}
-      {status === 'ready' && <IterationWindow />}
-      <ConfirmationWindow />
-      <NotificationLabel />
-      {status === 'ready' && <GlancePane />}
-      {status === 'ready' && inspectorOpen && (
-        <div
-          className="resize-strip inspector-resize"
-          onPointerDown={inspectorFrame.start('w')}
-          aria-hidden="true"
-        />
-      )}
-    </div>
+      </div>
+    </NativePickerContext.Provider>
   )
 }

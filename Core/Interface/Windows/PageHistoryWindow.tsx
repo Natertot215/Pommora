@@ -17,6 +17,8 @@ import { useEmbedScale, useSession, type WindowTarget } from '../../Session/stor
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
 import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
@@ -123,7 +125,7 @@ function PageHistoryBody({
   }
   const openMenu = async (ts: number): Promise<void> => {
     const keys = checked.has(ts) ? [...checked] : [ts]
-    const action = await host().ask('history:menu', { batch: keys.length > 1 })
+    const action = await popRowMenu(fileHistoryMenuItems(keys.length > 1))
     if (action === 'restore') await restore(ts)
     else if (action === 'delete') await remove(keys)
   }

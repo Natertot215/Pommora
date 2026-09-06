@@ -30,24 +30,3 @@ export function popReturningMenu<A>(
     })
   })
 }
-
-/** A parent item cannot itself be clicked, so a container repeats its name as its submenu's first row. */
-export function destinationNodes<T extends { label: string; children?: T[] }>(
-  targets: readonly T[],
-  pick: (target: T) => () => void,
-  disabled?: (target: T) => boolean,
-): MenuItemConstructorOptions[] {
-  const node = (t: T): MenuItemConstructorOptions => {
-    const self: MenuItemConstructorOptions = {
-      label: t.label,
-      enabled: !disabled?.(t),
-      click: pick(t),
-    }
-    if (!t.children?.length) return self
-    return {
-      label: t.label,
-      submenu: [self, { type: 'separator' }, ...t.children.map(node)],
-    }
-  }
-  return targets.map(node)
-}

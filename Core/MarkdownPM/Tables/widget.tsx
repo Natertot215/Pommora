@@ -45,8 +45,13 @@ import {
 import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
+import {
+  type TableMenuAction,
+  type TableMenuContext,
+  tableMenuItems,
+} from '@pommora/core/Actions/tableMenu'
 import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
 
 type ConnGetter = () => ConnectionsApi | undefined
 const tableConnections = Facet.define<ConnGetter, ConnGetter>({
@@ -235,40 +240,38 @@ class TableWidget extends ReactWidget {
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
-      void host()
-        .ask('table-menu', ctx)
-        .then((action) => {
-          if (!action) return
-          // A `.nexus/`-persisted visual, not a source edit — toggling the field rebuilds this table's widget.
-          if (action === 'col:toggle-heading') {
-            view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
-            return
-          }
-          const scan = docScan(view.state.doc)
-          const region = scan.tables[this.tableIndex]
-          if (!region) return
-          const copy = copyTextFor(
-            action,
-            ctx.index,
-            scan.text.slice(region.from, region.to),
-            modelFromRegion(region),
-          )
-          if (copy !== null) {
-            toClipboard(copy)
-            return
-          }
-          if (
-            action === 'table:delete' ||
-            (action === 'col:delete' && modelFromRegion(region).columns.length <= 1)
-          ) {
-            view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
-            return
-          }
-          const transform = transformFor(action, ctx.index)
-          if (!transform) return
-          const change = structuralEditChange(scan, this.tableIndex, transform)
-          if (change) view.dispatch({ changes: change })
-        })
+      void popRowMenu(tableMenuItems(ctx)).then((action) => {
+        if (!action) return
+        // A `.nexus/`-persisted visual, not a source edit — toggling the field rebuilds this table's widget.
+        if (action === 'col:toggle-heading') {
+          view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
+          return
+        }
+        const scan = docScan(view.state.doc)
+        const region = scan.tables[this.tableIndex]
+        if (!region) return
+        const copy = copyTextFor(
+          action,
+          ctx.index,
+          scan.text.slice(region.from, region.to),
+          modelFromRegion(region),
+        )
+        if (copy !== null) {
+          toClipboard(copy)
+          return
+        }
+        if (
+          action === 'table:delete' ||
+          (action === 'col:delete' && modelFromRegion(region).columns.length <= 1)
+        ) {
+          view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
+          return
+        }
+        const transform = transformFor(action, ctx.index)
+        if (!transform) return
+        const change = structuralEditChange(scan, this.tableIndex, transform)
+        if (change) view.dispatch({ changes: change })
+      })
     }
     dom._height = this.height
     if (!dom._ro) {

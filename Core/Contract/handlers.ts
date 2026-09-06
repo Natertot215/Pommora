@@ -1,7 +1,6 @@
 import type { Asks, Pushes } from './bridge'
+import type { RowMenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
-import type { MutateDeps } from '../Nexus/mutate'
-import type { ContextTarget, MutateRequest } from '../Pages/mutateRequest'
 import type { TrashMode } from '../Trash/trashRow'
 
 export type PickKind = 'file' | 'folder' | 'image' | 'exclusion'
@@ -10,33 +9,6 @@ export interface PickOptions {
   defaultPath?: string
   message?: string
 }
-
-export type MenuChannel =
-  | 'history:menu'
-  | 'create-menu'
-  | 'view-button-menu'
-  | 'view-row-menu'
-  | 'view-embed-title-menu'
-  | 'view-embed-area-menu'
-  | 'icon-favorite-menu'
-  | 'nexus:iconMenu'
-  | 'nexus:bannerMenu'
-  | 'nexus:titleMenu'
-  | 'table-menu'
-  | 'grip-menu'
-  | 'column-menu'
-  | 'cell-menu'
-  | 'page-actions-menu'
-  | 'card-menu'
-  | 'trash:menu'
-  | 'trash:columnMenu'
-  | 'tab-menu'
-  | 'nav-row-menu'
-  | 'conn-menu'
-  | 'citation-menu'
-  | 'property-menu'
-  | 'option-menu'
-  | 'row-menu'
 
 /** What a host does that the engine cannot: reach the renderer, the user's dialogs and menus, the
  *  system, and the surfaces only that host draws. Every path handed in is forward-slash. */
@@ -49,12 +21,8 @@ export interface HostContext {
   openExternal(url: string): Promise<void>
   message(type: 'error' | 'info', message: string, detail: string): Promise<void>
   systemAccent(): string | null
-  menu<K extends MenuChannel>(k: K, ...args: Asks[K]['args']): Promise<Asks[K]['reply']>
-  contextMenu(
-    target: ContextTarget,
-    deps: MutateDeps,
-    onChanged: (req: MutateRequest, reply: { created?: { id: string; path: string } }) => void,
-  ): Promise<void>
+  /** A host without a native popper answers with the in-app presenter. */
+  menu(req: RowMenuRequest): Promise<string | null>
   thumbnails: {
     capture(
       root: string,

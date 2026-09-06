@@ -18,6 +18,8 @@ import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
 import { useTabClose } from './tabClose'
 import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import './tab-base.css'
 
 interface TabEntry {
@@ -111,12 +113,14 @@ function TabBarBody({
       e.preventDefault()
       e.stopPropagation()
       const isPage = target.kind === 'page'
-      const action = await host().ask('tab-menu', {
-        pinned,
-        isNewTab: target.kind === 'newtab',
-        isPage,
-        ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
-      })
+      const action = await popRowMenu(
+        tabMenuItems({
+          pinned,
+          isNewTab: target.kind === 'newtab',
+          isPage,
+          ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
+        }),
+      )
       if (action === 'pin') pinTab(tabId)
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)

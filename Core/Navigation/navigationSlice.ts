@@ -59,6 +59,8 @@ import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from '../Session/sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { createMenuItems, createdRequest } from '@pommora/core/Actions/createMenu'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
@@ -643,7 +645,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     createFromMenu: async (items, host) => {
-      const req = await dialer().ask('create-menu', items)
+      const action = await popRowMenu(createMenuItems(items))
+      const req = action && createdRequest(items, action)
       if (req) await get().mutate(req, (created) => get().beginRename(created.path, true, host))
     },
 

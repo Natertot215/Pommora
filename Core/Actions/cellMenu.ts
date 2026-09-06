@@ -1,17 +1,16 @@
-import { styleMenuItems, styleMenuLabel, type StyleMenuItem } from './columnMenu'
+import { styleMenuItems, styleMenuLabel, type StyleAction } from './columnMenu'
 import type { ColumnStyle } from '../Properties/columnStyles'
 import {
   type PageMetaAction,
   type PageMoveAction,
   type PageMoveContext,
-  offersMove,
   pageMetaMenuItems,
 } from './pageMenu'
 import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
-import type { ActionItem } from './menuModel'
+import { type ActionItem, afterSeparator } from './menuModel'
 
-/** Right-click always opens a menu, never acts; style radios come from the COLUMN, and a `link` cell's look is per-property. */
+/** Right-click always opens a menu, never acts; style rows come from the COLUMN, and a `link` cell's look is per-property. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -38,13 +37,7 @@ export type CellMenuAction =
   | 'file:add'
   | 'file:replace'
   | 'file:remove'
-  | `style:${string}:${string}`
-
-export interface CellMenuModel {
-  items: ActionItem<CellMenuAction>[]
-  /** Rows and the name they sit under travel together, so radios can't land under the wrong word. */
-  style?: { label: string; rows: StyleMenuItem[] }
-}
+  | StyleAction
 
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
 
@@ -94,46 +87,44 @@ function baseCellMenu(
   return null
 }
 
-export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
-  const model = baseCellMenuModel(ctx)
-  if (ctx.hideable && ctx.kind !== 'title') {
-    model.items = [
-      ...model.items,
-      {
-        // Self-separate from SIBLING items only: keying on `model.style` too would double the separator.
-        label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
-        action: 'cell:hide',
-        separatorBefore: model.items.length > 0,
-      },
-    ]
-  }
-  return model
+/** The Style ▸ row leads; every other row sits under a divider from it. */
+export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {
+  const { style, items } = baseCellMenuModel(ctx)
+  if (ctx.hideable && ctx.kind !== 'title')
+    items.push({
+      label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
+      action: 'cell:hide',
+      separatorBefore: items.length > 0,
+    })
+  return style ? [style, ...afterSeparator(items)] : items
 }
 
-function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
+function baseCellMenuModel(ctx: CellMenuContext): {
+  style?: ActionItem<CellMenuAction>
+  items: ActionItem<CellMenuAction>[]
+} {
   switch (ctx.kind) {
     case 'title':
       return {
         items: pageMetaMenuItems(ctx.alreadyOpen, {
           window: true,
           newPages: 'pair',
-          move: offersMove(ctx),
+          move: ctx,
           clipboard: true,
           history: true,
         }),
       }
-    case 'style-only':
+    case 'style-only': {
+      const rows = styleMenuItems({
+        type: ctx.type,
+        current: ctx.current,
+        barCapable: ctx.barCapable,
+      })
       return {
+        style: { label: styleMenuLabel(ctx.type), action: rows[0].action, submenu: rows },
         items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
-        style: {
-          label: styleMenuLabel(ctx.type),
-          rows: styleMenuItems({
-            type: ctx.type,
-            current: ctx.current,
-            barCapable: ctx.barCapable,
-          }),
-        },
       }
+    }
     case 'link':
       // Rename and Clear are no-ops on an empty cell, so only Edit shows there.
       return {

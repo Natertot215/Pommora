@@ -3,7 +3,7 @@ import { useContext, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { cellMenuContextFor } from '@pommora/core/Actions/cellMenu'
+import { cellMenuContextFor, cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme/typography.css'
@@ -24,7 +24,7 @@ import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
-import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
 
 export function CardValue({
   row,
@@ -126,7 +126,7 @@ export function CardValue({
       onChip: chip !== null,
     })
     if (!menuCtx) return
-    const action = await holdGhost(() => host().ask('cell-menu', menuCtx))
+    const action = await holdGhost(() => popRowMenu(cellMenuModel(menuCtx)))
     if (!action) return
     if (runFileMenuAction(action, schemaDef, v, chip, commit)) return
     if (action === 'cell:clear') commit(null)
