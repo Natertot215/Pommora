@@ -7,7 +7,7 @@ import { labelColorFor } from '@pommora/uix/Theme/colorMap'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../Cells/OptionChip'
 import { OptionEditPopup } from './OptionEditPopup'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
@@ -82,7 +82,7 @@ export function OptionRow({
     return (
       <span className={s.optionAnchor} ref={iconAnchor}>
         <OptionChip type={type} look="compact" option={option} def={def} />
-        <IconPicker
+        <IconChoice
           open
           value={icon}
           onSelect={(id) => onEditIcon?.(id)}

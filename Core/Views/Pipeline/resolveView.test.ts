@@ -152,7 +152,6 @@ describe('resolveView — full pipeline over the fixture', () => {
         kind: 'property',
         property_id: 'prop_status',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       sort: [{ property_id: '_title', direction: 'descending' }],
@@ -291,7 +290,6 @@ describe('resolveView — group_order', () => {
         kind: 'property',
         property_id: 'prop_gone',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
     }
@@ -511,7 +509,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     kind: 'property' as const,
     property_id: 'prop_sel',
     order_mode: 'configured' as const,
-    empty_placement: 'bottom' as const,
     hide_empty_groups: false,
   })
 
@@ -609,7 +606,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
           property_id: 'prop_when',
           order_mode: 'configured',
           date_granularity: 'month',
-          empty_placement: 'bottom',
           hide_empty_groups: false,
         },
         hidden_groups: ['2025-07'],

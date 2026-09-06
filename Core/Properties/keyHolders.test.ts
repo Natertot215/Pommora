@@ -99,12 +99,18 @@ describe('the property cascades open only the holders', () => {
     await mkdir(abs('Vault'), { recursive: true })
     const excludedPage = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
     await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
-    const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
-      if (!('<Areas>' in raw)) return null
-      const next = { ...raw }
-      delete next['<Areas>']
-      return { next }
-    })
+    const swept = await sweepGovernedRoots(
+      root,
+      { kind: 'nexus' },
+      {
+        raw: (raw) => {
+          if (!('<Areas>' in raw)) return null
+          const next = { ...raw }
+          delete next['<Areas>']
+          return { next }
+        },
+      },
+    )
     expect(swept.touched).toEqual([])
     expect(await readFile(abs('Vault', 'Tagged.md'), 'utf8')).toBe(excludedPage)
   })
@@ -112,12 +118,18 @@ describe('the property cascades open only the holders', () => {
   it("a sweep keeps every holder's modification time", async () => {
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(abs('Notes', 'HolderA.md'), past, past)
-    const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
-      if (!('Stage' in raw)) return null
-      const next = { ...raw }
-      delete next.Stage
-      return { next }
-    })
+    const swept = await sweepGovernedRoots(
+      root,
+      { kind: 'nexus' },
+      {
+        raw: (raw) => {
+          if (!('Stage' in raw)) return null
+          const next = { ...raw }
+          delete next.Stage
+          return { next }
+        },
+      },
+    )
     expect(swept.touched).toContain(abs('Notes', 'HolderA.md'))
     expect(Math.floor((await stat(abs('Notes', 'HolderA.md'))).mtimeMs / 1000)).toBe(
       Math.floor(past.getTime() / 1000),

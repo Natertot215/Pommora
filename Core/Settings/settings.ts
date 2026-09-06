@@ -103,11 +103,8 @@ export async function readSubfield(root: string): Promise<SubfieldConfig | null>
   const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
   const sub = existing?.subfield
   if (!sub || typeof sub !== 'object') return null
-  const s = sub as Record<string, unknown>
-  return {
-    order: s.order && typeof s.order === 'object' ? (s.order as SubfieldConfig['order']) : {},
-    expanded: typeof s.expanded === 'boolean' ? s.expanded : true,
-  }
+  const expanded = (sub as Record<string, unknown>).expanded
+  return { expanded: typeof expanded === 'boolean' ? expanded : true }
 }
 
 /** Write the `subfield` key, preserving every other foreign key in settings.json. */

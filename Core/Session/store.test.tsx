@@ -526,22 +526,22 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
 describe('store — recents reorder + batched close', () => {
   const savedRecents = (): ReturnType<typeof vi.fn> => channels['nav:write']
 
-  it('reorderRecent rewrites the order to the source and persists immediately (drag)', () => {
+  it('setRecentsOrder rewrites the order to the source and persists immediately (drag)', () => {
     const a = ctx('a')
     const b = ctx('b')
     const c = ctx('c')
     seed({ recents: [a, b, c] })
-    useSession.getState().reorderRecent(navKey(a), navKey(c)) // drop a onto c's slot
+    useSession.getState().setRecentsOrder([b, c, a].map(navKey))
     expect(useSession.getState().recents).toEqual([b, c, a])
     expect(savedRecents()).toHaveBeenCalledWith({ recents: [b, c, a] })
   })
 
-  it('reorderRecent is a no-op on same/unknown key (no state churn, no write)', () => {
+  it('setRecentsOrder is a no-op on the standing order and on unknown keys', () => {
     const a = ctx('a')
     const b = ctx('b')
     seed({ recents: [a, b] })
-    useSession.getState().reorderRecent(navKey(a), navKey(a))
-    useSession.getState().reorderRecent('missing', navKey(b))
+    useSession.getState().setRecentsOrder([a, b].map(navKey))
+    useSession.getState().setRecentsOrder(['missing'])
     expect(useSession.getState().recents).toEqual([a, b])
     expect(savedRecents()).not.toHaveBeenCalled()
   })

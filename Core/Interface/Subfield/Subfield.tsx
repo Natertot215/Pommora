@@ -4,7 +4,7 @@ import { useSession } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
-import { DEFAULT_ITEMS, SubfieldItem, type SubfieldPage, isSubfieldItemId } from './subfieldItems'
+import { DEFAULT_ITEMS, SubfieldItem, type SubfieldPage } from './subfieldItems'
 import './subfield.css'
 
 export function Subfield({
@@ -21,12 +21,10 @@ export function Subfield({
   const navigateCrumb = useSession((s) => s.navigateCrumb)
   const crumbDepth = useSession((s) => s.crumbDepth)
 
-  const order = useSession((s) => s.subfieldOrder)
   const crumbSelection = page?.target ?? selection
   const rawCrumbs = subfieldCrumbs(tree, crumbSelection, inert ? null : crumbDepth, navigateCrumb)
   const crumbs = inert ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
-  const kind = crumbSelection.kind
-  const items = (order[kind] ?? DEFAULT_ITEMS[kind] ?? []).filter(isSubfieldItemId)
+  const items = DEFAULT_ITEMS[crumbSelection.kind] ?? []
 
   return (
     // With no breadcrumb (NavView) the action has nothing to sit opposite, so it leads on the left

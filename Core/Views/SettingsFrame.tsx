@@ -29,7 +29,7 @@ import {
   MenuTopRow,
 } from '@pommora/uix/Menus'
 import { factorChoice, PickerControl, stepsWith } from '@pommora/uix/Pickers/PickerControl'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from './ViewTileScope'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
@@ -301,7 +301,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         minWidth={225}
         minHeight={245}
       />
-      <IconPicker
+      <IconChoice
         open={iconOpen}
         onClose={() => setIconOpen(false)}
         triggerRef={iconRef}

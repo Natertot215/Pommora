@@ -9,7 +9,6 @@ const propertyGroup = {
   kind: 'property',
   property_id: 'p1',
   order_mode: 'configured',
-  empty_placement: 'bottom',
   hide_empty_groups: false,
 } as const
 

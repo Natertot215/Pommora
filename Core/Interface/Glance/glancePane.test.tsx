@@ -238,10 +238,10 @@ describe('warmth', () => {
   })
 
   it('holds a bounded number of pages, evicting the least recently captured', () => {
-    for (let i = 0; i < 9; i++) glanceWarmSeam(`cap-${i}`, `Notes/${i}.md`).capture(state('hi', i))
+    for (let i = 0; i < 11; i++) glanceWarmSeam(`cap-${i}`, `Notes/${i}.md`).capture(state('hi', i))
     expect(glanceWarmSeam('cap-0', 'Notes/0.md').restore()).toBeUndefined()
     expect(glanceWarmSeam('cap-1', 'Notes/1.md').restore()).toEqual(state('hi', 1))
-    expect(glanceWarmSeam('cap-8', 'Notes/8.md').restore()).toEqual(state('hi', 8))
+    expect(glanceWarmSeam('cap-10', 'Notes/10.md').restore()).toEqual(state('hi', 10))
   })
 
   it('the pane hands the tile a seam, so an open captures on close', async () => {

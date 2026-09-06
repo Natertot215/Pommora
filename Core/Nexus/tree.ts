@@ -12,9 +12,7 @@ export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 interface BaseNode {
   id: string
   kind: NodeKind
-  /** Derived from the file/folder basename — never stored on disk. */
   title: string
-  /** A symbol name; overrides the kind's default icon. */
   icon?: string
 }
 
@@ -23,26 +21,20 @@ interface BaseNode {
  *  session root — the renderer must never reconstruct the on-disk path itself. */
 interface PathNode extends BaseNode {
   path: string
-  /** Only banner-bearing owners (Collections/Sets + contexts) populate it, surfaced from the
-   *  sidecar `banner` field (a page's banner rides its own frontmatter `banner` key). */
+  /** From the sidecar; a page's banner rides its own frontmatter key instead. */
   banner?: string
-  /** From the sidecar `heading_icon_hidden`. Absent/false = shown. */
   headingIconHidden?: boolean
 }
 
 export interface PageNode extends PathNode {
   kind: 'page'
-  /** contextId → the member's Space ids, attached at walk assembly from the raw parenthesized
-   *  keys the parse retains. Absent = no links. */
+  /** contextId → Space ids, attached at walk assembly from the raw keys the parse retains. */
   contextValues?: Record<string, string[]>
 }
 
-/** One Space — a member of a Context, backed by `.nexus/contexts/<Context>/<Space>/`. */
 export interface SpaceNode extends PathNode {
   kind: 'space'
-  /** Derived from the parent folder at walk. */
   contextId: string
-  /** Chip-solid palette key; absent = the neutral grey Default. */
   color?: string
   contextValues?: Record<string, string[]>
 }
@@ -54,11 +46,9 @@ export interface ContextGroup {
 
 export interface SetNode extends PathNode {
   kind: 'set'
-  /** Optional so a container read that stops short of the recursion still types; the walk
-   *  populates it. */
+  /** Optional so a container read that stops short of the recursion still types. */
   sets?: SetNode[]
   pages: PageNode[]
-  /** Depth-1 Sets only; deeper Sub-Sets ignore them. */
   views?: SavedView[]
   viewButton?: ViewButton
   disclosureLocked?: boolean
@@ -75,11 +65,9 @@ export interface CollectionNode extends PathNode {
   disclosureLocked?: boolean
 }
 
-/** Keyed by normalized basename — what a `[[Name.png]]` reference resolves against. Every path
- *  answering to a name is held, sorted, so display can take the first while a delete refuses to
- *  choose; holding only the winner would leave an unlink with nothing to promote. `version`
- *  moves on every change, so a file re-saved under an unchanged name is re-requested rather than
- *  left as a deep-equal map nothing repaints for. */
+/** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes
+ *  the first while a delete refuses to choose and an unlink has something to promote. `version`
+ *  moves on every change, so a re-save under an unchanged name is re-requested. */
 export interface AssetMap {
   files: Record<string, string[]>
   version: number
@@ -119,14 +107,11 @@ export interface NexusTree {
   accent: AccentSetting
   personalization: Personalization
   commands: Record<string, string>
-  /** Nexus-relative folder paths the walk, the watcher, and the content index all step around. */
   excluded: string[]
-  /** Nexus-relative POSIX, defaulting to `.nexus/assets`. Outside the content corpus and the
-   *  tree, and watched regardless of `excluded`. */
+  /** Outside the content corpus and the tree, and watched regardless of `excluded`. */
   assetDirectory: string
   registry: PropertyDefinition[]
-  /** A present-but-unparseable sidecar, an Unknown or unreadable page. Distinct from absence,
-   *  which is a missing entry; absent when empty. */
+  /** Unparseable, not missing — absence is a missing entry instead. */
   unreadable?: { path: string }[]
 }
 

@@ -5,7 +5,7 @@ import type { PropertyDefinition } from './properties'
 import { errText } from '../Contract/result'
 import { collectionFolderOf } from './assignment'
 import { assignedDefs, loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
-import { sweepGovernedRoots } from './governedSweep'
+import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
 import { rereadSinceSeed } from '../Index/indexSeed'
 import { contentIndexStore } from '../Platform/stores'
@@ -40,17 +40,18 @@ export async function runRepairSweep(root: string): Promise<void> {
     // stays as written, for the user to settle on the page. Adoptions ride whether or not the
     // file moved — a canonical list can still name an option the definition lacks.
     const adoptions: Adoption[] = []
-    await sweepGovernedRoots(root, { kind: 'files', files: [...worlds.keys()] }, (raw, file) => {
+    const raw: Rewrite<never> = (fm, file) => {
       const world = worlds.get(file)
       if (!world || !live()) return null
-      const r = reconcileGovernedRoot(raw, world)
+      const r = reconcileGovernedRoot(fm, world)
       adoptions.push(...r.adoptions)
       const surviving = survivingChanges(r)
       for (const key of Object.keys(surviving)) {
-        if (memberCount(surviving[key]) < memberCount(raw[key])) delete surviving[key]
+        if (memberCount(surviving[key]) < memberCount(fm[key])) delete surviving[key]
       }
-      return { next: { ...raw, ...surviving } }
-    })
+      return { next: { ...fm, ...surviving } }
+    }
+    await sweepGovernedRoots(root, { kind: 'files', files: [...worlds.keys()] }, { raw })
     await applyAdoptions(root, adoptions)
   } catch (e) {
     console.error('repair sweep: failed; values repair on their next edit:', errText(e))

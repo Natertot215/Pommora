@@ -22,7 +22,6 @@ describe('SavedView decode', () => {
       property_id: 'prop_status',
       order_mode: 'manual',
       order: ['in_progress', 'opt_open', 'not_started', 'done'],
-      empty_placement: 'bottom',
       hide_empty_groups: false,
     })
     expect(v.sort).toEqual([{ property_id: 'prop_status', direction: 'descending' }])

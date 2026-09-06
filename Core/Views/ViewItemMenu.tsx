@@ -22,7 +22,7 @@ export function ViewItemMenu({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
   const views = source.views ?? []
-  const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
+  const canDelete = views.length > 1
 
   const duplicateView = async (): Promise<void> => {
     const res = await host().ask('views:save', source.path, source.kind, {

@@ -168,7 +168,6 @@ describe('flattenContainer + structural grouping', () => {
         kind: 'property',
         property_id: 'x',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       statusSchema,
@@ -278,7 +277,6 @@ describe('property grouping — status manual order', () => {
     property_id: 'prop_status',
     order_mode: 'manual',
     order: ['in_progress', 'opt_open', 'not_started', 'done'],
-    empty_placement: 'bottom',
     hide_empty_groups: false,
   }
 
@@ -287,18 +285,6 @@ describe('property grouping — status manual order', () => {
     const groups = resolveGroups(rows, base, statusSchema, setTree, null)
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
     expect(groups.find((g) => g.key === 'opt_open')?.items).toEqual([])
-  })
-
-  it('pins the no-value rows last even when empty_placement says top (the no-None-band ruling)', () => {
-    const { rows, setTree } = flattenContainer(col, values)
-    const groups = resolveGroups(
-      rows,
-      { ...base, empty_placement: 'top' },
-      statusSchema,
-      setTree,
-      null,
-    )
-    expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
   })
 
   it('a stale manual-order key (deleted option) never renders a ghost band; live empty options do', () => {
@@ -455,7 +441,6 @@ describe('ungrouped placement (the view-level knob)', () => {
       kind: 'property',
       property_id: 'prop_status',
       order_mode: 'configured',
-      empty_placement: 'bottom',
       hide_empty_groups: false,
     }
     const groups = resolveGroups(rows, group, statusSchema, setTree, null, [], 'top')
@@ -489,7 +474,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     kind: 'property',
     property_id: 'prop_sel',
     order_mode: 'configured',
-    empty_placement: 'bottom',
     hide_empty_groups: false,
     ...over,
   })
@@ -529,7 +513,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         kind: 'property',
         property_id: 'prop_done',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       cbSchema,
@@ -568,7 +551,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         property_id: 'prop_when',
         order_mode: 'configured',
         date_granularity: 'month',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       dateSchema,
@@ -592,7 +574,6 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
         property_id: 'prop_due',
         order_mode: 'configured',
         date_granularity: 'day',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       dueSchema,
@@ -615,7 +596,6 @@ describe('property grouping — non-groupable fallback', () => {
         kind: 'property',
         property_id: 'prop_num',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       [{ id: 'prop_num', name: 'Num', type: 'number' }],
@@ -630,7 +610,6 @@ describe('property grouping — non-groupable fallback', () => {
         kind: 'property',
         property_id: 'prop_tags',
         order_mode: 'configured',
-        empty_placement: 'bottom',
         hide_empty_groups: false,
       },
       [{ id: 'prop_tags', name: 'Tags', type: 'multi_select' }],

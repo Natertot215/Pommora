@@ -35,7 +35,7 @@ import {
 } from '@pommora/uix/Menus'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-base.css'
 import { Reveal, duration, useEntrance } from '@pommora/uix/Animations'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableLabel } from '@pommora/uix/Fields'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
@@ -561,7 +561,7 @@ export function PropertyFrame({
         minWidth={225}
         minHeight={245}
       />
-      <IconPicker
+      <IconChoice
         open={iconOpen}
         onClose={() => setIconOpen(false)}
         triggerRef={iconRef}

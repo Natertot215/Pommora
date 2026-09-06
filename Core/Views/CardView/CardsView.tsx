@@ -79,7 +79,7 @@ import {
   shownColumnsFor,
 } from '../cardValueInput'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -1158,7 +1158,7 @@ const PageCard = memo(function PageCard({
           />
         </CardBody>
       </div>
-      <IconPicker
+      <IconChoice
         open={iconOpen}
         triggerRef={textRef}
         value={typeof row.icon === 'string' ? row.icon : undefined}
