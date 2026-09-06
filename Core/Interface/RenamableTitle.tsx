@@ -1,7 +1,7 @@
 import type { MutableKind, RenameHost } from '@pommora/core/Pages/mutateRequest'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
-import { RenamableLabel } from '@pommora/uix/Fields'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 
 /** The fence resolves one winner, so a path visible on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
 export function RenamableTitle({

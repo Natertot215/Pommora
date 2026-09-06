@@ -1,4 +1,4 @@
-import { resolveColor } from '@pommora/uix/Theme/solidColor'
+import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { MenuIndex } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'
 

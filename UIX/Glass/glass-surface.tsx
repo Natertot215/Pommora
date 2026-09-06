@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { frostStyle, notchGeometry, NOTCH_H, SURFACE_FROST, WINDOW_FROST } from './glass-base'
 import { shadowStandardVar } from '../Theme/color.css'
+import { PURE_WHITE } from '../Theme/colors'
 import { cx } from '../Utilities/cx'
 
 /** Opt-in beaked geometry — a pane that points at what opened it. `insetRight` aims the beak from the
@@ -139,7 +140,7 @@ function NotchedGlass({
             fill="none"
             strokeWidth={1}
             // Known outlier: a pure-white frost edge, deliberately brighter than the palette's system-white.
-            stroke="#FFFFFF"
+            stroke={PURE_WHITE}
             strokeOpacity={SURFACE_FROST.borderAlpha}
           />
         </svg>

@@ -1,4 +1,4 @@
-import { PathField } from '@pommora/uix/Fields'
+import { PathField } from '@pommora/uix/Fields/PathField'
 import { MenuRowView } from '@pommora/uix/Menus'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'

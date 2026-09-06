@@ -28,7 +28,7 @@ import {
   WEB_ZOOM_DEFAULT,
 } from '@pommora/core/Settings/personalization'
 import { readLivePersonalization, readWatchScope } from '@pommora/core/Settings/settings'
-import { WINDOW_BG } from '@pommora/uix/Theme/theme'
+import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { showContextMenu } from './Actions/contextMenu'
 import { installEditorContextMenu, setFormatState, setGripHot } from './Actions/editorMenu'
 import { installAppMenu } from './Actions/menu'

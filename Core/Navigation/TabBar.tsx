@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
@@ -166,7 +166,6 @@ function TabBarBody({
       {pinnedEntries.length > 0 && (
         <SortableZone
           items={pinnedEntries.map((e) => e.res?.key ?? '')}
-          layout="list"
           axis="x"
           onReorder={reorderPin}
         >
@@ -189,12 +188,7 @@ function TabBarBody({
         <span className={cx(segment, 'tab-divider')} />
       )}
       <div className="tab-scroll over-scroll-x" ref={stripRef}>
-        <SortableZone
-          items={liveEntries.map((e) => e.tab.id)}
-          layout="list"
-          axis="x"
-          onReorder={reorderTabs}
-        >
+        <SortableZone items={liveEntries.map((e) => e.tab.id)} axis="x" onReorder={reorderTabs}>
           <div className="tab-strip">
             {renderEntries.map(({ entry, ghost }, i) => (
               <Fragment key={entry.tab.id}>

@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PickerMenu } from '../picker-base'
-import { SearchField } from '../../Fields'
+import { SearchField } from '../../Fields/SearchField'
 import { Icon } from '../../Symbols'
 import { lucideGlyph, searchIcons, type IconEntry } from '../../Symbols/allSymbols'
 import { reorder, SortableZone, useDragItem } from '../../Interactions/drag'
@@ -82,7 +82,7 @@ export function IconPicker({
       e.preventDefault()
       if ((await favorites.onMenu?.(favs.includes(id))) === 'toggle') toggleFav(id)
     },
-    [favs, toggleFav],
+    [favs, favorites.onMenu, toggleFav],
   )
 
   // `scrollEl` is a state-backed callback ref so the virtualizer re-runs the moment the element
@@ -123,7 +123,7 @@ export function IconPicker({
         {favs.length > 0 && (
           <div className={s.favorites}>
             <div className={cx(s.favScroll, 'over-scroll-x')}>
-              <SortableZone items={favs} layout="grid" onReorder={reorderFavs}>
+              <SortableZone items={favs} onReorder={reorderFavs}>
                 {favs.map((id) => (
                   <FavCell
                     key={id}

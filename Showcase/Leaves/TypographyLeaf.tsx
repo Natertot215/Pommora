@@ -4,9 +4,6 @@ import { humanize, useComputedStyleText } from './helpers'
 type RampStyle = { standard: string; emphasized: string }
 
 const ALL_TYPE_KEYS: Array<keyof typeof text> = [
-  'titleLarge',
-  'titleMedium',
-  'titleSmall',
   'headline',
   'body',
   'callout',

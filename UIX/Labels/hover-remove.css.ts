@@ -41,9 +41,9 @@ export const removeZone = style({
 })
 
 const crispRamp =
-  'linear-gradient(to right, transparent 0, #000000 var(--over-scroll-fade, 0px), #000000 calc(100% - 18px), transparent calc(100% - 8px))'
+  'linear-gradient(to right, transparent 0, var(--system-black) var(--over-scroll-fade, 0px), var(--system-black) calc(100% - 18px), transparent calc(100% - 8px))'
 const blurRamp =
-  'linear-gradient(to right, transparent calc(100% - 18px), #000000 calc(100% - 8px))'
+  'linear-gradient(to right, transparent calc(100% - 18px), var(--system-black) calc(100% - 8px))'
 
 /**
  * A twin sits inside the scroller, so its box rides the WINDOW the label is currently showing while

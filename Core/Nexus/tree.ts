@@ -4,7 +4,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
-import type { AccentSetting } from '@pommora/uix/Theme/colorSetting'
+import type { AccentSetting } from '@pommora/uix/Theme/colors'
 import type { Crop } from './schemas'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'

@@ -1,5 +1,5 @@
-import { GlassPane } from '@pommora/uix/Glass'
-import { paneSlide } from '@pommora/uix/Animations'
+import { GlassPane } from '@pommora/uix/Glass/glass-pane'
+import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './side-pane.css'
 

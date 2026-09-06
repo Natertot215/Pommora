@@ -70,7 +70,7 @@ export function Ribbon(): React.JSX.Element {
       >
         <NexusPhoto size="titleMedium" />
       </button>
-      <SortableZone items={keys} layout="list" axis="y" onReorder={reorderIcons}>
+      <SortableZone items={keys} axis="y" onReorder={reorderIcons}>
         {keys.map((k) => (
           <RibbonTab
             key={k}

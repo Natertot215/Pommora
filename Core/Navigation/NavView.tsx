@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
-import { SearchField } from '@pommora/uix/Fields'
+import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'

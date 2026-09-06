@@ -1,7 +1,7 @@
 import { AssetImage } from './AssetImage'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from './entityIconPolicy'
-import { ICON_PX, type IconSize } from '@pommora/uix/Theme/size.css'
+import { ICON_PX, type IconSize } from '@pommora/uix/Theme/theme-vars.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from './useAssetUrl'

@@ -5,7 +5,7 @@ import { text } from '../Theme/typography.css'
 import { OverScroll } from '../Elements/OverScroll'
 import { useDropSlot, type DragItem } from '../Interactions/drag'
 import { stack } from '../Theme/stack'
-import { NavTrail, type TrailSegment } from '../Elements/NavTrail'
+import { NavTrail, type TrailSegment } from '../Elements/NavTrail/NavTrail'
 import './cards.css'
 
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }

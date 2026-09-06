@@ -7,7 +7,7 @@ import type {
   ConnectionColorSetting,
   ExternalLinkColorSetting,
   HighlightColorSetting,
-} from '@pommora/uix/Theme/colorSetting'
+} from '@pommora/uix/Theme/colors'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 export const TIME_FORMAT_SETTINGS = ['twelveHour', 'twentyFourHour'] as const

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { shadowLiftVar, shadowStandardVar } from '../Theme/color.css'
+import { PURE_WHITE } from '../Theme/colors'
 import { clamp } from '../Utilities/clamp'
 
 /** The Pommora glass recipe — parametric, so each tier is one recipe at its own dim and fill. */
@@ -64,10 +65,10 @@ export function frostStyle(p: FrostParams): CSSProperties {
   // Zero-valued edge pieces emit nothing, so an edge-free frost carries no phantom geometry.
   const edges = [
     p.borderAlpha > 0 && OUTLINE_INSET,
-    p.topSpecular > 0 && `inset 0 1px 0 #FFFFFF${hexA(p.topSpecular)}`,
-    p.innerRing > 0 && `inset 0 0 0 1px #FFFFFF${hexA(p.innerRing)}`,
+    p.topSpecular > 0 && `inset 0 1px 0 ${PURE_WHITE}${hexA(p.topSpecular)}`,
+    p.innerRing > 0 && `inset 0 0 0 1px ${PURE_WHITE}${hexA(p.innerRing)}`,
     p.lowerRim > 0 &&
-      `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px #FFFFFF${hexA(p.lowerRim)}`,
+      `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px ${PURE_WHITE}${hexA(p.lowerRim)}`,
     p.shadow ?? shadowStandardVar,
   ].filter(Boolean)
   return {
@@ -78,7 +79,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
     backdropFilter: filter,
     WebkitBackdropFilter: filter,
     ...(p.borderAlpha > 0 && {
-      border: `var(--width-100) solid var(--glass-outline, #FFFFFF${hexA(p.borderAlpha)})`,
+      border: `var(--width-100) solid var(--glass-outline, ${PURE_WHITE}${hexA(p.borderAlpha)})`,
     }),
     boxShadow: edges.join(', '),
   }
@@ -88,19 +89,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
 export const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
 /** The pane tier — the brightest glass in the app. */
-export const paneMaterial: CSSProperties = {
-  background: 'transparent',
-  backdropFilter: 'blur(6px) brightness(95%)',
-  WebkitBackdropFilter: 'blur(6px) brightness(95%)',
-  border: 'var(--width-100) solid var(--glass-outline, #FFFFFF1F)',
-  boxShadow: [
-    OUTLINE_INSET,
-    'inset 0 1px 0 #FFFFFF59', // top specular
-    'inset 0 0 0 1px #FFFFFF14', // hairline inner ring
-    'inset 0 -12px 18px -12px #FFFFFF14', // lower-rim light pool
-    shadowStandardVar,
-  ].join(', '),
-}
+export const paneMaterial: CSSProperties = frostStyle({ ...SURFACE_FROST, brightness: 95 })
 
 // ── The beak — opt-in notched geometry any glass tier can wear (GlassSurface's `notch`) ──
 

@@ -1,6 +1,6 @@
 import * as s from './dual-switch.css'
 import { cx } from '../../Utilities/cx'
-import { GlassSegment } from '../../Glass'
+import { GlassSegment } from '../../Glass/glass-control'
 
 /** Figma "Switch". Ticks fade on the same beat as the knob's slide (dual-switch.css.ts). */
 export function DualSwitch({

@@ -39,7 +39,6 @@ export function IconsLeaf(): React.JSX.Element {
         ) : (
           <SortableZone
             items={names}
-            layout="grid"
             getItemLabel={(id) => id}
             onReorder={(a, o) =>
               setNames((x) =>

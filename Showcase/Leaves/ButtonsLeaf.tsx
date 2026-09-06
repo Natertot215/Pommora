@@ -1,4 +1,4 @@
-import { Button, type ButtonType, type Segment, Segmented } from '@pommora/uix/Buttons'
+import { Button, type ButtonType, type Segment, Segmented } from '@pommora/uix/Buttons/Button'
 import type { ButtonSize } from '@pommora/uix/Theme'
 
 const TYPES: ButtonType[] = ['base', 'filled', 'tinted', 'solid', 'destructive']

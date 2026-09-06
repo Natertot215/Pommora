@@ -21,7 +21,7 @@ import {
 import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
-import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@pommora/uix/Theme/size.css'
+import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
 import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'

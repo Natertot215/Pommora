@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { GlassPane } from '@pommora/uix/Glass'
+import { GlassPane } from '@pommora/uix/Glass/glass-pane'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Banner } from './Header/Banner'
 import { isSurfaceKind, type BannerOwner } from '../Session/treeIndex'

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { cx } from '../Utilities/cx'
-import { duration, ms } from '../Animations'
+import { duration, ms } from '../Animations/motion'
 import { useExitPresence } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
 

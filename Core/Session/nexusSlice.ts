@@ -13,7 +13,7 @@ import {
   reorderTopInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
-import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/accent'
+import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from './personalization'
 import { reconcileIndexOf } from './treeIndex'
 import { flushAllPageSaves } from './saveScheduler'

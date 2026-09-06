@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { base } from '@pommora/uix/Fields'
+import { base } from '@pommora/uix/Fields/fields.css'
 
 /** The done-guard keeps Enter's commit from double-firing through the blur that follows it. */
 export function PropertyEditor({

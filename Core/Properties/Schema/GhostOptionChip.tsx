@@ -6,9 +6,11 @@ import {
   type GhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { base, EditableInput } from '@pommora/uix/Fields'
+import { EditableInput } from '@pommora/uix/Fields/EditableInput'
+import { base } from '@pommora/uix/Fields/fields.css'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { Label, type LabelShape } from '@pommora/uix/Labels'
+import { Label } from '@pommora/uix/Labels/Label'
+import type { LabelShape } from '@pommora/uix/Labels/label-base.css'
 
 // The slot sits flush under the list it joins, so a leave closes it immediately and landing in the slot keeps it alive either way.
 const GHOST_GRACE_MS = 0 // KNOB

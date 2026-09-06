@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { EditableInput } from '../../Fields'
+import { EditableInput } from '../../Fields/EditableInput'
 import { cx } from '../../Utilities/cx'
 import { Icon } from '../../Symbols'
 import { PickerMenu, PickerRow } from '../picker-base'

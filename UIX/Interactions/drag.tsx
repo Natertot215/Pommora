@@ -2,11 +2,10 @@ import type { ReactNode } from 'react'
 import { Zone, useDropSlot, useZoneItem } from './engine'
 import './drop-chrome.css'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
-import type { DragItem, DragNotify, Modifier } from './shared'
+import type { DragItem } from './shared'
 import { moveItem } from '../Utilities/moveItem'
 
-export type Layout = 'list' | 'grid' | 'table'
-export type { DragItem, DragNotify, DragGroupProps, Modifier }
+export type { DragItem, DragGroupProps }
 export { DragGroup, useGroupedDragItem, useDropSlot }
 
 export function reorder<T extends { id: string }>(
@@ -20,17 +19,12 @@ export function reorder<T extends { id: string }>(
   return moveItem(items, from, to)
 }
 
-export type SortableZoneProps = DragNotify & {
+export type SortableZoneProps = {
   id?: string
   items: string[]
-  layout?: Layout
   onReorder?: (activeId: string, overId: string) => void
-  canReorder?: (activeId: string, overId: string) => boolean | Promise<boolean>
   disabled?: boolean
   axis?: 'x' | 'y'
-  bounds?: 'parent' | 'window'
-  modifiers?: Modifier[]
-  swap?: boolean
   itemRole?: string | null
   getItemLabel?: (id: string) => string
   group?: string
@@ -46,15 +40,7 @@ export function SortableZone(props: SortableZoneProps): React.JSX.Element {
       </GroupZone>
     )
   }
-  const {
-    id: _id,
-    items,
-    layout: _layout,
-    group: _group,
-    className: _className,
-    children,
-    ...rest
-  } = props
+  const { id: _id, items, group: _group, className: _className, children, ...rest } = props
   return (
     <Zone ids={items} {...rest}>
       {children}

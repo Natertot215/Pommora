@@ -1,5 +1,5 @@
 import { Icon } from '../../Symbols'
-import { Button } from '../../Buttons'
+import { Button } from '../../Buttons/Button'
 import { cx } from '../../Utilities/cx'
 import * as s from './eye-toggle.css'
 

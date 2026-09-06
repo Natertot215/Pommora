@@ -1,7 +1,8 @@
 import { type Ref, useState } from 'react'
 import type { TitleMenuAction } from '@pommora/core/Actions/identityMenus'
 import { Icon } from '@pommora/uix/Symbols'
-import { RenamableLabel, base } from '@pommora/uix/Fields'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { base } from '@pommora/uix/Fields/fields.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import './content-title.css'
 

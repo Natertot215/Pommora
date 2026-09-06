@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import {
   type DrillPickItem,

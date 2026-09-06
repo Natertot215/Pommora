@@ -8,7 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { duration, ms } from '@pommora/uix/Animations'
+import { duration, ms } from '@pommora/uix/Animations/motion'
 import { docScan } from './docCache'
 import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'

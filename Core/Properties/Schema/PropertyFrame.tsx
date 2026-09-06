@@ -34,9 +34,11 @@ import {
   AccessoryButton,
 } from '@pommora/uix/Menus'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-base.css'
-import { Reveal, duration, useEntrance } from '@pommora/uix/Animations'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { duration } from '@pommora/uix/Animations/motion'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { IconChoice } from '../../Assets/IconChoice'
-import { RenamableLabel } from '@pommora/uix/Fields'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'

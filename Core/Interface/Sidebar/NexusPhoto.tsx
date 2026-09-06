@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON } from '../../Assets/entityIconPolicy'
-import { ICON_PX, type IconSize } from '@pommora/uix/Theme/size.css'
+import { ICON_PX, type IconSize } from '@pommora/uix/Theme/theme-vars.css'
 import { IconChoice } from '../../Assets/IconChoice'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useNexusIcon } from '../../Assets/useNexusIcon'

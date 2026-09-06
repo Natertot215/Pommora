@@ -1,4 +1,4 @@
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 
 export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (

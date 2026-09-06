@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/size.css'
+import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { FolderPlacement } from '@pommora/core/Settings/personalization'

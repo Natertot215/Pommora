@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import type { IconSize } from '../../Theme/size.css'
+import type { IconSize } from '../../Theme/theme-vars.css'
 import { ghostRest } from '../../Buttons/button-base.css'
 import { accessoryButton } from '../../Menus/menu-base.css'
 
