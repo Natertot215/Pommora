@@ -9,10 +9,10 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from '../../Pommora/node_modules/typescript/lib/typescript.js'
+import ts from '../../node_modules/typescript/lib/typescript.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const appRoot = join(repoRoot, 'Pommora')
+const WORKSPACES = ['Core', 'UIX', 'Desktop']
 
 const COMMENT = new Set([
   ts.SyntaxKind.SingleLineCommentTrivia,
@@ -65,10 +65,10 @@ function commentsOf(sf, text) {
 // A snapshot of the tree as some commit left it, so a baseline can be rebuilt after the working
 // tree has already moved.
 const atRev = (rev, file) =>
-  execFileSync('git', ['show', `${rev}:./${file}`], { cwd: appRoot, encoding: 'utf8' })
+  execFileSync('git', ['show', `${rev}:./${file}`], { cwd: repoRoot, encoding: 'utf8' })
 
 function measure(file, rev) {
-  const text = rev ? atRev(rev, file) : readFileSync(join(appRoot, file), 'utf8')
+  const text = rev ? atRev(rev, file) : readFileSync(join(repoRoot, file), 'utf8')
   const sf = parse(file, text)
   const seen = commentsOf(sf, text)
   let chars = 0
@@ -77,22 +77,22 @@ function measure(file, rev) {
 }
 
 const sources = () =>
-  execFileSync('git', ['ls-files', 'src/**/*.ts', 'src/**/*.tsx'], { cwd: appRoot, encoding: 'utf8' })
+  execFileSync('git', ['ls-files', '--', ...WORKSPACES], { cwd: repoRoot, encoding: 'utf8' })
     .trim()
     .split('\n')
-    .filter(Boolean)
+    .filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.d.ts'))
 
 // Directives a tool reads rather than a reader. Deleting one is a silent behavior change the
 // token hash cannot see, because the comment was never a token.
-const PRAGMAS = { 'biome-ignore': 79, KNOB: 84, '@vitest-environment': 88 }
+const PRAGMAS = { 'biome-ignore': 73, KNOB: 84, '@vitest-environment': 96 }
 
 function pragmas() {
   const out = {}
   for (const p of Object.keys(PRAGMAS)) {
     const hits = execFileSync(
       'git',
-      ['grep', '-o', '-F', p, '--', 'src/*.ts', 'src/*.tsx'],
-      { cwd: appRoot, encoding: 'utf8' },
+      ['grep', '-o', '-F', p, '--', ...WORKSPACES.flatMap((w) => [`${w}/*.ts`, `${w}/*.tsx`])],
+      { cwd: repoRoot, encoding: 'utf8' },
     )
     out[p] = hits.trim() === '' ? 0 : hits.trim().split('\n').length
   }
@@ -105,9 +105,8 @@ const fmt = (n) => n.toLocaleString('en-US')
 const pct = (part, whole) => (whole === 0 ? '—' : `${((part / whole) * 100).toFixed(1)}%`)
 const total = (files, key) => Object.values(files).reduce((sum, r) => sum + r[key], 0)
 
-// A file's unit is its directory; the top-level areas that hold their whole tree in one folder
-// (shared, preload) collapse to that folder.
-const unitOf = (f) => f.replace(/^src\//, '').split('/').slice(0, -1).join('/') || '(root)'
+// A file's unit is its directory; a workspace's own root files collapse to the workspace.
+const unitOf = (f) => f.split('/').slice(0, -1).join('/') || '(root)'
 
 function table(files, base) {
   const units = new Map()

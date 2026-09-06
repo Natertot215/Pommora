@@ -31,3 +31,32 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/* The Settings window's own shell, restated here: the leaf shows the frame, and the app's
+   stylesheet that dresses it is Core's, which the showcase does not reach. */
+.panes-window {
+  padding: 6px;
+  --window-toolbar-h: 0px;
+}
+.panes-rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.panes-body {
+  padding: 10px;
+  padding-top: 28px;
+}
+.panes-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--label-primary);
+  margin: 0 0 14px;
+  padding: 0 var(--row-pad-standard) 10px;
+  border-bottom: var(--width-150) solid var(--border-base);
+}
+.panes-section {
+  display: flex;
+  flex-direction: column;
+}

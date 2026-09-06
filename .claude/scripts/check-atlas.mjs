@@ -15,9 +15,10 @@ const IDENT = /^[A-Za-z0-9_.@'[\]-]+$/
 const SKIP_IDENTS = new Set(['token', 'value', '—'])
 
 // The bridge is an implicit source for every `--var` handle — theme-vars republishes the hashed
-// tokens under stable names, and color.css.ts holds the few vars authored beside their tokens.
-const bridgeText = ['Tokens/theme-vars.css.ts', 'Tokens/color.css.ts']
-  .map((f) => readFileSync(join(repoRoot, 'Pommora/src/renderer/DesignSystem', f), 'utf8'))
+// tokens under stable names, colors.ts is the one color file, and color.css.ts publishes the vars
+// authored beside their tokens.
+const bridgeText = ['theme-vars.css.ts', 'colors.ts', 'color.css.ts']
+  .map((f) => readFileSync(join(repoRoot, 'UIX/Theme', f), 'utf8'))
   .join('\n')
 
 let failures = 0
@@ -31,17 +32,15 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
     tables++
     const sources = [...m[1].matchAll(/`([^`]+)`/g)].map((s) => s[1])
     const missingFiles = sources.filter((s) => !existsSync(join(repoRoot, s)))
-    // A SOURCE entry may abbreviate a sibling as `tokens/x.ts` — resolve against the first full path's dir.
+    // A SOURCE entry may abbreviate a sibling as `x.ts` — resolve it beside the first full path.
     const base = sources.find((s) => existsSync(join(repoRoot, s)))
     const text = sources
       .map((s) => {
         if (existsSync(join(repoRoot, s))) return readFileSync(join(repoRoot, s), 'utf8')
-        if (base) {
-          const guess = join(repoRoot, base.split('/src/')[0], 'src', 'renderer', 'DesignSystem', s)
-          if (existsSync(guess)) {
-            missingFiles.splice(missingFiles.indexOf(s), 1)
-            return readFileSync(guess, 'utf8')
-          }
+        const guess = base && join(repoRoot, dirname(base), s)
+        if (guess && existsSync(guess)) {
+          missingFiles.splice(missingFiles.indexOf(s), 1)
+          return readFileSync(guess, 'utf8')
         }
         return ''
       })
