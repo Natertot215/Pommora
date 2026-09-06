@@ -1,5 +1,4 @@
-// One derivation of the exclusion set: a `$$`, `![[…]]` or webpage-embed line inside a fence or table region is
-// content there, never a construct. Every layer that must agree on what these lines are reads this one.
+// One derivation of the exclusion set: a math, page-embed or webpage-embed line inside a fence or table region is content there, never a construct. Every layer that must agree on what these lines are reads this one.
 import {
   blockEmbedLines,
   blockMathRanges,
@@ -26,7 +25,6 @@ export interface DocLineScan {
   citations: CitationScan
 }
 
-/** Assembled here alone, so two layers never disagree about what a `$$` or a `[^1]:` inside a table is. */
 export function constructExclusions(
   d: DocLines,
   fences: [number, number][],
@@ -40,7 +38,6 @@ export function constructExclusions(
   return { maths, excluded: [...base, ...maths] }
 }
 
-/** The exclusion set is assembled once, so a caller needing several kinds never re-scans the doc per kind. */
 export function docLineScan(
   d: DocLines,
   fences: [number, number][],
@@ -61,8 +58,7 @@ export function embeddable(title: string, exclude: ReadonlySet<string>): boolean
   return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
 }
 
-/** Claimed when its title resolves to exactly one page and it is the first line naming it — a later duplicate stays
- *  the inert token, so two tiles can never edit one page from one document. */
+/** Claimed when its title resolves to exactly one page and it is the first line naming it — a later duplicate stays the inert token, so two tiles can never edit one page from one document. */
 export function claimedEmbeds(
   embeds: readonly EmbedLine[],
   statusOf: (title: string) => LinkStatus,

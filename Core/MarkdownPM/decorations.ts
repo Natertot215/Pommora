@@ -311,7 +311,6 @@ const docAtomics = perDoc((doc) => {
   return Decoration.set(ranges, true)
 })
 
-/** Minus the caret's own line, which reveals its raw source. Bounded there, so a caret move never walks the document. */
 function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
   const all = docAtomics(doc)
   if (head < 0) return all
@@ -385,13 +384,12 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       continue
     }
     if (it.to <= it.from) continue
-    if (it.kind === 'atomic') continue // whole-document, built by atomicFor
+    if (it.kind === 'atomic') continue
     if (it.kind === 'class')
       ranges.push(Decoration.mark({ class: it.className }).range(it.from, it.to))
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
-  // Brackets: dimmed for invalid (the broken-link tell), hidden-until-caret otherwise.
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges

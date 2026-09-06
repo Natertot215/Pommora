@@ -1,5 +1,4 @@
-// A marker's pointer gestures — a third spec over the shared factory rather than a third copy of the hover
-// intent, press latch and caret clamp. The jump itself is `travelTo`; this only supplies a target.
+// A third spec over the shared pointer factory rather than a third copy of the hover intent, press latch and caret clamp.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'

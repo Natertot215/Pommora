@@ -244,8 +244,7 @@ function observersFor(view: EditorView): WebObservers {
           }
         }
       },
-      // Viewport root, never an element: only it folds in every clipping ancestor. The ratio is itself a
-      // threshold — fractional layout tops a fully visible tile out just below 1.
+      // Viewport root, never an element: only it folds in every clipping ancestor. The ratio is itself a threshold — fractional layout tops a fully visible tile out just below 1.
       { threshold: [0, WEB_FULL_RATIO, 1] },
     )
     const ro = new ResizeObserver(() => {

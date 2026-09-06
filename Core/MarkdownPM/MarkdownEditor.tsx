@@ -78,7 +78,6 @@ import type { WarmSeam } from './warmSeam'
 import { host as dialer } from '../Platform/dialer'
 import './markdown-pm.css'
 
-// Zoom maps EXPONENTIALLY (`2^(z−1)`) so each ±1 halves/doubles the size.
 export const EDITOR_BASE_PT = 15
 export const ZOOM_DEFAULT = 1
 export const ZOOM_MIN = 0

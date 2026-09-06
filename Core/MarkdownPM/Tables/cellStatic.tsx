@@ -241,7 +241,6 @@ function StaticCellImpl({
           if (linkSpanAt(e.target)) e.preventDefault()
           return
         }
-        // Every other press is the browser's, so a drag beginning in one cell highlights across as many as it reaches.
         if (e.button === 0) claimCite(e) ?? claimLink(e)
       }}
     >

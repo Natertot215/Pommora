@@ -9,8 +9,7 @@ import { focusRange } from '../Editor/caretPlacement'
 import { restedOnLink } from '../Gestures/linkGestures'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-/** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans rather than
- *  the rendered text: a displayed alias hides where the title is. */
+/** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
 export function wikiAuthorTarget(
   text: string,
   tk: Token,
@@ -32,8 +31,7 @@ export function applyLinkAction(
   action: ConnEditAction,
   range: [number, number],
 ): void {
-  // The span was captured before a native menu opened. `lineAt` throws past the document's end rather than
-  // clamping, and the throw would land unhandled inside the menu's promise.
+  // The span was captured before a native menu opened, and `lineAt` throws past the document's end rather than clamping — the throw would land unhandled inside the menu's promise.
   if (range[0] > view.state.doc.length) return
   const line = view.state.doc.lineAt(range[0])
   const tk = tokenize(line.text).find(
@@ -93,7 +91,6 @@ function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at
   if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
 }
 
-/** The check is what makes the call safe to make late: an offset computed one turn and spent the next would delete whatever drifted in. */
 function collapseAt(view: EditorView, at: number): void {
   if (view.state.doc.sliceString(at, at + 1) !== '|') return
   view.dispatch({ changes: { from: at, to: at + 1 } })
@@ -118,9 +115,8 @@ function leaveAlias(
   else collapseAt(view, pipe)
 }
 
-/** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the
- *  caret, and every keystroke would be remembered as a name. Blur is handled on the event rather than the update
- *  listener, which has to defer to a macrotask the editor's own teardown outruns — so an abandoned pipe would reach disk. */
+/** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret.
+ *  Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
 export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
   return [
     EditorView.domEventHandlers({

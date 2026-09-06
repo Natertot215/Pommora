@@ -34,8 +34,7 @@ export const nativeEditorMenu: EditorMenuApi = {
   onAction: (cb) => host().on('menu:action', cb),
 }
 
-/** Latched when focus lands rather than read live: a native menu holds the document's focus, so `hasFocus` reads
- *  false at exactly the moment the chosen action comes back. */
+/** Latched when focus lands rather than read live: a native menu holds the document's focus, so `hasFocus` reads false at exactly the moment the chosen action comes back. */
 let subject: EditorView | null = null
 
 export const claimEditorMenu = (view: EditorView): void => {

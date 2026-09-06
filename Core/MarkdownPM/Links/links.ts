@@ -16,8 +16,7 @@ interface LinkHit extends PointerTarget {
   target: MdTarget
 }
 
-// `posAtCoords` clamps to the nearest rendered position, and a valid link's markers are replaced to zero width, so
-// a click past a short label resolves onto its last character — following that would launch the browser untouched.
+// `posAtCoords` clamps to the nearest rendered position and a valid link's markers are replaced to zero width, so a click past a short label resolves onto its last character.
 function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
@@ -43,8 +42,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   }
 }
 
-/** The one answer the body's click path, the wikilink's, and a resting table cell's all read. Null inside a glance:
- *  the pane is a glance surface by contract, so nothing follows there. */
+/** The one answer the body's click path, the wikilink's, and a resting table cell's all read. Null inside a glance: the pane is a glance surface by contract, so nothing follows there. */
 export function followTarget(
   target: MdTarget,
   url: string,
@@ -78,8 +76,7 @@ export function dwellTarget(
   return hasWebScheme(web) ? () => glance({ kind: 'site', url: web }, el) : null
 }
 
-// A link naming a page is drawn as a connection and raises the same glance — the connection handler can't, because
-// its hit-test reads wikiLink tokens and this is a `link`.
+// A link naming a page raises the same glance, which the connection handler can't do: its hit-test reads wikiLink tokens and this is a `link`.
 export function markdownLinkClicks(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.

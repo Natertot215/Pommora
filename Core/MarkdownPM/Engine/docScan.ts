@@ -173,7 +173,6 @@ function lineIntentsInto(
   }
   const quoteChromeAt = (k: number): boolean => scan.quotes[k] && !literalQuoteAt(k)
 
-  // `base` is where the inner content begins, so a construct renders the same top-level or behind a `>`.
   const fence = fences[i]
   let base = 0
   const co = callouts[i]
@@ -248,8 +247,7 @@ function lineIntentsInto(
     return null
   }
 
-  // A citation row returns like a fence line, so it never enters the list vocabulary; its label can never be
-  // revealed — a caret in five hidden characters would break it.
+  // A citation row returns like a fence line, so it never enters the list vocabulary; its label can never be revealed — a caret in five hidden characters would break it.
   if (scan.citations.mask[i]) {
     const entry = scan.citations.entryAt.get(i)
     if (!entry) return null
@@ -344,7 +342,6 @@ export function docLineIntents(scan: DocScan): CachedLineIntents {
   return { perLine, rails: railIntents(scan.lineStarts, listLevels, listKinds) }
 }
 
-/** A position on a line's terminating newline belongs to that line, which puts an end-of-line caret where it looks. */
 export function lineIndexAt(scan: DocScan, pos: number): number {
   const { lines, lineStarts } = scan
   let lo = 0
@@ -357,7 +354,6 @@ export function lineIndexAt(scan: DocScan, pos: number): number {
   return lo
 }
 
-/** Only the one line's spans are read; the string form re-splits and re-pairs from the top. */
 export function inCodeAt(scan: DocScan, pos: number): boolean {
   if (pos < 0) return false
   const i = lineIndexAt(scan, pos)
@@ -369,7 +365,6 @@ export function inCalloutAt(scan: DocScan, pos: number): boolean {
   return scan.callouts[lineIndexAt(scan, pos)] !== undefined
 }
 
-/** The caret's own line is the only one whose intents read it — every reveal is line-local. NO_CARET = none. */
 function caretLine(scan: DocScan, selStart: number): number {
   return selStart < 0 ? NO_CARET : lineIndexAt(scan, selStart)
 }
@@ -436,7 +431,6 @@ function pushConstruct(
   const onMarker =
     lm !== null && selStart >= innerStart + lm.markerStart && selStart <= innerStart + lm.markerEnd
 
-  // A leading widget absorbs the box prefix into one replace; otherwise hide the prefix separately.
   const bulletAbsorbs =
     base > 0 && !onMarker && lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box
   const hrAbsorbs = base > 0 && !caretOnLine && lm === null && isThematicBreakLine(inner)
@@ -496,8 +490,7 @@ function pushConstruct(
     }
     return lm
   } else if (lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box) {
-    // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces
-    // occupy the in-flow slot; the visible gap is the glyph's CSS margin.
+    // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
     intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
     if (onMarker) {
       if (lm.markerStart > 0)
@@ -573,5 +566,4 @@ export function perText<T>(derive: (text: string) => T): (text: string) => T {
   }
 }
 
-// Keyed on the text, so a caller holding only the body meets the editor's own scan in one slot instead of scanning twice.
 export const scanOf = perText(scanDoc)

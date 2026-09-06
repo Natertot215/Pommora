@@ -26,10 +26,8 @@ interface PointerSpec<H extends PointerTarget> {
   menu: (hit: H, view: EditorView) => (() => void) | null
 }
 
-/** The wikilink and the markdown link differ only in what they find and where it leads; the gesture grammar over it is one. */
 export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): Extension {
-  // Never cancel before the gate: four handlers share one editor, and a pre-gate cancel from the ones
-  // that arm nothing would kill the dwell the one that does just started.
+  // Never cancel before the gate: four handlers share one editor, and a pre-gate cancel from the ones that arm nothing would kill the dwell the one that does just started.
   let editingOnPress = false
   // A native menu takes the pointer away and hands it back over the same link, and that re-entry would bloom a glance behind the menu.
   let actedOnLink = false
@@ -48,10 +46,8 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       // inside the syntax and should stand down, so a fallthrough seats one on every right-press and the
       // menu never appears. No test covers it — jsdom seats no caret from synthetic coordinates.
       if (event.button === 2) return go != null
-      // Everything below is the plain single left press; the other buttons keep CM's own semantics.
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
-      // A press that missed the drawn text but clamped inside belongs outside — the zero-width marker that
-      // made the coordinate land here would drop the caret inside a label the pointer never touched.
+      // A press that missed the drawn text but clamped inside belongs outside — the zero-width marker that made the coordinate land here would drop the caret inside a label the pointer never touched.
       if (!hit.onText && hit.hidesSyntax && !editingOnPress)
         return seatAtNearerEdge(view, hit.pos, hit.range)
       if (!go || editingOnPress) return false

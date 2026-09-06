@@ -82,7 +82,6 @@ export function useConnectionAutocomplete(
     view.dispatch({
       changes,
       selection: { anchor },
-      // A finished link rests rendered on its closer only because this gesture put the caret there.
       ...(opensAlias ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
     })
@@ -90,8 +89,7 @@ export function useConnectionAutocomplete(
     view.focus()
   }
 
-  // Clamped where it's read: forgetting a row shrinks the list without touching the query, and an open panel
-  // holds Enter away from the editor while picking nothing.
+  // Clamped where it's read: forgetting a row shrinks the list without touching the query, and an open panel holds Enter away from the editor while picking nothing.
   const selected = Math.min(acIndex, Math.max(candidates.length - 1, 0))
 
   const acCtl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
@@ -129,7 +127,6 @@ function surfaceOf(view: EditorView): HTMLElement {
   return found
 }
 
-// A free function rather than a closure so both editors share one detection path.
 export function detectConnectionQuery(
   view: EditorView,
   setAc: (s: AcState | null) => void,

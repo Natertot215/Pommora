@@ -67,10 +67,8 @@ export function CellEditor({
   onTablePaste?: (text: string) => boolean
   onUndo: () => void
   onRedo: () => void
-  // At the click point if one was captured, otherwise at the end (keyboard navigation into the cell).
   caretCoords?: { x: number; y: number } | null
   initialSelect?: [number, number] | null
-  /** The caret lands at the release point, and the end the sweep came from becomes the selection's anchor. */
   sweepFrom?: 'start' | 'end' | null
   connections?: () => ConnectionsApi | undefined
   ordinalOf?: (label: string) => number | null
@@ -227,8 +225,7 @@ export function CellEditor({
     viewRef.current?.dispatch({ effects: citesChanged.of(null) })
   }, [ordinalOf])
 
-  // Safe while focused: a keystroke makes `initial` equal the text just typed so the guard below no-ops,
-  // while a reorder or focused undo brings genuinely different text the sync must apply.
+  // Safe while focused: a keystroke makes `initial` equal the text just typed so the guard below no-ops, while a reorder or focused undo brings genuinely different text the sync must apply.
   useLayoutEffect(() => {
     const view = viewRef.current
     if (!view || view.state.doc.toString() === initial) return

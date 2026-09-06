@@ -1,5 +1,4 @@
-// The drawn selection via a CM `layer` seated BELOW the text, so the tint sits behind the glyphs the way a
-// native highlight does. Geometry only — fill, corner and bleed are text-selection.css.
+// Seated BELOW the text so the tint sits behind the glyphs. Geometry only — fill, corner and bleed are text-selection.css.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection, type SelectionRange } from '@codemirror/state'
 import { clampToLine } from './caret'
@@ -14,9 +13,7 @@ function caretEdge(view: EditorView, pos: number, assoc: 1 | -1): RectangleMarke
 const corner = (i: number, n: number): string =>
   n === 1 ? `${CLS}-solo` : i === 0 ? `${CLS}-head` : i === n - 1 ? `${CLS}-foot` : ''
 
-// CM hands back a contiguous, already-viewport-clipped ribbon, so the interior seams are gap-free as given
-// and only the OUTER bound is line-box tall where the caret is shorter — "caret-bound" is exactly two edits.
-// An edge the viewport clipped is a continuation rather than an end, and keeps its own box.
+// CM hands back a contiguous, already-viewport-clipped ribbon, so only the OUTER bound is line-box tall where the caret is shorter; an edge the viewport clipped is a continuation and keeps its own box.
 function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[] {
   const pieces = RectangleMarker.forRange(view, CLS, range)
   const last = pieces.length - 1
