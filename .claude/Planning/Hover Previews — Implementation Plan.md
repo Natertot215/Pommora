@@ -193,10 +193,10 @@ export function shiftDown(): boolean   // ambient: one lazily-attached window ke
 **Assumed by:** Tasks 5–7 (`armPreview` + `shiftDown`), Task 8 (`glanceShown`/`setGlanceShown` from `glanceAction`).
 
 **Verify — automated**
-- [ ] `rg -F 'armPreview' Core` → ≥1; `glanceLink` still resolves (kept); no new file.
-- [ ] Guard both halves: persistence 'off' → `armPreview` presents nothing (spy the presenter); '1s' → presents. Disabling the gate makes the 'off' case fail. Editor path proven via `glanceLink`.
-- [ ] `shiftDown()` flips on synthetic Shift keydown/keyup; `glanceShown()` reflects `setGlanceShown`.
-- [ ] `npm run typecheck` · `npm run test` green.
+- [x] `rg -F 'armPreview' Core` → ≥1; `glanceLink` still resolves (kept); no new file.
+- [x] Guard both halves: persistence 'off' → `armPreview` presents nothing (spy the presenter); '1s' → presents. Disabling the gate makes the 'off' case fail. Editor path proven via `glanceLink`.
+- [x] `shiftDown()` flips on synthetic Shift keydown/keyup; `glanceShown()` reflects `setGlanceShown`.
+- [x] `npm run typecheck` · `npm run test` green.
 
 **Verify — user**
 - [ ] With Hover Previews = Off, resting on an editor `[[connection]]` raises nothing. *(Carries.)*
@@ -634,8 +634,8 @@ useEffect(() => {
 ### Progress
 
 - [ ] **Phase 1** — One setting owns persistence · base `38a4d8e2c`
-  - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `PENDING1`
-  - [ ] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `<commit>`
+  - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `c80e39af1`
+  - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `PENDING2`
   - [ ] Task 3 — Picker replaces slider (hazard window) · `<commit>`
 - [ ] **Phase 2** — Dwell slots
   - [ ] Task 4 — `detail`/`views` dwell values · `<commit>`

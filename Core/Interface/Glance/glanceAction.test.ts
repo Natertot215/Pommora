@@ -6,7 +6,9 @@ import {
   armGlance,
   cancelGlance,
   closeGlance,
+  glanceShown,
   setGlancePresenter,
+  setGlanceShown,
   watchAnchor,
   type GlanceRequest,
 } from './glanceAction'
@@ -28,8 +30,19 @@ beforeEach(() => {
 afterEach(() => {
   cancelGlance()
   setGlancePresenter(null)
+  setGlanceShown(false)
   document.body.innerHTML = ''
   vi.useRealTimers()
+})
+
+describe('the shown flag', () => {
+  it('starts false and reflects setGlanceShown', () => {
+    expect(glanceShown()).toBe(false)
+    setGlanceShown(true)
+    expect(glanceShown()).toBe(true)
+    setGlanceShown(false)
+    expect(glanceShown()).toBe(false)
+  })
 })
 
 describe('the dwell', () => {
