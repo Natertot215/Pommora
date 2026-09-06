@@ -118,10 +118,10 @@ export function classifyEvent(
   if (rel === null) return { kind: 'full-refresh' }
   const segs = rel.split('/')
   const name = segs[segs.length - 1]
-  // First of every arm, so `excluded_folders` means the content corpus and nothing more: a shared attachments folder is usually named there already, and every other arm below would otherwise claim it.
+  // First of every arm: `excluded_folders` means content corpus only, preventing other arms from claiming it.
   if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel, event: ev.event }
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
-  // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or transition) — only the walk may adjudicate it. Container and Space sidecars record their OWNER directory there, so the parent is checked too.
+  // Unreadable paths: only walk may adjudicate. Sidecars record owner directory, so check parent.
   const dirRel = parentOf(rel)
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
@@ -296,7 +296,7 @@ export async function patchContainerFromDisk(
   root: string,
   dirRel: string,
 ): Promise<'ok' | 'refresh'> {
-  // This read only picks WHICH sidecar to open; the post-await read below is the authoritative one.
+  // This read picks sidecar; post-await read is authoritative.
   const held = getLiveTree()
   const kind = held && findContainer(held, dirRel)?.kind
   if (!kind) return 'refresh'

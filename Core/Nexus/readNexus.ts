@@ -88,7 +88,7 @@ const readContainerMeta = (
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readJsonObject(absPath).then((v) => v ?? {})
 
-// Registry-independent, so the parse cache never needs busting for registry changes.
+// Registry-independent cache never needs busting.
 const rawContextByNode = new WeakMap<object, Json>()
 
 function retainContextKeys(node: object, raw: Json): void {
@@ -316,7 +316,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       readRegistry(root),
       readSidecar(contextsRegistryFile(root)),
     ])
-  // Absent nexus.json is real raw mode; an UNREADABLE one is an error — a lenient null here would flip the whole nexus to raw mode, ignoring every sidecar's identity, views and schema for the session. Fail the walk instead; the tree stays as last-read.
+  // Unreadable nexus.json: fail walk, don't flip nexus to raw mode.
   if (!identityRead.ok && identityRead.error.code !== 'not-found') {
     throw new Error(`The nexus identity file could not be read: ${identityRead.error.message}`)
   }
@@ -330,7 +330,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
   const spaceOrders = readSpaceOrders(state)
   const unreadable: string[] = []
-  // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
+  // Unusable registry blanks Contexts. Record reads blank as unreadable, not deletion.
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
     unreadable.push(CONTEXTS_REGISTRY_REL)
   const contexts = ctxRegistry
