@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { duration, ms } from './motion'
 
-// `exitMs` must cover the slowest close animation — the default gives the menu Bloom (duration.slow)
-// slack; the picker/autocomplete `dropdown` token is covered by the same window.
+// `exitMs` must cover the slowest close animation; the default gives the menu Bloom slack.
 const EXIT_SLACK_MS = 30
 export function useExitPresence(
   open: boolean,
@@ -27,8 +26,7 @@ export function useExitPresence(
   return { mounted, closing }
 }
 
-/** A value kept through its exit animation: the store nulls it at close, and the body renders the
- *  last one until the window has left. */
+/** A value kept through its exit animation: the store nulls it at close, this renders the last. */
 export function useHeldPresence<T>(
   value: T | null,
   open: boolean = value !== null,

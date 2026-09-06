@@ -4,7 +4,6 @@ import { Button } from '../Buttons'
 import { Icon } from '../Symbols'
 import * as s from './frames.css'
 
-/** `iconRef` registers the icon button's element so an external picker can anchor to it. */
 export function InlineEditHeader({
   value,
   icon,
@@ -24,12 +23,8 @@ export function InlineEditHeader({
   onIconClick?: () => void
   iconOpen?: boolean
   outline?: string
-  /** A locked view embed sets this — an editable field whose commit can't land is the failure
-   *  mode this prevents. */
   readOnly?: boolean
-  /** Uncontrolled by default: clicking the field opens it. A host with its own way in — a menu's
-   *  Rename — drives it instead, so the caret lands in THIS field rather than wherever the
-   *  rename fence would otherwise award it. */
+  /** Uncontrolled by default; a host with its own way in drives it so the caret lands here. */
   editing?: boolean
   onEditingChange?: (editing: boolean) => void
 }): React.JSX.Element {
