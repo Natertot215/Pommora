@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 06:30 PT",
+  updated: "09-06-2026 09:40 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -104,8 +104,8 @@ const DATA = {
       { n: 9, title: "Dispatcher bodies and the one sweep", state: "done", hash: "838b1fa0", note: "mutate.ts 633 → 178; one governed sweep engine; a second nexus's journal clears (red-green). Non-test +151 (fourteen files' import blocks). Found: an unknown property kind erases the value (Task 16)." },
     ], gate: { name: "Gate 2", state: "done", hash: "de8c32b8", note: "Two Opus reviewers; −120 gross; a second assetUrl writer and the last sessionRoot reach-in fixed; tests 322 / 3,992." } },
     { name: "Phase 3", title: "Filing inside the domains · review → polish → move, Fable reviews each domain before its re-nest", tasks: [
-      { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "running", note: "Review landed at d1e42e19 (+96: the restored asset migration is +183, the rest −87). Comment killer, then the move. flavor → kind across Windows (47 sites)." },
-      { n: 11, title: "MarkdownPM re-nests; the model separates", state: "pending" },
+      { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "done", hash: "48b23960", note: "Review d1e42e19 (+96, the restored asset migration +183), comments 3804eb52 (3,246 → 1,003 lines), move 48b23960 (−284). PagePropertyRows with its variant; one tree index; flavor → kind. Run stands +89 vs base." },
+      { n: 11, title: "MarkdownPM re-nests; the model separates", state: "running", note: "Opus review (rulings 16–18, comments) then the re-nest." },
       { n: 12, title: "UIX settles at its root; motion has one definition", state: "pending" },
     ], gate: { name: "Gate 3", state: "pending", note: "One smoke launch." } },
     { name: "Phase 4", title: "The two layers", tasks: [
@@ -143,8 +143,11 @@ const DATA = {
     { at: "838b1fa0", label: "Task 9", lines: 69757 },
     { at: "de8c32b8", label: "Gate 2", lines: 69748 },
     { at: "d1e42e19", label: "Task 10 review", lines: 69844 },
+    { at: "3804eb52", label: "Task 10 comments", lines: 69832 },
+    { at: "48b23960", label: "Task 10 move", lines: 69548 },
   ],
   gates: [
+    { name: "Task 10 · 48b23960", text: "typecheck 0 · test 0 (323 / 4,003) · lint 0 (1,083 files) · build 0\\nbuildIndex → 1 · PagePanel → 0 · page-window-insp- → 0 · PagePropertyRows → 7 · flavor → 0 · kind: 'nav' → 2\\nsmoke (agent): page window opened, merged panel rendered 2 rows, body round-tripped, restored" },
     { name: "Gate 2 · de8c32b8", text: "typecheck 0 · test 0 (322 / 3,992) · lint 0 · build 0\\nwindow.nexus in Core → dialer.ts only · ipcMain → Bridge/ipc.ts only · installMachine/installStores one call each · sessionRoot() below handlers → 0" },
     { name: "Task 9 · 838b1fa0", text: "typecheck 0 · test 0 (322 / 3,991) · lint 0 (1,084 files) · build 0\nwc mutate.ts → 178 · cascadePages → 0 · sweepGovernedRoots → 14 call sites · second-root journal test red → green\nsmoke (agent): mutate setProperty + setIcon round-tripped to frontmatter; restored" },
     { name: "Task 8 · 4f6a8898", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 (1,071 files) · build 0\ntest ! -d Pommora · ipcMain.handle sites → 1 · BrowserWindow in Core → 0 · electron in Core → 0\nsmoke (agent): state open, 7 collections; page:open + updateBody round-tripped; restored" },
