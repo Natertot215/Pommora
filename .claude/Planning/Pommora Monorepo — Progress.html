@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 03:00 PT",
+  updated: "09-06-2026 03:30 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -107,9 +107,9 @@ const DATA = {
       { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "done", hash: "48b23960", note: "Review d1e42e19 (+96, the restored asset migration +183), comments 3804eb52 (3,246 → 1,003 lines), move 48b23960 (−284). PagePropertyRows with its variant; one tree index; flavor → kind. Run stands +89 vs base." },
       { n: 11, title: "MarkdownPM re-nests; the model separates", state: "running", note: "Review a9d737ab (−36; comments 2,214 → 759). Re-nest in flight: Engine/ and the ten folders, MarkdownEditor.tsx + markdown-pm.css at the root; Editor/ keeps only Task 14's host wiring." },
       { n: 12, title: "UIX settles at its root; motion has one definition", state: "done", hash: "50eded4f", note: "One color file (colors.ts), Theme 13 → 7, motion one source, gesture.ts the one skeleton, eight barrels retired, −15 files, −185 code lines. Rulings 19–30 each landed or already so. Run stands −236 vs base." },
-    ], gate: { name: "Gate 3", state: "running", note: "Task 12 smoke stands; one Opus simplify-and-attack review of de8c32b8..HEAD in flight." } },
+    ], gate: { name: "Gate 3", state: "done", hash: "e25db9ea", note: "One Opus review: −30, zero bugs; four Rule-of-Two twins left because each needs a new symbol (NexusIconEditors, AutocompletePane taking ac, the insertion-drag tail, toggleLink/toggleConnection)." } },
     { name: "Phase 4", title: "The two layers", tasks: [
-      { n: 13, title: "Every list menu on one path", state: "pending", note: "Fable." },
+      { n: 13, title: "Every list menu on one path", state: "running", note: "Opus comment killer over the menu files first, then Fable: one model, one channel, one native popper, one in-app presenter; rulings 31–37." },
       { n: 14, title: "The editor takes its host", state: "pending", note: "Fable." },
     ], gate: { name: "Gate 4", state: "pending" } },
     { name: "Phase 5", title: "Removals, fixes, docs", tasks: [
@@ -149,8 +149,10 @@ const DATA = {
     { at: "a9d737ab", label: "Task 11 review", lines: 69398 },
     { at: "9dfe2e59", label: "Task 11 move", lines: 69408 },
     { at: "50eded4f", label: "Task 12", lines: 69223 },
+    { at: "e25db9ea", label: "Gate 3", lines: 69193 },
   ],
   gates: [
+    { name: "Gate 3 · e25db9ea", text: "typecheck 0 · test 0 (322 / 4,003) · lint 0 (1,068 files) · build 0\\none Opus simplify-and-attack review of de8c32b8..HEAD: −30; zero bugs — every var(--…) read resolves, Engine/ transitively pure (29 files), paneMaterial byte-identical, docScan/docCache keyed the same, the gesture migration's drift as ruled\\nTask 12's smoke stood as the gate's · run −266 vs base" },
     { name: "Task 12 · 50eded4f", text: "typecheck 0 · test 0 (322 / 4,003; colorMap + solidColor tests folded into colors.test.ts) · lint 0 (1,068 files) · build 0\\ngetComputedStyle in OverScroll → 0 (duration.base → 8) · useHeld → 1 · @pommora/core in UIX → PickerControl only · color literals → 21, all UIX/Theme/colors.ts · size.css.ts gone · house → 0 · title* weight classes → 0\\nsmoke (agent): tree rendered, fifteen tokens resolved on :root, page body round-tripped, restored" },
     { name: "Task 11 · 9dfe2e59", text: "typecheck 0 · test 0 (323 / 4,003) · lint 0 (1,083 files) · build 0\\n@codemirror in Engine → 0 · react in Engine → 0 (control: 73 files) · _root → 1 file · Detect/Parser/Tokens/Decorations/Connections gone · MarkdownPM/Editor/ importers → pageEditor.ts only (travelTo)\\nsmoke (agent): page opened, typed smoke-11 into the editor over CDP after a hit-test, on disk after the debounce, undone, file byte-identical" },
     { name: "Task 11 review · a9d737ab", text: "typecheck 0 · test 0 (323 / 4,003) · lint 0 (1,082 files) · build 0\\ncaretSeat → 0 · markdown-tables.css at the root · docBidirMarks → 0 · Tables/index.ts gone · MarkdownPM comments 2,214 → 759, every file ≤ 20\\nrun −61 vs base" },
@@ -171,6 +173,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Gate 3 landed (e25db9ea, −30, no bugs). Phase 3 closed; the run stands −266 vs base. Six files stay over the 20-comment cap on biome-ignore directives, KNOBs, and load-bearing whys — the reviewer read all six and cut none. Phase 4 opens: the post-compact prompt notification, then Task 13 on Fable." },
     { when: "09-06-2026", text: "Task 12 landed (50eded4f, −185): every color value in UIX/Theme/colors.ts, Theme 13 → 7 modules, eight barrels gone, motion one source, the drag skeleton one. Ruled at commit: colors.ts (a .ts, not .css.ts) because Desktop's main process reads WINDOW_BG and vanilla-extract cannot export a function; ALL_ICONS stays Lucide-only (adding the 23 Tabler file glyphs would put new tiles in the picker); Menus/ and PickerControl/ barrels wait for Task 13; Interface/styles.css's :root geometry stays (app chrome, not the kit). Gate 3 review dispatched." },
     { when: "09-06-2026", text: "Task 11 landed (9dfe2e59, +10: reactWidget.ts and aliasGuard.ts). Ruled at commit: the header slot and api.ts wait for Task 14's host boundary; nine plain-DOM widgets keep extending WidgetType; Core/Connections/scan.ts stays on codeMask (Engine/detect would close a cycle). Task 12 dispatched." },
     { when: "09-06-2026", text: "Task 11's pre-move review landed (a9d737ab, −36): the three live rulings executed, eight A10 items taken, no literal color anywhere in MarkdownPM (nothing for Task 12 to pull). The re-nest agent dispatched. Found: blockContext rebuilt on every blockAt (for Task 14)." },
