@@ -5,7 +5,7 @@
 
 **Goal**
 
-One component renders every popup that assigns a property value, and one component renders a property panel. Afterwards `PropertyPicker` is the single popup surface — option rows, a date, a link address, a link alias, a number, a file — optionally opening on a chooser pane first, so "add a property" and "set a value" are one component. `Core/Properties/Page/` is gone, replaced by `Core/Properties/PropertyPanel.tsx` + `property-panel.css.ts`, whose rows are the design system's `MenuItem`.
+One component renders every hand-rolled popup that assigns a property value, and one component renders a property panel. Afterwards `PropertyPicker` renders option rows, a date, and a file pane, and optionally opens on a chooser pane first, so "add a property" and "set a value" are one component. Text popups already run through one shared `TextPicker` and stay there. `Core/Properties/Page/` is gone, replaced by `Core/Properties/PropertyPanel.tsx` + `property-panel.css.ts`, whose rows are the design system's `MenuItem`.
 
 **This folds hosts, not behavior.** A census of the whole codebase found nine distinct popup compositions for one job. Each surface's *behavior* is correct for that surface and is preserved exactly: Cards pops the link address and inlines the alias; Table and the panel inline the address and pop the alias; Table alone has bar-look numbers and mass select; Cards alone has the `PathField` file pane and centre-origin anchoring. Every one of those survives, chosen by the `kind` its caller passes. What dies is nine hand-rolled `PickerMenu` wrappers around the same content.
 
@@ -18,9 +18,9 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 1. `Core/Properties/Page/` deleted — all four files.
 2. `Core/Properties/PropertyPanel.tsx` + `property-panel.css.ts` replace it; rows are `MenuItem`s, leading icon + name, and the panel's own value element in a trailing slot.
 3. `PropertyPanel` takes `panelStyle: 'standard' | 'filled'`; both current callers pass `'filled'`, so nothing moves visually.
-4. One `shown` Set plus one live predicate replace the `revealed` / `setAside` pair; the page-frame seed is a clause inside that predicate, not a named function.
+4. The page-frame seed is a clause inside the existing visibility predicates, not a named function; `revealed` and `setAside` keep their names.
 5. `usePropertyRows` and the `PropertyRows` interface no longer exist, and are not re-created as a hook.
-6. `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, `DatetimeCellPicker`, and `UIX/Pickers/TextPicker/TextPicker.tsx` no longer exist; `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value.
+6. `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, and `DatetimeCellPicker` no longer exist. `PropertyPicker` mounts every option, datetime and file popup and both choosers; `TextPicker` — already one component with five callers — keeps every text popup and is not touched.
 7. Net source reduction **over 250 lines**, comments and tests excluded.
 8. Every behavior in the Behavior Ledger holds, on its own surface, unchanged.
 
@@ -31,7 +31,7 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 - `PropertyPicker`'s pure exports are imported by `MassPropertyPicker` (`pickShape`, `PropertyOptionRows`, `selectedValues`), `TableView` and `CardAddPicker` (`syntheticContextDef`, `pickSemantics`, `PropertyOptionRows`), and `FilterFrame` (`toggleValue` only — its `optionsOf` comes from `GroupFrame.tsx:356`, a **second** `optionsOf` with inverted precedence; recorded in Sequenced After, not fixed here) → the component grows props; no export changes signature or leaves the module. *(Task 1)*
 - `PickerMenu` latches `origin` and `direction` once per open (`picker-base.tsx:182-191`, `:207`) → a picker that swaps content kind while open cannot renegotiate placement. `FrameSlide` grows the pane in place instead, which is what `CardAddPicker` already does. The chooser pane is therefore the mechanism, not a convenience. *(Task 1)*
 - `PickerMenu` already holds its own `children` through exit via `useHeld` (`picker-base.tsx:128`), but not props derived from the same state → `PropertyPicker` holds its own `target` internally with `useHeld`, so no caller re-grows the `lastValue` ref pattern. *(Task 1)*
-- `EditableInput` is uncontrolled (`EditableInput.tsx:49`) → a `TextPicker` picks up a changed value only on remount. `TableView.tsx:672` forces this with a `nonce` key. `PropertyPicker` keys its text kinds the same way. *(Task 1)*
+- `TextPicker` (`UIX/Pickers/TextPicker/TextPicker.tsx:7`) is already one component with five callers across all three surfaces → it is not duplication, it is the end state. `PropertyPicker` does not absorb text kinds, `UIX/Pickers/` is untouched, and every text call site keeps its own mount and parse tail exactly as today. *(Tasks 1, 2, 3, 4)*
 - `PickerRow` is a real `<button>` (`picker-base.tsx:411`) → the chooser's entry rows use `MenuItem`, as `CardAddPicker.tsx:105` already does. *(Task 1)*
 - `addEntriesFor` reads `SavedView`, `hiddenListIds`, `isCompact` → `cardValueInput.ts` stays in `Views/Cards/`; the chooser takes caller-built entries so `Core/Properties` never sees a view type. *(Tasks 1, 2)*
 - The panel currently passes neither `look` nor `dateFormat` to its pickers (`PropertyValueEditors.tsx:51-58`, `:70-73`) → it keeps passing neither. A panel row has no per-view column style to read, and adding one would change what the panel renders. *(Task 4)*
@@ -113,7 +113,7 @@ Execution halts at each until Nathan closes its boxes.
 | B25 | Cards | The card menu's Add ▸ opens the chooser **pre-drilled** onto the chosen entry | `CardsView.tsx:1088`, `CardAddPicker.tsx:87-90` |
 | B26 | Cards | A chooser entry of kind datetime/url/number/file leaves the chooser and opens its own anchored popup with `revealOnCommit` | `CardAddPicker.tsx:121-128`, `CardPickerHost.tsx:121-134` |
 | B27 | Cards | Every add-path commit reveals its column, not only `revealOnCommit` ones | `CardPickerHost.tsx:220-223` |
-| B28 | All | Each popup keeps its current placement and frost: options `anchorX ? center : right` + solid; datetime/file `auto` + solid; every text popup `down` + `center`, **not** solid, left-anchored caret | `PropertyPicker.tsx:77`, `CardPickerHost.tsx:139,176`, `TextPicker.tsx:42-50` |
+| B28 | All | Options keeps `anchorX ? center : right`; datetime and file keep `auto`. Every text popup keeps its own `TextPicker`, untouched | `PropertyPicker.tsx:77`, `CardPickerHost.tsx:139,176` |
 
 **Made False** *(each rewrite rides the commit that falsifies it)*
 
@@ -128,7 +128,6 @@ Execution halts at each until Nathan closes its boxes.
 
 - `PagePropertyRows` → 0 (today 7) · `usePropertyRows` → 0 (4) · `PropertyValueEditors` → 0 (3)
 - `CardPickerHost` → 0 (3) · `CardAddPicker` → 0 (3) · `DatetimeCellPicker` → 0 (3) · `Properties/Page` → 0 (3)
-- `TextPicker` → 0 (12, of which 4 are `picker-base.test.tsx` and are rewritten onto `TextField` by Task 1)
 - Control: `PropertyPicker` → ≥ 19. Zero here means the sweep never ran.
 
 *From `grep -rF "<token>" --include='*.ts' --include='*.tsx' Core UIX`. Re-derive at execution.*
@@ -139,13 +138,13 @@ Execution halts at each until Nathan closes its boxes.
 
 ### Phase 1 — PropertyPicker becomes the one popup surface
 
-#### Task 1: PropertyPicker takes a target union, a pane descriptor, and a chooser pane
+#### Task 1: PropertyPicker takes a target union and a chooser pane
 
 **Requirement:** 6
 
-**Why:** Every popup that assigns a value is chosen today by a wrapper. Moving that choice inside `PropertyPicker` is what lets all of them be deleted. Tasks 2, 3 and 4 each consume this shape.
+**Why:** The datetime popup shell is hand-rolled three times and there are two separate choosers. Absorbing them is what lets `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, `DatetimeCellPicker` and the panel's Add popup all be deleted. Tasks 2, 3 and 4 consume this shape.
 
-**Now** — `PropertyPicker.tsx` 156 lines, one flat option list; `UIX/Pickers/TextPicker/TextPicker.tsx` 59 lines, a `PickerMenu` wrapping one `EditableInput`.
+**Now** — `PropertyPicker.tsx` 156 lines, one flat option list:
 
 ```ts
 export function PropertyPicker({
@@ -156,44 +155,19 @@ export function PropertyPicker({
      onCommit: (value: PropertyValue | null) => void; onDismiss: () => void }): React.JSX.Element | null
 ```
 
-**Becomes** — three files change. First, `TextPicker` splits: the field becomes reusable, the wrapper dies.
-
-```tsx
-// UIX/Pickers/TextPicker/TextField.tsx (new) — TextPicker.tsx (59) is DELETED, not kept beside it.
-// Its PickerMenu cannot nest inside another; the pane is now the caller's.
-export function TextField({
-  value, onCommit, onCancel, accent, maxLength, leading, trailing,
-}: {
-  value: string
-  onCommit: (next: string) => void
-  /** Escape's ONLY path out: EditableInput preventDefaults it, so dismissalStack bails. */
-  onCancel: () => void
-  accent?: string
-  maxLength?: number
-  leading?: React.ReactNode
-  trailing?: React.ReactNode
-}): React.JSX.Element
-// Body is TextPicker.tsx:26-40 verbatim — the affix branch keeps its 140px suffixField
-// wrapper and bare suffixInput; the bare branch keeps boxed + autoSize + caretAtEnd.
-export const textPaneClassName: string  // = text-picker.css.ts's `content`, the left-anchored caret
-```
+**Becomes** — three kinds and an optional chooser root. `UIX/Pickers/` is not touched.
 
 ```ts
 // Core/Properties/Pickers/PropertyPicker.tsx
-export type PropertyPickKind = 'options' | 'datetime' | 'link' | 'alias' | 'number' | 'file'
-
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
   | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
   | { kind: 'datetime'; dateFormat?: DateFormatName }
-  | { kind: 'link' }
-  | { kind: 'alias' }
-  | { kind: 'number'; leading?: ReactNode; trailing?: ReactNode; keepNull?: false }
   | { kind: 'file' }
 )
 
-/** `target` null AND `revealOnly` false means a dependent kind: the caller takes it back
- *  through `onReveal` and opens its own popup. That is B26, and it is why the chevron
- *  keys off `revealOnly` rather than off `target`. */
+/** `target` null with `revealOnly` false is a dependent kind: the caller takes it back
+ *  through `onReveal` and opens its own popup — a TextPicker, or the file dialog. That is
+ *  B26, and why the chevron keys off `revealOnly` rather than off `target`. */
 export type PickEntry = {
   id: string
   name: string
@@ -203,8 +177,7 @@ export type PickEntry = {
 }
 
 export function PropertyPicker({
-  target, chooser, chooserInitial, open, triggerRef, anchorX, nonce,
-  onCommit, onReveal, onDismiss,
+  target, chooser, chooserInitial, open, triggerRef, anchorX, onCommit, onReveal, onDismiss,
 }: {
   /** Optional only while the hazard window is open; Task 5 makes it required. */
   target?: PickTarget | null
@@ -214,9 +187,8 @@ export function PropertyPicker({
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   anchorX?: number
-  nonce?: number
-  /** `entry` is present on the chooser path — the caller cannot otherwise know
-   *  which column was committed, and B27 reveals on every add commit. */
+  /** `entry` is present on the chooser path — the caller cannot otherwise know which
+   *  column was committed, and B27 reveals on every add commit. */
   onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
   onDismiss: () => void
@@ -224,134 +196,46 @@ export function PropertyPicker({
 ```
 
 ```tsx
-// The pane descriptor. Placement is per-kind because it is per-kind today (B28) — one
-// `origin` ternary reproduces exactly one of the three live contracts.
-type Pane = {
-  body: React.JSX.Element
-  origin: 'auto' | 'center' | 'right'
-  direction?: PickerDirection
-  solid: boolean
-  contentClassName?: string
-}
-
-function valuePane(
-  t: PickTarget,
-  commit: (v: PropertyValue | null) => void,
-  onDismiss: () => void,
-  anchorX: number | undefined,
-  nonce: number | undefined,
-): Pane {
-  const text = (body: React.JSX.Element): Pane => ({
-    body, origin: 'center', direction: 'down', solid: false, contentClassName: textPaneClassName,
-  })
-  switch (t.kind) {
-    case 'options': {
-      const { options, selected, pick } = pickSemantics(t.def, t.current, commit, onDismiss, t.contextOptions)
-      return {
-        body: (
-          <PropertyOptionRows
-            def={t.def} look={t.look} contextOptions={t.contextOptions}
-            options={options} selected={selected} onPick={pick}
-          />
-        ),
-        origin: anchorX !== undefined ? 'center' : 'right',
-        solid: true,
-      }
-    }
-    case 'datetime':
-      return {
-        body: <DatetimeValuePicker value={t.current} dateFormat={t.dateFormat} onCommit={commit} />,
-        origin: 'auto',
-        solid: true,
-      }
-    case 'link': {
-      const raw = t.current?.kind === 'url' ? t.current.value : undefined
-      return text(
-        <TextField
-          key={nonce}
-          value={raw ? linkEditText(raw) : ''}
-          accent={solidColorCss(t.def.link_color)}
-          onCancel={onDismiss}
-          onCommit={(v) => {
-            const next = urlValueFromEdit(v, raw, resolveTitle)
-            if (next !== undefined && (next !== null || raw)) commit(next)
-            onDismiss()
-          }}
-        />,
-      )
-    }
-    case 'alias': {
-      const raw = t.current?.kind === 'url' ? t.current.value : ''
-      return text(
-        <TextField
-          key={nonce}
-          value={linkAlias(raw) ?? ''}
-          accent={solidColorCss(t.def.link_color)}
-          onCancel={onDismiss}
-          onCommit={(v) => { commit(urlValueFromRename(v, raw)); onDismiss() }}
-        />,
-      )
-    }
-    case 'number':
-      return text(
-        <TextField
-          key={nonce}
-          value={t.current?.kind === 'number' ? String(t.current.value) : ''}
-          leading={t.leading}
-          trailing={t.trailing}
-          onCancel={onDismiss}
-          onCommit={(v) => {
-            const next = parseEditorValue('number', v)
-            if (next !== undefined && (next !== null || t.keepNull !== false)) commit(next)
-            onDismiss()
-          }}
-        />,
-      )
-    case 'file':
-      return {
-        body: (
-          <PathField
-            label={t.def.name} value="" empty="Choose a file" browseLabel="Choose File"
-            onBrowse={() => pickFileInto(t.def, t.current, null, (v) => { commit(v); onDismiss() })}
-            onCommit={(raw) => {
-              if (raw.trim()) adoptPathInto(t.def, t.current, raw.trim(), commit)
-              onDismiss()
-            }}
-          />
-        ),
-        origin: 'auto',
-        solid: true,
-      }
-  }
-}
-```
-
-```tsx
-// The body. `useHeld` on the target is why no caller keeps a lastValue ref.
+// The body. useHeld on the target is why no caller keeps a lastValue ref.
 const held = useHeld(target ?? null, open)
 const [picked, setPicked] = useState<PickEntry | null>(null)
 useEffect(() => {
-  if (open) setPicked(chooser?.find((e) => e.id === chooserInitial) ?? null)
-  else setPicked(null)
+  setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
 }, [open, chooser, chooserInitial])
 
-const shown = picked?.target ?? held
+const t = picked?.target ?? held
 const commit = (v: PropertyValue | null): void => onCommit(v, picked ?? undefined)
-const pane = shown && valuePane(shown, commit, onDismiss, anchorX, nonce)
-const place: Pane | undefined = chooser
-  ? { body: <></>, origin: 'auto', solid: true }
-  : pane
+
+// B28 — options anchors to the click when it has one; datetime and file keep 'auto'.
+const origin = !t || t.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
+
+const pane = !t ? null : t.kind === 'options' ? (
+  (() => {
+    const { options, selected, pick } = pickSemantics(t.def, t.current, commit, onDismiss, t.contextOptions)
+    return (
+      <PropertyOptionRows
+        def={t.def} look={t.look} contextOptions={t.contextOptions}
+        options={options} selected={selected} onPick={pick}
+      />
+    )
+  })()
+) : t.kind === 'datetime' ? (
+  <DatetimeValuePicker value={t.current} dateFormat={t.dateFormat} onCommit={commit} />
+) : (
+  <PathField
+    label={t.def.name} value="" empty="Choose a file" browseLabel="Choose File"
+    onBrowse={() => pickFileInto(t.def, t.current, null, (v) => { commit(v); onDismiss() })}
+    onCommit={(raw) => {
+      if (raw.trim()) adoptPathInto(t.def, t.current, raw.trim(), commit)
+      onDismiss()
+    }}
+  />
+)
 
 return (
   <PickerMenu
-    solid={place?.solid ?? true}
-    open={open}
-    onDismiss={onDismiss}
-    triggerRef={triggerRef}
-    origin={place?.origin ?? 'right'}
-    direction={place?.direction}
-    anchorX={anchorX}
-    contentClassName={place?.contentClassName}
+    solid open={open} onDismiss={onDismiss} triggerRef={triggerRef}
+    origin={chooser ? 'auto' : origin} anchorX={anchorX}
   >
     {chooser ? (
       <FrameSlide
@@ -385,40 +269,33 @@ return (
             <div>
               <MenuTopRow
                 label="Properties" current={picked.name}
-                onBack={() => setPicked(null)} className={s.chooserTop}
+                onBack={() => setPicked(null)} className={chooserTop}
               />
-              {pane?.body}
+              {pane}
             </div>
           )
         }
       />
     ) : (
-      pane?.body
+      pane
     )}
   </PickerMenu>
 )
 ```
 
-```ts
-// Core/Properties/Pickers/property-picker.css.ts (new, 3 lines) — card-add-top-flat moves
-// here from cards-view.css:123, which Core/Properties may not import.
-export const chooserTop = style({ vars: { '--row-pad-y': '0px' } })
-```
-
 **Ordered steps**
 
-1. Split `TextPicker` first, in isolation: create `TextField.tsx`, delete `TextPicker.tsx`, and rewrite `picker-base.test.tsx:310-350` to mount `TextField` inside a bare `PickerMenu`. The test asserts caret behavior, which is `TextField`'s, so it survives intact — this is a signature move, not a weakened test.
-2. Add the types, `valuePane`, and the new props to `PropertyPicker`. Leave the flat props in place **and make `target` optional** — the hazard window is open and all three callers still pass the old shape.
-3. Delete `card-add-top-flat` from `cards-view.css` once nothing imports it (Task 2 removes the last importer).
+1. Add the two types and the new props, leaving the flat props in place and **`target` optional** — the hazard window is open and all three callers still pass the old shape.
+2. `chooserTop` carries `card-add-top-flat`'s one declaration (`--row-pad-y: 0px`, `cards-view.css:123`), which `Core/Properties` cannot import. **Open question for Nathan, recorded under Rulings:** a three-line `property-picker.css.ts` for one override, or drop the override and let the chooser header keep `MenuTopRow`'s default padding. Do not decide it silently.
 
 **Assumed by:** Task 2 (Cards), Task 3 (Table), Task 4 (PropertyPanel), Task 5 (props removal).
 
 **Verify — automated**
 
-- [ ] New `PropertyPicker.pane.test.tsx`, red first — expect 8 failures naming the missing props, then green: each of the six kinds renders its own body and its own `origin`/`solid` (B28); a `revealOnly` entry calls `onReveal` and never `onCommit`; a targeted entry slides to the value pane; `chooserInitial` opens pre-drilled (B25); `onCommit` carries its `entry` on the chooser path; Escape on a text kind calls `onDismiss` (B-C6).
-- [ ] `rg -F "TextPicker" UIX Core` → 0. Control: `rg -F "TextField" UIX` → non-zero.
+- [ ] New `PropertyPicker.pane.test.tsx`, red first — expect 6 failures naming the missing props, then green: each of the three kinds renders its own body; options takes `center` with an `anchorX` and `right` without, datetime and file take `auto` (B28); a `revealOnly` entry calls `onReveal` and never `onCommit`; a targeted entry slides to the value pane; `chooserInitial` opens pre-drilled (B25); `onCommit` carries its `entry` on the chooser path.
+- [ ] `git diff --stat UIX/` → empty. `UIX/Pickers/` is untouched by this task.
 - [ ] `npm run typecheck` green — `target` optional keeps all three existing callers compiling.
-- [ ] `npm run test` green, count = baseline + 8. `npm run lint` green.
+- [ ] `npm run test` green, count = baseline + 6. `npm run lint` green.
 
 **Verify — user**
 
@@ -441,51 +318,57 @@ export const chooserTop = style({ vars: { '--row-pad-y': '0px' } })
 **Becomes** — `CardsView` builds the picker's inputs where it already holds the requests:
 
 ```tsx
-// Core/Views/Cards/CardsView.tsx
-import { addEntriesFor as addableEntries, addColumn, orderAddableEntries } from './cardValueInput'
-
-const pickTargetFor = (rowId: string, column: ResolvedColumn, kind: ValuePickerRequest['kind']): PickTarget | null => {
+// Core/Views/Cards/CardsView.tsx — ONE adapter, because three call sites read it: the value
+// popup, the chooser's in-pane entries, and the dismiss effects. It is not a one-reader helper.
+const pickTargetFor = (rowId: string, column: ResolvedColumn, kind: PickTarget['kind']): PickTarget | null => {
   const row = rowById.get(rowId)
   if (!row) return null
   const current = resolveFieldValue(row, column.id, ctx.schema)
   const def = ctx.schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
   const style = styleFor(column.id, ctx.schema, view)
-  switch (kind) {
-    case 'picker':
-      return { kind: 'options', def, current, look: style.look,
-               contextOptions: contextOptionsFor(column) ?? undefined }
-    case 'datetime': return { kind: 'datetime', def, current, dateFormat: style.date_format }
-    case 'link':     return { kind: 'link', def, current }
-    case 'number':   return { kind: 'number', def, current, leading: numberFormatGlyph(def), keepNull: false }
-    case 'file':     return { kind: 'file', def, current }
-  }
+  if (kind === 'datetime') return { kind, def, current, dateFormat: style.date_format }
+  if (kind === 'file') return { kind, def, current }
+  return { kind: 'options', def, current, look: style.look,
+           contextOptions: contextOptionsFor(column) ?? undefined }
 }
+```
 
-// A chooser entry gets a target ONLY for the in-pane kinds. datetime/url/number/file keep
-// their own anchored popup (B26), so they arrive here with target null and revealOnly false.
-const chooserEntries = (req: AddPickerRequest): PickEntry[] => {
-  const row = rowById.get(req.rowId)
-  if (!row) return []
-  return orderAddableEntries(addableEntries(row, view, ctx, columns, tree, capitalize)).map((e) => ({
-    id: e.id,
-    name: e.name,
-    icon: e.def ? propertyIcon(e.def) : (propertyTypeIconName(e.type) ?? 'square-dashed'),
-    revealOnly: e.revealOnly,
-    target:
-      e.revealOnly || e.type === 'datetime' || e.type === 'url' || e.type === 'number' || e.type === 'file'
-        ? null
-        : pickTargetFor(req.rowId, addColumn(e.id, tree), 'picker'),
-  }))
-}
+```tsx
+// The link and number popups keep their own TextPicker mounts, moved from CardPickerHost
+// :151-175 to CardsView unchanged — same props, same parse tails, same accent (B10).
+<TextPicker
+  open={valuePicker?.kind === 'link'} onDismiss={dismissValue} triggerRef={pickerAnchorRef}
+  value={…} accent={…} onCommit={…}
+/>
+<TextPicker
+  open={valuePicker?.kind === 'number'} onDismiss={dismissValue} triggerRef={pickerAnchorRef}
+  value={…} leading={…} onCommit={…}
+/>
 ```
 
 ```tsx
 // Replacing <CardPickerHost/> at CardsView.tsx:590.
 <PropertyPicker
-  target={valuePicker ? pickTargetFor(valuePicker.rowId, valuePicker.column, valuePicker.kind) : null}
-  chooser={addPicker ? chooserEntries(addPicker) : undefined}
+  target={
+    valuePicker && valuePicker.kind !== 'link' && valuePicker.kind !== 'number'
+      ? pickTargetFor(valuePicker.rowId, valuePicker.column, valuePicker.kind)
+      : null
+  }
+  chooser={
+    addPicker &&
+    orderAddableEntries(addableEntries(rowById.get(addPicker.rowId), view, ctx, columns, tree, capitalize)).map((e) => ({
+      id: e.id,
+      name: e.name,
+      icon: e.def ? propertyIcon(e.def) : (propertyTypeIconName(e.type) ?? 'square-dashed'),
+      revealOnly: e.revealOnly,
+      // Only the in-pane kinds get a target; the other four hand back through onReveal (B26).
+      target: e.revealOnly || e.type !== 'select' && e.type !== 'status' && e.type !== 'multi_select' && e.type !== 'context'
+        ? null
+        : pickTargetFor(addPicker.rowId, addColumn(e.id, tree), 'options'),
+    }))
+  }
   chooserInitial={addPicker?.initialEntry?.id}
-  open={valuePicker !== null || addPicker !== null}
+  open={(valuePicker !== null && valuePicker.kind !== 'link' && valuePicker.kind !== 'number') || addPicker !== null}
   triggerRef={pickerAnchorRef}
   anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}
   onCommit={(v, entry) => {
@@ -518,8 +401,9 @@ const chooserEntries = (req: AddPickerRequest): PickEntry[] => {
 1. Move `ValuePickerRequest` / `AddPickerRequest` into `CardsView.tsx` above the component.
 2. Move `CardPickerHost`'s two force-dismiss effects (B14) into `CardsView` — they read `rowById`, `view`, `ctx`, which it already holds.
 3. `pickerAnchorRef` is one ref pointed at `(valuePicker ?? addPicker)?.anchor` each render; the `lastValue` / `lastAdd` / `valueAnchorRef` trio goes, since `PropertyPicker` holds the target.
-4. `dependentKind` is `CardPickerHost.tsx:127-130`'s map, moved: `datetime|number|file → itself, else 'link'`.
-5. Delete both files and `cards-view.css`'s `card-add-top-flat`; rewrite the two `ViewTypesPM.md:119` claims.
+4. `dependentKind` is `CardPickerHost.tsx:127-130`'s map, moved unchanged: `datetime|number|file → itself, else 'link'`.
+5. The `link` and `number` `TextPicker` mounts and the `datetime`/`file` `PropertyPicker` target move together; `ValuePickerRequest.kind` keeps all five members, since Cards still distinguishes them.
+6. Delete both files and `cards-view.css`'s `card-add-top-flat`; rewrite the two `ViewTypesPM.md:119` claims.
 
 **Verify — automated**
 
@@ -540,8 +424,9 @@ const chooserEntries = (req: AddPickerRequest): PickEntry[] => {
 
 ```tsx
 // TableView.tsx:91  DatetimeCellPicker — deleted
-// :588-616  cellPicker's datetime + options branches · :665-709  renameField's two TextPickers
-// :547-561 cellEditor · :620-661 massPicker · :575-583 pickerDefOf — unchanged, all still used
+// :588-616  cellPicker's datetime + options branches — folded
+// :665-709 renameField · :547-561 cellEditor · :620-661 massPicker · :575-583 pickerDefOf
+//   — unchanged, all still used
 ```
 
 **Becomes** — two mounts, because the two write paths must stay split:
@@ -563,24 +448,13 @@ const cellTarget = (): PickTarget | null => {
         contextOptions: picked.contextOptions ?? undefined }
 }
 
-const textTarget = (): PickTarget | null => {
-  const cell = editing?.mode === 'rename' ? editing : lastRename.current
-  const row = cell && rowById.get(cell.rowId)
-  const col = cell && columns.find((c) => c.id === cell.colId)
-  if (!cell || !row || !col) return null
-  const def = schema.find((d) => d.id === col.id)
-  if (!def) return null
-  const current = resolveFieldValue(row, col.id, schema)
-  const divisor = numberDivisor(def)
-  return declaredType(col.id, schema) === 'number'
-    ? { kind: 'number', def, current, trailing: divisor ? `/ ${divisor}` : undefined }
-    : { kind: 'alias', def, current }
-}
+// renameField (:665-709) is UNCHANGED — both its branches keep their own TextPicker,
+// their own key={rowId:colId:nonce} remount, and their own setProperty write (B17, B18).
 ```
 
 ```tsx
-// Two mounts. The picker writes through commitValue; both rename branches write through
-// setProperty — the split the plan's Sequenced After deliberately keeps.
+// ONE mount. The rename branches stay on TextPicker + setProperty — the write-path split
+// the plan's Sequenced After deliberately keeps.
 <PropertyPicker
   target={cellTarget()}
   open={editing?.mode === 'picker'}
@@ -588,14 +462,7 @@ const textTarget = (): PickTarget | null => {
   onCommit={(v) => { const c = pickerCell(); if (c) commitValue(c.row, c.col, v) }}
   onDismiss={() => setEditing(null)}
 />
-<PropertyPicker
-  target={textTarget()}
-  open={editing?.mode === 'rename'}
-  triggerRef={triggerElRef}
-  nonce={(editing?.mode === 'rename' ? editing.nonce : lastRename.current?.nonce) ?? 0}
-  onCommit={(v) => { const c = renameCell(); if (c) setProperty(c.row, c.col.id, v) }}
-  onDismiss={() => setEditing(null)}
-/>
+// renameField() renders as it does today — no second PropertyPicker mount.
 ```
 
 **Verify — automated**
@@ -605,7 +472,7 @@ const textTarget = (): PickTarget | null => {
 
 **Verify — user**
 
-- [ ] Table: a date cell opens the calendar in its column format (B21) at its current position (B28); a bar-look number opens the `/ divisor` field (B17); an alias renames in its popup, re-anchored to the cell, and re-opening on a different cell shows that cell's text (B18); a filled http url still opens the browser and the address still edits inline (B19); mass-select still fans out.
+- [ ] Table: a date cell opens the calendar in its column format (B21) at its current position (B28); the bar-look number field and the alias rename are untouched (B17, B18); a filled http url still opens the browser and the address still edits inline (B19); mass-select still fans out.
 
 ---
 
@@ -647,16 +514,16 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element
 ```
 
 ```tsx
-// Visibility. `shown` is `revealed` ONLY — the rest stays a LIVE predicate over fm, because
+// Visibility. `revealed` keeps its name and its meaning; the rest stays a LIVE predicate, because
 // a committed value must make its row appear the instant its key exists. Reset key is
 // nexusId, exactly as today (PagePropertyRows.tsx:85-89) — NOT page.path.
-const [shown, setShown] = useState<ReadonlySet<string>>(new Set())
+const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
 const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
 
 const isShownProp = (def: PropertyDefinition): boolean =>
-  shown.has(def.id) || (fm as Record<string, unknown> | null)?.[def.name] !== undefined
+  revealed.has(def.id) || (fm as Record<string, unknown> | null)?.[def.name] !== undefined
 const isShownContext = (id: string): boolean =>
-  pageFrame ? !setAside.has(id) : shown.has(id) || (contextValues?.[id]?.length ?? 0) > 0
+  pageFrame ? !setAside.has(id) : revealed.has(id) || (contextValues?.[id]?.length ?? 0) > 0
 ```
 
 ```tsx
@@ -688,11 +555,14 @@ const isShownContext = (id: string): boolean =>
 // ONE PropertyPicker for both the value popup and the Add chooser — the panel's second
 // PickerMenu (PagePropertyRows.tsx:325-350) is deleted, not re-hosted.
 <PropertyPicker
-  target={editing ? panelTarget(editing) : null}
-  chooser={addOpen ? hiddenEntries() : undefined}
+  target={editing ? panelTarget : null}
+  chooser={addOpen ? hiddenEntries : undefined}
   open={editing !== null || addOpen}
   triggerRef={triggerRef}
-  onCommit={(v, entry) => commitFor(entry?.id ?? editing?.id, v)}
+  onCommit={(v, entry) => {
+    const id = entry?.id ?? editing?.id
+    if (id) (isContextRow(id) ? commitContext : commitValue)(id, v)
+  }}
   onReveal={(entry) => {
     // B7 — Add ▸ still runs the full click dispatch against the newly revealed row.
     setAddOpen(false)
@@ -743,7 +613,7 @@ export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
 
 **Verify — automated**
 
-- [ ] New `PropertyPanel.test.tsx`, red first — expect 3 failures, module not found: an `onBack` panel seeds Context rows shown and one without seeds them hidden (B8); a committed value makes its row appear without a `shown` write (the live predicate, C10).
+- [ ] New `PropertyPanel.test.tsx`, red first — expect 3 failures, module not found: an `onBack` panel seeds Context rows shown and one without seeds them hidden (B8); a committed value makes its row appear without a `revealed` write (the live predicate).
 - [ ] `rg -F "PagePropertyRows" Core` → 0 · `usePropertyRows` → 0 · `PropertyValueEditors` → 0 · `Properties/Page` → 0. Control: `rg -F "PropertyPanel" Core` → ≥ 4.
 - [ ] `rg -c "PickerMenu" Core/Properties/PropertyPanel.tsx` → 0 — the panel mounts none of its own (U1).
 - [ ] `ls Core/Properties/Page` exits non-zero.
@@ -792,7 +662,7 @@ export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
 A. Every popup, menu, pane, or inline editor opened to SET a property value or a
    Context/Space assignment. Sweep Core/Properties, Core/Views, Core/Contexts,
    Core/Tiles, Core/Pages, Core/Interface, Core/Navigation, Core/MarkdownPM.
-   Anchors: PickerMenu · TextField · PathField · DatetimeValuePicker · PropertyEditor ·
+   Anchors: PickerMenu · TextPicker · PathField · DatetimeValuePicker · PropertyEditor ·
    sharedValueClickAction · pickFileInto · setProperty · setContext.
    Report file:line, trigger, component, value kinds, commit path, inline-or-popup.
    Flag every PickerMenu mounted to assign a value that is NOT PropertyPicker.
@@ -849,7 +719,7 @@ without deleting more than it grows is out of scope — report it under Sequence
 ### Progress
 
 - [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
-  - [ ] Task 1 — TextField split, target union, pane descriptor, chooser · `<commit>`
+  - [ ] Task 1 — target union + chooser pane · `<commit>`
   - [ ] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
   - [ ] Task 3 — Table's two mounts; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
@@ -866,7 +736,8 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **`panelStyle` ships with both callers on `'filled'`**, so nothing moves visually. `groupStandard` is not written until a surface asks for it.
 - **Per-surface behavior is correct and preserved.** The link inversion between Cards and Table/panel, Cards' inline alias rename, Table's bar-look number, and the panel's missing `look`/`dateFormat` are all intentional. This plan folds hosts, not behavior.
 - **`MassPropertyPicker`'s exemption is its batched commit contract**, not its dismiss rule — the two dismiss rules were traced identical, and `massPickCommits` at n=1 is provably `pickSemantics.pick`. The exemption stands only because folding it would change the `onPick(commits[])` shape that `TableView`'s `pushValueUndo` depends on, and the undo/write layer is out of scope.
-- **`TextPicker` is deleted, not kept.** After the fold its only remaining reference was its own test. `TextField` replaces it in the same directory and the test is rewritten onto it — a signature move, not a weakened assertion.
+- **`TextPicker` is untouched, and `UIX/Pickers/` is out of scope entirely.** An earlier draft extracted its inner field into a new `TextField` so text kinds could live inside `PropertyPicker`. Nathan struck it: the field already exists, `TextPicker` is already ONE component with five callers across all three surfaces, and folding a shared component into another shared component buys nothing while orphaning a working one. `PropertyPicker` absorbs only what is hand-rolled per surface — options, datetime, file, and the two choosers.
+- **Named locals earn their place or are inlined.** `valuePane`, `PropertyPickKind`, the `Pane` descriptor, `nonce`, `keepNull`, `textTarget`, `shown`, and six caller-side adapters were cut for having one writer and one reader. `pickTargetFor` survives because three call sites read it.
 - **Three defects reported and declined.** The Cards Add ▸ number/file empty pane, the panel's unmount-while-open, and the add-flow's discarded null were raised from the census. Nathan: the first is not real, the second resolves when the panel inherits the new picker, the third is fine. None is a task.
 
 ### Open Against Later Tasks
