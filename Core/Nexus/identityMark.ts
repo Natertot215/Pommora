@@ -4,7 +4,7 @@ export const ID_KEY = 'ID'
 
 export const RETIRED_ID_KEYS = ['PageID', 'TaskID', 'EventID'] as const
 
-export const KIND_MARK = {
+const KIND_MARK = {
   page: 'P',
   task: 'T',
   event: 'E',

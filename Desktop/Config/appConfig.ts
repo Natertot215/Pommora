@@ -58,7 +58,7 @@ export function addRecent(recents: string[], path: string, cap = 10): string[] {
 }
 
 /** True when `p` exists and is a directory. An unreadable dir surfaces later as a read error. */
-export async function isExistingDir(p: string): Promise<boolean> {
+async function isExistingDir(p: string): Promise<boolean> {
   try {
     return (await stat(p)).isDirectory()
   } catch {

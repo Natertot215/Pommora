@@ -76,7 +76,7 @@ const GRANULARITY: PickerOption<DateGranularity>[] = [
 const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
 
-const pickerRow = <T extends string>(
+export const pickerRow = <T extends string>(
   glyph: string,
   label: string,
   value: T,

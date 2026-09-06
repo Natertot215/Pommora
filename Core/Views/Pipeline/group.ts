@@ -30,9 +30,21 @@ const applySort = (rows: ViewRow[], sorter: Sorter | null): ViewRow[] =>
 
 const placeTail = (
   groups: ResolvedGroup[],
-  tail: ResolvedGroup,
+  tail: ViewRow[],
+  sorter: Sorter | null,
+  collapsed: Set<string>,
   placement: EmptyPlacement,
-): ResolvedGroup[] => (placement === 'top' ? [tail, ...groups] : [...groups, tail])
+  key: string = UNGROUPED,
+): ResolvedGroup[] => {
+  if (tail.length === 0) return groups
+  const band: ResolvedGroup = {
+    key,
+    kind: 'ungrouped',
+    items: applySort(tail, sorter),
+    isCollapsed: collapsed.has(key),
+  }
+  return placement === 'top' ? [band, ...groups] : [...groups, band]
+}
 
 function groupRows<K>(rows: ViewRow[], keyOf: (r: ViewRow) => K): Map<K, ViewRow[]> {
   const m = new Map<K, ViewRow[]>()
@@ -232,17 +244,8 @@ function property(
     })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
-  if (isCheckbox || noValue.length === 0) return groups
-  return placeTail(
-    groups,
-    {
-      key: UNGROUPED,
-      kind: 'ungrouped',
-      items: applySort(noValue, sorter),
-      isCollapsed: collapsed.has(UNGROUPED),
-    },
-    placement,
-  )
+  if (isCheckbox) return groups
+  return placeTail(groups, noValue, sorter, collapsed, placement)
 }
 
 function structural(
@@ -265,17 +268,7 @@ function structural(
     }
   }
   const groups = setTree.map(build)
-  if (rootRows.length === 0) return groups
-  return placeTail(
-    groups,
-    {
-      key: UNGROUPED,
-      kind: 'ungrouped',
-      items: applySort(rootRows, sorter),
-      isCollapsed: collapsed.has(UNGROUPED),
-    },
-    placement,
-  )
+  return placeTail(groups, rootRows, sorter, collapsed, placement)
 }
 
 /** Cards never indent: each top-level set is ONE flat band, so a manual reorder spans the whole band instead of snapping back within a sub-set. */
@@ -297,17 +290,7 @@ function structuralFlat(
     ),
     isCollapsed: collapsed.has(node.id),
   }))
-  if (rootRows.length === 0) return groups
-  return placeTail(
-    groups,
-    {
-      key: UNGROUPED,
-      kind: 'ungrouped',
-      items: applySort(rootRows, sorter),
-      isCollapsed: collapsed.has(UNGROUPED),
-    },
-    placement,
-  )
+  return placeTail(groups, rootRows, sorter, collapsed, placement)
 }
 
 function locationFlat(
@@ -360,19 +343,14 @@ function structuralSubGrouped(
         },
       ]
     })
-    if (noValue.length > 0) {
-      const key = subGroupKey(node.id, UNGROUPED)
-      children = placeTail(
-        children,
-        {
-          key,
-          kind: 'ungrouped',
-          items: applySort(noValue, sorter),
-          isCollapsed: collapsed.has(key),
-        },
-        placement,
-      )
-    }
+    children = placeTail(
+      children,
+      noValue,
+      sorter,
+      collapsed,
+      placement,
+      subGroupKey(node.id, UNGROUPED),
+    )
     return {
       key: node.id,
       kind: 'structural-set',
@@ -381,17 +359,7 @@ function structuralSubGrouped(
       isCollapsed: collapsed.has(node.id),
     }
   })
-  if (rootRows.length === 0) return groups
-  return placeTail(
-    groups,
-    {
-      key: UNGROUPED,
-      kind: 'ungrouped',
-      items: applySort(rootRows, sorter),
-      isCollapsed: collapsed.has(UNGROUPED),
-    },
-    placement,
-  )
+  return placeTail(groups, rootRows, sorter, collapsed, placement)
 }
 
 /** Compose bucket-first so a set whose sub-buckets all emptied goes with them. */

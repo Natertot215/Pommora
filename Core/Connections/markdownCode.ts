@@ -87,7 +87,7 @@ export function fenceSpans(lines: string[]): FenceSpan[] {
   return spans
 }
 
-export function fencedLineMask(lines: string[]): Uint8Array {
+function fencedLineMask(lines: string[]): Uint8Array {
   const mask = new Uint8Array(lines.length)
   for (const span of fenceSpans(lines)) for (let k = span.open; k <= span.close; k++) mask[k] = 1
   return mask

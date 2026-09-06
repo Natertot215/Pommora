@@ -22,7 +22,7 @@ export type ConnCellAction = 'link:clear' | 'link:hide'
 export type ConnCellApply = (action: ConnCellAction) => void
 export type ConnOpenAction = Extract<PageMetaAction, 'title:window' | 'title:newtab'>
 
-export const CONN_OPEN_ACTIONS = [
+const CONN_OPEN_ACTIONS = [
   'title:window',
   'title:newtab',
 ] as const satisfies readonly ConnOpenAction[]
@@ -36,12 +36,12 @@ const CONN_COPY_ACTIONS = [
 
 export type ConnSiteAction = 'link:window' | 'link:browser'
 
-export const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
+const CONN_SITE_ROWS: readonly ActionItem<ConnSiteAction>[] = [
   { label: 'Open Preview', action: 'link:window' },
   { label: 'Open Browser', action: 'link:browser' },
 ]
 
-export const CONN_URL_ACTIONS = [
+const CONN_URL_ACTIONS = [
   'rename',
   'editLink',
   'format:link-full',
@@ -53,7 +53,7 @@ export const CONN_URL_ACTIONS = [
 export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
 
 /** Ends the menu below a separator; acts on the link's existence rather than how it reads. */
-export const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
+const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
   { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
   { label: 'Delete', action: 'link:delete' },
 ]

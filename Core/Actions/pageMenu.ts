@@ -1,21 +1,17 @@
-// The page context-menu meta block (Open · Rename · Edit Icon · Delete) and the send block that
-// closes it (Move To ▸ · Copy Link · Copy Path) — shared by every surface that right-clicks a page,
-// so the page actions stay single-sourced. An already-open page reads "Open" (focus its tab) rather
-// than "Open New Tab". Each consumer names its item set explicitly, so no menu carries an action
-// its router doesn't serve.
+// The page context menu's meta block and the send block that closes it, shared by every surface
+// that right-clicks a page. Each consumer names its item set, so no menu carries an action its
+// router doesn't serve.
 
 import type { ActionItem } from './menuModel'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
 
-/** What Copy Link puts on the clipboard: the connection syntax that reaches this page from any
- *  MarkdownPM surface, so a copied page pastes as a working link rather than as its name. */
+/** Copy Link's clipboard form: a copied page pastes as a working link, not as its name. */
 export function pageLinkText(title: string): string {
   return connectionText(title)
 }
 
-/** What Copy Path puts on the clipboard: the page's location read from the nexus root, with the
- *  extension dropped — the form a person names a page by, not the form the disk stores it under. */
+/** Copy Path's clipboard form: the location a person names a page by, not the disk's spelling. */
 export function pagePathText(nexusRelativePath: string): string {
   return nexusRelativePath.replace(/\.md$/i, '')
 }
@@ -34,14 +30,13 @@ export type PageMetaAction =
   | 'title:reveal'
   | 'title:delete'
 
-/** The Move To row is a submenu rather than an act, so `title:moveto` never resolves back to a
- *  surface — main expands it into the destination tree, and a leaf resolves as the move itself. */
+/** A submenu rather than an act, so it never resolves back to a surface: the host expands it into
+ *  the destination tree, and a leaf resolves as the move itself. */
 export const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
 
-/** One destination an entity may be sent to. `children` are its sub-sets (a nested submenu). Both
- *  addresses ride along since the two consumers address differently: `path` is the move's
+/** Both addresses ride along because the consumers address differently: `path` is the move's
  *  `newParentPath`, `id` is what a restore resolves its parent by. */
 export interface MoveTarget {
   id: string
@@ -50,34 +45,30 @@ export interface MoveTarget {
   children?: MoveTarget[]
 }
 
-/** The containers on offer, and the one the page already sits in — that destination shows disabled,
- *  since moving there is a no-op rather than an absence. No targets, no Move To row. */
+/** The container the page already sits in shows disabled: a no-op rather than an absence. */
 export interface PageMoveContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
 }
 
-/** Whether a surface's menu carries the Move To row at all — no destination, no row. */
 export function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
-/** The actions a surface can offer for a page it only points at — a tab, a row — since none asks
- *  anything of the page but its name, where it sits, and the history kept for it. */
+/** What a surface that only points at a page (a tab, a row) can offer: its name, where it sits,
+ *  and the history kept for it. */
 export type PageReachAction = Extract<
   PageMetaAction,
   'title:copylink' | 'title:copypath' | 'title:history'
 >
 
-export const PAGE_REACH_ACTIONS = [
+const PAGE_REACH_ACTIONS = [
   'title:copylink',
   'title:copypath',
   'title:history',
 ] as const satisfies readonly PageReachAction[]
 
-/** The send block — where a page can go, then what it can be carried away as, then its history.
- *  Every surface that reaches a page offers them together, so the group reads the same wherever
- *  it's popped. */
+/** Offered together everywhere, so the send block reads the same wherever it's popped. */
 export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW
 
 const PAGE_SEND_ACTIONS = [
@@ -85,17 +76,15 @@ const PAGE_SEND_ACTIONS = [
   ...PAGE_REACH_ACTIONS,
 ] as const satisfies readonly PageSendAction[]
 
-/** The block as a surface that only points at a page should ask for it — the reach actions alone
- *  where nothing was offered to send to. */
+/** The reach actions alone where nothing was offered to send to. */
 export function pageSendActions(ctx: PageMoveContext): readonly PageSendAction[] {
   return offersMove(ctx) ? PAGE_SEND_ACTIONS : PAGE_REACH_ACTIONS
 }
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
-  // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" using the
-  // Below path — a grid has no above. `clipboard`/`reveal` are separate since copying a page's link
-  // or path needs nothing but the page, where revealing it needs the filesystem underneath.
+  // `newPages`: 'pair' offers Above/Below; 'single' takes the Below path, since a grid has no
+  // above. `clipboard` and `reveal` split because only revealing needs a filesystem underneath.
   opts: {
     window?: boolean
     newPages?: 'pair' | 'single'
@@ -142,9 +131,8 @@ export function pageMetaMenuItems(
   ]
 }
 
-/** A narrower menu drawn from the same list — actions stay in the order the full menu gives them,
- *  so a surface offering four of them can't disagree with one offering ten. A separator that would
- *  lead the result is dropped, since it separates nothing. */
+/** Drawn from the same list in the same order, so a surface offering four can't disagree with one
+ *  offering ten. A separator left leading the result is dropped. */
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,

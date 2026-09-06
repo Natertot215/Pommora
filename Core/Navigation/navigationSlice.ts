@@ -635,9 +635,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (selection.kind === 'collection' || selection.kind === 'set')
         parentPath = findContainer(tree, (n) => n.id === selection.id)?.path ?? null
       else if (selection.kind === 'page') parentPath = parentPathOf(selection.path)
-      if (parentPath === null) {
-        parentPath = (tree.collections ?? [])[0]?.path ?? null
-      }
+      if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
       if (parentPath === null) return
       await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, (created) =>
         get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),

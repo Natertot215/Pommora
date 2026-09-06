@@ -21,7 +21,7 @@ export function anchorPoint(
 
 /** The single statement of what a row becomes, whichever menu carries it. Icons are left behind
  *  on purpose: an OS menu draws its own. */
-export function nativeRow<A extends string>(
+function nativeRow<A extends string>(
   item: ActionItem<A>,
   pick: (action: A) => () => void,
 ): MenuItemConstructorOptions {

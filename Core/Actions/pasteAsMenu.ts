@@ -1,6 +1,5 @@
-// How one paste departs from the nexus-wide ⌘V default without touching a setting. The offer is
-// read off the clipboard's text alone — no page index, no round trip — since an address is an
-// address, and a page arrives as the `[[Title]]` its own Copy Link puts there.
+// How one paste departs from the nexus-wide ⌘V default without touching a setting. Read off the
+// clipboard's text alone — no page index, no round trip.
 
 import { embeddableTitle, pageEmbedText, pageLinkPattern } from '../Connections/connections'
 import {
@@ -29,8 +28,7 @@ export const PASTE_AS_PREFIX = 'pasteAs:'
 
 export type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: string } | null
 
-/** The whole clipboard as one wikilink, or null — anything around it makes it prose that happens
- *  to contain a connection. */
+/** Null unless the whole clipboard IS the wikilink; anything around it is prose. */
 function wholeWikiLink(s: string): string | null {
   const m = pageLinkPattern().exec(s)
   return m && m[0] === s ? m[1] : null
@@ -76,15 +74,14 @@ function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
   return target.kind === 'page' ? embeddableTitle(target.title) : hasWebScheme(target.url)
 }
 
-/** Empty means no submenu, not one shown empty. Each placement-bound form is gated on its own
- *  seat — embeds need a blank line to themselves, the footnote a spot a marker can bind from. */
+/** Empty means no submenu, not one shown empty; each form is gated on its own seat. */
 export function pasteAsRows(
   clipboard: string,
   embedSeat: boolean,
   citeSeat: boolean,
 ): readonly PasteAsRow[] {
-  // Footnote answers to the clipboard alone, not `pasteAsTarget`: that reader refuses a newline,
-  // but a multi-paragraph clipboard is exactly what the footnote's normalization is for.
+  // Footnote reads the clipboard, not `pasteAsTarget`: that reader refuses the newline a
+  // multi-paragraph clipboard carries, which is exactly what the footnote normalizes.
   const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
   const target = pasteAsTarget(clipboard)
   if (!target) return footnote
@@ -100,30 +97,26 @@ export interface TextPaste {
   text: string
 }
 
-/** Replaces the caret's whole line rather than the selection, so stray leading whitespace can't
- *  leave the token indented, which the two embed grammars read as prose. */
+/** The whole line, not the selection: leading whitespace would indent the token into prose. */
 export interface LinePaste {
   kind: 'line'
   text: string
 }
 
-/** Null where `target`/`form` don't belong together — a menu can stay open while the clipboard
- *  changes underneath it. The three link forms return the same shape a formatted paste does, so
- *  a Page Title chosen here defers to the fetch exactly as one pasted does. */
+/** Null where `target` and `form` don't belong together, since a menu can stay open while the
+ *  clipboard changes under it. The link forms return what a formatted paste returns. */
 export function pasteAsWrite(
   target: PasteAsTarget,
   form: PasteAsForm,
   title?: string,
 ): LinkPaste | TextPaste | LinePaste | null {
-  // A footnote is two disjoint sites — a marker and a citation — so the caller forks ahead of this
-  // single-range writer rather than ask it for text it can't spell.
+  // A footnote writes two disjoint sites, so the caller forks ahead of this single-range writer.
   if (!target || form === 'footnote') return null
   if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
     if (form === 'connection') return { kind: 'text', text: pageLinkText(target.title) }
     if (form === 'embedPage') return { kind: 'line', text: pageEmbedText(target.title) }
-    // Through the serializer so a title carrying `]` gets escaped — spelled inline, `Notes [WIP]`
-    // would compose a link that tokenizes as nothing at all.
+    // Through the serializer so a `]` escapes: inline, `Notes [WIP]` tokenizes as nothing.
     if (form === 'markdown')
       return {
         kind: 'text',
@@ -132,8 +125,7 @@ export function pasteAsWrite(
     return null
   }
   if (form === 'plain') return { kind: 'text', text: target.url }
-  // Label left empty: a pasted address has no words of its own, and an empty label defers display
-  // to the nexus's link format at render.
+  // Left empty: a pasted address has no words, so display defers to the link format at render.
   if (form === 'embedLink') return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
   if (form === 'connection' || form === 'markdown' || form === 'embedPage') return null
   return linkPaste(target.url, form, title)

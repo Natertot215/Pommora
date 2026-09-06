@@ -12,6 +12,7 @@ import { nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
 import { excludedFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
 import { normalizeSeg, rootSegs } from '../Locations/exclusion'
 import { fail, ok, type Result } from '../Contract/result'
+import { isPlainObject } from '../Properties/propertyValue'
 
 /** The one primitive every `.nexus` config writer funnels through: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
 export async function updateNexusConfig(
@@ -34,11 +35,7 @@ export function updateCrops(
   edit: (byImage: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
   return updateNexusConfig(root, 'crops', (cur) => {
-    const b =
-      cur.byImage != null && typeof cur.byImage === 'object' && !Array.isArray(cur.byImage)
-        ? (cur.byImage as Record<string, unknown>)
-        : {}
-    return { ...cur, byImage: edit(b) }
+    return { ...cur, byImage: edit(isPlainObject(cur.byImage) ? cur.byImage : {}) }
   })
 }
 
@@ -122,12 +119,7 @@ export function writeNavViewModes(root: string, modes: NavViewModes): Promise<vo
 /** An `undefined` value resets the key to its built-in default — JSON omits it. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
   return updateSettings(root, (cur) => {
-    const p =
-      cur.personalization != null &&
-      typeof cur.personalization === 'object' &&
-      !Array.isArray(cur.personalization)
-        ? (cur.personalization as Record<string, unknown>)
-        : {}
+    const p = isPlainObject(cur.personalization) ? cur.personalization : {}
     return { ...cur, personalization: { ...p, [key]: value } }
   })
 }

@@ -1,6 +1,5 @@
-// Pure tree patch transforms — the one definition both processes apply: the renderer
-// optimistically, main as canon. Unresolvable against the given tree returns null → the caller
-// falls back to a full walk.
+// The one set of tree transforms both processes apply — the renderer optimistically, main as
+// canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
 
 import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '../Pages/mutateRequest'
 import { titleFromPath } from '../Connections/connections'
@@ -11,17 +10,15 @@ import type { PropertyDefinition } from '../Properties/properties'
 import type { SavedView } from '../Views/views'
 
 const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
-/** The containing directory of a nexus-relative POSIX path, '' at the root — a bare
- *  slice(0, lastIndexOf) would eat the name's last character. */
 export const parentOf = (path: string): string => {
   const i = path.lastIndexOf('/')
   return i === -1 ? '' : path.slice(0, i)
 }
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
-// The walk's literal node shapes, stated once. Every producer builds nodes here, so a
-// transform-built node and a walk-built node of the same entity carry identical key sets — what
-// lets `stabilize` prove tree convergence by reference identity.
+// The walk's literal node shapes, stated once: every producer builds here, so a transform-built
+// node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by
+// reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
 export function makePageNode(f: {
   id: string
@@ -117,8 +114,7 @@ export function makeCollectionNode(f: {
   }
 }
 
-/** The ORIGINAL oldPath/newPath thread through the whole recursion — swapping against a child's
- *  already-swapped path would re-prepend its segment and corrupt every grandchild. */
+/** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
   node: T,
   oldPath: string,
@@ -135,7 +131,6 @@ function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
   } as T
 }
 
-/** Extract the page/set at `path` from its container; returns the pruned container tree + the node. */
 function extract(
   containers: (CollectionNode | SetNode)[],
   path: string,
@@ -165,7 +160,6 @@ function extract(
   return { containers: next, node }
 }
 
-/** Insert `node` into the container at `parentPath` (its pages for a page, sets for a set). */
 function insert(
   containers: (CollectionNode | SetNode)[],
   parentPath: string,
@@ -194,9 +188,7 @@ function insert(
   return { containers: next, done }
 }
 
-/** Re-point (or, with `newPath` null, prune) the walk-owned unreadable bookkeeping riding a path
- *  change — a stale entry buys spurious walks at a dead address and blinds the classifier to the
- *  live one. The key is never invented, since `stabilize` counts keys. */
+/** `newPath` null prunes. A stale entry buys spurious walks at a dead address. */
 function repointUnreadable(
   tree: NexusTree | null,
   oldPath: string,
@@ -217,7 +209,6 @@ function repointUnreadable(
   return next
 }
 
-/** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
 export function relocateNodeInTree(
   tree: NexusTree,
   path: string,
@@ -243,9 +234,7 @@ function holdsPath(containers: (CollectionNode | SetNode)[], path: string): bool
   )
 }
 
-/** Insert a just-created entity at its slot. Null when it's already present — a watcher echo or a
- *  replay can hand the optimistic layer a tree that holds the newborn, and a second insert would
- *  duplicate the node; null keeps the insert idempotent. */
+/** Null when already present: an echo or replay can hand a tree that holds the newborn. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
@@ -253,9 +242,9 @@ export function insertCreatedInTree(
 ): NexusTree | null {
   const present =
     req.op === 'createContextGroup'
-      ? (tree.contexts?.some((g) => g.def.id === created.id) ?? false)
+      ? tree.contexts.some((g) => g.def.id === created.id)
       : req.op === 'createSpace'
-        ? (tree.contexts?.some((g) => g.spaces.some((s) => s.path === created.path)) ?? false)
+        ? tree.contexts.some((g) => g.spaces.some((s) => s.path === created.path))
         : holdsPath(tree.collections, created.path)
   if (present) return null
   if (req.op === 'createContextGroup') {
@@ -264,10 +253,10 @@ export function insertCreatedInTree(
       def: { id: created.id, title },
       spaces: [],
     }
-    return { ...tree, contexts: [...(tree.contexts ?? []), group] }
+    return { ...tree, contexts: [...tree.contexts, group] }
   }
   if (req.op === 'createSpace') {
-    if (!tree.contexts?.some((g) => g.def.id === req.contextId)) return null
+    if (!tree.contexts.some((g) => g.def.id === req.contextId)) return null
     const node = makeSpaceNode({
       id: created.id,
       title: basename(created.path),
@@ -282,8 +271,7 @@ export function insertCreatedInTree(
     }
   }
   if (req.op === 'createContainer' && req.kind === 'collection') {
-    // Only top-level collections are walked as CollectionNodes — a nested one is unresolvable
-    // here (a set-shaped node would render the wrong kind), so the caller walks.
+    // Only top-level collections walk as CollectionNodes; a nested one would render as a set.
     if (req.parentPath !== '') return null
     const node = makeCollectionNode({
       id: created.id,
@@ -305,8 +293,7 @@ export function insertCreatedInTree(
             title: basename(created.path),
             path: created.path,
           })
-    // A positional create's row must appear AT its slot — the order array already names it, and
-    // an appended row would flash at the container's bottom.
+    // The order array already names the slot; an appended row would flash at the bottom first.
     const pageAt =
       req.op === 'createPage' && req.order ? req.order.indexOf(NEW_PAGE_SLOT) : undefined
     const placed = insert(tree.collections, req.parentPath, node, pageAt)
@@ -316,10 +303,8 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Install a re-read registry and re-point every Collection's embedded defs at it, so the one fact
- *  stays reference-identical in both of its homes the way the walk leaves them. `stabilize` recycles
- *  the defs that did not move, so only the edited property's assigners get a new node. An id the
- *  registry no longer carries drops out, exactly how the walk resolves a dangling ref. */
+/** Keeps one def reference-identical in both homes (`tree.registry` and each Collection's
+ *  `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
 export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
   const defs = stabilize(registry, tree.registry)
   const byId = new Map(defs.map((d) => [d.id, d]))
@@ -336,9 +321,7 @@ export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinit
   return { ...tree, registry: defs, collections: moved ? collections : tree.collections }
 }
 
-/** Context-layer patches. A Context's folder and a Space's folder are both named by title, so a
- *  rename moves paths too: a Space is a leaf and swaps its own tail; a Context rename prefix-swaps
- *  every member Space's path under the renamed group directory. */
+/** Named by title, so a rename moves paths: a Space swaps its tail, a Context prefix-swaps. */
 export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
   const groups = tree.contexts
   if (!groups.length) return null
@@ -377,8 +360,7 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
           ...g,
           spaces: g.spaces.map((s) => {
             if (s.id !== req.spaceId) return s
-            // The key stays even when cleared — the factories emit every key the walk does,
-            // and `stabilize` counts keys, so a dropped one reads as drift.
+            // The key stays when cleared: `stabilize` counts keys, so a dropped one reads as drift.
             return { ...s, color: req.color ?? undefined }
           }),
         })),
@@ -398,7 +380,6 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
   }
 }
 
-/** Reorder `items` to follow `ids`; unlisted items keep their relative order at the tail. */
 function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T[] {
   const rank = new Map(ids.map((id, i) => [id, i]))
   return [...items].sort(
@@ -408,20 +389,20 @@ function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T
 
 export type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
 
-/** `fn` returns the replacement — or null to remove it. */
+/** `fn` returns the replacement, or null to remove the node. */
 export function updateNodeInTree(
   tree: NexusTree,
   path: string,
   fn: (node: TreeEntity) => TreeEntity | null,
 ): NexusTree | null {
-  for (const [gi, g] of (tree.contexts ?? []).entries()) {
+  for (const [gi, g] of tree.contexts.entries()) {
     const i = g.spaces.findIndex((s) => s.path === path)
     if (i === -1) continue
     const next = fn(g.spaces[i])
     const spaces = [...g.spaces]
     if (next === null) spaces.splice(i, 1)
     else spaces[i] = next as SpaceNode
-    const groups = [...(tree.contexts ?? [])]
+    const groups = [...tree.contexts]
     groups[gi] = { ...g, spaces }
     return { ...tree, contexts: groups }
   }
@@ -470,12 +451,10 @@ function updateInContainers(
   return { containers: out, found }
 }
 
-/** Rename the entity at `path` (filename = title): title, path, and descendant paths update.
- *  Only valid after the write succeeded — a collision fails main-side and never patches. */
+/** Only valid after the write succeeded — a collision fails main-side and never patches. */
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
   const parent = parentOf(path)
-  // A page path wears `.md`; every container and Space path is bare. Case-insensitive to match the
-  // walk's admit: a `.MD` page renames onto the canonical lowercase extension.
+  // Case-insensitive to match the walk's admit: a `.MD` page takes the canonical extension.
   const newPath = /\.md$/i.test(path)
     ? joinPath(parent, `${newName}.md`)
     : joinPath(parent, newName)
@@ -489,7 +468,6 @@ export function renameNodeInTree(tree: NexusTree, path: string, newName: string)
   return repointUnreadable(next, path, newPath)
 }
 
-/** Remove the entity at `path` (a just-confirmed delete). */
 export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | null {
   return repointUnreadable(
     updateNodeInTree(tree, path, () => null),
@@ -498,7 +476,6 @@ export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | nul
   )
 }
 
-/** Patch renderer-knowable display fields on the entity at `path` (icon / heading-icon chrome). */
 export function patchNodeInTree(
   tree: NexusTree,
   path: string,
@@ -506,8 +483,7 @@ export function patchNodeInTree(
 ): NexusTree | null {
   return updateNodeInTree(tree, path, (node) => {
     const next = { ...node }
-    // A cleared icon keeps its key (undefined-valued), matching the factories' walk shape —
-    // `stabilize` counts keys, so deleting one reads as drift.
+    // A cleared icon keeps its key, undefined-valued: `stabilize` counts keys.
     if ('icon' in patch) next.icon = patch.icon ?? undefined
     if (patch.headingIconHidden !== undefined) next.headingIconHidden = patch.headingIconHidden
     if ('disclosureLocked' in patch && (next.kind === 'collection' || next.kind === 'set'))
@@ -516,8 +492,7 @@ export function patchNodeInTree(
   })
 }
 
-/** Stable order-by-id: listed ids in `order` order, unknown ids after in their current order.
- *  Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
+/** Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
 export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   return reorderById(arr, order, (item) => item.id)
 }
@@ -526,7 +501,6 @@ export function reorderTopInTree(tree: NexusTree, _key: StateOrderKey, order: st
   return { ...tree, collections: byOrder(tree.collections, order) }
 }
 
-/** Reorder a container's child containers ('' = the vault's top collections). */
 export function reorderChildrenInTree(
   tree: NexusTree,
   parentPath: string,
@@ -540,8 +514,7 @@ export function reorderChildrenInTree(
   )
 }
 
-/** Reorder a container's pages to `order` — the pages-side twin of reorderChildrenInTree,
- *  composed after relocateNodeInTree so a moved page lands at its slot, not appended. */
+/** Composed after relocateNodeInTree so a moved page lands at its slot rather than appended. */
 export function reorderPagesInTree(
   tree: NexusTree,
   parentPath: string,

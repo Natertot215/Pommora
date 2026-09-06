@@ -1,3 +1,5 @@
+import { clamp } from '@pommora/uix/Utilities/clamp'
+import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { join } from '../Locations/posix'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
@@ -67,9 +69,7 @@ function reorderInner(
     if (!r) return fail('not-found', 'Collection not found.')
     const from = r.ids.indexOf(propertyId)
     if (from < 0) return fail('not-found', 'Property not assigned.')
-    const next = [...r.ids]
-    const [moved] = next.splice(from, 1)
-    next.splice(Math.min(Math.max(toIndex, 0), next.length), 0, moved)
+    const next = moveItem(r.ids, from, clamp(toIndex, 0, r.ids.length - 1))
     await write(collectionFolder, r.sidecar, next)
     return ok(null)
   })
@@ -104,7 +104,7 @@ export async function collectionFolders(root: string): Promise<string[]> {
     if (node.kind === 'collection') out.push(join(root, node.path))
     for (const s of node.sets ?? []) visit(s)
   }
-  for (const c of [...(tree.collections ?? [])]) visit(c)
+  for (const c of tree.collections) visit(c)
   return out
 }
 

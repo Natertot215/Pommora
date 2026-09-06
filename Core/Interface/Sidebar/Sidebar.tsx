@@ -837,11 +837,11 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   )
 
   const contextsLayer = dndLayer(
-    (tree.contexts ?? []).map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />),
+    tree.contexts.map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />),
   )
 
   const collectionsLayer = dndLayer(
-    (tree.collections ?? []).map((c) => (
+    tree.collections.map((c) => (
       <CollectionRow
         key={c.id}
         col={c}

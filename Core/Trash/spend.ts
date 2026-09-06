@@ -169,7 +169,7 @@ function withDestination(
   switch (record.entity) {
     case 'space':
       if (destination.kind !== 'context') return fail('invalid-path', 'A Space lives in a Context.')
-      if (!tree.contexts?.some((g) => g.def.id === destination.id))
+      if (!tree.contexts.some((g) => g.def.id === destination.id))
         return fail('not-found', 'That Context no longer exists.')
       return ok({ ...record, parent: { kind: 'context', id: destination.id } })
     case 'page':

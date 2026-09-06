@@ -8,8 +8,8 @@ import { ID_KEY } from './identityMark'
 
 const ulidList = z.array(z.string()).optional()
 
-export const openInField = z.enum(OPEN_INS).optional().catch(undefined)
-export const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
+const openInField = z.enum(OPEN_INS).optional().catch(undefined)
+const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
 
 export const coerceOpenIn = (raw: unknown): OpenIn | undefined => openInField.parse(raw)
 export const coerceViewButton = (raw: unknown): ViewButton | undefined => viewButtonField.parse(raw)

@@ -1,7 +1,5 @@
-// The lone-line webpage-embed grammar. Every shipped link grammar refuses empty halves — a
-// `[](…)` label or a `(…)` with nothing in it tokenizes as prose — so the surfaces that must
-// recognize a link mid-authoring read the empty-tolerant variant instead of the tokenizer.
-// No fs, no React; both processes may import it.
+// The lone-line webpage-embed grammar. Every shipped link grammar refuses empty halves, so the
+// surfaces that must recognize a link mid-authoring read the empty-tolerant variant instead.
 
 import {
   emptyTolerantLinkRegex,
@@ -13,11 +11,9 @@ import {
 import { linkDisplayText } from '../Connections/linkValue'
 import type { LinkDisplay } from '../Properties/properties'
 
-/** The lone-line webpage embed: `![label](url)` alone on its line, trailing whitespace tolerated,
- *  never indented (an indented line is list continuation, mirroring the page embed's anchor).
- *  The label may be empty; the URL must carry an explicit http(s) scheme and be an address the
- *  link system would open — a mid-typed prefix like `https://example.c` passes here, which is
- *  why claims are formation-gated on the selection rather than on the grammar. */
+/** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A
+ *  mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on
+ *  the selection rather than on the grammar. */
 export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
   if (!lineText.startsWith('![')) return null
   const line = lineText.replace(/\s+$/, '')
@@ -29,16 +25,14 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   return { label: unescapeAlias(m[1]), url }
 }
 
-/** The ONLY assembly path any webpage-embed writer uses — `serializeLink` emits no bang and
- *  collapses an empty alias to the bare URL, so composing through it would write a line the
- *  detector refuses. */
+/** The ONLY assembly path: `serializeLink` emits no bang and collapses an empty alias to the
+ *  bare URL, so composing through it would write a line the detector refuses. */
 export function composeWebpageEmbedLine(label: string, url: string): string {
   return `![${escapeAlias(label)}](${url})`
 }
 
-/** The title a tile displays, resolved at render — nothing is ever written into the document. A
- *  hand-written on-disk label wins verbatim; an empty one derives per the nexus's default link
- *  format, Page Title reading the same fetched-title cache every property cell reads. */
+/** Resolved at render; nothing is written into the document. A hand-written label wins verbatim,
+ *  an empty one derives per the nexus's default link format. */
 export function webpageTileTitle(
   label: string,
   url: string,
@@ -48,19 +42,15 @@ export function webpageTileTitle(
   return label !== '' ? label : linkDisplayText(url, display, title)
 }
 
-/** The address span of a lone webpage embed, in line-relative offsets — what Edit Link selects, so
- *  a tile's address is replaced by typing the way every other link's is. */
+/** What Edit Link selects, so a tile's address is retyped the way every other link's is. */
 export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
   if (!loneWebpageEmbed(lineText)) return null
   const span = emptyTolerantLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
   return span ? [span[0], span[1]] : null
 }
 
-/** Whether `col` sits inside the `()` destination of a markdown link on the line — the span a
- *  character typed at `col` would land in. Two shapes count: a complete link, empty halves
- *  included (the caret ⌘K seats sits inside `[]()` before anything is typed), and a destination
- *  still open before the caret (`](` with no `)` yet) — the same reading the smart-dash guard
- *  gives an address mid-typing. */
+/** Two shapes count: a complete link, empty halves included (⌘K seats the caret inside `[]()`),
+ *  and a destination still open before the caret — the reading the smart-dash guard gives too. */
 export function linkDestinationAt(lineText: string, col: number): boolean {
   for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
     const span = m.indices?.[2]
