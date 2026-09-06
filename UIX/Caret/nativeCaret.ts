@@ -1,8 +1,7 @@
-// CSS can only recolor the browser's native caret and selection, never reshape either, so this paints the
-// same `.mdpm-caret` bar and `.mdpm-sel` pills the editor draws over whichever field is focused. One
-// document-root focus listener, so no component has to opt in.
+// CSS can only recolor the native caret and selection, never reshape either, so this paints the
+// same `.mdpm-caret` bar and `.mdpm-sel` pills the editor draws over whichever field is focused.
 
-// Computed-style props copied onto the measuring mirror so its text lays out exactly like the field's.
+// Copied onto the measuring mirror so its text lays out exactly like the field's.
 const MIRROR_PROPS = [
   'boxSizing',
   'width',
@@ -36,15 +35,14 @@ const MIRROR_PROPS = [
 
 type Field = HTMLInputElement | HTMLTextAreaElement
 
-// email/number return null selectionStart, so skip. `password` is out on purpose: it renders
-// masked dots, so the mirror's real-character widths would mis-place the caret.
+// email/number return null selectionStart; `password`'s masked dots the mirror would mis-measure.
 const TEXT_TYPES = new Set(['', 'text', 'search', 'url', 'tel'])
 
 const isField = (el: EventTarget | null): el is Field =>
   (el instanceof HTMLTextAreaElement && !el.readOnly && !el.disabled) ||
   (el instanceof HTMLInputElement && TEXT_TYPES.has(el.type) && !el.readOnly && !el.disabled)
 
-// Editable text that ISN'T a CodeMirror surface (those carry customCaret already).
+// A CodeMirror surface carries customCaret already.
 const isEditable = (el: EventTarget | null): el is HTMLElement =>
   el instanceof HTMLElement && el.isContentEditable && !el.closest('.cm-editor')
 
@@ -66,10 +64,8 @@ let mirror: HTMLDivElement | null = null
 let active: HTMLElement | null = null
 let raf = 0
 let started = false
-// A field that resizes AFTER focus (`field-sizing` growth, or a picker pane re-centering as it
-// does) strands the bar at its focus-time spot — re-measure on resize.
+// A field that resizes AFTER focus strands the bar at its focus-time spot.
 let fieldRO: ResizeObserver | null = null
-// Cached so the per-frame path only updates text + position, not the full mirror style.
 let styledEl: Field | null = null
 let styledH = 0
 let host: HTMLDivElement | null = null
@@ -99,7 +95,6 @@ function ensureNodes(): void {
   }
 }
 
-// Only needed when the active field changes (or layout shifts on resize) — never per keystroke.
 function syncMirror(el: Field): void {
   const cs = getComputedStyle(el)
   const m = mirror as HTMLDivElement
@@ -112,7 +107,6 @@ function syncMirror(el: Field): void {
   styledEl = el
 }
 
-// The mirror lays out over the field's own box, so a rect measured inside it reads in the field's space.
 function seatMirror(el: Field): { m: HTMLDivElement; box: DOMRect } {
   const m = mirror as HTMLDivElement
   if (styledEl !== el) syncMirror(el)
@@ -126,9 +120,8 @@ function fieldCaret(el: Field): CaretRect | null {
   const { m, box } = seatMirror(el)
   const pos = el.selectionStart ?? el.value.length
   m.textContent = el.value.slice(0, pos)
-  // The trailing span's LEFT edge marks the caret; a lone `.` stands in when the caret's at the
-  // end so the span has a box. Assumes left-aligned text (revisit here if a right/centered input
-  // ever appears).
+  // The trailing span's LEFT edge marks the caret; a lone `.` gives it a box at the end of the
+  // value. Assumes left-aligned text.
   const span = document.createElement('span')
   span.textContent = el.value.slice(pos) || '.'
   m.appendChild(span)
@@ -136,11 +129,9 @@ function fieldCaret(el: Field): CaretRect | null {
   m.textContent = ''
   const x = sr.left - el.scrollLeft
   const y = sr.top - el.scrollTop
-  // No box (detached / display:none).
   if (box.width === 0 && box.height === 0) return null
-  // Scrolled out of view. Horizontally the caret is a point, so a point test holds. Vertically it's
-  // a bar that can overhang the field's border box at rest — a line-height tighter than the font's
-  // own content area gives the line box negative half-leading — so the bar need only intersect.
+  // Vertically the bar can overhang the border box at rest (negative half-leading), so it need
+  // only intersect; horizontally the caret is a point.
   if (x < box.left - 1 || x > box.right + 1) return null
   if (y + styledH <= box.top || y >= box.bottom) return null
   return { x, y, h: styledH }
@@ -198,8 +189,8 @@ function editableCaret(el: HTMLElement): CaretRect | null {
   return { x: rect.left, y: rect.top, h: lineHeight(getComputedStyle(el), rect.height) }
 }
 
-// A field row is no stacking context of its own, so a negative z-index would sink past its background too.
-// Isolating the parent while a selection is drawn gives that negative layer a floor to sit on.
+// A field row is no stacking context, so a negative z-index sinks past its background; isolating
+// the parent gives that layer a floor.
 function ensureHost(): HTMLDivElement | null {
   const parent = active?.parentElement
   if (!parent) return null
@@ -276,20 +267,18 @@ function reposition(): void {
   b.style.left = `${c.x}px`
   b.style.top = `${c.y}px`
   b.style.height = `${c.h}px`
-  // Restart the fade on every move so the caret reads solid the instant it relocates — same
-  // keyframe-swap trick the editor's caret.ts uses; the animation name IS the state, no extra flag.
+  // Restarting the fade on every move — the editor's keyframe swap; the name IS the state.
   b.style.animationName = b.style.animationName === 'mdpm-blink2' ? 'mdpm-blink' : 'mdpm-blink2'
 }
 
 function schedule(): void {
-  // Nothing focused → nothing to draw; don't burn a frame on every scroll/resize elsewhere in the app.
+  // Nothing focused → don't burn a frame on every scroll/resize elsewhere in the app.
   if (active && !raf) raf = requestAnimationFrame(reposition)
 }
 
-// A pane may still be animating open (the Bloom scale, the center-origin re-place) when its field
-// takes focus — moves no listener above can see, since transforms never touch the layout box the
-// ResizeObserver watches. A fresh focus re-measures every frame until the bar holds still, then
-// stops; the deadline caps a host that never settles.
+// A pane still animating open when its field takes focus moves in ways no listener above can see —
+// transforms never touch the layout box the ResizeObserver watches — so a fresh focus re-measures
+// every frame until the bar holds still, the deadline capping a host that never settles.
 let settleRaf = 0
 const SETTLE_STILL_FRAMES = 2
 const SETTLE_DEADLINE_MS = 400
@@ -323,8 +312,7 @@ export function initNativeCaret(): void {
     active = isField(e.target) || isEditable(e.target) ? (e.target as HTMLElement) : null
     fieldRO?.disconnect()
     if (active) {
-      // Defer a frame before scheduling so the re-measure lands AFTER the pane's resultant
-      // re-center render, not on the intermediate geometry (which strands the bar a few px off).
+      // Deferred a frame, so the re-measure lands after the pane's re-center render.
       fieldRO = new ResizeObserver(() => {
         styledEl = null
         requestAnimationFrame(schedule)
@@ -335,7 +323,7 @@ export function initNativeCaret(): void {
     schedule()
   })
   document.addEventListener('focusout', (e) => {
-    // Hide directly — schedule() now no-ops once `active` is null, so it can't do the hide for us.
+    // Hidden directly: schedule() no-ops once `active` is null, so it can't do it for us.
     if (e.target === active) {
       active = null
       styledEl = null
@@ -345,12 +333,11 @@ export function initNativeCaret(): void {
       if (bar) bar.style.display = 'none'
     }
   })
-  // Any event that can move the caret. Capture so a field's own scroll (which doesn't bubble) is seen too.
+  // Capture, so a field's own scroll (which doesn't bubble) is seen too.
   for (const ev of ['input', 'keyup', 'click', 'pointerup', 'select', 'scroll']) {
     document.addEventListener(ev, schedule, true)
   }
   document.addEventListener('selectionchange', schedule)
-  // Layout may shift the field on resize — force a one-time mirror re-sync next frame.
   window.addEventListener('resize', () => {
     styledEl = null
     schedule()

@@ -12,7 +12,9 @@
     text;
 }
 
-/* The full `.cm-editor .cm-scroller .cm-content` path out-specifies CM's baseTheme, same as caret-color below. */
+/* The browser caret is hidden so nativeCaret.ts (and the editor's own layer) can paint the drawn bar
+   over these at a JS-tracked position. The full `.cm-editor .cm-scroller .cm-content` path is what
+   out-specifies CM's baseTheme. */
 .cm-editor .cm-scroller .cm-content,
 input:not([type]),
 input[type="text"],
@@ -22,20 +24,6 @@ input[type="tel"],
 textarea,
 [contenteditable="true"] {
   cursor: var(--caret-cursor);
-}
-
-/* Native fields hide the browser caret so nativeCaret.ts can paint the drawn bar over them at a JS-tracked position. */
-input:not([type]),
-input[type="text"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
-textarea,
-[contenteditable="true"] {
-  caret-color: transparent;
-}
-
-.cm-editor .cm-scroller .cm-content {
   caret-color: transparent;
 }
 

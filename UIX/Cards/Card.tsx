@@ -8,8 +8,6 @@ import { stack } from '../Theme/stack'
 import { NavTrail, type TrailSegment } from '../Elements/NavTrail'
 import './cards.css'
 
-const cardTitleType = text.body.emphasized
-
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }
 
 /** The engine owns this element's inline transform, so frame and hover-pop live on the body inside instead. */
@@ -81,7 +79,7 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLSpanElement> & {
   mode?: 'scroll' | 'wrap' | 'static'
 }): React.JSX.Element {
-  const cls = cx('card-title', mode === 'wrap' && 'is-wrap', cardTitleType, className)
+  const cls = cx('card-title', mode === 'wrap' && 'is-wrap', text.body.emphasized, className)
   if (mode === 'scroll') return <OverScroll className={cls}>{children}</OverScroll>
   return (
     <span {...rest} className={cls}>

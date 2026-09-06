@@ -1,7 +1,8 @@
+import { clamp } from '../../Utilities/clamp'
 import * as s from './progress-bar.css'
 
 export function ProgressBar({ fill }: { fill: number }): React.JSX.Element {
-  const pct = Math.max(0, Math.min(1, Number.isFinite(fill) ? fill : 0)) * 100
+  const pct = clamp(Number.isFinite(fill) ? fill : 0, 0, 1) * 100
   return (
     <div
       className={s.track}
