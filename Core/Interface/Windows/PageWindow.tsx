@@ -16,30 +16,9 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { pageIndexOf, resolveIndexOf, trailOf } from '../../Session/treeIndex'
 import { windowTargetOf, useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
+import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
-import { EmptyValue } from '@pommora/uix/Elements/EmptyValue/EmptyValue'
-import { Button } from '@pommora/uix/Buttons'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { ResolvedColumn } from '@pommora/core/Views/viewRow'
-import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
-import { Icon } from '@pommora/uix/Symbols'
-import { text } from '@pommora/uix/Theme'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
-import { Cell } from '../../Properties/Cells/Cell'
-import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
-import { PropertyValueEditors } from '../../Properties/Page/PropertyValueEditors'
-import { parseEditorValue } from '../../Properties/parseEditorValue'
-import { linkEditText, urlValueFromEdit } from '@pommora/core/Connections/linkValue'
-import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
-import { resolveFieldValue } from '../../Properties/value'
-import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
-import { usePropertyRows, type Editing } from '../../Properties/Page/usePropertyRows'
-import { propertyIcon } from '../../Properties/Cells/PropertyTypes'
-import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { host } from '../../Platform/dialer'
 import './page-window.css'
 
 const DRAG_SURFACES = '.page-window-body, .window-tabwrap, .tab-scroll, .tab-strip'
@@ -51,7 +30,7 @@ const STATS_DEBOUNCE_MS = 120
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 export function PageWindow(): React.JSX.Element | null {
-  const open = useSession((s) => s.pageWindow?.flavor === 'page')
+  const open = useSession((s) => s.pageWindow?.kind === 'page')
   const target = useSession(windowTargetOf)
   const shown = useHeldPresence(target, open)
   if (!shown) return null
@@ -204,7 +183,9 @@ function PageWindowBody({
         open: inspectorOpen,
         className: 'page-window-inspector',
         children: (
-          <div className="window-pane-scroll">{inspectorOpen && <PagePanel target={target} />}</div>
+          <div className="window-pane-scroll">
+            {inspectorOpen && <PagePropertyRows variant="panel" page={target} />}
+          </div>
         ),
       }}
       footer={<Subfield page={page} inert />}
@@ -223,266 +204,5 @@ function PageWindowBody({
         />
       </div>
     </WindowBase>
-  )
-}
-
-export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
-  const [fm, setFm] = useState<PageFrontmatter | null>(null)
-  const [title, setTitle] = useState('')
-  const [editing, setEditing] = useState<Editing>(null)
-  const triggerRef = useRef<HTMLElement | null>(null)
-  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
-  const [addOpen, setAddOpen] = useState(false)
-  const addRef = useRef<HTMLButtonElement | null>(null)
-
-  useEffect(() => {
-    setEditing(null)
-    // The warm path-keyed detail slot first, so the page is fetched once per window; any frontmatter write drops the slot, so a hit is never staler than the page beside it.
-    const cached = readPageDetail(target.path)
-    if (cached) {
-      setFm(cached.frontmatter as PageFrontmatter)
-      setTitle(cached.title)
-      return
-    }
-    let live = true
-    setFm(null)
-    void fetchPageDetail(target.path).then((detail) => {
-      if (!live || !detail) return
-      setFm(detail.frontmatter as PageFrontmatter)
-      setTitle(detail.title)
-    })
-    return () => {
-      live = false
-    }
-  }, [target.path])
-
-  const page = useMemo(
-    () => ({ id: target.id, title, path: target.path }),
-    [target.id, title, target.path],
-  )
-  const {
-    schema,
-    ctx,
-    contextRows,
-    contextValues,
-    row,
-    isContextRow,
-    commitValue,
-    commitContext,
-    editRow: editRowShared,
-    valueMenu: valueMenuShared,
-  } = usePropertyRows(page, fm, setFm)
-
-  // A row shows when it holds a real value or was assigned this session — disk never carries an empty key.
-  const isAssigned = (id: string): boolean => {
-    if (revealed.has(id)) return true
-    if (isContextRow(id)) return (contextValues?.[id]?.length ?? 0) > 0
-    const def = schema.find((d) => d.id === id)
-    return def ? (fm as Record<string, unknown> | undefined)?.[def.name] !== undefined : false
-  }
-
-  const editRow = (def: PropertyDefinition, el: HTMLElement, from?: EventTarget | null): void =>
-    editRowShared(
-      def,
-      el,
-      {
-        setTrigger: (t) => {
-          triggerRef.current = t
-        },
-        setEditing,
-        onReveal: (id) => setRevealed((prev) => new Set([...prev, id])),
-      },
-      from,
-    )
-
-  // The row mounts next frame, so its value field can only be anchored to after paint.
-  const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
-    setAddOpen(false)
-    setRevealed((prev) => new Set([...prev, id]))
-    requestAnimationFrame(() => {
-      const el =
-        document.querySelector<HTMLElement>(`[data-insp-id="${id}"] .page-window-insp-value`) ??
-        addRef.current
-      if (def && el) return editRow(def, el)
-      triggerRef.current = el
-      setEditing({ id, mode: 'picker' })
-    })
-  }
-
-  if (!ctx || !row || !fm) return <div className="window-panel-column" />
-
-  const emptyRow = (id: string, keep: boolean): void => {
-    if (isContextRow(id)) commitContext(id, [])
-    else commitValue(id, null)
-    if (keep) setRevealed((prev) => new Set([...prev, id]))
-    else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
-  }
-  const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
-    const action = await host().ask('property-menu', {
-      kind: 'page-value',
-      name,
-      filled: !isBlankValue(value),
-    })
-    if (action === 'value:clear' || action === 'value:remove')
-      emptyRow(id, action === 'value:clear')
-  }
-  return (
-    <div className="window-panel-column">
-      <div className="page-window-insp-rows over-scroll">
-        {[
-          contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
-          schema
-            .filter((d) => isAssigned(d.id))
-            .map((d) => ({
-              def: d,
-              id: d.id,
-              label: displayPropertyName(d.name, capitalize),
-              icon: propertyIcon(d),
-            })),
-        ].map((group, gi) =>
-          group.length === 0 ? null : (
-            <div key={gi === 0 ? 'contexts' : 'properties'} className="page-window-insp-group">
-              {group.map(({ def, id, label, icon }) => {
-                const col: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
-                return (
-                  // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-                  <div
-                    key={id}
-                    className="page-window-insp-row"
-                    data-insp-id={id}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      void rowMenu(id, label, resolveFieldValue(row, id, schema))
-                    }}
-                  >
-                    <span
-                      className={cx(
-                        'page-window-insp-label',
-                        text.caption.standard,
-                        overScrollEllipsis,
-                      )}
-                    >
-                      <Icon name={icon} size="control" />
-                      {label}
-                    </span>
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
-                    <span
-                      className="page-window-insp-value"
-                      onContextMenu={(e) => {
-                        if (
-                          !valueMenuShared(id, resolveFieldValue(row, id, schema), e.target, {
-                            emptyRow,
-                            setEditing,
-                          })
-                        )
-                          return
-                        e.preventDefault()
-                        e.stopPropagation()
-                      }}
-                      onClick={(e) => {
-                        if (def) return editRow(def, e.currentTarget, e.target)
-                        triggerRef.current = e.currentTarget
-                        setEditing({ id, mode: 'picker' })
-                      }}
-                    >
-                      {editing?.id === id && editing.mode === 'editor' && def ? (
-                        <PropertyEditor
-                          initial={(() => {
-                            const v = resolveFieldValue(row, id, schema)
-                            if (v.kind === 'number') return String(v.value)
-                            if (v.kind === 'url') return linkEditText(v.value)
-                            return ''
-                          })()}
-                          numeric={def.type === 'number'}
-                          validate={def.type === 'url' ? validateLink : undefined}
-                          onCommit={(raw) => {
-                            const cur = resolveFieldValue(row, id, schema)
-                            const next =
-                              def.type === 'url'
-                                ? urlValueFromEdit(
-                                    raw.trim(),
-                                    cur.kind === 'url' ? cur.value : undefined,
-                                    resolveTitle,
-                                  )
-                                : parseEditorValue(def.type, raw)
-                            if (next !== undefined) commitValue(id, next)
-                            setEditing(null)
-                          }}
-                          onCancel={() => setEditing(null)}
-                        />
-                      ) : (
-                        (Cell({
-                          row,
-                          column: col,
-                          ctx,
-                          hideIcon: false,
-                          style: { look: 'standard' },
-                          remove: def
-                            ? (next) => commitValue(id, next)
-                            : (next) =>
-                                commitContext(id, next?.kind === 'context' ? next.value : []),
-                        }) ?? <EmptyValue className="page-window-insp-empty" />)
-                      )}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          ),
-        )}
-        {(contextRows.some((t) => !isAssigned(t.id)) || schema.some((d) => !isAssigned(d.id))) && (
-          <Button
-            ref={addRef}
-            size="button-inline"
-            icon="plus"
-            iconSize="caption"
-            label="Add Property"
-            className="page-window-insp-add"
-            onClick={() => setAddOpen(true)}
-          />
-        )}
-      </div>
-      <PickerMenu
-        solid
-        open={addOpen}
-        onDismiss={() => setAddOpen(false)}
-        triggerRef={addRef}
-        origin="center"
-      >
-        {contextRows
-          .filter((t) => !isAssigned(t.id))
-          .map((t) => (
-            <PickerRow
-              key={t.id}
-              leading={<Icon name={t.icon} size="body" />}
-              onClick={() => revealAndEdit(t.id)}
-            >
-              {t.label}
-            </PickerRow>
-          ))}
-        {schema
-          .filter((d) => !isAssigned(d.id))
-          .map((d) => (
-            <PickerRow
-              key={d.id}
-              leading={<Icon name={propertyIcon(d)} size="body" />}
-              onClick={() => revealAndEdit(d.id, d)}
-            >
-              {displayPropertyName(d.name, capitalize)}
-            </PickerRow>
-          ))}
-      </PickerMenu>
-      <PropertyValueEditors
-        editing={editing}
-        onDone={() => setEditing(null)}
-        triggerRef={triggerRef}
-        row={row}
-        schema={schema}
-        isContextRow={isContextRow}
-        commitValue={commitValue}
-        commitContext={commitContext}
-      />
-    </div>
   )
 }

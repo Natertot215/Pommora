@@ -6,8 +6,8 @@ import {
 } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import { declaredType } from '../Properties/value'
-import { useSession } from '../Session/store'
+import { declaredType } from '../../Properties/value'
+import { useSession } from '../../Session/store'
 
 /** The saved entry's defined keys win over the type defaults — a caught-invalid saved value parses to `undefined` and must not erase a default. */
 export function styleFor(

@@ -7,7 +7,7 @@ import {
   spacesByIdOf,
 } from './contextIdentity'
 
-export interface ResolveContext {
+export interface ValueContext {
   schema: PropertyDefinition[]
   contextsById: ReadonlyMap<string, SpaceIdentity>
   contexts: ReadonlyMap<string, ContextIdentity>
@@ -15,11 +15,11 @@ export interface ResolveContext {
   assets: AssetMap
 }
 
-export function buildResolveContext(
+export function buildValueContext(
   tree: NexusTree,
   schema: PropertyDefinition[],
   assets: AssetMap,
-): ResolveContext {
+): ValueContext {
   return {
     schema,
     contextsById: spacesByIdOf(tree),

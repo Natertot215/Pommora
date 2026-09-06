@@ -3,7 +3,7 @@ import { buildSetIcons, buildSetNames, findOption, groupLabel, optionLabel } fro
 import { EMPTY_ASSET_MAP, type CollectionNode } from '@pommora/core/Nexus/tree'
 import { UNGROUPED, type ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { ResolveContext } from '../resolveContext'
+import type { ValueContext } from '../valueContext'
 
 const schema: PropertyDefinition[] = [
   {
@@ -27,7 +27,7 @@ const schema: PropertyDefinition[] = [
   },
 ]
 
-const ctx: ResolveContext = {
+const ctx: ValueContext = {
   schema,
   contexts: new Map(),
   contextsById: new Map([

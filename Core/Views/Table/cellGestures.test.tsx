@@ -6,7 +6,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { useSession } from '../../Session/store'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { ViewHost } from '../ViewHost'
+import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot } from '../propsAtRoot'
 import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
@@ -150,7 +150,8 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: {
-      personalization: {},
+      nexus: {},
+      personalization: { defaultIcons: {} },
       contexts: [
         {
           def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },

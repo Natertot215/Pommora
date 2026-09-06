@@ -26,30 +26,30 @@ import { footingLabel, footingSymbol, side } from '@pommora/uix/Menus/menu-base.
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { DualSwitch } from '@pommora/uix/Controls/Switches/DualSwitch'
-import { useSaveView } from './ViewTileScope'
-import { declaredType } from '../Properties/value'
-import { useContainerValues } from './useValuesEpoch'
+import { useSaveView } from '../ViewTileScope'
+import { declaredType } from '../../Properties/value'
+import { useContainerValues } from '../Host/useValuesEpoch'
 import {
   bucketKey,
   bucketOrder,
   flattenContainer,
   groupsStructurally,
   subHiddenKey,
-} from './Pipeline/group'
-import { formatBucketLabel, NUMERIC_FORMATS } from '../Properties/formatValue'
-import type { Band } from './bandDndModel'
-import { reparentFsOrder, structuralOrderAfterDrop } from './bandDndModel'
+} from '../Pipeline/group'
+import { formatBucketLabel, NUMERIC_FORMATS } from '../../Properties/formatValue'
+import type { Band } from '../Bands/bandDndModel'
+import { reparentFsOrder, structuralOrderAfterDrop } from '../Bands/bandDndModel'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
-import { EntityIcon } from '../Assets/EntityIcon'
+import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useSession } from '../Session/store'
+import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { propertyIcon } from '../Properties/Cells/PropertyTypes'
+import { propertyIcon } from '../../Properties/Cells/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import * as gp from './group-frame.css'
-import { OptionChip } from '../Properties/Cells/OptionChip'
-import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
+import { OptionChip } from '../../Properties/Cells/OptionChip'
+import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 

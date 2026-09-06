@@ -12,7 +12,7 @@ import {
   stubRect,
 } from '@pommora/uix/Interactions/pointerHarness'
 import { useSession } from '../../Session/store'
-import { ViewHost } from '../ViewHost'
+import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot } from '../propsAtRoot'
 import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'

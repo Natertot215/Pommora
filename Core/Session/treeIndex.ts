@@ -29,7 +29,7 @@ import type { ReconcileIndex } from './selection'
 /** The `{id, title, path}` tuple is `EntityRecord`'s; `id` and `path` are '' for the folderless,
  *  id-less homepage singleton. `kind` stays local — the unions are disjoint (`homepage` here,
  *  `context` there). */
-interface NodeRecord extends TrailNode {
+export interface NodeRecord extends TrailNode {
   key: string
   kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
   /** The node's own raw icon field — surfaces that render absence read this, not the resolved glyph. */
@@ -155,6 +155,10 @@ function walk(tree: NexusTree): NodeRecord[] {
   }
   return nodes
 }
+
+/** The walk's records in tree order — parents before children. Every lookup over the whole tree
+ *  reads this instead of walking again. */
+export const nodesOf = (tree: NexusTree): readonly NodeRecord[] => indexFor(tree).nodes
 
 /** Existence + live-path lookup per entity kind — what reconcileWith answers from. */
 export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {

@@ -9,7 +9,7 @@ export interface WindowTab {
 }
 
 export interface WindowState {
-  flavor: 'page' | 'nav'
+  kind: 'page' | 'nav'
   originId: string
   tabs: WindowTab[]
   activeTabId: string
@@ -50,7 +50,7 @@ export function closeTabIn(win: WindowState, id: string): WindowState | null {
   const closedOrigin = targetPageId(win.tabs[idx].target) === win.originId
   const originId =
     closedOrigin && firstPage ? (targetPageId(firstPage.target) as string) : win.originId
-  if (!firstPage && win.flavor === 'page') return null
+  if (!firstPage && win.kind === 'page') return null
   return { ...win, tabs, activeTabId, originId }
 }
 

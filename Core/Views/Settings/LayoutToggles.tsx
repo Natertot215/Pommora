@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
 import { MenuIndex, MenuSeparator } from '@pommora/uix/Menus'
-import { useSaveView } from './ViewTileScope'
+import { useSaveView } from '../ViewTileScope'
 import { switchRows, type SwitchEntry } from './switchRows'
 
 const SWITCHES: SwitchEntry[] = [

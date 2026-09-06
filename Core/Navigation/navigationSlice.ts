@@ -55,7 +55,7 @@ import {
 } from '../Session/treeIndex'
 import { cancelPageSave } from '../Session/saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
-import { ensureContainerView } from '../Views/viewMint'
+import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from '../Session/sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'

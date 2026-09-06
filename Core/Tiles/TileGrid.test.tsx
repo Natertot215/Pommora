@@ -7,8 +7,8 @@ import {
   pressEscape,
   stubPointerCapture,
 } from '@pommora/uix/Interactions/pointerHarness'
-import { getTile, tileIds } from './layout/model'
-import { insertBand } from './layout/ops'
+import { getTile, tileIds } from './Layout/model'
+import { insertBand } from './Layout/ops'
 import { TileGrid } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

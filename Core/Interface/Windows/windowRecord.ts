@@ -26,7 +26,7 @@ export interface WindowSetRecord {
 export interface WindowsFile {
   navSet: WindowSetRecord | null
   origins: Record<string, WindowSetRecord>
-  open: { flavor: 'page' | 'nav'; originId: string } | null
+  open: { kind: 'page' | 'nav'; originId: string } | null
   navOverride?: boolean
 }
 

@@ -3,10 +3,10 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { GroupBand, resolveBandHead } from './GroupBand'
-import { bandShowsAdd } from './CardView/cardsBand'
+import { bandShowsAdd } from './cardsBand'
 import { useBandDrag } from './BandDnd'
-import type { ResolveContext } from '../Properties/resolveContext'
-import { host } from '../Platform/dialer'
+import type { ValueContext } from '../../Properties/valueContext'
+import { host } from '../../Platform/dialer'
 
 /** Holds `useBandDrag`, which throws outside `<BandDnd>` and so can't live in the shared presentational GroupBand. */
 export function ViewGroupBand({
@@ -28,7 +28,7 @@ export function ViewGroupBand({
 }: {
   group: ResolvedGroup
   view: SavedView
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   setNames: Map<string, string>
   setIcons: Map<string, string | undefined>
   source: CollectionNode | SetNode

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { ResolveContext } from '../Properties/resolveContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import {
   type AddEntry,
   addEntriesFor,
   orderAddableEntries,
   shownColumnsFor,
 } from './cardValueInput'
-import { parseEditorValue } from '../Properties/parseEditorValue'
+import { parseEditorValue } from '../../Properties/parseEditorValue'
 
 describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {
@@ -54,7 +54,7 @@ describe('shownColumnsFor', () => {
     select_options: [{ value: 'Done', label: 'Done' }],
   } as PropertyDefinition
   const chk = { id: 'chk', name: 'Chk', type: 'checkbox' } as PropertyDefinition
-  const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ResolveContext
+  const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ValueContext
   const columns: ResolvedColumn[] = [
     { id: '_title', kind: 'title' },
     { id: 'sel', kind: 'property' },
@@ -76,7 +76,7 @@ describe('shownColumnsFor', () => {
 })
 
 describe('addEntriesFor', () => {
-  const ctx = { schema: [], contexts: new Map() } as unknown as ResolveContext
+  const ctx = { schema: [], contexts: new Map() } as unknown as ValueContext
   const view = { property_order: ['_title'], hidden_properties: [] } as unknown as SavedView
   const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
 

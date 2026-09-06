@@ -22,6 +22,12 @@ export const rows = style({
   padding: '4px 0 6px',
 })
 
+/** The window panel's own scroll column — its padding is the pane's, unchanged. */
+export const panelRows = style([
+  rows,
+  { flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', padding: '0 4px 4px' },
+])
+
 export const group = style({
   display: 'flex',
   flexDirection: 'column',

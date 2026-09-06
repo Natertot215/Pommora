@@ -2,7 +2,7 @@
 // changes. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
 import { useSession } from '../Session/store'
-import { confirmDelete } from '../Interface/confirmations'
+import { confirmDelete } from '../Interface/Confirm/confirmations'
 import { contextTargetToSelect } from '../Navigation/tabsModel'
 import { openWebLink } from './openWebLink'
 import { host as dialer } from './dialer'
@@ -83,8 +83,7 @@ export function useBridgeSubscriptions(): void {
         case 'new-tab': {
           const s = useSession.getState()
           const p = s.pageWindow
-          const active =
-            p?.flavor === 'page' ? p.tabs.find((t) => t.id === p.activeTabId) : undefined
+          const active = p?.kind === 'page' ? p.tabs.find((t) => t.id === p.activeTabId) : undefined
           if (active && active.target.kind === 'page') {
             void s.select(
               { kind: 'page', id: active.target.id, path: active.target.path },

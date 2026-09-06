@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { DEFAULT_VIEW_ID, type SavedView } from '@pommora/core/Views/views'
-import { askDeleteView } from '../Interface/confirmations'
-import { notifyDeleted, notifyError } from '../Interface/notifications'
-import { restoreView } from './restoreView'
+import { askDeleteView } from '../../Interface/Confirm/confirmations'
+import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
+import { restoreView } from '../restoreView'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { host } from '../Platform/dialer'
+import { host } from '../../Platform/dialer'
 
 export function ViewItemMenu({
   source,

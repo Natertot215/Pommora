@@ -26,9 +26,12 @@ const collections = [
   { kind: 'collection', id: 'col-plain', title: 'Plain', path: 'Plain', pages: [], sets: [] },
 ] as unknown as CollectionNode[]
 
+const treeOf = (cols: CollectionNode[]): NexusTree =>
+  ({ nexus: {}, personalization: { defaultIcons: {} }, collections: cols }) as unknown as NexusTree
+
 describe('containerTargets', () => {
   it('walks Collections and their Sets to any depth, in tree order', () => {
-    expect(containerTargets(collections)).toEqual([
+    expect(containerTargets(treeOf(collections))).toEqual([
       {
         id: 'col-notes',
         label: 'Notes',
@@ -50,13 +53,13 @@ describe('containerTargets', () => {
   })
 
   it('carries both addresses, because its two consumers address differently', () => {
-    const [notes] = containerTargets(collections)
+    const [notes] = containerTargets(treeOf(collections))
     expect(notes.id).toBe('col-notes')
     expect(notes.path).toBe('Notes')
   })
 
   it('an empty nexus offers nowhere', () => {
-    expect(containerTargets([])).toEqual([])
+    expect(containerTargets(treeOf([]))).toEqual([])
   })
 })
 
