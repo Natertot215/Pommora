@@ -1,9 +1,4 @@
-// The inverse of the global property delete. ONLY WHAT STILL VALIDATES RETURNS: a definition
-// whose name has since been taken cannot come back; a value whose option is gone, whose type no
-// longer fits, or whose page has since died simply doesn't. The record is evidence of what was,
-// never a mandate to recreate it.
-
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
 import { fail, ok, type Result } from '../Contract/result'
@@ -12,7 +7,7 @@ import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { refreshTree } from '../Nexus/liveTree'
 import { readSidecar } from '../IO/sidecar'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { collectionFolders, assignInner } from '../Properties/assignment'
 import { updatePageProperty } from '../Nexus/page'
 import { isBlankValue, reconcilePropertyValue } from '../Properties/propertyValue'
@@ -37,12 +32,9 @@ export function restoreProperty(root: string, record: PropertyRecord): Promise<R
 }
 
 async function restoreInner(root: string, record: PropertyRecord): Promise<Result<null>> {
-  // Nothing may write over a living identity.
   if ((await readRegistry(root)).defs[record.id])
     return fail('exists', 'Something in the nexus already carries this identity.')
 
-  // The registry refuses a name another property now holds, which is exactly what makes a
-  // restore invalid.
   const created = await createProperty(root, {
     ...(record.def as unknown as PropertyDefinition),
     id: record.id,
@@ -54,7 +46,6 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
   const byId = await foldersById(root)
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
-    // A Collection deleted since is simply gone; the property returns to the ones still here.
     if (folder) await assignInner(root, folder, record.id)
   }
 
@@ -72,7 +63,7 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       continue
     }
     const file = join(root, entry.path)
-    const written = await serializeOnFile(file, () =>
+    const written = await machine().lock(file, () =>
       updatePageProperty(file, def, reconciled.value),
     )
     if (!written.ok) dropped++

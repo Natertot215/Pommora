@@ -1,8 +1,5 @@
-// Landing bytes in the asset directory — the one writer an adoption, a crop and the migration
-// all cross, so a name that steps aside does so by the same rule wherever it came from.
-
-import { basename, extname, join } from 'node:path'
-import { mkdir } from 'node:fs/promises'
+import { basename, extname, join } from '../Locations/posix'
+import { machine } from '../Platform/machine'
 import { connectionText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../IO/atomicWrite'
@@ -10,17 +7,14 @@ import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated } from '../Locations/disambiguate'
 import { assetsDir, relPosix } from '../Locations/paths'
 
-/** Write `bytes` into the asset root under `base`, answering the `[[Name.ext]]` that names it.
- *  A basename answers nexus-wide, so a name already held ANYWHERE under the root steps aside:
- *  landing a second file beside it would author the ambiguity resolution refuses to resolve. */
 export async function writeAssetFile(
   root: string,
   assetDir: string,
   base: string,
-  bytes: Buffer,
+  bytes: Uint8Array,
 ): Promise<Result<string>> {
   const dir = assetsDir(root, assetDir)
-  await mkdir(dir, { recursive: true })
+  await machine().mkdir(dir)
   const ext = extname(base)
   const map = await liveAssetMap(root)
   return createDisambiguated(basename(base, ext), async (stem) => {

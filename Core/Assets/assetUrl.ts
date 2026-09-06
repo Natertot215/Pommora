@@ -9,9 +9,7 @@ export type AssetValue =
   | { kind: 'unresolved' }
 
 /** What one stored asset value names. Three spellings reach here: the Obsidian wikilink both
- *  applications write, a web address, and the nexus-relative path Pommora used to mint. The
- *  wikilink is parsed by `parseConnectionText`, so an asset reference and a Link property can
- *  never disagree about what a whole-string `[[…]]` is. */
+ *  applications write, a web address, and the nexus-relative path Pommora used to mint.*/
 export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
   const raw = value.trim()
   if (!raw) return { kind: 'unresolved' }
@@ -33,18 +31,12 @@ function namedAsset(raw: string, map: AssetMap): FileValue | null {
 
 export type FileValue = Exclude<AssetValue, { kind: 'external' }>
 
-/** What one stored FILE-property value names. The wikilink branch alone: a file value resolves in
- *  the asset map's basename domain or not at all. `resolveAssetValue`'s bare-string branch reads
- *  an unschemed value as a nexus-relative path, and inheriting it would render a hand-written
- *  `- Report.pdf` as resolved while naming a file that isn't there — and aim Replace's
- *  `defaultPath` at a folder that doesn't exist. */
+/** What one stored FILE-property value names.*/
 export function resolveFileValue(value: string, map: AssetMap): FileValue {
   return namedAsset(value.trim(), map) ?? { kind: 'unresolved' }
 }
 
-/** The `src` one stored asset value renders at, or null where nothing renders. A resolved asset
- *  carries the map's version, the same cache-busting the thumbnail sites use, so a file re-saved
- *  under an unchanged name is re-requested rather than served from the last paint. */
+/** The `src` one stored asset value renders at, or null where nothing renders. */
 export function resolveAssetUrl(value: string | null | undefined, map: AssetMap): string | null {
   if (!value) return null
   const res = resolveAssetValue(value, map)

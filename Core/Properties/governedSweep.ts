@@ -1,11 +1,11 @@
-// The one walk every governed-key sweep shares: enumerate the roots, take the file's lock, ask
-// whether it may be rewritten at all, run the caller's decision, write back only what changed.
-// What differs per caller rides as parameters — WHICH roots, and what gets captured on the way past.
-
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { readJsonObject, rewritePreservingTimes, writeJson } from '../IO/atomicWrite'
-import { serializeOnFile } from '../IO/fileLock'
+import { join } from '../Locations/posix'
+import {
+  readJsonObject,
+  readTextOrNull,
+  rewritePreservingTimes,
+  writeJson,
+} from '../IO/atomicWrite'
+import { machine } from '../Platform/machine'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
@@ -16,15 +16,8 @@ import { sweepAdmits } from '../Nexus/util'
 
 export type Raw = Record<string, unknown>
 
-/** A Context tag is legal on any page and on a Space sidecar; a property value only means
- *  anything inside the Collection whose schema governs it. */
-export type SweepScope =
-  | { kind: 'nexus' }
-  /** An explicit, already-scoped page list (the key-holder query); sidecars unreached. */
-  | { kind: 'files'; files: string[] }
+export type SweepScope = { kind: 'nexus' } | { kind: 'files'; files: string[] }
 
-/** `skipped` could not be read, `refused` may not be rewritten — kept apart so callers don't
- *  conflate the two. */
 export interface SweepResult<C> {
   touched: string[]
   skipped: string[]
@@ -34,14 +27,9 @@ export interface SweepResult<C> {
 
 export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } | null
 
-/** A raw decision merges key-wise and can't name a key's own position or comment. Renaming a
- *  key where it sits needs the yaml document, so that decision arrives as text and owns the
- *  whole file it returns. `null` still means untouched. */
 export type RewriteText = (content: string, file: string) => string | null
 
 export interface SweepOptions {
-  /** Pages take this instead of the raw decision; sidecars keep the raw one, JSON having neither
-   *  position nor comments to preserve. */
   rewriteText?: RewriteText
 }
 
@@ -69,9 +57,6 @@ const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
     ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
     : Promise.resolve([])
 
-/** A page merges key-wise — only the governed keys that changed, so foreign frontmatter and the
- *  body never move — unless the caller states its decision as text, which then owns the file
- *  whole. Either way the page keeps its modification time. A sidecar is always written whole. */
 export async function sweepGovernedRoots<C>(
   root: string,
   scope: SweepScope,
@@ -81,11 +66,9 @@ export async function sweepGovernedRoots<C>(
   const out: SweepResult<C> = { touched: [], skipped: [], refused: [], captured: [] }
 
   for (const file of await pageRoots(root, scope)) {
-    await serializeOnFile(file, async () => {
-      let content: string
-      try {
-        content = await readFile(file, 'utf8')
-      } catch {
+    await machine().lock(file, async () => {
+      const content = await readTextOrNull(file)
+      if (content === null) {
         out.skipped.push(file)
         return
       }
@@ -122,7 +105,7 @@ export async function sweepGovernedRoots<C>(
   }
 
   for (const file of await sidecarRoots(root, scope)) {
-    await serializeOnFile(file, async () => {
+    await machine().lock(file, async () => {
       const raw = await readJsonObject(file)
       if (!raw) {
         out.skipped.push(file)

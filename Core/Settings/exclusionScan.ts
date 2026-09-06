@@ -2,8 +2,8 @@
 // enumerator prunes them. The Agenda layer stays out: a folder carrying a Task or Event config is
 // skipped whole.
 
-import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
+import { machine } from '../Platform/machine'
 import { parseContextKey } from '../Properties/contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { ok, type Result } from '../Contract/result'
@@ -32,11 +32,11 @@ export async function excludedArtifacts(
 
   const walk = async (absDir: string, segs: string[]): Promise<void> => {
     const entries = await listEntries(absDir)
-    if (entries.some((e) => e.isFile() && AGENDA_CONFIGS.includes(e.name))) return
+    if (entries.some((e) => e.kind === 'file' && AGENDA_CONFIGS.includes(e.name))) return
     for (const e of entries) {
       const next = [...segs, e.name]
       if (isAsset(next)) continue
-      if (e.isDirectory()) {
+      if (e.kind === 'dir') {
         if (e.name === 'node_modules' || e.name.startsWith('.')) continue
         await walk(join(absDir, e.name), next)
       } else if (isMarkdownFile(e.name)) {
@@ -75,10 +75,12 @@ export async function clearExclusionData(
   // skipped so the page sweep still runs, rather than aborting the whole pass mid-way.
   let removed = 0
   for (const sidecar of sidecars) {
-    const gone = await rm(sidecar, { force: true }).then(
-      () => true,
-      () => false,
-    )
+    const gone = await machine()
+      .remove(sidecar)
+      .then(
+        () => true,
+        () => false,
+      )
     if (gone) removed++
   }
   const swept = await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {

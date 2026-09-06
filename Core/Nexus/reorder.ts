@@ -1,8 +1,4 @@
-// The renderer computes a new order and sends the full id list; main just persists it — top-level
-// orders to .nexus/state.json, within-container orders to the container's sidecar.
-// Read-modify-write so a reorder doesn't clobber other state keys.
-
-import { mkdir } from 'node:fs/promises'
+import { machine } from '../Platform/machine'
 import type { z } from 'zod'
 import { rmwJsonStrict, pathExists } from '../IO/atomicWrite'
 import {
@@ -18,7 +14,6 @@ import { ok, type Result } from '../Contract/result'
 import type { StateOrderKey, ChildOrderKey } from '../Pages/mutateRequest'
 
 export type { StateOrderKey }
-// `page_order` is written on a page move, never a reorderChildren.
 export type ContainerOrderKey = ChildOrderKey | 'page_order'
 
 // Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps
@@ -32,7 +27,7 @@ export async function setStateOrder(
   ids: string[],
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
-  await mkdir(nexusDir(nexusRoot), { recursive: true })
+  await machine().mkdir(nexusDir(nexusRoot))
   const written = await rmwJsonStrict(
     nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
     (state) => ({ ...state, [key]: clean }),
@@ -48,7 +43,7 @@ export async function setSpaceOrder(
   ids: string[],
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
-  await mkdir(nexusDir(nexusRoot), { recursive: true })
+  await machine().mkdir(nexusDir(nexusRoot))
   const written = await rmwJsonStrict(
     nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
     (state) => {
@@ -81,8 +76,6 @@ const CONTAINER_SIDECARS = [
   { kind: 'set' as const, schema: pageSetSidecar },
 ]
 
-/** Resolves the folder's kind from its sidecar on disk. A raw/adopted folder with no
- *  recognized sidecar is a no-op (order falls back to title). */
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,

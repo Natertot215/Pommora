@@ -1,14 +1,5 @@
-// The single write orchestration behind the `mutate` IPC: resolves nexus-relative paths under
-// the session root, runs the matching crud/* op, applies the cascade policy. Never throws
-// across the boundary.
-//
-// Cascade policy, owned here so no call site re-invents it: a page rename reverts if
-// renameCascade's inbound-[[links]] rewrite fails; a context/space delete unlinks the
-// parenthesized key/value everywhere BEFORE the folder is removed, so no member file keeps a
-// dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
-
-import { basename, dirname, extname, join, relative, sep } from 'node:path'
-import { readFile, realpath } from 'node:fs/promises'
+import { basename, dirname, extname, join, relative } from '../Locations/posix'
+import { machine } from '../Platform/machine'
 import { sessionRoot } from './session'
 import { noteValueWrite } from './valuesChanged'
 import { splitFrontmatter } from './readNexus'
@@ -43,7 +34,13 @@ import { setSpaceOrder } from './reorder'
 import { renameCascade } from './cascade'
 import { applyAdoptions } from '../Properties/optionOps'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
-import { pathExists, readJsonObject, rmwJsonStrict, atomicWriteFile } from '../IO/atomicWrite'
+import {
+  pathExists,
+  readJsonObject,
+  readTextOrNull,
+  rmwJsonStrict,
+  atomicWriteFile,
+} from '../IO/atomicWrite'
 import { mintBundle, settleBundle } from '../Trash/bundle'
 import { recordWrite } from '../IO/writeEcho'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
@@ -56,7 +53,6 @@ import {
 } from '../Assets/assetRoots'
 import { createDisambiguated } from '../Locations/disambiguate'
 import { writeAssetFile } from '../Assets/assetWrite'
-import { serializeOnFile } from '../IO/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from '../IO/pageFile'
 import { basenameNoMd } from '../Locations/coerce'
 import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from '../Locations/paths'
@@ -79,21 +75,14 @@ import { ASSET_MIME } from '../Assets/assetMime'
 import { neverWatched } from '../Locations/exclusion'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from '../Assets/assetMap'
 
-/** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
   trashMode: TrashMode
-  /** Move a path to the OS trash (shell.trashItem). */
   trashToSystem: (absPath: string) => Promise<void>
-  /** `personalization.permanentDelete` — what emptying a bundle means. Read main-side per
-   *  operation: the renderer never carries the flag that chooses between recoverable and gone. */
   permanentDelete?: boolean
 }
 
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
 
-/** Delete the file a replaced image value named, unless the new value names it too. The stored
- *  spellings are not comparable: a wikilink and a path can mean one file, and a singleton
- *  rewritten in place is stored under the very name it replaced. */
 async function dropReplacedAsset(
   root: string,
   prev: string | null,
@@ -102,103 +91,63 @@ async function dropReplacedAsset(
 ): Promise<void> {
   if (!prev || prev === (await assetFileToDelete(root, next))) return
   await trash(join(root, prev)).catch(() => {})
-  // Best-effort like the trash above and like the crops read path: a corrupt crops.json must not
-  // fail the banner/profile op whose asset was already removed.
   await updateCrops(root, (b) => setOrDrop(b, prev, null)).catch(() => {})
 }
 
-/** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file
- *  already sitting under an asset root is referenced where it is; one whose bytes already sit
- *  there under the same name is referenced rather than copied a second time.
- *
- *  THE adoption seam — every guard that makes an adoption safe lives here rather than in
- *  `writeAssetFile`, which is the inner byte-lander. `allow` is what separates a banner (which
- *  must be an image the app can render) from a file property (which takes whatever the user
- *  picked); `subfolder` is where that property says its files land. Deleting the file a
- *  replacement leaves behind is the CALLER's policy — this never removes anything. */
 export async function adoptFile(
   root: string,
   absSource: string,
   opts: { allow: 'image' | 'any'; subfolder?: string },
 ): Promise<Result<string>> {
   const base = basename(absSource)
-  // A name the map would never hold resolves to nothing — refused at adoption rather than copied
-  // in and left blank.
   if (!base || !embeddableTitle(base) || neverWatched(base))
     return fault('That file’s name can’t be written as a link.')
   if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')
   const { assetDir } = await readWatchScope(root)
-  // The destination is renderer-supplied and reaches `mkdir` + a write, so it is refused HERE
-  // rather than at a caller: `rootSegs` drops empty segments but not `..`, and `join` then
-  // collapses them straight past the root. The check also refuses a folder the map could never
-  // index, so a write can't land somewhere its own reference will never resolve from.
   const dir = assetSubRoot(assetDir, opts.subfolder)
   if (opts.subfolder !== undefined && !validPropertyDir(opts.subfolder, assetDir))
     return fault(NOT_A_PROPERTY_DIR_MESSAGE)
-  // The one hole a lexical check can't see is a segment inside the root that is a symlink out.
-  // A folder that already exists settles it by realpath; one that doesn't has no link to follow,
-  // and `writeAssetFile`'s mkdir creates real directories. Resolving the SUBFOLDER rather than
-  // the root is what makes the existing-symlink case reachable at all.
+  // Resolving the SUBFOLDER, not the root, is what catches a segment inside the root that is a symlink out.
   const canonical = await resolveUnderRoot(root, dir)
   if (!canonical.ok && canonical.error.code !== 'not-found') return canonical
-  // `resolveUnderRoot` bounds the NEXUS, which a link pointing at the content tree satisfies — so
-  // where a real SUBFOLDER answers, the boundary that matters is re-read from its canonical path.
-  // A link out of the nexus is already refused above; this is the one that lands bytes among the
-  // user's pages, under a name the asset map will never index. The root itself is exempt because
-  // `underAssetRoot` reads strictly below its root, and where the root is a link that is the asset
-  // directory setting's business rather than adoption's.
   if (
     opts.subfolder &&
     canonical.ok &&
-    !underAssetRoot(relPosix(await realpath(root), canonical.value), assetDir)
+    !underAssetRoot(relPosix(await machine().realpath(root), canonical.value), assetDir)
   )
     return fault(NOT_A_PROPERTY_DIR_MESSAGE)
   const hit = resolveAssetName(await liveAssetMap(root), base)
-  // A name several files answer to has no reference that means one of them — authoring it would
-  // spell exactly what the resolver refuses to answer.
   if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
 
-  // In place only where the map can answer for it: `underAssetRoot` admits a dot-prefixed segment
-  // that `indexable` drops forever, so a pick from a hidden folder under the root would mint a
-  // reference that renders permanently unresolved with no error anywhere. Such a pick falls
-  // through to the copy instead, which lands the bytes where they resolve.
-  const srcRel = relPosix(await realpath(root), await realpath(absSource))
+  // A pick from a hidden folder under the root would mint a reference that never resolves; it copies instead.
+  const srcRel = relPosix(await machine().realpath(root), await machine().realpath(absSource))
   if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir))
     return ok(connectionText(base))
 
-  let bytes: Buffer
-  try {
-    bytes = await readFile(absSource)
-  } catch {
-    return fault('That file could not be read.')
-  }
-  if (hit && bytes.equals(await readFile(join(root, hit)).catch(() => Buffer.alloc(0))))
-    return ok(connectionText(base))
+  const bytes = await machine()
+    .readBytes(absSource)
+    .catch(() => null)
+  if (!bytes) return fault('That file could not be read.')
+  const held = hit
+    ? await machine()
+        .readBytes(join(root, hit))
+        .catch(() => null)
+    : null
+  if (held && sameBytes(bytes, held)) return ok(connectionText(base))
   return writeAssetFile(root, dir, base, bytes)
 }
 
-/** The nexus's own machinery — never a renderer-mutable entity. The read side skips these,
- *  so the write side refuses to rename/delete them (defense against a buggy/hostile renderer
- *  message). Contexts live UNDER `.nexus/contexts/<Title>/` and stay mutable — only the root,
- *  `.nexus` itself, and `.trash` are off-limits. `abs` is canonical (resolveUnderRoot realpaths
- *  it), so the root is canonicalized too — else a symlinked root (e.g. macOS /var→/private/var)
- *  makes `relative` mismatch and the guard silently passes. */
 async function isReserved(root: string, abs: string): Promise<boolean> {
-  const rel = relative(await realpath(root), abs)
-  return rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}${sep}`)
+  const rel = relative(await machine().realpath(root), abs)
+  return rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}/`)
 }
+
+const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
+  a.length === b.length && a.every((v, i) => v === b[i])
 
 const fault = (message: string): Result<never> => fail('operation-failed', message)
 
-/** The choke point every move passes: a page or Set may only land somewhere that holds pages —
- *  a guard against a programmatic accident bypassing the UI's own constraints, and the ONE
- *  main-side check, rather than a rule re-stated per caller.
- *
- *  The empty registration is the honest reading, not a shortcut past one: the resolver consults it
- *  in a single branch — the destination carries an agenda config — and every outcome of that
- *  branch is a kind this refuses, so no registration can change the answer. Building a real one
- *  costs a sidecar read per root folder, on a drag. */
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const depth = dirname(dst) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(dst, depth, { agenda: {}, homed: new Set(), root })
@@ -207,8 +156,6 @@ async function movesInto(root: string, dst: string): Promise<Result<null>> {
     : fail('invalid-path', 'Pages live in Collections and Sets.')
 }
 
-/** Set one field on a config/sidecar record, or drop the key when there's no value — the
- *  no-empties rule the banner, heading-icon and icon writers all follow. */
 function setOrDrop(
   cur: Record<string, unknown>,
   key: string,
@@ -223,8 +170,6 @@ function setOrDrop(
 export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateReply> {
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
-  // A CRUD/fs/trash throw (e.g. shell.trashItem rejecting, EACCES/ENOSPC) becomes a fault
-  // Result here, not a rejected IPC promise callers would silently swallow.
   try {
     return await dispatch(req, deps, root)
   } catch (e) {
@@ -232,7 +177,6 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
   }
 }
 
-// An http(s) source is stored by reference — the same value a web-address banner already carries.
 const adoptImageSource = (root: string, source: string): Promise<Result<string>> =>
   WEB_ADDRESS.test(source)
     ? Promise.resolve(ok(source))
@@ -241,11 +185,8 @@ const adoptImageSource = (root: string, source: string): Promise<Result<string>>
 async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateReply> {
   switch (req.op) {
     case 'createPage': {
-      // '' parentPath = the nexus root (e.g. a page directly under an adopted root); '.'
-      // is the existing dir resolveUnderRoot validates. relJoin keeps '' for the rel path.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
       if (!parent.ok) return parent
-      // Seed definitions resolve here, never renderer-side; a seed naming a dead property drops.
       let values: { def: PropertyDefinition; value: PropertyValue }[] | undefined
       if (req.seeds) {
         const defs = (await readRegistry(root)).defs
@@ -272,12 +213,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'createContainer': {
-      // '' parentPath = the nexus root (new top-level Collection). See createPage.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
       if (!parent.ok) return parent
       const extra: Record<string, unknown> = {}
-      // Creation-seed: an app-made container is born with its default view on disk, so no
-      // surface ever meets an empty views[]. The ULID mints here in main (the sentinel can't).
       extra.views = [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }]
       const r = await createDisambiguated(req.name, (name) =>
         createFolderEntity(parent.value, req.kind, name, extra),
@@ -301,10 +239,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           return ok({ renamed: { path: relJoin(relParent, file), name: basenameNoMd(file) } })
         }
         if (req.fromCreate) {
-          // A just-created page's first commit is part of the creation: it disambiguates the
-          // way every create does instead of rejecting, and skips the link cascade outright —
-          // a page this new has no inbound links, and a cascade keyed on the literal
-          // "Untitled" could rewrite unrelated [[Untitled]] links.
           const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
           if (!r.ok) return r
           await moveIndexPaths(root, abs, r.value.path)
@@ -312,7 +246,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }
         const r = await renamePage(abs, req.newName)
         if (!r.ok) return r
-        // renameCascade rewrites inbound [[links]] nexus-wide.
         try {
           const cascade = await renameCascade(root, oldTitle, req.newName)
           if (!cascade.ok) {
@@ -323,16 +256,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           await renamePage(r.value.path, oldTitle)
           return fault('Rename cascade failed; the rename was reverted.')
         }
-        // Heal markdown-tile bodies too (renameCascade skips .nexus-resident, id-less tile files).
-        // Best-effort AFTER the page cascade committed: a failure here leaves tiles stale (re-runnable),
-        // never un-reverts the now-successful page rename.
         try {
           await rewriteTileConnections(root, oldTitle, req.newName)
         } catch {}
         await moveIndexPaths(root, abs, r.value.path)
         return renamedReply(r.value.path)
       }
-      // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
       if (!r.ok) return r
       await moveIndexPaths(root, abs, r.value.path)
@@ -345,14 +274,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
       if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
-      // Write-ahead. The bundle is minted while the artifact is still live, the record lands
-      // inside it before the sweep that destroys what it describes, and the artifact moves in
-      // LAST — so a delete cut short leaves evidence rather than silence. Facts that only exist
-      // mid-delete (a sweep's captured membership) are patched in on the way past; `partial`
-      // is recomputed by the gatherers, never cleared, so a thin record always says so.
-      //
-      // System-trash mode records nothing: the artifact leaves the nexus entirely and there is
-      // nowhere valid for a record to live. `write` is null there, and every gather with it.
+      // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact
+      // moves LAST, so a delete cut short leaves evidence rather than silence.
       const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
       const write = bundle
         ? async (record: RecordFile | null): Promise<void> => {
@@ -360,24 +283,17 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           }
         : null
       if (req.kind === 'space') {
-        // The registry entry and the Space's own sidecar are read BEFORE the sweep — after it,
-        // the membership they anchor is already gone.
         const registry = write ? await readRegistryStrict(root) : null
         if (write) await write(await gatherSpaceRecord(abs, registry, null))
-        // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
         const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
         if (write)
           await write(await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null))
       } else if (req.kind === 'context') {
         const title = basename(abs)
-        // The title→id window closes at the registry erase, so the evidence is taken first.
         const evidence = write
           ? await gatherContextEvidence(abs, title, await readRegistryStrict(root))
           : null
         if (write && evidence) await write(buildContextRecord(evidence, null))
-        // Unlink the parenthesized key everywhere OUTSIDE the folder being trashed — the
-        // subtree's own roots are passengers whose links stay true in the trash; then drop
-        // the registry entry; the folder tree (its Spaces included) trashes recoverably below.
         const swept = await unlinkContextKey(root, title, abs)
         // By id, never by title: the gather already resolved which entry this is, and two entries
         // sharing a title would otherwise erase both while only one folder is trashed.
@@ -404,8 +320,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       const r = await restoreArtifact(root, resolved.value, req.destination)
       if (!r.ok) return r
-      // A restore lands an arbitrary subtree back in the corpus; the stat-gated seed reads
-      // exactly the files that returned.
       await seedContentIndex(root)
       return ok({})
     }
@@ -424,22 +338,18 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileImage': {
-      // Mirrors setBanner's navview arm with a different field; the circle framing is a
-      // separate crop on the adopted image.
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = await assetFileToDelete(root, existing?.profile_image)
       const adopted = req.source ? await adoptImageSource(root, req.source) : ok(null)
       if (!adopted.ok) return adopted
-      // Set the field first, then delete a replaced file — a failed write never leaves
-      // profile_image pointing at a deleted file (mirrors the banner ordering).
+      // Field first, then the replaced file: a failed write never points at a deleted file.
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', adopted.value))
       await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
       return ok(adopted.value ? { adopted: adopted.value } : {})
     }
 
     case 'setProfileIcon': {
-      // No asset write — it's a symbol name, not an image.
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_icon', req.icon))
       return ok({})
     }
@@ -454,32 +364,21 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setBanner': {
-      // Adoption stays inside each owner arm, AFTER that owner has been validated — a picked file
-      // must not land in the asset directory for a banner the write is about to refuse.
       const adopt = async (): Promise<Result<string | null>> =>
         req.source ? adoptImageSource(root, req.source) : ok(null)
-      // A page's banner is the `banner` key in its `.md` frontmatter, not a JSON sidecar.
-      // Foreign frontmatter + body survive.
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
-        // Under the page's file lock — a banner write and a property cascade both rewrite
-        // this page's frontmatter, so they must serialize rather than clobber from a stale read.
-        return serializeOnFile(resolved.value, async () => {
-          let existing: string
-          try {
-            existing = await readFile(resolved.value, 'utf8')
-          } catch {
-            return fault('That page could not be read.')
-          }
+        return machine().lock(resolved.value, async () => {
+          const existing = await readTextOrNull(resolved.value)
+          if (existing === null) return fault('That page could not be read.')
           const { body } = splitEnvelope(existing)
           const fields = readFrontmatterFields(existing)
           const prev = await assetFileToDelete(root, fields.banner)
           const adopted = await adopt()
           if (!adopted.ok) return adopted
           const rel = adopted.value
-          // Set the field first; only THEN delete a replaced file, so a failed write never
-          // leaves `banner` pointing at a deleted file.
+          // Field first, then the replaced file: a failed write never points at a deleted file.
           await atomicWriteFile(
             resolved.value,
             mergeFrontmatter(existing, rel ? { banner: rel } : {}, ['banner'], body),
@@ -489,12 +388,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           return ok(rel ? { adopted: rel } : {})
         })
       }
-      // The NavView's banner rides navigation.json — the pointer is the only linkage, so the
-      // one serialized patch-writer is what keeps the arrays and the banner from dropping
-      // each other.
       if (req.kind === 'navview') {
-        // Resolved rather than trusted: the read gate admits a wikilink, which names a
-        // file rather than a path, and one several files answer to deletes nothing at all.
         const prevNav = await assetFileToDelete(root, (await readNavigationFile(root)).banner)
         const adopted = await adopt()
         if (!adopted.ok) return adopted
@@ -502,11 +396,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await dropReplacedAsset(root, prevNav, adopted.value, deps.trashToSystem)
         return ok(adopted.value ? { adopted: adopted.value } : {})
       }
-      // Resolve the config holding the banner field, per owner kind: the homepage is a singleton
-      // (.nexus/homepage.json); the rest are folder sidecars.
       let cfgPath: string
-      // The singleton legitimately seeds from nothing; a folder sidecar never does — one that
-      // vanishes mid-op fails not-found rather than being re-minted around a banner.
       let seed: (() => Record<string, unknown>) | undefined
       let existing: Record<string, unknown> | null
       if (req.kind === 'homepage') {
@@ -523,7 +413,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const prev = await assetFileToDelete(root, existing?.banner)
       const adopted = await adopt()
       if (!adopted.ok) return adopted
-      // Same ordering as the page arm above: field first, then delete.
       const written = await rmwJsonStrict(
         cfgPath,
         (cur) => setOrDrop(cur, 'banner', adopted.value),
@@ -535,8 +424,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setHeadingIconHidden': {
-      // The banner-heading icon show/hide flag → `heading_icon_hidden` in the owner's config
-      // (homepage.json for the singleton, the folder sidecar otherwise). Absent = shown.
       let cfgPath: string
       let fallback: Record<string, unknown>
       if (req.kind === 'navview') return fault('The NavView has no heading icon.')
@@ -562,19 +449,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setIcon': {
-      // A bare symbol id. Pages carry it in `.md` frontmatter (`icon`); containers + contexts in their
-      // JSON sidecar. `null` clears it. Foreign frontmatter/keys survive (mirrors setBanner, minus the
-      // asset file).
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
-        return serializeOnFile(resolved.value, async () => {
-          let existing: string
-          try {
-            existing = await readFile(resolved.value, 'utf8')
-          } catch {
-            return fault('That page could not be read.')
-          }
+        return machine().lock(resolved.value, async () => {
+          const existing = await readTextOrNull(resolved.value)
+          if (existing === null) return fault('That page could not be read.')
           const { body } = splitEnvelope(existing)
           const fields = req.icon ? { icon: req.icon } : {}
           await atomicWriteFile(resolved.value, mergeFrontmatter(existing, fields, ['icon'], body))
@@ -586,7 +466,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       if (await isReserved(root, resolved.value)) return fault('That item can’t take an icon.')
       if (req.kind === 'context') {
-        // A Context's icon lives on its registry entry, not a folder sidecar.
         const title = basename(resolved.value)
         const r = await mutateRegistryFile(root, (cur) => ({
           contexts: cur.contexts.map((c) => {
@@ -600,8 +479,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         return r.ok ? ok({}) : r
       }
       const cfgPath = sidecarPath(resolved.value, req.kind)
-      // One strict read: the id gate rides inside the mutator (the throw lands as the op's
-      // fault), and a vanished sidecar fails not-found rather than being reseeded.
       const written = await rmwJsonStrict(cfgPath, (cur) => {
         if (typeof cur.id !== 'string') throw new Error('That item has no id.')
         return setOrDrop(cur, 'icon', req.icon)
@@ -623,20 +500,16 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProperty': {
-      // Routed through the one page-value writer so a cell edit and an option cascade stamp the
-      // page identically. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return resolved
       // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the
       // lock can send the write to a key the sweep has already passed.
-      const adoptions = await serializeOnFile(resolved.value, async () => {
+      const adoptions = await machine().lock(resolved.value, async () => {
         const def = (await readRegistry(root)).defs[req.propertyId]
         if (!def) return fail('not-found', 'Property not found.')
-        const world = await loadGovernedWorld(
-          root,
-          resolved.value,
-          splitFrontmatter(await readFile(resolved.value, 'utf8')),
-        )
+        const content = await readTextOrNull(resolved.value)
+        if (content === null) return fail('not-found', 'That page could not be read.')
+        const world = await loadGovernedWorld(root, resolved.value, splitFrontmatter(content))
         const r = await updatePageProperty(resolved.value, def, req.value, world)
         if (!r.ok) return r
         await indexWrittenPage(root, resolved.value)
@@ -656,10 +529,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!destOk.ok) return destOk
       const r = await movePage(src.value, dst.value)
       if (!r.ok) return r
-      // Persist the destination's new page order (reorder + drop-at-position). The source's
-      // stale id self-drops on the next read, so only the destination is rewritten. Best-effort:
-      // the file has already moved, and reporting a failed order write as a failed move leaves
-      // the renderer showing the page where it no longer is. Order falls back to title instead.
       if (req.order) await setChildOrder(dst.value, 'page_order', req.order)
       await moveIndexPaths(root, src.value, r.value.path)
       noteValueWrite(root, r.value.path)
@@ -667,7 +536,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'moveSet': {
-      // The set's pages travel inside the folder.
       const src = await resolveUnderRoot(root, req.path)
       if (!src.ok) return src
       const dst = await resolveUnderRoot(root, req.newParentPath)
@@ -676,17 +544,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!destOk.ok) return destOk
       const r = await moveFolderEntity(src.value, dst.value)
       if (!r.ok) return r
-      // Best-effort for the same reason as movePage — the folder has already moved.
       await setChildOrder(dst.value, 'set_order', req.order)
       await moveIndexPaths(root, src.value, r.value.path)
-      // A folder resolves to no page id, so the destination re-reads whole and sweeps every
-      // page the set carried in.
       noteValueWrite(root, r.value.path)
       return ok({})
     }
 
     case 'reorderChildren': {
-      // Reorder collections within a vault / sets within a collection — order-only, no move.
       const parent = await resolveUnderRoot(root, req.parentPath)
       if (!parent.ok) return parent
       const o = await setChildOrder(parent.value, req.key, req.order)
@@ -695,7 +559,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'reorderTop': {
-      // Reorder top Collections / a Context group — persisted to .nexus/state.json.
       const o = await setStateOrder(root, req.key, req.order)
       if (!o.ok) return o
       return ok({})
@@ -747,8 +610,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'reorderContexts': {
-      // Registry array position IS the order; ids the renderer missed keep their
-      // relative order at the end (a concurrent create must never vanish).
       const r = await mutateRegistryFile(root, (cur) => {
         const byId = new Map(cur.contexts.map((c) => [c.id, c]))
         const ordered = req.ids.map((id) => byId.get(id)).filter((c) => c !== undefined)

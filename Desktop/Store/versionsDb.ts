@@ -1,23 +1,13 @@
-// The page-history store: whole-file snapshots keyed by page id and timestamp, device-local and
-// separate from nexus.db so a schema reset there never costs history.
-
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
-import { errText } from '../Contract/result'
+import { errText } from '@pommora/core/Contract/result'
 import { damagedStore, openDb, type Db } from './driver'
-import { fileStamp } from '../Trash/bundle'
-import { nexusDir } from '../Locations/paths'
+import { fileStamp } from '@pommora/core/Trash/bundle'
+import { nexusDir } from '@pommora/core/Locations/paths'
+import type { SnapshotRow, SnapshotSource } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'
-
-/** Where a snapshot came from: the autosave, a foreign writer's text about to be overwritten, or
- *  the text a restore replaced. */
-export type SnapshotSource = 'edit' | 'external' | 'restore'
-export interface SnapshotRow {
-  ts: number
-  source: SnapshotSource
-}
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS snapshots (
@@ -43,9 +33,7 @@ function healthy(db: Db): boolean {
 function quarantine(dbPath: string): void {
   try {
     renameSync(dbPath, dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`))
-  } catch {
-    /* left where it is; the caller reads the outcome from the path */
-  }
+  } catch {}
 }
 
 function withTable(db: Db | null): Db | null {
@@ -127,7 +115,6 @@ export function deleteSnapshots(db: Db, pageId: string, ts: readonly number[]): 
   )
 }
 
-/** Empties the store and gives its bytes back — the one reason to press Clear History is disk. */
 export function clearSnapshots(db: Db): number {
   const count = removed(db.prepare('DELETE FROM snapshots').run())
   // Under WAL the rebuilt file lands in the journal; the checkpoint is what truncates the store.

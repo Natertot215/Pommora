@@ -1,9 +1,9 @@
 // One pending-op slot on disk, replayed on the next open. A write never displaces a different
 // stranded record — its owed heal outranks the op now starting, which runs unjournaled — and a
 // clear lands only for the caller's own record on the live session's root.
-import { rm } from 'node:fs/promises'
 import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { recordWrite } from '../IO/writeEcho'
+import { machine } from '../Platform/machine'
 import { nexusConfig } from '../Locations/paths'
 import { sessionRoot } from '../Nexus/session'
 
@@ -39,7 +39,7 @@ export function journalSlot<J>(
       if (!held || !same(held, own)) return
       // The unlink is a `.nexus` event the watcher classifies full-refresh; echo it away.
       recordWrite(path(root))
-      await rm(path(root), { force: true })
+      await machine().remove(path(root))
     },
   }
 }

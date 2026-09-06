@@ -1,8 +1,3 @@
-// The streaming <title> scanner: the pure half of page-title resolution, fed response chunks by
-// whatever owns the network.
-
-import { StringDecoder } from 'node:string_decoder'
-
 const MAX_BYTES = 65536 // the <title> lives in <head>; never pull a whole page down
 const NAMED: Record<string, string> = { lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 
@@ -24,7 +19,6 @@ function decodeEntities(s: string): string {
     .replace(/&amp;/gi, '&')
 }
 
-/** Exported for tests (the network wrapper below isn't unit-testable). */
 export function extractTitle(html: string): string | null {
   const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)
   if (!m) return null
@@ -32,25 +26,20 @@ export function extractTitle(html: string): string | null {
   return text || null
 }
 
-/** Streaming <title> scanner: feed response chunks, decoding UTF-8 THROUGH chunk boundaries via a
- *  StringDecoder (a plain per-chunk `toString` splits a multi-byte char in two and corrupts it —
- *  any accented/CJK/emoji title). `push` returns the title once `</title>` or the byte cap
- *  arrives, else undefined to keep going; `end` flushes the decoder for a stream that finished
- *  without either. */
 export function makeTitleScanner(maxBytes = MAX_BYTES): {
-  push(chunk: Buffer): string | null | undefined
+  push(chunk: Uint8Array): string | null | undefined
   end(): string | null
 } {
-  const decoder = new StringDecoder('utf8')
+  const decoder = new TextDecoder()
   let buf = ''
   return {
-    push(chunk: Buffer): string | null | undefined {
-      buf += decoder.write(chunk)
+    push(chunk: Uint8Array): string | null | undefined {
+      buf += decoder.decode(chunk, { stream: true })
       if (/<\/title>/i.test(buf) || buf.length >= maxBytes) return extractTitle(buf)
       return undefined
     },
     end(): string | null {
-      return extractTitle(buf + decoder.end())
+      return extractTitle(buf + decoder.decode())
     },
   }
 }

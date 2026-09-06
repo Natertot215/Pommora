@@ -1,13 +1,10 @@
-// Page-title resolution for anything showing a link in its Page Title form. Main owns the network
-// (the renderer never fetches) and the authoritative in-memory cache, persisted a row at a time
-// in nexus.db. A title is fetched at most once per URL per session.
 import { net } from 'electron'
 import {
   isHttpLink,
   normalizeLinkUrl,
   LINK_RESOLVE_TIMEOUT_MS,
 } from '@pommora/core/Connections/links'
-import { readScope, writeKey } from '@pommora/core/Store/localState'
+import { readScope, writeKey } from '@pommora/core/Platform/localState'
 import { makeTitleScanner } from '@pommora/core/Web/titleScan'
 
 /** URL → fetched page title. Regeneratable from the network, so it never leaves the device. */
@@ -16,8 +13,6 @@ export type LinkTitleCache = Record<string, string>
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Pommora/1.0'
 
-/** Fetch a URL and return its page title, or null on any failure (offline / non-2xx / no title /
- *  timeout). http(s) only. Stops the download the moment `</title>` arrives or the byte cap is hit. */
 function fetchPageTitle(rawUrl: string): Promise<string | null> {
   if (!isHttpLink(rawUrl)) return Promise.resolve(null) // http(s) only — never mailto:/file:/etc.
   const url = normalizeLinkUrl(rawUrl)
@@ -67,14 +62,11 @@ function ensureCache(root: string): void {
   cacheRoot = root
 }
 
-/** The renderer hydrates its store from this on open. */
 export function getTitleCache(root: string): LinkTitleCache {
   ensureCache(root)
   return { ...cache }
 }
 
-/** A failed fetch returns null and caches nothing (the renderer won't re-ask this session; next
- *  session retries once). */
 export async function resolveTitle(root: string, url: string): Promise<string | null> {
   ensureCache(root)
   const hit = cache[url]

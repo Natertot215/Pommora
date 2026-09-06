@@ -88,7 +88,7 @@ import { validateAssetDir } from '@pommora/core/Settings/assetDirValidate'
 import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
 import { sessionRoot, openSession } from '@pommora/core/Nexus/session'
 import { isExistingDir, resolveRestorePath } from '@pommora/desktop/Config/appConfig'
-import { openSessionDb, closeSessionDb } from '@pommora/core/Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { stampAdopted } from '@pommora/core/Nexus/adopt'
 import { ensureIdentity } from '@pommora/core/Nexus/identity'
 import { ensureContextsRegistry } from '@pommora/core/Contexts/contextsRegistry'
@@ -129,7 +129,9 @@ import {
   writeNavigationState,
 } from '@pommora/core/Navigation/navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from '@pommora/core/Interface/tabsState'
-import { readValue, writeValue } from '@pommora/core/Store/localState'
+import { readValue, writeValue } from '@pommora/core/Platform/localState'
+import { installMachine } from '@pommora/core/Platform/machine'
+import { nodeMachine } from '@pommora/desktop/Platform/nodeMachine'
 import {
   readWindowsState,
   sanitizeWindows,
@@ -228,6 +230,8 @@ import { installEditorContextMenu, setFormatState, setGripHot } from './editorMe
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { getTitleCache, resolveTitle, type LinkTitleCache } from './linkTitles'
+
+installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(p) })
 
 // Opt-in CDP endpoint for headless automation; must be appended before the app is ready.
 if (process.env.POMMORA_DEBUG_PORT) {

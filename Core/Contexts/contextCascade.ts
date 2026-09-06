@@ -1,9 +1,4 @@
-// A Context rename rewrites the parenthesized KEY in every member root; a Space rename rewrites
-// its exact canonical title as a VALUE under its Context's key (near-miss forms stay for the
-// reconcile). Scope: every `.md` frontmatter and every `_space.json` root, each under its own lock.
-
-import { rename } from 'node:fs/promises'
-import { basename, join, sep } from 'node:path'
+import { basename, join } from '../Locations/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, type ContextsRegistry } from '../Properties/contexts'
 import { contentId } from '../Nexus/identityMark'
@@ -12,6 +7,7 @@ import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, readJsonObject } from '../IO/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
 import { recordWrite } from '../IO/writeEcho'
+import { machine } from '../Platform/machine'
 import { contextsDir, SPACE_SIDECAR } from '../Locations/paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
@@ -28,7 +24,6 @@ import { invalidName, invalidContextTitle } from '../Nexus/util'
  *  list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
-/** The key/value rewrite one raw root undergoes, or null when untouched. */
 function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
   if (j.spaceId === undefined) {
     const oldKey = contextKey(j.oldTitle)
@@ -47,7 +42,6 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
     }
     return out
   }
-  // Only the EXACT canonical old title rewrites, deduped if the new title already rode alongside.
   const key = contextKey(contextTitle)
   const arr = raw[key]
   if (!Array.isArray(arr) || !arr.includes(j.oldTitle)) return null
@@ -59,7 +53,6 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
   return { ...raw, [key]: next }
 }
 
-/** What one swept root gave up: its identity (absent = unrestorable) and the values removed. */
 export interface SweepCapture {
   id?: string
   kind: 'page' | 'space'
@@ -87,16 +80,12 @@ export async function sweepContextRoots(
   return { touched, skipped, refused }
 }
 
-/** The id comes from whichever id key the root carries; a root with the key but no id
- *  captures id-less, honestly unrestorable. */
 function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR
   const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : contentId(raw)
   return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
 }
 
-/** A Context rename moves a KEY, whose position and surrounding comment live only in the file's
- *  own text; a Space rename moves VALUES under a key that stays put. */
 function pageLeg(j: RenameJournal): SweepOptions {
   if (j.spaceId !== undefined) return {}
   const oldKey = contextKey(j.oldTitle)
@@ -106,8 +95,6 @@ function pageLeg(j: RenameJournal): SweepOptions {
   }
 }
 
-/** `contextTitle` is the owning Context's CURRENT registry title, the key Space values live
- *  under. Every caller resolves the def before journaling, so an unknown context sweeps nothing. */
 export async function cascadeTitle(
   root: string,
   registry: ContextsRegistry,
@@ -120,16 +107,13 @@ export async function cascadeTitle(
   return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
 }
 
-/** A root under `skipUnder` is a passenger leaving with its owner (its key stays true inside
- *  the subtree the same operation ships to trash), so the delete arm passes its resolved target
- *  and the sweep leaves that subtree intact. The rename cascade never skips. */
 export async function unlinkContextKey(
   root: string,
   contextTitle: string,
   skipUnder?: string,
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
-  const skipPrefix = skipUnder ? skipUnder + sep : null
+  const skipPrefix = skipUnder ? `${skipUnder}/` : null
   const captured: SweepCapture[] = []
   const swept = await sweepContextRoots(root, (raw, file) => {
     if (skipPrefix && file.startsWith(skipPrefix)) return null
@@ -145,7 +129,6 @@ export async function unlinkContextKey(
   return ok({ ...swept, captured })
 }
 
-/** A key left empty drops with it (no empties). */
 export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
@@ -166,7 +149,6 @@ export async function unlinkSpaceValue(
   return ok({ ...swept, captured })
 }
 
-/** Persist the skip list for retry, or clear the journal when the sweep completed clean. */
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {
   if (skipped.length) await writeJournal(root, { ...j, skipped })
   else await clearJournal(root, j)
@@ -185,7 +167,6 @@ export async function renameContextOp(
   const entry = reg.value.contexts.find((c) => c.id === contextId)
   if (!entry) return fail('not-found', 'Unknown Context.')
   if (entry.title === newName) return ok(null)
-  // Case-insensitive vs OTHER groups (the filesystem is); a case-only rename of itself passes.
   if (
     reg.value.contexts.some(
       (c) => c.id !== contextId && normalizeTitle(c.title) === normalizeTitle(newName),
@@ -202,7 +183,7 @@ export async function renameContextOp(
     if (await pathExists(oldDir)) {
       recordWrite(oldDir)
       recordWrite(newDir)
-      await rename(oldDir, newDir)
+      await machine().rename(oldDir, newDir)
     }
   } catch (e) {
     await clearJournal(root, j)
@@ -217,10 +198,8 @@ export async function renameContextOp(
   if (!committed.ok) {
     await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
-      if (await pathExists(newDir)) await rename(newDir, oldDir)
-    } catch {
-      /* best-effort */
-    }
+      if (await pathExists(newDir)) await machine().rename(newDir, oldDir)
+    } catch {}
     await clearJournal(root, j)
     return committed
   }
@@ -229,7 +208,6 @@ export async function renameContextOp(
   return ok(null)
 }
 
-/** No registry commit — Space identity lives in its folder + sidecar id. */
 export async function renameSpaceOp(
   root: string,
   spaceId: string,
@@ -242,8 +220,6 @@ export async function renameSpaceOp(
   if (!ref) return fail('not-found', 'Unknown Space.')
   if (ref.title === newName) return ok(null)
   const target = join(contextsDir(root), ref.contextTitle, newName)
-  // A case-only rename of ITSELF hits its own folder on a case-insensitive filesystem —
-  // that's the rename, not a collision.
   const caseOnly = normalizeTitle(ref.title) === normalizeTitle(newName)
   if (!caseOnly && (await pathExists(target))) return fail('exists', `"${newName}" already exists.`)
 
@@ -258,7 +234,7 @@ export async function renameSpaceOp(
   try {
     recordWrite(ref.dir)
     recordWrite(target)
-    await rename(ref.dir, target)
+    await machine().rename(ref.dir, target)
   } catch (e) {
     await clearJournal(root, j)
     return fail('operation-failed', errText(e))
@@ -269,9 +245,6 @@ export async function renameSpaceOp(
   return ok(null)
 }
 
-/** Re-verifies before touching anything: the registry/folders must still map the journal's
- *  exact old→new record, and a freed, re-minted old title discards the journal rather than
- *  hijacking the new owner. Idempotent. */
 export async function replayPendingRename(root: string): Promise<void> {
   const j = await readJournal(root)
   if (!j) return
@@ -296,7 +269,8 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     const oldDir = join(contextsDir(root), j.oldTitle)
     const newDir = join(contextsDir(root), j.newTitle)
-    if ((await pathExists(oldDir)) && !(await pathExists(newDir))) await rename(oldDir, newDir)
+    if ((await pathExists(oldDir)) && !(await pathExists(newDir)))
+      await machine().rename(oldDir, newDir)
     const cascade = await cascadeTitle(root, reg.value, j)
     if (entry.title !== j.newTitle) {
       const committed = await mutateRegistryFile(root, (cur) => ({
@@ -330,7 +304,7 @@ export async function replayPendingRename(root: string): Promise<void> {
       await clearJournal(root, j)
       return
     }
-    await rename(join(ctxDir, j.oldTitle), target)
+    await machine().rename(join(ctxDir, j.oldTitle), target)
   }
   const cascade = await cascadeTitle(root, reg.value, j)
   await settleJournal(root, j, cascade.skipped)
