@@ -88,7 +88,7 @@ export async function agendaContext(
 
   // An unreadable root yields no entries, so no claims are counted and the recorded registration stands — a root Pommora cannot list is no evidence that anything duplicated it.
   const entries = (await listEntries(root)).filter((e) => e.kind === 'dir')
-  // Counting is order-independent, so reads fan out in parallel.
+  // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(
     entries.flatMap((e) =>
       AGENDA_SLOTS.map((s) => readSidecar(join(root, e.name), s.sidecar, baseSidecar)),
