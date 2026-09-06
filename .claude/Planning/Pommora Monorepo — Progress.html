@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 06:30 PT",
+  updated: "09-06-2026 07:40 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -114,7 +114,7 @@ const DATA = {
     ], gate: { name: "Gate 4", state: "done", hash: "eba69eda", note: "One Opus review: −10; the attack cleared the range; one regression routed to Task 16 with its fix; two Nathan's-call items logged." } },
     { name: "Phase 5", title: "Removals, fixes, docs", tasks: [
       { n: 15, title: "Kill list at high confidence", state: "pending" },
-      { n: 16, title: "The two write-path bugs", state: "pending" },
+      { n: 16, title: "The two write-path bugs", state: "running", note: "Opus: five bugs red-first (sidecar lock, homepage.json, unknown kind, tableDnd beforeId, the stale renderTile connections) with sibling sweeps." },
       { n: 17, title: "Showcase severed", state: "pending" },
       { n: 18, title: "Harness scripts", state: "pending", note: "Every script repointed; the comment ledgers stay." },
       { n: 19, title: "Docs path sweep and stale claims", state: "pending" },
@@ -155,8 +155,10 @@ const DATA = {
     { at: "8afea447", label: "Task 14 comments", lines: 68710 },
     { at: "d4369bd2", label: "Task 14", lines: 69009 },
     { at: "eba69eda", label: "Gate 4", lines: 69000 },
+    { at: "f2db2a34", label: "Task 15", lines: 68745 },
   ],
   gates: [
+    { name: "Task 15 · f2db2a34", text: "typecheck 0 · test 0 (334 / 4,045) · lint 0 (1,065 files) · build 0\\n19 deleted symbols → 0 each (control capSet → 11) · function isPlainObject → 1 · function splitFrontmatter → 1 · withRoot → definition + 26 sites · dead exports 0 of 2,854 · orphan files 0 · dead CSS classes 0\\nsmoke (agent): tree rendered, page body round-tripped and restored, the trash surface's Time Deleted column rendered · run −714 vs base" },
     { name: "Gate 4 · eba69eda", text: "typecheck 0 · test 0 (334 / 4,049) · lint 0 (1,067 files) · build 0\\none Opus simplify-and-attack review of e25db9ea..HEAD: −10; one live regression found and routed to Task 16 with its fix (renderTile's connections pinned at mount); the menu path and the host cleared item by item\\nTask 14's smoke stood as the gate's · run −459 vs base" },
     { name: "Task 14 · d4369bd2", text: "typecheck 0 · test 0 (334 / 4,049) · lint 0 (1,067 files) · build 0\\nuseSession in MarkdownPM → 0 · window.nexus → 0 · host() → 0 · glanceAction → 0 · Tiles lazy import → 0 (renderTile → 2) · Editor/ gone · @codemirror/react in Engine → 0/0 (41-file closure) · ZOOM_MIN/zoomMultiplier → 0\\nsmoke (agent): autocomplete pane on [[ and none inside a fence, grip menu native, footnotes fold/unfold, glance arms after the dwell, ![[…]] mounted a PageTile through renderTile at 13.5px (15 × 0.9), embedScale 1.25 → 18.75px, file byte-identical" },
     { name: "Task 13 · ab246bac", text: "typecheck 0 · test 0 (332 / 4,041) · lint 0 (1,062 files) · build 0\\nmenu asks → 'row-menu' alone (26 → 1) · Pushes 14 → 7 · Desktop/Actions → rowMenu, returningMenu, editorMenu, appMenu, accelerators · buildFromTemplate → 3 files · tileMenuModel → 0 · @pommora/core in UIX → 0 · radio in menuModel → 0\\nsmoke (agent): native row-menu resolved null on Escape and 'a' on ↓⏎; in-app RowMenuHost pane rendered its rows, Escape → null, click → 'a'; page body round-tripped, restored" },
@@ -181,6 +183,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Task 15 landed (f2db2a34, −255 of a −550 target): the audits' high-confidence lists were already consumed by Tasks 3–14 and the simplification pass — verified item by item; the tree has no dead export, no orphan file, no dead CSS class. The agent declined to buy the number by deleting the Tiles layout primitives the suite is written against or the equivalence oracles; recorded as such. Run −714 vs base. Task 16 dispatched." },
     { when: "09-06-2026", text: "Gate 4 landed (eba69eda, −10). Phase 4 closed; the run stands −459 vs base. Found: the editor's host facet is pinned at mount so an embedded tile's ConnectionsApi goes stale after a tree push (Task 16, with a red test; the fix is a ref read inside renderTile); ActionItem.confirm is write-only though ruling 35 keeps it (Nathan's call at ContextPM); RowMenuHost has no desktop caller by design (the phone's seat, ~110 lines). Task 15 dispatched with a −1,000 target." },
     { when: "09-06-2026", text: "Task 14 landed (d4369bd2): the EditorHost, Editor/ dissolved, rulings 38–43 red-first, blockContext cached, the header slot without a wrapper. Counter says +299 (intents.ts 469 after the docScan split, the harness 61 → 184 as a full in-memory mounter, editorHost.tsx 138, api.ts 84) against the agent's own −115 product / +123 harness read; the run stands −450. Gate 4 review dispatched with the delta named." },
     { when: "09-06-2026", text: "Task 13 landed (ab246bac, −483): one model, one channel, one popper, one presenter; the UIX → Core edge severed. Ruled at commit: no useMenuPresenter hook (native stays the default and ten call sites are outside React — the choice sits on HostContext.menu); presentRowMenu is a chrome-slice action, not a singleton; checked maps to a checkbox item (identical on macOS; a Windows note for Task 20); sidebar picks through the renderer's mutate, failures through error:show as before (ruling 6). Run −749 vs base. Comment killer over Task 14's files dispatched." },
