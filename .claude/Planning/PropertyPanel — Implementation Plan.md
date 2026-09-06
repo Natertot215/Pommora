@@ -424,8 +424,8 @@ const pickTargetFor = (rowId: string, column: ResolvedColumn, kind: PickTarget['
 
 **Verify — automated**
 
-- [ ] `rg -F "CardPickerHost" Core` → 0; `rg -F "CardAddPicker" Core` → 0; `rg -F "card-add-top-flat" Core` → 0. Control: `rg -F "CardsView" Core` → non-zero.
-- [ ] `npm run typecheck`, `npm run test` (count unmoved), `npm run lint` green.
+- [x] `CardPickerHost` → 0; `CardAddPicker` → 0; `card-add-top-flat` → 0. Control: `CardsView` → 3.
+- [x] `npm run typecheck`, `npm run test`, `npm run lint` green. (Suite is 4071, not 4057: a parallel agent landed +2 files / +14 tests mid-run; this task adds none.)
 
 **Verify — user**
 
@@ -738,7 +738,7 @@ without deleting more than it grows is out of scope — report it under Sequence
 
 - [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
   - [x] Task 1 — target union + chooser pane · `<commit>`
-  - [ ] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
+  - [x] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
   - [ ] Task 3 — Table's two mounts; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
   - [ ] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
@@ -766,6 +766,8 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **Task 1 — the pane test is +7, not the fenced +6.** The B28 "centres with `anchorX`, not without" behavior is two `it`s (one per branch) rather than one, for a legible failure. Coverage added, none removed; baseline is 4050 → 4057.
 - **Task 1 — `commit` passes `entry` only when drilled, not `onCommit(v, picked ?? undefined)`.** The fenced form emits a trailing `undefined` second argument on the direct path, which breaks the baseline `cellGestures` multi-select assertion's exact single-arg `toHaveBeenCalledWith`. `picked ? onCommit(v, picked) : onCommit(v)` preserves that baseline test verbatim; no runtime behavior differs for any real caller.
 - **Gate residue corrected (struck TextField extraction).** The Gate checklist's "test count = baseline + 11" and "the `picker-base.test.tsx` rewrite is a signature move" are leftovers from the extraction Nathan struck (Rulings: `UIX/Pickers/` untouched). No `UIX/Pickers/` file is touched. Real test add is **+10**: 7 (Task 1 pane) + 3 (Task 4 panel).
+- **Task 2 — `CardsView.tsx` lands at +161, over its +130 ceiling by 31 (FLAGGED for Gate 1).** Per the guardrail, I looked for and cut what was built and not needed: the `vpRow/vpDef/vpCurrent/vpRaw` derivations duplicated `pickTargetFor`, so one `vTarget` now feeds the two `TextPicker`s and the `PropertyPicker`, and `commitValuePicker` resolves its own row (−7). The residual is irreducible without deleting behavior: the mount inlines `CardPickerHost`'s ~89-line render (two `TextPicker`s, the datetime/file/options `PropertyPicker`, the chooser mapping) plus the two B14 dismiss effects and `pickTargetFor` — none of it relocatable to a file with headroom, none a one-reader helper. Read against the deletions it offsets (`CardPickerHost` 217 + `CardAddPicker` 155 = 372), the fold is deeply net-negative; the per-file estimate was optimistic. The Gate 1 `code-simplifier` gets the next pass; if it cannot reach 130, the ceiling itself is the miss, not the code.
+- **Task 2 — the request types (`ValuePickerRequest`/`AddPickerRequest`) and `dependentKind` moved into `CardsView` unchanged**, since `CardPickerHost` (their only other home) is deleted and only `CardsView` reads them. `onReveal` looks a dependent entry up in the retained `addEntries: AddEntry[]` for its `type`, because `PickEntry` (now `icon: string`, since `propertyIcon` returns an arbitrary user-icon string) deliberately carries no `type`.
 
 ### Lessons
 
