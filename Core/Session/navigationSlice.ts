@@ -15,14 +15,16 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import type { StoredTabSet } from '@pommora/core/Interface/Windows/windowRecord'
-import {
-  type ReconcileIndex,
-  reconcileSelection,
-  reconcileWith,
-} from '../Session/reconcileSelection'
+import { type ReconcileIndex, reconcileSelection, reconcileWith } from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
-import { moveByKey, navKey, RECENTS_CAP, recordRecent, removeRecentByKey } from './navRecents'
-import { dropCapturedOutside } from './thumbMarkers'
+import {
+  moveByKey,
+  navKey,
+  RECENTS_CAP,
+  recordRecent,
+  removeRecentByKey,
+} from '../Navigation/navRecents'
+import { dropCapturedOutside } from '../Navigation/thumbMarkers'
 import {
   activeUnpinnedTab,
   closeTab as closeTabModel,
@@ -40,15 +42,15 @@ import {
   reorderWithinZone,
   sameTabs,
   tabKey,
-} from './tabsModel'
+} from '../Navigation/tabsModel'
 import {
   bumpBodyEpoch,
   clearCache,
   dropPageDetail,
   dropCacheDetail,
   fetchPageDetail,
-} from '../Session/pageDetailCache'
-import { dropCacheTab, readCache } from './warmTabs'
+} from './pageDetailCache'
+import { dropCacheTab, readCache } from '../Navigation/warmTabs'
 import {
   findCollection,
   findCollectionForSet,
@@ -57,10 +59,10 @@ import {
   isDepth1Set,
   parentPathOf,
 } from '../Nexus/treeIndex'
-import { cancelPageSave } from '../Session/saveScheduler'
+import { cancelPageSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
-import type { SessionState, Slice } from '../Session/sessionState'
+import type { SessionState, Slice } from './sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
 import { popRowMenu } from '../Actions/nativeMenus'

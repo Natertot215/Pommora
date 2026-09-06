@@ -13,7 +13,7 @@ collision semantics, resize-handle geometry, controlled-layout data flow — and
 grid-cell model (units + compaction + tetris holes) was rejected in favor of a split tree,
 and its synthetic drag core was replaced by PommoraDND's capture discipline.
 
-#### The Model (`Core/model.ts`)
+#### The Model (`Layout/model.ts`)
 
 A page is a vertical stack of **bands**. Inside a band, a **row** divides width by zero-sum
 ratios, a **column** stacks children, and every **tile** owns its height in pixels. The two
@@ -29,17 +29,16 @@ axes deliberately obey different physics:
 
 | File | Role |
 | --- | --- |
-| `Core/model.ts` | Tree types, height derivation, lookup, validation |
-| `Core/ops.ts` | Pure tree operations — split, move, remove, band ops, the three resize ops |
-| `Core/rects.ts` | Tree → per-tile pixel rects, divider hit zones, band seam centerlines |
-| `Core/edges.ts` | A tile edge → the shared boundary it actually moves |
-| `Core/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
-| `Core/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
-| `Core/codec.ts` | Persistence codec — a parse; the ops keep every mutation normalized |
+| `Layout/model.ts` | Tree types, height derivation, lookup, validation |
+| `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, the three resize ops |
+| `Layout/rects.ts` | Tree → per-tile pixel rects, divider hit zones, band seam centerlines |
+| `Layout/edges.ts` | A tile edge → the shared boundary it actually moves |
+| `Layout/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
+| `Layout/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
+| `Layout/codec.ts` | Persistence codec — a parse; the ops keep every mutation normalized |
 | `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint |
 | `TileHost.tsx` | The host binding — the document, the entry union, the menus, create, remove, convert, duplicate |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
-| `TileLab.tsx` | Dev harness (demo + stress layouts) |
 
 #### Resize Semantics
 

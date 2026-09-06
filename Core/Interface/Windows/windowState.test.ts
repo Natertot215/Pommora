@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { EMPTY_WINDOWS, type WindowsFile } from './Windows/windowRecord'
+import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
 

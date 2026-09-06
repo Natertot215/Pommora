@@ -1,5 +1,5 @@
 import type { NavViewMode } from '@pommora/core/Interface/chrome'
-import type { Slice } from '../Session/sessionState'
+import type { Slice } from './sessionState'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { host } from '../Platform/dialer'
 
