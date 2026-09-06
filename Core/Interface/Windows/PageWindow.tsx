@@ -8,10 +8,10 @@ import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { Subfield } from '../Subfield/Subfield'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import type { SubfieldPage } from '../Subfield/subfieldItems'
-import { showConnectionMenu } from '../Menus/connectionMenu'
 import { getContentViewRect } from '../ContentView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
-import { connectionsFor, resolveIndexOf, trailOf } from '../../Session/treeIndex'
+import { resolveIndexOf, trailOf } from '../../Session/treeIndex'
+import { useWindowTabConnections } from '../../Session/pageConnections'
 import { windowTargetOf, useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
@@ -79,17 +79,7 @@ function PageWindowBody({
   )
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  const openWindowTab = useSession((s) => s.openWindowTab)
-  const connections = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: (page) => openWindowTab({ id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-        menu: showConnectionMenu,
-      }),
-    [tree, openWindowTab, select],
-  )
+  const connections = useWindowTabConnections(tree)
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 

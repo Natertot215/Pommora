@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { MenuRowView } from '@pommora/uix/Menus'
+import { SettingsFieldRow } from './SettingsFieldRow'
 
 const CLEARED_MS = 1500
 
@@ -23,22 +23,8 @@ export function ClearActionRow({
     timer.current = window.setTimeout(() => setDone(false), CLEARED_MS)
   }
   return (
-    <MenuRowView
-      row={{
-        kind: 'item',
-        label,
-        caption: hint,
-        trailing: {
-          kind: 'field',
-          children: (
-            <Button
-              type="destructive"
-              label={done ? 'Cleared' : 'Clear'}
-              onClick={() => void run()}
-            />
-          ),
-        },
-      }}
-    />
+    <SettingsFieldRow label={label} hint={hint}>
+      <Button type="destructive" label={done ? 'Cleared' : 'Clear'} onClick={() => void run()} />
+    </SettingsFieldRow>
   )
 }

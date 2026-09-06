@@ -8,9 +8,9 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
-import { showConnectionMenu } from '../Menus/connectionMenu'
 import { moveByKey } from '../../Navigation/navRecents'
-import { connectionsFor, resolveIndexOf } from '../../Session/treeIndex'
+import { resolveIndexOf } from '../../Session/treeIndex'
+import { useWindowTabConnections } from '../../Session/pageConnections'
 import { windowTargetOf, useSession } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
@@ -100,7 +100,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     }
   }, [pageTarget])
 
-  const openWindowTab = useSession((s) => s.openWindowTab)
   const select = useSession((s) => s.select)
   const openNewTab = useSession((s) => s.openNewTab)
   const setNavViewMode = useSession((s) => s.setNavViewMode)
@@ -122,16 +121,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
   const warmSeam = useWindowWarm(pageScrollRef, pageTarget?.path)
-  const connections = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: (page) => openWindowTab({ id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-        menu: showConnectionMenu,
-      }),
-    [tree, openWindowTab, select],
-  )
+  const connections = useWindowTabConnections(tree)
 
   return (
     <WindowBase

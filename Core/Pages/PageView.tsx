@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { useSession } from '../Session/store'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
-import { connectionsFor } from '../Session/treeIndex'
-import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
+import { usePreviewConnections } from '../Session/pageConnections'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { navKey } from '../Navigation/navRecents'
@@ -40,10 +39,6 @@ export function PageView({
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const tree = useSession((s) => s.tree)
-  const select = useSession((s) => s.select)
-  const openWindow = useSession((s) => s.openWindow)
-  // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
-  const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const setPageBody = useSession((s) => s.setPageBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingLive = useRef<[string, string] | null>(null)
@@ -88,19 +83,7 @@ export function PageView({
     void host().ask('headingIcon:set', pageId, next)
   }
 
-  const connections = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: (page) =>
-          openInWindow
-            ? openWindow({ id: page.id, path: page.path })
-            : void select({ kind: 'page', id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-        menu: showConnectionMenu,
-      }),
-    [tree, select, openWindow, openInWindow],
-  )
+  const connections = usePreviewConnections(tree)
   const editorHost = useEditorHost({ pageId, connections })
 
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
