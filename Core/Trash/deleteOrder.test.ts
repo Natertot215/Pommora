@@ -110,9 +110,7 @@ describe('the record is written before the destruction it describes', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    // The pre-sweep record knows its identity and admits it is thinner than the truth.
     expect(atSweep).toMatchObject({ entity: 'space', id: 'sp-pom', members: [], partial: true })
-    // The membership the sweep captured is patched in before the artifact settles.
     expect(atSettle).toMatchObject({ entity: 'space', members: [{ id: PAGE_A, kind: 'page' }] })
     expect(atSettle).not.toMatchObject({ partial: true })
   })
@@ -184,7 +182,6 @@ describe('a deletion cut short leaves evidence, never silence', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(false)
-    // The sweep already ran, and the Space folder is still live — the accepted cost of ordering the record first. What it took is hand-readable in the record rather than lost.
     expect(await tagOf()).toBeUndefined()
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })

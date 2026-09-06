@@ -7,8 +7,7 @@ import { PickerRow } from '../Pickers/picker-base'
 import { side } from './menu-base.css'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
-/** The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree
- *  needs no seed and stays right as nodes appear and vanish beneath it. */
+// The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it.
 export function useDisclosureSet(defaultOpen = false): {
   has: (id: string) => boolean
   toggle: (id: string) => void

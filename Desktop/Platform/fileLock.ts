@@ -4,8 +4,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 
 const fileChains = new Map<string, Promise<unknown>>()
 
-/** The keys held by the call in flight. Nesting DIFFERENT keys stays legal — only re-taking one
- *  already held is the deadlock. */
+// The keys held by the call in flight. Nesting DIFFERENT keys stays legal — only re-taking one already held is the deadlock.
 const heldKeys = new AsyncLocalStorage<ReadonlySet<string>>()
 
 export function serializeOnFile<T>(path: string, fn: () => Promise<T>): Promise<T> {

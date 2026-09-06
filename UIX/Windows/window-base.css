@@ -4,31 +4,27 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--app-radius);
-  /* CLIPS: a parked panel must never peek past the glass edge. */
   overflow: hidden;
 
-  --window-toolbar-h: 36px; /* KNOB — toolbar strip height */
-  /* KNOB — the panels' ring off the edges. */
+  --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
-  /* KNOB — an overlay panel's top clearance. */
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
-  /* KNOB — the pair's home gap; tracks the inset. */
   --slide-home: calc(var(--window-panel-inset) + 22px);
   --slide-cluster-w: 36px; /* KNOB — the trailing pair's width */
-  --slide-breathing: calc(var(--surface-inset) * 2); /* KNOB — breathing room off the pane's seam */
-  /* The pair lands INSIDE the pane's corner; 62px = toolbar right padding + cluster. */
+  --slide-breathing: calc(var(--surface-inset) * 2);
   --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
-  /* Also read by nav-window.css's .navwindow-tabs. */
-  --window-tab-clear-l: calc(var(--window-panel-inset) + 22px); /* KNOB — past the scan glyph */
-  --window-tab-clear-r: calc(
-    var(--window-panel-inset) +
-    56px +
-    var(--window-title-squeeze, 0px)
-  ); /* KNOB — past the inspector + close pair */
+  /* Half the body's reserved panel gutter — the floating title rides the content column's center, not the frame's. */
+  --window-title-shift: calc(
+    var(--io) *
+    (var(--window-panel-r-w) + var(--window-panel-inset)) /
+    -2
+  );
+  --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
+  --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;
@@ -111,6 +107,8 @@
   top: calc(var(--window-panel-inset) + 4px);
   left: 50%;
   transform: translateX(-50%);
+  /* Its own property, so the host's collapse transform and its transition stay untouched. */
+  translate: var(--window-title-shift);
   display: flex;
   align-items: center;
   height: 20px;
