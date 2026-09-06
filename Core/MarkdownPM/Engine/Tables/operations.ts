@@ -98,8 +98,7 @@ export function fillCells(
   }
 }
 
-/** The copied header lands only where the target's is empty; the body fills from `atRow`, or from
- *  row 1 when the anchor IS the header. */
+// The copied header lands only where the target's is empty; the body fills from `atRow`, or from row 1 when the anchor IS the header.
 export function fillColumn(
   m: TableModel,
   atRow: number,

@@ -9,16 +9,13 @@ export interface CacheSlice {
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
   setActiveView: (containerId: string, viewId: string) => Promise<void>
-  /** Keyed by page id so they survive a rename. Its own slice rather than a tree-keyed derivation, since authoring or forgetting one pushes no tree. */
   pageAliases: Record<string, string[]>
   rememberAlias: (pageId: string, alias: string) => void
   forgetAlias: (pageId: string, alias: string) => void
-  /** Every open tile host's lock, keyed by host; the host's document hook is its one writer. */
   hostLocks: Record<string, boolean>
   setHostLock: (host: TileHostRef, locked: boolean) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
-  /** The adopt path reaches here without a following load(), so anything left behind would write back under the next nexus's foreign keys. */
   resetCaches: () => void
 }
 

@@ -17,7 +17,7 @@
     "build:showcase": "npm run build -w Showcase",
     "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json",
     "test": "vitest run",
-    "lint": "biome check .",
+    "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan",
     "format": "biome format --write .",
     "check": "biome check --write ."
   },

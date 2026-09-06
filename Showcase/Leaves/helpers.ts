@@ -9,9 +9,7 @@ export function humanize(key: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-/** Read back a rendered color → "#RRGGBB", or "#RRGGBB · NN%" when it carries an
- *  alpha (the opacity tokens), so the gallery shows base + percent, never an opaque
- *  A## byte. */
+// Read back a rendered color → "#RRGGBB", or "#RRGGBB · NN%" when it carries an alpha (the opacity tokens), so the gallery shows base + percent, never an opaque A## byte.
 export function formatColor(css: string): string {
   const m = css.match(/-?\d*\.?\d+/g)
   if (!m || m.length < 3) return css
@@ -24,8 +22,7 @@ export function formatColor(css: string): string {
   return a < 1 ? `${hex} · ${Math.round(a * 100)}%` : hex
 }
 
-/** Read a value back from a rendered node on mount — so a swatch/type sample shows
- *  its real computed value rather than a restated literal. */
+// Read a value back from a rendered node on mount — so a swatch/type sample shows its real computed value rather than a restated literal.
 export function useComputedStyleText<T extends HTMLElement>(
   read: (cs: CSSStyleDeclaration) => string,
 ): [RefObject<T | null>, string] {
@@ -39,9 +36,7 @@ export function useComputedStyleText<T extends HTMLElement>(
 
 const COMPACT_QUERY = '(max-width: 720px)'
 
-/** True on compact (mobile-width) screens — the same breakpoint the mobile nav uses.
- *  Galleries drop their drag wiring here: a draggable item sets `touch-action: none`,
- *  which would otherwise trap touch scrolling on a tall grid. */
+// True on compact (mobile-width) screens — the same breakpoint the mobile nav uses. Galleries drop their drag wiring here: a draggable item sets `touch-action: none`, which would otherwise trap touch scrolling on a tall grid.
 export function useIsCompact(): boolean {
   const [compact, setCompact] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(COMPACT_QUERY).matches,

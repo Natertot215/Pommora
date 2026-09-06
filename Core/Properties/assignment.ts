@@ -27,8 +27,7 @@ const write = async (
   ids: string[],
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
-/** The one writer of a sidecar's `property_cache` block — an absent block value removes the entry,
- *  and an emptied cache leaves no key behind. */
+// The one writer of a sidecar's `property_cache` block — an absent block value removes the entry, and an emptied cache leaves no key behind.
 export function patchCacheBlock(
   sidecar: Record<string, unknown>,
   propertyId: string,

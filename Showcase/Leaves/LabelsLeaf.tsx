@@ -161,8 +161,7 @@ function SwitchDemo({ color }: { color: LabelColorName }): React.JSX.Element {
 
 const PENDING = ['Separator', 'Row']
 
-/** The two colorless shapes, which the shape rows can't show: those fan a shape across every chip
- *  color, and a file carries none of its own — its name and its type glyph are the whole content. */
+// The two colorless shapes, which the shape rows can't show: those fan a shape across every chip color, and a file carries none of its own — its name and its type glyph are the whole content.
 const FILE_SHAPES: Array<{ label: string; content: ReactNode }> = [
   { label: 'File · a file property’s value', content: <FileChip name="Q3 Report.pdf" /> },
   { label: 'Plain · a name inside a field', content: <FileLabel name="Meeting Notes.md" /> },
