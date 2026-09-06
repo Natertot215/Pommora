@@ -1,12 +1,7 @@
 // The generic editor menu stands down over a grip because the rail hover flags it hot to main; the flag is cleared by hand after a delete, since no mousemove fires under a modal menu.
 import { EditorView } from '@codemirror/view'
 import { pageEmbedText } from '@pommora/core/Connections/connections'
-import type {
-  GripMenuContext,
-  ListKind,
-  PickNode,
-  ZoomOption,
-} from '@pommora/core/Actions/gripMenu'
+import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Engine/detect'
 import { ZOOM_STEPS } from '../../Tiles/tileZoom'
@@ -66,11 +61,6 @@ export function blockDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
-const ZOOM_MENU_STEPS: readonly ZoomOption[] = ZOOM_STEPS.map(({ label, factor }) => ({
-  label,
-  factor,
-}))
-
 function contextFor(view: EditorView, doc: string, block: Block): GripMenuContext {
   switch (block.kind) {
     case 'embed': {
@@ -78,14 +68,14 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       return {
         kind: 'embed',
         tree: embedPickTree(host.pickTree(), embedExclusions(view.state)),
-        zoomSteps: ZOOM_MENU_STEPS,
+        zoomSteps: ZOOM_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     }
     case 'webpage':
       return {
         kind: 'webpage',
-        zoomSteps: ZOOM_MENU_STEPS,
+        zoomSteps: ZOOM_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     case 'list':
