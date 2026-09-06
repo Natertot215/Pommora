@@ -4,12 +4,13 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { CitationsToggle } from './CitationsToggle'
 import { useSession } from '../../Session/store'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 const written: [string, boolean | null][] = []
-;(window as unknown as { nexus: unknown }).nexus = {
-  citations: { set: (id: string, v: boolean | null) => void written.push([id, v]) },
-}
+;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+  'citations:set': (id: string, v: boolean | null) => void written.push([id, v]),
+})
 
 const CITED = 'body[^a] here\n\n[^a]: the citation'
 const target = { kind: 'page' as const, id: 'page-1', path: 'Notes/A.md' }

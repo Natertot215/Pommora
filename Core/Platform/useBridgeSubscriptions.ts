@@ -5,6 +5,7 @@ import { useSession } from '../Session/store'
 import { confirmDelete } from '../Interface/confirmations'
 import { contextTargetToSelect } from '../Navigation/tabsModel'
 import { openWebLink } from './openWebLink'
+import { host as dialer } from './dialer'
 
 export function useBridgeSubscriptions(): void {
   const load = useSession((s) => s.load)
@@ -22,21 +23,22 @@ export function useBridgeSubscriptions(): void {
   const select = useSession((s) => s.select)
 
   useEffect(() => {
-    return window.nexus.onBeginRename(({ path, create, host }) => beginRename(path, create, host))
+    return dialer().on('begin-rename', ({ path, create, host }) => beginRename(path, create, host))
   }, [beginRename])
 
   useEffect(() => {
-    return window.nexus.onBeginIcon(({ path }) => beginIcon(path))
+    return dialer().on('begin-icon', ({ path }) => beginIcon(path))
   }, [beginIcon])
 
   useEffect(() => {
-    return window.nexus.onNewPageAdjacent(
+    return dialer().on(
+      'new-page-adjacent',
       ({ path, where, host }) => void newPageAdjacent(path, where, host),
     )
   }, [newPageAdjacent])
 
   useEffect(() => {
-    return window.nexus.onOpenInNewTab((target) => {
+    return dialer().on('open-in-new-tab', (target) => {
       if (!target.id) return
       void select(contextTargetToSelect({ kind: target.kind, id: target.id, path: target.path }), {
         newTab: true,
@@ -44,44 +46,44 @@ export function useBridgeSubscriptions(): void {
     })
   }, [select])
 
-  useEffect(() => window.nexus.onConfirmDelete((target) => void confirmDelete(target)), [])
+  useEffect(() => dialer().on('confirm-delete', (target) => void confirmDelete(target)), [])
 
   const openWindow = useSession((s) => s.openWindow)
   useEffect(() => {
-    return window.nexus.onOpenInWindow((target) => {
+    return dialer().on('open-in-window', (target) => {
       if (target.id) openWindow({ id: target.id, path: target.path })
     })
   }, [openWindow])
 
   const openHistory = useSession((s) => s.openHistory)
   useEffect(() => {
-    return window.nexus.onOpenHistory((target) => {
+    return dialer().on('open-history', (target) => {
       if (target.id) openHistory({ id: target.id, path: target.path })
     })
   }, [openHistory])
 
   useEffect(() => {
-    return window.nexus.onNexusChanged((next) => void applyTree(next))
+    return dialer().on('nexus:changed', (next) => void applyTree(next))
   }, [applyTree])
 
   const bumpContainerValues = useSession((s) => s.bumpContainerValues)
-  useEffect(() => window.nexus.onValuesChanged(bumpContainerValues), [bumpContainerValues])
+  useEffect(() => dialer().on('values:changed', bumpContainerValues), [bumpContainerValues])
 
   useEffect(() => {
-    return window.nexus.onNavChanged((nav) => applyNavChanged(nav))
+    return dialer().on('nav:changed', (nav) => applyNavChanged(nav))
   }, [applyNavChanged])
 
   useEffect(() => {
-    void window.nexus.assetMap().then(applyAssetMap)
-    return window.nexus.onAssetsChanged((map) => applyAssetMap(map))
+    void dialer().ask('assets:map').then(applyAssetMap)
+    return dialer().on('assets:changed', (map) => applyAssetMap(map))
   }, [applyAssetMap, nexusRoot])
 
   useEffect(() => {
-    return window.nexus.onWebPopup((url) => openWebLink(url))
+    return dialer().on('web:popup', (url) => openWebLink(url))
   }, [])
 
   useEffect(() => {
-    return window.nexus.onMenuAction((action) => {
+    return dialer().on('menu:action', (action) => {
       switch (action) {
         case 'open':
           void choose()

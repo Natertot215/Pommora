@@ -7,6 +7,7 @@ import { restoreView } from './restoreView'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { host } from '../Platform/dialer'
 
 /** The view's own "…" — Duplicate, and a Delete that asks first. */
 export function ViewItemMenu({
@@ -24,7 +25,7 @@ export function ViewItemMenu({
   const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
 
   const duplicateView = async (): Promise<void> => {
-    const res = await window.nexus.views.save(source.path, source.kind, {
+    const res = await host().ask('views:save', source.path, source.kind, {
       ...view,
       id: DEFAULT_VIEW_ID,
     })
@@ -32,12 +33,12 @@ export function ViewItemMenu({
       const ids = views.map((v) => v.id).filter((id) => id !== res.value.id)
       const at = ids.indexOf(view.id)
       ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
-      await window.nexus.views.reorder(source.path, source.kind, ids)
+      await host().ask('views:reorder', source.path, source.kind, ids)
     }
   }
   const deleteView = async (): Promise<void> => {
     if (!(await askDeleteView())) return
-    const res = await window.nexus.views.delete(source.path, source.kind, view.id)
+    const res = await host().ask('views:delete', source.path, source.kind, view.id)
     if (!res.ok) return void notifyError(res.error.message)
     notifyDeleted(view.name, () => restoreView(source.path, source.kind, view, views))
     onDeleted?.()

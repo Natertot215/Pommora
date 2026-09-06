@@ -7,6 +7,7 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { containerTargets } from '../../Session/destinationTree'
 import { useSession } from '../../Session/store'
+import { host } from '../../Platform/dialer'
 
 /** Where this page may be sent: every container in the nexus, with the one it already sits in
  *  named so the menu can show that destination disabled. */
@@ -29,11 +30,11 @@ export function runPageSendAction(
     return true
   }
   if (action === 'title:copylink') {
-    void window.nexus.writeClipboard(pageLinkText(titleFromPath(path)))
+    void host().ask('clipboard:write', pageLinkText(titleFromPath(path)))
     return true
   }
   if (action === 'title:copypath') {
-    void window.nexus.writeClipboard(pagePathText(path))
+    void host().ask('clipboard:write', pagePathText(path))
     return true
   }
   if (action === 'title:history') {

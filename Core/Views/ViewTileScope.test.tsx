@@ -15,6 +15,7 @@ import {
   ViewTileScopeProvider,
   type ViewTileScopeValue,
 } from './ViewTileScope'
+import { stubDialer } from '../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -93,11 +94,11 @@ beforeEach(() => {
   persistConfig = vi.fn()
   persistState = vi.fn()
   sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    views: { save: sourceSave },
-    activeViews: { set: vi.fn(async () => {}) },
-    showError: vi.fn(async () => {}),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'views:save': sourceSave,
+    'activeViews:set': vi.fn(async () => {}),
+    'error:show': vi.fn(async () => {}),
+  })
   useSession.setState({ load: vi.fn(async () => {}) as never })
 })
 afterEach(() => {

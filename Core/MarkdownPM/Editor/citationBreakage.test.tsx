@@ -20,7 +20,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 beforeEach(() => {
-  stubEditorBridge({ readClipboard: async () => '' })
+  stubEditorBridge({ 'clipboard:read': async () => '' })
   useSession.setState({ personalization: { jumpToCitation: false } })
 })
 afterEach(async () => {

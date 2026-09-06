@@ -21,6 +21,7 @@ import {
   type HeadingLevel,
   type BlockFormat,
 } from '../Input/format'
+import { host } from '../../Platform/dialer'
 
 /** Native context-menu seam — pushes editor state to main, receives chosen actions back. */
 export interface EditorMenuApi {
@@ -31,8 +32,8 @@ export interface EditorMenuApi {
 /** The seam over the real bridge. The bridge's listener is per-caller, so every mounted editor
  *  hears every action; both directions answer to `subject` below. */
 export const nativeEditorMenu: EditorMenuApi = {
-  pushState: (s) => window.nexus.setEditorFormatState(s),
-  onAction: (cb) => window.nexus.onMenuAction(cb),
+  pushState: (s) => host().tell('editor:format-state', s),
+  onAction: (cb) => host().on('menu:action', cb),
 }
 
 /** The editor the native menu is about. Latched when focus lands rather than read live: a native

@@ -1,6 +1,7 @@
 import type { NavViewMode } from '@pommora/core/Interface/chrome'
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import type { Slice } from '../Session/sessionState'
+import { host } from '../Platform/dialer'
 
 export interface LayoutSlice {
   sidebarVisible: boolean
@@ -68,15 +69,15 @@ const PER_NEXUS = {
 export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
   const persistSubfield = (): void => {
     const s = get()
-    void window.nexus.subfield
-      .set({ order: s.subfieldOrder, expanded: s.subfieldExpanded })
+    void host()
+      .ask('subfield:set', { order: s.subfieldOrder, expanded: s.subfieldExpanded })
       .catch(() => undefined)
   }
 
   const persistNavModes = (): void => {
     const s = get()
-    void window.nexus.navViewModes
-      .set({ window: s.navWindowMode, view: s.navViewMode })
+    void host()
+      .ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode })
       .catch(() => undefined)
   }
 

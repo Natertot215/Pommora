@@ -57,6 +57,8 @@ import { cancelPageSave } from '../Session/saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/viewMint'
 import type { SessionState, Slice } from '../Session/sessionState'
+import type { Asks } from '@pommora/core/Contract/bridge'
+import { host as dialer } from '../Platform/dialer'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
@@ -222,7 +224,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       navStack: t.navStack.map(toNavRef),
       navIndex: t.navIndex,
     }))
-    void window.nexus.tabs.save({ tabs, activeTabId: s.activeTabId }).catch(() => undefined)
+    void dialer()
+      .ask('tabs:save', { tabs, activeTabId: s.activeTabId })
+      .catch(() => undefined)
   }
 
   // Silent when nothing goes: a fresh record for an unchanged set would re-identify every page
@@ -285,9 +289,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   // The envelope never rejects, so a silently-dropped ack would be the only failure witness.
   const writeNav = (patch: Partial<NavigationState>): void => {
-    void window.nexus.nav.write(patch).then((ack) => {
-      if (!ack.ok) console.error('navigation write failed:', ack.error.message)
-    })
+    void dialer()
+      .ask('nav:write', patch)
+      .then((ack) => {
+        if (!ack.ok) console.error('navigation write failed:', ack.error.message)
+      })
   }
 
   // Identity-preserving, like stabilize(): an echo keeps the same array, so memos hold.
@@ -512,7 +518,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       // transient error — this keeps a just-visited entity from a false-empty eviction.
       const live = [...navKeysOf(tree), ...get().recents.map(navKey), ...get().pinned.map(navKey)]
       dropCapturedOutside(new Set(live))
-      void window.nexus.capture.evict(live)
+      void dialer().ask('nav:evictThumbs', live)
     },
     addFavorite: (target) => {
       // Favorites are tree kinds only — an agenda favorite resolves to null, which renders as an
@@ -641,9 +647,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           const fallback = setTimeout(() => {
             if (seq === pageFetchSeq) set({ selection: pageSel })
           }, COLD_SWAP_DEADLINE)
-          let res: Awaited<ReturnType<typeof window.nexus.openPage>>
+          let res: Asks['page:open']['reply']
           try {
-            res = await window.nexus.openPage(target.path)
+            res = await dialer().ask('page:open', target.path)
           } catch (e) {
             res = fail('operation-failed', errText(e))
           }
@@ -663,7 +669,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     reloadPage: async () => {
       const shown = shownPage(get())
       if (!shown) return
-      const res = await window.nexus.openPage(shown.target.path).catch(() => null)
+      const res = await dialer()
+        .ask('page:open', shown.target.path)
+        .catch(() => null)
       if (!res?.ok) return
       const body = shown.status === 'ready' ? shown.body : res.value.body
       set((s) => ({
@@ -689,7 +697,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     createFromMenu: async (items, host) => {
-      const req = await window.nexus.popCreateMenu(items)
+      const req = await dialer().ask('create-menu', items)
       if (req) await get().mutate(req, (created) => get().beginRename(created.path, true, host))
     },
 

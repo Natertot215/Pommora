@@ -11,6 +11,7 @@ import { insertCitation } from './citationActions'
 import { citationText } from './citationEdits'
 import { embedSeatAt } from './embedInsert'
 import { awaitTitle } from './pendingTitle'
+import { host } from '../../Platform/dialer'
 
 // Turns a pasted address into a markdown link per the nexus's format setting, with a chord for the
 // reverse. Mounted in both the page-body and table-cell editors, each its own EditorView.
@@ -93,7 +94,7 @@ function writeLine(view: EditorView, text: string): void {
 /** The forms are decided and written by the shared model, so this menu can never offer something
  *  the writer can't produce. */
 export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void> {
-  const text = await window.nexus.readClipboard()
+  const text = await host().ask('clipboard:read')
   // The menu is popped by main and can be held open indefinitely — the surface it was popped over
   // may be gone, and a table cell's editor is destroyed the moment its cell deactivates.
   if (!text || !view.dom.isConnected || view.state.readOnly) return
@@ -136,13 +137,15 @@ export const pasteLink = EditorView.domEventHandlers({
     if (!matchesCommand(useSession.getState().commands['paste-inverse'], event)) return false
     if (view.state.readOnly || view.state.selection.ranges.length !== 1) return false
     event.preventDefault()
-    void window.nexus.readClipboard().then((text) => {
-      // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
-      if (!text || !view.dom.isConnected) return
-      const link = linkFor(view, text, true)
-      if (link) writeLink(view, link)
-      else view.dispatch(view.state.replaceSelection(text))
-    })
+    void host()
+      .ask('clipboard:read')
+      .then((text) => {
+        // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
+        if (!text || !view.dom.isConnected) return
+        const link = linkFor(view, text, true)
+        if (link) writeLink(view, link)
+        else view.dispatch(view.state.replaceSelection(text))
+      })
     return true
   },
 })

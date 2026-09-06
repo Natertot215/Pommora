@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { useBannerMenu } from './useBannerMenu'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { useSession } from '../../Session/store'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -57,7 +58,9 @@ const mount = (el: React.ReactNode): Promise<void> => act(async () => root.rende
 describe('useBannerMenu', () => {
   it("opens the editor on 'edit' and pops through the ghost wrap", async () => {
     const ghost = vi.fn((fn: () => Promise<unknown>) => fn())
-    ;(window as { nexus?: unknown }).nexus = { bannerMenu: () => Promise.resolve('edit') }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:bannerMenu': () => Promise.resolve('edit'),
+    })
     await mount(<Probe ghost={ghost} />)
     expect(api.editing).toBe(false)
     await act(async () => {
@@ -68,7 +71,9 @@ describe('useBannerMenu', () => {
   })
 
   it('onSave writes setCrop keyed by the seat’s stored value and closes the editor', async () => {
-    ;(window as { nexus?: unknown }).nexus = { bannerMenu: () => Promise.resolve('edit') }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:bannerMenu': () => Promise.resolve('edit'),
+    })
     await mount(<Probe />)
     await act(async () => {
       await api.openMenu()
@@ -86,10 +91,10 @@ describe('useBannerMenu', () => {
   })
 
   it('autoEdit pops the crop editor after a fresh pick', async () => {
-    ;(window as { nexus?: unknown }).nexus = {
-      bannerMenu: () => Promise.resolve('change'),
-      pickFile: () => Promise.resolve('/abs/Picked.png'),
-    }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:bannerMenu': () => Promise.resolve('change'),
+      'nexus:pickFile': () => Promise.resolve('/abs/Picked.png'),
+    })
     await mount(<Probe autoEdit />)
     await act(async () => {
       await api.openMenu()
@@ -103,10 +108,10 @@ describe('useBannerMenu', () => {
   })
 
   it('without autoEdit a fresh pick sets the image and leaves the editor closed', async () => {
-    ;(window as { nexus?: unknown }).nexus = {
-      bannerMenu: () => Promise.resolve('change'),
-      pickFile: () => Promise.resolve('/abs/Picked.png'),
-    }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:bannerMenu': () => Promise.resolve('change'),
+      'nexus:pickFile': () => Promise.resolve('/abs/Picked.png'),
+    })
     await mount(<Probe />)
     await act(async () => {
       await api.openMenu()
@@ -116,7 +121,7 @@ describe('useBannerMenu', () => {
   })
 
   it('onRepick adopts the source through setBanner', async () => {
-    ;(window as { nexus?: unknown }).nexus = {}
+    ;(window as { nexus?: unknown }).nexus = stubDialer({})
     await mount(<Probe />)
     await act(async () => {
       await api.onRepick('/abs/New.png')

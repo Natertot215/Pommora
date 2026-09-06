@@ -16,6 +16,7 @@ vi.mock('../../Session/saveScheduler', () => ({
 }))
 
 import { PageTile } from './PageTile'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -31,9 +32,9 @@ const detail = (body: string) => ({
 
 beforeEach(() => {
   clearCache()
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    openPage: vi.fn(async () => ({ ok: true, value: detail('fetched') })),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'page:open': vi.fn(async () => ({ ok: true, value: detail('fetched') })),
+  })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)

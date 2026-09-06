@@ -42,6 +42,7 @@ import {
   settingsBtnActive,
 } from '@pommora/uix/Elements/action-band.css'
 import * as s from './view-tile.css'
+import { host } from '../../Platform/dialer'
 
 function coerceEmbeddedView(
   raw: unknown,
@@ -346,7 +347,7 @@ export function ViewTile({
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await window.nexus.viewEmbedTitleMenu({ iconShown, level: titleLevel })
+    const action = await host().ask('view-embed-title-menu', { iconShown, level: titleLevel })
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
@@ -360,7 +361,7 @@ export function ViewTile({
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await window.nexus.viewEmbedAreaMenu({
+    const action = await host().ask('view-embed-area-menu', {
       viewStyle: dropdown ? 'dropdown' : 'toolbar',
       titleShown,
     })
@@ -374,7 +375,7 @@ export function ViewTile({
     e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await window.nexus.viewRowMenu({
+    const action = await host().ask('view-row-menu', {
       titlesShown: labeled,
       deletable: entry.views.length > 1,
     })

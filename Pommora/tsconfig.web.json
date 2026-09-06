@@ -16,5 +16,5 @@
     },
     "noEmit": true
   },
-  "include": ["../Desktop/Renderer/**/*", "../Desktop/Web/**/*", "../Core/Platform/dialer.ts"]
+  "include": ["../Desktop/Renderer/**/*", "../Desktop/Web/**/*"]
 }

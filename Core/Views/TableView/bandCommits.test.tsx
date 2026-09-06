@@ -21,6 +21,7 @@ import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '../propsAtRoot'
 import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -137,6 +138,7 @@ let mutateSpy: ReturnType<typeof vi.fn>
 let saveSpy: ReturnType<typeof vi.fn>
 let selectSpy: ReturnType<typeof vi.fn>
 let contextMenuSpy: ReturnType<typeof vi.fn>
+let channels: Record<string, unknown>
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -146,15 +148,16 @@ beforeEach(() => {
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   selectSpy = vi.fn(async () => {})
   contextMenuSpy = vi.fn(async () => {})
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    loadValues: async () => VALUES,
-    activeViews: { get: async () => ({}) },
-    viewOrders: { get: async () => ({}) },
-    views: { save: saveSpy },
-    cellMenu: vi.fn(async () => null),
-    columnMenu: vi.fn(async () => null),
-    contextMenu: contextMenuSpy,
+  channels = {
+    'view:loadValues': async () => VALUES,
+    'activeViews:get': async () => ({}),
+    'viewOrders:get': async () => ({}),
+    'views:save': saveSpy,
+    'cell-menu': vi.fn(async () => null),
+    'column-menu': vi.fn(async () => null),
+    'context-menu': contextMenuSpy,
   }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: {
       collections: [],
@@ -365,8 +368,7 @@ const SUB_VALUES = valuesReply({
 
 describe('sub-group bucket band drag', () => {
   beforeEach(() => {
-    ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
-      async () => SUB_VALUES
+    channels['view:loadValues'] = async () => SUB_VALUES
   })
 
   // bands: A(0), A/active(1), A/complete(2), B(3), B/active(4)
@@ -417,8 +419,7 @@ describe('sub-group bucket band drag', () => {
 
 describe('sub-group row drop (the set × bucket matrix)', () => {
   beforeEach(() => {
-    ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
-      async () => SUB_VALUES
+    channels['view:loadValues'] = async () => SUB_VALUES
   })
 
   /** Rects: drop-line-host box + each data-row stacked at 24px from y=100 (pA1, pA2, pB in DOM order). */

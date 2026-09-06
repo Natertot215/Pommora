@@ -6,6 +6,7 @@ import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { Reveal, useEntrance } from '@pommora/uix/Animations'
 import { useSession } from '../Session/store'
 import * as x from './exclusion-rows.css'
+import { host } from '../Platform/dialer'
 
 const PANE_MIN_W = 250
 const PANE_MAX_W = 500
@@ -36,7 +37,7 @@ export function ExcludedDirectoriesRow({
     setBusy(true)
     try {
       const r = await setExclusions(list)
-      if (!r.ok) await window.nexus.showError(r.error.message)
+      if (!r.ok) await host().ask('error:show', r.error.message)
       return r.ok
     } finally {
       setBusy(false)
@@ -50,9 +51,11 @@ export function ExcludedDirectoriesRow({
     if (next && (await commit([...stored, next]))) setDrafting(false)
   }
   const browse = (apply: (picked: string) => void): void => {
-    void window.nexus.chooseExclusion().then((r) => {
-      if (r.ok && r.value !== null) apply(r.value)
-    })
+    void host()
+      .ask('exclusions:choose')
+      .then((r) => {
+        if (r.ok && r.value !== null) apply(r.value)
+      })
   }
 
   const fieldRow = (

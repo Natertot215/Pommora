@@ -18,6 +18,7 @@ import {
   setGlancePresenter,
   watchAnchor,
 } from './glanceAction'
+import { host } from '../../Platform/dialer'
 import './glance-pane.css'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click
@@ -58,11 +59,13 @@ function seedGlanceSize(nexusId: string | undefined): void {
   if (!nexusId || sizeNexus === nexusId) return
   sizeCache = null
   const token = ++sizeLoad
-  void window.nexus.glance.load().then((r) => {
-    if (token !== sizeLoad || !r.ok) return
-    sizeNexus = nexusId
-    if (r.value) sizeCache = clampSize(r.value)
-  })
+  void host()
+    .ask('glance:load')
+    .then((r) => {
+      if (token !== sizeLoad || !r.ok) return
+      sizeNexus = nexusId
+      if (r.value) sizeCache = clampSize(r.value)
+    })
 }
 
 export function glanceSize(): GlanceSize {
@@ -72,7 +75,7 @@ export function glanceSize(): GlanceSize {
 export function setGlanceSize(next: GlanceSize): void {
   sizeLoad++
   sizeCache = clampSize(next)
-  void window.nexus.glance.save(sizeCache)
+  void host().ask('glance:save', sizeCache)
 }
 
 // The glance's own warmth, apart from the tab and window caches; the fence drops an entry whose
@@ -121,7 +124,7 @@ function scrollGuest(
 ): void {
   try {
     const id = el?.getWebContentsId?.()
-    if (id !== undefined) window.nexus.wheelGuest(id, Math.round(x), Math.round(y), -dx, -dy)
+    if (id !== undefined) host().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
   } catch {
     // A guest that hasn't attached has nothing to scroll yet.
   }

@@ -24,6 +24,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import * as s from './image-picker.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { host } from '../Platform/dialer'
 
 const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)
 const MIN_W = 220 // KNOB — narrowest the frame gets (a tall seat)
@@ -124,9 +125,11 @@ export function ImagePicker({
         settleRepick(text)
         return
       }
-      void window.nexus.pasteImage().then((p) => {
-        if (p) settleRepick(p)
-      })
+      void host()
+        .ask('nexus:pasteImage')
+        .then((p) => {
+          if (p) settleRepick(p)
+        })
     }
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
@@ -186,9 +189,11 @@ export function ImagePicker({
   }
   const repick = (): void => {
     if (!onRepick) return
-    void window.nexus.pickFile().then((p) => {
-      if (p) settleRepick(p)
-    })
+    void host()
+      .ask('nexus:pickFile')
+      .then((p) => {
+        if (p) settleRepick(p)
+      })
   }
   const pickBackground = (): void => {
     const Eye = (window as { EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> } })

@@ -6,6 +6,7 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
+import { host } from '../Platform/dialer'
 
 /** What the header draws, passed as one object rather than five props so a host — page view, floating
  *  window, embedded tile — hands over the page it's showing. Never read from the store: a window
@@ -61,7 +62,9 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
       icon={icon}
       iconHidden={iconHidden}
       onRename={onRename}
-      requestMenu={() => window.nexus.titleMenu({ toggleIcon: icon !== undefined, iconHidden })}
+      requestMenu={() =>
+        host().ask('nexus:titleMenu', { toggleIcon: icon !== undefined, iconHidden })
+      }
       onEditIcon={onEditIcon}
       onToggleIcon={onToggleIcon}
     />

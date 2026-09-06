@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { Ribbon } from './Ribbon'
 import { useSession } from '../../Session/store'
+import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let host: HTMLDivElement
@@ -12,6 +13,7 @@ let selectSpy: ReturnType<typeof vi.fn>
 let setPersonalizationSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
   selectSpy = vi.fn()
   setPersonalizationSpy = vi.fn()
   useSession.setState({

@@ -6,6 +6,7 @@ import { stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
+import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -30,20 +31,18 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    schema: {
-      add: vi.fn(async () => ({ ok: true, value: { id: 'x' } })),
-      rename: vi.fn(async () => ({ ok: true, value: null })),
-      reorder: vi.fn(async () => ({ ok: true, value: null })),
-      delete: vi.fn(async () => ({ ok: true, value: null })),
-      assign: vi.fn(async () => ({ ok: true, value: null })),
-    },
-    property: { delete: vi.fn(async () => ({ ok: true, value: null })) },
-    views: { save: saveSpy },
-    activeViews: { set: vi.fn(async () => {}) },
-    propertyMenu: vi.fn(async () => null),
-    showError: vi.fn(async () => {}),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'x' } })),
+    'schema:rename': vi.fn(async () => ({ ok: true, value: null })),
+    'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
+    'schema:delete': vi.fn(async () => ({ ok: true, value: null })),
+    'schema:assign': vi.fn(async () => ({ ok: true, value: null })),
+    'property:delete': vi.fn(async () => ({ ok: true, value: null })),
+    'views:save': saveSpy,
+    'activeViews:set': vi.fn(async () => {}),
+    'property-menu': vi.fn(async () => null),
+    'error:show': vi.fn(async () => {}),
+  })
   useSession.setState({
     load: vi.fn(async () => {}) as never,
     tree: { registry: [] } as never,

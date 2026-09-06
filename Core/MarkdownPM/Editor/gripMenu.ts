@@ -20,6 +20,7 @@ import { HEADING_FOLD_LINE } from './folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from './embedWidget'
 import { focusRange } from './caretSeat'
 import { webpageEmbedUrlSpan } from '@pommora/core/Web/webpageEmbed'
+import { host } from '../../Platform/dialer'
 
 /** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip
  *  flag read this one list. */
@@ -107,44 +108,47 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const opened = view.state.doc.lineAt(view.posAtDOM(headingEl))
   const level = headingParts(opened.text)?.hashes.length
   if (level === undefined) return
-  void window.nexus?.gripMenu?.({ kind: 'heading', level }).then((action) => {
-    if (!action) return
-    // Re-found where the chevron was and matched against what the menu was built from — a native
-    // menu can stay open indefinitely, and an undo or outside write can move the document under it.
-    const doc = docString(view.state.doc)
-    const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
-    const parts = headingParts(line.text)
-    if (!parts || line.text !== opened.text) return
-    const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
-    switch (action.action) {
-      case 'rename':
-        // Select the heading's text so a keystroke replaces it — the editor's own inline rename.
-        focusRange(view, contentStart, line.to)
-        break
-      case 'size': {
-        // The grip addresses one block, so the range is that heading's own line — the selection
-        // belongs to the caret, and a grip pressed elsewhere must not carry it along.
-        const edit = setHeading(doc, line.from, line.from, action.level as HeadingLevel)
-        view.dispatch({
-          changes: edit.changes,
-          selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
-          userEvent: 'input',
-        })
-        view.focus()
-        break
+  void host()
+    .ask('grip-menu', { kind: 'heading', level })
+    .then((action) => {
+      if (!action) return
+      // Re-found where the chevron was and matched against what the menu was built from — a native
+      // menu can stay open indefinitely, and an undo or outside write can move the document under it.
+      const doc = docString(view.state.doc)
+      const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
+      const parts = headingParts(line.text)
+      if (!parts || line.text !== opened.text) return
+      const contentStart =
+        line.from + parts.indent.length + parts.hashes.length + parts.space.length
+      switch (action.action) {
+        case 'rename':
+          // Select the heading's text so a keystroke replaces it — the editor's own inline rename.
+          focusRange(view, contentStart, line.to)
+          break
+        case 'size': {
+          // The grip addresses one block, so the range is that heading's own line — the selection
+          // belongs to the caret, and a grip pressed elsewhere must not carry it along.
+          const edit = setHeading(doc, line.from, line.from, action.level as HeadingLevel)
+          view.dispatch({
+            changes: edit.changes,
+            selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
+            userEvent: 'input',
+          })
+          view.focus()
+          break
+        }
+        case 'delete': {
+          // The heading LINE alone — its body stays, folding up under the previous heading.
+          const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
+          view.dispatch({
+            changes: { from: span.from, to: span.to, insert: '' },
+            userEvent: 'delete',
+          })
+          host().tell('editor:grip-hot', false) // the chevron is gone and no mousemove fires under a modal
+          break
+        }
       }
-      case 'delete': {
-        // The heading LINE alone — its body stays, folding up under the previous heading.
-        const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
-        view.dispatch({
-          changes: { from: span.from, to: span.to, insert: '' },
-          userEvent: 'delete',
-        })
-        window.nexus?.setGripHot?.(false) // the chevron is gone and no mousemove fires under a modal
-        break
-      }
-    }
-  })
+    })
 }
 
 export const gripMenu = EditorView.domEventHandlers({
@@ -171,56 +175,58 @@ export const gripMenu = EditorView.domEventHandlers({
     const doc = docString(view.state.doc)
     const opened = doc.slice(block.from, block.to)
     e.preventDefault()
-    void window.nexus?.gripMenu?.(contextFor(view, doc, block)).then((action) => {
-      if (!action) return
-      // A native menu can be held open indefinitely, and an undo or outside write can move the
-      // document underneath it, so the block is re-found and matched against what the menu was
-      // built from; a document that no longer holds it declines the action.
-      const doc = docString(view.state.doc)
-      const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
-      if (!block || doc.slice(block.from, block.to) !== opened) return
-      switch (action.action) {
-        case 'source':
-          // The block span IS the embed line (claimed or not) — an unresolved or duplicate token
-          // re-aims exactly like a live tile; acting through the claimed set would dead-end the menu
-          // precisely when a stale embed needs re-aiming.
-          view.dispatch({
-            changes: { from: block.from, to: block.to, insert: pageEmbedText(action.title) },
-            userEvent: 'input',
-          })
-          break
-        case 'editLink': {
-          // In the line itself, like every other Edit Link: the seat un-forms the tile back to its
-          // raw address with that address selected, and leaving the line re-forms it. The site is
-          // only asked to load again once the new address is the document's.
-          const line = view.state.doc.lineAt(block.from)
-          const span = webpageEmbedUrlSpan(line.text)
-          if (span) {
-            view.dispatch({ effects: setWebLinkSeat.of(line.from) })
-            focusRange(view, line.from + span[0], line.from + span[1])
+    void host()
+      .ask('grip-menu', contextFor(view, doc, block))
+      .then((action) => {
+        if (!action) return
+        // A native menu can be held open indefinitely, and an undo or outside write can move the
+        // document underneath it, so the block is re-found and matched against what the menu was
+        // built from; a document that no longer holds it declines the action.
+        const doc = docString(view.state.doc)
+        const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+        if (!block || doc.slice(block.from, block.to) !== opened) return
+        switch (action.action) {
+          case 'source':
+            // The block span IS the embed line (claimed or not) — an unresolved or duplicate token
+            // re-aims exactly like a live tile; acting through the claimed set would dead-end the menu
+            // precisely when a stale embed needs re-aiming.
+            view.dispatch({
+              changes: { from: block.from, to: block.to, insert: pageEmbedText(action.title) },
+              userEvent: 'input',
+            })
+            break
+          case 'editLink': {
+            // In the line itself, like every other Edit Link: the seat un-forms the tile back to its
+            // raw address with that address selected, and leaving the line re-forms it. The site is
+            // only asked to load again once the new address is the document's.
+            const line = view.state.doc.lineAt(block.from)
+            const span = webpageEmbedUrlSpan(line.text)
+            if (span) {
+              view.dispatch({ effects: setWebLinkSeat.of(line.from) })
+              focusRange(view, line.from + span[0], line.from + span[1])
+            }
+            break
           }
-          break
+          case 'zoom':
+            applyEmbedZoom(view, block.from, action.factor)
+            break
+          case 'listKind': {
+            const { changes } = setListKind(doc, block.from, block.to, action.kind)
+            if (changes.length > 0) view.dispatch({ changes, userEvent: 'input' })
+            break
+          }
+          case 'delete': {
+            const span = blockDeleteSpan(doc, block)
+            view.dispatch({
+              changes: { from: span.from, to: span.to, insert: '' },
+              userEvent: 'delete',
+            })
+            // The grip is gone with its block, and no mousemove fired under the modal — clear by hand.
+            host().tell('editor:grip-hot', false)
+            break
+          }
         }
-        case 'zoom':
-          applyEmbedZoom(view, block.from, action.factor)
-          break
-        case 'listKind': {
-          const { changes } = setListKind(doc, block.from, block.to, action.kind)
-          if (changes.length > 0) view.dispatch({ changes, userEvent: 'input' })
-          break
-        }
-        case 'delete': {
-          const span = blockDeleteSpan(doc, block)
-          view.dispatch({
-            changes: { from: span.from, to: span.to, insert: '' },
-            userEvent: 'delete',
-          })
-          // The grip is gone with its block, and no mousemove fired under the modal — clear by hand.
-          window.nexus?.setGripHot?.(false)
-          break
-        }
-      }
-    })
+      })
     return true
   },
 })

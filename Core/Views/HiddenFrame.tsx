@@ -21,6 +21,7 @@ import { PropertyTypeIcon, propertyIcon } from '../Properties/Cells/PropertyType
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
+import { host } from '../Platform/dialer'
 
 function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   const def = schema.find((d) => d.id === id)
@@ -133,7 +134,7 @@ export function VisibilityList({
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
     const res = await saveView({ ...view, ...patch })
-    if (!res.ok) await window.nexus.showError(res.error.message)
+    if (!res.ok) await host().ask('error:show', res.error.message)
   }
   const handleDrop = (drop: PaneDrop): void => {
     if (drop.kind === 'unassign') void save(hideShown(view, drop.propId))

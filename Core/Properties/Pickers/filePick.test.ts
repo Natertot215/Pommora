@@ -9,6 +9,7 @@ import {
   pickFileInto,
   runFilePick,
 } from './filePick'
+import { stubDialer } from '../../vitest.setup'
 
 const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition =>
   ({ id: 'p', name: 'Attachments', type: 'file', ...over }) as PropertyDefinition
@@ -23,7 +24,13 @@ beforeEach(() => {
   pickFile = vi.fn(async () => '/outside/New.pdf')
   adoptFile = vi.fn(async () => ({ ok: true, value: '[[New.pdf]]' }))
   cellMenu = vi.fn(async () => null)
-  ;(globalThis as { window?: unknown }).window = { nexus: { pickFile, adoptFile, cellMenu } }
+  ;(globalThis as { window?: unknown }).window = {
+    nexus: stubDialer({
+      'nexus:pickFile': pickFile,
+      'assets:adopt': adoptFile,
+      'cell-menu': cellMenu,
+    }),
+  }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
     // A Directory is stored under the asset root, so the root has to be present for the join to

@@ -16,22 +16,25 @@ import {
 import { newTabTab } from '../Navigation/tabsModel'
 import { navKey } from '../Navigation/navRecents'
 import { clearCache } from './pageDetailCache'
+import { stubDialer } from '../vitest.setup'
 
-// Stub the narrow window.nexus surface the tab glue reaches (page fetch, recents save, tab persist,
+// Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist,
 // the mutation gateway, the applyTree accent read) so it runs in isolation.
+let channels: Record<string, ReturnType<typeof vi.fn>>
+const openPage = (): ReturnType<typeof vi.fn> => channels['page:open']
+
 beforeEach(() => {
   clearCache() // module state — never leaks across tests
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    openPage: vi.fn(async () => ({ ok: true, value: {} })),
-    nav: { write: vi.fn(async () => ({ ok: true, value: null })) },
-    tabs: {
-      save: vi.fn(async () => ({ ok: true, value: null })),
-      load: vi.fn(async () => ({ ok: true, value: null })),
-    },
-    systemAccent: vi.fn(async () => '#000000'),
-    devicePrefs: { load: vi.fn(async () => ({ ok: true, value: null })) },
+  channels = {
+    'page:open': vi.fn(async () => ({ ok: true, value: {} })),
+    'nav:write': vi.fn(async () => ({ ok: true, value: null })),
+    'tabs:save': vi.fn(async () => ({ ok: true, value: null })),
+    'tabs:load': vi.fn(async () => ({ ok: true, value: null })),
+    'theme:systemAccent': vi.fn(async () => '#000000'),
+    'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
     mutate: vi.fn(async () => ({ ok: true, value: {} })),
   }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
 
 const ctx = (id: string): SelectTarget => ({ kind: 'context', id })
@@ -162,7 +165,7 @@ const ready = (id: string): PageSlot => ({
 /** Holds B's fetch open while A resolves at once; the returned resolver lands B's response. */
 const pauseFetchOfB = (): ((v: unknown) => void) => {
   let resolveB!: (v: unknown) => void
-  ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
+  openPage().mockImplementation((path: string) =>
     path === pg('b').path
       ? new Promise((r) => (resolveB = r))
       : Promise.resolve({ ok: true, value: detail('a') }),
@@ -180,12 +183,12 @@ describe('store — warm tabs (B-2/B-3)', () => {
     })
     useSession.getState().activateTab('t2')
     expect(useSession.getState().pages.a?.status).toBe('ready')
-    ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockClear()
+    openPage().mockClear()
     useSession.getState().activateTab('t1')
     const s = useSession.getState()
     expect(shownPage(s)?.status).toBe('ready')
     expect(shownDetail(s)?.id).toBe('a')
-    expect(window.nexus.openPage).not.toHaveBeenCalled()
+    expect(openPage()).not.toHaveBeenCalled()
   })
 
   it('a renamed entity misses the loaded slot and the warm detail (path check) and falls through to the cold fetch', async () => {
@@ -199,7 +202,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     await useSession
       .getState()
       .select({ kind: 'page', id: 'a', path: '/a-renamed' }, { record: false })
-    expect(window.nexus.openPage).toHaveBeenCalledWith('/a-renamed')
+    expect(openPage()).toHaveBeenCalledWith('/a-renamed')
   })
 
   it('a stale cold fetch resolving after a warm switch-back never clobbers the shown page', async () => {
@@ -293,8 +296,6 @@ describe('store — warm tabs (B-2/B-3)', () => {
 })
 
 describe('store — page slots', () => {
-  const openPage = (): ReturnType<typeof vi.fn> => window.nexus.openPage as ReturnType<typeof vi.fn>
-
   it('a slot outlives one tab while another points at its page, and dies with the last', () => {
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('a'), [pg('a')], 0)],
@@ -523,9 +524,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
 })
 
 describe('store — recents reorder + batched close', () => {
-  const savedRecents = (): unknown =>
-    (window as unknown as { nexus: { nav: { write: { mock: { calls: unknown[][] } } } } }).nexus.nav
-      .write
+  const savedRecents = (): ReturnType<typeof vi.fn> => channels['nav:write']
 
   it('reorderRecent rewrites the order to the source and persists immediately (drag)', () => {
     const a = ctx('a')
@@ -551,14 +550,10 @@ describe('store — recents reorder + batched close', () => {
 // The memory is a slice rather than a tree-keyed derivation because neither gesture pushes a tree:
 // what these assert is that a write and a forget are visible immediately, with no reload between.
 describe('store — the aliases a page has been given', () => {
-  const aliasWrites = (): ReturnType<typeof vi.fn> =>
-    (window as unknown as { nexus: { aliases: { set: ReturnType<typeof vi.fn> } } }).nexus.aliases
-      .set
+  const aliasWrites = (): ReturnType<typeof vi.fn> => channels['aliases:set']
 
   beforeEach(() => {
-    ;(window as unknown as { nexus: Record<string, unknown> }).nexus.aliases = {
-      set: vi.fn(async () => ({ ok: true, value: null })),
-    }
+    channels['aliases:set'] = vi.fn(async () => ({ ok: true, value: null }))
     useSession.setState({ pageAliases: {} })
   })
 

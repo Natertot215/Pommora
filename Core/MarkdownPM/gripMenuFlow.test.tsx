@@ -11,11 +11,11 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 const calls: GripMenuContext[] = []
 let nextPick: GripMenuAction | null = null
 stubEditorBridge({
-  gripMenu: async (ctx: GripMenuContext) => {
+  'grip-menu': async (ctx: GripMenuContext) => {
     calls.push(ctx)
     return nextPick
   },
-  setGripHot: () => {},
+  'editor:grip-hot': () => {},
 })
 
 const pages = [

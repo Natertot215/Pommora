@@ -6,6 +6,7 @@ import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize }
 import { armGlance, closeGlance, setGlancePresenter } from './glanceAction'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
+import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -26,12 +27,13 @@ const glanceStore = {
 /** The bridge a mounted glance reads. The editor inside it takes the native-menu seam like every
  *  other surface, so every stub carries those two channels whatever else a test drives. */
 const stubNexus = (extra: Record<string, unknown>): void => {
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    setEditorFormatState: () => {},
-    onMenuAction: () => () => {},
-    glance: glanceStore,
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'editor:format-state': () => {},
+    'menu:action': () => () => {},
+    'glance:load': glanceStore.load,
+    'glance:save': glanceStore.save,
     ...extra,
-  }
+  })
 }
 
 let host: HTMLDivElement
@@ -90,7 +92,7 @@ describe('the presenter', () => {
 
   it('a cold page opens only once its fetch lands, still under the pointer', async () => {
     dropPageDetail(page.path)
-    stubNexus({ openPage: async () => ({ ok: true, value: detail }) })
+    stubNexus({ 'page:open': async () => ({ ok: true, value: detail }) })
     const el = link()
     const hoverSpy = vi.spyOn(el, 'matches').mockReturnValue(true)
     present(el)
@@ -102,7 +104,7 @@ describe('the presenter', () => {
 
   it('a flick-away during the fetch opens nothing', async () => {
     dropPageDetail(page.path)
-    stubNexus({ openPage: async () => ({ ok: true, value: detail }) })
+    stubNexus({ 'page:open': async () => ({ ok: true, value: detail }) })
     const el = link()
     vi.spyOn(el, 'matches').mockReturnValue(false)
     present(el)
@@ -112,7 +114,7 @@ describe('the presenter', () => {
 
   it('a failed open blooms nothing', async () => {
     dropPageDetail(page.path)
-    stubNexus({ openPage: async () => ({ ok: false, error: { code: 'io', message: 'gone' } }) })
+    stubNexus({ 'page:open': async () => ({ ok: false, error: { code: 'io', message: 'gone' } }) })
     present(link())
     await flush()
     expect(paneOpen()).toBe(false)

@@ -6,6 +6,7 @@ import { defaultStatusSeed, type PropertyDefinition } from '@pommora/core/Proper
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
+import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -29,6 +30,7 @@ let assignSpy: ReturnType<typeof vi.fn>
 let renameSpy: ReturnType<typeof vi.fn>
 let propertyMenuSpy: ReturnType<typeof vi.fn>
 let destroySpy: ReturnType<typeof vi.fn>
+let schemaDeleteSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -39,18 +41,17 @@ beforeEach(() => {
   renameSpy = vi.fn(async () => ({ ok: true, value: null }))
   propertyMenuSpy = vi.fn(async () => null)
   destroySpy = vi.fn(async () => ({ ok: true, value: null }))
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    schema: {
-      add: vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
-      rename: renameSpy,
-      reorder: vi.fn(async () => ({ ok: true, value: null })),
-      delete: vi.fn(async () => ({ ok: true, value: null })),
-      assign: assignSpy,
-    },
-    property: { delete: destroySpy },
-    propertyMenu: propertyMenuSpy,
-    showError: vi.fn(async () => {}),
-  }
+  schemaDeleteSpy = vi.fn(async () => ({ ok: true, value: null }))
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
+    'schema:rename': renameSpy,
+    'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
+    'schema:delete': schemaDeleteSpy,
+    'schema:assign': assignSpy,
+    'property:delete': destroySpy,
+    'property-menu': propertyMenuSpy,
+    'error:show': vi.fn(async () => {}),
+  })
   useSession.setState({
     load: loadSpy as never,
     tree: { registry: [] } as never,
@@ -156,9 +157,7 @@ describe('the All Properties section (T5)', () => {
 })
 
 describe('the two-region drag (T6) — state-level; geometry truth lives in the live pass', () => {
-  const deleteSpy = (): ReturnType<typeof vi.fn> =>
-    (window as unknown as { nexus: { schema: { delete: ReturnType<typeof vi.fn> } } }).nexus.schema
-      .delete
+  const deleteSpy = (): ReturnType<typeof vi.fn> => schemaDeleteSpy
 
   /** Rects: assigned rows at 10-30 / 30-50 (region 10-50); all block at 70-110 with x1 at 70-90. */
   const stubGeometry = (): void => {
@@ -275,9 +274,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })
     expect(propertyMenuSpy).toHaveBeenCalledWith({ kind: 'editor', name: 'Status' })
-    const del = (window as unknown as { nexus: { schema: { delete: ReturnType<typeof vi.fn> } } })
-      .nexus.schema.delete
-    expect(del).toHaveBeenCalledWith('Col', 'prop_status')
+    expect(schemaDeleteSpy).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
   it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {

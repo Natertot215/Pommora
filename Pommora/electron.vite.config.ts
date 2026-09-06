@@ -9,6 +9,10 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    build: {
+      outDir: resolve(__dirname, 'out/preload'),
+      rollupOptions: { input: { index: resolve(__dirname, '../Desktop/Bridge/preload.ts') } },
+    },
   },
   renderer: {
     root: resolve(__dirname, '../Desktop/Renderer'),

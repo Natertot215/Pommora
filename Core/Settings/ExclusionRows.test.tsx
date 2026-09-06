@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { shield } from '@pommora/uix/Pickers/picker-base.css'
 import { useSession } from '../Session/store'
+import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -18,9 +19,9 @@ const render = async (excluded: string[]): Promise<void> => {
     tree: { excluded } as never,
     setExclusions: setExclusions as never,
   })
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    chooseExclusion: vi.fn(async () => ({ ok: true, value: 'Picked' })),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'exclusions:choose': vi.fn(async () => ({ ok: true, value: 'Picked' })),
+  })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)

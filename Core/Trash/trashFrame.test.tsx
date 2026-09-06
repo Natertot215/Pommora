@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { TrashFrame } from './TrashFrame'
+import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,9 +22,9 @@ describe('a Trash row', () => {
   let root: Root | null = null
 
   beforeEach(() => {
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      listTrash: vi.fn(async () => ({ ok: true, value: [row] })),
-    }
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'trash:list': vi.fn(async () => ({ ok: true, value: [row] })),
+    })
   })
   afterEach(async () => {
     await act(async () => root?.unmount())

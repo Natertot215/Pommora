@@ -9,6 +9,7 @@ import { orderWithSlot } from '../Views/creationOrder'
 import { findContainer, parentPathOf } from './treeIndex'
 import type { Slice } from './sessionState'
 import type { ValueChange, ValuesEpoch } from '@pommora/core/Nexus/tree'
+import { host } from '../Platform/dialer'
 
 interface RenameClaim {
   token: number
@@ -199,9 +200,9 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     // Captured BEFORE the ask: main's confirming push can rename the registry in this
     // store before the reply's continuation runs.
     const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
-    const res = await window.nexus.schema.rename(target.collectionPath, target.propertyId, newName)
+    const res = await host().ask('schema:rename', target.collectionPath, target.propertyId, newName)
     if (!res.ok) {
-      await window.nexus.showError(res.error.message)
+      await host().ask('error:show', res.error.message)
       return false
     }
     const after = normalizePropertyName(newName)

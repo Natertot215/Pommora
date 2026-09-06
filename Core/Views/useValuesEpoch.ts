@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
 import { useSession } from '../Session/store'
+import { host } from '../Platform/dialer'
 
 // `write` is the mutate the override waits on; null once it landed.
 export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
@@ -13,7 +14,9 @@ export const fetchValues = (
   path: string,
   pageIds?: string[],
 ): Promise<Record<string, PageValues> | null> =>
-  window.nexus.loadValues(path, pageIds).then((r) => (r.ok ? r.value : null))
+  host()
+    .ask('view:loadValues', path, pageIds)
+    .then((r) => (r.ok ? r.value : null))
 
 export const patchOverride = (
   set: SetOverrides,

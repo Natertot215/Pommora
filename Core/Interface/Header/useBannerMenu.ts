@@ -3,6 +3,7 @@ import { useSession } from '../../Session/store'
 import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
+import { host } from '../../Platform/dialer'
 
 /** The one place a banner band pops its menu. The ghost-suppress Context lets card seats stand
  *  their hover ghost down while the menu owns the pointer. */
@@ -47,7 +48,7 @@ export function useBannerMenu(
     return ok ? adopted : undefined
   }
   const addOrChange = async (): Promise<void> => {
-    const picked = await window.nexus.pickFile()
+    const picked = await host().ask('nexus:pickFile')
     if (picked && (await setBanner(picked)) && autoEdit) openEditor()
   }
   const openEditor = (): void => {
@@ -57,7 +58,7 @@ export function useBannerMenu(
   }
   const closeEditor = (): void => setEditing(false)
   const openMenu = async (): Promise<void> => {
-    const action = await holdGhost(() => window.nexus.bannerMenu({ noun, add, noRemove }))
+    const action = await holdGhost(() => host().ask('nexus:bannerMenu', { noun, add, noRemove }))
     if (action === 'change') await addOrChange()
     else if (action === 'edit') openEditor()
     else if (action === 'remove') await setBanner(null)

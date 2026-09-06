@@ -24,6 +24,7 @@ import { useOptionReorder } from './useOptionReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading } from '@pommora/uix/Menus'
 import { labelColor, optionShapeFor, shape } from '@pommora/uix/Labels'
+import { host } from '../../Platform/dialer'
 
 const LIST_ANCHOR = 'options'
 
@@ -89,7 +90,7 @@ export function OptionEditor({
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (o: Option): Promise<void> => {
-    const action = await window.nexus.optionMenu({ name: o.label, canEditIcon: true })
+    const action = await host().ask('option-menu', { name: o.label, canEditIcon: true })
     if (action === 'option:rename') setRenaming(o.value)
     else if (action === 'option:edit-icon') setIconEditing(o.value)
     else if (action === 'option:remove') {

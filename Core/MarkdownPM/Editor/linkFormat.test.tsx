@@ -22,8 +22,12 @@ const connMenu = vi.fn<(ctx: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
 // The title never arrives over the bridge here — every test that needs one writes it into the shared
 // cache directly, which is the same thing the fetch's own resolution does.
-const linkTitles = { fetch: async () => ({ ok: false, error: { code: 'offline' } }) }
-stubEditorBridge({ connMenu, writeClipboard, linkTitles })
+const linkTitlesFetch = async () => ({ ok: false, error: { code: 'offline' } })
+stubEditorBridge({
+  'conn-menu': connMenu,
+  'clipboard:write': writeClipboard,
+  'linkTitles:fetch': linkTitlesFetch,
+})
 
 const URL = 'https://www.example.com/a/b'
 const BODY = `a [Home](${URL}) b`

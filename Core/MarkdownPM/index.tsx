@@ -72,6 +72,7 @@ import type { ConnectionsApi } from './Connections'
 import { PageHeader } from '../Pages/PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import type { WarmSeam } from './warmSeam'
+import { host as dialer } from '../Platform/dialer'
 import './Styles.css'
 
 interface Props {
@@ -289,7 +290,8 @@ export function MarkdownEditor({
       // Reveal a grip only while the pointer is in its gutter strip, not over the line's text; the
       // hot-line callback tells main to stand its generic editor menu down there.
       blockGripHover((line) =>
-        window.nexus?.setGripHot?.(
+        dialer().tell(
+          'editor:grip-hot',
           !!line && HOT_MENU_LINES.some((c) => line.classList.contains(c)),
         ),
       ),

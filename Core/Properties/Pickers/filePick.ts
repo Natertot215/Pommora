@@ -11,6 +11,7 @@ import { assetSubRoot } from '@pommora/core/Locations/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
+import { host } from '../../Platform/dialer'
 
 /** Which label a click landed on, or null for the value's own area. The run stamps its entries
  *  with their position, so the table, the cards and both panes hit-test the same way. */
@@ -46,7 +47,7 @@ export async function runFilePick(
   const files = filesOf(current)
   const named = chip === null ? undefined : files[chip]
   const dir = (named && folderOf(named)) || propertyFolder(def)
-  const picked = await window.nexus.pickFile({ any: true, ...(dir ? { dir } : {}) })
+  const picked = await host().ask('nexus:pickFile', { any: true, ...(dir ? { dir } : {}) })
   if (picked === null) return undefined
   return adoptInto(def, files, chip, picked)
 }
@@ -57,7 +58,7 @@ async function adoptInto(
   chip: number | null,
   source: string,
 ): Promise<PropertyValue | undefined> {
-  const adopted = await window.nexus.adoptFile(source, def.file_directory)
+  const adopted = await host().ask('assets:adopt', source, def.file_directory)
   if (!adopted.ok) return undefined
   const next =
     chip === null
@@ -145,6 +146,6 @@ export async function fileValueMenu(
   commit: (next: PropertyValue | null) => void,
 ): Promise<void> {
   const chip = fileChipIndex(target)
-  const action = await window.nexus.cellMenu({ kind: 'file', onChip: chip !== null })
+  const action = await host().ask('cell-menu', { kind: 'file', onChip: chip !== null })
   if (action) runFileMenuAction(action, def, current, chip, commit)
 }
