@@ -3,26 +3,26 @@ import { EMBED_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/persona
 import { wireViewAdopted } from '../Views/Host/viewMint'
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
-import { createLayoutSlice } from '../Interface/layoutSlice'
+import { createLayoutSlice } from './layoutSlice'
 import { createConfigSlice } from './configSlice'
-import { createNavigationSlice } from '../Navigation/navigationSlice'
+import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
-import { createWindowSlice } from '../Interface/Windows/windowSlice'
+import { createWindowSlice } from './windowSlice'
 import { createRenameSlice } from './mutationSlice'
 import type { SessionState } from './sessionState'
 
 export type { SelectTarget } from '@pommora/core/Navigation/navRef'
 export type { SessionState } from './sessionState'
-export type { PageSlot, PageTarget } from '../Navigation/navigationSlice'
-export type { WindowTarget } from '../Interface/Windows/windowSlice'
+export type { PageSlot, PageTarget } from './navigationSlice'
+export type { WindowTarget } from './windowSlice'
 export {
   frozenOf,
   pageBody,
   readyPageIds,
   shownDetail,
   shownPage,
-} from '../Navigation/navigationSlice'
-export { windowTargetOf } from '../Interface/Windows/windowSlice'
+} from './navigationSlice'
+export { windowTargetOf } from './windowSlice'
 export { citationsVisible } from './configSlice'
 
 export const useSession = create<SessionState>()((...a) => ({

@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
-import { INSPECTOR_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
+import { INSPECTOR_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
 import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
 import { Surface } from './InterfaceScaffold'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'

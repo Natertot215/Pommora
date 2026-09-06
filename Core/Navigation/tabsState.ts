@@ -1,6 +1,6 @@
 import { isPlainObject } from '../Properties/propertyValue'
-import { isNavRef, TAB_KINDS, toNavRef } from '../Navigation/navRef'
-import type { StoredTab, StoredTabSet } from './Windows/windowRecord'
+import { isNavRef, TAB_KINDS, toNavRef } from './navRef'
+import type { StoredTab, StoredTabSet } from '../Interface/Windows/windowRecord'
 import { readValue, writeValue } from '../Platform/localState'
 
 function readTab(v: unknown): StoredTab | null {

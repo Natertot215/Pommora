@@ -1,8 +1,8 @@
-import { isPlainObject } from '../Properties/propertyValue'
-import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './Windows/windowRecord'
-import { toNavRef, type NavRef } from '../Navigation/navRef'
-import { readValue, writeValue } from '../Platform/localState'
-import { isNavRef, TAB_KINDS } from '../Navigation/navRef'
+import { isPlainObject } from '../../Properties/propertyValue'
+import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './windowRecord'
+import { toNavRef, type NavRef } from '../../Navigation/navRef'
+import { readValue, writeValue } from '../../Platform/localState'
+import { isNavRef, TAB_KINDS } from '../../Navigation/navRef'
 
 function readRecord(v: unknown): WindowSetRecord | null {
   if (!isPlainObject(v) || !Array.isArray(v.tabs)) return null
