@@ -1,4 +1,4 @@
-import { DEFAULT_ACCENT, type AccentSetting } from '@pommora/uix/Theme/colorSetting'
+import { DEFAULT_ACCENT, type AccentSetting } from './colorSetting'
 import { labelColorFor } from './colorMap'
 import { ANCHOR_CELLS, cellColor } from './ramp'
 
