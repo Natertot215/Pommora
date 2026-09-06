@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from '../../Session/store'
-import { duration, ms, paneSlide } from '@pommora/uix/Animations'
+import { duration, ms } from '@pommora/uix/Animations/motion'
+import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useHeld'
 import { cx } from '@pommora/uix/Utilities/cx'

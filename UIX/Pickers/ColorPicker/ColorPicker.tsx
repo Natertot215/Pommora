@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { PickerMenu } from '../picker-base'
-import type { LabelColorName } from '../../Labels'
+import type { LabelColorName } from '../../Labels/label-base.css'
 import { RAMP_FAMILIES, RAMP_STEPS, cellColor, cellRing, type CellKey } from '../../Theme/ramp'
 import { cx } from '../../Utilities/cx'
 import * as s from './color-picker.css'

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { shownDetail, useSession } from '../Session/store'

@@ -12,14 +12,14 @@ import {
 } from '@pommora/core/Views/views'
 import { Icon, iconNameOr } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { AccessoryButton, Menu, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { optionRing, PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
-import { RenamableLabel } from '@pommora/uix/Fields'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { findCollection, findSet } from '../../Session/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
@@ -452,7 +452,6 @@ export function ViewTile({
     <>
       <SortableZone
         items={views.map((v) => v.id)}
-        layout="list"
         axis="x"
         disabled={locked}
         onReorder={reorderViews}

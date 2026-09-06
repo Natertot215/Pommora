@@ -17,13 +17,15 @@ import {
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from './GhostOptionChip'
-import { Reveal, useEntrance } from '@pommora/uix/Animations'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading } from '@pommora/uix/Menus'
-import { labelColor, optionShapeFor, shape } from '@pommora/uix/Labels'
+import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
+import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { host } from '../../Platform/dialer'
 
 const LIST_ANCHOR = 'options'

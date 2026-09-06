@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { duration, ms } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import './over-scroll.css'
@@ -80,16 +81,15 @@ function markScroll(cap: HTMLElement): void {
 // Guarded: the module is imported by node-environment tests, which have no document.
 if (typeof document !== 'undefined') wireCaps()
 
-/** scrollLeft isn't CSS-transitionable, so this rAF tween replaces it — reads --duration-base. */
+/** scrollLeft isn't CSS-transitionable, so this rAF tween replaces it on the duration token. */
 function slideScrollBack(scroller: HTMLElement): void {
   const from = scroller.scrollLeft
   if (from <= 0) return
-  const raw = getComputedStyle(document.documentElement).getPropertyValue('--duration-base').trim()
-  const ms = (raw.endsWith('ms') ? Number.parseFloat(raw) : Number.parseFloat(raw) * 1000) || 240
+  const span = ms(duration.base)
   const t0 = performance.now()
   const tick = (t: number): void => {
-    const p = Math.min(1, (t - t0) / ms)
-    scroller.scrollLeft = from * (1 - p) ** 3 // ease-out settle, matching --ease-base
+    const p = Math.min(1, (t - t0) / span)
+    scroller.scrollLeft = from * (1 - p) ** 3 // ease-out settle, as close to --ease-base as JS gets
     markScroll(scroller)
     if (p < 1) requestAnimationFrame(tick)
   }

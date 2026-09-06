@@ -16,8 +16,8 @@ import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/bounds'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { stepsWith, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
-import { solidColorCss } from '@pommora/uix/Theme/solidColor'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
@@ -46,7 +46,7 @@ import {
   INTERFACE_SCALE_DEFAULT,
   INTERFACE_SCALE_STEPS,
 } from '@pommora/core/Settings/personalization'
-import type { ColorSetting } from '@pommora/uix/Theme/colorSetting'
+import type { ColorSetting } from '@pommora/uix/Theme/colors'
 import {
   DATE_FORMAT_LABELS,
   DATE_FORMATS,

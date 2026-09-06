@@ -1,4 +1,4 @@
-import { PathField } from '@pommora/uix/Fields'
+import { PathField } from '@pommora/uix/Fields/PathField'
 import { useSession } from '../../Session/store'
 import { MenuIndex } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'

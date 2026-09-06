@@ -1,9 +1,9 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
 import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../Cells/OptionChip'
 import { OptionEditPopup } from './OptionEditPopup'
@@ -12,7 +12,8 @@ import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { compactTitle } from './option-row.css'
-import { labelColor, shape as labelShape, optionShapeFor } from '@pommora/uix/Labels'
+import { labelColor, shape as labelShape } from '@pommora/uix/Labels/label-base.css'
+import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 
 export type OptionStyle = Extract<ColumnLook, 'standard' | 'compact'>
 

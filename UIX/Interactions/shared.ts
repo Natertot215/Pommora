@@ -9,18 +9,6 @@ export type Box = {
   cy: number
 }
 export type DropState = 'idle' | 'dragging' | 'dropping' | 'pending'
-export type Modifier = (
-  t: { x: number; y: number },
-  ctx: { activeRect: Box; bounds: Box | null },
-) => { x: number; y: number }
-
-export type DragNotify = {
-  onDragStart?: (e: { activeId: string }) => void
-  onDragOver?: (e: { activeId: string; overId: string | null }) => void
-  onDragEnd?: (e: { activeId: string; overId: string | null }) => void
-  onDragCancel?: (e: { activeId: string }) => void
-}
-
 export type DragItem = {
   setNodeRef: (el: HTMLElement | null) => void
   style: CSSProperties
@@ -30,7 +18,7 @@ export type DragItem = {
 
 export const ACTIVATION = 5 // px the pointer must travel before a drag starts
 // The CSS side reads this same token as `--drop-line-inset`.
-export { DROP_LINE_INSET } from '../Theme/size.css'
+export { DROP_LINE_INSET } from '../Theme/theme-vars.css'
 export const GHOST_OFFSET = { x: 12, y: 8 }
 export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
 

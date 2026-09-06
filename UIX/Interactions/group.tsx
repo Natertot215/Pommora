@@ -14,13 +14,12 @@ import { stack } from '../Theme/stack'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { announce } from './a11y'
 import { findScroller, startAutoScroll } from './autoscroll'
-import { beginDragDisclose, endDragDisclose } from './dragDisclose'
+import { usePointerGesture } from './gesture'
 import {
   ACTIVATION,
   HYSTERESIS,
   SETTLE_FALLBACK,
   px,
-  suppressNextClick,
   toBox,
   type Box,
   type DragItem,
@@ -197,15 +196,9 @@ export function DragGroup({
     interactive: false,
     idxAnchorX: 0,
     idxAnchorY: 0,
-    handlers: null as null | {
-      move: (e: PointerEvent) => void
-      up: () => void
-      cancel: () => void
-      scroll: () => void
-      blur: () => void
-    },
   })
 
+  const beginGesture = usePointerGesture()
   const commitRef = useRef<(() => void) | null>(null)
   const timerRef = useRef<number | null>(null)
   const stopScroll = useRef<(() => void) | null>(null)
@@ -357,51 +350,43 @@ export function DragGroup({
     setOverIndex(idx)
   }
 
-  const onMove = (e: PointerEvent): void => {
+  const onActivate = (): boolean => {
     const d = drag.current
-    // No pointer capture, so a release outside the window delivers no pointerup.
-    if (d.active && e.buttons === 0) {
-      onCancel()
-      return
+    measureBounds()
+    const rects = measure(d.zone)
+    const z = zones.current.get(d.zone)
+    const srcIdx = z ? z.ids.indexOf(d.id) : -1
+    const rect = srcIdx >= 0 ? rects[srcIdx] : undefined
+    if (!rect) return false
+    frozen.current.set(d.zone, rects)
+    d.active = true
+    d.rect = rect
+    d.srcIdx = srcIdx
+    // Smallest positive vertical step, not rects[1]-rects[0]: a grid's first two items share a row.
+    const vgaps = rects.map((b) => b.top - rect.top).filter((d) => d > 1)
+    d.pitch = vgaps.length ? Math.min(...vgaps) : rect.height + 8
+    d.overZone = d.zone
+    d.overIndex = srcIdx
+    setActive({ id: d.id, zone: d.zone, srcIdx, pitch: d.pitch, rect })
+    setDropState('dragging')
+    setOverZone(d.zone)
+    setOverIndex(srcIdx)
+    const scroller = findScroller(d.el, 'xy')
+    if (scroller) {
+      stopScroll.current = startAutoScroll({
+        getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
+        scroller,
+        dragEl: d.el,
+        axis: 'xy',
+        onScrolled: onScrollTracked,
+      })
     }
-    if (!d.active) {
-      const dx = e.clientX - d.startX
-      const dy = e.clientY - d.startY
-      if (Math.hypot(dx, dy) < (d.interactive ? INTERACTIVE_ACTIVATION : ACTIVATION)) return
-      measureBounds()
-      const rects = measure(d.zone)
-      const z = zones.current.get(d.zone)
-      const srcIdx = z ? z.ids.indexOf(d.id) : -1
-      const rect = srcIdx >= 0 ? rects[srcIdx] : undefined
-      if (!rect) {
-        detach()
-        return
-      }
-      frozen.current.set(d.zone, rects)
-      d.active = true
-      d.rect = rect
-      d.srcIdx = srcIdx
-      // Smallest positive vertical step, not rects[1]-rects[0]: a grid's first two items share a row.
-      const vgaps = rects.map((b) => b.top - rect.top).filter((d) => d > 1)
-      d.pitch = vgaps.length ? Math.min(...vgaps) : rect.height + 8
-      d.overZone = d.zone
-      d.overIndex = srcIdx
-      setActive({ id: d.id, zone: d.zone, srcIdx, pitch: d.pitch, rect })
-      setDropState('dragging')
-      setOverZone(d.zone)
-      setOverIndex(srcIdx)
-      const scroller = findScroller(d.el, 'xy')
-      if (scroller) {
-        stopScroll.current = startAutoScroll({
-          getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
-          scroller,
-          dragEl: d.el,
-          axis: 'xy',
-          onScrolled: onScrollTracked,
-        })
-      }
-      announce('Picked up card.')
-    }
+    announce('Picked up card.')
+    return true
+  }
+
+  const onDragMove = (e: PointerEvent): void => {
+    const d = drag.current
     d.lastX = e.clientX
     d.lastY = e.clientY
     trackAt(e.clientX, e.clientY)
@@ -410,16 +395,6 @@ export function DragGroup({
   const detach = (): void => {
     stopScroll.current?.()
     stopScroll.current = null
-    const d = drag.current
-    if (d.handlers) {
-      window.removeEventListener('pointermove', d.handlers.move)
-      window.removeEventListener('pointerup', d.handlers.up)
-      window.removeEventListener('pointercancel', d.handlers.cancel)
-      window.removeEventListener('scroll', d.handlers.scroll, { capture: true })
-      window.removeEventListener('blur', d.handlers.blur)
-      endDragDisclose()
-    }
-    d.handlers = null
   }
 
   const reset = (): void => {
@@ -461,13 +436,11 @@ export function DragGroup({
     return cellAt(rects, slot, drag.current.pitch, zoneWidth(zoneId))
   }
 
-  const onUp = (): void => {
-    detach()
+  const onDrop = (): void => {
     const d = drag.current
-    if (!d.active || !d.rect) return
+    if (!d.rect) return
     // Cleared here, not in reset, so a press during the settle can fast-forward the armed commit.
     d.active = false
-    suppressNextClick()
     const rect = d.rect
     // The true zone under the drop point: d.overZone sticks to the last zone crossed.
     const dropZone = crossZoneRef.current ? zoneAt(d.lastX, d.lastY) : d.zone
@@ -499,19 +472,12 @@ export function DragGroup({
     })
   }
 
-  const onCancel = (): void => {
-    detach()
+  const onAbort = (): void => {
     if (!drag.current.active) return
     drag.current.active = false
     setDropState('dropping')
     setDropTarget({ x: 0, y: 0 })
     arm(reset)
-  }
-
-  // Focus loss mid-drag is the case the buttons guard can't catch — the pointer may never return.
-  const onWindowBlur = (): void => {
-    if (drag.current.active) onCancel()
-    else if (drag.current.handlers) detach()
   }
 
   const onScrollTracked = (): void => {
@@ -520,7 +486,6 @@ export function DragGroup({
   }
 
   const begin = (zoneId: string, id: string, e: ReactPointerEvent): void => {
-    if (e.button !== 0 || !e.isPrimary) return
     if (drag.current.active) return
     if (commitRef.current) commitRef.current()
     const z = zones.current.get(zoneId)
@@ -529,13 +494,6 @@ export function DragGroup({
     const interactive = !!(e.target as Element)?.closest?.(
       '[data-drag-slop], button, input, textarea, select, a[href], [contenteditable]',
     )
-    const handlers = {
-      move: onMove,
-      up: onUp,
-      cancel: onCancel,
-      scroll: onScrollTracked,
-      blur: onWindowBlur,
-    }
     drag.current = {
       id,
       zone: zoneId,
@@ -553,15 +511,21 @@ export function DragGroup({
       interactive,
       idxAnchorX: e.clientX,
       idxAnchorY: e.clientY,
-      handlers,
     }
-    // Not pointer capture: it would retarget a no-move tap's click onto the handle.
-    window.addEventListener('pointermove', handlers.move)
-    window.addEventListener('pointerup', handlers.up)
-    window.addEventListener('pointercancel', handlers.cancel)
-    window.addEventListener('scroll', handlers.scroll, { capture: true, passive: true })
-    window.addEventListener('blur', handlers.blur)
-    beginDragDisclose(measureBounds)
+    beginGesture({
+      el,
+      event: e,
+      activation: interactive ? INTERACTIVE_ACTIVATION : ACTIVATION,
+      // Not pointer capture: it would retarget a no-move tap's click onto the handle.
+      capture: false,
+      onActivate,
+      onDragMove,
+      onDrop,
+      onAbort,
+      onWindowScroll: onScrollTracked,
+      onDisclose: measureBounds,
+      teardown: detach,
+    })
   }
 
   const itemState = (

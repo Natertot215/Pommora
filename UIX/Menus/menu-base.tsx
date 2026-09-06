@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Segmented, type Segment } from '../Buttons'
+import { Segmented, type Segment } from '../Buttons/Button'
 import { useDismissal } from '../Interactions/dismissalStack'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { MenuSurface } from './menu-surface'

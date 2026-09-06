@@ -1,7 +1,7 @@
 import { vars as colorVars } from './color.css'
 import { font, text } from './typography.css'
-import { size, type IconSize, type ButtonSize } from './size.css'
-import { mixAt, tintAt, TINT_STEPS, type TintStep } from './tint'
+import { mixAt, tintAt, TINT_STEPS, type TintStep } from './colors'
+import { size, type IconSize, type ButtonSize } from './theme-vars.css'
 import './theme-vars.css' // bridges tokens → stable CSS vars for plain-CSS consumers
 
 /** The single token object — vars.color.*, vars.font.*, vars.size.*. */

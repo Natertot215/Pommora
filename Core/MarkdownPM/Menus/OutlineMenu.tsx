@@ -8,7 +8,7 @@ import {
   titleInput,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
-import { RenamableLabel } from '@pommora/uix/Fields'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { pageBody, shownPage, useSession } from '../../Session/store'
 import { viewSettingsScope } from '../../Interface/Toolbar/viewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../../Pages/pageEditor'

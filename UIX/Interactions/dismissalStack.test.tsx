@@ -2,7 +2,7 @@
 import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { InputField } from '../Fields'
+import { InputField } from '../Fields/InputField'
 import { type DismissalHandle, pushDismissal, SHIELD_ATTR, useDismissal } from './dismissalStack'
 
 let host: HTMLDivElement

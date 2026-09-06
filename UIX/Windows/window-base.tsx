@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
-import { Button } from '../Buttons'
-import { GlassWindow } from '../Glass'
+import { Button } from '../Buttons/Button'
+import { GlassWindow } from '../Glass/glass-window'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { useRevealNear } from '../Interactions/revealBar'
-import { windowIn, windowOut } from '../Animations'
+import { windowIn, windowOut } from '../Animations/animations.css'
 import {
   CORNERS,
   onScreen,

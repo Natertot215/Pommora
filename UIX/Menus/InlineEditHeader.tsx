@@ -1,6 +1,6 @@
 import { type Ref, useState } from 'react'
-import { InputField } from '../Fields'
-import { Button } from '../Buttons'
+import { InputField } from '../Fields/InputField'
+import { Button } from '../Buttons/Button'
 import { Icon } from '../Symbols'
 import * as s from './frames.css'
 

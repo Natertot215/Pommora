@@ -14,25 +14,22 @@ import { moveItem } from '../Utilities/moveItem'
 import { DEFAULT_FEEL, type Feel } from '../Animations/feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
+import { usePointerGesture } from './gesture'
 import { ARROW_DIRS, keyboardNext } from './keyboard'
 import {
-  ACTIVATION,
   HYSTERESIS,
   SETTLE_FALLBACK,
   px,
   toBox,
   type Box,
   type DragItem,
-  type DragNotify,
   type DropState,
-  type Modifier,
 } from './shared'
 
 // Mutable so pointer/rAF/keydown callbacks read it without stale closures. Every lift installs a
 // whole fresh scratch over `blankDrag()`, so nothing survives from the gesture before it.
 type DragScratch = {
   id: string
-  pid: number
   el: HTMLElement | null
   startX: number
   startY: number
@@ -42,16 +39,13 @@ type DragScratch = {
   activeIdx: number
   rects: Box[]
   over: number
-  bounds: Box | null
   scroller: HTMLElement | null
   scroll0X: number
   scroll0Y: number
-  handlers: { move: (e: PointerEvent) => void; up: () => void; cancel: () => void } | null
   kdown: ((e: KeyboardEvent) => void) | null
 }
 const blankDrag = (): DragScratch => ({
   id: '',
-  pid: -1,
   el: null,
   startX: 0,
   startY: 0,
@@ -61,11 +55,9 @@ const blankDrag = (): DragScratch => ({
   activeIdx: -1,
   rects: [],
   over: -1,
-  bounds: null,
   scroller: null,
   scroll0X: 0,
   scroll0Y: 0,
-  handlers: null,
   kdown: null,
 })
 
@@ -78,7 +70,6 @@ type ZoneValue = {
   dropState: DropState
   keyboard: boolean
   disabled: boolean
-  swap: boolean
   itemRole: string | null
   register: (id: string, el: HTMLElement | null) => void
   begin: (id: string, e: ReactPointerEvent) => void
@@ -86,17 +77,11 @@ type ZoneValue = {
 }
 const ZoneCtx = createContext<ZoneValue | null>(null)
 
-export type ZoneProps = DragNotify & {
+export type ZoneProps = {
   ids: string[]
   onReorder?: (activeId: string, overId: string) => void
-  /** Return false (or a Promise<false>) to reject; the item animates back to origin. A Promise
-   *  holds the item lifted (`pending`) until it resolves. */
-  canReorder?: (activeId: string, overId: string) => boolean | Promise<boolean>
   disabled?: boolean
   axis?: 'x' | 'y'
-  bounds?: 'parent' | 'window'
-  modifiers?: Modifier[]
-  swap?: boolean
   itemRole?: string | null
   getItemLabel?: (id: string) => string
   children: ReactNode
@@ -105,28 +90,21 @@ export type ZoneProps = DragNotify & {
 export function Zone({
   ids,
   onReorder,
-  canReorder,
   disabled = false,
   axis,
-  bounds,
-  modifiers,
-  swap = false,
   itemRole = 'button',
   getItemLabel,
   children,
-  ...notify
 }: ZoneProps): React.JSX.Element {
   const feel = DEFAULT_FEEL
 
   const els = useRef(new Map<string, HTMLElement>())
   const idsRef = useRef(ids)
   idsRef.current = ids
-  const notifyRef = useRef(notify)
-  notifyRef.current = notify
-  const cbRef = useRef({ onReorder, canReorder })
-  cbRef.current = { onReorder, canReorder }
-  const optsRef = useRef({ axis, bounds, modifiers })
-  optsRef.current = { axis, bounds, modifiers }
+  const reorderRef = useRef(onReorder)
+  reorderRef.current = onReorder
+  const axisRef = useRef(axis)
+  axisRef.current = axis
   const labelRef = useRef(getItemLabel)
   labelRef.current = getItemLabel
 
@@ -137,6 +115,7 @@ export function Zone({
   const [keyboard, setKeyboard] = useState(false)
 
   const drag = useRef(blankDrag())
+  const beginGesture = usePointerGesture()
 
   // Instance-scoped, so a sibling Zone's unmount can't halt this Zone's live drag.
   const stopScroll = useRef<(() => void) | null>(null)
@@ -157,20 +136,10 @@ export function Zone({
     return out
   }
 
-  const constrain = (dx: number, dy: number): { x: number; y: number } => {
-    const o = optsRef.current
-    const ar = drag.current.rects[drag.current.activeIdx]
-    let x = o.axis === 'y' ? 0 : dx
-    let y = o.axis === 'x' ? 0 : dy
-    const bnd = drag.current.bounds
-    if (bnd && ar) {
-      x = Math.max(bnd.left - ar.left, Math.min(x, bnd.left + bnd.width - (ar.left + ar.width)))
-      y = Math.max(bnd.top - ar.top, Math.min(y, bnd.top + bnd.height - (ar.top + ar.height)))
-    }
-    if (o.modifiers && ar)
-      for (const m of o.modifiers) ({ x, y } = m({ x, y }, { activeRect: ar, bounds: bnd }))
-    return { x, y }
-  }
+  const constrain = (dx: number, dy: number): { x: number; y: number } => ({
+    x: axisRef.current === 'y' ? 0 : dx,
+    y: axisRef.current === 'x' ? 0 : dy,
+  })
 
   const track = (cx: number, cy: number): void => {
     const d = drag.current
@@ -198,49 +167,45 @@ export function Zone({
     if (next !== d.over) {
       d.over = next
       setOverIndex(next)
-      notifyRef.current.onDragOver?.({ activeId: d.id, overId: idsRef.current[next] ?? null })
     }
   }
 
-  const onMove = (e: PointerEvent): void => {
+  const onActivate = (): boolean => {
     const d = drag.current
-    if (!d.active) {
-      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < ACTIVATION) return
-      const measured = measure()
-      const activeIdx = idsRef.current.indexOf(d.id)
-      if (!measured || activeIdx === -1) {
-        detach()
-        return
-      }
-      d.active = true
-      d.activeIdx = activeIdx
-      d.rects = measured
-      d.over = activeIdx
-      d.bounds = resolveBounds(optsRef.current.bounds, measured)
-      d.scroller = findScroller(d.el, 'xy')
-      d.scroll0X = d.scroller?.scrollLeft ?? 0
-      d.scroll0Y = d.scroller?.scrollTop ?? 0
-      setActiveId(d.id)
-      setRects(measured)
-      setOverIndex(activeIdx)
-      setDropState('dragging')
-      notifyRef.current.onDragStart?.({ activeId: d.id })
-      announce(`Picked up ${labelOf(d.id)}.`)
-      // The activation commit strips React's managed transform; re-assert before the item can
-      // paint at origin.
-      requestAnimationFrame(() => {
-        if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
+    const measured = measure()
+    const activeIdx = idsRef.current.indexOf(d.id)
+    if (!measured || activeIdx === -1) return false
+    d.active = true
+    d.activeIdx = activeIdx
+    d.rects = measured
+    d.over = activeIdx
+    d.scroller = findScroller(d.el, 'xy')
+    d.scroll0X = d.scroller?.scrollLeft ?? 0
+    d.scroll0Y = d.scroller?.scrollTop ?? 0
+    setActiveId(d.id)
+    setRects(measured)
+    setOverIndex(activeIdx)
+    setDropState('dragging')
+    announce(`Picked up ${labelOf(d.id)}.`)
+    // The activation commit strips React's managed transform; re-assert before the item can
+    // paint at origin.
+    requestAnimationFrame(() => {
+      if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
+    })
+    if (d.scroller) {
+      stopScroll.current = startAutoScroll({
+        getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
+        scroller: d.scroller,
+        dragEl: d.el,
+        axis: 'xy',
+        onScrolled: () => track(drag.current.lastX, drag.current.lastY),
       })
-      if (d.scroller) {
-        stopScroll.current = startAutoScroll({
-          getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
-          scroller: d.scroller,
-          dragEl: d.el,
-          axis: 'xy',
-          onScrolled: () => track(drag.current.lastX, drag.current.lastY),
-        })
-      }
     }
+    return true
+  }
+
+  const onDragMove = (e: PointerEvent): void => {
+    const d = drag.current
     d.lastX = e.clientX
     d.lastY = e.clientY
     track(e.clientX, e.clientY)
@@ -250,15 +215,6 @@ export function Zone({
     stopScroll.current?.()
     stopScroll.current = null
     const d = drag.current
-    if (d.el && d.handlers) {
-      d.el.removeEventListener('pointermove', d.handlers.move)
-      d.el.removeEventListener('pointerup', d.handlers.up)
-      d.el.removeEventListener('pointercancel', d.handlers.cancel)
-      try {
-        d.el.releasePointerCapture(d.pid)
-      } catch {}
-    }
-    d.handlers = null
     if (d.kdown) {
       document.removeEventListener('keydown', d.kdown)
       d.kdown = null
@@ -267,7 +223,7 @@ export function Zone({
 
   // Commits on `transitionend`, not a timer: the transition starts a frame later, so a timer fires
   // while gap items are mid-flight and snaps them short. The fallback covers no-transition hosts.
-  const settle = (targetIndex: number, commit: () => void): void => {
+  const settle = (targetIndex: number, commit?: () => void): void => {
     setDropState('dropping')
     setOverIndex(targetIndex)
     const el = drag.current.el
@@ -281,7 +237,7 @@ export function Zone({
       setActiveId(null)
       setOverIndex(-1)
       setKeyboard(false)
-      commit()
+      commit?.()
     }
     const onEnd = (e: TransitionEvent): void => {
       if (e.target === el && e.propertyName === 'transform') finish()
@@ -299,8 +255,7 @@ export function Zone({
     const overId = idsRef.current[over]
     const apply = (ok: boolean): void =>
       settle(ok ? over : activeIdx, () => {
-        if (ok) cbRef.current.onReorder?.(activeId2, overId)
-        notifyRef.current.onDragEnd?.({ activeId: activeId2, overId: ok ? overId : null })
+        if (ok) reorderRef.current?.(activeId2, overId)
         const label = labelOf(activeId2)
         announce(
           ok
@@ -309,57 +264,37 @@ export function Zone({
         )
         if (kbdEl) requestAnimationFrame(() => kbdEl.focus())
       })
-    if (over === activeIdx) {
-      apply(false)
-      return
-    }
-    const verdict = cbRef.current.canReorder?.(activeId2, overId) ?? true
-    if (verdict instanceof Promise) {
-      setDropState('pending')
-      verdict.then(apply).catch(() => apply(false))
-    } else {
-      apply(verdict)
-    }
-  }
-
-  const onUp = (): void => {
-    detach()
-    const d = drag.current
-    if (!d.active) return // never passed activation — a click, not a drag
-    resolveDrop(d.over, d.activeIdx, d.id, null)
-  }
-
-  const onCancel = (): void => {
-    detach()
-    const d = drag.current
-    if (!d.active) return
-    const activeId2 = d.id
-    settle(d.activeIdx, () => notifyRef.current.onDragCancel?.({ activeId: activeId2 }))
+    apply(over !== activeIdx)
   }
 
   const begin = (id: string, e: ReactPointerEvent): void => {
-    if (disabled || e.button !== 0 || !e.isPrimary) return
-    if (drag.current.active) return
+    if (disabled || drag.current.active) return
     const el = els.current.get(id) ?? null
     if (!el) return
-    const handlers = { move: onMove, up: onUp, cancel: onCancel }
     drag.current = {
       ...blankDrag(),
       id,
-      pid: e.pointerId,
       el,
       startX: e.clientX,
       startY: e.clientY,
       lastX: e.clientX,
       lastY: e.clientY,
-      handlers,
     }
-    try {
-      el.setPointerCapture(e.pointerId)
-    } catch {}
-    el.addEventListener('pointermove', handlers.move)
-    el.addEventListener('pointerup', handlers.up)
-    el.addEventListener('pointercancel', handlers.cancel)
+    beginGesture({
+      el,
+      event: e,
+      onActivate,
+      onDragMove,
+      onDrop: () => {
+        const d = drag.current
+        resolveDrop(d.over, d.activeIdx, d.id, null)
+      },
+      onAbort: () => {
+        const d = drag.current
+        if (d.active) settle(d.activeIdx)
+      },
+      teardown: detach,
+    })
   }
 
   const onKeyboard = (e: KeyboardEvent): void => {
@@ -381,11 +316,9 @@ export function Zone({
     } else if (e.key === 'Escape') {
       e.preventDefault()
       detach()
-      const activeId2 = d.id
       const el = d.el
-      const label = labelOf(activeId2)
+      const label = labelOf(d.id)
       settle(d.activeIdx, () => {
-        notifyRef.current.onDragCancel?.({ activeId: activeId2 })
         announce(`Movement canceled. ${label} returned to its original position.`)
         requestAnimationFrame(() => el?.focus())
       })
@@ -415,7 +348,6 @@ export function Zone({
     setKeyboard(true)
     setDropState('dragging')
     document.addEventListener('keydown', onKeyboard)
-    notifyRef.current.onDragStart?.({ activeId: id })
     announce(`Picked up ${labelOf(id)}. Item ${activeIdx + 1} of ${measured.length}.`)
   }
 
@@ -432,28 +364,14 @@ export function Zone({
       dropState,
       keyboard,
       disabled,
-      swap,
       itemRole,
       register,
       begin,
       liftKeyboard,
     }),
-    [ids, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
+    [ids, activeId, overIndex, rects, dropState, keyboard, disabled, itemRole],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>
-}
-
-function resolveBounds(kind: 'parent' | 'window' | undefined, rects: Box[]): Box | null {
-  if (kind === 'window')
-    return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight, cx: 0, cy: 0 }
-  if (kind === 'parent' && rects.length) {
-    const left = Math.min(...rects.map((r) => r.left))
-    const top = Math.min(...rects.map((r) => r.top))
-    const right = Math.max(...rects.map((r) => r.left + r.width))
-    const bottom = Math.max(...rects.map((r) => r.top + r.height))
-    return { left, top, width: right - left, height: bottom - top, cx: 0, cy: 0 }
-  }
-  return null
 }
 
 export function reflow(rects: Box[], overIndex: number, activeIdx: number, index: number): Box {
@@ -478,7 +396,6 @@ export function useZoneItem(id: string): DragItem {
     dropState,
     keyboard,
     disabled,
-    swap,
     itemRole,
     register,
     begin,
@@ -498,9 +415,6 @@ export function useZoneItem(id: string): DragItem {
       transform = t
         ? `translate3d(${px(t.left - rects[activeIdx].left)}, ${px(t.top - rects[activeIdx].top)}, 0)`
         : undefined
-    } else if (swap) {
-      if (index === overIndex)
-        transform = `translate3d(${px(rects[activeIdx].left - rects[index].left)}, ${px(rects[activeIdx].top - rects[index].top)}, 0)`
     } else {
       const t = reflow(rects, overIndex, activeIdx, index)
       transform = `translate3d(${px(t.left - rects[index].left)}, ${px(t.top - rects[index].top)}, 0)`

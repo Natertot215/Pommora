@@ -35,7 +35,6 @@ import {
   Hash,
   Heart,
   History,
-  House,
   Image,
   Import,
   LayoutDashboard,
@@ -82,14 +81,12 @@ import { forwardRef } from 'react'
 import { CardsGrid, ListRounded, LockFilled, LockOutline, ProgressCheck } from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
 import { lucideGlyph } from './allSymbols'
-import { size as sizeTokens, type IconSize } from '../Theme/size.css'
+import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 
-/** Curated icon set — Lucide. This registry IS the roster: to add an icon, import it above and
- *  add a line here (tree-shaking keeps only these in the bundle). Tabler stays installed as a
- *  second source to pull from — both default to stroke 2, so they sit at the same weight with no
- *  override. */
+/** Curated icon set — the app's semantic vocabulary. This registry IS the roster: to add an icon,
+ *  import it above and add a line here. Tabler is a second source, pulled in by name where it is
+ *  needed — both default to stroke 2, so they sit at the same weight with no override. */
 export const icons = {
-  house: House,
   orbit: Orbit,
   calendar: Calendar,
   clock: Clock,

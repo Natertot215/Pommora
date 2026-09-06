@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { OverScroll } from '../OverScroll'
 import { Icon } from '../../Symbols'
-import type { IconSize } from '../../Theme/size.css'
+import type { IconSize } from '../../Theme/theme-vars.css'
 import { cx } from '../../Utilities/cx'
 import * as s from './nav-trail.css'
 

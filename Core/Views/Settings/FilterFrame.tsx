@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { FilterRule, SavedView } from '@pommora/core/Views/views'
@@ -7,7 +7,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { SegmentRun } from '@pommora/uix/Fields/SegmentRun'
 import * as sr from '@pommora/uix/Fields/segment-run.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import {
   DisclosureRow,
   MenuFooting,
@@ -22,7 +22,7 @@ import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { OverScroll } from '@pommora/uix/Elements/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { useEntrance } from '@pommora/uix/Animations'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '../../Properties/contextIdentity'
 import { useStyleFor } from '../Host/columnStyles'
@@ -50,7 +50,7 @@ import {
   operatorsFor,
 } from '../filterModel'
 import * as fp from './filter-frame.css'
-import { SpaceChip } from '@pommora/uix/Labels'
+import { SpaceChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 

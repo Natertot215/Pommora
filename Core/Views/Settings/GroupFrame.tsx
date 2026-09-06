@@ -24,7 +24,7 @@ import {
 } from '@pommora/uix/Menus'
 import { footingLabel, footingSymbol, side } from '@pommora/uix/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
-import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
+import { EyeToggle } from '@pommora/uix/Elements/EyeToggle/EyeToggle'
 import { DualSwitch } from '@pommora/uix/Controls/Switches/DualSwitch'
 import { useSaveView } from '../ViewTileScope'
 import { declaredType } from '../../Properties/value'

@@ -137,7 +137,7 @@
 }
 
 .agenda-empty {
-  padding: 8px var(--row-width-standard);
+  padding: 8px var(--row-pad-standard);
   color: var(--label-tertiary);
 }
 

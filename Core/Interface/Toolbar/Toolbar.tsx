@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Segmented, type Segment } from '@pommora/uix/Buttons'
+import { Segmented, type Segment } from '@pommora/uix/Buttons/Button'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewMenu } from '../../Views/Settings/ViewMenu'

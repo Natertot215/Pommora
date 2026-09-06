@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
 import { useRevealNear } from '@pommora/uix/Interactions/revealBar'
-import { duration, easing, ms } from '@pommora/uix/Animations'
+import { duration, easing, ms } from '@pommora/uix/Animations/motion'
 import { Icon } from '@pommora/uix/Symbols'
 import { findCollection, findSet } from '../Session/treeIndex'
 import { ContainerView } from '../Views/ContainerView'

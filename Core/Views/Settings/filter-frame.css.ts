@@ -64,7 +64,7 @@ export const connector = style([
   {
     width: 'auto',
     flex: '0 0 auto',
-    padding: '0 var(--row-width-standard)',
+    padding: '0 var(--row-pad-standard)',
     border: 'none',
     cursor: 'default',
     color: c.label.secondary,

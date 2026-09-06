@@ -1,19 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { vars } from '@pommora/uix/Theme'
-import {
-  SpaceChip,
-  FileChip,
-  FileLabel,
-  fill,
-  labelColor,
-  Label,
-  roomy,
-  shape,
-  textCap,
-} from '@pommora/uix/Labels'
+import { Label } from '@pommora/uix/Labels/Label'
+import { fill, labelColor, roomy, shape, textCap } from '@pommora/uix/Labels/label-base.css'
+import { SpaceChip, FileChip, FileLabel } from '@pommora/uix/Labels/recipes'
 import { DualSwitch } from '@pommora/uix/Controls/Switches/DualSwitch'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
-import type { LabelColorName } from '@pommora/uix/Labels'
+import type { LabelColorName } from '@pommora/uix/Labels/label-base.css'
 import { ANCHOR_CELLS, cellColor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollUnmasked } from '@pommora/uix/Elements/OverScroll'
@@ -62,7 +54,6 @@ function PillRow(): React.JSX.Element {
   return (
     <SortableZone
       items={items.map((i) => i.id)}
-      layout="grid"
       getItemLabel={(id) => items.find((i) => i.id === id)?.name ?? id}
       onReorder={(a, o) => setItems((x) => reorder(x, a, o))}
     >
@@ -114,7 +105,6 @@ function ShapeRow({
   return (
     <SortableZone
       items={order.map((k) => `${rowId}:${k}`)}
-      layout="grid"
       getItemLabel={(id) => id.split(':')[1]}
       onReorder={(a, o) =>
         setOrder((x) =>

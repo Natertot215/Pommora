@@ -1,6 +1,6 @@
 import { forwardRef, Fragment, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
-import { DISCLOSURE_INDENT, type IconSize } from '../Theme/size.css'
-import { Button } from '../Buttons'
+import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
+import { Button } from '../Buttons/Button'
 import { Icon, type IconName } from '../Symbols'
 import * as s from './menu-base.css'
 import { cx } from '../Utilities/cx'

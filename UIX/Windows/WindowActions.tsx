@@ -1,4 +1,4 @@
-import { Button } from '../Buttons'
+import { Button } from '../Buttons/Button'
 
 // The surface's swallow math sizes itself for exactly this pair — stays one component rather than a shape each window re-declares.
 export function WindowActions({

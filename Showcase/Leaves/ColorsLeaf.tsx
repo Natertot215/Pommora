@@ -1,11 +1,10 @@
 import { useState, type CSSProperties } from 'react'
 import { vars, tintAt, TINT_STEPS } from '@pommora/uix/Theme'
-import { shape, tinted } from '@pommora/uix/Labels'
+import { shape, tinted } from '@pommora/uix/Labels/label-base.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
-import { applyAccent, readCssAccentColor } from '@pommora/uix/Theme/accent'
-import { SOLID_COLORS, type AccentSetting } from '@pommora/uix/Theme/colorSetting'
-import { accentValue } from '@pommora/uix/Theme/accent'
+import { accentValue, applyAccent, readCssAccentColor } from '@pommora/uix/Theme/ramp'
+import { SOLID_COLORS, type AccentSetting } from '@pommora/uix/Theme/colors'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 
 const ACCENT_CHIP = { '--label-base': 'var(--accent)' } as CSSProperties
@@ -87,7 +86,6 @@ function SwatchGroup({
       ) : (
         <SortableZone
           items={items.map((i) => i.id)}
-          layout="grid"
           getItemLabel={(id) => items.find((i) => i.id === id)?.name ?? id}
           onReorder={(a, o) => setItems((x) => reorder(x, a, o))}
         >
@@ -184,7 +182,6 @@ function TintScale(): React.JSX.Element {
   ) : (
     <SortableZone
       items={colors.map(([n]) => n)}
-      layout="grid"
       getItemLabel={(id) => humanize(id)}
       onReorder={(a, o) =>
         setColors((x) =>

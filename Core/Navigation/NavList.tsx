@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import { MenuItem } from '@pommora/uix/Menus'
 import { overlay, rowDragging } from '@pommora/uix/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'

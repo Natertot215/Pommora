@@ -7,7 +7,7 @@ import { MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Labels/HoverRemove'
 import { useKeepInView } from './useKeepInView'
-import { NavTrail, NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
+import { NavTrail, NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { ancestryOf } from '../../Session/treeIndex'
 import { useSession } from '../../Session/store'
@@ -74,7 +74,7 @@ export function AutocompletePane({
             <NavTrail
               segments={locationOf(row)}
               overScroll={false}
-              iconSize="subline"
+              iconSize="footnote"
               className={text.subline.standard}
             />
           }

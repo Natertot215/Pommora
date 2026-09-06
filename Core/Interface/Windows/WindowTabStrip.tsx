@@ -84,7 +84,6 @@ export function WindowTabStrip({
               items={renderEntries
                 .filter((e) => !e.ghost && e.entry.tab.target.kind === 'page')
                 .map((e) => e.entry.tab.id)}
-              layout="list"
               axis="x"
               onReorder={reorderWindowTabs}
             >
