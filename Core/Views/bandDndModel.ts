@@ -1,8 +1,4 @@
-// Pure model behind band drag (group headers), shared by every surface that renders bands — no
-// React, no DOM. Hit-testing runs over the VISIBLE band list; order math runs over the FULL
-// structural id set so collapsed subtrees survive every write. A drop slot resolves its IMPLIED
-// PARENT from the band below the line — the router compares it against the dragged band's current
-// parent to pick reorder vs reparent (a flat array alone can never lift a child past its parent).
+// A drop slot resolves its IMPLIED PARENT from the band below the line — the router compares it against the dragged band's current parent to pick reorder vs reparent (a flat array alone can never lift a child past its parent).
 
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import { type MeasuredRow, nextOrder } from '@pommora/uix/Interactions/reorderModel'
@@ -24,9 +20,7 @@ export interface BandSlot {
 /** Top/bottom fraction of a set band that reads as a before/after slot; the middle nests. */
 const NEST_ZONE = 0.3
 
-/** The visible band headers in display order — the live `collapsed` set prunes hidden subtrees
- *  (a ResolvedGroup's own isCollapsed is a snapshot; the render reads live state). The ungrouped
- *  tail is a non-entity: no band, no drag, no target. */
+/** A ResolvedGroup's own isCollapsed is a snapshot; the render reads live state. The ungrouped tail is a non-entity: no band, no drag, no target. */
 export function flattenBands(groups: ResolvedGroup[], collapsed: Set<string>): Band[] {
   const out: Band[] = []
   const walk = (gs: ResolvedGroup[], depth: number, parentId: string | null): void => {
@@ -45,8 +39,7 @@ export function flattenBands(groups: ResolvedGroup[], collapsed: Set<string>): B
   return out
 }
 
-/** Every structural set id in tree order, collapsed subtrees INCLUDED — the id universe order
- *  writes must merge against so hidden siblings survive. Never contains the ungrouped key. */
+/** Collapsed subtrees INCLUDED — the id universe order writes must merge against so hidden siblings survive. */
 export function allStructuralIds(groups: ResolvedGroup[]): string[] {
   const out: string[] = []
   const walk = (gs: ResolvedGroup[]): void => {
@@ -60,8 +53,6 @@ export function allStructuralIds(groups: ResolvedGroup[]): string[] {
   return out
 }
 
-/** True when `targetId` is a set band outside the dragged band's subtree — the cycle guard for
- *  nest-into (walks parent links up from the target, the sidebar's isSelfOrDescendant shape). */
 export function canNest(draggedId: string, targetId: string, bands: Band[]): boolean {
   const byId = new Map(bands.map((b) => [b.id, b]))
   return byId.get(targetId)?.kind === 'set' && !walksTo(targetId, draggedId, byId)
@@ -76,9 +67,7 @@ function walksTo(fromId: string, ancestorId: string, byId: Map<string, Band>): b
   return false
 }
 
-/** The band lookup + measured-row set for one drag, built ONCE at activation (snapshot state) —
- *  hit-testing runs per pointermove and must never allocate or rebuild indexes (the "on every X"
- *  rule; the measurement discipline's index sibling). */
+/** Built ONCE at activation: hit-testing runs per pointermove and must never allocate or rebuild indexes. */
 export interface BandIndex {
   byId: Map<string, Band>
   rows: MeasuredRow[]
@@ -89,7 +78,6 @@ export function buildBandIndex(bands: Band[], measured: MeasuredRow[]): BandInde
   return { byId, rows: measured.filter((m) => byId.has(m.id)) }
 }
 
-/** Resolve the pointer's drop slot against the frozen band snapshot.*/
 export function bandSlot(
   index: BandIndex,
   y: number,
@@ -102,9 +90,7 @@ export function bandSlot(
 
   const inDraggedSubtree = (id: string): boolean => walksTo(id, draggedId, byId)
 
-  // The slot before rows[i]: the band below the line owns the level. Skipping the dragged
-  // subtree makes "just above the dragged band" resolve to its own current position (a no-op)
-  // instead of an inside-itself slot.
+  // The band below the line owns the level; skipping the dragged subtree makes "just above the dragged band" resolve to its own current position rather than an inside-itself slot.
   const slotBefore = (i: number, lineY: number): BandSlot | null => {
     let j = i
     while (j < rows.length && inDraggedSubtree(rows[j].id)) j++
@@ -138,10 +124,7 @@ export function bandSlot(
   return slotBefore(idx + 1, rows[idx + 1] ? rows[idx + 1].top : row.bottom)
 }
 
-/** The view's structural band order after a reorder drop — merge-then-move: keep the prior
- *  order's surviving ids, append tree ids it never listed (tree order), then move the dragged id
- *  before `beforeId` (null = append). Collapsed siblings always survive: the merge runs over the
- *  FULL id set, never the visible flatten. */
+/** Merge-then-move over the FULL id set, never the visible flatten, so collapsed siblings always survive. */
 export function structuralOrderAfterDrop(
   priorOrder: string[],
   fullTreeIds: string[],
@@ -155,7 +138,6 @@ export function structuralOrderAfterDrop(
   return nextOrder(seeded, draggedId, beforeId)
 }
 
-/** The property band order after a drop, over the present bucket keys. */
 export function propertyOrderAfterDrop(
   presentKeys: string[],
   draggedKey: string,
@@ -164,9 +146,7 @@ export function propertyOrderAfterDrop(
   return nextOrder(presentKeys, draggedKey, beforeKey)
 }
 
-/** The destination's fs `set_order` for a reparent commit: its CURRENT children + the moved id
- *  APPENDED — never the visual drop position, which persists only in the view's group_order
- *  (the per-view order must not leak into the filesystem). */
+/** Its CURRENT children + the moved id APPENDED — never the visual drop position, which persists only in the view's group_order: the per-view order must not leak into the filesystem. */
 export function reparentFsOrder(destChildIds: string[], movedId: string): string[] {
   return [...destChildIds.filter((id) => id !== movedId), movedId]
 }

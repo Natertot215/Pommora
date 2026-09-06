@@ -27,8 +27,7 @@ async function snapshot(
   const assignments: string[] = []
   let partial = false
   for (const folder of folders) {
-    // Gathered before the unassign strips it — a property restored into no Collection is
-    // defined but belongs nowhere.
+    // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     const holds = ((sidecar?.properties as string[] | undefined) ?? []).includes(propertyId)
     if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
@@ -63,8 +62,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   if (!def) return fail('not-found', 'Property not found.')
   const key = def.name
 
-  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
-  // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
+  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
   const files = await keyHolderFiles(root, key, folders)
   await snapshot(root, propertyId, def, folders, files)
@@ -102,8 +100,7 @@ export function unassignAndPurge(folder: string, propertyId: string): Promise<vo
       ...sidecar,
       properties: assigned.filter((id) => id !== propertyId),
     }
-    // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
-    // and assign only copies keys that are present.
+    // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
     await writeSidecar(folder, 'collection', hadCache ? withoutCacheBlock(next, propertyId) : next)
   })
 }

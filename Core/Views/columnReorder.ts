@@ -1,13 +1,6 @@
 import { reorder } from '@pommora/uix/Interactions/drag'
 
-/**
- * Translate a header drag into a new `property_order`. The visible columns reorder; any hidden
- * property (present in `property_order` but filtered out of the rendered columns) is preserved at the
- * tail so a later hide/show toggle can't drop it — the drop-on-toggle persistence failure this guards against.
- *
- * The full visible order is written explicitly, so default-on reserved columns (Context columns, title) persist
- * the slot they were dragged to instead of snapping back to their resolver-default placement.
- */
+/** Any hidden property is preserved at the tail so a later hide/show toggle can't drop it, and the full visible order is written explicitly so default-on reserved columns persist the slot they were dragged to. */
 export function reorderColumns(
   visibleIds: string[],
   propertyOrder: string[],

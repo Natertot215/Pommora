@@ -5,8 +5,6 @@ import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
 
-/** The one place a banner band pops its menu. The ghost-suppress Context lets card seats stand
- *  their hover ghost down while the menu owns the pointer. */
 export function useBannerMenu(
   path: string,
   kind: BannerOwnerKind,
@@ -16,8 +14,6 @@ export function useBannerMenu(
     noun?: string
     noRemove?: boolean
     onDone?: () => void
-    /** Pop the crop editor right after a fresh pick lands — a card frames its cover on set; the
-     *  banner band and the other add surfaces leave it off. */
     autoEdit?: boolean
   },
 ): {
@@ -37,8 +33,7 @@ export function useBannerMenu(
   const [boxAspect, setBoxAspect] = useState(1)
   const add = !value
 
-  // onDone advances the seat's value so a re-pick's picker resets its draft to the new image —
-  // a page cover refreshes only on refetch, not a tree push.
+  // onDone advances the seat's value so a re-pick's picker resets its draft — a page cover refreshes only on refetch, not a tree push.
   const setBanner = async (source: string | null): Promise<string | undefined> => {
     let adopted: string | undefined
     const ok = await mutate({ op: 'setBanner', path, kind, source }, undefined, (a) => {

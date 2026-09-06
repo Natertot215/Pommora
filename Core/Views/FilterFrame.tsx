@@ -138,9 +138,7 @@ function ValueInput({
   numeric: boolean
   onCommit: (next: string | undefined) => void
 }): React.JSX.Element {
-  // Kept through a ref callback that ignores the detach: React detaches refs before passive
-  // cleanups, and the `key` below remounts the input on every committed round-trip, so a plain
-  // ref captured at mount would be a dead earlier node with a stale value.
+  // Kept through a ref callback that ignores the detach: React detaches refs before passive cleanups, and the `key` below remounts the input on every committed round-trip.
   const node = useRef<HTMLInputElement | null>(null)
   const keepNode = (n: HTMLInputElement | null): void => {
     if (n) node.current = n

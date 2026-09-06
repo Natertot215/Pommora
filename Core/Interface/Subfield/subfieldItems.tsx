@@ -5,11 +5,8 @@ import { type PageTarget, useSession } from '../../Session/store'
 import { findCollection } from '../../Session/treeIndex'
 import { pageStats } from '../../MarkdownPM/subfieldStats'
 
-/** New item ids slot in here, and in the per-view default order below. */
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
-/** The page a host's footer describes and the body it counts — hands down so the main pane and a
- *  floating window drive the same footer from their own page. */
 export interface SubfieldPage {
   target: PageTarget
   body: string
@@ -62,8 +59,7 @@ function AddMenuItem(): React.JSX.Element | null {
   )
 }
 
-/** List ⇄ Gallery toggle for NavView — drives `navViewMode`, separate from NavWindow's own
- *  `navWindowMode`. */
+/** Drives `navViewMode`, separate from NavWindow's own `navWindowMode`. */
 function ViewTypeItem(): React.JSX.Element {
   const mode = useSession((s) => s.navViewMode)
   const setMode = useSession((s) => s.setNavViewMode)

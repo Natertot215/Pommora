@@ -17,8 +17,7 @@ export interface GovernedWorld {
 
 export const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
-/** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted
- *  key is foreign data, never a link. */
+/** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted key is foreign data, never a link. */
 function idsByExactTitle(registry: ContextsRegistry): Map<string, string> {
   const m = new Map<string, string>()
   for (const c of registry.contexts) m.set(c.title, c.id)
@@ -56,14 +55,10 @@ export function resolveContextKeys(
 
 export interface Reconciled {
   root: Record<string, unknown>
-  /** Keys set or deleted. */
   changed: string[]
   adoptions: Adoption[]
 }
 
-/** The one reconcile over a governed root: a Context key repairs a coercion-only near-miss to the
- *  canonical Space title and drops an unknown value; an assigned property key re-encodes as its
- *  definition reads it; an emptied key is deleted; every other key passes verbatim. */
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
@@ -104,8 +99,6 @@ export function reconcileGovernedRoot(
   return { root: out, changed, adoptions }
 }
 
-/** The changed keys that survived; a changed key absent from the root is a delete, which the
- *  frontmatter merge signals by omission. */
 export function survivingChanges({ root, changed }: Reconciled): Record<string, unknown> {
   return Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
 }

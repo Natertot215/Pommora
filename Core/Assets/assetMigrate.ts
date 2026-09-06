@@ -1,6 +1,4 @@
-// Walks the STORES rather than the directory: nothing cleans up `.nexus/assets/<id>/` when an entity
-// is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
-// Idempotent per reference, so a run after a partial failure finishes rather than wedging.
+// Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
 import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT, TRASH_DIR } from '../Locations/nexusPaths'
@@ -24,15 +22,12 @@ import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 
 export interface AssetMigration {
-  /** Source → the name the file now wears. */
   moved: { from: string; to: string }[]
   rewritten: number
   skipped: { store: string; why: string }[]
   trashed: number
 }
 
-/** `owner` is the name the file takes when its own is one Pommora invented; a `write` answering
- *  false is a refusal, not a rewrite. */
 interface StoreRef {
   store: string
   owner: string
@@ -40,7 +35,6 @@ interface StoreRef {
   write: (link: string) => Promise<boolean>
 }
 
-/** Only a name Pommora minted is worth replacing — a file the user named keeps it. */
 const INVENTED = /^(?:banner|profile)-[a-z0-9]{6,}$/i
 
 /** Latin-1 is a byte-for-byte bijection, so this digests the bytes — the machine's hash takes text. */
@@ -126,8 +120,6 @@ async function sidecarsUnder(root: string): Promise<string[]> {
   return out.sort()
 }
 
-/** Null when it does not apply: an unset `asset_directory` makes source and destination one place,
- *  and a `.nexus/assets` holding only thumbnails has already migrated. */
 export async function migrateAssets(root: string): Promise<AssetMigration | null> {
   const { assetDir } = await readWatchScope(root)
   if (assetDir === ASSETS_DIR_REL) return null

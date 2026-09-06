@@ -9,8 +9,6 @@ import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import * as s from './nexus-header.css'
 
-/** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
- *  on the homepage banner title, not here either. */
 export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
   const {
     profileImage,

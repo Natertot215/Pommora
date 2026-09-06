@@ -1,6 +1,3 @@
-// The in-app browser — back/forward lead the toolbar, the centered title is the link itself (click
-// escalates the current page to the system browser), and one webview owns the whole body on the
-// shared partition. A summon while open retakes the window in place.
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -17,12 +14,10 @@ import './web-window.css'
 
 const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
 
-/** The direct summon of the floating browser, knob-independent by contract. */
 export function openInAppBrowser(url: string): void {
   useSession.getState().openBrowser(url)
 }
 
-/** What the guest element answers with once attached — the navigation surface the toolbar drives. */
 interface BrowserGuest extends HTMLElement {
   goBack(): void
   goForward(): void
@@ -34,7 +29,6 @@ interface BrowserGuest extends HTMLElement {
 
 export function WebWindow(): React.JSX.Element | null {
   const summon = useSession((s) => s.browserSummon)
-  // An overtake swaps the guest's destination in place; the window never remounts.
   const shown = useHeldPresence(summon)
   if (!shown) return null
   return <WebWindowBody summon={shown.held} closing={shown.closing} />
@@ -53,9 +47,7 @@ function WebWindowBody({
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
   const [nav, setNav] = useState({ back: false, forward: false })
-  // A retake aims the standing guest at the address — imperatively, because the guest may have
-  // navigated away from the very url being re-summoned, which the src attribute reads as
-  // unchanged.
+  // Imperative, because the guest may have navigated away from the very url being re-summoned, which the src attribute reads as unchanged.
   const applied = useRef(seq)
   useEffect(() => {
     setTitle('')
@@ -74,8 +66,7 @@ function WebWindowBody({
     const wv = ref.current
     if (!wv) return
     const onTitle = (e: Event): void => setTitle((e as Event & { title?: string }).title ?? '')
-    // Event-driven, never polled: every commit (page loads, pushState hops, back/forward) lands
-    // one of these, and the toolbar re-reads the guest's truth there.
+    // Event-driven, never polled: every commit (page loads, pushState hops, back/forward) lands one of these.
     const onNavigate = (): void => {
       setCurrent(wv.getURL())
       setNav({ back: wv.canGoBack(), forward: wv.canGoForward() })

@@ -2,9 +2,7 @@ import type { PropertyValue } from './propertyValue'
 import { urlValueFromEdit } from '@pommora/core/Connections/linkValue'
 import { resolveTitle } from './Cells/linkResolve'
 
-/** Parse a text-editor string for a number/url property into its committable value. `null` clears
- *  (empty input); `undefined` means invalid — don't commit. Shared by the card value editor and the
- *  add-picker's value pane so both parse identically. */
+/** `null` clears (empty input); `undefined` means invalid — don't commit. */
 export function parseEditorValue(
   type: string | undefined,
   raw: string,

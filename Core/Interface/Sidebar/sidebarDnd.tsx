@@ -20,8 +20,8 @@ const STEP_INDENT = DISCLOSURE_INDENT // MenuItem's per-depth inset — the shar
 
 type Slot = {
   depth: number
-  lineY: number // relative to the content wrapper
-  commit: MutateRequest // handed straight to store.mutate
+  lineY: number
+  commit: MutateRequest
 }
 
 type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
@@ -40,7 +40,6 @@ export function SidebarDnd({
   subSetPlacement = 'top',
   children,
 }: {
-  /** The tree-keyed drag index — built once by the host, shared across every mounted layer. */
   index: Index
   onCommit: (commit: MutateRequest) => void
   setPlacement?: FolderPlacement
@@ -83,9 +82,7 @@ export function SidebarDnd({
           },
         )
       }
-      // A Set that's a sibling of the dragged page is the page↔Set boundary, not a reparent target —
-      // grazing it reorders the page to its group's edge, never drops it into the Set (that happens
-      // via the Set's expanded pages instead).
+      // A Set that's a sibling of the dragged page is the page↔Set boundary, not a reparent target — grazing it reorders to the group's edge; the Set's expanded pages are the way in.
       if (
         entry.kind === 'set' &&
         draggedEntry.parentId &&
@@ -111,8 +108,7 @@ export function SidebarDnd({
       }
       const beforeId = entry.pageIds.find((x) => x !== id) ?? null
       const order = nextOrder(entry.pageIds, id, beforeId)
-      // Derived from the slot the drop resolves to, never the row under the pointer — with folders
-      // first, a container's first page sits below its entire Sets block.
+      // Derived from the slot the drop resolves to, never the row under the pointer — with folders first, a container's first page sits below its entire Sets block.
       const firstRow = beforeId ? measured.find((m) => m.id === beforeId) : undefined
       return unless(over.id === draggedEntry.parentId && sameOrder(order, entry.pageIds), {
         depth: entry.depth + 1,
@@ -121,16 +117,15 @@ export function SidebarDnd({
       })
     }
 
-    // A Set may never land on a context or the top level; dropping into its own subtree is
-    // blocked as a cycle.
+    // A Set may never land on a context or the top level; dropping into its own subtree is blocked as a cycle.
     if (draggedEntry.kind === 'set') {
       const over = nearestByTop(measured, clientY)
       const overEntry = index.byId.get(over.id)
       if (!overEntry) return null
       const target = setContainerOf(overEntry, index)
       if (!target) return null
-      if (isSelfOrDescendant(target.id, id, index)) return null // no cycles
-      const group = target.containerIds // the target container's child Sets, in order
+      if (isSelfOrDescendant(target.id, id, index)) return null
+      const group = target.containerIds
       let beforeId: string | null
       let lineY: number
       if (overEntry.kind === 'set') {
@@ -138,8 +133,7 @@ export function SidebarDnd({
         beforeId = slot.beforeId
         lineY = slot.edge - contentTop
       } else {
-        // Derived from real geometry: an existing block's first-row top (correct either way), else
-        // — an empty block — just under the header (top) or after the container's last page (bottom).
+        // Derived from real geometry: an existing block's first-row top, else — an empty block — just under the header or after the container's last page.
         beforeId = group.find((x) => x !== id) ?? null
         const headerRect = measured.find((m) => m.id === target.id)
         const headEdge = headerRect ? headerRect.bottom : over.bottom
@@ -182,8 +176,7 @@ export function SidebarDnd({
   }
 
   const drag = useInsertionDrag<Slot, Snapshot>({
-    // Measured once at drag activation, not per pointermove: no row displaces mid-drag, so frozen
-    // rects stay valid until a scroll or tree swap invalidates.
+    // Measured once at drag activation, not per pointermove: no row displaces mid-drag, so frozen rects stay valid until a scroll or tree swap invalidates.
     take: (excludeId) => {
       const content = contentRef.current
       if (!content) return null
@@ -244,8 +237,7 @@ export function SidebarDnd({
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
-// All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in
-// computeTarget and never reach here.
+// All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in computeTarget and never reach here.
 function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
   switch (draggedEntry.kind) {
     case 'collection':
@@ -259,7 +251,6 @@ function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
   }
 }
 
-// Sets reorder/move via the moveSet branch in computeTarget, not here.
 function reorderCommit(draggedEntry: Entry, order: string[]): MutateRequest | null {
   switch (draggedEntry.kind) {
     case 'collection':
@@ -277,8 +268,6 @@ function reorderCommit(draggedEntry: Entry, order: string[]): MutateRequest | nu
   }
 }
 
-/** Spread `handle`, put `ref` on the row element — the engine decides what the drop means from
- *  the row's kind. */
 export function useSidebarDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

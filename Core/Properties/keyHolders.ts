@@ -1,6 +1,4 @@
-// The set is intersected with the sweep's own scope folders — the index answers over the whole
-// nexus, while a property value only means anything inside the Collection whose schema governs
-// it, so an unintersected query would strip keys from pages the sweeps were meant to leave alone.
+// Intersected with the sweep's own scope folders: the index answers over the whole nexus, so an unintersected query would strip keys from pages the sweeps were meant to leave alone.
 
 import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'

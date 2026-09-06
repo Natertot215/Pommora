@@ -6,8 +6,7 @@ export type PropertyValue =
   | { kind: 'datetime'; value: string } // ISO-8601; a bare "yyyy-MM-dd" is a date-only datetime
   | { kind: 'select'; value: string }
   | { kind: 'multiSelect'; value: string[] }
-  /** Context target ULIDs. Kept while the Status tag goes, because Context is NOT derivable from
-   *  the schema on the value path — the type resolver runs there without the Context id list. */
+  /** Kept while the Status tag goes, because Context is NOT derivable from the schema on the value path — the type resolver runs there without the Context id list. */
   | { kind: 'context'; value: string[] }
   | { kind: 'url'; value: string }
   | { kind: 'file'; value: string[] } // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
@@ -17,8 +16,7 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-/** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string; unwrapping
- *  single-element arrays back to their spelling keeps a hand-edit from nulling the whole value. */
+/** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string; unwrapping single-element arrays keeps a hand-edit from nulling the whole value. */
 function fileEntry(v: unknown): string | null {
   if (typeof v === 'string') return v
   let inner: unknown = v
@@ -66,11 +64,9 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       const value = resolveSingleOption(xs, optionValues(def))
       return value === undefined ? NULL : { kind: 'select', value }
     }
-    // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a
-    // merged case would discard every attachment through the restore path.
+    // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
-      // A dangling `- ` under an attachment key is YAML null; an entry nothing can spell is
-      // dropped rather than nulling the whole list and losing the other attachments.
+      // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
       for (const x of Array.isArray(raw) ? raw : [raw]) {
         const entry = fileEntry(x)
@@ -79,16 +75,11 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return entries.length === 0 ? NULL : { kind: 'file', value: entries }
     }
     default:
-      // A Context column resolves at walk assembly and never routes here.
       return NULL
   }
 }
 
-/** What a stored value stands as under its definition, and the Multi-Select options it holds that
- *  the definition doesn't offer yet. */
-// A write adopts a Multi-Select option the definition lacks; a restore of a frozen copy (the
-// Remove cache, a trash bundle) keeps only the options the definition still offers, so a deleted
-// option never comes back through it.
+// A restore of a frozen copy keeps only the options the definition still offers, so a deleted option never comes back through it.
 export function reconcilePropertyValue(
   def: PropertyDefinition,
   raw: unknown,
@@ -142,8 +133,6 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
-/** The renderer's optimistic mirror of the main-side write, so a cell reads the same value
- *  whether the commit has landed yet or not. */
 export function applyValueAtRoot(
   root: Record<string, unknown>,
   def: PropertyDefinition,

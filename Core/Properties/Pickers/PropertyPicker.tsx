@@ -10,9 +10,7 @@ import { OptionChip } from '../Cells/OptionChip'
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
 
-/** A pickable option — status options flatten out of their groups, select/multi read
- *  `select_options`. An option is never filtered by what it's called: the starter options a new
- *  property seeds are ordinary values. Groups are containers, never pickable chips. */
+/** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values. Groups are containers, never pickable chips. */
 export const optionsOf = (def: PropertyDefinition): PickOption[] => {
   return def.type === 'status' ? statusOptions(def) : (def.select_options ?? [])
 }
@@ -35,21 +33,12 @@ export const pickShape = (
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
-/** The minimal def a Context column with no schema entry feeds the picker —
- *  its real options arrive through `contextOptions`, so the name goes unused. */
 export const syntheticContextDef = (id: string): PropertyDefinition => ({
   id,
   name: '',
   type: 'context',
 })
 
-/**
- * The value dropdown every container view's status/select/multi cells share. Table-agnostic and
- * stateless: props in, `onCommit(PropertyValue)` out — the caller owns the write + the optimistic
- * patch. Self-managed: PickerMenu portals to a body top layer off `triggerRef` (escaping the
- * table's overflow clip), owns its Bloom-in/out off `open`, and dismisses via its own backdrop.
- * Single-value types commit + dismiss on pick; multi toggles against `current` and stays open.
- */
 export function PropertyPicker({
   def,
   current,
@@ -65,14 +54,8 @@ export function PropertyPicker({
   current: PropertyValue | null
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
-  /** Click x (viewport px). When set, the pane centers on the click point instead of the trigger's
-   *  fixed center (the card value gesture). Omitted → the default right-anchored dropdown. */
   anchorX?: number
-  /** The column's resolved look — a Compact status column renders its OPTIONS as glyph chips too
-   *  (deliberate); select/multi options stay labeled so a value is pickable by name. */
   look?: ColumnLook
-  /** Context columns (the registry Contexts + user context props) pick from the NEXUS's contexts,
-   *  not the def — the caller supplies the column's list. Toggles like multi; commits `context`. */
   contextOptions?: PickOption[]
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
@@ -106,8 +89,6 @@ export function PropertyPicker({
   )
 }
 
-/** The picker's option rows, menu-less — shared by PropertyPicker's own menu and any surface
- *  hosting the rows inside another pane (the cards' two-stage add-picker). */
 export function PropertyOptionRows({
   def,
   look,
@@ -150,10 +131,6 @@ export function PropertyOptionRows({
   )
 }
 
-/** The picker's shared option plumbing — options + selection + the per-type commit, extracted so
- *  both PropertyPicker's own menu and a host pane (the cards add-picker) run the exact same semantics.
- *  A `contextOptions` list swaps the options source and makes the pick toggle+commit `context` (the
- *  registry Contexts + user context props); without it, def-driven select/status/multi. */
 export function pickSemantics(
   def: PropertyDefinition,
   current: PropertyValue | null,

@@ -1,10 +1,7 @@
 import { useMemo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useStatusReorder } from './useStatusReorder'
 
-// The flat list is the one-group case of the grouped one — same gesture, same frozen-geometry
-// snapshot, same drop arithmetic — so this is an adapter rather than a second implementation. The
-// single group's element IS the container, which is what makes the grouped hook's group-relative
-// drop line the container-relative line a flat list wants.
+// An adapter, not a second implementation: the single group's element IS the container, which makes the grouped hook's group-relative drop line the container-relative line a flat list wants.
 const FLAT_GROUP = 'flat'
 
 export function useOptionReorder(

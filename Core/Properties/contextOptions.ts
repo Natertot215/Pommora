@@ -1,6 +1,3 @@
-// The one Context → pickable-Spaces mapping (table cell pickers, the FilterFrame's chip
-// fields). Spaces list in their per-Context sidebar order; every option carries the Space's
-// color + icon so a picker chip renders identically to a cell chip. Pure: no fs, no React.
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { spacesByIdOf } from './contextIdentity'
 
@@ -11,9 +8,7 @@ export interface ContextOption {
   icon?: string
 }
 
-// The card grid calls this per context value per render, so cache a STABLE array per
-// (tree, contextId) instead of remapping every call — keyed on the tree object, so a tree
-// push naturally invalidates it.
+// The card grid calls this per context value per render, so a STABLE array is cached per (tree, contextId) — keyed on the tree object, so a push invalidates it.
 const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
 
 export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOption[] {
@@ -32,9 +27,7 @@ export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOp
 
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
   const group = tree.contexts?.find((g) => g.def.id === contextId)
-  // Identity — title, glyph, color — comes from the seam, never re-derived here: resolving the
-  // glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
-  // Order is this function's own concern: options list in the Context's sidebar order.
+  // Identity comes from the seam, never re-derived here: resolving the glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
   const byId = spacesByIdOf(tree)
   return (group?.spaces ?? []).flatMap((s) => {
     const identity = byId.get(s.id)

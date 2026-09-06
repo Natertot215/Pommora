@@ -151,8 +151,7 @@ function PageWindowBody({
     void select({ kind: 'page', id: target.id, path: target.path })
   }
 
-  // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime
-  // values); the css .engulfing class only suppresses the default scale-out.
+  // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime values); the css .engulfing class only suppresses the default scale-out.
   const exitReason = useSession((s) => s.windowExit)
   useEffect(() => {
     if (!closing || useSession.getState().windowExit !== 'engulf') return
@@ -227,10 +226,6 @@ function PageWindowBody({
   )
 }
 
-// Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
-// CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
-// re-paths the open tab on rename.
-
 export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
@@ -243,9 +238,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
 
   useEffect(() => {
     setEditing(null)
-    // The warm path-keyed detail slot first — the embed half of this window feeds it (and vice
-    // versa), so the page is fetched once per window and a warm hit skips the blank frame. Any
-    // frontmatter write drops the slot, so a hit is never staler than the page beside it.
+    // The warm path-keyed detail slot first, so the page is fetched once per window; any frontmatter write drops the slot, so a hit is never staler than the page beside it.
     const cached = readPageDetail(target.path)
     if (cached) {
       setFm(cached.frontmatter as PageFrontmatter)
@@ -281,10 +274,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
     valueMenu: valueMenuShared,
   } = usePropertyRows(page, fm, setFm)
 
-  // A row shows when it holds a real value or was assigned this session (session-only — disk
-  // never carries an empty key). Deliberately unlike the Settings Properties leaf, which keeps
-  // every Context slot open until set aside — that surface is where a page gets filed, this one
-  // just reads one.
+  // A row shows when it holds a real value or was assigned this session — disk never carries an empty key.
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
     if (isContextRow(id)) return (contextValues?.[id]?.length ?? 0) > 0
@@ -306,9 +296,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
       from,
     )
 
-  // The row mounts next frame, so its value field can only be anchored to after paint; from there
-  // it routes through the same `editRow` every other click takes. A Context row carries no def and
-  // opens its own picker.
+  // The row mounts next frame, so its value field can only be anchored to after paint.
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
     setRevealed((prev) => new Set([...prev, id]))
@@ -324,8 +312,6 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
 
   if (!ctx || !row || !fm) return <div className="window-panel-column" />
 
-  // The same native menu the page's own properties pane pops: Clear empties the value and leaves
-  // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
   const emptyRow = (id: string, keep: boolean): void => {
     if (isContextRow(id)) commitContext(id, [])
     else commitValue(id, null)
@@ -411,8 +397,6 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
                           numeric={def.type === 'number'}
                           validate={def.type === 'url' ? validateLink : undefined}
                           onCommit={(raw) => {
-                            // url validates/normalizes and rides the existing alias along —
-                            // identical to the cell surfaces.
                             const cur = resolveFieldValue(row, id, schema)
                             const next =
                               def.type === 'url'
@@ -434,8 +418,6 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
                           ctx,
                           hideIcon: false,
                           style: { look: 'standard' },
-                          // The chip's hover × hands back what survives it — a Context keeps its
-                          // remaining Spaces, a property its remaining options.
                           remove: def
                             ? (next) => commitValue(id, next)
                             : (next) =>

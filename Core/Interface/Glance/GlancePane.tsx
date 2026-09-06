@@ -21,9 +21,7 @@ import {
 import { host } from '../../Platform/dialer'
 import './glance-pane.css'
 
-// Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click
-// or pull focus out of its host; a deliberate press inside it is the one exception, and the close
-// hands focus back.
+// Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click or pull focus out of its host.
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band, live.
 export const GLANCE_DEFAULT: GlanceSize = { w: 260, h: 120 }
@@ -34,11 +32,8 @@ const LEAVE_GRACE_MS = 200
 const RECT_SLOP = 6
 // KNOB — how many glanced pages keep their editor state and scroll between opens.
 const GLANCE_WARM_CAP = 10
-// A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
-// render inert, while no real page path can ever collide with it in the cycle guard.
+// A non-path host chain: no real page path can collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
-// Both sides, plus the horizontal edge away from the anchor and its corners — a flipped-up pane
-// grows upward from its anchored bottom edge.
 const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
 const EDGES_UP: readonly ResizeEdge[] = ['e', 'w', 'n', 'ne', 'nw']
 
@@ -47,14 +42,12 @@ const clampSize = (s: GlanceSize): GlanceSize => ({
   h: Math.max(GLANCE_MIN.h, Math.round(s.h)),
 })
 
-// One universal size, persisted per nexus; clamped on read so a stored value from before a bounds
-// change never reopens out of bounds.
+// Clamped on read so a stored value from before a bounds change never reopens out of bounds.
 let sizeCache: GlanceSize | null = null
 let sizeNexus: string | null = null
 // Only the newest load may land: a nexus switch mid-flight, or a set during the load, supersedes it.
 let sizeLoad = 0
 
-// A load that fails (no nexus yet) leaves the seed unclaimed so the next mount tries again.
 function seedGlanceSize(nexusId: string | undefined): void {
   if (!nexusId || sizeNexus === nexusId) return
   sizeCache = null
@@ -78,8 +71,6 @@ export function setGlanceSize(next: GlanceSize): void {
   void host().ask('glance:save', sizeCache)
 }
 
-// The glance's own warmth, apart from the tab and window caches; the fence drops an entry whose
-// doc no longer matches the fresh body.
 const warm = new Map<string, { editorState: unknown; scrollTop: number }>()
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
@@ -109,12 +100,9 @@ const inRect = (r: DOMRect, x: number, y: number): boolean =>
 const keyOf = (r: GlanceRequest): string =>
   r.target.kind === 'page' ? `p:${r.target.id}` : `s:${r.target.url}`
 
-/** What the guest element answers with once attached — the handle the replayed wheel is aimed at. */
 type ScrollableGuest = HTMLElement & { getWebContentsId?: () => number }
 
-/** Hands a wheel to the guest under the shield. The id read throws before the guest attaches (the
- *  method sits on the prototype first), and the wheel's own sign is inverted: a DOM delta counts
- *  the content's travel, the input event the wheel's. */
+/** The id read throws before the guest attaches (the method sits on the prototype first), and the wheel's own sign is inverted: a DOM delta counts the content's travel, the input event the wheel's. */
 function scrollGuest(
   el: ScrollableGuest | null,
   x: number,
@@ -126,17 +114,14 @@ function scrollGuest(
     const id = el?.getWebContentsId?.()
     if (id !== undefined) host().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
   } catch {
-    // A guest that hasn't attached has nothing to scroll yet.
+    // a guest that has not attached has nothing to scroll yet
   }
 }
 
 export function GlancePane(): React.JSX.Element {
   const [shown, setShownState] = useState<GlanceRequest | null>(null)
-  // Supersession token for the cold-page fetch: only the newest request's resolve may open.
   const pendingFetch = useRef(0)
   const retargetRaf = useRef(0)
-  /** The pane goes away, and nothing queued may bring it back: a retarget beat still pending and a
-   *  cold fetch still in flight are both superseded. */
   const dismiss = useCallback(() => {
     if (retargetRaf.current) {
       cancelAnimationFrame(retargetRaf.current)
@@ -150,24 +135,19 @@ export function GlancePane(): React.JSX.Element {
   useEffect(() => seedGlanceSize(nexusId), [nexusId])
   const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
-  // State, not a ref: the pane's portal lands a beat after the open render (exit-presence mounts
-  // it), so the guest-lifecycle effect must re-run when the element actually exists.
+  // State, not a ref: the portal lands a beat after the open render, so the guest-lifecycle effect must re-run when the element actually exists.
   const [siteEl, setSiteEl] = useState<HTMLElement | null>(null)
   const attachSiteEl = useCallback((el: Element | null) => setSiteEl(el as HTMLElement | null), [])
-  // The website flavor loads in the open pane behind a quiet cover that lifts on load-complete —
-  // the tile's blank-face precedent. A guest mounted in a hidden pane never reliably attaches
-  // (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load instead.
+  // A guest mounted in a hidden pane never reliably attaches (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load behind a cover instead.
   const [siteReady, setSiteReady] = useState(false)
   const anchorRef = useRef<Element | null>(null)
   const shownRef = useRef(shown)
   anchorRef.current = shown?.el ?? null
   shownRef.current = shown
-  // The Bloom-out rides the last real target; the next open supersedes the hold.
   const heldRef = useRef(shown)
   if (shown) heldRef.current = shown
   const held = shown ?? heldRef.current
 
-  // The ceiling, live: viewport width, and the vertical band on the pane's side of the anchor.
   const maxSize = (): GlanceSize => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
     const link = shownRef.current?.el.isConnected
@@ -207,7 +187,6 @@ export function GlancePane(): React.JSX.Element {
 
   useEffect(() => {
     const show = (next: GlanceRequest): void => {
-      // A newer target always beats a queued retarget.
       if (retargetRaf.current) {
         cancelAnimationFrame(retargetRaf.current)
         retargetRaf.current = 0
@@ -230,8 +209,6 @@ export function GlancePane(): React.JSX.Element {
       setSize(glanceSize())
       setShownState(next)
     }
-    // The body is resolved BEFORE the pane opens: a cold page blooms only once its fetch lands,
-    // still under the pointer, and a failed open blooms nothing.
     setGlancePresenter((next) => {
       if (next === null) {
         dismiss()
@@ -254,14 +231,11 @@ export function GlancePane(): React.JSX.Element {
     }
   }, [])
 
-  // Any navigation closes the pane — a click that leaves the page must not strand it over the
-  // destination.
   const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
   const pageWindow = useSession((s) => s.pageWindow)
   useEffect(dismiss, [dismiss, selection, activeTabId, pageWindow])
 
-  // The guest's own lifecycle, for the pane's whole life — a crash after load closes too.
   useEffect(() => {
     if (shown?.target.kind !== 'site' || !siteEl) return
     const onLoad = (): void => setSiteReady(true)
@@ -279,26 +253,18 @@ export function GlancePane(): React.JSX.Element {
     }
   }, [shown, siteEl, dismiss])
 
-  // The resolve deadline, measured from the open — a site that hasn't painted by then closes.
   useEffect(() => {
     if (shown?.target.kind !== 'site' || siteReady) return
     const deadline = setTimeout(dismiss, LINK_RESOLVE_TIMEOUT_MS)
     return () => clearTimeout(deadline)
   }, [shown, siteReady, dismiss])
 
-  // The linger: None (absent) keeps the short pointer-travel grace; a set duration holds the
-  // pane open that long after the pointer leaves anchor and pane, re-entry cancelling the
-  // countdown — the same timer, only its length changes.
   const linger = useSession((s) => s.personalization.hoverPreviewLinger)
   const graceMs = linger !== undefined ? linger * 1000 : LEAVE_GRACE_MS
 
-  // Resolve-only: the body's links style correctly but arm nothing — no glance (the seam refuses
-  // the pane's own body regardless), no menu, no bypass, and `open` deliberately inert.
   const tree = useSession((s) => s.tree)
   const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
 
-  // Recorded on the press that takes focus, so the close can hand it back to whoever held it — an
-  // editor through its own view (which keeps the caret and scroll), anything else through the DOM.
   const focusBefore = useRef<Element | null>(null)
 
   useEffect(() => {
@@ -320,8 +286,7 @@ export function GlancePane(): React.JSX.Element {
       }
       dismiss()
     }
-    // Both boxes hold still between scrolls, keystrokes, window resizes, and pane resizes — so they
-    // are measured once and dropped on exactly those, rather than re-read on every pointer move.
+    // Both boxes hold still between scrolls, keystrokes and resizes, so they are measured on exactly those rather than re-read on every pointer move.
     let linkBox: DOMRect | null = null
     let cardBox: DOMRect | null = null
     const dropBoxes = (): void => {
@@ -329,10 +294,7 @@ export function GlancePane(): React.JSX.Element {
       cardBox = null
     }
     const onMove = (e: MouseEvent): void => {
-      // A live resize or selection drag suspends the leave lifecycle (either routinely exits the
-      // pane), clearing rather than skipping so a countdown that pre-dates the drag can't fire
-      // mid-gesture. The selection flag lives only while the button is down, so a swallowed release
-      // heals on the next move.
+      // A live resize or selection drag suspends the leave lifecycle, clearing rather than skipping so a countdown that pre-dates the drag can't fire mid-gesture.
       if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
       if (resizing || selectingRef.current) {
         clearGrace()
@@ -387,11 +349,8 @@ export function GlancePane(): React.JSX.Element {
           if (!cardRef.current?.contains(document.activeElement))
             focusBefore.current = document.activeElement
         }}
-        // The glance is not a drag source — a press on an existing highlight would otherwise
-        // start a native drag whose drop lands the text in the live host page.
+        // A press on an existing highlight would otherwise start a native drag whose drop lands the text in the live host page.
         onDragStartCapture={(e) => e.preventDefault()}
-        // A heading click IS the fold toggle — the chevron stays hidden here and the whole line
-        // becomes the affordance, through the same fold logic.
         onClick={(e) => {
           if (window.getSelection()?.isCollapsed === false) return
           const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
@@ -421,9 +380,7 @@ export function GlancePane(): React.JSX.Element {
               partition={WEB_PARTITION}
               className="glance-web"
             />
-            {/* The shield is the loading face and the pointer owner: opaque until the site paints,
-                always above the guest so the leave lifecycle keeps running over it, and passing
-                only the wheel down. */}
+            {/* The shield is the loading face and the pointer owner: always above the guest so the leave lifecycle keeps running over it, and passing only the wheel down. */}
             <div
               className={`glance-web-shield${siteReady ? ' is-lifted' : ''}`}
               onWheel={(e) => {

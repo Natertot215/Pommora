@@ -26,8 +26,7 @@ export type ViewWrite =
   | { kind: 'state'; state: ViewState }
   | { kind: 'refused' }
 
-/** A locked tile refuses a config write but still folds a state-only one, so a refused config
- *  override can't ride in on the state it's allowed. */
+/** A locked tile refuses a config write but still folds a state-only one, so a refused config override can't ride in on the state it's allowed. */
 export function resolveViewWrite(
   locked: boolean,
   view: SavedView,

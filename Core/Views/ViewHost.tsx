@@ -14,12 +14,10 @@ const identity = (v: SavedView): SavedView => v
 const NO_SCHEMA: PropertyDefinition[] = []
 
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
-  // Only the type and scale are needed to seat a renderer, and a minted default is a table
-  // whatever the schema — so the seat skips the schema walk the host itself performs.
+  // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.
   const view = useActiveView(source, NO_SCHEMA).view
   const isCards = view.type === 'cards'
-  // The view's own scale is a main-pane read: an embedded tile states its own size, so in a tile
-  // scope the factor stays 1 and never compounds with the embed zoom.
+  // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = useViewTileScope() ? 1 : coerceScale(view.view_scale, 1)
   const upward = useRef<ViewHostApi['seam']>({
     foldOverrides: { current: identity },
@@ -28,8 +26,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
     onCreated: { current: () => {} },
   }).current
   const host = useViewHost(source, isCards, upward)
-  // Cards' set cards render independently of the pipeline, so a cards view with Sets present
-  // always mounts — Set Cards on paints them, off stays a blank pane.
+  // Cards' set cards render independently of the pipeline, so a cards view with Sets present always mounts.
   const setChrome = isCards && (source.sets?.length ?? 0) > 0
   if (!host) return <div className="view-empty">Loading…</div>
   if (host.groups.length === 0 && !setChrome) return <div className="view-empty">No pages here</div>

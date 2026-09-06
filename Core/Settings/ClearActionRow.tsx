@@ -4,7 +4,6 @@ import { MenuRowView } from '@pommora/uix/Menus'
 
 const CLEARED_MS = 1500
 
-/** A destructive Clear that reads Cleared for a moment once `clear` reports it ran. */
 export function ClearActionRow({
   label,
   hint,

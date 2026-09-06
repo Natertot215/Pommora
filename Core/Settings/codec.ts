@@ -1,6 +1,3 @@
-// Every `settings.json` leaf, decoded in one place — the walk and the watcher's settings patch
-// read the same file through the same coercions, so they cannot disagree.
-
 import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colorSetting'
 import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colorSetting'
 import { isColorKey } from '@pommora/uix/Theme/theme'
@@ -38,8 +35,7 @@ function resolveAccent(raw: string | undefined): AccentSetting {
   return DEFAULT_ACCENT
 }
 
-// Per-field: absent/invalid → undefined = the built-in default. Accent is the exception — it
-// resolves to a concrete setting so the row that shows it can never disagree with what paints.
+// Per-field: absent/invalid → undefined = the built-in default. Accent is the exception — it resolves to a concrete setting so the row that shows it can never disagree with what paints.
 export function readPersonalization(raw: unknown): Personalization {
   const p =
     raw != null && typeof raw === 'object' && !Array.isArray(raw)
@@ -50,8 +46,6 @@ export function readPersonalization(raw: unknown): Personalization {
     v === 'top' || v === 'bottom' ? v : undefined
   const mode = (v: unknown): SidebarMode | undefined =>
     v === 'collections' || v === 'contexts' || v === 'agenda' ? v : undefined
-  /** A deferring color setting: its own sentinel, or a ramp cell. Anything else is an unwritten key
-   *  rather than a value — the settings surface would have nothing to show for it. */
   const colorSetting = <S extends string>(v: unknown, inherit: S): ColorSetting<S> | undefined => {
     const c = asString(v)
     return c === inherit || (c != null && isColorKey(c)) ? (c as ColorSetting<S>) : undefined
@@ -129,8 +123,7 @@ export function readPersonalization(raw: unknown): Personalization {
   }
 }
 
-// Overlay the on-disk `settings.commands` map onto DEFAULT_COMMANDS — string values only, so a
-// malformed entry falls back to the built-in binding instead of poisoning the map.
+// String values only, so a malformed entry falls back to the built-in binding instead of poisoning the map.
 export function readCommands(raw: unknown): Record<string, string> {
   const commands = { ...DEFAULT_COMMANDS }
   const c =
@@ -143,23 +136,18 @@ export function readCommands(raw: unknown): Record<string, string> {
   return commands
 }
 
-/** Every tree leaf `settings.json` feeds, decoded in one place — the walk and the watcher's
- *  settings patch read the same file through the same coercions, so they cannot disagree. */
+/** Decoded in one place — the walk and the watcher's settings patch read the same file through the same coercions, so they cannot disagree. */
 export interface SettingsLeaves {
   excluded: string[]
   assetDirectory: string
   accent: AccentSetting
   personalization: Personalization
   commands: Record<string, string>
-  /** A nexus-relative asset path the renderer serves via nexus-asset://. Profile image,
-   *  icon and subtitle live in settings, not nexus.json — preferences, not identity. */
   profileImage: string | null
   profileIcon: string | undefined
   profileSubtitle: string
 }
 
-/** Shared by the asset root and each exclusion entry, so a value one reader would coerce and
- *  another would store is the disagreement this rule prevents. */
 export function nexusFolderRefusal(raw: string): string | null {
   const segs = rootSegs(raw)
   if (
@@ -173,13 +161,9 @@ export function nexusFolderRefusal(raw: string): string | null {
   return null
 }
 
-/** The asset root's refusal. A refused value takes the default rather than narrowing the walk or
- *  widening the protocol handler's containment check — e.g. `.nexus/contexts` would drop every
- *  Space from the walk, and a root-wide value would classify the whole nexus as asset. */
+/** A refused value takes the default rather than narrowing the walk or widening the protocol handler's containment check — `.nexus/contexts` would drop every Space from the walk. */
 export const assetDirRefusal = nexusFolderRefusal
 
-/** An exclusion entry's refusal. A hand-edited entry that fails it is dropped from the list
- *  rather than taking the whole list down with it. */
 export const excludedFolderRefusal = nexusFolderRefusal
 
 function readAssetDirectoryLeaf(v: unknown): string {
@@ -187,8 +171,6 @@ function readAssetDirectoryLeaf(v: unknown): string {
   return assetDirRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
 }
 
-/** Each exclusion entry read on its own: a non-string or refused element is dropped rather than
- *  discarding the whole list, and a kept one is normalized to the spelling the matcher compares. */
 function readExcludedLeaf(v: unknown): string[] {
   if (!Array.isArray(v)) return []
   const seen = new Set<string>()
@@ -226,8 +208,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   }
 }
 
-/** The two leaves the walk and the watcher arm with, as the unit they are threaded as — read
- *  from whatever already holds them, the freshly-decoded leaves or a live tree. */
 export function scopeOf(leaves: Pick<SettingsLeaves, 'excluded' | 'assetDirectory'>): WatchScope {
   return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
 }

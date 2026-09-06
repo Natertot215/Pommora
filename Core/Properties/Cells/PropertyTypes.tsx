@@ -41,8 +41,6 @@ const CURRENCY_GLYPH: Record<string, string> = {
   JPY: '¥',
 }
 
-/** The literal format sign a number field carries — `%`, the currency's symbol, or a plain `#` —
- *  rendered as typography, not a Symbol. */
 export const numberFormatGlyph = (def: PropertyDefinition): string =>
   def.number_family === 'percent'
     ? '%'
@@ -54,8 +52,7 @@ export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).f
   (t) => PROPERTY_TYPES[t].creatable,
 )
 
-// Title isn't a user PropertyType (it's the reserved heading column), but it needs the same glyph
-// vocabulary — its icon lives here so every surface renders it from one source.
+// Title isn't a user PropertyType, but it needs the same glyph vocabulary — its icon lives here so every surface renders it from one source.
 const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify' }
 
 export function PropertyTypeIcon({

@@ -58,8 +58,7 @@ async function reviseTile(
   if (written.ok && wasFileBacked) await trashTileFile(root, dir, tileId)
 }
 
-/** Trash a markdown tile's backing file on ITS lock — ordered against a still-pending
- *  editor flush, so a late body write can never land after the trash and resurrect it. */
+/** Ordered against a still-pending editor flush, so a late body write can never land after the trash and resurrect it. */
 async function trashTileFile(root: string, dir: string, tileId: string): Promise<void> {
   const file = tileFilePath(dir, tileId)
   await machine().lock(file, async () => {
@@ -80,8 +79,7 @@ export async function convertTileToPage(
   await reviseTile(root, dir, tileId, { type: 'page', page_id: pageId })
 }
 
-/** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload —
- *  preserving one would silently re-couple a copied snapshot to its source. */
+/** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source. */
 function remintConfigIds(views: unknown[]): unknown[] {
   return views.map((v) => {
     if (typeof v !== 'object' || v === null) return v
@@ -121,8 +119,7 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
   return id
 }
 
-/** Absent and unreadable stay apart: a body the read merely failed on must never render as an
- *  empty tile the next keystroke overwrites. */
+/** Absent and unreadable stay apart: a body the read merely failed on must never render as an empty tile the next keystroke overwrites. */
 export async function readMarkdownTile(dir: string, tileId: string): Promise<Result<string>> {
   try {
     const body = await machine().readText(tileFilePath(dir, tileId))

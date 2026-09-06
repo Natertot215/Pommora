@@ -36,8 +36,7 @@ export function resolveEdge(layout: TileLayout, tileId: string, edge: Edge): Edg
       return { kind: 'divider', ref: { band: at.band, path: parentPath, index: childIndex - 1 } }
   }
 
-  // A full-width tile's north edge crosses the band seam: negotiate with the
-  // band above when both roots are plain tiles (each has one height to give).
+  // A full-width tile's north edge crosses the band seam: negotiate with the band above when both roots are plain tiles (each has one height to give).
   if (edge === 'n' && at.path.length === 0 && at.band > 0) {
     const above = layout.bands[at.band - 1]?.node
     if (above?.kind === 'tile') return { kind: 'bandpair', above: at.band - 1 }

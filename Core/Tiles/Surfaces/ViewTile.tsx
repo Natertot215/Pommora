@@ -291,8 +291,7 @@ export function ViewTile({
   const persistConfig = (i: number, config: SavedView): void => {
     if (resolveViewWrite(locked, config).kind === 'config') writeConfig(i, config)
   }
-  // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold
-  // gestures the lock already refused, and folding those in would smuggle them past it.
+  // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold gestures the lock already refused.
   const persistState = (i: number, state: ViewState): void => {
     const stored = views[i]
     if (stored) writeConfig(i, { ...stored, ...state })

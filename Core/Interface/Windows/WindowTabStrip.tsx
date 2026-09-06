@@ -22,9 +22,7 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-// The morph owner between the centered breadcrumb title and the left-aligned strip on the shared
-// tab-open motion. Ghost-closing keeps the strip mounted so the last collapse plays before the
-// title returns.
+// Ghost-closing keeps the strip mounted so the last collapse plays before the title returns.
 export function WindowTabStrip({
   index,
   title,
@@ -55,8 +53,7 @@ export function WindowTabStrip({
 
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0
   const titlePresence = useExitPresence(!showStrip)
-  // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the
-  // live node would swap text mid-collapse without this hold.
+  // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
   const heldTitle = useHeld(title, !showStrip)
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -83,7 +80,6 @@ export function WindowTabStrip({
       <div className="window-tabwrap tabs-compact">
         {showStrip && (
           <div className="tab-scroll over-scroll-x" ref={scrollRef}>
-            {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}
             <SortableZone
               items={renderEntries
                 .filter((e) => !e.ghost && e.entry.tab.target.kind === 'page')
@@ -137,13 +133,11 @@ function WindowTabItem({
 }): React.JSX.Element {
   const isMap = entry.tab.target.kind === 'navwindow'
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
-  // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing
-  // masquerades as the perma-pinned NavWindow tab.
+  // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
   const res =
     navFlavor && entry.res?.icon === 'map'
       ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS.page }
       : entry.res
-  // Inert unless this id is in the zone's item set (map + ghosts never are).
   const drag = useDragItem(entry.tab.id)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
@@ -175,9 +169,7 @@ function WindowTabItem({
       ) : (
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
-      {/* The map tab is icon-only — the label is its tooltip. */}
       {!isMap && <span className={cx(overScrollEllipsis, 'tab-label')}>{label}</span>}
-      {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
         <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
       )}

@@ -22,8 +22,7 @@ import {
 } from './settings'
 
 export const settingsHandlers = {
-  // Duplicates collapse on the case-folded path the matcher compares, so `archive` and `Archive`
-  // are one folder while the spelling the user typed is what's stored.
+  // Duplicates collapse on the case-folded path the matcher compares, so `archive` and `Archive` are one folder while the spelling the user typed is what's stored.
   'exclusions:set': async (ctx, folders: unknown) => {
     const root = sessionRoot()
     if (root === null) return NO_NEXUS
@@ -76,8 +75,7 @@ export const settingsHandlers = {
     if (typeof key !== 'string' || !key)
       return fail('operation-failed', 'Invalid personalization key.')
     await writePersonalization(root, key, value)
-    // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes
-    // a field the walk reads — the push set's membership predicate.
+    // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
     await confirmSettingsWrite(ctx)
     if (key === 'webZoomFactor' || key === 'interfaceScale') await ctx.applyZoom()
     if (key === 'historyDays') void sweepFileHistory(root)

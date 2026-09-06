@@ -9,9 +9,7 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { declaredType } from '../Properties/value'
 import { useSession } from '../Session/store'
 
-/** The resolved style for a column: the saved entry's defined keys win over the type defaults
- *  (a caught-invalid saved value parses to `undefined` and must not erase a default). The nexus's
- *  own date form rides in as a default, so a column that never set one follows the nexus. */
+/** The saved entry's defined keys win over the type defaults — a caught-invalid saved value parses to `undefined` and must not erase a default. */
 export function styleFor(
   columnId: string,
   schema: PropertyDefinition[],
@@ -28,8 +26,6 @@ export function styleFor(
   }
 }
 
-/** `styleFor` bound to the nexus's own date form. Every surface that resolves a column style reads
- *  it through this, so a column that never set a date form follows the nexus the moment it changes. */
 export function useStyleFor(): (
   columnId: string,
   schema: PropertyDefinition[],

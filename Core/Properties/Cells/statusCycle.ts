@@ -7,8 +7,6 @@ const STATUS_GROUP_GLYPH: Record<string, IconName> = {
   done: 'check',
 }
 
-/** A group's glyph for the Compact status chip. An unknown or absent group (reachable only via
- *  malformed data today) falls back to the neutral dashed circle. */
 export function statusGroupGlyph(group: string | undefined): IconName {
   return (group ? STATUS_GROUP_GLYPH[group] : undefined) ?? 'circle-dashed'
 }

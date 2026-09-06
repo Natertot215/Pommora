@@ -7,11 +7,9 @@ import { tintAt } from '@pommora/uix/Theme/tint'
 
 const c = colorVars.color
 const fieldFocus = focusRing()
-/** Both seats rest on the same hairline, so the icon square and the title read as one run. */
 const restingRing = { '--field-ring': c.border.base }
 
-/** The grid is the pane's widest fixed row, so min-content pins the popup to ITS width and the
- *  title field yields instead of stretching the pane. */
+/** The grid is the pane's widest fixed row, so min-content pins the popup to ITS width and the title field yields instead of stretching the pane. */
 export const root = style({
   display: 'flex',
   flexDirection: 'column',
@@ -27,8 +25,6 @@ export const fieldRow = style({
   minWidth: 0,
 })
 
-/** The icon seat is a square of the SAME field chrome the title wears, so the pair reads as one
- *  input run. */
 export const iconSeat = style([
   field,
   {
@@ -46,7 +42,6 @@ export const iconSeat = style([
   },
 ])
 
-/** Held while its picker is up — the seat stays ringed as the field being edited. */
 export const iconSeatActive = style({
   vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
 })
@@ -63,7 +58,6 @@ export const titleField = style([
 
 export const gridFlush = style({ padding: 0 })
 
-/** Composes footingBar so the PickerControl inside takes the footing's footnote sizing. */
 export const footRow = style([
   footingBar,
   {

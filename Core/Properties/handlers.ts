@@ -48,8 +48,7 @@ const NEEDS_RENAME_ARGS = fail(
 const NEEDS_OPTION_ARRAY = fail('operation-failed', 'Options must be an array of { value, label }.')
 const NEEDS_STATUS_GROUPS = fail('operation-failed', 'Status groups must be an array.')
 
-// containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the
-// renderer passes the ancestor's path.
+// containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   containerPath: unknown,
 ): Promise<Result<{ root: string; folder: string; rel: string }>> {
@@ -61,8 +60,6 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ root, folder: resolved.value, rel: containerPath }) : resolved
 }
 
-/** Every registry write is the same shape: the session root, narrowed arguments, the write, and
- *  a confirmation push when it lands. A narrower returns the argument tuple or its own refusal. */
 const registryOp =
   <A extends unknown[]>(
     narrow: (args: unknown[]) => A | Result<never>,
@@ -108,8 +105,7 @@ const idOldNew = ([id, oldValue, newTitle]: unknown[]): [string, string, string]
 
 type DefChanges = Parameters<typeof editProperty>[2]
 
-/** The narrower keeps a display-config write from patching arbitrary def fields (type, options,
- *  id) through this door; `null` from it refuses the payload. */
+/** The narrower keeps a display-config write from patching arbitrary def fields (type, options, id) through this door. */
 const defEditOp =
   (
     narrow: (payload: unknown) => DefChanges | null,

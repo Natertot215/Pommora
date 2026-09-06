@@ -17,11 +17,9 @@ export function InterfaceScaffold({
   const ref = useRef<HTMLDivElement>(null)
   const activeTabId = useSession((s) => s.activeTabId)
   const selection = useSession((s) => s.selection)
-  // A container's warmth is its scroll position only — undo/folds are page-editor concerns.
   const warmKey = selection.kind !== 'none' && selection.kind !== 'page' ? navKey(selection) : null
 
-  // The scaffold's div is reused across containers (no key): scroll tracks continuously into
-  // `last` since by cleanup the div may already hold the next container's content.
+  // The scaffold's div is reused across containers (no key), so scroll tracks into `last` — by cleanup the div may already hold the next container's content.
   useEffect(() => {
     const el = ref.current
     if (!el || !warmKey) return
@@ -53,7 +51,6 @@ export function InterfaceScaffold({
   )
 }
 
-/** The app's root glass — the one surface everything else floats over. */
 export function Surface({
   children,
   className,

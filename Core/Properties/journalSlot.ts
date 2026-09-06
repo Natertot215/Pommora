@@ -1,6 +1,4 @@
-// One pending-op slot on disk, replayed on the next open. A write never displaces a different
-// stranded record — its owed heal outranks the op now starting, which runs unjournaled — and a
-// clear lands only for the caller's own record.
+// A write never displaces a different stranded record — its owed heal outranks the op now starting, which runs unjournaled — and a clear lands only for the caller's own record.
 import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { recordWrite } from '../IO/writeEcho'
 import { machine } from '../Platform/machine'
@@ -16,8 +14,7 @@ export function journalSlot<J>(
   file: string,
   decode: (raw: Record<string, unknown>) => J | null,
   same: (a: J, b: J) => boolean,
-  // Lets a newer intent for the SAME entity displace the held record — required by a replay
-  // that trusts the record's before-state (context); omitted by one that verifies current state.
+  // Lets a newer intent for the SAME entity displace the held record — required by a replay that trusts the record's before-state, omitted by one that verifies current state.
   supersedes?: (held: J, incoming: J) => boolean,
 ): JournalSlot<J> {
   const path = (root: string): string => nexusConfig(root, file)

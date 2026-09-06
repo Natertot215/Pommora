@@ -1,5 +1,3 @@
-// Pure model behind the visibility list — no React, no DOM.
-
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import {
   isReservedPropertyId,
@@ -19,10 +17,7 @@ import {
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
-/** The hidden group's display order: non-shown contexts (registry order), then every non-shown
- *  schema prop in collection order (never the view's) — explicitly hidden OR unaccounted for in
- *  property_order, which is what makes a prop or Context created after the view revealable rather
- *  than invisible — then the stamps under the same rule. */
+/** Explicitly hidden OR unaccounted for in property_order — which is what makes a prop or Context created after the view revealable rather than invisible. */
 export function hiddenListIds(
   view: SavedView,
   schema: PropertyDefinition[],
@@ -38,9 +33,6 @@ export function hiddenListIds(
   ]
 }
 
-/** Place `id` at the properties section's without-dragged slot `toIndex` — the one write a shown
- *  row's reorder and a hidden row's drag-in unhide share (the hidden filter no-ops on an
- *  already-shown id). */
 export function placeInShown(
   view: SavedView,
   fullVisibleIds: string[],
@@ -56,8 +48,7 @@ export function placeInShown(
   }
 }
 
-/** Hide a shown property — flag it, never move it: its property_order slot is its remembered
- *  spot, so a later unhide restores the property where it was instead of dumping it at the end. */
+/** Hide a shown property — flag it, never move it: its property_order slot is its remembered spot, so a later unhide restores it where it was. */
 export function hideShown(view: SavedView, id: string): Pick<SavedView, 'hidden_properties'> {
   return {
     hidden_properties: view.hidden_properties.includes(id)
@@ -66,7 +57,6 @@ export function hideShown(view: SavedView, id: string): Pick<SavedView, 'hidden_
   }
 }
 
-/** Unhide via the eye — lifts the hidden flag AND places the id in the visible order.*/
 export function unhide(view: SavedView, id: string): VisibilityPatch {
   return {
     property_order: view.property_order.includes(id)
@@ -76,10 +66,7 @@ export function unhide(view: SavedView, id: string): VisibilityPatch {
   }
 }
 
-/** The pane's slot rule (injected into FrameDnd in place of the Properties frameSlot). The shown
- *  zone ('assigned') takes positional drops — reorder or unhide-at-slot, both with a drop line.
- *  The hidden zone ('all') takes a membership drop from a shown row (hide, area-highlighted); a
- *  hidden row over its own zone stays inert. Title can reorder shown but never hides. */
+/** The shown zone takes positional drops (reorder or unhide-at-slot); the hidden zone takes a membership drop from a shown row. Title can reorder shown but never hides. */
 export function hiddenPaneSlot(
   rows: MeasuredRow[],
   byId: Map<string, FrameRow>,

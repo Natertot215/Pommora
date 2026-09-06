@@ -1,6 +1,4 @@
-// The per-view manual order cache, one home for both renderers. `viewOrders` is the per-machine
-// tiebreaker the pipeline's sorter reads when a view is sorted or grouped; the canonical
-// `page_order` answers the unsorted structural case and never comes through here.
+// `viewOrders` is the per-machine tiebreaker the pipeline's sorter reads when a view is sorted or grouped; the canonical `page_order` answers the unsorted structural case and never comes through here.
 
 import { useEffect, useState } from 'react'
 import { host } from '../Platform/dialer'

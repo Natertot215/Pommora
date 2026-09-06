@@ -76,8 +76,7 @@ export async function writeNavigationState(
   if (!touchesFile) return
   const path = navigationPath(root)
   const write = machine().lock(path, async () => {
-    // The write's read-half is STRICT — absent is a fact (start empty), unreadable is ignorance,
-    // and a write may act on a fact, never on ignorance. The lenient reader serves reads only.
+    // The write's read-half is STRICT — absent is a fact (start empty), unreadable is ignorance, and a write may act on a fact, never on ignorance.
     const read = await readJsonStrict(path)
     if (!read.ok && read.error.code !== 'not-found')
       throw new Error(`navigation.json is unreadable: ${read.error.message}`)

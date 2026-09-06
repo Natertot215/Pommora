@@ -49,9 +49,6 @@ export function ImagePicker({
   boxAspect: number
   onCancel: () => void
   onSave: (crop: Crop) => void | Promise<void>
-  /** Re-pick or paste a new image from inside the editor — the seat adopts the source and answers
-   *  the value it landed on, so Save is held until the seat's `value` reaches it (a dedup, where the
-   *  adopted value is the one already shown, releases at once). */
   onRepick?: (source: string) => Promise<string | undefined>
 }): React.JSX.Element | null {
   const map = useSession((st) => st.assetMap)
@@ -71,9 +68,7 @@ export function ImagePicker({
   const frameRef = useRef<HTMLDivElement>(null)
   const gesture = usePointerGesture()
 
-  // Reset the draft from the stored crop when the editor opens or its image changes (a re-pick
-  // swaps `value` while open, before main's confirming push lands the new reference). Deliberately
-  // keyed on open/value only, not on every map/crops push.
+  // Keyed on open/value only — a re-pick swaps `value` while open, and re-seeding on every map/crops push would stomp the draft.
   useEffect(() => {
     if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
@@ -93,7 +88,6 @@ export function ImagePicker({
     [onRepick, value],
   )
 
-  // The re-picked value has landed on the seat (the draft re-seeds on it) — Save is safe again.
   useEffect(() => {
     if (pendingValue !== null && value === pendingValue) {
       setRepicking(false)

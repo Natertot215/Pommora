@@ -24,8 +24,7 @@ export const host = style({
   borderWidth: SIZE.border,
   borderColor: c.fill.primary,
   background: c.fill.tertiary,
-  // The app-level `--io` inherits, so the driver is declared here — the inspector's must never
-  // reach this label.
+  // The app-level `--io` inherits, so the driver is declared here — the inspector's must never reach this label.
   vars: { '--pane-inset': 'var(--surface-inset)', '--io': '0' },
   transition: '--io var(--duration-base) var(--ease-base)',
 })

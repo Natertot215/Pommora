@@ -1,9 +1,4 @@
-// SavedView — the portable, on-disk view config stored in a Collection/Set sidecar's `views[]`
-// (snake_case keys on disk). `savedView` (zod) is the codec; the exported interfaces are the
-// canonical types consumers use.
-//
-// Each enum has ONE source: an `as const` array drives both the TS type and the zod codec /
-// runtime membership Set — never re-listed.
+// Each enum has ONE source: an `as const` array drives both the TS type and the zod codec / runtime membership Set — never re-listed.
 
 import { z } from 'zod'
 import { columnStyle, type ColumnStyle } from '../Properties/columnStyles'
@@ -43,9 +38,7 @@ export type StructuralOrderMode = (typeof STRUCTURAL_ORDER_MODES)[number]
 const DATE_SEPARATORS = ['dash', 'slash'] as const
 export type DateSeparator = (typeof DATE_SEPARATORS)[number]
 
-/** A property bucketing INSIDE each top-level set band. View-level (like group_order): the one
- *  `group` slot is replaced on a Group By switch, so anything surviving the round trip can't
- *  live on the config object. */
+/** View-level (like group_order): the one `group` slot is replaced on a Group By switch, so anything surviving the round trip can't live on the config object. */
 export interface SubGroupConfig {
   property_id: string
   order_mode: GroupOrderMode
@@ -53,16 +46,12 @@ export interface SubGroupConfig {
   date_granularity?: DateGranularity
 }
 
-/** `order` is the Custom option ranking for select/status — present means rank by this sequence
- *  (unknowns last), direction moot. */
 export interface SortCriterion {
   property_id: string
   direction: (typeof SORT_DIRECTIONS)[number]
   order?: string[]
 }
 
-/** `op` is a snake_case raw string (see FILTER_OPS). Both `value`/`values` absent for presence
- *  ops. */
 export interface FilterRule {
   property_id: string
   op: string
@@ -70,10 +59,7 @@ export interface FilterRule {
   values?: string[]
 }
 
-/** Rules combined by `match`: all = AND, any = OR — negation lives on the per-rule operators.
- *  RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`.
- *  Whether the filter APPLIES is a separate axis — `filter_enabled` — so turning it off never
- *  costs it its authored mode. */
+/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
 export interface FilterGroup {
   match: MatchMode
   rules: Array<FilterRule | FilterGroup>
@@ -95,7 +81,6 @@ export interface SavedView {
   id: string
   name: string
   icon?: string
-  /** Segment-stroke chip key, validated through the chip map at render; absent = neutral hairline. */
   color?: string
   type: ViewType
   property_order: string[]
@@ -104,53 +89,29 @@ export interface SavedView {
   column_alignments?: Record<string, ColumnAlign>
   column_styles?: Record<string, ColumnStyle>
   collapsed_groups?: string[]
-  /** Option values, set ids, date bucket keys, `sub/<value>` for sub-group buckets. Same key
-   *  vocabulary as collapsed_groups. */
   hidden_groups?: string[]
-  /** View-level (the ungrouped_placement hoist). The property config's own copy survives only
-   *  for decode parity. Absent = off. */
   hide_empty_groups?: boolean
-  /** Cards-view card size — the Size step's factor (0.5–1.5). Absent = 1. */
   card_size?: number
-  /** The whole view's own scale (0.5–1.5) — content and group bands, never the heading, and
-   *  never an embedded tile (a tile states its own size). Absent = 1. */
   view_scale?: number
-  /** Cards-view card image source: the page banner (`image`), the captured thumbnail
-   *  (`preview`), or imageless compact cards (`none`). Absent = image. */
   card_banner?: CardBanner
   hide_location?: boolean
-  /** Cards view: off = single-line overflow-scroll. */
   wrap_titles?: boolean
-  /** Cards view: the leading Set Cards row. Absent = shown. */
   set_cards?: boolean
   hide_page_icons?: boolean
-  /** Hides the type-icon in each column header (the title column never carries one). Other
-   *  view types surface this same flag under a different label. */
   hide_column_icons?: boolean
   hide_borders?: boolean
   sort?: SortCriterion[]
   filter?: FilterGroup
-  /** Absent = on. Parking a filter keeps its rules and match mode; only application stops. */
   filter_enabled?: boolean
   group?: GroupConfig
-  /** Persisted per-view; Cards reads it via `isCompact` to switch layout. */
   format?: ViewFormat
-  /** Manual structural band order — ONE flat set-id array covering every nesting level. View-level,
-   *  not on `group`: the structural GroupConfig decoder drops extra fields. Unlisted sets trail
-   *  in fs order; absent = derive from fs `set_order`. */
+  /** ONE flat set-id array covering every nesting level, view-level rather than on `group`: the structural GroupConfig decoder drops extra fields. */
   group_order?: string[]
-  /** 'location' mirrors the filesystem (drags write fs; group_order is preserved-but-ignored);
-   *  absent/'custom' = the view-owned group_order. */
   structural_order_mode?: StructuralOrderMode
-  /** The cards Location SORT's own order source — separate from the grouping one, since a cards
-   *  view can group structurally AND sort by Location and the two would otherwise shadow each
-   *  other. Absent = 'location'. */
+  /** Separate from the grouping order source, since a cards view can group structurally AND sort by Location and the two would otherwise shadow each other. */
   location_order_mode?: StructuralOrderMode
-  /** Survives Group By switches by living view-level. */
   sub_group?: SubGroupConfig
-  /** One view-level knob for every ungrouped tail. Absent = bottom. */
   ungrouped_placement?: EmptyPlacement
-  /** Absent = dash. */
   date_separator?: DateSeparator
 }
 
@@ -177,22 +138,17 @@ const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
-/** How you are LOOKING at a view, as opposed to how it's configured — a config lock never
- *  freezes it: collapsing a band is a way of reading the view, not an edit to it. */
 export const VIEW_STATE_KEYS = ['collapsed_groups'] as const
 export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
 
-/** Lets a state write land on a frozen view without carrying the config alongside it. */
 export function pickViewState(view: SavedView): ViewState {
   return { collapsed_groups: view.collapsed_groups }
 }
 
-/** The single guard the lenient group decode reuses for every enum field. */
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
   return typeof value === 'string' && allowed.has(value) ? (value as T) : undefined
 }
 
-/** Malformed → undefined, never throws (the decodeGroupConfig discipline). */
 export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return undefined
   const s = raw as Record<string, unknown>
@@ -209,8 +165,7 @@ export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
   }
 }
 
-/** Never throws; an unknown or malformed shape degrades to `structural` (a throw would poison
- *  the whole sidecar decode). */
+/** Never throws; an unknown or malformed shape degrades to `structural` — a throw would poison the whole sidecar decode. */
 export function decodeGroupConfig(raw: unknown): GroupConfig {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return { kind: 'structural' }
   const obj = raw as Record<string, unknown>
@@ -243,8 +198,7 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
   }
 }
 
-/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode
- *  defensively (`catch` → default). */
+/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
 export const savedView = z.looseObject({
   id: z.string().catch(''),
   name: z.string().catch('Table'),
@@ -269,8 +223,7 @@ export const savedView = z.looseObject({
   hide_column_icons: z.boolean().optional(),
   hide_borders: z.boolean().optional(),
   sort: z.array(sortCriterion).optional(),
-  // Catch, not fail: a filter the schema no longer admits drops alone and the view survives
-  // unfiltered; the next save writes clean.
+  // Catch, not fail: a filter the schema no longer admits drops alone and the view survives unfiltered.
   filter: filterGroup.optional().catch(undefined),
   filter_enabled: z.boolean().optional(),
   group: z.unknown().transform(decodeGroupConfig).optional(),
@@ -288,14 +241,9 @@ export const savedView = z.looseObject({
   date_separator: z.enum(DATE_SEPARATORS).optional().catch(undefined),
 })
 
-/** Not a real property — the sorter can't rank location; resolveView orders by structural
- *  position. Its order source is `location_order_mode` (Location = filesystem, Custom = the
- *  view's manual order). */
 export const LOCATION_SORT = '__location__'
 
-/** True when a view sorts by Location AND takes the filesystem order — the pipeline flattens the
- *  structural walk, and the card drag's within-band reorder goes inert. Both must read the same
- *  predicate: when they disagree, one honors a key the other doesn't. */
+/** Both the pipeline and the card drag must read the same predicate: when they disagree, one honors a key the other doesn't. */
 export function isLocationFsOrder(view: SavedView): boolean {
   return (
     view.sort?.[0]?.property_id === LOCATION_SORT &&
@@ -303,16 +251,11 @@ export function isLocationFsOrder(view: SavedView): boolean {
   )
 }
 
-/** Single-sourced so the sentinel and the minted id can't drift. */
 export const VIEW_ID_PREFIX = 'view_'
 
-/** Sentinel id for a freshly-minted default view. `shared/` can't import `main/ids`, so main
- *  swaps this for a real `view_<ulid>` on first save (see crud/views). */
+/** `shared/` can't import `main/ids`, so main swaps this for a real `view_<ulid>` on first save. */
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
-/** Every schema id is hidden and Context columns need no entry — absence from property_order IS
- *  hidden for them — so the guaranteed Title is the sole column (verified through
- *  resolveColumns), and the user reveals what they want. */
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return {
     id: DEFAULT_VIEW_ID,

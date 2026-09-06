@@ -22,8 +22,7 @@ export function MarkdownTile({
   editing: boolean
   onBeginEdit: (tileId: string) => void
   connections?: ConnectionsApi
-  /** True while this tile is being removed — a flush then would land AFTER the
-   *  trash and resurrect the file as an entry-less orphan. */
+  /** A flush while a tile is being removed would land AFTER the trash and resurrect the file as an entry-less orphan. */
   suppressFlush?: (tileId: string) => boolean
   locked?: boolean
 }): React.JSX.Element {
@@ -43,7 +42,6 @@ export function MarkdownTile({
 
   const suppressRef = useRef(suppressFlush)
   suppressRef.current = suppressFlush
-  // Leaving edit mode and unmounting both settle the pending write, unless the tile is being removed.
   useEffect(
     () => () => {
       if (suppressRef.current?.(tileId)) saves.cancel(tileId)
@@ -65,7 +63,7 @@ export function MarkdownTile({
     <div
       className={`markdown-tile${editing ? ' is-editing' : ''}`}
       onClick={() => {
-        if (editing || locked) return // locked: no edit entry; selection (portal is read-only) still works
+        if (editing || locked) return
         // Selecting rendered text to copy ends in a click — that's a copy, not an edit.
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) return

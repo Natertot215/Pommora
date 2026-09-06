@@ -1,5 +1,4 @@
-// The send block, renderer-side: what a surface hands over to offer it, and the actions every
-// surface answers identically. Sidebar rows are the exception — their menu runs main-side.
+// Sidebar rows are the exception — their menu runs main-side.
 
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import { pageLinkText, pagePathText, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
@@ -9,8 +8,6 @@ import { containerTargets } from '../../Session/destinationTree'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 
-/** Where this page may be sent: every container in the nexus, with the one it already sits in
- *  named so the menu can show that destination disabled. */
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
   return {
     moveTargets: tree ? containerTargets(tree.collections) : [],
@@ -18,9 +15,6 @@ export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveC
   }
 }
 
-/** Runs the send-block actions and reports whether it took one, so a surface's own routing picks
- *  up where this leaves off. A page is named by its file, which is what a connection resolves,
- *  and its history by its id. */
 export function runPageSendAction(
   action: string,
   { id, path }: { id: string; path: string },

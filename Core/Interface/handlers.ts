@@ -20,7 +20,6 @@ const isEmptyValue = (v: unknown): boolean =>
   (Array.isArray(v) && v.length === 0) ||
   (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0)
 
-/** A scope that can't be read degrades to its empty default, never a failure. */
 export function scopeGet<T>(scope: Scope): () => Record<string, T> {
   return () => {
     try {
@@ -105,14 +104,12 @@ export const interfaceHandlers = {
   // Only whether the header draws the icon is chrome; the icon itself stays in frontmatter.
   'headingIcon:get': scopeGet<boolean>('headingIcon'),
   'headingIcon:set': scopeSet('headingIcon', isBoolean, 'Hidden must be a boolean.'),
-  // A row exists only where someone overrode the nexus-wide default; null clears it.
   'citations:get': scopeGet<boolean>('citations'),
   'citations:set': scopeSet(
     'citations',
     (v: unknown): v is boolean | null => isBoolean(v) || v === null,
     'Shown must be a boolean.',
   ),
-  // An accelerator for offering an alias back; losing it costs a suggestion, never a link.
   'aliases:get': scopeGet<string[]>('aliases'),
   'aliases:set': scopeSet('aliases', isStringArray, 'Aliases must be a string array.'),
 

@@ -24,20 +24,16 @@ export function PageView({
   pageId,
   parked = false,
 }: {
-  /** The tab this surface belongs to, so it warms and captures under the tab that owns it. */
   tabId: string
   pageId: string
-  /** Held open behind the active surface, off screen. Its editor stays out of the page-editor
-   *  registry, which answers for the surface the user is actually looking at. */
+  /** Its editor stays out of the page-editor registry, which answers for the surface the user is actually looking at. */
   parked?: boolean
 }): React.JSX.Element {
   const slot = useSession((s) => s.pages[pageId])
-  // The capture at teardown reads the slot/tab id of that moment through here, and stays silent
-  // after a clear — the very thing that unmounts a surface after a rename's cascade.
+  // The capture at teardown reads the slot/tab id of that moment through here, and stays silent after a clear.
   const live = useRef({ slot, tabId })
   live.current = { slot, tabId }
-  // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors'
-  // effects, so the stale generation is seen exactly by the captures a clear caused.
+  // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
   const mountedGen = useRef(cacheGeneration())
   useEffect(() => {
     mountedGen.current = cacheGeneration()
@@ -53,8 +49,7 @@ export function PageView({
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingLive = useRef<[string, string] | null>(null)
   const bodyEpoch = useBodyEpoch(slot?.status === 'ready' ? slot.detail.path : '')
-  // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke
-  // must not write over it, and PageView's own unmount lands whatever is still pending.
+  // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke must not write over it.
   useEffect(() => {
     clearTimeout(liveTimer.current)
     pendingLive.current = null
@@ -69,13 +64,10 @@ export function PageView({
   )
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  // Whether the header draws its glyph is chrome, not frontmatter, so it rides the keyed local
-  // store beside folds and heading columns.
   const [iconHidden, setIconHidden] = useState(true)
   useEffect(() => {
     let alive = true
-    // Hidden unless this page says otherwise — a page opts into showing its glyph, unlike a
-    // Collection or Space, which shows one by default.
+    // Hidden unless this page says otherwise — a page opts into showing its glyph, unlike a Collection or Space.
     void host()
       .ask('headingIcon:get')
       .then((all) => {
@@ -85,8 +77,6 @@ export function PageView({
       alive = false
     }
   }, [pageId])
-  // The registry holds one editor — the one the outline, its rename, and its section mover act on.
-  // A surface publishes its own only while it's the shown one.
   const editorRef = useRef<EditorView | null>(null)
   useEffect(() => {
     if (parked) return
@@ -116,8 +106,7 @@ export function PageView({
     }
   }, [tree, select, openWindow, openInWindow])
 
-  // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown
-  // path flushes there, so a pending write survives without per-host flush machinery.
+  // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
     clearTimeout(liveTimer.current)
     pendingLive.current = [path, body]
@@ -186,8 +175,7 @@ export function PageView({
           editorRef.current = view
           if (!parked) registerPageEditor(view)
         }}
-        // restore carries the rename fence: a warm entry whose captured path diverges from the
-        // mounting page's mounts cold (id-keyed warmth must never revive a stale-path doc).
+        // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
         warm={{
           restore: () => {
             const entry = readCache(tabId, warmKey)

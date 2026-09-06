@@ -2,10 +2,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import type { ColumnAlign } from '@pommora/core/Views/views'
 
-/** One column header: the whole cell is the grab surface for the smooth-shift reorder (`dragging`
- *  applies the ghost veil + solid band, `transform` slides it with the cursor) plus a right-edge resize
- *  strip. The strip stops propagation so a resize never starts a reorder; the resize pointer delta
- *  is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
+/** The resize strip stops propagation so a resize never starts a reorder; its pointer delta is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
 export function ColumnHeader({
   id,
   label,
@@ -38,8 +35,7 @@ export function ColumnHeader({
   onContextMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
   const beginGesture = usePointerGesture()
-  // On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move
-  // click ends through teardown alone.
+  // On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move click ends through teardown alone.
   const startResize = (e: React.PointerEvent<HTMLSpanElement>): void => {
     e.preventDefault()
     e.stopPropagation()

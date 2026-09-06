@@ -107,7 +107,6 @@ type Row =
     })
   | (RowText & {
       kind: 'clear'
-      /** Asks, acts, and answers whether a clear ran — the row reads Cleared only then. */
       clear: () => Promise<boolean>
     })
   | (RowText & {
@@ -132,8 +131,6 @@ type Row =
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
-/** How a numeric row shows its stored value: `scale` turns the stored number into the shown one,
- *  and `suffix` follows the digits as written. */
 type NumberUnit = { scale: number; suffix: string }
 const PERCENT: NumberUnit = { scale: 100, suffix: '%' }
 const DAYS: NumberUnit = { scale: 1, suffix: ' Days' }
@@ -788,8 +785,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
               <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
             )}
             {section.rows.map((row) => (
-              // Keyed on the label: the one row writing a top-level settings key has no
-              // personalization key to be identified by, and a label is unique within a section.
+              // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
               <RowControl key={row.label} row={row} />
             ))}
           </div>

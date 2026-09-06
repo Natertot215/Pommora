@@ -1,6 +1,4 @@
-// Absent from TILE_SURFACES on purpose: a tile kind that lacks a tile-detail-surface creation method.
-// A guest clips correctly only at full visibility, so it stays live while fully visible and
-// hidden (not unmounted) under the retention cap otherwise.
+// A guest clips correctly only at full visibility, so it stays live while fully visible and hidden (not unmounted) under the retention cap otherwise.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
@@ -79,8 +77,7 @@ export function WebTile({
     if (!guest) setLoaded(false)
   }, [guest])
 
-  // Layout effect, not passive: `parting` must hold the guest painted before the retained class
-  // reaches the compositor, or a hidden guest captures an empty frame.
+  // Layout effect, not passive: `parting` must hold the guest painted before the retained class reaches the compositor, or a hidden guest captures an empty frame.
   useLayoutEffect(() => {
     if (visible) {
       webGuestRetention.show(id)
@@ -113,8 +110,7 @@ export function WebTile({
       if (dataUrl) setSnap(dataUrl)
       retain()
     }
-    // The call sits in a try: a pre-attach guest's capturePage throws synchronously (the method
-    // exists on the prototype before the guest does), and the clip must still complete without a frame.
+    // A pre-attach guest's capturePage throws synchronously (the method exists on the prototype before the guest does), and the clip must still complete without a frame.
     deadline = setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
     try {
       el.capturePage().then(
@@ -134,8 +130,7 @@ export function WebTile({
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
 
-  // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change
-  // or remount; 1.0 must still be sent — it clears a previous factor's map entry.
+  // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change or remount; 1.0 must still be sent — it clears a previous factor's map entry.
   useEffect(() => {
     const wv = ref.current as Guest | null
     if (!wv?.getWebContentsId || !loaded) return
@@ -198,9 +193,7 @@ export function WebTile({
           }}
           src={url}
           partition={WEB_PARTITION}
-          // The empty-string form, cast past React's boolean typing: React only serializes
-          // string values for attributes it doesn't know, so a bare boolean never reaches the
-          // attach — and popups then die inside Blink.
+          // React only serializes string values for attributes it doesn't know, so a bare boolean never reaches the attach — and popups then die inside Blink.
           allowpopups={'' as unknown as boolean}
           className={cx(!onScreen && 'is-retained', !engaged && 'is-inert')}
         />

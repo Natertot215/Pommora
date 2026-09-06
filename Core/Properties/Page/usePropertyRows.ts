@@ -19,15 +19,8 @@ import { sharedValueClickAction } from '../Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from '../Pickers/filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 
-// One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
-// window's inspector — for resolving a page into rows and writing a value back. Every write here
-// goes through the same primitives the table and cards use, so this is a shape over them rather
-// than a second way to write.
-
 export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 
-/** The page this surface is about. The two hosts find it differently — one reads the open page, the
- *  other resolves a window target — so it arrives already found. */
 export interface PropertyRowsPage {
   id: string
   title: string
@@ -43,9 +36,6 @@ export interface PropertyRows {
   isContextRow: (id: string) => boolean
   commitValue: (propertyId: string, next: PropertyValue | null) => void
   commitContext: (contextId: string, ids: string[]) => void
-  /** The VALUE's own right-click, and whether it claimed the event — a file pops the Add · Replace
-   *  · Remove triad, a live link pops the link menu, and anything else falls through to the row's
-   *  menu, where Remove belongs to the property rather than to the value it holds. */
   valueMenu: (
     id: string,
     value: PropertyValue,
@@ -64,7 +54,6 @@ export interface PropertyRows {
   ) => void
 }
 
-/** A page's owning Collection by path prefix — schema lives only on Collections. */
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
   tree?.collections.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
 
@@ -153,8 +142,7 @@ export function usePropertyRows(
     from = el,
   ) => {
     setTrigger(el)
-    // checkbox is true-or-absent on disk, never a stored false — the shared click-semantics router
-    // handles it; number/url stay inline in the host.
+    // checkbox is true-or-absent on disk, never a stored false; number/url stay inline in the host.
     const current = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
     const shared = sharedValueClickAction(def.type, current)
     if (shared) {
@@ -162,8 +150,7 @@ export function usePropertyRows(
         commitValue(def.id, shared.value)
         if (def.type === 'checkbox' && shared.value === null) onReveal(def.id)
       } else if (shared.kind === 'file') {
-        // The dialog, not a picker anchored to the row — and the label clicked decides whether it
-        // replaces or adds. `editRow` becomes fire-and-forget; the commit lands when it resolves.
+        // The dialog, not a picker anchored to the row — the label clicked decides whether it replaces or adds, and the commit lands when it resolves.
         pickFileInto(def, current, fileChipIndex(from), (next) => commitValue(def.id, next))
       } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
       return

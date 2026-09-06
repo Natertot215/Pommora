@@ -1,8 +1,4 @@
-// Two axes that must not be confused: declaredType is the column's snake_case SCHEMA type (plus
-// the synthetic 'title'/'context' sentinels), what sort/group/filter switch on; resolveFieldValue
-// is the row's camelCase-`.kind` VALUE, decoded definition-first by the declared type — never
-// inferred from a value's shape, so a url column always reads url even though both are plain
-// strings on disk. Pure: no fs, no React.
+// Two axes that must not be confused: declaredType is the column's SCHEMA type, what sort/group/filter switch on; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a url column always reads url.
 
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
@@ -15,10 +11,6 @@ import {
 import { decodeValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { parseConnectionText } from '@pommora/core/Connections/connections'
 
-/** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
- *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', the stamps→their
- *  STAMP_TYPE. `contextIds` is what classifies a Context column, so a caller that omits it sees
- *  none. */
 export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
@@ -34,12 +26,7 @@ export function declaredType(
 const stampValue = (iso: string | null): PropertyValue =>
   iso === null ? { kind: 'null' } : { kind: 'datetime', value: iso }
 
-/** The row's value for a column, as a PropertyValue. Absent or unreadable ⇒ `{ kind: 'null' }` —
- *  a single bad cell never poisons a view.
- *
- *  A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own
- *  `contextValues`, with the optimistic write layer's patched-frontmatter rider winning while a
- *  commit is in flight. */
+/** A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own `contextValues`, the optimistic patch winning while a commit is in flight. */
 export function resolveFieldValue(
   row: ViewRow,
   propertyId: string,
@@ -64,8 +51,7 @@ export function resolveFieldValue(
     resolvedByFm.set(row.frontmatter, m)
   }
   const def = schema.find((d) => d.id === propertyId)
-  // Keyed by the NAME the value is stored under plus the type it decodes as — a rename or a type
-  // change must re-resolve, and neither swaps the frontmatter identity the outer map is keyed on.
+  // Keyed by the NAME the value is stored under plus the type it decodes as — a rename or a type change must re-resolve, and neither swaps the frontmatter identity the outer map is keyed on.
   const cacheKey = def ? `${def.name}\u0000${def.type}` : propertyId
   let v = m.get(cacheKey)
   if (!v) {
@@ -77,14 +63,8 @@ export function resolveFieldValue(
   return v
 }
 
-// MEMOIZED per frontmatter object: the grouped pipeline resolves every row per run and every
-// Cell resolves the same value again per render — the decode was the measured
-// grouped-view hot spot. A value write swaps the page's frontmatter identity (loadValues / the
-// optimistic patch), so entries self-expire; resolved values are shared and treated immutable.
+// MEMOIZED per frontmatter object: the decode was the measured grouped-view hot spot. A value write swaps the page's frontmatter identity, so entries self-expire.
 const resolvedByFm = new WeakMap<PageFrontmatter, Map<string, PropertyValue>>()
 
-/** The filename a file reference names — the wikilink's own title, or the raw text where it isn't
- *  one. The one extraction, so the order a column sorts in and the text a cell shows can't
- *  disagree about what a reference is called. */
 export const fileName = (reference: string): string =>
   parseConnectionText(reference)?.title ?? reference

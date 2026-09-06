@@ -1024,8 +1024,7 @@ const PageCard = memo(function PageCard({
   const capitalize = useCapitalizeMetadata()
   const gdrag = useGroupedDragItem(row.id)
   const drag = draggable ? gdrag : null
-  // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it
-  // would rebuild on every drag frame — which is exactly when CardFace's memo has to hold.
+  // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
   const isDragging = drag?.isDragging ?? false
   const version = useSession((s) => s.thumbVersions[`page:${row.id}`] ?? 0)
   const tree = useSession((s) => s.tree)

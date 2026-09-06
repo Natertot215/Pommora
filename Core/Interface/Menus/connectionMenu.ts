@@ -16,12 +16,8 @@ import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 
-/** main pops the native menu at the cursor; the chosen action runs renderer-side (the sidebar
- *  contextMenu contract). Shared by every ConnectionsApi host and by the Link property's cells, so
- *  a link offers the same actions wherever it is right-clicked. */
 export function showConnectionMenu(target: ConnMenuTarget): void {
-  // An editable surface with no way back into it can't perform the edit either, so the two
-  // authoring items are offered only when both hold.
+  // An editable surface with no way back into it can't perform the edit either, so the authoring pair needs both.
   const shared = {
     surface: target.surface ?? 'editor',
     editable: (target.editable ?? true) && target.apply !== undefined,
@@ -53,8 +49,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   const ctx: ConnMenuContext = {
     ...shared,
     hasAlias: target.hasAlias,
-    // A page already in hand is not somewhere to be opened. The two readings are independent: the
-    // content view answers for the tab item, the page window for its own.
+    // The two readings are independent: the content view answers for the tab item, the page window for its own.
     open:
       shownDetail(s)?.path === page.path
         ? 'detail'
@@ -81,8 +76,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         case 'title:copypath':
           void host().ask('clipboard:write', pagePathText(page.path))
           return
-        // Named rather than caught: the action vocabulary is wider than any one menu, and an item
-        // this context never offered has no span or value here to act on.
+        // Named rather than caught: the action vocabulary is wider than any one menu, and an item this context never offered has no span or value here to act on.
         case 'rename':
         case 'editLink':
           target.apply?.(action)
@@ -94,14 +88,8 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
     })
 }
 
-/** What a Link property cell can be told to do — the four its own surface answers, out of the wider
- *  vocabulary the shared menu speaks. */
 export type LinkCellAction = ConnEditAction | ConnCellAction
 
-/** The link menu target a Link property cell pops. A value naming a page menus as that connection;
- *  one holding an address menus as that address. Null when the value holds a live link of neither
- *  kind — empty, or a title no page answers to — which is the cell's own menu rather than this one:
- *  there is nothing there to open, copy, or reach. */
 export function linkValueMenuTarget(
   raw: string,
   apply: (action: LinkCellAction) => void,
@@ -119,8 +107,7 @@ export function linkValueMenuTarget(
     const page = resolveConnection(useSession.getState().tree, value.title)
     return page ? { ...base, kind: 'page', page, apply } : null
   }
-  // A cell's address menu carries only the authoring pair out of the wider url vocabulary; the rest
-  // belong to a link sitting in prose, where there is a span to rewrite.
+  // The rest belong to a link sitting in prose, where there is a span to rewrite.
   return isValidLink(value.url)
     ? {
         ...base,

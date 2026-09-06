@@ -20,8 +20,7 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
     if (parsed.success) defs[id] = parsed.data
-    // Only a plausible def (a plain object) rides through writes — a scalar under an id key
-    // is corrupt noise, and re-writing it is what would break the file-shape check above.
+    // Only a plausible def (a plain object) rides through writes — a scalar under an id key is corrupt noise, and re-writing it is what would break the file-shape check above.
     else if (isPlainObject(value)) unparsed[id] = value
   }
   const order = (Array.isArray(obj.order) ? obj.order : []).filter(
@@ -66,8 +65,7 @@ export function mutateRegistry<T>(
     if (next) {
       const defs: Record<string, unknown> = { ...next.defs }
       for (const [id, raw] of Object.entries(unparsed)) if (!(id in defs)) defs[id] = raw
-      // Unparsed ids keep their order membership too, appended, so a repaired def re-lists
-      // rather than vanishing from the pane.
+      // Unparsed ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
       const order = [
         ...next.order,
         ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),

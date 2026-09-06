@@ -38,15 +38,13 @@ export function withoutCacheBlock(
   return next
 }
 
-// A chained fn awaiting another chained fn would deadlock the schema chain, so these are
-// unchained internals; `assignInner` is exported so a chained op can compose it in its own slot.
+// A chained fn awaiting another chained fn would deadlock the schema chain, so these are unchained internals a chained op composes in its own slot.
 export async function assignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  // Restore stays OUTSIDE the sidecar lock: it walks every member page, long enough that
-  // holding the lock would stall every sibling sidecar write.
+  // Restore stays OUTSIDE the sidecar lock: it walks every member page, long enough that holding the lock would stall every sibling sidecar write.
   const appended = await withSidecarLock(collectionFolder, 'collection', async () => {
     const r = await read(collectionFolder)
     if (!r) return fail('not-found', 'Collection not found.')

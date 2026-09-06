@@ -1,5 +1,4 @@
-// Per-container non-view settings CRUD — the sidecar's open_in / view_button. open_in is
-// collection-owned; a Set write is refused.
+// open_in is collection-owned; a Set write is refused.
 
 import { pageCollectionSidecar, pageSetSidecar } from '../Nexus/schemas'
 import type { OpenIn, ViewButton } from './viewRow'

@@ -1,24 +1,15 @@
-// The one identity seam between the tree's context data and every surface: memoized per-tree
-// accessors resolving a Context id → title/singular/icon and a Space id → title/icon/color, so
-// both render identically everywhere by construction. Pure: no fs, no React.
-
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { entityIcon } from '../Assets/entityIconPolicy'
 
 export interface ContextIdentity {
   title: string
-  /** Seeded Contexts only (Areas/Topics/Projects) — any other Context has none; its Spaces
-   *  read "New Space". */
   singular?: string
-  /** Always renderable — the entry's own icon, else the Contexts default. */
   icon: string
 }
 
 export interface SpaceIdentity {
   title: string
-  /** Always renderable — the entry's own icon, else the Spaces default. */
   icon: string
-  /** Chip-solid key (open string; labelColorFor normalizes at render). */
   color?: string
   contextId: string
 }
@@ -35,8 +26,7 @@ const mapsByTree = new WeakMap<NexusTree, IdentityMaps>()
 function mapsFor(tree: NexusTree): IdentityMaps {
   let maps = mapsByTree.get(tree)
   if (!maps) {
-    // The user's Space glyph, not the curated seed — personalization rides the tree, so every
-    // surface resolving through this seam lands on the same icon the sidebar shows.
+    // The user's Space glyph, not the curated seed — personalization rides the tree, so every surface resolving through this seam lands on the same icon the sidebar shows.
     const di = tree.personalization.defaultIcons
     const contexts = new Map<string, ContextIdentity>()
     const spaces = new Map<string, SpaceIdentity>()
@@ -61,7 +51,6 @@ function mapsFor(tree: NexusTree): IdentityMaps {
   return maps
 }
 
-/** Every registry Context id, in registry (display) order. */
 export function contextIdsOf(tree: NexusTree | null): string[] {
   return tree ? mapsFor(tree).contextIds : []
 }
@@ -70,8 +59,7 @@ export function contextIdentityOf(tree: NexusTree | null, id: string): ContextId
   return tree ? mapsFor(tree).contexts.get(id) : undefined
 }
 
-/** Every Context id → its identity. Hand this to a surface that must label Context columns but
- *  can't hold the tree — a memoized row would re-render on every unrelated tree push. */
+/** Hand this to a surface that must label Context columns but can't hold the tree — a memoized row would re-render on every unrelated tree push. */
 export function contextsByIdOf(tree: NexusTree | null): ReadonlyMap<string, ContextIdentity> {
   return tree ? mapsFor(tree).contexts : new Map()
 }
@@ -80,13 +68,10 @@ export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdenti
   return tree ? mapsFor(tree).spaces.get(id) : undefined
 }
 
-/** Every Space id → its identity, across every registry Context — the map cell renders hold and
- *  read per row, so it hands back the memoized map rather than a per-call copy. */
 export function spacesByIdOf(tree: NexusTree): ReadonlyMap<string, SpaceIdentity> {
   return mapsFor(tree).spaces
 }
 
-/** True when `id` names a registry Context — the column-kind test every pipeline seam shares. */
 export function isContextColumnId(tree: NexusTree | null, id: string): boolean {
   return tree ? mapsFor(tree).contexts.has(id) : false
 }

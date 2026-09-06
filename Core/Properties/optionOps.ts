@@ -1,8 +1,3 @@
-// Option-level CRUD for Select / Multi-Select properties. setOptions is registry-only (add / recolor
-// / reorder) and rides the mutateRegistry chain; the page-touching ops (rename / remove / clear) ride
-// the serializeSchemaOp chain, cascading each edit across every assigning collection's pages. Errors
-// flow as Result, never thrown.
-
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
@@ -27,16 +22,13 @@ import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './pr
 
 const NO_PROPERTY = fail('not-found', 'Property not found.')
 
-/** Applies to Select / Multi-Select only — rejected up front rather than left to the write. */
 function requireOptionType(type: PropertyType): Result<null> {
   return hasSelectOptions(type)
     ? ok(null)
     : fail('invalid-property', 'Options can only be edited on Select or Multi-Select properties.')
 }
 
-/** An emptied array stays empty (no re-seed), matching createProperty/editProperty, which seed
- *  only a field that is absent. Rides serializeSchemaOp so it can't land inside a concurrent
- *  renameOption's cascade and desync the registry from pages. */
+/** Rides serializeSchemaOp so it can't land inside a concurrent renameOption's cascade and desync the registry from pages. */
 export function setOptions(
   root: string,
   propertyId: string,
@@ -59,8 +51,7 @@ export function setOptions(
   )
 }
 
-/** The Status analog of setOptions. Validates unique option values property-wide, across all
- *  groups, since a page's value is referenced across all groups. */
+/** Validates unique option values property-wide, across all groups, since a page's value is referenced across all groups. */
 export function setStatusGroups(
   root: string,
   propertyId: string,
@@ -122,9 +113,7 @@ export async function applyAdoptions(root: string, adoptions: readonly Adoption[
   }
 }
 
-/** Drop one option value from a def's registry entry, whichever shape holds it — the remove
- *  ops' registry finish, shared with the crash replay so both run the identical edit. A value
- *  already gone is a completed finish, not a failure. */
+/** Shared with the crash replay so both run the identical edit; a value already gone is a completed finish, not a failure. */
 export function dropOptionFromDef(
   root: string,
   propertyId: string,
@@ -167,8 +156,6 @@ async function resolveForCascade(
   return ok(def.name)
 }
 
-/** Strips `value` — the shared tail of clear and remove on both Select and Status, which
- *  differ only in the type check that resolved `key`. */
 async function stripCascade(root: string, key: string, value: string): Promise<number> {
   const files = await keyHolderFiles(root, key, await collectionFolders(root))
   const text = (content: string): string | null => stripPageValue(content, key, value)
@@ -176,9 +163,7 @@ async function stripCascade(root: string, key: string, value: string): Promise<n
   return swept.skipped.length
 }
 
-/** Def-gated so an op the registry will refuse outright journals nothing. Staged BEFORE the
- *  commit: a crash between commit and cascade is recoverable only from this record, and one
- *  stranded by a refusal or throw is disposed of by the replay's holds-to-and-not-from gate. */
+/** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
 async function stageOptionRename(
   root: string,
   propertyId: string,
@@ -212,7 +197,6 @@ const editStatusGroups: OptionEdit = (def, oldValue, newTitle) => {
   return { next: { ...def, status_groups: groups }, values: groups.flatMap((g) => g.options) }
 }
 
-/** The registry edit validates unique values — a collision fails before any page is touched. */
 function renameOp(requireType: RequireType, editDef: OptionEdit) {
   return (
     root: string,
@@ -248,8 +232,7 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
     })
 }
 
-/** Page-only fan-out; the registry is untouched, which is why it is also unjournaled: its crash
- *  residue disagrees with nothing, since every remaining value is still a legal option. */
+/** Unjournaled because the registry is untouched: its crash residue disagrees with nothing, since every remaining value is still a legal option. */
 function clearOp(requireType: RequireType) {
   return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
     serializeSchemaOp(async () => {
@@ -260,9 +243,7 @@ function clearOp(requireType: RequireType) {
     })
 }
 
-/** Pages first (as deleteProperty does) so a def-edit failure never leaves the option gone with
- *  its values orphaned. A strip that could not read every holder defers the registry drop — the
- *  record stays, and the next open's replay re-runs both once the pages read. */
+/** Pages first, so a def-edit failure never leaves the option gone with its values orphaned; a strip that could not read every holder defers the registry drop. */
 function removeOp(requireType: RequireType) {
   return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
     serializeSchemaOp(async () => {

@@ -6,8 +6,7 @@ import { useSession } from '../../Session/store'
 import { NexusPhoto } from './NexusPhoto'
 import './Sidebar.css'
 
-// Navigation and settings each toggle their floating window instead of switching sidebarMode — the
-// icon that summoned a window dismisses it, matching the keyboard command that shares the state.
+// The icon that summoned a window dismisses it, matching the keyboard command that shares the state — neither switches sidebarMode.
 type RibbonKey = 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',

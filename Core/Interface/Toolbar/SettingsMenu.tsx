@@ -6,7 +6,6 @@ import { PageMenu } from '../../Pages/PageMenu'
 import { SettingsScaffold } from '../../Tiles/HomepageSettings'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-/** The button never binds to a specific frame — the content view's scope decides which one renders. */
 export function SettingsMenu({
   closing = false,
   notchInsetRight,

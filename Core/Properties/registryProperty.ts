@@ -27,9 +27,7 @@ import { serializeSchemaOp } from './schemaChain'
 const nameRefusal = (name: string): string =>
   isReservedKeyName(name) ? KEY_REFUSAL.reserved(name) : KEY_REFUSAL.reservedPrefix
 
-// Seeds only when the field is undefined (fresh create, or a type-change into select/status).
-// An EMPTY array is a deliberate state and is never re-seeded, or emptying a select's options
-// then making any unrelated edit would resurrect the seed.
+// Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
   let d = def
   if (d.type === 'status' && d.status_groups === undefined)
@@ -40,7 +38,6 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   return d
 }
 
-/** A title already taken is refused, case-folded: the title IS the key values write under. */
 export async function createProperty(
   root: string,
   def: PropertyDefinition,
@@ -64,9 +61,7 @@ export async function createProperty(
       result: ok({ id: candidate.id }),
     }
   })
-  // A landed create wearing a journaled delete's name or id supersedes the record — it's a
-  // re-create or restore — or a later replay would strip the living property instead of the
-  // dead one. Only after commit: a refused create must not spend a record it never displaced.
+  // A landed create wearing a journaled delete's name or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
     if (
@@ -80,10 +75,8 @@ export async function createProperty(
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
-/** Returns the holders it could not read, so a journaled caller holds its record while any remain. */
 export async function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
-  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
-  // both holds the old one too.
+  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER)
@@ -93,10 +86,7 @@ export async function renameSweep(root: string, oldName: string, newName: string
 
 type Rename = { from: string; to: string }
 
-/** Staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is
- *  recoverable from nowhere else, so the old name survives only here. The pre-read is advisory
- *  (mutateRegistry revalidates); a record for an edit that then fails is cleared on that path,
- *  one stranded by a throw disposed of by the id-gated replay. */
+/** Staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only here. */
 async function stageRename(
   root: string,
   propertyId: string,
@@ -111,7 +101,6 @@ async function stageRename(
   return record
 }
 
-/** A name change commits the registry first, then sweeps the pages once. */
 export function editProperty(
   root: string,
   propertyId: string,
@@ -155,7 +144,6 @@ export function editProperty(
   })
 }
 
-/** Bare registry delete — no value scrub or assignment cleanup; `deleteProperty` wraps this. */
 export function removeFromRegistry(root: string, propertyId: string): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry) => {
     if (!registry.defs[propertyId]) return { result: fail('not-found', 'Property not found.') }
@@ -168,7 +156,6 @@ export function removeFromRegistry(root: string, propertyId: string): Promise<Re
   })
 }
 
-/** Move propertyId to toIndex in the nexus-wide cosmetic order. Clamped; unknown id fails. */
 export function reorderRegistry(
   root: string,
   propertyId: string,

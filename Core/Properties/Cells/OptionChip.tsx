@@ -13,10 +13,8 @@ export interface OptionChipData {
   appearance?: OptionAppearance
 }
 
-/** The Compact glyph a select / multi option falls back to when it carries none of its own. */
 const defaultOptionIcon = (type: string): IconName => (type === 'multi_select' ? 'tags' : 'tag')
 
-/** The glyph an option leads with — its own icon, else its type's default (status: its group's). */
 export function optionGlyph(
   type: string,
   option: OptionChipData | undefined,
@@ -27,9 +25,6 @@ export function optionGlyph(
     : iconNameOr(option?.icon, defaultOptionIcon(type))
 }
 
-/** One option value as a chip — the single place a (type, look, option) becomes a Label. SHAPE is
- *  the type's identity (pill for status, tag for select / multi); the LOOK is its size: Standard
- *  shows the label, Compact an icon alone. */
 export function OptionChip({
   type,
   look,
@@ -41,7 +36,6 @@ export function OptionChip({
   type: string
   look?: ColumnLook
   option: OptionChipData | undefined
-  /** Status only: resolves the value's group for the Compact glyph. */
   def?: Pick<PropertyDefinition, 'status_groups'>
   onRemove?: () => void
   className?: string

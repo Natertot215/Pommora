@@ -23,8 +23,6 @@ import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.
 import { SpaceChip } from '@pommora/uix/Labels'
 import { OptionChip } from '../Properties/Cells/OptionChip'
 
-/** The single home for group-band glyph resolution, shared by the table and cards views. Chip
- *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */
 export function resolveBandHead(
   group: ResolvedGroup,
   view: SavedView,
@@ -73,8 +71,7 @@ export function resolveBandHead(
       ),
     }
   }
-  // A property band lives in two homes: top-level property grouping, or a sub-group bucket inside a
-  // set band (its raw value rides `bucket`; `key` is the composite collapse id).
+  // A property band lives in two homes: top-level property grouping, or a sub-group bucket inside a set band (its raw value rides `bucket`; `key` is the composite collapse id).
   const propId =
     view.group?.kind === 'property'
       ? view.group.property_id
@@ -85,9 +82,7 @@ export function resolveBandHead(
   if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
 
-  // A Context band names a Space, so it wears that Space's own icon, read from the identity map the
-  // cells already use. Routing it through the type registry instead would give every Context one
-  // shared glyph, and declaredType classifies a Context column only when handed the registry ids.
+  // A Context band wears its Space's own icon: routing it through the type registry would give every Context one shared glyph, and declaredType classifies a Context column only when handed the registry ids.
   if (ctx.contexts.has(propId)) {
     const space = ctx.contextsById.get(value)
     const title = space?.title ?? value
@@ -156,8 +151,7 @@ export interface BandDragHandle {
   isNestTarget: boolean
 }
 
-/** The outline and "+" isolate their pointerdown so they never arm a band drag; a double-click's
- *  two leading clicks also net out on the disclosure toggle (harmless, not a bug). */
+/** The outline and "+" isolate their pointerdown so they never arm a band drag. */
 export function GroupBand({
   glyph,
   collapsed,
@@ -177,7 +171,6 @@ export function GroupBand({
   collapsed: boolean
   onToggle: () => void
   showAdd?: boolean
-  /** The "+"'s creation handler; absent leaves it the bare affordance it renders as today. */
   onAdd?: () => void
   headless?: boolean
   fill?: boolean
@@ -190,8 +183,7 @@ export function GroupBand({
 }): React.JSX.Element {
   const outsideRename = (e: React.MouseEvent): boolean =>
     !(e.target as HTMLElement).closest?.('input')
-  // Spring-load: while collapsed, register the header so a drag dwelling over it discloses the group
-  // (dragDisclose). `toggleRef` keeps the callback fresh without re-registering on every render.
+  // Spring-load: `toggleRef` keeps the callback fresh without re-registering on every render.
   const rowRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef(onToggle)
   toggleRef.current = onToggle
@@ -202,8 +194,7 @@ export function GroupBand({
   return (
     <div className={cx('group-band', subBand && 'sub-band')}>
       {!headless && (
-        // The band row carries the section rhythm + indent + zoom (table); the head inside carries the
-        // sticky pin + drag — kept on separate elements so zoom never rides the sticky offset.
+        // The band row carries the section rhythm + indent + zoom; the head inside carries the sticky pin + drag — separate elements so zoom never rides the sticky offset.
         <div
           className="group-band-row"
           ref={rowRef}

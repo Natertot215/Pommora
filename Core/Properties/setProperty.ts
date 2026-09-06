@@ -17,8 +17,7 @@ export async function setPropertyOp(
 ): Promise<MutateReply> {
   const resolved = await resolveUnderRoot(root, req.path)
   if (!resolved.ok) return resolved
-  // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the
-  // lock can send the write to a key the sweep has already passed.
+  // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the lock can send the write to a key the sweep has already passed.
   const adoptions = await machine().lock(resolved.value, async () => {
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return fail('not-found', 'Property not found.')

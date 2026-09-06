@@ -4,8 +4,6 @@ import { livePagePath } from '../Session/treeIndex'
 import { useSession, type WindowTarget } from '../Session/store'
 import { host } from '../Platform/dialer'
 
-/** Restore's renderer half: land the page's pending save at its live path, ask main to write the
- *  snapshot's body, then replace the body in every open copy of the page. */
 export async function restoreSnapshot(target: WindowTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
   const live = livePagePath(tree, target)

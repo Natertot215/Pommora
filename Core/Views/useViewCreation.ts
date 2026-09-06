@@ -1,6 +1,4 @@
-// In-view creation, one home for both renderers. One act on every trigger: the page exists on
-// disk as Untitled the moment the gesture fires — seeds and order riding the create — and the
-// caller opens its own naming surface over the row already real. The pipeline owns placement.
+// The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller opens its own naming surface over the row already real.
 
 import { useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
@@ -25,28 +23,21 @@ import { flattenContainer, frontmatterOf } from './Pipeline/group'
 import { orderWithSlot, tieOrderWith } from './creationOrder'
 import { groupKeyToValue } from './TableView/reassign'
 
-// Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
-// Title and Modified aren't property ids and multi-value types don't copy; under those the row
-// simply lands where the sort puts it.
+// Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
 const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
 
 export interface ViewCreationConfig {
   source: CollectionNode | SetNode
-  /** The LIVE view — the caller resolves any local overrides before handing it over. */
   view: SavedView
   schema: PropertyDefinition[]
   values: Record<string, PageValues>
   setValueOverride: SetOverrides
   effectiveValues: Record<string, PageValues>
-  /** Whether creates write the canonical page_order channel — the table's law, stated by both
-   *  renderers: no property grouping and no sort, where the pipeline paints tree order. */
   structuralOrder: boolean
   viewOrders: Record<string, string[]>
   persistViewOrder: (ids: string[]) => void
   setManualOverride: React.Dispatch<React.SetStateAction<string[] | null>>
-  /** row id → its band key, for the group-value seed. */
   rowBand: Map<string, string>
-  /** band key → the group-value bucket it stamps (sub-grouped bands resolve their bucket). */
   bandBucket: (key: string) => string | null
   canReassign: boolean
   groupPropId: string | undefined
@@ -54,39 +45,29 @@ export interface ViewCreationConfig {
   setPaths: Map<string, string>
   collapsed: Set<string>
   toggleCollapse: (key: string) => void
-  /** The view's scroll root — created rows glide into it by `[data-rid]`. */
   viewRootRef: { readonly current: HTMLElement | null }
-  /** Opens the caller's naming surface over the created page. */
   onCreated: (created: { id: string; path: string }) => void
 }
 
 export interface ViewCreation {
-  /** Each create resolves with the write's outcome — a caller holding UI open for the newborn
-   *  (Cards' seat-holding skeleton) releases it on a false. */
   bandAdd: (setKey: string) => Promise<boolean>
   createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
   createAfter: (row: ViewRow) => Promise<boolean>
-  /** The container's full child list — order writes never build from a filtered view. */
   containerPages: (path: string) => string[]
 }
 
-/** `getCfg` is read only when a gesture fires — so the hook can sit with a component's early
- *  hooks (above any loading/empty return) while its config closes over later render-scope
- *  consts, which are initialized long before any pointer can reach a trigger. */
+/** `getCfg` is read only when a gesture fires, so the hook can sit above any loading/empty return while its config closes over later render-scope consts. */
 export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation {
   const mutate = useSession((s) => s.mutate)
   const getRef = useRef(getCfg)
   getRef.current = getCfg
   const cfg = (): ViewCreationConfig => getRef.current()
 
-  // A page a filter cleanly implies values for gets them stamped; gesture-context seeds spread
-  // AFTER these, so where they disagree the gesture wins.
   const impliedSeeds = (): Record<string, PropertyValue> => {
     const c = cfg()
     return filterSeeds(c.view.filter, c.view.filter_enabled !== false, c.schema)
   }
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does — the value
-  // cache never re-reads mid-session, so a disk-only stamp would resolve blank until next open.
+  // The created page's seeds reach the pipeline the way a band-drop's reassign does — the value cache never re-reads mid-session, so a disk-only stamp would resolve blank until next open.
   const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
     const c = cfg()
     const entries = Object.entries(seeds)
@@ -100,8 +81,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
     })
   }
-  // The full child list of the container a create targets — never the view's visible rows: an
-  // order built from a filtered view permanently re-ranks every row the filter was hiding.
+  // The full child list of the container a create targets — never the view's visible rows: an order built from a filtered view permanently re-ranks every row the filter was hiding.
   const containerPagesOf = (path: string): string[] => {
     const walk = (node: CollectionNode | SetNode): string[] | null => {
       if (node.path === path) return node.pages.map((p) => p.id)
@@ -130,8 +110,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       SEEK_GLIDE,
     )
   }
-  // Every live order settles in the create's own act — onCreated runs ahead of the optimistic tree
-  // apply, so the splice and the newborn's mount land in ONE commit.
+  // Every live order settles in the create's own act — onCreated runs ahead of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit.
   const settleOrders = (
     latest: ViewCreationConfig,
     createdId: string,
@@ -176,8 +155,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       ? orderWithSlot(containerPagesOf(setPath), null, 'last')
       : undefined
     return createPageIn(setPath, seeds, order, (created) => {
-      // A non-structural view has no page_order write to land the "end of the group" — absent
-      // any live array, the read-side title fallback would rank the newborn mid-band.
+      // A non-structural view has no page_order write to land the "end of the group" — absent any live array, the read-side title fallback would rank the newborn mid-band.
       const latest = cfg()
       latest.onCreated(created)
       if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, 'below')
@@ -185,8 +163,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     })
   }
 
-  // New Page Above / Below: born beside its anchor — the anchor's group value and sort-criteria
-  // values tie it there, and the order write breaks the tie at the gesture slot.
+  // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
   const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<boolean> => {
     const c = cfg()
     const parentPath = parentOf(row.path)
@@ -207,7 +184,6 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
       : undefined
     return createPageIn(parentPath, seeds, order, (created) => {
-      // Same forfeit-on-view-switch rule as bandAdd, above.
       const latest = cfg()
       latest.onCreated(created)
       if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)
