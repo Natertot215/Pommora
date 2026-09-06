@@ -36,7 +36,7 @@ Bounding constraints: **least moving parts** — reuse the pane, the editor-stat
 - `navResolve.ts` yields `ResolvedNav.path` as a breadcrumb (`TrailSegment[]`), not a file path; `treeIndex.ts:243` `pagesByIdOf(tree).get(id)?.path` is the id→file-path map → **forces:** nav-view arming resolves path via `pagesByIdOf`, not the nav resolver. → Task 7.
 - `navRef.ts:52-54` a tab target may be homepage/context/space/collection/set, not only page → **forces:** tab arming gates on `target.kind === 'page'`. → Task 6.
 - Pins are page-only (ratified) → **forbids:** locking a `kind:'site'` glance; the lock icon shows only for page targets. → Task 10.
-- `picker-base.tsx` DEV-errors on unmount-while-`open`, and `useExitPresence` (its self-managed bloom) doesn't export the exit duration → **forces:** pins mount persistently with `open` toggled by `activeTabId`; removal is two-phase (mark `.closing` → bloom → `onExited` → drop), and `PickerMenu` gains a one-line `onExited` so the drop self-times against the real bloom. → Task 10.
+- `picker-base.tsx:106,118` — `selfManaged = open !== undefined`, and the unmount-while-open guard only fires when `open === true` → **free:** a pin renders an **uncontrolled** `PickerMenu` (no `open`), so it's always-shown while mounted and unmounts instantly and guard-free. Removal = drop from the list = close; no exit phase, no `onExited` widen. → Task 10.
 - `nexusSlice.ts:43-51,146-148` — `resetNexusSession` calls a `resetX` per slice (and bulk-clears tabs *without* `closeTab`), and `applyTree` reconciles each slice → **forces:** `glanceSlice` adds `resetGlance` (wired into `resetNexusSession`) and `reconcileGlance` (wired beside `reconcileNavigation`/`reconcileWindow`), or a nexus switch leaks pins across nexuses and a rename orphans a pin as a dead-path fetch. → Task 9.
 
 **Inherited Reasoning**
@@ -81,8 +81,7 @@ Bounding constraints: **least moving parts** — reuse the pane, the editor-stat
 - Gates from repo root, exit codes read directly, never piped: `npm run typecheck` · `npm run test` · `npm run lint` (`biome check` + `no-wrapped-comments`). A change that adds a diagnostic, leaves a file unformatted, or wraps a block comment across lines isn't done.
 - Biome formatting is authoritative (single-quote, no semicolons); never hand-align. An Edit failing on whitespace means the hook reformatted — re-read and retry.
 - Comments only where the why can't be inferred; no status/pending narration; KNOB comments carry the tunable's rationale. **A block comment must not span lines** (the `no-wrapped-comments` scan) — use a single-line `/** … */` or stacked `//` lines.
-- **One new file only:** `Core/Session/glanceSlice.ts` (the missing Session slice). No new components; everything else widens `GlancePane.tsx`, `glanceLink.ts`, `glanceAction.ts`, `navigationSlice.ts`, `nexusSlice.ts` in place.
-- **One sanctioned shared-UIX widen:** a one-line `onExited?: () => void` prop on `PickerMenu` (`UIX/Pickers/picker-base.tsx`), fired when its `useExitPresence` settles to `mounted:false` — so a list of pinned panes drops each entry against the real bloom instead of duplicating the unexported exit duration. Additive and inert for every existing consumer.
+- **One new file only:** `Core/Session/glanceSlice.ts` (the missing Session slice). No new components, no shared-UIX changes; everything else widens `GlancePane.tsx`, `glanceLink.ts`, `glanceAction.ts`, `navigationSlice.ts`, `nexusSlice.ts` in place. (Pins render an uncontrolled `PickerMenu` — no `open` prop — so no exit-machinery or `onExited` widen is needed.)
 - `Core/Contract` boundary: any new channel is one `bridge.ts` entry, both ends derived, `Result` envelope. *(This plan adds none — all state is session-memory.)*
 - Report +/- line counts (comments + tests excluded) after significant changes.
 - Out of scope everywhere: trash (`Core/Trash/`, `Core/Settings/TrashFrame.tsx`), history (`Core/Interface/Windows/PageHistoryWindow.tsx`, `Core/Pages/fileHistory.ts`), `Showcase/`, on-disk pin persistence, website-glance pinning.
@@ -439,23 +438,23 @@ useEffect(() => { setGlanceShown(shown !== null); return () => setGlanceShown(fa
 
 ```ts
 // glanceSlice.ts — reuse GlanceSize (windowRecord, = {w,h}); pinId via makeTabId (tabsModel.ts:298, the session-id minter)
-// Placement is the FROZEN ANCHOR POINT + direction (render-layer finding), NOT the pane corner — PickerMenu re-adds gap/origin.
+// Placement is the FROZEN ANCHOR POINT, NOT the pane corner — PickerMenu re-adds gap/origin. Direction is NOT stored:
+// PickerMenu re-derives it from the frozen anchor+size on each open (deterministic), exactly as it re-derives centering.
+// Exit is dead simple (ratified): removing a pin from the list unmounts it — that IS the close. No .closing / exit phase —
+// pins render an UNCONTROLLED PickerMenu (no `open` prop), so unmount is instant and never trips the open-guard (Task 10).
 export type PinnedGlance = {
   pinId: string
   tabId: string
   target: { kind: 'page'; id: string; path: string }
   anchorX: number; anchorY: number; anchorHeight: number   // frozen trigger point for PickerMenu
-  dir: PickerDirection                                       // frozen — decidedDir resets on open=false, would else flip
   size: GlanceSize
-  closing?: boolean                                          // two-phase exit: marked here, dropped on the pane's onExited
 }
 export interface GlanceSlice {
   pinnedGlances: PinnedGlance[]
   pinGlance: (p: Omit<PinnedGlance, 'pinId'>) => void        // makeTabId() pinId; appends
-  unpinGlance: (pinId: string) => void                       // marks .closing (rides Bloom-out); dropGlance removes on onExited
-  scrubTabPins: (tabId: string) => void                      // tab closed: mark active-tab pins closing (ride exit), drop inactive directly (open already false → no unmount-while-open)
+  unpinGlance: (pinId: string) => void                       // THE remover — filter out pinId (unlock + Esc)
+  scrubTabPins: (tabId: string) => void                      // tab closed — filter out that tab's pins (one rule, no branch)
   retagTabPins: (oldId: string, newId: string) => void       // tab re-keyed (survives): move its pins oldId→newId
-  dropGlance: (pinId: string) => void                        // remove; wired to each pin's onExited
   reconcileGlance: (index: ReconcileIndex) => void           // rename: reconcileWith per target — repath, or drop a 'none' (same as tabs/windows)
   resetGlance: () => void                                    // per-nexus wipe
 }
@@ -466,14 +465,14 @@ const PER_NEXUS = { pinnedGlances: [] } satisfies Partial<GlanceSlice>  // reset
 
 Reconcile template — mirror `windowSlice.ts:264-268`: loop `pinnedGlances` through `reconcileWith(index, p.target)`; `'page'` with a new path → repath; `'none'` → drop. A reconcile-drop of a deleted page is not "silent" (same treatment tabs/windows get), so it satisfies R8's *never-silently-evicted* wording.
 
-**Assumed by:** Task 10 (lock/render/scrub/re-tag/Esc/onExited).
+**Assumed by:** Task 10 (lock/render/scrub/re-tag/Esc).
 
 **Verify — automated**
-- [ ] `npm run typecheck` green; `useSession.getState().pinnedGlances` exists; `PickerDirection`/`GlanceSize`/`ReconcileIndex`/`makeTabId` imported, not re-declared.
-- [ ] Unit: `pinGlance` appends with a fresh `pinId`; `unpinGlance` marks `.closing`; `dropGlance` removes; `scrubTabPins('A')` affects only A; `retagTabPins('A','B')` moves A's pins to B (survives); the same page under two tabIds is two entries (F3).
+- [ ] `npm run typecheck` green; `useSession.getState().pinnedGlances` exists; `GlanceSize`/`ReconcileIndex`/`makeTabId` imported, not re-declared.
+- [ ] Unit: `pinGlance` appends with a fresh `pinId`; `unpinGlance('x')` filters out x; `scrubTabPins('A')` filters out only A's; `retagTabPins('A','B')` moves A's pins to B (survives); the same page under two tabIds is two entries (F3).
 - [ ] Reset: `resetGlance()` empties `pinnedGlances`; a nexus switch through `resetNexusSession` clears pins (integration — the bulk `resetNavigation` path, not `closeTab`).
 - [ ] Reconcile (crossing): after a page repath in the index, `reconcileGlance` updates the pin's `target.path` to the same value `reconcileWith` gives a tab; a deleted page drops the pin.
-- [ ] Degenerate: `pinnedGlances` starts `[]`; `unpinGlance`/`dropGlance` of an unknown id is a no-op; `reconcileGlance` with no matching pins no-ops.
+- [ ] Degenerate: `pinnedGlances` starts `[]`; `unpinGlance` of an unknown id is a no-op; `reconcileGlance` with no matching pins no-ops.
 
 **Verify — user**
 - [ ] *(none — no visible change yet.)*
@@ -481,7 +480,7 @@ Reconcile template — mirror `windowSlice.ts:264-268`: loop `pinnedGlances` thr
 
 #### Task 10: Lock button, pinned render, tab lifecycle, Esc-closes-any
 
-**Requirement:** 7, 8, 9 · **Why:** The behavior itself, rendered by the pane that already exists. `GlancePane` gains a corner lock on the live page card and a render of every `pinnedGlances` entry — reusing the file's own `<PageTile>` render + fold handler (no new component), the `Button` icon recipe for the padlock, and PickerMenu's own `useExitPresence` bloom-out (no hand-rolled exit timer). A pin survives navigation and scroll because nothing dismisses it; it follows its tab through pin/unpin re-keys and vanishes on real close, via `glanceSlice` calls wired into `navigationSlice`'s existing lifecycle.
+**Requirement:** 7, 8, 9 · **Why:** The behavior itself, rendered by the pane that already exists. `GlancePane` gains a corner lock on the live page card and a render of the active tab's `pinnedGlances` — reusing the file's own `<PageTile>` render + fold handler (no new component) and the `Button` icon recipe for the padlock, each pin an uncontrolled `PickerMenu` so exit is a plain unmount. A pin survives navigation and scroll because nothing dismisses it; it follows its tab through pin/unpin re-keys and vanishes on real close, via `glanceSlice` calls wired into `navigationSlice`'s existing lifecycle.
 
 **Now** — the live pane's render and dismissal, and the tab-teardown sites:
 
@@ -536,27 +535,26 @@ const unlockBtn = (pinId: string) => (
   <Button icon="locked" revealOnHover ghostRest aria-label="Unlock preview"
     onMouseDown={(e) => e.preventDefault()} onClick={() => unpinGlance(pinId)} />
 )
-// onLock: freeze the ANCHOR point + direction (NOT the pane corner — PickerMenu re-adds gap/origin from an anchor point),
-//   plus the resolved live box size. cardRef's rect would double-apply the placement offset.
+// onLock: freeze the ANCHOR point (NOT the pane corner — PickerMenu re-adds gap/origin from an anchor point) + the live
+//   box size. Direction isn't stored — PickerMenu re-derives it from the frozen anchor on each open. cardRef's rect would
+//   double-apply the placement offset.
 const onLock = (): void => {
   if (!page || !shown) return
   const a = shown.el.getBoundingClientRect()
-  pinGlance({ tabId: activeTabId, target: page, dir,
+  pinGlance({ tabId: activeTabId, target: page,
     anchorX: a.left + a.width / 2, anchorY: a.top, anchorHeight: a.height, size: box })
   dismiss()
 }
 ```
 
-*(c) Rendering the pins — every pin mounts (a tab switch toggles `open`, never unmounts, F8); shows only on its own tab; carries no `watchAnchor` and is outside the live dismiss effect, so nav-off and anchor-loss leave it standing. `closing` lives in the SLICE, not a local Set — the tab-close removal originates in `navigationSlice`, which a GlancePane-local Set can't gate. `onExited` drops after the bloom.*
+*(c) Rendering the pins — only the active tab's pins render, each an **uncontrolled `PickerMenu` (no `open` prop)**. `selfManaged = open !== undefined` (picker-base.tsx:106) is then false, so the pane is always-shown while mounted and its unmount-while-open guard (`liveRef = open === true || closing`, :118) never fires — removing a pin (or switching tabs) just unmounts it, instantly and cleanly. A pin carries no `watchAnchor` and is outside the live dismiss effect, so nav-off and anchor-loss leave it standing; a tab switch unmounts it and a return remounts it warm (the page's editor state is still in the warm cache).*
 ```tsx
 const pinnedGlances = useSession((s) => s.pinnedGlances)
 const activeTabId = useSession((s) => s.activeTabId)
-const { pinGlance, unpinGlance, dropGlance } = useSession((s) => s)
-{pinnedGlances.map((p) => (
+const { pinGlance, unpinGlance } = useSession((s) => s)
+{pinnedGlances.filter((p) => p.tabId === activeTabId).map((p) => (
   <PickerMenu key={p.pinId} glass="window" anchorX={p.anchorX} anchorY={p.anchorY} anchorHeight={p.anchorHeight}
-    direction={p.dir} manageFocus={false} modal={false} origin="center"
-    open={p.tabId === activeTabId && !p.closing}
-    onExited={() => dropGlance(p.pinId)}>
+    manageFocus={false} modal={false} origin="center">
     <div {...{ [GLANCE_BODY_ATTR]: '' }} className="glance-body"
       style={{ width: p.size.w, height: p.size.h }} onClick={onFoldClick}>
       {renderPageTile(p.target)}
@@ -564,17 +562,15 @@ const { pinGlance, unpinGlance, dropGlance } = useSession((s) => s)
     </div>
   </PickerMenu>
 ))}
-// unpinGlance / scrubTabPins mark .closing → open flips false → PickerMenu blooms out → onExited → dropGlance removes.
-// (scrubTabPins drops an inactive tab's pins directly — their open was already false, so no unmount-while-open.)
+// unpinGlance (unlock/Esc) and scrubTabPins (tab close) both just remove from the list → the pane unmounts → closed.
 ```
-*`onExited` is a one-line prop added to `PickerMenu` — see the scope note in Global Constraints. Without it, `glanceSlice` drops on a timer that must approximate the (unexported) bloom duration.*
 
-*(d) Esc — the live pane keeps `watchAnchor.onEscape` (focus-restore); this adds ONLY the pin case, bailing when a live pane is shown or the event was consumed, so no double-close. `unpinGlance` marks `.closing` (rides the exit).*
+*(d) Esc — the live pane keeps `watchAnchor.onEscape` (focus-restore); this adds ONLY the pin case, bailing when a live pane is shown or the event was consumed, so no double-close. `unpinGlance` removes the newest active-tab pin.*
 ```tsx
 useEffect(() => {
   const onKey = (e: KeyboardEvent): void => {
     if (e.key !== 'Escape' || e.defaultPrevented || shown) return
-    const newest = pinnedGlances.filter((p) => p.tabId === activeTabId && !p.closing).at(-1)
+    const newest = pinnedGlances.filter((p) => p.tabId === activeTabId).at(-1)
     if (newest) { e.preventDefault(); unpinGlance(newest.pinId) }
   }
   window.addEventListener('keydown', onKey)
@@ -591,12 +587,11 @@ useEffect(() => {
 
 **Ordered Steps**
 1. `GlancePane.tsx`: lift the `<PageTile>` call into `renderPageTile`; keep `onFoldClick` a shared pure handler. The live `.glance-body` wrapper (cardRef + its handlers) is unchanged and renders `renderPageTile(page)` (behavior-preserving).
-2. Add `PickerMenu`'s `onExited` prop (one line in `UIX/Pickers/picker-base.tsx`, fired when its `useExitPresence` goes `mounted:false`) — see the Global Constraints scope note.
-3. Add the `Button` lock/unlock (page-only, `onMouseDown` preventDefault) + `onLock` (freeze anchor + `dir` + `box` from `shown.el`); a `glance-lock` CSS rule (corner-absolute, reuse existing button tokens).
-4. Render the `pinnedGlances` map as siblings of the live PickerMenu (own minimal `.glance-body` wrapper carrying `GLANCE_BODY_ATTR`), `open` toggled by `activeTabId && !p.closing`, `onExited={() => dropGlance(p.pinId)}`.
-5. Add the guarded Esc keydown (marks `unpinGlance`, bails on `shown`/`defaultPrevented`).
-6. `navigationSlice.ts`: `scrubTabPins` at the two real closes; `retagTabPins` N→N inside the `graduatePinCovered` loop and the `unpinTab` pair.
-7. *(InterfacePM's navigation/anchor sentence is falsified by pinned panes, but Nathan pre-edited that doc — don't touch it.)*
+2. Add the `Button` lock/unlock (page-only, `onMouseDown` preventDefault) + `onLock` (freeze anchor + `box` from `shown.el`); a `glance-lock` CSS rule (corner-absolute, reuse existing button tokens).
+3. Render the active tab's `pinnedGlances` as siblings of the live PickerMenu — each an **uncontrolled** `PickerMenu` (no `open`), own minimal `.glance-body` wrapper carrying `GLANCE_BODY_ATTR`.
+4. Add the guarded Esc keydown (`unpinGlance` the newest active-tab pin, bails on `shown`/`defaultPrevented`).
+5. `navigationSlice.ts`: `scrubTabPins` at the two real closes; `retagTabPins` N→N inside the `graduatePinCovered` loop and the `unpinTab` pair.
+6. *(InterfacePM's navigation/anchor sentence is falsified by pinned panes, but Nathan pre-edited that doc — don't touch it.)*
 
 **Assumed by:** — *(terminal task; nothing downstream.)*
 
@@ -605,7 +600,7 @@ useEffect(() => {
 - [ ] Re-key (F2): a pin on a tab that is pinned (`graduatePinCovered`) then unpinned (`unpinTab`) survives both, re-tagged to the surviving id; `scrubTabPins` fires only at real closes. Control: `rg -F 'retagTabPins' Core/Session/navigationSlice.ts` → matches the two re-key sites; `rg -F 'scrubTabPins' Core/Session/navigationSlice.ts` → the two close sites (re-derive counts).
 - [ ] Tab close: closing a tab drops its pins; another tab's remain; closing the tab that owns the live (non-pinned) glance behaves (live dismisses via its own effect).
 - [ ] Esc (F7): live shown → `watchAnchor` closes it and the new keydown bails on `shown` (no double-close); only pins → newest active-tab pin closes; neither touches the other's panes.
-- [ ] F8 (both removal paths ride the exit): a tab switch toggles pins' `open` without unmounting (no DEV "unmounted while open" error); an unpin marks `.closing` → bloom → `onExited` → `dropGlance`; closing a **background** tab drops its (already-`open:false`) pins directly with no error; closing the **active** tab marks its open pin `.closing` so it blooms rather than hard-unmounting.
+- [ ] Uncontrolled render: a pin's `PickerMenu` receives no `open` prop, so unmounting it (unpin, tab close, or tab switch) fires no DEV "unmounted while open" error and closes instantly. A tab switch unmounts the previous tab's pins and a return remounts them (warm).
 - [ ] Site target: `lockBtn` is `null` for a `kind:'site'` live card — the lock is unreachable for a website preview.
 - [ ] Focus: clicking the lock does not move focus off the host (the `onMouseDown` preventDefault holds the pane's never-take-focus contract).
 - [ ] `npm run typecheck` · `npm run test` · `npm run lint` (incl. `no-wrapped-comments`) green.
@@ -614,7 +609,7 @@ useEffect(() => {
 - [ ] Lock an editor page preview → it pins in place; navigate within the tab and scroll the anchor off screen → it stays put; switch to another tab and back → it's still there; pin the tab, then unpin it → it survives both; close the tab → it's gone.
 - [ ] Esc closes whichever preview is open — live or locked.
 - [ ] The lock control never appears on a website preview.
-- [ ] The lock/unlock padlock reads right in the corner, and a pin's Bloom-out plays on release (no instant vanish).
+- [ ] The lock/unlock padlock reads right in the corner; unlocking (or closing/switching the tab) removes the pin cleanly.
 
 
 #### Gate 4 — lock and persistence
@@ -652,9 +647,9 @@ useEffect(() => {
 - **'always' + ghost suppression (F10):** with Until Closed, an open live preview keeps `glanceShown()` true, so create-ghosts stay suppressed until the preview is closed/replaced/navigated. Designed consequence of R5; surfaced at the Phase 3 eyeball — exempt 'always' from suppression only if Nathan dislikes it.
 - **Shift-arm contract (F5):** Shift is read at pointer-enter; pressing Shift after entering doesn't arm a preview (leave+re-enter with Shift). Chosen over a re-arm-on-keydown mechanism for least parts; the ghost still blooms in that case, so it's no dead zone. Surfaced at the eyeball.
 - **Pin key (F3):** pins are a list keyed by minted `pinId`, tagged with `tabId` — multiple per tab and the same page across tabs both work.
+- **Exit = removal (ratified):** unlock, Esc, and tab-close all just remove the pin from `pinnedGlances`; the uncontrolled `PickerMenu` unmounts instantly. No `.closing`, no `onExited`, no ghost/two-phase — the close is not animated, by choice.
 - **Warm-cache aliasing (known edge):** the pin's editor *state* rides the id-keyed warm cache (`glanceWarmSeam`), so the same page pinned in two tabs shares one warm entry — scroll can race on tab-switch, and a pin's editor state (not the pin) can be evicted past `GLANCE_WARM_CAP=10` warm glances. The pin *object* is safe in `glanceSlice`; only its scroll/warmth is affected. Accepted; revisit only if it reads wrong at the eyeball.
 - **retag ≠ drop (divergence flag):** the warm cache is *dropped* on tab re-key at all four sites; pins must *survive* re-key (R8), so `retagTabPins` is deliberately NOT `dropCacheTab`. A later "reuse" pass must not collapse them.
-- **`onExited` widen:** adding the one-line `onExited` prop to `PickerMenu` is sanctioned (Global Constraints) — the disclosed in-flight decision to touch shared UIX. Vetoable; the fallback is a `glanceSlice` drop timer approximating the bloom.
 
 ### Open Against Later Tasks
 
