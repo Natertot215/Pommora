@@ -34,7 +34,7 @@ const derived = createGlobalTheme(':root', {
       quaternary: tintAt(grey, 6),
       quinary: tintAt(grey, 4),
     },
-    // `muted` dims a surface a step darker, so it derives from black rather than the grey the washes share.
+
     state: {
       hover: tintAt(grey, 2.5),
       selected: tintAt(grey, 5),
