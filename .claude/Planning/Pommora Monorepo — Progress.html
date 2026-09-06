@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 04:40 PT",
+  updated: "09-06-2026 06:00 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -110,8 +110,8 @@ const DATA = {
     ], gate: { name: "Gate 3", state: "done", hash: "e25db9ea", note: "One Opus review: −30, zero bugs; four Rule-of-Two twins left because each needs a new symbol (NexusIconEditors, AutocompletePane taking ac, the insertion-drag tail, toggleLink/toggleConnection)." } },
     { name: "Phase 4", title: "The two layers", tasks: [
       { n: 13, title: "Every list menu on one path", state: "done", hash: "ab246bac", note: "Fable. Comments 7b6a6ed1 (515 → 233). Menu asks 26 → 1, 23 files gone, RowMenuHost the in-app presenter, PickerControl on a context; tests 332 / 4,041; −483 code lines. Run stands −749 vs base." },
-      { n: 14, title: "The editor takes its host", state: "running", note: "Opus comment killer over the editor's host-touching files first, then Fable: EditorHost from the mounter, Editor/ dissolves, rulings 38–45 with red tests." },
-    ], gate: { name: "Gate 4", state: "pending" } },
+      { n: 14, title: "The editor takes its host", state: "done", hash: "d4369bd2", note: "Fable. Comments 8afea447 (772 → 376). EditorHost via a facet, built in Core/Pages/editorHost.tsx (four mounters) and in-memory by the harness; Editor/ gone; rulings 38–43 red-first; tests 334 / 4,049; +299 by the counter. Run stands −450 vs base." },
+    ], gate: { name: "Gate 4", state: "running", note: "Task 14's smoke stands; one Opus simplify-and-attack review of e25db9ea..HEAD in flight." } },
     { name: "Phase 5", title: "Removals, fixes, docs", tasks: [
       { n: 15, title: "Kill list at high confidence", state: "pending" },
       { n: 16, title: "The two write-path bugs", state: "pending" },
@@ -153,8 +153,10 @@ const DATA = {
     { at: "7b6a6ed1", label: "Task 13 comments", lines: 69193 },
     { at: "ab246bac", label: "Task 13", lines: 68710 },
     { at: "8afea447", label: "Task 14 comments", lines: 68710 },
+    { at: "d4369bd2", label: "Task 14", lines: 69009 },
   ],
   gates: [
+    { name: "Task 14 · d4369bd2", text: "typecheck 0 · test 0 (334 / 4,049) · lint 0 (1,067 files) · build 0\\nuseSession in MarkdownPM → 0 · window.nexus → 0 · host() → 0 · glanceAction → 0 · Tiles lazy import → 0 (renderTile → 2) · Editor/ gone · @codemirror/react in Engine → 0/0 (41-file closure) · ZOOM_MIN/zoomMultiplier → 0\\nsmoke (agent): autocomplete pane on [[ and none inside a fence, grip menu native, footnotes fold/unfold, glance arms after the dwell, ![[…]] mounted a PageTile through renderTile at 13.5px (15 × 0.9), embedScale 1.25 → 18.75px, file byte-identical" },
     { name: "Task 13 · ab246bac", text: "typecheck 0 · test 0 (332 / 4,041) · lint 0 (1,062 files) · build 0\\nmenu asks → 'row-menu' alone (26 → 1) · Pushes 14 → 7 · Desktop/Actions → rowMenu, returningMenu, editorMenu, appMenu, accelerators · buildFromTemplate → 3 files · tileMenuModel → 0 · @pommora/core in UIX → 0 · radio in menuModel → 0\\nsmoke (agent): native row-menu resolved null on Escape and 'a' on ↓⏎; in-app RowMenuHost pane rendered its rows, Escape → null, click → 'a'; page body round-tripped, restored" },
     { name: "Gate 3 · e25db9ea", text: "typecheck 0 · test 0 (322 / 4,003) · lint 0 (1,068 files) · build 0\\none Opus simplify-and-attack review of de8c32b8..HEAD: −30; zero bugs — every var(--…) read resolves, Engine/ transitively pure (29 files), paneMaterial byte-identical, docScan/docCache keyed the same, the gesture migration's drift as ruled\\nTask 12's smoke stood as the gate's · run −266 vs base" },
     { name: "Task 12 · 50eded4f", text: "typecheck 0 · test 0 (322 / 4,003; colorMap + solidColor tests folded into colors.test.ts) · lint 0 (1,068 files) · build 0\\ngetComputedStyle in OverScroll → 0 (duration.base → 8) · useHeld → 1 · @pommora/core in UIX → PickerControl only · color literals → 21, all UIX/Theme/colors.ts · size.css.ts gone · house → 0 · title* weight classes → 0\\nsmoke (agent): tree rendered, fifteen tokens resolved on :root, page body round-tripped, restored" },
@@ -177,6 +179,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Task 14 landed (d4369bd2): the EditorHost, Editor/ dissolved, rulings 38–43 red-first, blockContext cached, the header slot without a wrapper. Counter says +299 (intents.ts 469 after the docScan split, the harness 61 → 184 as a full in-memory mounter, editorHost.tsx 138, api.ts 84) against the agent's own −115 product / +123 harness read; the run stands −450. Gate 4 review dispatched with the delta named." },
     { when: "09-06-2026", text: "Task 13 landed (ab246bac, −483): one model, one channel, one popper, one presenter; the UIX → Core edge severed. Ruled at commit: no useMenuPresenter hook (native stays the default and ten call sites are outside React — the choice sits on HostContext.menu); presentRowMenu is a chrome-slice action, not a singleton; checked maps to a checkbox item (identical on macOS; a Windows note for Task 20); sidebar picks through the renderer's mutate, failures through error:show as before (ruling 6). Run −749 vs base. Comment killer over Task 14's files dispatched." },
     { when: "09-06-2026", text: "Gate 3 landed (e25db9ea, −30, no bugs). Phase 3 closed; the run stands −266 vs base. Six files stay over the 20-comment cap on biome-ignore directives, KNOBs, and load-bearing whys — the reviewer read all six and cut none. Phase 4 opens: the post-compact prompt notification, then Task 13 on Fable." },
     { when: "09-06-2026", text: "Task 12 landed (50eded4f, −185): every color value in UIX/Theme/colors.ts, Theme 13 → 7 modules, eight barrels gone, motion one source, the drag skeleton one. Ruled at commit: colors.ts (a .ts, not .css.ts) because Desktop's main process reads WINDOW_BG and vanilla-extract cannot export a function; ALL_ICONS stays Lucide-only (adding the 23 Tabler file glyphs would put new tiles in the picker); Menus/ and PickerControl/ barrels wait for Task 13; Interface/styles.css's :root geometry stays (app chrome, not the kit). Gate 3 review dispatched." },
