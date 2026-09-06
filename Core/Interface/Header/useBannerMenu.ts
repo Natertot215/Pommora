@@ -4,6 +4,8 @@ import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export function useBannerMenu(
   path: string,
@@ -53,7 +55,7 @@ export function useBannerMenu(
   }
   const closeEditor = (): void => setEditing(false)
   const openMenu = async (): Promise<void> => {
-    const action = await holdGhost(() => host().ask('nexus:bannerMenu', { noun, add, noRemove }))
+    const action = await holdGhost(() => popRowMenu(bannerMenuItems({ noun, add, noRemove })))
     if (action === 'change') await addOrChange()
     else if (action === 'edit') openEditor()
     else if (action === 'remove') await setBanner(null)

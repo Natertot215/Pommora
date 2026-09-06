@@ -39,7 +39,7 @@ beforeEach(() => {
     'property:delete': vi.fn(async () => ({ ok: true, value: null })),
     'views:save': saveSpy,
     'activeViews:set': vi.fn(async () => {}),
-    'property-menu': vi.fn(async () => null),
+    'row-menu': vi.fn(async () => null),
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({

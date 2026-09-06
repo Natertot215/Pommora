@@ -1,32 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import type { TileEntry, PagePickerItem, ViewPickerItem } from '../Tiles/tiles'
-import { type TileMenuContext, tileMenuModel } from './tileMenu'
+import { tileMenuItems } from './TileHandleMenu'
 
-const STEPS = [
-  { label: '1.00x', factor: 1 },
-  { label: '0.50x', factor: 0.5 },
-]
+type Ctx = Parameters<typeof tileMenuItems>[0]
 
-const ctx = (over: Partial<TileMenuContext> = {}): TileMenuContext => ({
+const ctx = (over: Partial<Ctx> = {}): Ctx => ({
   entry: { type: 'markdown', id: 'b1' } as unknown as TileEntry,
   pageItems: [],
   viewItems: [],
-  zoomSteps: STEPS,
-  currentFactor: 1,
-  locked: false,
   containerLocked: false,
   ...over,
 })
 
-const labels = (m: ReturnType<typeof tileMenuModel>): string[] => m.items.map((i) => i.label)
-const row = (m: ReturnType<typeof tileMenuModel>, label: string) =>
+const labels = (m: ReturnType<typeof tileMenuItems>): string[] => m.items.map((i) => i.label)
+const row = (m: ReturnType<typeof tileMenuItems>, label: string) =>
   m.items.find((i) => i.label === label)
 
-describe('the tile menu as a model', () => {
+describe('the tile menu as native rows', () => {
   it('offers the two link drills for a markdown tile, and Source for a page tile', () => {
-    expect(labels(tileMenuModel(ctx()))).toContain('Link View')
-    expect(labels(tileMenuModel(ctx()))).toContain('Link Page')
-    const page = tileMenuModel(
+    expect(labels(tileMenuItems(ctx()))).toContain('Link View')
+    expect(labels(tileMenuItems(ctx()))).toContain('Link Page')
+    const page = tileMenuItems(
       ctx({
         entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
         pageInfo: { title: 'Roadmap' },
@@ -37,7 +31,7 @@ describe('the tile menu as a model', () => {
   })
 
   it('heads a page tile with its own name, inert — the title field has no native twin', () => {
-    const m = tileMenuModel(
+    const m = tileMenuItems(
       ctx({
         entry: { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry,
         pageInfo: { title: 'Roadmap' },
@@ -47,11 +41,9 @@ describe('the tile menu as a model', () => {
   })
 
   it('marks the scale and style in force', () => {
-    const m = tileMenuModel(ctx({ currentFactor: 0.5 }))
-    expect(row(m, 'Scale')?.submenu?.map((r) => [r.label, r.checked])).toEqual([
-      ['1.00x', false],
-      ['0.50x', true],
-    ])
+    const m = tileMenuItems(ctx({ entry: { type: 'markdown', id: 'b1', zoom: 0.5 } as TileEntry }))
+    const scale = row(m, 'Scale')?.submenu ?? []
+    expect(scale.filter((r) => r.checked).map((r) => r.action)).toEqual(['tile:zoom:0.5'])
     expect(row(m, 'Style')?.submenu?.find((r) => r.checked)?.label).toBe('Bordered')
   })
 
@@ -63,7 +55,7 @@ describe('the tile menu as a model', () => {
       },
     ]
     const pages: PagePickerItem[] = [{ label: 'Notes', pick: 'p9' }]
-    const m = tileMenuModel(ctx({ viewItems: views, pageItems: pages }))
+    const m = tileMenuItems(ctx({ viewItems: views, pageItems: pages }))
     const leaf = row(m, 'Link View')?.submenu?.[0].submenu?.[0]
     expect(leaf?.label).toBe('Board')
     expect(m.picks[Number(leaf?.action.slice(10))]).toEqual({
@@ -75,7 +67,9 @@ describe('the tile menu as a model', () => {
   })
 
   it('refuses every act under a lock but still offers the menu', () => {
-    const m = tileMenuModel(ctx({ locked: true }))
+    const m = tileMenuItems(
+      ctx({ entry: { type: 'markdown', id: 'b1', locked: true } as TileEntry }),
+    )
     expect(row(m, 'Duplicate')?.disabled).toBe(true)
     expect(row(m, 'Delete')?.disabled).toBe(true)
     expect(row(m, 'Style')?.disabled).toBe(true)
@@ -83,23 +77,23 @@ describe('the tile menu as a model', () => {
   })
 
   it('shows a board lock as an inert Locked the tile cannot undo', () => {
-    const m = tileMenuModel(ctx({ locked: true, containerLocked: true }))
+    const m = tileMenuItems(ctx({ containerLocked: true }))
     expect(row(m, 'Locked')?.disabled).toBe(true)
   })
 
   it('refuses a drill with nothing in it, and opens no empty branch', () => {
-    const r = row(tileMenuModel(ctx()), 'Link Page')
+    const r = row(tileMenuItems(ctx()), 'Link Page')
     expect(r?.disabled).toBe(true)
     expect(r?.submenu).toBeUndefined()
   })
 
   it('offers a view tile no link rows', () => {
-    const m = tileMenuModel(ctx({ entry: { type: 'view', id: 'b1' } as unknown as TileEntry }))
+    const m = tileMenuItems(ctx({ entry: { type: 'view', id: 'b1' } as unknown as TileEntry }))
     expect(row(m, 'Source')).toBeUndefined()
   })
 
   it('refuses a container holding nothing rather than branching into blank space', () => {
-    const m = tileMenuModel(
+    const m = tileMenuItems(
       ctx({ pageItems: [{ label: 'Empty Collection', submenu: [] }] as PagePickerItem[] }),
     )
     const branch = row(m, 'Link Page')?.submenu?.[0]

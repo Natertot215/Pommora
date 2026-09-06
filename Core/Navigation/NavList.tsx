@@ -15,7 +15,8 @@ import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
-import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { navRowMenuItems } from '@pommora/core/Actions/navRowMenu'
 
 export function NavRowMenu({
   item,
@@ -42,50 +43,50 @@ export function NavRowMenu({
     const livePage =
       target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
     const livePath = livePage?.kind === 'page' ? livePage.path : undefined
-    void host()
-      .ask('nav-row-menu', {
+    void popRowMenu(
+      navRowMenuItems({
         canOpenNewTab: onOpenNewTab !== undefined,
         alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
         isPage: target.kind === 'page',
         isPinned,
         isFavorite,
         ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
-      })
-      .then((action) => {
-        if (!alive.current) return
-        onClose()
-        const st = useSession.getState()
-        if (action && livePage?.kind === 'page' && runPageSendAction(action, livePage)) return
-        switch (action) {
-          case 'open-new-tab':
-            onOpenNewTab?.(target)
-            break
-          case 'open-window':
-            if (target.kind === 'page' && st.tree) {
-              const livePage = liveTarget(reconcileIndexOf(st.tree), target)
-              if (livePage?.kind !== 'page') break
-              const ref = { id: livePage.id, path: livePage.path }
-              if (st.navOpen && (st.windowsFile.navOverride ?? true)) st.openWindowTab(ref)
-              else st.openWindow(ref)
-            }
-            break
-          case 'pin':
-            st.pinTarget(target)
-            break
-          case 'unpin':
-            st.unpinTarget(item.key)
-            break
-          case 'favorite':
-            st.addFavorite(target)
-            break
-          case 'unfavorite':
-            st.removeFavorite(item.key)
-            break
-          case 'remove':
-            st.removeRecent(item.key)
-            break
-        }
-      })
+      }),
+    ).then((action) => {
+      if (!alive.current) return
+      onClose()
+      const st = useSession.getState()
+      if (action && livePage?.kind === 'page' && runPageSendAction(action, livePage)) return
+      switch (action) {
+        case 'open-new-tab':
+          onOpenNewTab?.(target)
+          break
+        case 'open-window':
+          if (target.kind === 'page' && st.tree) {
+            const livePage = liveTarget(reconcileIndexOf(st.tree), target)
+            if (livePage?.kind !== 'page') break
+            const ref = { id: livePage.id, path: livePage.path }
+            if (st.navOpen && (st.windowsFile.navOverride ?? true)) st.openWindowTab(ref)
+            else st.openWindow(ref)
+          }
+          break
+        case 'pin':
+          st.pinTarget(target)
+          break
+        case 'unpin':
+          st.unpinTarget(item.key)
+          break
+        case 'favorite':
+          st.addFavorite(target)
+          break
+        case 'unfavorite':
+          st.removeFavorite(item.key)
+          break
+        case 'remove':
+          st.removeRecent(item.key)
+          break
+      }
+    })
     return () => {
       alive.current = false
     }

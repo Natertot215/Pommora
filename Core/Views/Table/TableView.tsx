@@ -5,8 +5,12 @@ import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
-import { type CellMenuContext, cellMenuContextFor } from '@pommora/core/Actions/cellMenu'
-import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
+import {
+  type CellMenuContext,
+  cellMenuContextFor,
+  cellMenuModel,
+} from '@pommora/core/Actions/cellMenu'
+import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
 import {
   applyValueAtRoot,
@@ -77,7 +81,7 @@ import {
 } from '@pommora/core/Connections/linkValue'
 import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
-import { host as dialer } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
 
 // TUNABLE — px past a column's edge the drag center must travel before the slot flips (sticky zone).
 const COL_SHIFT_HYSTERESIS = 25
@@ -432,13 +436,15 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       t !== undefined && t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }
         : undefined
-    const action = await dialer().ask('column-menu', {
-      align: colAlign(id),
-      alignable: !isTitle,
-      hideable: !isTitle,
-      iconsShown,
-      style,
-    })
+    const action = await popRowMenu(
+      columnMenuItems({
+        align: colAlign(id),
+        alignable: !isTitle,
+        hideable: !isTitle,
+        iconsShown,
+        style,
+      }),
+    )
     if (action === 'column:hide') hideColumn(id)
     else if (action === 'column:toggle-icons') persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
@@ -746,7 +752,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             ...pageMoveContext(tree, row.path),
           }
         : base
-    const action = await holdGhost(() => dialer().ask('cell-menu', ctx))
+    const action = await holdGhost(() => popRowMenu(cellMenuModel(ctx)))
     if (!action) return
     if (runPageSendAction(action, row)) return
     if (

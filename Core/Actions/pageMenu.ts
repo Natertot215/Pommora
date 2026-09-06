@@ -26,7 +26,7 @@ export type PageMetaAction =
   | 'title:reveal'
   | 'title:delete'
 
-/** A submenu rather than an act: the host expands it, and a leaf resolves as the move itself. */
+/** A submenu rather than an act: a leaf resolves as the move itself. */
 export const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
@@ -47,6 +47,42 @@ export interface PageMoveContext {
 
 export function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
+}
+
+/** A parent row cannot itself be picked, so a container repeats its name as its submenu's first row. */
+export function destinationRows<A>(
+  targets: readonly MoveTarget[],
+  action: (target: MoveTarget) => A,
+  disabled?: (target: MoveTarget) => boolean,
+): ActionItem<A>[] {
+  const node = (t: MoveTarget): ActionItem<A> => {
+    const self: ActionItem<A> = {
+      label: t.label,
+      action: action(t),
+      ...(disabled?.(t) ? { disabled: true } : {}),
+    }
+    if (!t.children?.length) return self
+    const [first, ...rest] = t.children.map(node)
+    return {
+      label: t.label,
+      action: self.action,
+      submenu: [self, { ...first, separatorBefore: true }, ...rest],
+    }
+  }
+  return targets.map(node)
+}
+
+function moveRow(ctx: PageMoveContext): ActionItem<PageMetaAction | PageMoveAction> {
+  return {
+    label: 'Move To',
+    action: PAGE_MOVE_ROW,
+    separatorBefore: true,
+    submenu: destinationRows(
+      ctx.moveTargets ?? [],
+      (t) => `move:${t.path}` as const,
+      (t) => t.path === ctx.currentParentPath,
+    ),
+  }
 }
 
 export type PageReachAction = Extract<
@@ -77,12 +113,13 @@ export function pageMetaMenuItems(
   opts: {
     window?: boolean
     newPages?: 'pair' | 'single'
-    move?: boolean
+    move?: PageMoveContext
     clipboard?: boolean
     history?: boolean
     reveal?: boolean
   } = {},
-): ActionItem<PageMetaAction>[] {
+): ActionItem<PageMetaAction | PageMoveAction>[] {
+  const move = opts.move !== undefined && offersMove(opts.move)
   return [
     ...(opts.window ? [{ label: 'Open Preview', action: 'title:window' as const }] : []),
     { label: openLabel(alreadyOpen), action: 'title:newtab' },
@@ -97,10 +134,10 @@ export function pageMetaMenuItems(
     ...(opts.newPages === 'single'
       ? [{ label: 'New Page', action: 'title:newbelow' as const, separatorBefore: true }]
       : []),
-    ...(opts.move ? [{ label: 'Move To', action: PAGE_MOVE_ROW, separatorBefore: true }] : []),
+    ...(move && opts.move ? [moveRow(opts.move)] : []),
     ...(opts.clipboard
       ? [
-          { label: 'Copy Link', action: 'title:copylink' as const, separatorBefore: !opts.move },
+          { label: 'Copy Link', action: 'title:copylink' as const, separatorBefore: !move },
           { label: 'Copy Path', action: 'title:copypath' as const },
         ]
       : []),
@@ -112,7 +149,7 @@ export function pageMetaMenuItems(
           {
             label: 'Reveal Location',
             action: 'title:reveal' as const,
-            separatorBefore: !opts.history && !opts.clipboard && !opts.move,
+            separatorBefore: !opts.history && !opts.clipboard && !move,
           },
         ]
       : []),
@@ -124,14 +161,26 @@ export function pageMetaMenuItems(
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,
-): ActionItem<A>[] {
+): ActionItem<A>[]
+export function pageMetaMenuSubset<A extends PageMetaAction>(
+  actions: readonly A[],
+  alreadyOpen: boolean | undefined,
+  move: PageMoveContext,
+): ActionItem<A | PageMoveAction>[]
+export function pageMetaMenuSubset<A extends PageMetaAction>(
+  actions: readonly A[],
+  alreadyOpen?: boolean,
+  move?: PageMoveContext,
+): ActionItem<A | PageMoveAction>[] {
   const kept = pageMetaMenuItems(alreadyOpen, {
     window: true,
     newPages: 'pair',
-    move: true,
+    move,
     clipboard: true,
     history: true,
     reveal: true,
-  }).filter((i): i is ActionItem<A> => (actions as readonly PageMetaAction[]).includes(i.action))
+  }).filter((i): i is ActionItem<A | PageMoveAction> =>
+    (actions as readonly PageMetaAction[]).includes(i.action as PageMetaAction),
+  )
   return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))
 }

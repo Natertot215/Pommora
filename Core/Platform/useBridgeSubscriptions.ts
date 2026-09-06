@@ -1,9 +1,7 @@
-// Every push the host bridge makes into the running session — renames, menu actions, tree and asset
+// Every push the host bridge makes into the running session — menu actions, tree and asset
 // changes. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
 import { useSession } from '../Session/store'
-import { confirmDelete } from '../Interface/Confirm/confirmations'
-import { contextTargetToSelect } from '../Navigation/tabsModel'
 import { openWebLink } from './openWebLink'
 import { host as dialer } from './dialer'
 
@@ -17,48 +15,6 @@ export function useBridgeSubscriptions(): void {
   const toggleSidebar = useSession((s) => s.toggleSidebar)
   const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
-  const beginRename = useSession((s) => s.beginRename)
-  const beginIcon = useSession((s) => s.beginIcon)
-  const newPageAdjacent = useSession((s) => s.newPageAdjacent)
-  const select = useSession((s) => s.select)
-
-  useEffect(() => {
-    return dialer().on('begin-rename', ({ path, create, host }) => beginRename(path, create, host))
-  }, [beginRename])
-
-  useEffect(() => dialer().on('begin-icon', ({ path }) => beginIcon(path)), [beginIcon])
-
-  useEffect(() => {
-    return dialer().on(
-      'new-page-adjacent',
-      ({ path, where, host }) => void newPageAdjacent(path, where, host),
-    )
-  }, [newPageAdjacent])
-
-  useEffect(() => {
-    return dialer().on('open-in-new-tab', (target) => {
-      if (!target.id) return
-      void select(contextTargetToSelect({ kind: target.kind, id: target.id, path: target.path }), {
-        newTab: true,
-      })
-    })
-  }, [select])
-
-  useEffect(() => dialer().on('confirm-delete', (target) => void confirmDelete(target)), [])
-
-  const openWindow = useSession((s) => s.openWindow)
-  useEffect(() => {
-    return dialer().on('open-in-window', (target) => {
-      if (target.id) openWindow({ id: target.id, path: target.path })
-    })
-  }, [openWindow])
-
-  const openHistory = useSession((s) => s.openHistory)
-  useEffect(() => {
-    return dialer().on('open-history', (target) => {
-      if (target.id) openHistory({ id: target.id, path: target.path })
-    })
-  }, [openHistory])
 
   useEffect(() => dialer().on('nexus:changed', (next) => void applyTree(next)), [applyTree])
 

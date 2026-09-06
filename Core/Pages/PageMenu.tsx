@@ -17,8 +17,9 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PagePropertyRows } from '../Properties/Page/PagePropertyRows'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { pageLinkText } from '@pommora/core/Actions/pageMenu'
+import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
 import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
@@ -36,7 +37,7 @@ export function PageMenu(): React.JSX.Element | null {
   if (!pageDetail) return null
 
   const runFooterAction = async (): Promise<void> => {
-    const action = await host().ask('page-actions-menu', { actions: [...FOOTER_ACTIONS] })
+    const action = await popRowMenu(pageMetaMenuSubset(FOOTER_ACTIONS))
     if (action === 'title:rename') setRenaming(true)
     else if (action === 'title:copylink')
       await host().ask('clipboard:write', pageLinkText(pageDetail.title))

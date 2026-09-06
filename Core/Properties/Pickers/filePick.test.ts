@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../../Session/store'
@@ -28,7 +29,7 @@ beforeEach(() => {
     nexus: stubDialer({
       'nexus:pickFile': pickFile,
       'assets:adopt': adoptFile,
-      'cell-menu': cellMenu,
+      'row-menu': cellMenu,
     }),
   }
   useSession.setState({
@@ -154,14 +155,20 @@ describe('fileValueMenu — the value menu the inspector panes pop', () => {
 
   it('the value’s own area offers the off-chip menu — there is no file to act on', async () => {
     await fileValueMenu(def(), held(['[[Old.pdf]]']), null, vi.fn())
-    expect(cellMenu).toHaveBeenCalledWith({ kind: 'file', onChip: false })
+    expect(cellMenu).toHaveBeenCalledWith({
+      items: cellMenuModel({ kind: 'file', onChip: false }),
+      anchor: undefined,
+    })
   })
 
   it('a chip offers the on-chip menu, and Remove drops that chip alone', async () => {
     const commit = vi.fn()
     cellMenu.mockResolvedValueOnce('file:remove')
     await fileValueMenu(def(), held(['[[A.pdf]]', '[[B.pdf]]']), chipAt(1), commit)
-    expect(cellMenu).toHaveBeenCalledWith({ kind: 'file', onChip: true })
+    expect(cellMenu).toHaveBeenCalledWith({
+      items: cellMenuModel({ kind: 'file', onChip: true }),
+      anchor: undefined,
+    })
     expect(commit).toHaveBeenCalledWith(held(['[[A.pdf]]']))
   })
 

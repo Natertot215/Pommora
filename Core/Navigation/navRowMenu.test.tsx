@@ -28,7 +28,7 @@ beforeEach(() => {
       }),
   )
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'nav-row-menu': popup,
+    'row-menu': popup,
   })
   host = document.createElement('div')
   document.body.appendChild(host)

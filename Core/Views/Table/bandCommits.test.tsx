@@ -17,6 +17,8 @@ import { propsAtRoot } from '../propsAtRoot'
 import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
+import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
+import { containerCreators } from '@pommora/core/Pages/mutateRequest'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -140,15 +142,13 @@ beforeEach(() => {
   mutateSpy = vi.fn(async () => true) // the reparent router gates its view write on this
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   selectSpy = vi.fn(async () => {})
-  contextMenuSpy = vi.fn(async () => {})
+  contextMenuSpy = vi.fn(async () => null)
   channels = {
     'view:loadValues': async () => VALUES,
     'activeViews:get': async () => ({}),
     'viewOrders:get': async () => ({}),
     'views:save': saveSpy,
-    'cell-menu': vi.fn(async () => null),
-    'column-menu': vi.fn(async () => null),
-    'context-menu': contextMenuSpy,
+    'row-menu': contextMenuSpy,
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
@@ -567,16 +567,17 @@ describe('band header — the sidebar interaction model', () => {
     expect(selectSpy).not.toHaveBeenCalled()
   })
 
-  it('right-clicking a Set band pops the native set context menu', async () => {
+  it('right-clicking a Set band pops the set entity menu', async () => {
     await mountTable(structuralSource())
     await act(async () => {
       headerOf('B').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(contextMenuSpy).toHaveBeenCalledWith({
-      kind: 'set',
-      path: 'Col/B',
-      title: 'B',
-      host: 'detail',
+      items: entityMenuItems(
+        { kind: 'set', path: 'Col/B', title: 'B', host: 'detail' },
+        containerCreators('set', 'Col/B'),
+      ),
+      anchor: undefined,
     })
   })
 

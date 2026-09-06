@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { isValidElement } from 'react'
 import type { TileEntry } from '@pommora/core/Tiles/tiles'
 import { TILE_KINDS } from '@pommora/core/Tiles/tiles'
-import { tileMenuModel } from '@pommora/core/Actions/tileMenu'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
 import { renderTile, TILE_SURFACES, tileSourceInfo, type TileRenderContext } from './tileKinds'
+import { tileMenuItems } from './TileHandleMenu'
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const ctx = (entry: TileEntry, pages = new Map([[page.id, page]])): TileRenderContext => ({
@@ -56,13 +56,10 @@ describe('the renderer table', () => {
     ]
     for (const entry of entries) {
       const rows = TILE_KINDS[entry.type].menuRows
-      const model = tileMenuModel({
+      const model = tileMenuItems({
         entry,
         pageItems: [{ label: 'Notes', pick: 'p9' }],
         viewItems: [{ label: 'Board', pick: { source_id: 's', view_id: 'v1' } }],
-        zoomSteps: [],
-        currentFactor: 1,
-        locked: false,
         containerLocked: false,
       })
       const linkRows = model.items.filter((i) => rows.some((r) => r.label === i.label))

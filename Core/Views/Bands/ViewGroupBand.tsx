@@ -6,7 +6,7 @@ import { GroupBand, resolveBandHead } from './GroupBand'
 import { bandShowsAdd } from './cardsBand'
 import { useBandDrag } from './BandDnd'
 import type { ValueContext } from '../../Properties/valueContext'
-import { host } from '../../Platform/dialer'
+import { showEntityMenu } from '../../Interface/Sidebar/entityMenuActions'
 
 /** Holds `useBandDrag`, which throws outside `<BandDnd>` and so can't live in the shared presentational GroupBand. */
 export function ViewGroupBand({
@@ -50,7 +50,7 @@ export function ViewGroupBand({
     ? (e: React.MouseEvent): void => {
         e.preventDefault()
         e.stopPropagation()
-        void host().ask('context-menu', {
+        void showEntityMenu({
           kind: 'set',
           path: setPath,
           title: setNames.get(group.key) ?? group.key,

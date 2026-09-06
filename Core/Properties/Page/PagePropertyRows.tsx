@@ -27,7 +27,8 @@ import type { WindowTarget } from '../../Session/store'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import * as s from './page-properties.css'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
-import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
@@ -160,11 +161,9 @@ export function PagePropertyRows(props: Props): React.JSX.Element {
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
-    const action = await host().ask('property-menu', {
-      kind: 'page-value',
-      name,
-      filled: !isBlankValue(value),
-    })
+    const action = await popRowMenu(
+      propertyMenuModel({ kind: 'page-value', name, filled: !isBlankValue(value) }),
+    )
     if (action === 'value:clear' || action === 'value:remove')
       emptyRow(id, action === 'value:clear')
   }

@@ -83,7 +83,8 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
-import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { cardMenuModel } from '@pommora/core/Actions/cardMenu'
 import './cards-view.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
@@ -1060,12 +1061,14 @@ const PageCard = memo(function PageCard({
     const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const action = await holdGhost(() =>
-      host().ask('card-menu', {
-        addable: menuAddable,
-        alreadyOpen,
-        editableImage: banner === 'image' && !!cover,
-        ...pageMoveContext(tree, row.path),
-      }),
+      popRowMenu(
+        cardMenuModel({
+          addable: menuAddable,
+          alreadyOpen,
+          editableImage: banner === 'image' && !!cover,
+          ...pageMoveContext(tree, row.path),
+        }),
+      ),
     )
     if (!action) return
     if (runPageSendAction(action, row)) return

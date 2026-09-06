@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  columnMenuItems,
   styleMenuLabel,
   parseStyleAction,
   styleMenuItems,
@@ -15,20 +16,22 @@ const items = (
 describe('styleMenuItems', () => {
   it('status offers Standard and Compact, current checked', () => {
     const rows = items('status', { look: 'compact' })
-    expect(rows.map((r) => [r.label, r.value])).toEqual([
-      ['Standard', 'standard'],
-      ['Compact', 'compact'],
+    expect(rows.map((r) => [r.label, r.action])).toEqual([
+      ['Standard', 'style:look:standard'],
+      ['Compact', 'style:look:compact'],
     ])
-    expect(rows.find((r) => r.value === 'compact')?.checked).toBe(true)
-    expect(rows.every((r) => r.key === 'look')).toBe(true)
+    expect(rows.find((r) => r.action === 'style:look:compact')?.checked).toBe(true)
   })
 
   it('select and multi-select offer Standard and Compact', () => {
-    expect(items('select', { look: 'standard' }).map((r) => r.value)).toEqual([
-      'standard',
-      'compact',
+    expect(items('select', { look: 'standard' }).map((r) => r.action)).toEqual([
+      'style:look:standard',
+      'style:look:compact',
     ])
-    expect(items('multi_select', {}).map((r) => r.value)).toEqual(['standard', 'compact'])
+    expect(items('multi_select', {}).map((r) => r.action)).toEqual([
+      'style:look:standard',
+      'style:look:compact',
+    ])
   })
 
   it('checkbox offers Checkbox/Switch; url the three link forms; file Filename/Full Path', () => {
@@ -46,9 +49,9 @@ describe('styleMenuItems', () => {
 
   it('number offers Bar only when bar-capable; plain numbers get Number alone', () => {
     const rows = items('number', { look: 'bar' }, true)
-    expect(rows.map((r) => [r.label, r.key, r.value, r.checked])).toEqual([
-      ['Number', 'look', 'number', false],
-      ['Bar', 'look', 'bar', true],
+    expect(rows.map((r) => [r.label, r.action, r.checked])).toEqual([
+      ['Number', 'style:look:number', false],
+      ['Bar', 'style:look:bar', true],
     ])
     // No max to fill against → Bar is gated out (picking it would silently show text).
     expect(items('number', { look: 'number' }).map((r) => r.label)).toEqual(['Number'])
@@ -56,39 +59,39 @@ describe('styleMenuItems', () => {
 
   it('datetime lists dates, then weekdays, then times — each group behind a separator', () => {
     const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
-    expect(rows.map((r) => [r.key, r.label, r.value])).toEqual([
-      ['date_format', 'MM/DD/YYYY', 'monthDayYear'],
-      ['date_format', 'DD/MM/YYYY', 'dayMonthYear'],
-      ['date_format', 'Short Date', 'short'],
-      ['date_format', 'Full Date', 'full'],
-      ['date_format', 'Relative', 'relative'],
-      ['weekday', 'Full', 'long'],
-      ['weekday', 'Short', 'short'],
-      ['weekday', 'Hidden', 'none'],
-      ['time_format', '12 Hours', 'twelveHour'],
-      ['time_format', '24 Hours', 'twentyFourHour'],
-      ['time_format', 'Hidden', 'none'],
+    expect(rows.map((r) => [r.label, r.action])).toEqual([
+      ['MM/DD/YYYY', 'style:date_format:monthDayYear'],
+      ['DD/MM/YYYY', 'style:date_format:dayMonthYear'],
+      ['Short Date', 'style:date_format:short'],
+      ['Full Date', 'style:date_format:full'],
+      ['Relative', 'style:date_format:relative'],
+      ['Full', 'style:weekday:long'],
+      ['Short', 'style:weekday:short'],
+      ['Hidden', 'style:weekday:none'],
+      ['12 Hours', 'style:time_format:twelveHour'],
+      ['24 Hours', 'style:time_format:twentyFourHour'],
+      ['Hidden', 'style:time_format:none'],
     ])
-    expect(rows.find((r) => r.key === 'weekday' && r.value === 'long')?.separatorBefore).toBe(true)
-    expect(
-      rows.find((r) => r.key === 'time_format' && r.value === 'twelveHour')?.separatorBefore,
-    ).toBe(true)
-    expect(rows.filter((r) => r.checked).map((r) => [r.key, r.value])).toEqual([
-      ['date_format', 'full'],
-      ['weekday', 'none'],
-      ['time_format', 'none'],
+    expect(rows.find((r) => r.action === 'style:weekday:long')?.separatorBefore).toBe(true)
+    expect(rows.find((r) => r.action === 'style:time_format:twelveHour')?.separatorBefore).toBe(
+      true,
+    )
+    expect(rows.filter((r) => r.checked).map((r) => r.action)).toEqual([
+      'style:date_format:full',
+      'style:weekday:none',
+      'style:time_format:none',
     ])
   })
 
   it('offers the Relative date radio and Full/Short/Hidden weekday radios', () => {
     const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
-    expect(rows.find((r) => r.key === 'date_format' && r.value === 'relative')?.label).toBe(
-      'Relative',
-    )
-    expect(rows.filter((r) => r.key === 'weekday').map((r) => [r.label, r.value])).toEqual([
-      ['Full', 'long'],
-      ['Short', 'short'],
-      ['Hidden', 'none'],
+    expect(rows.find((r) => r.action === 'style:date_format:relative')?.label).toBe('Relative')
+    expect(
+      rows.filter((r) => r.action.startsWith('style:weekday:')).map((r) => [r.label, r.action]),
+    ).toEqual([
+      ['Full', 'style:weekday:long'],
+      ['Short', 'style:weekday:short'],
+      ['Hidden', 'style:weekday:none'],
     ])
   })
 
@@ -98,6 +101,35 @@ describe('styleMenuItems', () => {
 
   it('context gets no Style items', () => {
     expect(items('context')).toEqual([])
+  })
+})
+
+describe('columnMenuItems', () => {
+  it('offers Align and Style drills where the column takes them, the Icon check, and a divided Hide', () => {
+    const items = columnMenuItems({
+      align: 'center',
+      alignable: true,
+      hideable: true,
+      iconsShown: true,
+      style: { type: 'status', current: { look: 'compact' } },
+    })
+    expect(items.map((i) => [i.label, i.separatorBefore ?? false])).toEqual([
+      ['Align', false],
+      ['Style', false],
+      ['Icon', false],
+      ['Hide', true],
+    ])
+    expect(items[0].submenu?.find((r) => r.checked)?.action).toBe('align:center')
+    expect(items[1].submenu?.find((r) => r.checked)?.action).toBe('style:look:compact')
+    expect(items[2]).toMatchObject({ action: 'column:toggle-icons', checked: true })
+  })
+
+  it('a title column offers the Icon check alone', () => {
+    expect(
+      columnMenuItems({ align: 'left', alignable: false, hideable: false, iconsShown: false }).map(
+        (i) => i.action,
+      ),
+    ).toEqual(['column:toggle-icons'])
   })
 })
 

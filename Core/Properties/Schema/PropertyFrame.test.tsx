@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -49,7 +50,7 @@ beforeEach(() => {
     'schema:delete': schemaDeleteSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
-    'property-menu': propertyMenuSpy,
+    'row-menu': propertyMenuSpy,
     'error:show': vi.fn(async () => {}),
   })
   useSession.setState({
@@ -270,7 +271,10 @@ describe('native menus + the inline-rename channel (T7)', () => {
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })
-    expect(propertyMenuSpy).toHaveBeenCalledWith({ kind: 'editor', name: 'Status' })
+    expect(propertyMenuSpy).toHaveBeenCalledWith({
+      items: propertyMenuModel({ kind: 'editor', name: 'Status' }),
+      anchor: undefined,
+    })
     expect(schemaDeleteSpy).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
@@ -313,7 +317,10 @@ describe('native menus + the inline-rename channel (T7)', () => {
         .querySelector('[class*="item"]')!
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    expect(propertyMenuSpy).toHaveBeenCalledWith({ kind: 'assigned-row', name: 'Status' })
+    expect(propertyMenuSpy).toHaveBeenCalledWith({
+      items: propertyMenuModel({ kind: 'assigned-row', name: 'Status' }),
+      anchor: undefined,
+    })
     const input = host.querySelector<HTMLInputElement>('.row-title-input')
     expect(input).toBeTruthy()
     await act(async () => {
@@ -342,6 +349,9 @@ describe('native menus + the inline-rename channel (T7)', () => {
         .querySelector('[class*="item"]')!
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    expect(propertyMenuSpy).toHaveBeenCalledWith({ kind: 'registry-row', name: 'Effort' })
+    expect(propertyMenuSpy).toHaveBeenCalledWith({
+      items: propertyMenuModel({ kind: 'registry-row', name: 'Effort' }),
+      anchor: undefined,
+    })
   })
 })

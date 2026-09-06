@@ -2,11 +2,6 @@
 
 import type { ActionItem } from './menuModel'
 
-export interface OptionMenuContext {
-  name: string
-  canEditIcon?: boolean
-}
-
 export type OptionMenuAction =
   | 'option:rename'
   | 'option:edit-icon'
@@ -18,7 +13,7 @@ export function optionMenuModel(canEditIcon = false): ActionItem<OptionMenuActio
   return [
     { label: 'Rename', action: 'option:rename' },
     ...(canEditIcon ? [{ label: 'Edit Icon', action: 'option:edit-icon' as const }] : []),
-    { label: 'Remove', action: 'option:remove', confirm: true },
+    { label: 'Remove', action: 'option:remove', separatorBefore: true, confirm: true },
     { label: 'Clear', action: 'option:clear', confirm: true },
   ]
 }

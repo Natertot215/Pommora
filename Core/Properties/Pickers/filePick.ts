@@ -2,13 +2,14 @@
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { CellMenuAction } from '@pommora/core/Actions/cellMenu'
+import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { assetSubRoot } from '@pommora/core/Locations/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { SEGMENT_INDEX_ATTR } from '@pommora/uix/Fields/SegmentRun'
 import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
 
 export function fileChipIndex(target: EventTarget | null): number | null {
   const el = target instanceof Element ? target.closest(`[${SEGMENT_INDEX_ATTR}]`) : null
@@ -113,6 +114,6 @@ export async function fileValueMenu(
   commit: (next: PropertyValue | null) => void,
 ): Promise<void> {
   const chip = fileChipIndex(target)
-  const action = await host().ask('cell-menu', { kind: 'file', onChip: chip !== null })
+  const action = await popRowMenu(cellMenuModel({ kind: 'file', onChip: chip !== null }))
   if (action) runFileMenuAction(action, def, current, chip, commit)
 }

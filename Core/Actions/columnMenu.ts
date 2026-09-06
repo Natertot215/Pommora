@@ -7,13 +7,16 @@ import {
   type ColumnStyle,
 } from '../Properties/columnStyles'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
-import type { ColumnAlign } from '../Views/views'
+import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
+import type { ActionItem } from './menuModel'
+
+export type StyleAction = `style:${string}:${string}`
 
 export type ColumnMenuAction =
   | 'column:hide'
   | 'column:toggle-icons'
   | `align:${ColumnAlign}`
-  | `style:${string}:${string}`
+  | StyleAction
 
 export interface ColumnMenuContext {
   align: ColumnAlign
@@ -23,7 +26,7 @@ export interface ColumnMenuContext {
   style?: StyleMenuContext
 }
 
-/** `current` is the RESOLVED style (defaults applied), so the checked radio reflects what renders. */
+/** `current` is the RESOLVED style (defaults applied), so the checked row reflects what renders. */
 export interface StyleMenuContext {
   type: PropertyType
   current: ColumnStyle
@@ -35,24 +38,24 @@ export function styleMenuLabel(type: PropertyType): string {
   return type === 'url' || type === 'number' ? 'Format' : 'Style'
 }
 
-/** `separatorBefore` splits the datetime date radios from its time radios: Electron groups radios per separator-bounded run. */
-export interface StyleMenuItem {
-  label: string
-  key: keyof ColumnStyle & string
-  value: string
-  checked: boolean
-  separatorBefore?: boolean
+export function alignRows(
+  current: ColumnAlign | null | undefined,
+): ActionItem<`align:${ColumnAlign}`>[] {
+  return COLUMN_ALIGNS.map((a) => ({
+    label: `${a[0].toUpperCase()}${a.slice(1)}`,
+    action: `align:${a}`,
+    checked: current === a,
+  }))
 }
 
 /** The ONE place that knows which types are style-addressable; datetime labels are format NAMES, never samples. */
-export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
+export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[] {
   const { type, current } = ctx
   const row =
-    (key: StyleMenuItem['key'], checked: string | undefined) =>
-    (label: string, value: string, separatorBefore?: boolean): StyleMenuItem => ({
+    (key: keyof ColumnStyle & string, checked: string | undefined) =>
+    (label: string, value: string, separatorBefore?: boolean): ActionItem<StyleAction> => ({
       label,
-      key,
-      value,
+      action: `style:${key}:${value}`,
       checked: checked === value,
       ...(separatorBefore ? { separatorBefore } : {}),
     })
@@ -89,6 +92,23 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
     default:
       return []
   }
+}
+
+export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAction>[] {
+  const style = ctx.style
+  const styleRows = style ? styleMenuItems(style) : []
+  return [
+    ...(ctx.alignable
+      ? [{ label: 'Align', action: 'align:left' as const, submenu: alignRows(ctx.align) }]
+      : []),
+    ...(style && styleRows.length > 0
+      ? [{ label: styleMenuLabel(style.type), action: styleRows[0].action, submenu: styleRows }]
+      : []),
+    { label: 'Icon', action: 'column:toggle-icons', checked: ctx.iconsShown },
+    ...(ctx.hideable
+      ? [{ label: 'Hide', action: 'column:hide' as const, separatorBefore: true }]
+      : []),
+  ]
 }
 
 const STYLE_VALUES: Record<string, readonly string[]> = {

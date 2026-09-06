@@ -42,7 +42,9 @@ import {
   settingsBtnActive,
 } from '@pommora/uix/Elements/action-band.css'
 import * as s from './view-tile.css'
-import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
+import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
 function coerceEmbeddedView(
   raw: unknown,
@@ -346,7 +348,7 @@ export function ViewTile({
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await host().ask('view-embed-title-menu', { iconShown, level: titleLevel })
+    const action = await popRowMenu(embedTitleMenuItems(iconShown, titleLevel))
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
@@ -360,10 +362,9 @@ export function ViewTile({
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
-    const action = await host().ask('view-embed-area-menu', {
-      viewStyle: dropdown ? 'dropdown' : 'toolbar',
-      titleShown,
-    })
+    const action = await popRowMenu(
+      embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown }),
+    )
     if (action === 'show-title') patchEntry({ title: undefined })
     else if (action === 'new-view') addView()
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
@@ -374,10 +375,9 @@ export function ViewTile({
     e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await host().ask('view-row-menu', {
-      titlesShown: labeled,
-      deletable: entry.views.length > 1,
-    })
+    const action = await popRowMenu(
+      viewRowMenuItems({ titlesShown: labeled, deletable: entry.views.length > 1 }),
+    )
     switch (action) {
       case 'rename':
         return setRenaming(i)
