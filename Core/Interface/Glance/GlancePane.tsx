@@ -8,6 +8,7 @@ import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/Resiz
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
 import { connectionsFor } from '../../Nexus/treeIndex'
+import { previewLingerMs } from '../../Settings/personalization'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
@@ -242,8 +243,13 @@ export function GlancePane(): React.JSX.Element {
     return () => clearTimeout(deadline)
   }, [shown, siteReady, dismiss])
 
-  const linger = useSession((s) => s.personalization.hoverPreviewLinger)
-  const graceMs = linger !== undefined ? linger * 1000 : LEAVE_GRACE_MS
+  const persistence = useSession((s) => s.personalization.previewPersistence)
+  const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persistence)
+
+  // Off mid-open dismisses a live pane; arming is already gated off, so nothing reopens.
+  useEffect(() => {
+    if (persistence === 'off') dismiss()
+  }, [persistence, dismiss])
 
   const tree = useSession((s) => s.tree)
   const resolveOnly = useMemo(() => connectionsFor(tree, { open: () => {} }), [tree])
@@ -292,7 +298,8 @@ export function GlancePane(): React.JSX.Element {
       cardBox ??= cardRef.current?.getBoundingClientRect() ?? null
       const overCard = cardBox ? inRect(cardBox, e.clientX, e.clientY) : false
       if (overCard || inRect(linkBox, e.clientX, e.clientY)) clearGrace()
-      else if (!grace) grace = setTimeout(close, graceMs)
+      // An Infinite grace ('always') never schedules a dismiss — the pane holds until nav/Esc/replace.
+      else if (!grace && Number.isFinite(graceMs)) grace = setTimeout(close, graceMs)
     }
     window.addEventListener('mousemove', onMove)
     const unwatch = watchAnchor(shown.el, { onGone: close, onEscape: close, onMoved: dropBoxes })

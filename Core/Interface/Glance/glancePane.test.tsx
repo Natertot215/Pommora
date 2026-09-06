@@ -52,6 +52,9 @@ afterEach(() => {
   act(() => root.unmount())
   host.remove()
   dropPageDetail(page.path)
+  useSession.setState((s) => ({
+    personalization: { ...s.personalization, previewPersistence: undefined },
+  }))
   for (const n of document.querySelectorAll('[data-picker-portal]')) n.remove()
 })
 
@@ -144,6 +147,63 @@ describe('the presenter', () => {
       vi.useRealTimers()
     }
     expect(spy).not.toHaveBeenCalled()
+  })
+})
+
+describe('the leave grace', () => {
+  const leaveMove = (): void =>
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 500, clientY: 500 }))
+    })
+
+  const setPersistence = (v: 'off' | '5s' | 'always'): void =>
+    act(() =>
+      useSession.setState((s) => ({
+        personalization: { ...s.personalization, previewPersistence: v },
+      })),
+    )
+
+  it("'5s' holds the pane the full grace after leaving, then dismisses", () => {
+    setPersistence('5s')
+    present(link())
+    expect(paneOpen()).toBe(true)
+    vi.useFakeTimers()
+    try {
+      leaveMove()
+      act(() => vi.advanceTimersByTime(4999))
+      expect(paneOpen()).toBe(true)
+      act(() => vi.advanceTimersByTime(1))
+      act(() => vi.advanceTimersByTime(1000))
+      expect(paneOpen()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("'always' schedules no dismiss timer, so the pane holds indefinitely", () => {
+    setPersistence('always')
+    present(link())
+    vi.useFakeTimers()
+    try {
+      leaveMove()
+      act(() => vi.advanceTimersByTime(600_000))
+      expect(paneOpen()).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("flipping persistence to 'off' dismisses a live pane", () => {
+    present(link())
+    expect(paneOpen()).toBe(true)
+    vi.useFakeTimers()
+    try {
+      setPersistence('off')
+      act(() => vi.advanceTimersByTime(1000))
+      expect(paneOpen()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
