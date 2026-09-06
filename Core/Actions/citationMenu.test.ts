@@ -25,7 +25,6 @@ describe('what a citation offers', () => {
 })
 
 describe('the rows group themselves', () => {
-  // Edit and Copy read the footnote; Delete removes it. One divider, and it stands above Delete.
   it('Delete takes the divider, and only where a group stands above it', () => {
     const dividers = (ctx: Parameters<typeof citationMenuModel>[0]): string[] =>
       citationMenuModel(ctx)

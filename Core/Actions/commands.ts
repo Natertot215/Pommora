@@ -1,5 +1,4 @@
-/** The `commands` object in `.nexus/settings.json`. Keys are command ids, values are shortcut
- *  specs ("cmd+t"); an absent id falls back to its default here. */
+/** The `commands` object in `.nexus/settings.json`; an absent id falls back to its default here. */
 export const DEFAULT_COMMANDS: Record<string, string> = {
   'toggle-ribbon': 'cmd+t',
   'toggle-nav': 'cmd+o',

@@ -6,8 +6,7 @@ import * as s from './frame-slide.css'
 
 const SLIDE_MS = ms(duration.base)
 
-/** Slides and resizes only, never caps or scrolls a slot — a slot that needs a ceiling or a pinned
- *  footer wraps its content in a `MenuScrollFrame`, and two scrolling containers break the slide. */
+/** Never caps or scrolls a slot: a slot needing a ceiling wraps its content in a `MenuScrollFrame`, since two scrolling containers break the slide. */
 export function FrameSlide({
   open,
   root,
@@ -38,8 +37,7 @@ export function FrameSlide({
     return () => cancelAnimationFrame(raf)
   }, [open])
 
-  // The caller nulls `detail` the same render the slide-out starts; latching keeps the slot's
-  // measured box stable so the observer doesn't read a collapsing one mid-slide.
+  // The caller nulls `detail` the same render the slide-out starts; latching keeps the measured box stable.
   const { mounted } = useExitPresence(open, SLIDE_MS)
   const latchedDetail = useRef<ReactNode>(null)
   if (open) latchedDetail.current = detail
@@ -62,8 +60,7 @@ export function FrameSlide({
   // Armed only after the first paint, so the pane snaps to its measured size instead of growing.
   useEffect(() => setEnabled(true), [])
 
-  // Height eases only across a flip; between flips an in-place resize must track content live
-  // rather than lag-chase an observer firing every animating frame.
+  // Height eases only across a flip; an in-place resize must track content live, not lag-chase the observer.
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
   // Before paint, not after: a passive effect blinks the outgoing slot out at the head of a slide.

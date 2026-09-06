@@ -1,18 +1,12 @@
-// Reaching the OS menu from the renderer: whether this machine asks for one, and where it opens.
-// The rows are the caller's model — a surface states what it offers, never how it crosses.
-
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useSession } from '../Session/store'
 import { host } from './dialer'
 
-/** Whether this machine draws its list menus as the operating system's. */
 export function useNativeMenus(): boolean {
   return useSession((st) => st.devicePrefs.nativeMenus ?? false)
 }
 
-/** Pops the rows as a system menu hanging from `trigger`'s box, measured here so no surface has to
- *  know the shape an anchor crosses in. Without a trigger the menu opens at the cursor, which is
- *  what a right-click wants. */
+/** Without a trigger the menu opens at the cursor, which is what a right-click wants. */
 export function popRowMenu(
   items: ActionItem<string>[],
   trigger: HTMLElement | null | undefined,

@@ -1,12 +1,7 @@
-// The view-family native menus' action vocabulary — one home for the unions both processes
-// speak (main pops the menu, preload types the reply), completing the shared-menu convention
-// the per-menu files (cellMenu, tabMenu, …) established.
-
 import type { ActionItem } from './menuModel'
 import type { ViewButton, ViewStyle } from '../Views/viewRow'
 import { iconLabel } from './toggleLabels'
 
-/** Which surface a view embed picks its views from — its dropdown button or an inline pill bar. */
 export type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
 export type ViewButtonMenuAction = 'toggle-title'
@@ -15,20 +10,16 @@ export type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' 
 
 export type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
 
-/** The heading levels an embed's title can be set to — the full six, unlike the block grip's
- *  picker, since an embed title is chrome rather than document structure. */
+/** The full six, unlike the block grip's picker: an embed title is chrome, not document structure. */
 const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
-/** Which surface an embed's views are picked from, and what each reads as. Checkboxes rather
- *  than radios: the pair reads as two states of one setting. */
+/** Checkboxes rather than radios: the pair reads as two states of one setting. */
 const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
   { label: 'Dropdown', style: 'dropdown' },
   { label: 'Toolbar', style: 'toolbar' },
 ]
 
-/** The Style branch the embed's area menu offers — it sets the embed tile's own `view_style`. A
- *  branch row never resolves its own action, so it carries the leading leaf's: the leaf a person
- *  lands on is what comes back. */
+/** A branch row never resolves its own action, so it carries the leading leaf's. */
 function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> {
   return {
     label: 'Style',
@@ -42,8 +33,7 @@ function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> 
   }
 }
 
-/** The embed title row's chrome menu. Edit Icon appears only while an icon is shown, since it
- *  has nothing to change otherwise. */
+/** Edit Icon appears only while an icon is shown, since it has nothing to change otherwise. */
 export function embedTitleMenuItems(
   iconShown: boolean,
   level: number,
@@ -53,8 +43,6 @@ export function embedTitleMenuItems(
     { label: iconLabel(iconShown), action: 'toggle-icon' },
     {
       label: 'Title Size',
-      // A branch carries its leading leaf's action, so a host that resolves one lands on the row
-      // a person would have reached through it.
       action: 'size-1',
       submenu: EMBED_TITLE_SIZES.map((n) => ({
         label: `Heading ${n}`,
@@ -66,8 +54,7 @@ export function embedTitleMenuItems(
   ]
 }
 
-/** The switcher area's presentation menu. Show Title surfaces here only while the title row is
- *  hidden — with the row gone, its own right-click target is gone too. */
+/** Show Title surfaces only while the title row is hidden — with the row gone, so is its own target. */
 export function embedAreaMenuItems(current: {
   viewStyle: ViewStyle
   titleShown: boolean
@@ -79,7 +66,6 @@ export function embedAreaMenuItems(current: {
   ]
 }
 
-/** The view button's own right-click menu — whether the button carries its view's title. */
 export function viewButtonMenuItems(current: {
   viewButton: ViewButton
 }): ActionItem<ViewButtonMenuAction>[] {

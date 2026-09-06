@@ -1,12 +1,9 @@
-// Every menu that is a list rather than a surface comes through here, which lets the same model
-// reach the OS or an in-app pane without either renderer knowing about the other.
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { ActionItem, MenuAnchor, RowMenuRequest } from '@pommora/core/Actions/menuModel'
 import { PAGE_MOVE_ROW, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
-/** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by exactly the
- *  window's zoom. A dropdown hangs from its trigger's bottom-left, so that corner is the origin. */
+/** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by the window's zoom. */
 export function anchorPoint(
   win: BrowserWindow,
   anchor: MenuAnchor | undefined,
@@ -19,8 +16,7 @@ export function anchorPoint(
   }
 }
 
-/** The single statement of what a row becomes, whichever menu carries it. Icons are left behind
- *  on purpose: an OS menu draws its own. */
+/** Icons are left behind on purpose: an OS menu draws its own. */
 function nativeRow<A extends string>(
   item: ActionItem<A>,
   pick: (action: A) => () => void,
@@ -34,9 +30,7 @@ function nativeRow<A extends string>(
   }
 }
 
-/** A FRAGMENT, which is why `separatorBefore` expands verbatim: a run spliced beneath rows a menu
- *  already holds needs that divider. Dropping one that leads the whole menu is `menuTemplate`'s
- *  job, since only a builder holding the finished menu can tell the two cases apart. */
+/** A FRAGMENT, so `separatorBefore` expands verbatim; dropping one that leads a whole menu is `menuTemplate`'s job. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,

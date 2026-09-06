@@ -1,8 +1,3 @@
-// The card's right-click menu: page-meta actions (Open · Rename · Edit Icon · Delete), an
-// Add Property ▸ submenu of the card's blank, addable properties, and the send block the other page
-// menus carry — Move To ▸ over the Collection/Set tree, then the two copies. The renderer builds both
-// trees (already ordered) and routes the chosen action; main maps this model to Electron MenuItems.
-
 import {
   type PageMetaAction,
   type PageMoveAction,
@@ -17,9 +12,8 @@ export type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction |
 export interface CardMenuContext extends PageMoveContext {
   /** Blank, addable properties — already ordered by the renderer (pane-kinds first). */
   addable: Array<{ id: string; name: string }>
-  /** An open page reads "Open" (focus its tab) rather than "Open New Tab". */
   alreadyOpen?: boolean
-  /** Image mode with a banner set — the card's own Edit Image, framing the banner in the picker. */
+  /** Image mode with a banner set: Edit Image frames the banner in the picker. */
   editableImage?: boolean
 }
 
@@ -29,7 +23,6 @@ export interface CardMenuModel {
   addProperty?: ActionItem<CardMenuAction>[]
 }
 
-/** The pure per-card item model — main maps it to Electron MenuItems. */
 export function cardMenuModel(ctx: CardMenuContext): CardMenuModel {
   const meta = pageMetaMenuItems(ctx.alreadyOpen, {
     newPages: 'single',

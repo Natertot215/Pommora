@@ -34,7 +34,6 @@ export type Popper<K extends MenuChannel> = (
   ...args: Asks[K]['args']
 ) => Promise<Asks[K]['reply']>
 
-/** The native popper behind each menu channel. */
 export const poppers: { [K in MenuChannel]: Popper<K> } = {
   'history:menu': (win, c) => popModelMenu(win, fileHistoryMenuItems(c.batch)),
   'create-menu': (win, items) =>
@@ -55,8 +54,7 @@ export const poppers: { [K in MenuChannel]: Popper<K> } = {
       ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
       ...(opts.hasGlyph ? [{ label: 'Remove Icon', click: pick('removeIcon') }] : []),
     ]),
-  // The noun follows the surface's vocabulary (Banner by default). Add resolves 'change' (both
-  // routes open the image picker).
+  // Add resolves 'change': both routes open the image picker.
   'nexus:bannerMenu': (win, opts) => {
     const noun = opts?.noun ?? 'Banner'
     return popReturningMenu<BannerMenuAction>(win, (pick) =>

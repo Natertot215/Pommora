@@ -36,8 +36,6 @@ describe('styleMenuItems', () => {
       'Checkbox',
       'Switch',
     ])
-    // The same three names a link wears everywhere else — the property's own Format control, the
-    // nexus-wide default, and a link's own menu in a page body.
     expect(items('url', { look: 'link-full' }).map((r) => r.label)).toEqual([
       'Full Link',
       'Short Link',
@@ -122,7 +120,6 @@ describe('parseStyleAction', () => {
   })
 })
 
-// Two types' rows name a value's format; the rest offer looks, which is a different word.
 describe('styleMenuLabel', () => {
   it('says Format for the two whose rows are one', () => {
     expect(styleMenuLabel('url')).toBe('Format')

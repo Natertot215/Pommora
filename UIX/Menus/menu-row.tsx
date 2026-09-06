@@ -169,8 +169,7 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
   return <div className={s.caption}>{children}</div>
 }
 
-/** A MenuFooting's row: the footing's glyph + label treatment, with every other MenuItem prop
- *  (trailing, value, onClick) passed straight through. */
+/** The footing's glyph + label treatment; every other MenuItem prop passes straight through. */
 export function FootingItem({
   icon,
   label,

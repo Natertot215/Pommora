@@ -1,7 +1,4 @@
 // @vitest-environment jsdom
-// A typeable picker's second door: a right-press writes the value out instead of stepping it. It
-// must land on a selected field and leave the list alone, and it must reach the trigger whether or
-// not the left press would have handed the list to the OS.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

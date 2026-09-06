@@ -1,7 +1,3 @@
-// The page context menu's meta block and the send block that closes it, shared by every surface
-// that right-clicks a page. Each consumer names its item set, so no menu carries an action its
-// router doesn't serve.
-
 import type { ActionItem } from './menuModel'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
@@ -30,14 +26,12 @@ export type PageMetaAction =
   | 'title:reveal'
   | 'title:delete'
 
-/** A submenu rather than an act, so it never resolves back to a surface: the host expands it into
- *  the destination tree, and a leaf resolves as the move itself. */
+/** A submenu rather than an act: the host expands it, and a leaf resolves as the move itself. */
 export const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
 
-/** Both addresses ride along because the consumers address differently: `path` is the move's
- *  `newParentPath`, `id` is what a restore resolves its parent by. */
+/** `path` is the move's `newParentPath`; `id` is what a restore resolves its parent by. */
 export interface MoveTarget {
   id: string
   label: string
@@ -55,8 +49,6 @@ export function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
-/** What a surface that only points at a page (a tab, a row) can offer: its name, where it sits,
- *  and the history kept for it. */
 export type PageReachAction = Extract<
   PageMetaAction,
   'title:copylink' | 'title:copypath' | 'title:history'
@@ -68,7 +60,6 @@ const PAGE_REACH_ACTIONS = [
   'title:history',
 ] as const satisfies readonly PageReachAction[]
 
-/** Offered together everywhere, so the send block reads the same wherever it's popped. */
 export type PageSendAction = PageReachAction | typeof PAGE_MOVE_ROW
 
 const PAGE_SEND_ACTIONS = [
@@ -76,15 +67,13 @@ const PAGE_SEND_ACTIONS = [
   ...PAGE_REACH_ACTIONS,
 ] as const satisfies readonly PageSendAction[]
 
-/** The reach actions alone where nothing was offered to send to. */
 export function pageSendActions(ctx: PageMoveContext): readonly PageSendAction[] {
   return offersMove(ctx) ? PAGE_SEND_ACTIONS : PAGE_REACH_ACTIONS
 }
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
-  // `newPages`: 'pair' offers Above/Below; 'single' takes the Below path, since a grid has no
-  // above. `clipboard` and `reveal` split because only revealing needs a filesystem underneath.
+  // `newPages`: 'single' takes the Below path, since a grid has no above.
   opts: {
     window?: boolean
     newPages?: 'pair' | 'single'
@@ -131,8 +120,7 @@ export function pageMetaMenuItems(
   ]
 }
 
-/** Drawn from the same list in the same order, so a surface offering four can't disagree with one
- *  offering ten. A separator left leading the result is dropped. */
+/** Drawn from the same list in the same order, so subsets can't disagree; a leading separator is dropped. */
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,
