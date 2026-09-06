@@ -21,7 +21,7 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 4. The page-frame seed is a clause inside the existing visibility predicates, not a named function; `revealed` and `setAside` keep their names.
 5. `usePropertyRows` and the `PropertyRows` interface no longer exist, and are not re-created as a hook.
 6. `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, and `DatetimeCellPicker` no longer exist. `PropertyPicker` mounts every option, datetime and file popup and both choosers; `TextPicker` — already one component with five callers — keeps every text popup and is not touched.
-7. Net source reduction **over 250 lines**, comments and tests excluded.
+7. Net source reduction **over 400 lines**, comments and tests excluded, inside the Line Budget below. Net source **files** must be negative.
 8. Every behavior in the Behavior Ledger holds, on its own surface, unchanged.
 
 **Acceptance — the whole thing working:** On the page window inspector, Page Settings ▸ Properties, a Cards view, and a Table view, every value type can be set, changed, and cleared exactly as it can today; the re-fold census in Phase 3 returns zero residue against its control; and the net delta is under −250.
@@ -57,6 +57,23 @@ Bounded by: no behavior change on any surface — **no exceptions**; `Core/Prope
 - **Explorer:** `Explore` (Opus). **Code reviewer:** `feature-dev:code-reviewer`. **Attack reviewer:** `build-breaking-agent`. **Neutral verifier:** `general-purpose`. **Simplification:** `code-simplifier`, then `comment-killer-agent`.
 - **Gate commands:** `npm run typecheck` · `npm run test` · `npm run lint`, from the repo root, exit codes read directly.
 - **Rules directory:** `.claude/Guidelines/`.
+
+**Line Budget** *(measured comments- and blanks-excluded; the deletion column is real, taken at `9c6b51130`)*
+
+| Deleted | LOC | Added, ceiling | LOC |
+| --- | ---: | --- | ---: |
+| `PagePropertyRows.tsx` | 341 | `PropertyPanel.tsx` | **≤ 320** |
+| `usePropertyRows.ts` | 177 | `property-panel.css.ts` | **≤ 45** |
+| `PropertyValueEditors.tsx` | 77 | `PropertyPicker.tsx` growth (144 today) | **≤ +130** |
+| `page-properties.css.ts` | 42 | `property-picker.css.ts` (open question) | **≤ 5** |
+| `CardPickerHost.tsx` | 217 | `CardsView.tsx` net growth | **≤ +130** |
+| `CardAddPicker.tsx` | 155 | `TableView.tsx` net growth | **≤ +35** |
+| `TableView` datetime shell + folded branches | ~50 | | |
+| **Total** | **~1059** | **Total ceiling** | **~665** |
+
+**Expected net: −400 to −590, central ≈ −490.** This is a guardrail against over-engineering, not a target to hit by deleting behavior. A net shallower than **−400**, or any single file over its ceiling, means something was built that did not need building — **stop, find it, and cut it before continuing**. Do not clear the number by weakening a test, dropping a Behavior Ledger row, or moving code into a file with headroom.
+
+**File count:** 6 source files deleted, 3 created (`PropertyPanel.tsx`, `property-panel.css.ts`, and `property-picker.css.ts` only if its open question resolves that way). **Net −3, or −4 if it doesn't.** Two test files are added. No other file may be created — a new file is the loudest over-engineering signal there is, so if a task seems to need one, that is a plan defect to report, not a call to make.
 
 **Shapes:** refactor · removal.
 
@@ -692,7 +709,8 @@ without deleting more than it grows is out of scope — report it under Sequence
 - [ ] Census A returns zero unallowlisted `PickerMenu` mounts for property assignment.
 - [ ] Census B returns zero orphans.
 - [ ] Census C returns zero new divergences against the Behavior Ledger.
-- [ ] Net source reduction **over 250 lines**, comments and tests excluded, measured with `.claude/scripts/loc.py`.
+- [ ] Net source reduction inside the Line Budget: **−400 to −590**, measured with `.claude/scripts/loc.py`. Every per-file ceiling respected.
+- [ ] Net source file count negative; no file created beyond the three the budget names.
 - [ ] All three gates green.
 
 **Verify — user**
@@ -798,7 +816,7 @@ Everything else is the standard below.
 - [ ] `Core/Properties/Page/` does not exist.
 - [ ] `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value, allowlist aside.
 - [ ] Every Behavior Ledger row holds, on its own surface, unchanged.
-- [ ] Net source reduction over 250 lines, comments and tests excluded.
+- [ ] Net source reduction of −400 or better, every per-file ceiling respected, net file count negative.
 
 **The passes**
 
