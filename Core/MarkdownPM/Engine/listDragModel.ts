@@ -1,5 +1,5 @@
 import { parseListMarkerPrefixed as parseListMarker } from './detect'
-import { lineOffsetsOf, quoteDepthOf } from '@pommora/core/Connections/markdownCode'
+import { lineOffsetsOf, quoteDepthOf } from './markdownCode'
 import { scanOf } from './docScan'
 import { lineStartAt, lineEndAt } from '../Input/edits'
 

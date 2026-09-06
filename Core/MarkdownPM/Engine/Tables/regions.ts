@@ -1,5 +1,5 @@
 import { parse } from '../parser'
-import { codeMask, type CodeMask } from '@pommora/core/Connections/markdownCode'
+import { codeMask, type CodeMask } from '../markdownCode'
 import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, type CellSpan } from './codec'
