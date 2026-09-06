@@ -1,22 +1,25 @@
 #!/usr/bin/env node
-// Lists every substantial comment a stripping pass deleted outright, so the deletions can be read
-// rather than trusted. Character counts prove how much went; only this proves what. A long comment
-// removed whole is the shape that carries an invariant, so those are the ones worth a human's eye —
-// compression is invisible here by design, and a pass that only shortened produces an empty report.
+// Run bare: the comment-line census, per file, against the twenty-line cap.
 //
-// Also reports `{}` left behind in JSX: removing the comment inside `{/* … */}` without its braces
-// satisfies the token-stream check and leaves litter no gate sees.
+// Run with a base revision: lists every substantial comment a stripping pass deleted outright, so
+// the deletions can be read rather than trusted. Character counts prove how much went; only this
+// proves what. A long comment removed whole is the shape that carries an invariant, so those are
+// the ones worth a human's eye — compression is invisible here by design, and a pass that only
+// shortened produces an empty report. Also reports `{}` left behind in JSX: removing the comment
+// inside `{/* … */}` without its braces satisfies the token-stream check and leaves litter no
+// gate sees.
 import { readFileSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from '../../Pommora/node_modules/typescript/lib/typescript.js'
+import ts from '../../node_modules/typescript/lib/typescript.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const appRoot = join(repoRoot, 'Pommora')
+const WORKSPACES = ['Core', 'UIX', 'Desktop']
 const unitsPath = join(repoRoot, '.claude', 'scripts', 'comment-units.json')
+const CAP = 20
 
-const [base = '53b5d903', unitArg, sizeArg] = process.argv.slice(2)
+const [base, unitArg, sizeArg] = process.argv.slice(2)
 const FLOOR = Number(sizeArg ?? 150)
 
 const units = existsSync(unitsPath) ? JSON.parse(readFileSync(unitsPath, 'utf8')) : []
@@ -36,35 +39,92 @@ const norm = (s) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-function comments(text) {
-  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.JSX, text)
-  const out = []
-  let tok
-  while ((tok = scanner.scan()) !== ts.SyntaxKind.EndOfFileToken) {
-    if (COMMENT.has(tok)) {
-      const raw = scanner.getTokenText()
-      out.push({ raw, body: norm(raw), line: scanner.getTokenStart() })
-    }
+// The raw scanner cannot be used here: with no parser to tell it that the `}` closing a template
+// substitution resumes the template, it takes the trailing backtick of `` `a${x}b` `` as a new
+// string and swallows the rest of the file — comments included. The parser gets templates right
+// and hands comments back as trivia ranges.
+function comments(file, text) {
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  const seen = new Map()
+  const take = (ranges) => {
+    for (const r of ranges ?? []) if (COMMENT.has(r.kind)) seen.set(r.pos, r.end)
   }
-  return out
+  const walk = (node) => {
+    const kids = node.getChildren(sf)
+    if (kids.length === 0) {
+      take(ts.getLeadingCommentRanges(text, node.getFullStart()))
+      take(ts.getTrailingCommentRanges(text, node.getEnd()))
+      return
+    }
+    for (const k of kids) walk(k)
+  }
+  walk(sf)
+  return [...seen]
+    .sort((a, b) => a[0] - b[0])
+    .map(([pos, end]) => {
+      const raw = text.slice(pos, end)
+      return { raw, body: norm(raw), pos, end }
+    })
+}
+
+// A stylesheet has no parser here, and `/*` inside a string is not a shape CSS produces.
+const cssComments = (text) =>
+  [...text.matchAll(/\/\*[\s\S]*?\*\//g)].map((m) => ({
+    raw: m[0],
+    body: norm(m[0]),
+    pos: m.index,
+    end: m.index + m[0].length,
+  }))
+
+const lineAt = (text, pos) => text.slice(0, pos).split('\n').length
+
+// A comment's weight against the cap is the source lines it occupies, not its characters.
+function commentLines(text, found) {
+  const lines = new Set()
+  for (const c of found) {
+    for (let n = lineAt(text, c.pos); n <= lineAt(text, c.end - 1); n++) lines.add(n)
+  }
+  return lines.size
 }
 
 const show = (rev, file) => {
   try {
-    return execFileSync('git', ['show', `${rev}:./${file}`], { cwd: appRoot, encoding: 'utf8' })
+    return execFileSync('git', ['show', `${rev}:./${file}`], { cwd: repoRoot, encoding: 'utf8' })
   } catch {
     return null
   }
 }
 
-const files = execFileSync('git', ['ls-files', 'src/**/*.ts', 'src/**/*.tsx'], {
-  cwd: appRoot,
+const tracked = execFileSync('git', ['ls-files', '--', ...WORKSPACES], {
+  cwd: repoRoot,
   encoding: 'utf8',
 })
   .trim()
   .split('\n')
-  .filter(Boolean)
   .filter((f) => (unit ? unit.files.includes(f) : true))
+
+const commentsOf = (f, text) => (f.endsWith('.css') ? cssComments(text) : comments(f, text))
+
+if (base === undefined) {
+  const census = tracked
+    .filter((f) => /\.(tsx?|css)$/.test(f) && !f.endsWith('.d.ts') && !/\.(test|spec)\./.test(f))
+    .map((f) => {
+      const text = readFileSync(join(repoRoot, f), 'utf8')
+      return { f, lines: commentLines(text, commentsOf(f, text)) }
+    })
+    .sort((a, b) => b.lines - a.lines)
+  const over = census.filter((c) => c.lines > CAP)
+  for (const { f, lines } of census) if (lines > 0) console.log(`${String(lines).padStart(4)}  ${f}`)
+  console.log(`\n${'─'.repeat(76)}`)
+  console.log(
+    `${census.length} files · ${census.reduce((s, c) => s + c.lines, 0)} comment lines · ` +
+      `${over.length} over the ${CAP}-line cap`,
+  )
+  for (const { f, lines } of over) console.log(`  ${f}  ${lines}`)
+  process.exit(0)
+}
+
+const files = tracked.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.d.ts'))
 
 let deletedCount = 0
 let deletedChars = 0
@@ -89,13 +149,13 @@ function overlap(a, b) {
 for (const file of files) {
   const before = show(base, file)
   if (before === null) continue
-  const after = readFileSync(join(appRoot, file), 'utf8')
+  const after = readFileSync(join(repoRoot, file), 'utf8')
   if (before === after) continue
   filesTouched += 1
 
-  const survivors = comments(after).filter((c) => c.body !== '')
+  const survivors = comments(file, after).filter((c) => c.body !== '')
   const kept = new Set(survivors.map((c) => c.body))
-  const missing = comments(before).filter((c) => c.body !== '' && !kept.has(c.body))
+  const missing = comments(file, before).filter((c) => c.body !== '' && !kept.has(c.body))
 
   // A shortened comment and a deleted one both leave their original body missing. The survivor
   // that still carries most of its words is the shortened version of it; with no such survivor,

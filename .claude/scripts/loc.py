@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Real code lines per area of the Pommora app.
 
-Counts .ts / .tsx / .css under Pommora/src, excluding blank lines, comment lines,
-test files, type declaration shims, and anything outside the app source tree
-(node_modules, dist, the monorepo's own tooling).
+Counts .ts / .tsx / .css across the workspaces, excluding blank lines, comment lines, test files,
+type declaration shims, build configuration, and anything outside a workspace (node_modules, dist).
 
   loc.py            -> JSON for the working tree
   loc.py --history  -> JSON with one sample per day of main's history
@@ -20,20 +19,26 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = "Pommora/src"
+WORKSPACES = ["Core", "UIX", "Desktop", "Showcase"]
 
-# Ordered: the first matching prefix wins, so specific paths precede their parents. Paths are
-# relative to Pommora/src with the renderer's old `renderer/src/` spelling folded into `renderer/`,
-# so one map measures every commit on the branch; folders that were renamed list both names.
+# The pre-monorepo layout. Every area lists the old prefixes it was assembled from, so one map
+# measures every commit on the branch and the earlier samples stay comparable.
+LEGACY_ROOT = "Pommora/src"
+
+# Ordered: the first matching prefix wins, so specific paths precede their parents. Each entry is
+# (area, new prefixes, prefixes under the legacy root).
 AREAS = [
-    ("Editor — MarkdownPM", ["renderer/MarkdownPM"]),
-    ("Design System", ["renderer/DesignSystem"]),
+    ("Showcase", ["Showcase"], ["renderer/Showcase"]),
+    ("Editor — MarkdownPM", ["Core/MarkdownPM"], ["renderer/MarkdownPM"]),
+    ("Design System", ["UIX"], ["renderer/DesignSystem"]),
     (
         "Surfaces & Embeds",
+        ["Core/Tiles", "Core/Web"],
         ["renderer/Tiles", "renderer/SurfacePM", "renderer/Blocks", "renderer/Embeds", "renderer/PagePreview"],
     ),
     (
         "Views & Properties",
+        ["Core/Views", "Core/Properties"],
         [
             "renderer/Views",
             "renderer/Tables",
@@ -44,34 +49,70 @@ AREAS = [
             "renderer/Detail",
         ],
     ),
-    ("App Chrome", ["renderer"]),
-    ("Main Process", ["main"]),
-    ("Shared Contract", ["shared", "preload"]),
+    ("Shared Contract", ["Core/Contract", "Core/Platform", "Desktop/Bridge"], ["shared", "preload"]),
+    (
+        "Nexus & Data",
+        [
+            "Core/Actions",
+            "Core/Assets",
+            "Core/Connections",
+            "Core/Contexts",
+            "Core/IO",
+            "Core/Index",
+            "Core/Locations",
+            "Core/Nexus",
+            "Core/Pages",
+            "Core/Trash",
+        ],
+        ["main"],
+    ),
+    ("App Chrome", ["Core"], ["renderer"]),
+    ("Desktop Shell", ["Desktop"], []),
 ]
+
+# Areas that changed name with the tree, so a stored sample keyed by the old name still reads.
+RENAMED_FROM = {"Nexus & Data": "Main Process"}
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
     "Views & Properties",
-    "Main Process",
+    "Nexus & Data",
     "Editor — MarkdownPM",
     "Design System",
     "App Chrome",
     "Surfaces & Embeds",
     "Shared Contract",
+    "Desktop Shell",
+    "Showcase",
 ]
-COLORS = ["#1C7629", "#075CB2", "#8C7606", "#DC519F", "#B26F07", "#A24CCE", "#D93B31"]
+COLORS = [
+    "#1C7629",
+    "#075CB2",
+    "#8C7606",
+    "#DC519F",
+    "#B26F07",
+    "#A24CCE",
+    "#D93B31",
+    "#0E7C86",
+    "#5A6270",
+]
 
-SKIP_DIR = {"node_modules", "dist", "out", ".git", "Showcase", "testing"}
+SKIP_DIR = {"node_modules", "dist", "out", ".git", "testing"}
 EXT = (".ts", ".tsx", ".css")
 
 
 def area_of(rel: str) -> str | None:
-    if rel.startswith("renderer/src/"):
-        rel = "renderer/" + rel[len("renderer/src/") :]
-    for name, prefixes in AREAS:
-        for p in prefixes:
-            if rel == p or rel.startswith(p + "/"):
+    if rel.startswith(LEGACY_ROOT + "/"):
+        legacy = rel[len(LEGACY_ROOT) + 1 :]
+        if legacy.startswith("renderer/src/"):
+            legacy = "renderer/" + legacy[len("renderer/src/") :]
+        for name, _, prefixes in AREAS:
+            if any(legacy == p or legacy.startswith(p + "/") for p in prefixes):
                 return name
+        return None
+    for name, prefixes, _ in AREAS:
+        if any(rel == p or rel.startswith(p + "/") for p in prefixes):
+            return name
     return None
 
 
@@ -80,6 +121,8 @@ def countable(rel: str) -> bool:
     if not rel.endswith(EXT):
         return False
     if ".test." in base or ".spec." in base or base.endswith(".d.ts"):
+        return False
+    if base.endswith(".config.ts") or base == "vitest.setup.ts":
         return False
     parts = rel.split("/")
     return not any(p in SKIP_DIR for p in parts)
@@ -118,28 +161,38 @@ def code_lines(text: str) -> int:
 
 
 def measure_tree(base: str) -> dict[str, int]:
-    """base holds a checkout whose Pommora/src sits at <base>/Pommora/src."""
-    totals: dict[str, int] = {name: 0 for name, _ in AREAS}
-    src = os.path.join(base, SRC)
-    if not os.path.isdir(src):
-        return totals
-    for dirpath, dirnames, filenames in os.walk(src):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIR]
-        for f in filenames:
-            full = os.path.join(dirpath, f)
-            rel = os.path.relpath(full, src)
-            if not countable(rel):
-                continue
-            area = area_of(rel)
-            if area is None:
-                continue
-            with open(full, encoding="utf-8", errors="ignore") as fh:
-                totals[area] += code_lines(fh.read())
+    """base holds a checkout: the workspaces at its root, or the pre-monorepo Pommora/src."""
+    totals: dict[str, int] = {name: 0 for name in ORDER}
+    for root in [*WORKSPACES, LEGACY_ROOT]:
+        top = os.path.join(base, root)
+        if not os.path.isdir(top):
+            continue
+        for dirpath, dirnames, filenames in os.walk(top):
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIR]
+            for f in filenames:
+                full = os.path.join(dirpath, f)
+                rel = os.path.relpath(full, base)
+                if not countable(rel):
+                    continue
+                area = area_of(rel)
+                if area is None:
+                    continue
+                with open(full, encoding="utf-8", errors="ignore") as fh:
+                    totals[area] += code_lines(fh.read())
     return totals
 
 
 def git(*args: str) -> str:
     return subprocess.check_output(["git", "-C", ROOT, *args], text=True)
+
+
+def archive_paths(rev: str) -> list[str]:
+    """Only the roots that commit actually holds — git archive fails on a pathspec matching none."""
+    top = set(git("ls-tree", "--name-only", rev).split())
+    paths = [w for w in WORKSPACES if w in top]
+    if LEGACY_ROOT.split("/")[0] in top:
+        paths.append(LEGACY_ROOT)
+    return paths
 
 
 def history() -> list[dict]:
@@ -156,7 +209,7 @@ def history() -> list[dict]:
         with tempfile.TemporaryDirectory() as tmp:
             try:
                 tar = subprocess.run(
-                    ["git", "-C", ROOT, "archive", sha, SRC],
+                    ["git", "-C", ROOT, "archive", sha, *archive_paths(sha)],
                     capture_output=True,
                     check=True,
                 )
@@ -183,10 +236,27 @@ def measure_commit(rev: str) -> dict[str, int]:
     uncommitted work and would attribute it to a commit that doesn't contain it."""
     with tempfile.TemporaryDirectory() as tmp:
         tar = subprocess.run(
-            ["git", "-C", ROOT, "archive", rev, SRC], capture_output=True, check=True
+            ["git", "-C", ROOT, "archive", rev, *archive_paths(rev)], capture_output=True, check=True
         )
         subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
         return measure_tree(tmp)
+
+
+def migrate(payload: dict) -> dict:
+    """Re-key a stored payload onto the current area list: a renamed area carries its samples over,
+    an area the tree gained reads zero for every day before it existed."""
+    stored = payload.get("areas", [])
+    if stored == ORDER:
+        return payload
+    index = {name: i for i, name in enumerate(stored)}
+    slots = [index.get(a, index.get(RENAMED_FROM.get(a, ""), -1)) for a in ORDER]
+    payload["areas"] = ORDER
+    payload["colors"] = COLORS
+    payload["series"] = [
+        {"d": s["d"], "v": [s["v"][k] if 0 <= k < len(s["v"]) else 0 for k in slots]}
+        for s in payload["series"]
+    ]
+    return payload
 
 
 def update() -> str:
@@ -202,11 +272,13 @@ def update() -> str:
     row = {"d": date, "v": [totals[a] for a in ORDER]}
 
     with open(HISTORY_JSON, encoding="utf-8") as fh:
-        payload = json.load(fh)
+        payload = migrate(json.load(fh))
     # A commit that moved no code leaves the page alone. Rewriting it just to stamp a new SHA would
     # dirty the tree on every commit forever — including the commit that carries the refresh — so
     # `head` means the commit these numbers were measured at, which is the truthful reading anyway.
-    if any(s["d"] == date and s["v"] == row["v"] for s in payload["series"]):
+    if payload["areas"] == ORDER and any(
+        s["d"] == date and s["v"] == row["v"] for s in payload["series"]
+    ):
         return f"{date}  {head}  unchanged"
     series = [s for s in payload["series"] if s["d"] != date]
     series.append(row)
