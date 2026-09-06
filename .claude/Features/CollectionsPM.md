@@ -1,6 +1,5 @@
 ## Page Collections
 
-**Workspace:** Core
 
 A Page Collection is the operational layer's schema-bearing tier: a folder at the Nexus root whose sidecar assigns the nexus-wide properties every Page inside it shares, at any nesting depth, along with its saved views, its children's order, and where its pages open. It has no text editor of its own — a Collection is a pure database surface, rendered through its views. Property definitions live in the nexus-wide registry; the Collection holds only the assignment, and its Sets inherit that assignment whole.
 

@@ -1,6 +1,5 @@
 ## Interaction & Motion
 
-**Workspace:** UIX
 
 The named motions and the interaction primitives, built on the duration ladder and the two curves in the design system's `UIX/Animations/` folder. Drag-specific motion — the reorder feel, the insertion line, auto-scroll — belongs to PommoraDND. Motion is Pommora-native, inspired by Apple, and adopted only where it deepens the minimalism: one progress variable drives a coordinated move, one primitive serves each pattern, and the pointer drives what should feel attached to it.
 

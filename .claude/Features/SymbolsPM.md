@@ -1,6 +1,5 @@
 ## SymbolsPM
 
-**Workspace:** UIX
 
 Pommora's standard semantic icons: the canonical glyph for each pane, property type, and recurring concept. The curated registry in `UIX/Symbols/` is the primary source and the app's own vocabulary; a caller with no assigned glyph renders `square-dashed`, the placeholder, until a symbol is chosen, and an id that resolves in neither source falls back to it as well.
 

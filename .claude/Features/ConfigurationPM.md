@@ -1,6 +1,5 @@
 ## Configuration
 
-**Workspace:** Core · Desktop
 
 Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter and its per-machine chrome. Beneath all three sits a per-device layer that never syncs: the app config beside the application, and the machine-and-Nexus preferences in the Nexus's own database. This document is the one roster of every knob; other documents name a setting by its label and point here.
 

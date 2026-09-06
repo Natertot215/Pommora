@@ -1,8 +1,7 @@
 ## Core
 
-**Workspace:** Core
 
-Pommora's engine and its interface: the Nexus on disk, the data layer that reads and writes it, and the domains the rest of the app is filed into. Core knows nothing of Electron or Node — it reaches a machine only through the Platform seam and speaks to any host through one contract. Per-domain depth lives in each domain's own document; this one is the map and the home of the cross-cutting rules no single feature owns. The PRD carries the product-level storage model, [[DesktopPM]] the Electron host.
+The Nexus on disk, the data layer that reads and writes it, and the rules that hold across every entity. Per-domain depth lives in each domain's own document; this one is the map. The PRD carries the product-level storage model, and [[DesktopPM]] what is true only of the desktop app.
 
 ### The Nexus Layout
 
@@ -176,40 +175,9 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 
 Deliberately never kept: the window opens at one size every launch, and floating windows re-center rather than reopening where they were left, since a remembered position strands chrome off screen when the display changes.
 
-### The Domains
+### The Host Boundary
 
-One folder per thing Pommora has, each holding that thing's logic, its React surfaces, and its styles. At depth one, each under `Core/`:
-
-- **`Actions`** — the list-menu models: one row shape, one channel, every menu in the app built from a tested model → [[InterfacePM]]
-- **`Assets`** — the asset directory, its URL builder, and image aspect measurement.
-- **`Connections`** — `[[Title]]` syntax, resolution against the live title map, and the rename cascade → [[ConnectionsPM]]
-- **`Contexts`** — the Context registry and the writes that keep Spaces and their members agreeing → [[ContextsPM]]
-- **`Contract`** — the channel map, the `Result` envelope, and the handler table (below).
-- **`IO`** — the atomic-write contract, the sidecar lock, and the Markdown page file's frontmatter seam.
-- **`Index`** — the content index: which titles each page mentions and the governed values it carries.
-- **`Interface`** — the shell: the three-pane window, toolbar, sidebar, side pane, floating windows, glance pane, notifications, and confirmations → [[InterfacePM]]
-- **`Locations`** — every path the Nexus has a name for, exclusion, and the boundary checks that keep a write inside the root.
-- **`MarkdownPM`** — the editor → [[MarkdownPM]]
-- **`Navigation`** — tabs, their histories, and the navigation layer of recents, pins, favorites, and search → [[NavigationPM]]
-- **`Nexus`** — the live tree, admission, identity, mutations, adoption, and remint: the model of what a Nexus contains.
-- **`Pages`** — page bodies, file history, and restore → [[PagesPM]]
-- **`Platform`** — the machine seam and the host dialer (below).
-- **`Properties`** — the type catalog, the schema, values, and every editor over them → [[PropertiesPM]]
-- **`Session`** — the Zustand store, `useSession`: the tree, selection, tabs, open pages, windows, personalization, and the caches, composed from slices so features react to each other without private channels. It is per-window working state; the host owns the data and the store caches what it last confirmed.
-- **`Settings`** — the personalization roster and the Settings window's frames → [[ConfigurationPM]]
-- **`Tiles`** — the tile document, the split-tree layout engine, and every tile surface → [[SurfacePM]]
-- **`Trash`** — deletion bundles, their provenance, and restore → [[NexusRecordPM]]
-- **`Utilities`** — the handful of helpers no domain owns, and the iteration window.
-- **`Views`** — the saved-view model and the pure pipeline (columns, filter, group, sort) that Table and Cards both render → [[ViewTypesPM]]
-- **`Web`** — the webpage-embed grammar, the session partition, and where an external link opens → [[WebviewPM]]
-
-### The Platform Seam
-
-`Core/Platform` is the only door Core has to a machine. `machine.ts` declares the filesystem interface — read, write, stat, list, rename, remove, watch — that a host implements; `dialer.ts` declares the interface a host answers channels through, and `stores.ts` the database handles. A domain calls `machine()` and never `node:fs`, so the same code runs under Electron, under a phone, or under a test double. `openWebLink.ts` and `nativeMenus.ts` are the two affordances that ask the host what it can do rather than assuming it can.
-
-### The Contract
-
-`Core/Contract` is the contract between any interface and any host. `bridge.ts` declares every channel once — its direction, what it carries, and what it answers with — and both sides derive from that map, so a channel on only one side or a drifted signature is a build error. `result.ts` holds the `Result` envelope every data channel answers with; nothing throws across the boundary. `handlers.ts` gives each domain's handler map the context it closes over, and `serve.ts` spreads the domain maps into the one table a host registers.
+The app reaches the machine — the filesystem, the database handles, native menus, the system's web links — through the interfaces in `Core/Platform`, which the host implements. Every channel between the interface and the host is declared once in `Core/Contract/bridge.ts`, both sides derive from that declaration, and data channels answer with the `Result` envelope rather than throwing across the boundary.
 
 ### What the Data Layer Leaves to the OS
 
