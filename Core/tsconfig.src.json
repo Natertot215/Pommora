@@ -12,7 +12,7 @@
     "vitest.config.ts",
     "vitest.setup.ts",
     "MarkdownPM/editorHarness.ts",
-    "Navigation/testTree.ts",
+    "Testing/**",
     "Views/fixtures/**"
   ]
 }

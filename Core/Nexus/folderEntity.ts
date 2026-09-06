@@ -1,12 +1,12 @@
-import { join, dirname, basename } from '../Locations/posix'
+import { join, dirname, basename } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import type { z } from 'zod'
-import { newId } from '../Locations/ids'
-import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
-import { recordWrite } from '../IO/writeEcho'
-import { pathExists } from '../IO/atomicWrite'
+import { newId } from './ids'
+import { readSidecar, writeSidecar, withSidecarLock } from '../Files/sidecar'
+import { recordWrite } from '../Files/writeEcho'
+import { pathExists } from '../Files/atomicWrite'
 import { invalidName } from './util'
-import type { SidecarKind } from '../Locations/paths'
+import type { SidecarKind } from '../Paths/paths'
 import { ok, fail, type Result } from '../Contract/result'
 
 export async function createFolderEntity(

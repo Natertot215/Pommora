@@ -24,7 +24,7 @@ import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 
 export function CardValue({
   row,

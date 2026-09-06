@@ -3,7 +3,7 @@
 import { readContainerSidecar, type ContainerKind } from '../Nexus/schemas'
 import type { OpenIn, ViewButton } from './viewRow'
 import { ok, fail, type Result } from '../Contract/result'
-import { writeSidecar, withSidecarLock } from '../IO/sidecar'
+import { writeSidecar, withSidecarLock } from '../Files/sidecar'
 
 export type ContainerConfigPatch = {
   open_in?: OpenIn

@@ -5,9 +5,9 @@ import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { DATE_FORMATS } from '../Properties/columnStyles'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import { isPlainObject } from '../Properties/propertyValue'
-import { asString } from '../Locations/coerce'
-import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Locations/nexusPaths'
-import { normalizeSeg, rootSegs, type WatchScope } from '../Locations/exclusion'
+import { asString } from '../Nexus/coerce'
+import { ASSETS_DIR_REL, NON_CORPUS_TOP } from '../Paths/nexusPaths'
+import { normalizeSeg, rootSegs, type WatchScope } from '../Paths/exclusion'
 import {
   EMBED_SCALE_DEFAULT,
   ENTITY_ICON_KINDS,

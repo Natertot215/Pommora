@@ -11,7 +11,7 @@ import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
 import { refreshAfterWrite } from '../Nexus/liveTree'
-import { contextsDir, contextsRegistryFile } from '../Locations/paths'
+import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 
 let root: string

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree } from './tree'
 import { NEW_PAGE_SLOT } from '../Pages/mutateRequest'
 import {

@@ -7,10 +7,9 @@ import {
   isScalar,
   isSeq,
 } from 'yaml'
-import { basename, join } from '../Locations/posix'
+import { basename, basenameNoMd, join } from '../Paths/posix'
 import { contentId } from '../Nexus/identityMark'
-import { basenameNoMd } from '../Locations/coerce'
-import { adoptedId } from '../Locations/ids'
+import { adoptedId } from '../Nexus/ids'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
 import { machine } from '../Platform/machine'

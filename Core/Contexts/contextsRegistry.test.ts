@@ -3,8 +3,8 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
-import { contextsRegistryFile, nexusDir } from '../Locations/paths'
-import { readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
+import { contextsRegistryFile, nexusDir } from '../Paths/paths'
+import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
 
 let root: string
 beforeEach(async () => {

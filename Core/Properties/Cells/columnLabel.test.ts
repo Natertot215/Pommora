@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel, displayPropertyName } from './columnLabel'
-import { contextsByIdOf } from '../contextIdentity'
+import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 
 const schema: PropertyDefinition[] = [

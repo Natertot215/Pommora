@@ -1,8 +1,8 @@
 // The one containment test the asset protocol and the banner delete-guard both cross — they hard-coded the same constant for opposite reasons, and two disagreeing tests is a defect neither one's own tests can see.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, assetSubRoot } from '../Locations/nexusPaths'
-import { normalizeSeg, rootSegs } from '../Locations/exclusion'
+import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
+import { normalizeSeg, rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
 import { readWatchScope } from '../Settings/settings'

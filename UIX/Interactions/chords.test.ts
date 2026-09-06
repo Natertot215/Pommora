@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchesCommand } from './commands'
+import { matchesCommand } from './chords'
 
 const key = (k: string, mods: Partial<KeyboardEvent> = {}): KeyboardEvent =>
   ({

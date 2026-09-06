@@ -6,17 +6,17 @@ import {
   type ConnCellAction,
   type ConnEditAction,
   type ConnMenuContext,
-} from '@pommora/core/Actions/connMenu'
+} from '@pommora/core/MarkdownPM/Links/connMenu'
 import { isValidLink } from '@pommora/core/Connections/links'
 import { readLink } from '@pommora/core/Connections/linkValue'
-import { resolveConnection } from '../../Session/treeIndex'
+import { resolveConnection } from '../../Nexus/treeIndex'
 import { pageLinkText, pagePathText } from '@pommora/core/Actions/pageMenu'
 import { openInAppBrowser } from '@pommora/core/Interface/Windows/WebWindow'
 import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 
 export function showConnectionMenu(target: ConnMenuTarget): void {
   // An editable surface with no way back into it can't perform the edit either, so the authoring pair needs both.

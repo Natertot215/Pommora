@@ -26,7 +26,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
 
 export function StatusEditor({

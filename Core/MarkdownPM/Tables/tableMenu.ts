@@ -1,6 +1,6 @@
-import type { ActionItem } from './menuModel'
-import { alignRows } from './columnMenu'
-import type { ColumnAlign } from '../Views/views'
+import type { ActionItem } from '../../Actions/menuModel'
+import { alignRows } from '../../Actions/columnMenu'
+import type { ColumnAlign } from '../../Views/views'
 
 type TableMenuKind = 'column' | 'row' | 'header'
 

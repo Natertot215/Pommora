@@ -6,7 +6,7 @@ import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
-import { splitEnvelope } from '../IO/pageFile'
+import { splitEnvelope } from '../Files/pageFile'
 import { type SnapshotStore, snapshotStore } from '../Platform/stores'
 import {
   SNAPSHOT_MAX_BYTES,

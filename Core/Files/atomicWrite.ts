@@ -4,7 +4,7 @@ import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
 import { recordWrite } from './writeEcho'
 import { machine } from '../Platform/machine'
-import { basename } from '../Locations/posix'
+import { basename } from '../Paths/posix'
 
 export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
   recordWrite(filePath)

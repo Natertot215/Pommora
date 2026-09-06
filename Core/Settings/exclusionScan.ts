@@ -1,16 +1,16 @@
 // The one place in the app that deliberately reads inside an excluded folder — every other enumerator prunes them.
 
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { parseContextKey } from '../Properties/contexts'
+import { parseContextKey } from '../Contexts/contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { ok, type Result } from '../Contract/result'
 import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText } from '../Properties/governedSweep'
-import { assetMatcher, rootSegs } from '../Locations/exclusion'
-import { isMarkdownFile, listEntries } from '../IO/walk'
-import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../IO/pageFile'
-import { SIDECAR_FILENAME } from '../Locations/paths'
+import { assetMatcher, rootSegs } from '../Paths/exclusion'
+import { isMarkdownFile, listEntries } from '../Files/walk'
+import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
+import { SIDECAR_FILENAME } from '../Paths/paths'
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
 const AGENDA_CONFIGS: readonly string[] = [

@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { serializeOnFile } from './fileLock'
-import { rewritePageSerialized, atomicWriteFile } from '@pommora/core/IO/atomicWrite'
+import { rewritePageSerialized, atomicWriteFile } from '@pommora/core/Files/atomicWrite'
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 

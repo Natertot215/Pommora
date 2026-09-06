@@ -9,7 +9,7 @@ import {
   rewritePageSerialized,
   rewritePreservingTimes,
   writeJson,
-} from '../IO/atomicWrite'
+} from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { listBundles } from '../Trash/spend'
@@ -19,8 +19,8 @@ import { deleteProperty } from './deleteProperty'
 import { clearOption, removeOption, renameOption, setOptions } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 
-vi.mock('../IO/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../IO/atomicWrite')>()
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
   return {
     ...mod,
     atomicWriteFile: vi.fn(mod.atomicWriteFile),
@@ -60,7 +60,7 @@ beforeEach(async () => {
   const note = (path: string): void => {
     observed.push({ path, journaled: existsSync(journalFile()) })
   }
-  const real = await vi.importActual<typeof import('../IO/atomicWrite')>('../IO/atomicWrite')
+  const real = await vi.importActual<typeof import('../Files/atomicWrite')>('../Files/atomicWrite')
   vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
     note(path)
     return real.atomicWriteFile(path, data)

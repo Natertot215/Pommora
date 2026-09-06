@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
+import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import type { SelectTarget, Tab } from '@pommora/core/Navigation/navRef'

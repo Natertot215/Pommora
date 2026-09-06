@@ -2,7 +2,7 @@ import type { Result } from '@pommora/core/Contract/result'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { Personalization } from '@pommora/core/Settings/personalization'
-import { applyPersonalizationKey } from './personalization'
+import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
 

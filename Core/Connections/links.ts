@@ -1,4 +1,4 @@
-import { HAS_SCHEME, WEB_ADDRESS } from '../Locations/url'
+import { HAS_SCHEME, WEB_ADDRESS } from '../Paths/url'
 import { normalizeTitle } from './connections'
 
 export const hasWebScheme = (url: string): boolean => WEB_ADDRESS.test(url)

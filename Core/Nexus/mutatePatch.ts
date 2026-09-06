@@ -18,7 +18,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
 } from './treePatch'
-import { isAdoptedId } from '../Locations/ids'
+import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
 import {
@@ -32,7 +32,7 @@ import {
   patchSpaceOrderFromDisk,
   patchTopOrderFromDisk,
 } from './watchPatch'
-import { CONTEXTS_DIR_REL } from '../Locations/nexusPaths'
+import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
 function patchForMutation(

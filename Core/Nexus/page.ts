@@ -1,8 +1,8 @@
-import { join, dirname, basename } from '../Locations/posix'
+import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
-import { newContentId } from '../Locations/ids'
-import { type PageWrite, writePageFile } from '../IO/pageFile'
-import { recordWrite } from '../IO/writeEcho'
+import { newContentId } from './ids'
+import { type PageWrite, writePageFile } from '../Files/pageFile'
+import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import {
   type Adoption,
@@ -10,10 +10,10 @@ import {
   isBlankValue,
   type PropertyValue,
 } from '../Properties/propertyValue'
-import type { GovernedWorld } from '../Properties/contextResolve'
+import type { GovernedWorld } from '../Contexts/contextResolve'
 import { PAGE_MODELED_KEYS } from './identityMark'
 import { errText, ok, fail, type Result } from '../Contract/result'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { invalidName } from './util'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'

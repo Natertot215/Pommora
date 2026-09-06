@@ -7,13 +7,13 @@ import {
   reconcileGovernedRoot,
   survivingChanges,
   type GovernedWorld,
-} from '../Properties/contextResolve'
-import { readJsonObject, writeJson } from '../IO/atomicWrite'
+} from '../Contexts/contextResolve'
+import { readJsonObject, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
-import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../IO/walk'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../Files/walk'
 
-import { SPACE_SIDECAR } from '../Locations/paths'
+import { SPACE_SIDECAR } from '../Paths/paths'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 
 async function liveWorld(

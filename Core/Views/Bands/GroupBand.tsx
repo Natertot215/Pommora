@@ -20,7 +20,7 @@ import type { ValueContext } from '../../Properties/valueContext'
 import './group-band.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
-import { SpaceChip } from '@pommora/uix/Labels/recipes'
+import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 
 export function resolveBandHead(
@@ -88,7 +88,7 @@ export function resolveBandHead(
     const title = space?.title ?? value
     return {
       label: title,
-      glyph: <SpaceChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
+      glyph: <NeutralChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
     }
   }
 

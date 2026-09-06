@@ -5,12 +5,12 @@ import {
   type Personalization,
 } from './personalization'
 import type { NavViewMode, NavViewModes, SubfieldConfig } from '../Interface/chrome'
-import type { WatchScope } from '../Locations/exclusion'
-import { readJsonObject, rmwJsonStrict } from '../IO/atomicWrite'
+import type { WatchScope } from '../Paths/exclusion'
+import { readJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { nexusFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
-import { normalizeSeg, rootSegs } from '../Locations/exclusion'
+import { normalizeSeg, rootSegs } from '../Paths/exclusion'
 import { fail, ok, type Result } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
 

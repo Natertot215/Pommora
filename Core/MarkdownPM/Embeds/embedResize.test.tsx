@@ -4,7 +4,7 @@ import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
 import { embedField, setEmbedHeights } from './embedWidget'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
 
 stubEditorBridge()
 stubPointerCapture()

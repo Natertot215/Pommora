@@ -3,8 +3,8 @@ import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import type { SelectTarget } from '../../Session/store'
-import { ancestryOf, type TrailNode } from '../../Session/treeIndex'
-import { findSpace } from '../../Session/treeIndex'
+import { ancestryOf, type TrailNode } from '../../Nexus/treeIndex'
+import { findSpace } from '../../Nexus/treeIndex'
 
 type SpineTarget = Extract<SelectTarget, { kind: 'collection' | 'set' | 'page' }>
 

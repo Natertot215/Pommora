@@ -1,6 +1,6 @@
 import type { Handlers } from '../Contract/handlers'
 import { BUSY, fail, NO_NEXUS, ok, type Result } from '../Contract/result'
-import { isUlid } from '../Locations/ids'
+import { isUlid } from '../Nexus/ids'
 import { adopting } from '../Nexus/handlers'
 import { sessionRoot } from '../Nexus/session'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'

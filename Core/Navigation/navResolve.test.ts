@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { resolveFavorites, resolvePins, resolveRecents, resolveWith } from './navResolve'
-import { resolveIndexOf } from '../Session/treeIndex'
-import { makeTree } from './testTree'
+import { resolveIndexOf } from '../Nexus/treeIndex'
+import { makeTree } from '../Testing/testTree'
 
 describe('resolveWith — single entry', () => {
   const resolveOne = (tree: Parameters<typeof resolveIndexOf>[0], entry: NavRef) =>

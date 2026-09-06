@@ -4,7 +4,7 @@ import type {
   ConnEditAction,
   ConnSurface,
   ConnUrlAction,
-} from '@pommora/core/Actions/connMenu'
+} from '@pommora/core/MarkdownPM/Links/connMenu'
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */

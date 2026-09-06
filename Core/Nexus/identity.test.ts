@@ -3,9 +3,9 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureIdentity } from './identity'
-import { isUlid } from '../Locations/ids'
-import { pathExists } from '../IO/atomicWrite'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Locations/paths'
+import { isUlid } from './ids'
+import { pathExists } from '../Files/atomicWrite'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
 
 let root: string
 beforeEach(async () => {

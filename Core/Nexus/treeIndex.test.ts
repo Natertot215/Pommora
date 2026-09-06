@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { makeTree } from '../Navigation/testTree'
-import { reconcileWith } from './reconcileSelection'
+import { makeTree } from '../Testing/testTree'
+import { reconcileWith } from '../Session/reconcileSelection'
 import {
   containersByPathOf,
   navKeysOf,

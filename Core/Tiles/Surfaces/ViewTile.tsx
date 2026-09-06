@@ -21,7 +21,7 @@ import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/dr
 import { optionRing, PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { findCollection, findSet } from '../../Session/treeIndex'
+import { findCollection, findSet } from '../../Nexus/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
@@ -42,7 +42,7 @@ import {
   settingsBtnActive,
 } from '@pommora/uix/Elements/action-band.css'
 import * as s from './view-tile.css'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 

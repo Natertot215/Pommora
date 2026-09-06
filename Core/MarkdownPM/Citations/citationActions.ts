@@ -7,7 +7,7 @@ import {
   Facet,
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import type { CitationMenuAction } from '@pommora/core/Actions/citationMenu'
+import type { CitationMenuAction } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 import { isInsideInlineCode } from '../Engine/markdownCode'
 import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'

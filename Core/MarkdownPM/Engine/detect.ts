@@ -1,7 +1,7 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from './parser'
 import { codeMask, fenceLang, fenceSpans, lineOffsetsOf, type CodeMask } from './markdownCode'
-import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
+import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg

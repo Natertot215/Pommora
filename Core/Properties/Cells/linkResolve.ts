@@ -2,7 +2,7 @@
 
 import { isCommittableLink, type ResolveTitle } from '@pommora/core/Connections/linkValue'
 import { useSession } from '../../Session/store'
-import { resolveConnection } from '../../Session/treeIndex'
+import { resolveConnection } from '../../Nexus/treeIndex'
 
 export const resolveTitle: ResolveTitle = (rawTitle) =>
   resolveConnection(useSession.getState().tree, rawTitle)?.title ?? null

@@ -1,5 +1,5 @@
-import { readJsonObject, setOrDrop } from '../IO/atomicWrite'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { readJsonObject, setOrDrop } from '../Files/atomicWrite'
+import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { updateSettings } from '../Settings/settings'
 import { ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'

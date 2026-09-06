@@ -1,6 +1,6 @@
-import { assetMatcher, excludedMatcher, type WatchScope } from '../Locations/exclusion'
-import { NON_CORPUS_TOP } from '../Locations/nexusPaths'
-import { join, relative } from '../Locations/posix'
+import { assetMatcher, excludedMatcher, type WatchScope } from '../Paths/exclusion'
+import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
+import { join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
 
 // Case-insensitive: a walk that admits `.MD` while a sweep skips it leaves a page that never rewrites.

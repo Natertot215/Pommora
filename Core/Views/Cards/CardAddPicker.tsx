@@ -11,7 +11,7 @@ import {
   pickSemantics,
   syntheticContextDef,
 } from '../../Properties/Pickers/PropertyPicker'
-import type { ContextOption } from '../../Properties/contextOptions'
+import type { ContextOption } from '../../Contexts/contextOptions'
 import { type AddEntry, orderAddableEntries } from './cardValueInput'
 import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import './cards-view.css'

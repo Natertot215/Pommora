@@ -1,9 +1,9 @@
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
-import { pathExists } from '../IO/atomicWrite'
-import { listEntries } from '../IO/walk'
-import { SIDECAR_FILENAME, type SidecarKind } from '../Locations/paths'
-import { readSidecar } from '../IO/sidecar'
+import { pathExists } from '../Files/atomicWrite'
+import { listEntries } from '../Files/walk'
+import { SIDECAR_FILENAME, type SidecarKind } from '../Paths/paths'
+import { readSidecar } from '../Files/sidecar'
 
 export type FolderKind = 'collection' | 'set' | 'tasks-singleton' | 'events-singleton' | 'unknown'
 

@@ -8,9 +8,9 @@ import {
 } from '../Connections/links'
 import { serializeLink } from '../Connections/linkValue'
 import { pageLinkText } from './pageMenu'
-import { linkPaste, type LinkPaste } from '../Web/pasteLink'
+import { linkPaste, type LinkPaste } from '../MarkdownPM/Links/pasteDecision'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
-import { composeWebpageEmbedLine } from '../Web/webpageEmbed'
+import { composeWebpageEmbedLine } from '../MarkdownPM/Embeds/webpageEmbed'
 
 export type PasteAsForm =
   | LinkDisplay

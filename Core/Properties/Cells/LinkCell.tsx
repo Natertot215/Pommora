@@ -10,9 +10,9 @@ import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OverScroll } from '@pommora/uix/Elements/OverScroll'
 import { linkDisplayText, readLink, type LinkTarget } from '@pommora/core/Connections/linkValue'
-import { resolveConnection } from '../../Session/treeIndex'
+import { resolveConnection } from '../../Nexus/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { openWebLink } from '../../Platform/openWebLink'
+import { openWebLink } from '../../Web/openWebLink'
 
 /** Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. Only the Page Title format fetches; the other two derive from the URL itself. */
 export function LinkCell({

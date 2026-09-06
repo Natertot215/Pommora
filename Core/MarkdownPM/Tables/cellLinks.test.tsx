@@ -6,7 +6,7 @@ import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@pommora/core/Actions/connMenu'
+import type { ConnUrlAction } from '@pommora/core/MarkdownPM/Links/connMenu'
 import {
   buildPageIndex,
   type ConnectionsApi,

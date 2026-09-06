@@ -1,16 +1,16 @@
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import {
   readJsonObject,
   readTextOrNull,
   rewritePreservingTimes,
   writeJson,
-} from '../IO/atomicWrite'
+} from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
-import { listFilesRecursive } from '../IO/walk'
-import { contextsDir, SPACE_SIDECAR } from '../Locations/paths'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { listFilesRecursive } from '../Files/walk'
+import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
 import { sweepAdmits } from '../Nexus/util'
 
 export type Raw = Record<string, unknown>

@@ -1,7 +1,7 @@
 // The walk is single-flight: concurrent refreshes share the in-flight promise. A walk that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a walk whose slot was dropped or superseded installs nothing.
 
 import type { NexusTree } from './tree'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { readNexus } from './readNexus'
 
 interface WalkSlot {

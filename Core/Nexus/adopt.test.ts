@@ -4,11 +4,11 @@ import { mkdtemp, rm, mkdir, writeFile, readFile, stat, utimes } from 'node:fs/p
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { stampAdopted } from './adopt'
-import { readSidecar } from '../IO/sidecar'
-import { splitFrontmatter } from '../IO/pageFile'
-import { isUlid, idTime } from '../Locations/ids'
+import { readSidecar } from '../Files/sidecar'
+import { splitFrontmatter } from '../Files/pageFile'
+import { isUlid, idTime } from './ids'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
-import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Locations/paths'
+import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/paths'
 
 let root: string
 

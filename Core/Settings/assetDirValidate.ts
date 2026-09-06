@@ -1,10 +1,10 @@
-import { join } from '../Locations/posix'
+import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
-import { isMarkdownFile, listEntries } from '../IO/walk'
-import { resolveUnderRoot } from '../Locations/pathSafety'
+import { isMarkdownFile, listEntries } from '../Files/walk'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { nexusFolderRefusal } from './codec'
-import { SIDECARS, relPosix } from '../Locations/paths'
+import { SIDECARS, relPosix } from '../Paths/paths'
 
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
   const rel = relPosix(root, abs)

@@ -3,9 +3,9 @@ import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
-import { readSidecar } from '../IO/sidecar'
+import { readSidecar } from '../Files/sidecar'
 import { baseSidecar, pageCollectionSidecar } from './schemas'
-import { isUlid } from '../Locations/ids'
+import { isUlid } from './ids'
 
 let root: string
 beforeEach(async () => {

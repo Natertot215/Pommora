@@ -1,8 +1,8 @@
 // Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
 import { useEffect } from 'react'
-import { useSession } from '../Session/store'
-import { openWebLink } from './openWebLink'
-import { host as dialer } from './dialer'
+import { useSession } from './store'
+import { openWebLink } from '../Web/openWebLink'
+import { host as dialer } from '../Platform/dialer'
 
 export function useBridgeSubscriptions(): void {
   const load = useSession((s) => s.load)

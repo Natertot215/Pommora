@@ -1,5 +1,5 @@
 import type { PommoraError } from '../Contract/result'
-import type { ContextDef } from '../Properties/contexts'
+import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
 import type { OpenIn, ViewButton } from '../Views/viewRow'

@@ -22,7 +22,7 @@ import { useSession } from '../../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { popRowMenu } from '../../Actions/nativeMenus'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
 const PANE_SQUARE = 225

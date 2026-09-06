@@ -4,7 +4,7 @@ import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
-import { SpaceChip } from '@pommora/uix/Labels/recipes'
+import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import type { PickKind } from './massAssign'
 import { OptionChip } from '../Cells/OptionChip'
 
@@ -116,7 +116,7 @@ export function PropertyOptionRows({
           onClick={() => onPick(o.value)}
         >
           {contextOptions ? (
-            <SpaceChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
+            <NeutralChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
           ) : (
             <OptionChip
               type={def.type}

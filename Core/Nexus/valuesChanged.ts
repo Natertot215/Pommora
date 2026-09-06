@@ -1,9 +1,9 @@
 // Main's own page writes are invisible to the watcher (the echo window), so every writer notes the page it touched and one flush per operation pushes them, grouped by container, with page ids resolved from the live tree.
 
 import { getLiveTree } from './liveTree'
-import { escapes } from '../Locations/pathSafety'
+import { escapes } from '../Paths/pathSafety'
 import { parentOf } from './treePatch'
-import { relPosix } from '../Locations/paths'
+import { relPosix } from '../Paths/paths'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.

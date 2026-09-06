@@ -20,7 +20,7 @@ import {
   reconcileSelection,
   reconcileWith,
 } from '../Session/reconcileSelection'
-import { navKeysOf, reconcileIndexOf } from '../Session/treeIndex'
+import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { moveByKey, navKey, RECENTS_CAP, recordRecent, removeRecentByKey } from './navRecents'
 import { dropCapturedOutside } from './thumbMarkers'
 import {
@@ -56,14 +56,14 @@ import {
   findSet,
   isDepth1Set,
   parentPathOf,
-} from '../Session/treeIndex'
+} from '../Nexus/treeIndex'
 import { cancelPageSave } from '../Session/saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from '../Session/sessionState'
 import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
-import { popRowMenu } from '../Platform/nativeMenus'
+import { popRowMenu } from '../Actions/nativeMenus'
 import { createMenuItems, createdRequest } from '@pommora/core/Actions/createMenu'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>

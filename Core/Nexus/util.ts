@@ -1,7 +1,7 @@
-import { invalidBasename } from '../Properties/contexts'
-import { hiddenName } from '../Locations/exclusion'
+import { invalidBasename } from '../Contexts/contexts'
+import { hiddenName } from '../Paths/exclusion'
 import { admitContentFile } from './identityMark'
-import { frontmatterWritable, splitFrontmatter } from '../IO/pageFile'
+import { frontmatterWritable, splitFrontmatter } from '../Files/pageFile'
 
 /** Rejects path separators, dot dirs, and a trailing managed extension (writers append that themselves — "Note.md" would otherwise yield "Note.md.md"). */
 export function invalidName(name: string): boolean {

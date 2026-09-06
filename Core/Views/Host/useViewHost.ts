@@ -16,8 +16,8 @@ import { useSaveView } from '../ViewTileScope'
 import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
-} from '../../Properties/contextOptions'
-import { contextIdsOf } from '../../Properties/contextIdentity'
+} from '../../Contexts/contextOptions'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { declaredType } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'

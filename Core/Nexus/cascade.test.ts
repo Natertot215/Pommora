@@ -8,8 +8,8 @@ import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { createPage } from './page'
 import { createProperty } from '../Properties/registryProperty'
 
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
-import { rewritePageSerialized } from '../IO/atomicWrite'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import { rewritePageSerialized } from '../Files/atomicWrite'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { seedContentIndex } from '../Index/indexSeed'
 

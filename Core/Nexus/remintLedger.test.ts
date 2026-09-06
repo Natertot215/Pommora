@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { EntityRecord } from './record'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode } from './tree'
-import { adoptedId } from '../Locations/ids'
+import { adoptedId } from './ids'
 import {
   type Baseline,
   latchBaseline,

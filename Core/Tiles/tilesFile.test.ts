@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/pro
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import {
   convertTileToView,
@@ -16,7 +16,7 @@ import {
   writeMarkdownTile,
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { tileDocPath, tileFilePath, tileHostDir } from '../Locations/paths'
+import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 
 let root: string
 const home = (): string => tileHostDir(root)

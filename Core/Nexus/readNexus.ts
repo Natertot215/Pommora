@@ -1,5 +1,5 @@
-import { basename, join } from '../Locations/posix'
-import { splitFrontmatter } from '../IO/pageFile'
+import { basename, basenameNoMd, join } from '../Paths/posix'
+import { splitFrontmatter } from '../Files/pageFile'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
@@ -7,22 +7,22 @@ import {
   contextsRegistry as contextsRegistrySchema,
   parseContextKey,
   type ContextsRegistry,
-} from '../Properties/contexts'
-import { resolveContextKeys } from '../Properties/contextResolve'
+} from '../Contexts/contexts'
+import { resolveContextKeys } from '../Contexts/contextResolve'
 import { savedView, type SavedView } from '../Views/views'
 import { type Crop, coerceOpenIn, coerceViewButton, cropsFile } from './schemas'
 import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
-import { adoptedId } from '../Locations/ids'
+import { adoptedId } from './ids'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
-import { pathExists, readJsonObject, readJsonStrict } from '../IO/atomicWrite'
-import { isContentFile, listEntries } from '../IO/walk'
+import { pathExists, readJsonObject, readJsonStrict } from '../Files/atomicWrite'
+import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
-import { asString, asStringArray, basenameNoMd } from '../Locations/coerce'
-import { shouldSkipDir, type WatchScope } from '../Locations/exclusion'
-import { resolveOrder } from '../Locations/order'
-import { beginWalk, cachedParse, endWalk } from '../IO/walkCache'
+import { asString, asStringArray } from './coerce'
+import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
+import { resolveOrder } from './order'
+import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
 import {
   contextsDir,
   contextsRegistryFile,
@@ -30,8 +30,8 @@ import {
   nexusConfig,
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
-} from '../Locations/paths'
-import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '../Locations/nexusPaths'
+} from '../Paths/paths'
+import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '../Paths/nexusPaths'
 
 type Json = Record<string, unknown>
 

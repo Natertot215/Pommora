@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { searchEntriesOf } from '../Session/treeIndex'
+import { searchEntriesOf } from '../Nexus/treeIndex'
 import { filterNav } from './navSearch'
-import { makeTree } from './testTree'
+import { makeTree } from '../Testing/testTree'
 
 const index = (): ReturnType<typeof searchEntriesOf> => searchEntriesOf(makeTree())
 

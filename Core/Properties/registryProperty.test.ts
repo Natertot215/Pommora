@@ -11,9 +11,9 @@ import {
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
-import { pathExists } from '../IO/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import type { PropertyDefinition } from './properties'
 
 let root: string

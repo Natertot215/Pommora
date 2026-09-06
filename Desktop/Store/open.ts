@@ -9,7 +9,7 @@ import {
   truncateIndex,
   writeMeta,
 } from './ddl'
-import { nexusDir } from '@pommora/core/Locations/paths'
+import { nexusDir } from '@pommora/core/Paths/paths'
 
 export const DB_FILENAME = 'nexus.db'
 

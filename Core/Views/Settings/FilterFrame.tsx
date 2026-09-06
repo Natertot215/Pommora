@@ -24,11 +24,11 @@ import { OverScroll } from '@pommora/uix/Elements/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker/CalendarPicker'
-import { contextIdsOf, isContextColumnId } from '../../Properties/contextIdentity'
-import { useStyleFor } from '../Host/columnStyles'
+import { contextIdsOf, isContextColumnId } from '../../Contexts/contextIdentity'
+import { useStyleFor } from '../Host/useColumnStyles'
 import { useSession } from '../../Session/store'
 import { condensedDate, formatDate } from '../../Properties/formatValue'
-import { contextOptionsFor, type ContextOption } from '../../Properties/contextOptions'
+import { contextOptionsFor, type ContextOption } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
 import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
 import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
@@ -50,7 +50,7 @@ import {
   operatorsFor,
 } from '../filterModel'
 import * as fp from './filter-frame.css'
-import { SpaceChip } from '@pommora/uix/Labels/recipes'
+import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
@@ -313,7 +313,7 @@ function ChipsField({
             {shown.map((v) => {
               const o = byValue.get(v)
               return isContext ? (
-                <SpaceChip
+                <NeutralChip
                   key={v}
                   color={labelColorFor(o?.color)}
                   title={o?.label ?? v}
@@ -344,7 +344,7 @@ function ChipsField({
                   onClick={() => toggle(o.value)}
                 >
                   {isContext ? (
-                    <SpaceChip color={labelColorFor(o.color)} title={o.label} />
+                    <NeutralChip color={labelColorFor(o.color)} title={o.label} />
                   ) : (
                     <OptionChip type={type} option={o} />
                   )}

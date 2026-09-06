@@ -1,8 +1,8 @@
 import { machine } from '../Platform/machine'
-import { newId } from '../Locations/ids'
-import { readJsonStrict, writeJson } from '../IO/atomicWrite'
-import { asString } from '../Locations/coerce'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
+import { newId } from './ids'
+import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { asString } from './coerce'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../Paths/paths'
 import { createFolderEntity } from './folderEntity'
 import { AGENDA_SLOTS, type AgendaRegistration } from './folderKind'
 
