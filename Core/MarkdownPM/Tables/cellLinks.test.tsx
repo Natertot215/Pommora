@@ -29,7 +29,6 @@ const conn: ConnectionsApi = {
   open: (p: ConnPage) => opened(p.id),
 }
 
-// An ALIASED connection: what it draws is "the plan", what it resolves is "Quarterly Plan" — reading the key off the rendered text would fail.
 const model: TableModel = {
   columns: [{ align: null, dashes: 3 }],
   header: ['A'],
@@ -87,7 +86,6 @@ describe('a connection in a resting cell behaves like one in the body', () => {
     expect(link.dataset.connTitle).toBe('Quarterly Plan')
   })
 
-  // Without claiming the press the cell swaps into an editor first, and the click lands on a caret inside the syntax.
   it('navigates rather than dropping the caret into its syntax', async () => {
     await mount()
     await clickLink()
@@ -114,7 +112,6 @@ describe('a connection in a resting cell behaves like one in the body', () => {
   })
 })
 
-// A resting cell's external links colored as links but followed nothing and left an armed dwell behind a menu.
 describe('an external link in a resting cell behaves like one in the body', () => {
   const opener = vi.fn()
   const web: TableModel = {
@@ -150,8 +147,6 @@ describe('an external link in a resting cell behaves like one in the body', () =
   })
 })
 
-// The autocomplete panel is a body-level portal — demoting the active cell on a pointerdown there tears the
-// editor down before the press that picked a suggestion can reach it.
 describe('the picker survives being clicked', () => {
   it('a pointerdown inside the panel does not demote the cell', async () => {
     await mount()
@@ -204,7 +199,6 @@ describe('the picker survives being clicked', () => {
   })
 })
 
-// The four actions that only rewrite text must reach a resting cell's link without it first becoming an editor.
 describe('a link’s menu in a resting cell', () => {
   const URL = 'https://www.example.com/a/b'
   const committed = vi.fn()
@@ -252,14 +246,12 @@ describe('a link’s menu in a resting cell', () => {
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
   })
 
-  // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
   it('settles the table, so the edit is drawn rather than waiting on a visit', async () => {
     await mountLink('link:delete')
     await rightClick()
     expect(settled).toHaveBeenCalled()
   })
 
-  // A native menu can be held open indefinitely, and an undo can move the cell underneath it.
   it('declines once the cell no longer holds the link the menu was popped on', async () => {
     committed.mockReset()
     container = document.createElement('div')
@@ -324,7 +316,6 @@ describe('a link’s menu in a resting cell', () => {
   })
 })
 
-// One decision about what a right-clicked link is offered, whichever syntax wrote it.
 describe('a connection’s menu in a resting cell', () => {
   let target: ConnMenuTarget | null = null
 
@@ -371,7 +362,6 @@ describe('a connection’s menu in a resting cell', () => {
     expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('the plan')
   })
 
-  // Menued as the connection it is drawn as, minus the authoring pair that belongs to `[[ ]]`.
   it('a markdown link naming a page gets the page menu without the authoring pair', async () => {
     await mountConn('[the plan](Quarterly%20Plan)')
     expect(target).toMatchObject({ kind: 'page', editable: false, hasAlias: false })

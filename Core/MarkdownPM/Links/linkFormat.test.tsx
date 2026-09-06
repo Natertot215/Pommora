@@ -20,8 +20,6 @@ class ResizeObserverStub {
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
-// The title never arrives over the bridge here — every test that needs one writes it into the shared
-// cache directly, which is the same thing the fetch's own resolution does.
 const linkTitlesFetch = async () => ({ ok: false, error: { code: 'offline' } })
 stubEditorBridge({
   'row-menu': connMenu,
@@ -48,7 +46,6 @@ afterEach(async () => {
   await cleanupEditor()
 })
 
-/** Right-click the drawn label, then let the menu's promise chain settle. */
 const rightClick = async (view: EditorView): Promise<void> => {
   vi.spyOn(view, 'posAtCoords').mockReturnValue(5)
   const el = view.dom.querySelector('.md-link') as HTMLElement
@@ -59,7 +56,6 @@ const rightClick = async (view: EditorView): Promise<void> => {
   })
 }
 
-/** Pop the link's menu with `action` already chosen, and answer with the document it left. */
 const choose = async (action: ConnMenuAction, body = BODY): Promise<EditorView> => {
   connMenu.mockResolvedValue(action)
   const view = await mountEditor({ initialBody: body, connections: conn })
@@ -119,8 +115,6 @@ describe('Format rewrites the label and nothing else', () => {
     expect(view.state.doc.toString()).toBe(`a [Example Domain](${URL}) b`)
   })
 
-  // The same deferral the paste path uses: the domain stands in, and the fetched title replaces it
-  // through the pending-title anchor rather than through a second mechanism.
   it('stands the domain in until the title lands', async () => {
     const view = await choose('format:link-title')
     expect(view.state.doc.toString()).toBe(`a [example.com](${URL}) b`)
@@ -130,8 +124,6 @@ describe('Format rewrites the label and nothing else', () => {
     expect(view.state.doc.toString()).toBe(`a [Example Domain](${URL}) b`)
   })
 
-  // A label Format writes and a label the paste path writes are the same words for the same address,
-  // or a link formatted by hand reads differently from one pasted in that mode.
   it('agrees with what a paste in the same mode would have written', async () => {
     const view = await choose('format:link-short')
     expect(view.state.doc.toString()).toBe(`a ${linkMarkdown(URL, 'link-short')} b`)
@@ -145,7 +137,6 @@ describe('the three that act on the link itself', () => {
     expect(view.state.sliceDoc(sel.from, sel.to)).toBe('Home')
   })
 
-  // Both halves are selected rather than merely reached: each is a thing you replace outright.
   it('Edit Link selects the address', async () => {
     const view = await choose('editLink')
     const sel = view.state.selection.main
@@ -157,7 +148,6 @@ describe('the three that act on the link itself', () => {
     expect(view.state.doc.toString()).toBe('a Home b')
   })
 
-  // The escapes belong to the link syntax the label was surviving; as prose it is just the words.
   it('Remove Link unescapes what the syntax made the label carry', async () => {
     const view = await choose('link:remove', `a [Notes \\[WIP\\]](${URL}) b`)
     expect(view.state.doc.toString()).toBe('a Notes [WIP] b')
@@ -168,8 +158,6 @@ describe('the three that act on the link itself', () => {
     expect(view.state.doc.toString()).toBe('a  b')
   })
 
-  // A native menu can be held open for as long as the user likes, and the document is free to move
-  // underneath it — the span the menu was popped on may no longer be in the document at all.
   it('declines when the document shrank past the span while the menu was open', async () => {
     connMenu.mockResolvedValue('link:delete')
     const view = await mountEditor({ initialBody: BODY, connections: conn })
@@ -185,12 +173,9 @@ describe('the three that act on the link itself', () => {
   })
 })
 
-// An address already sitting in the prose as ordinary text. Format ▸ Link opens an empty target for
-// words you have yet to point anywhere; this one points the address at itself.
 describe('Insert Link over a selected address', () => {
   const insert = async (body: string, from: number, to: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })
-    // The menu is raised over the editor you clicked into, which is the claim focus makes.
     claimEditorMenu(view)
     view.dispatch({ selection: { anchor: from, head: to } })
     await act(async () => {
@@ -204,7 +189,6 @@ describe('Insert Link over a selected address', () => {
     expect(view.state.doc.toString()).toBe(`see [${URL}](${URL}) now`)
   })
 
-  // The label is the address you were looking at; the target is the one that opens.
   it('gives a schemeless address the scheme it needs to open', async () => {
     const view = await insert('see example.com now', 4, 15)
     expect(view.state.doc.toString()).toBe('see [example.com](https://example.com) now')
@@ -215,8 +199,6 @@ describe('Insert Link over a selected address', () => {
     expect(view.state.doc.toString()).toBe('see these words now')
   })
 
-  // The gate is validity, not intent — the same one Paste As uses, and for the same reason: a paste
-  // that formats on its own has to guess, where selecting a filename and asking for a link does not.
   it('obliges a dotted token that only looks like an address, since you asked for it', async () => {
     const view = await insert('see App.tsx now', 4, 11)
     expect(view.state.doc.toString()).toBe('see [App.tsx](https://App.tsx) now')

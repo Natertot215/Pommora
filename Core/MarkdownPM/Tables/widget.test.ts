@@ -13,8 +13,6 @@ import type { TableModel } from '../Engine/Tables/model'
 
 const make = (doc: string): number => buildWidgetDecorations(EditorState.create({ doc })).size
 
-// Reach the widget field's live decoration set (via the decorations facet) and return the first table
-// widget's stored text + model — what MarkdownTable renders its static cells from.
 function firstTableWidget(state: EditorState): {
   text: string
   model: TableModel
@@ -34,7 +32,6 @@ function firstTableWidget(state: EditorState): {
   throw new Error('no table widget in decoration set')
 }
 
-/** The span the first table's block decoration covers, in the live decoration set. */
 function widgetSpan(state: EditorState): [number, number] {
   for (const provider of state.facet(EditorView.decorations)) {
     if (typeof provider === 'function') continue
@@ -73,9 +70,6 @@ describe('table widget decorations', () => {
     expect(doc.slice(from, to)).toBe('| a | b |\n| --- | --- |\n| 1 | 2 |')
   })
 
-  // A cell self-edit maps the widget forward and rebuilds nothing. The cell being typed in is a live
-  // editor holding its own text; replacing the block decoration here would make CodeMirror re-measure
-  // the block on every keystroke, against React content that hasn't rendered yet — the page jumps.
   it('leaves the widget alone on a cell self-edit', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
     const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
@@ -91,7 +85,6 @@ describe('table widget decorations', () => {
     expect(firstTableWidget(next).model.rows[0][0]).toBe('1')
   })
 
-  // …and catches up when the cell demotes, which is the first moment a static cell has to draw it.
   it('rebuilds it when the cell settles', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
     const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
@@ -107,8 +100,6 @@ describe('table widget decorations', () => {
     expect(w.text).toContain('hello')
   })
 
-  // Mapping has to carry the block over the edit: a widget left spanning the old range would clip the
-  // table it replaces.
   it('and the widget still spans the table after an edit that lengthened it', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
     const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
@@ -121,8 +112,6 @@ describe('table widget decorations', () => {
   })
 })
 
-// A cell draws a footnote number its own text never holds, so a renumber anywhere in the document
-// changes what the table must draw — even when the edit is nowhere near it.
 describe("a table follows the document's footnote numbering", () => {
   const doc = 'first [^a]\n\nmiddle line\n\n| h |\n| - |\n| [^b] |\n\n[^a]: one\n[^b]: two'
 
@@ -141,7 +130,6 @@ describe("a table follows the document's footnote numbering", () => {
       ],
     }).state
     expect(next.doc.toString()).toContain('[^new] middle line')
-    // Disk order, carrying each label's positional number — the new marker takes 2 and pushes b to 3.
     expect(firstTableWidget(next).cites).toBe('A=1;B=3;NEW=2')
   })
 

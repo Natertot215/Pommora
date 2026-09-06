@@ -49,16 +49,14 @@ describe('cellCommitChange — minimal-diff cell edit (replace just the cell spa
   })
 
   it('escapes backslash+pipe so a literal `a\\|b` stays ONE cell and round-trips', () => {
-    const c = cellCommitChange(doc, 0, 0, 1, 'a\\|b')! // user typed: a \ | b into header col 1
+    const c = cellCommitChange(doc, 0, 0, 1, 'a\\|b')!
     const spliced = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
     const m = parseTable(spliced)!
-    expect(m.header).toHaveLength(2) // structure intact — no phantom column
-    expect(unescapeCell(m.header[1])).toBe('a\\|b') // value preserved through the round-trip
+    expect(m.header).toHaveLength(2)
+    expect(unescapeCell(m.header[1])).toBe('a\\|b')
   })
 })
 
-// A row short of the columns its delimiter declares is read through a padded model, so a cell being
-// typed in has a position in the model and no span in the source.
 describe('a ragged row keeps what is typed into the columns it is short of', () => {
   const doc = '| a | b |\n| --- | --- |\n| 1 |'
 
@@ -84,11 +82,11 @@ describe('structuralEditChange — whole-table op re-serialized into the source 
   it('applies the transform, replaces the region, and preserves content + surroundings', () => {
     const c = structuralEditChange(doc, 0, (m) => insertColumn(m, 1, 'right'))!
     const m = parseTable(c.insert)!
-    expect(m.header).toEqual(['a', 'b', '']) // a column was added
-    expect(m.rows).toEqual([['1', '2', '']]) // existing cells preserved
+    expect(m.header).toEqual(['a', 'b', ''])
+    expect(m.rows).toEqual([['1', '2', '']])
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
-    expect(next.startsWith('before\n\n')).toBe(true) // text before the table untouched
-    expect(next.endsWith('\n\nafter')).toBe(true) // text after the table untouched
+    expect(next.startsWith('before\n\n')).toBe(true)
+    expect(next.endsWith('\n\nafter')).toBe(true)
   })
 
   it('returns null for an out-of-range table index', () => {

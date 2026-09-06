@@ -93,14 +93,12 @@ interface TableDom extends ReactDom {
   _ro?: ResizeObserver
 }
 
-/** CodeMirror asks the widget what height to assume until the next measure — a table answering "unknown"
- *  is assumed one line tall, collapsing the document's height on every keystroke a cell makes. */
+/** CodeMirror asks the widget what height to assume until the next measure — a table answering "unknown" is assumed one line tall, collapsing the document's height on every keystroke a cell makes. */
 interface HeightBox {
   px: number
 }
 
-// `index` is the column index or the visual row index (body index = index - 1). `table:delete` is a doc-level
-// region removal handled by the caller, so it maps to null.
+// `table:delete` is a doc-level region removal handled by the caller, so it maps to null.
 function transformFor(
   action: TableMenuAction,
   index: number,
@@ -458,8 +456,7 @@ const widgetField = StateField.define<DecorationSet>({
     if (toggled) return toggledSet
     if (tr.effects.some((e) => e.is(setHeadingColsEffect)))
       return buildWidgetDecorations(tr.state, deco)
-    // Map the widgets forward and STOP: rebuilding per keystroke makes CM re-measure against React content
-    // that hasn't rendered. `refreshTableEffect` does it when the cell demotes.
+    // Map the widgets forward and STOP: rebuilding per keystroke makes CM re-measure against React content that hasn't rendered. `refreshTableEffect` does it when the cell demotes.
     if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)
     let refreshedSet = deco
     let refreshed = false

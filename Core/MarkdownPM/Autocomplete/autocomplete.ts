@@ -53,8 +53,7 @@ export function autocompleteQuery(
   const s = linkAt(line, rel)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
-    // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would
-    // arm a list keyed on the title and discard the alias on Enter.
+    // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
     if (rel >= s.title[0] && rel <= s.title[1])
       return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
@@ -76,8 +75,7 @@ export function autocompleteQuery(
       form: 'target',
       label: { from: lineStart + paren.label[0], to: lineStart + paren.label[1] },
     }
-  // A LOCAL match — the connections pattern excludes `![[` by design, and `[` doesn't auto-pair after `!`,
-  // so an in-progress embed is usually unclosed.
+  // A LOCAL match — the connections pattern excludes an embed opener by design, and `[` doesn't auto-pair after `!`, so an in-progress embed is usually unclosed.
   if (allowEmbeds) {
     for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
       const contentStart = idx + 3

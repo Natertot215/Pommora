@@ -1,6 +1,4 @@
-// A cell editor's document is one cell, so its own scan can never bind a marker — the citations that
-// number it live in the page around it. This gives the entered cell the same numbering source the
-// resting cell draws from, so the glyph does not change when the caret arrives.
+// A cell editor's document is one cell, so its own scan can never bind a marker — this gives the entered cell the same numbering source the resting cell draws from, so the glyph does not change when the caret arrives.
 import {
   Decoration,
   EditorView,
@@ -14,8 +12,7 @@ import { CiteRefWidget } from '../decorations'
 
 type OrdinalOf = (label: string) => number | null
 
-/** The document's numbering moved — no transaction this cell's own editor sees says so, so the host
- *  holding the whole-document answer fires this instead. */
+/** The document's numbering moved — no transaction this cell's own editor sees says so, so the host holding the whole-document answer fires this instead. */
 export const citesChanged = StateEffect.define<null>()
 
 function marks(view: EditorView, ordinalOf?: OrdinalOf): DecorationSet {
@@ -44,8 +41,7 @@ export function cellCitations(getOrdinalOf: () => OrdinalOf | undefined): Extens
     },
     { decorations: (v) => v.deco },
   )
-  // The same range the widget covers, so the caret steps over a marker here exactly as it does in
-  // the body rather than seating inside characters nothing on screen stands for.
+  // The same range the widget covers, so the caret steps over a marker here exactly as it does in the body rather than seating inside characters nothing on screen stands for.
   return [
     plugin,
     EditorView.atomicRanges.of((view) => view.plugin(plugin)?.deco ?? Decoration.none),

@@ -18,9 +18,6 @@ const mount = async (initialBody: string): Promise<void> => {
 const embedSpans = (): string[] =>
   [...editorContainer().querySelectorAll('.md-embed')].map((el) => el.textContent ?? '')
 
-// The claim predicate is shared with the tile field: a claimed line's token stands down (the widget
-// owns it), while unresolved, duplicate, and non-lone occurrences keep the dim token — that text IS
-// their rendering, including the deleted-target degrade.
 describe('claim-gated token suppression', () => {
   it('suppresses the claimed lone-line, keeps the unresolved one', async () => {
     await mount('![[Alpha]]\n\n![[Nowhere]]')

@@ -50,8 +50,7 @@ function formatted(url: string, display: LinkDisplay): LinkActionText {
   return { insert: text, url, wantsTitle }
 }
 
-/** Works off the token's spans, the only thing that still knows where the label ends once the syntax is drawn away.
- *  `applyLinkAction` is the parallel for `[[ ]]`, kept separate: a wikilink's label is an alias over a title that resolves. */
+/** Works off the token's spans, the only thing that still knows where the label ends once the syntax is drawn away. `applyLinkAction` is the parallel for a wikilink, whose label is an alias over a title that resolves. */
 export function applyUrlLinkAction(
   view: EditorView,
   action: ConnUrlAction,

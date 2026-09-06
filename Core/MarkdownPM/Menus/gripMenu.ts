@@ -1,5 +1,4 @@
-// Every block grip's right-click menu. The generic editor menu stands down over a grip because the rail hover
-// flags it hot to main; the flag is cleared by hand after a delete, since no mousemove fires under a modal menu.
+// The generic editor menu stands down over a grip because the rail hover flags it hot to main; the flag is cleared by hand after a delete, since no mousemove fires under a modal menu.
 import { EditorView } from '@codemirror/view'
 import { pageEmbedText } from '@pommora/core/Connections/connections'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
@@ -132,8 +131,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
 }
 
 export const gripMenu = EditorView.domEventHandlers({
-  // A grip acts on its block, never on the caret. A right-press needs the same suppression the drag gestures
-  // give a left-press: preventing the contextmenu comes far too late to stop the seat.
+  // A grip acts on its block, never on the caret, and a right-press needs the same suppression the drag gestures give a left-press: preventing the contextmenu comes far too late to stop the seat.
   mousedown(e) {
     if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
     e.preventDefault()
@@ -156,7 +154,6 @@ export const gripMenu = EditorView.domEventHandlers({
     e.preventDefault()
     void popRowMenu(gripMenuItems(contextFor(view, doc, block))).then((action) => {
       if (!action) return
-      // Re-found and matched against what the menu was built from; a document that no longer holds it declines.
       const doc = docString(view.state.doc)
       const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
       if (!block || doc.slice(block.from, block.to) !== opened) return
@@ -166,8 +163,7 @@ export const gripMenu = EditorView.domEventHandlers({
       const zoom = arg('zoom:')
       const kind = arg('listKind:')
       if (title !== undefined) {
-        // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end
-        // the menu precisely when a stale embed needs re-aiming.
+        // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
         view.dispatch({
           changes: { from: block.from, to: block.to, insert: pageEmbedText(title) },
           userEvent: 'input',

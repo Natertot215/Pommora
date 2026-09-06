@@ -21,8 +21,6 @@ const hosted = {
   embedHeights: { load: async () => ({ p1: 480 }), save: () => {} },
 }
 
-/** PageTile loads through React.lazy, so a fresh tile holds only the Suspense frame — its body and
- *  the resize strip enter the DOM together, once that chunk lands. Every assertion reads the tile. */
 async function until(cond: () => boolean): Promise<boolean> {
   const deadline = Date.now() + 2000
   while (!cond() && Date.now() < deadline) await new Promise((r) => setTimeout(r, 5))

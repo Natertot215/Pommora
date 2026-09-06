@@ -27,7 +27,6 @@ const TWICE = 'one[^a] and two[^a]\n\n[^a]: shared'
 const PAIR = 'x[^a] y[^b]\n\n[^a]: first\n[^b]: second'
 
 describe('deleting a marker', () => {
-  // A footnote nothing points at is an orphan, and the gesture that made it one answers for it.
   it('takes its citation with it when it was the last reference', () => {
     const s = scanOf(ONE)
     const out = apply(ONE, deleteMarkerChanges(s, s.citations.markers[0]))
@@ -51,8 +50,6 @@ describe('deleting a marker', () => {
 })
 
 describe('deleting a citation', () => {
-  // The inverse cascade: the alternative is leaving raw `[^a]` scattered through prose that used to
-  // read as a number.
   it('takes every marker bound to it, in one transaction', () => {
     const s = scanOf(TWICE)
     const out = apply(TWICE, deleteCitationChanges(s, s.citations.entries[0]))
@@ -74,8 +71,6 @@ describe('deleting a citation', () => {
   })
 })
 
-// A cascade fires only where the deleted range is exactly the construct — this stops a wide sweep
-// from silently taking citations the reader never saw.
 describe('cascades are keyed to the range, never to the gesture', () => {
   const intent = (doc: string, from: number, to = from): string | null => {
     const s = scanOf(doc)
@@ -109,7 +104,6 @@ describe('cascades are keyed to the range, never to the gesture', () => {
     expect(intent(PAIR, from, PAIR.length)).toBe('x y\n')
   })
 
-  // The negative control. A range that is the construct PLUS something else is not the construct.
   it('a marker swept with the words beside it takes only the swept text', () => {
     const s = scanOf(ONE)
     expect(intent(ONE, s.citations.markers[0].from - 1, ONE.indexOf(' here'))).toBeNull()
@@ -156,7 +150,6 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^1]\n\n[^1]: nine\n[^2]: orphan')
   })
 
-  // Two rows renamed onto one label would fuse two independent footnotes, losing one binding.
   it('never renames two rows onto one label', () => {
     const doc = 'x[^2] y[^3]\n\n[^1]: orphan\n[^2]: two\n[^3]: three'
     expect(normalized(doc)).toBe('x[^2] y[^3]\n\n[^2]: two\n[^3]: three\n[^1]: orphan')
@@ -169,7 +162,6 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^5]\n\n[^5]: five\n[^1]: orphan')
   })
 
-  // Normalization renumbers and reorders; it never quietly turns a duplicate into an orphan.
   it('drops a duplicate that lost below the run, still shadowing its winner', () => {
     const doc = 'x[^7] y[^b]\n\n[^b]: bee\n[^7]: won\n[^7]: lost'
     expect(normalized(doc)).toBe('x[^1] y[^b]\n\n[^1]: won\n[^b]: bee\n[^1]: lost')
@@ -194,7 +186,6 @@ describe('normalizing the section', () => {
     expect(normalizeCitations(scanOf('just prose, and a stray [^1] marker'))).toEqual([])
   })
 
-  // After normalizing, a numeric disk label IS the number the walk draws over it.
   it('leaves every numeric label equal to the ordinal the scan gives it', () => {
     const out = normalized('p[^zed] q[^8] r[^one] s[^3]\n\n[^3]: c\n[^8]: b\n[^one]: d\n[^zed]: a')
     const c = citationScan(splitWithOffsets(out), [])
@@ -230,7 +221,6 @@ describe('a gesture carries its own renormalization', () => {
     expect(citationGesture(scanOf('x[^1]\n\n[^1]: one'), []).empty).toBe(true)
   })
 
-  // A citation-shaped line inside a fence is code, not a citation.
   it('never rewrites a citation-shaped line inside a code fence', () => {
     const doc = 'x[^2] y[^1]\n\n```\n[^9]: code\n```\n\n[^1]: one\n[^2]: two'
     const out = citationGesture(scanDoc(doc), [])
@@ -240,8 +230,6 @@ describe('a gesture carries its own renormalization', () => {
   })
 })
 
-// Cases the corpus above doesn't carry: a duplicated label, a differently-cased label, and the
-// constructs a marker can sit inside.
 describe('the last reference takes its footnote in every shape the document can hold', () => {
   const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string => {
     const s = scanOf(doc)
@@ -253,7 +241,6 @@ describe('the last reference takes its footnote in every shape the document can 
     doc.split('\n').filter((l) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l))
   const live = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
 
-  // Two rows claim one label; removing the only marker orphans both, so the gesture takes both.
   it('a duplicate row travels with the row it duplicates', () => {
     const doc = 'body[^a] here\n\n[^a]: the winner\n[^a]: the loser'
     const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
@@ -268,7 +255,6 @@ describe('the last reference takes its footnote in every shape the document can 
     expect(live(out)).toBe(2)
   })
 
-  // GFM folds a footnote label's case, so `[^ABC]` and `[^abc]:` are one footnote.
   it('a label spelled in another case is still the last reference', () => {
     const doc = 'body[^ABC] here\n\n[^abc]: the citation'
     const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
@@ -285,7 +271,6 @@ describe('the last reference takes its footnote in every shape the document can 
     expect(out).toContain('cell')
   })
 
-  // A marker inside code is characters, not a reference — the cascade must not reach into it.
   it('but never into a code span or a fence', () => {
     const doc = 'live[^a]\n\n`[^a]` and\n\n```\n[^a]\n```\n\n[^a]: shared'
     const out = gesture(doc, (s) => deleteCitationChanges(s, s.citations.entries[0]))
@@ -321,9 +306,6 @@ const orders = [
   ['b', 'a', 'b'],
 ]
 
-// A label two rows claim can be interleaved with another label's rows, so the set a cascade cuts
-// is not a contiguous block. Nothing should throw on an overlapping span, and no `[^x]:` line
-// should ever be left outside a live section.
 describe('an interleaved duplicate survives every gesture at every range', () => {
   it('never throws and never strands a head', () => {
     const failures: string[] = []

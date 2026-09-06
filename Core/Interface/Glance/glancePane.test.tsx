@@ -123,7 +123,6 @@ describe('the presenter', () => {
     vi.useFakeTimers()
     try {
       act(() => useSession.setState({ activeTabId: 'tab-2' }))
-      // The portal outlives the close through the exit animation — run it out.
       act(() => vi.advanceTimersByTime(500))
       expect(paneOpen()).toBe(false)
     } finally {

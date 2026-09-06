@@ -1,8 +1,4 @@
 // @vitest-environment jsdom
-// The section is the document's tail: any line left standing after it literalizes every citation at
-// once. This suite tries to produce that state from the keyboard, at every seat in and around the
-// section, and asserts it never happened — a `[^x]:` line the scan doesn't read as part of a live
-// section is the corrupted state.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
@@ -30,15 +26,12 @@ afterEach(async () => {
 const BODY = '# Notes\n\nprose[^1] and more[^two] here\n\n| a | b |\n| --- | --- |\n| c[^1] | d |\n'
 const DOC = `${BODY}\n[^1]: the first citation\n[^two]: the second\n[^orphan]: nothing points here`
 
-/** Every `[^label]:` line the document holds that the scan doesn't read as a live citation — the
- *  one state no keystroke may produce. */
 function stranded(doc: string): string[] {
   const d = splitWithOffsets(doc)
   const owned = new Set(citationScan(d, []).entries.map((e) => e.line))
   return d.lines.filter((l, i) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l) && !owned.has(i))
 }
 
-/** A head inside a fence is code and is nobody's citation, so any stranded head this reports is real. */
 const intact = (view: EditorView): string[] => stranded(view.state.doc.toString())
 
 const keys = ['Enter', 'Backspace', 'Delete', 'Tab'] as const
@@ -69,7 +62,6 @@ async function seat(view: EditorView, at: number, to = at): Promise<void> {
 }
 
 describe('no keystroke, at any seat, strands a citation', () => {
-  // Every offset from the line above the section to the document's very end.
   const from = DOC.indexOf('\n[^1]: the first')
   const seats = Array.from({ length: DOC.length - from + 1 }, (_, i) => from + i)
 
@@ -175,7 +167,6 @@ describe('the section refuses to seat a marker inside itself, in every shape', (
   })
 })
 
-// The rule is keyed to the range, so the two deletion keys must give the same answer over it.
 describe('Backspace and forward-Delete agree over the same range', () => {
   const rowFrom = DOC.indexOf('[^two]: the second')
   const rowTo = rowFrom + '[^two]: the second'.length

@@ -40,8 +40,6 @@ async function pickFirst(body: string, caret: number): Promise<{ doc: string; he
 }
 
 describe('committing a connection leaves it reading as finished', () => {
-  // The closer is the one caret position that leaves a connection rendered, so nothing is written
-  // to move the caret off it — accepting a suggestion adds the link and not a character more.
   it('writes the link alone and rests the caret on its closer', async () => {
     const { doc, head } = await pickFirst('[[Alp]]', 4)
     expect(doc).toBe('[[Alpha]]')
@@ -77,7 +75,6 @@ describe('the picker stands down when it has nothing to add', () => {
   })
 })
 
-// Retargeting replaces the whole token, so the alias is destroyed here unless deliberately carried.
 describe('retargeting an aliased connection obeys the strip setting', () => {
   it('drops the alias by default — the old words describe the old page', async () => {
     useSession.setState({ personalization: {} })

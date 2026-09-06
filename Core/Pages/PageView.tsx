@@ -67,7 +67,6 @@ export function PageView({
   const [iconHidden, setIconHidden] = useState(true)
   useEffect(() => {
     let alive = true
-    // Hidden unless this page says otherwise — a page opts into showing its glyph, unlike a Collection or Space.
     void host()
       .ask('headingIcon:get')
       .then((all) => {

@@ -30,8 +30,6 @@ const mk2 = (doc: string): EditorState =>
 const apply = (state: EditorState, spec: TransactionSpec): string =>
   state.update(spec).state.doc.toString()
 
-// The lone-line guard: a live tile can be removed whole but never eroded in place; boundary-seat
-// insertions repair onto their own line.
 describe('embed lone-line guard', () => {
   it('refuses a join that would drag prose onto the tile line', () => {
     const doc = 'alpha\n![[Alpha]]\nbeta'
@@ -234,7 +232,6 @@ describe('a page is excluded from embedding itself', () => {
 
 describe('per-tile fence accounting', () => {
   it('removing one tile whole cannot legalize gluing another', () => {
-    // Spanning-delete of the first tile must not be paid for by the second losing its blank.
     const doc = 'text\n![[Alpha]]\n\n![[Beta]]'
     const out = apply(mk2(doc), { changes: { from: 5, to: 17, insert: '' } })
     expect(out).toBe(doc)

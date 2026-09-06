@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// The drag's slot math is wrap-relative while the pointer is viewport-relative — these pin the
-// origin re-base that keeps the two aligned when the editor scrolls mid-drag.
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -11,8 +9,6 @@ import type { TableModel } from '../Engine/Tables/model'
 
 stubPointerCapture()
 
-// A ResizeObserver stub that hands the test the measure callback, so geometry can be stubbed
-// after mount and then measured on demand.
 const roCallbacks: ResizeObserverCallback[] = []
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
   cb: ResizeObserverCallback
@@ -84,7 +80,6 @@ const stubGeometry = (wrapTop: number): void => {
   }
 }
 
-// Grip index 1 is the first data row — index 0 drags the whole table.
 const measureAndGrip = async (): Promise<HTMLElement> => {
   await act(async () => {
     for (const cb of roCallbacks) cb([], {} as ResizeObserver)
@@ -92,7 +87,6 @@ const measureAndGrip = async (): Promise<HTMLElement> => {
   return container.querySelectorAll('.mdpm-tbl-grip-row')[1] as HTMLElement
 }
 
-// The editor scroll moves the wrap's viewport box; wrap-relative geom holds still.
 const scrollWrapTo = async (wrapTop: number): Promise<void> => {
   stubGeometry(wrapTop)
   await act(async () => {

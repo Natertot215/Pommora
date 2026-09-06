@@ -18,10 +18,8 @@ export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
 
 export const docString = perDoc((doc) => doc.toString())
 
-// One per doc version — a caret move must never pay an O(doc) re-scan for line chrome.
 export const docScan = perDoc((doc) => scanOf(docString(doc)))
 
-// Caret-free per-line intents and rails, one per doc version, so per-caret cost stops scaling with document length.
 export const docLineIntentsOf = perDoc((doc) => docLineIntents(docScan(doc)))
 
 // Two slots, most-recent first: a span set is returned to as readily as it's left (scrolling back up, folding within one version).

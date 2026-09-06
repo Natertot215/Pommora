@@ -54,8 +54,6 @@ export function AutocompletePane({
   }, [open])
   const sliding = v.form === 'alias' && cameFrom.current.length > 0
 
-  // Where the page lives, drawn from the same ancestry every location trail reads — the row's own
-  // title is the leaf, so the caption stops at its containers. An alias names no place of its own.
   const locationOf = (row: AcRow): TrailSegment[] => {
     if (!tree || !row.isPage || !row.pageId) return NO_TRAIL
     const chain = ancestryOf(tree, { kind: 'page', id: row.pageId })
@@ -111,9 +109,7 @@ export function AutocompletePane({
   const shown = slot(v.candidates, true)
 
   return (
-    // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return
-    // and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the
-    // alias.
+    // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the alias.
     <PickerMenu
       glass="window"
       open={live}

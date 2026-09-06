@@ -1,11 +1,9 @@
-// A drawn caret via a CM `layer`, geometry only. Only the native caret is hidden, not the selection — unlike
-// drawSelection's all-or-nothing takeover.
+// Only the native caret is hidden, not the selection — unlike drawSelection's all-or-nothing takeover.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { embedTileRanges } from '../Embeds/embedWidget'
 
-// A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box
-// itself — so draw where the seat's insertion will land, one line above or below the tile.
+// A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box itself — so draw where the seat's insertion will land.
 function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null {
   const tile = embedTileRanges(view.state).find((t) => head === t.from || head === t.to)
   if (!tile) return null
@@ -21,8 +19,7 @@ function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null 
   return new RectangleMarker('mdpm-caret', left, top, null, lh)
 }
 
-// A cursor against a block widget makes forRange return a marker spanning the whole widget, so anything far
-// taller than a text line comes back one line tall.
+// A cursor against a block widget makes forRange return a marker spanning the whole widget, so anything far taller than a text line comes back one line tall.
 export function clampToLine(view: EditorView, cls: string, m: RectangleMarker): RectangleMarker {
   const cap = view.defaultLineHeight * 2.5
   const floor = 4

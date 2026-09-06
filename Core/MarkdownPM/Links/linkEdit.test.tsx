@@ -33,7 +33,6 @@ const conn: ConnectionsApi = {
   menu: showConnectionMenu,
 }
 
-/** Right-click the rendered link and let the menu's promise settle. */
 async function rightClick(view: EditorView, pos: number): Promise<void> {
   vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
   const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
@@ -59,7 +58,6 @@ describe('the connection menu knows its span and its surface', () => {
     })
   })
 
-  // The item names the act: on a bare link there is no title yet to rename.
   it('reports an existing alias, so the item can name renaming instead of adding', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await rightClick(view, 12)
@@ -90,8 +88,6 @@ describe('the connection menu knows its span and its surface', () => {
     })
   })
 
-  // The native editor menu carries spelling, autocorrect, and substitutions. Inside a link's
-  // syntax you're editing prose, so that menu wins over the two link actions.
   it('stands down inside the syntax, leaving the native menu', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => {
@@ -102,8 +98,6 @@ describe('the connection menu knows its span and its surface', () => {
     expect(connMenu).not.toHaveBeenCalled()
   })
 
-  // PageWindow starts read-only and silently drops doc changes, so Rename there would seat a
-  // caret and swallow every keystroke.
   it('withholds it from a read-only surface', async () => {
     const view = await mountEditor({
       initialBody: 'a [[Alpha]] b',
@@ -146,8 +140,6 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
   })
 
-  // Clicking another page blurs and unmounts this editor in the same task, so a collapse deferred
-  // to a macrotask would fire against a destroyed view and do nothing.
   it('collapses on blur without waiting for a timer', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await act(async () => {
@@ -172,8 +164,6 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
   })
 })
 
-// Enter finishes an alias by moving the caret to the closer and nothing else. The closer is the one
-// position that leaves a connection rendered, so no space is written to put distance between them.
 describe('Enter finishes an alias without writing anything', () => {
   it('rests the caret on the closer and leaves the text alone', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
@@ -198,8 +188,6 @@ describe('Enter finishes an alias without writing anything', () => {
   })
 })
 
-// The two open items are the shared page menu's, so a link reaches its page exactly as every other
-// surface pointing at one does.
 describe('a connection opens its page the two ways every page menu offers', () => {
   it('Open New Tab selects the page a link names into a tab of its own', async () => {
     const select = vi.fn(async () => {})

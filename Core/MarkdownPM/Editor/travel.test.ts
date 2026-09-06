@@ -38,8 +38,6 @@ describe('travel goes somewhere without editing or moving the caret', () => {
     expect(view.state.doc.toString()).toBe(DOC)
   })
 
-  // Arriving at a heading whose body is still folded is indistinguishable from having gone nowhere,
-  // so a travel opens what conceals its destination before it measures anything.
   it('opens a fold hiding the destination', async () => {
     const view = await mountEditor({ initialBody: DOC })
     await act(async () => {

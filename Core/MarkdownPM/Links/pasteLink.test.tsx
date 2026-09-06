@@ -19,7 +19,6 @@ function paste(view: EditorView, text: string | null): void {
   view.contentDOM.dispatchEvent(event)
 }
 
-// A keypress has no `clipboardData`, so the chord reads the system clipboard back over the bridge.
 let clipboard = ''
 
 function chord(view: EditorView): void {
@@ -40,7 +39,6 @@ const settings = (p: Partial<Personalization>): void => {
 
 beforeEach(() => {
   clipboard = URL
-  // The title never arrives over the bridge: tests write it into the shared cache, the only thing the swap watches.
   stubEditorBridge({
     'clipboard:read': async () => clipboard,
     'linkTitles:fetch': async () => ({ ok: false, error: { code: 'offline' } }),
@@ -117,8 +115,6 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
   })
 
-  // A site whose <title> IS its domain resolves to text already on the page, so the swap writes nothing and
-  // the validity prune never fires — without an explicit withdrawal the anchor would sit pending forever.
   it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
@@ -140,7 +136,6 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
-  // The same clipboard on the same line lands literal inside a destination and formats outside one — the guard reads the column.
   const LINKED = '[docs]() tail'
 
   it('lands literal inside a link destination', async () => {
@@ -180,7 +175,6 @@ describe('pasting an address into the editor', () => {
   })
 })
 
-// ⌘⇧V does the opposite of ⌘V: with a selection the question is whether a paste wraps it, without one it is the literal escape.
 describe('the inverse chord', () => {
   it('leaves the address where a plain paste would have written a link', async () => {
     const view = await mountEditor({ initialBody: '' })
@@ -195,7 +189,6 @@ describe('the inverse chord', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  // The chord was spent choosing not to wrap; the replacing paste is an ordinary caret paste, and those format.
   it('replaces a selection with the formatted link where a plain paste would have wrapped it', async () => {
     settings({ pasteLinkIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
@@ -218,7 +211,6 @@ describe('the inverse chord', () => {
   })
 })
 
-// The two embed forms take a line to themselves, so each is written onto the blank line the caret already sits on.
 describe('pasting as an embed', () => {
   const seated = async (body: string, anchor: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })
@@ -239,7 +231,6 @@ describe('pasting as an embed', () => {
     expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
   })
 
-  // An indented token is list continuation to both grammars, so the whole line goes.
   it('takes the whole line, not the caret', async () => {
     const view = await seated('intro\n   \ntail', 9)
     await act(async () => await pasteAs(view, 'embedLink'))

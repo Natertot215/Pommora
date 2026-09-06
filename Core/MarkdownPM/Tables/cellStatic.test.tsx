@@ -102,7 +102,6 @@ describe('a resting cell draws a marker as the number the document gives it', ()
 describe('an entered cell draws what the resting cell drew', () => {
   it('replaces the marker in the cell editor too, so the glyph does not change on entry', async () => {
     await mount('NOTE=2')
-    // The body row's cell, not the header's — the header is the first static cell in the table.
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
     ) as HTMLElement
@@ -116,9 +115,6 @@ describe('an entered cell draws what the resting cell drew', () => {
   })
 })
 
-// The citation lives in the page around the table, so the cell has no editor that could carry the
-// jump — the marker acts on the press the way a link in a resting cell does, and the cell it sits in
-// never enters.
 describe('a marker in a resting cell leads to its citation', () => {
   const pressGlyph = async (): Promise<void> => {
     const glyph = container.querySelector('.md-cite-ref') as HTMLElement
@@ -140,7 +136,6 @@ describe('a marker in a resting cell leads to its citation', () => {
     expect(container.querySelector('.cm-editor')).toBeNull()
   })
 
-  // The negative control: pressing the cell anywhere else is an ordinary entry.
   it('while a press beside it enters the cell as always', async () => {
     await mount('NOTE=2')
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
@@ -155,8 +150,6 @@ describe('a marker in a resting cell leads to its citation', () => {
   })
 })
 
-// The numbering is a whole-document fact and the cell's own document is one cell, so an OPEN cell has
-// no way to notice a renumber on its own. It has to be told, exactly as the resting cell is.
 describe('an entered cell follows the numbering too', () => {
   it('redraws when the numbering moves while the cell is open', async () => {
     await mount('NOTE=2')

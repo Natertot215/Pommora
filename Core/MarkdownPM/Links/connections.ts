@@ -10,15 +10,12 @@ type GetApi = () => ConnectionsApi | undefined
 
 interface WikiHit {
   title: string
-  /** The whole token, markers included. */
   range: [number, number]
-  /** What the token displays — the alias when it has one. */
   content: [number, number]
-  /** Whether it wears an alias. An opened-but-empty one doesn't count — there's nothing to rename. */
+  /** An opened-but-empty alias doesn't count — there's nothing to rename. */
   aliased: boolean
 }
 
-/** The wikiLink token at `pos`, resolved or not, in absolute document offsets. */
 function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
@@ -89,9 +86,7 @@ export function connectionClicks(getApi: GetApi): Extension {
         menu({
           kind: 'page',
           page,
-          // Editability is read here rather than threaded through the host: `readOnly` is live
-          // inside the editor and flips at runtime through a Compartment, so a captured value
-          // would go stale.
+          // Editability is read here rather than threaded through the host: `readOnly` is live inside the editor and flips at runtime through a Compartment, so a captured value would go stale.
           editable: !view.state.readOnly,
           hasAlias: hit.aliased,
           apply: (action) => applyLinkAction(view, action, hit.range),

@@ -8,8 +8,7 @@ import type {
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 import type { GlanceTarget } from '../../Interface/Glance/glanceAction'
 
-/** `apply` is the way back into the editor instance clicked, and its absence marks a display-only surface.
- *  It closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on. */
+/** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
 export type ConnMenuTarget = {
   surface?: ConnSurface
   hideable?: boolean
@@ -60,8 +59,7 @@ export interface ConnectionsApi extends PageIndex {
 /** One resolver behind the click path and both renderers, so a link can never be colored as one thing and act as another. */
 export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
 
-/** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md`
- *  would read as a website and the page it names would be unreachable through this syntax. */
+/** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
   const title = targetTitle(rawTarget)
   if (index && title) {

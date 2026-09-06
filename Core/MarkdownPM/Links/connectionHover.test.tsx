@@ -7,8 +7,6 @@ import { glanceLink } from '../../Interface/Glance/glanceLink'
 import { GLANCE_DWELL, cancelGlance, setGlancePresenter } from '../../Interface/Glance/glanceAction'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
 
-// Derived from the dwell rather than restated: these tests are about arm/cancel ordering, and
-// hard-coded milliseconds turn a tuned knob into a red suite.
 const PAST_DWELL = GLANCE_DWELL.link + 50
 const MID_DWELL = Math.floor(GLANCE_DWELL.link / 2)
 
@@ -20,9 +18,6 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 stubEditorBridge()
-// The real hook against the real seam, with only the pane's presenter stubbed: what these tests
-// assert is that the dwell FIRES through the editor's whole pointer path — four pointer handlers
-// share one editor, and only the one that armed may decide whether it survives.
 const present = vi.fn()
 beforeEach(() => {
   vi.useFakeTimers()
@@ -42,9 +37,7 @@ const conn: ConnectionsApi = {
   glance: glanceLink,
 }
 
-// jsdom draws no layout, so posAtCoords can't hit-test — pin it inside the displayed title. It has
-// to be the content span, not the token's start: the edges beside the syntax are left to caret
-// placement, so a pin at 0 would suppress the very dwell these tests assert.
+// jsdom draws no layout, so posAtCoords can't hit-test — the pin has to be inside the displayed title's content span, since the edges beside the syntax are left to caret placement.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
   const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
@@ -89,7 +82,6 @@ describe('the connection dwell', () => {
     expect(present).not.toHaveBeenCalled()
   })
 
-  // A native menu hands the pointer back over the same link, and that re-entry is a fresh mouseover.
   it('re-entry over a link that was just acted on does not re-arm', async () => {
     const { span } = await mountLink()
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -155,7 +147,6 @@ describe('inside a glance', () => {
 
 describe('read-only autocomplete gate', () => {
   const coords = { left: 10, right: 10, top: 10, bottom: 20 }
-  // A partial title, deliberately: a complete one suggests only itself, and the picker stands down.
   it('a caret seated inside a link opens the picker only when the editor can edit', async () => {
     const editable = await mountEditor({ initialBody: '[[Alph]]', connections: conn })
     vi.spyOn(editable, 'coordsAtPos').mockReturnValue(coords)
