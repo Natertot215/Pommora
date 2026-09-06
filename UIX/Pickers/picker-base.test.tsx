@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// Placement/Bloom geometry is visual truth (CDP), not asserted here.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -163,8 +162,7 @@ describe('PickerMenu focus contract', () => {
               First
             </button>
           </PickerMenu>
-          {/* A stacked pane hung off the first as a SIBLING — the OptionEditPopup arrangement,
-              where the outer's keydown listener registers first. */}
+          {/* A stacked pane hung off the first as a SIBLING — the OptionEditPopup arrangement, where the outer's keydown listener registers first. */}
           <PickerMenu open={inner} onDismiss={() => dismissed.push('inner')} triggerRef={innerRef}>
             <button type="button" data-id="nested">
               Nested
@@ -378,8 +376,7 @@ describe('PickerMenu focus contract', () => {
   })
 })
 
-// Whether a pane CENTERS is a decision, not a look — the pixels stay visual truth, but which of the
-// two placements it takes has to hold.
+// Whether a pane CENTERS is a decision, not a look — the pixels stay visual truth, but which of the two placements it takes has to hold.
 describe('PickerMenu auto-centering', () => {
   const PANE_W = 200
   let triggerCenter = 512
@@ -410,15 +407,14 @@ describe('PickerMenu auto-centering', () => {
   const layer = (): HTMLElement => layerOf('first')
 
   it('straddles the trigger when the whole pane fits there', async () => {
-    triggerCenter = 512 // mid-viewport (jsdom is 1024 wide)
+    triggerCenter = 512
     await render(<Host open={false} />)
     await render(<Host open />)
     expect(layer().style.transform).toBe('translateX(-50%)')
     expect(layer().style.left).toBe('512px')
   })
 
-  // A named `center` slides within its bounds; `auto` declines to center at all once it would have
-  // to be clamped, which is the rule below.
+  // A named `center` slides within its bounds; `auto` declines to center at all once it would have to be clamped.
   it('slides a centered pane within a given bounds rather than the viewport', async () => {
     // Mid-viewport, so nothing about the WINDOW would move it; the surface is what does.
     triggerCenter = 580
@@ -426,7 +422,7 @@ describe('PickerMenu auto-centering', () => {
     await render(<Host open={false} origin="center" bounds={b} />)
     await render(<Host open origin="center" bounds={b} />)
     expect(layer().style.transform).toBe('translateX(-50%)')
-    expect(layer().style.left).toBe('492px') // centering would overhang the surface's right edge
+    expect(layer().style.left).toBe('492px')
   })
 
   it('centers freely at that same point when nothing bounds it', async () => {
@@ -445,7 +441,7 @@ describe('PickerMenu auto-centering', () => {
   })
 
   it('falls back to the edge anchor when centering would be clamped', async () => {
-    triggerCenter = 60 // half a pane-width would run past the left margin
+    triggerCenter = 60
     await render(<Host open={false} />)
     await render(<Host open />)
     expect(layer().style.transform).toBe('')

@@ -1,10 +1,7 @@
 import { delimCell, parseDelimiter, pipeRow, serialize, splitRow } from './codec'
 import type { Column, TableModel } from './model'
 
-// Plain text in the file's own pipe-row grammar, so a copy stays legible pasted anywhere and an
-// external pipe fragment pastes structurally. Shape carries the meaning: pipe rows alone are a
-// rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in
-// source form, exactly as the model holds them.
+// Shape carries the meaning: pipe rows alone are a rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in source form, exactly as the model holds them.
 
 export type TablePayload =
   | { kind: 'rect'; grid: string[][] }
@@ -19,8 +16,7 @@ export function encodeColumn(header: string, column: Column, body: string[]): st
   return [header, delimCell(column), ...body].map((c) => pipeRow([c])).join('\n')
 }
 
-/** Null where the text isn't table-shaped, and for a lone pipe cell — one cell of text is a text
- *  paste, not a structural one. An all-empty payload (a copied outline) reads as inert `table`. */
+/** Null where the text isn't table-shaped, and for a lone pipe cell — one cell of text is a text paste, not a structural one. An all-empty payload (a copied outline) reads as inert `table`. */
 export function decodePayload(text: string): TablePayload | null {
   const lines = text.replace(/\n+$/, '').split('\n')
   for (const l of lines) {
@@ -41,12 +37,10 @@ export function decodePayload(text: string): TablePayload | null {
   return { kind: 'rect', grid }
 }
 
-/** Shape and heading row kept, every body cell blank — what Copy Outline carries. */
 export function serializeOutline(m: TableModel): string {
   return serialize({ ...m, rows: m.rows.map((r) => r.map(() => '')) })
 }
 
-/** The visual-row slice a rectangle covers, headers as ordinary cells. */
 export function rectGrid(
   m: TableModel,
   r0: number,

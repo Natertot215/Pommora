@@ -1,5 +1,4 @@
-// Every restoration combination the surface can produce, driven through the same ops the leaf
-// calls, against a real nexus on disk.
+// Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -137,7 +136,6 @@ describe('end to end — deleted, listed, restored', () => {
   })
 
   it('the restoration matrix: every homeless kind lands where it is told', async () => {
-    // page → Set
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
     expect(
@@ -175,7 +173,6 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Alpha.md'))).toBe(true)
 
-    // Set → Collection
     const setRow = await find('Daily')
     expect(
       (
@@ -191,7 +188,6 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', '_pageset.json'))).toBe(true)
 
-    // Space → a different Context
     await del('.nexus/contexts/Projects/Pommora', 'space')
     await del('.nexus/contexts/Projects', 'context')
     const spaceRow = await find('Pommora')
@@ -267,7 +263,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(
       (await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
     ).toBe(true)
-    expect(handed).toHaveLength(1) // unchanged: it never reached the system trash
+    expect(handed).toHaveLength(1)
     expect(await rows()).toHaveLength(0)
   })
 })

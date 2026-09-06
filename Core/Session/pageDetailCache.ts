@@ -1,12 +1,10 @@
-// The path-keyed page-detail slot for embed rehydration — module state, written through by the
-// shared save scheduler so a returning tile always seeds on the newest body.
+// The path-keyed page-detail slot for embed rehydration — module state, written through by the shared save scheduler so a returning tile always seeds on the newest body.
 import { useSyncExternalStore } from 'react'
 import { capSet } from '../Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'
 
-/** Beyond this many pages, the stalest embed detail goes cold. */
 const DETAIL_CAP = 50
 
 const detailByPath = new Map<string, PageDetail>()
@@ -21,9 +19,7 @@ export function readPageDetail(path: string): PageDetail | undefined {
 
 const inFlight = new Map<string, Promise<PageDetail | null>>()
 
-/** The one fetch for a path — concurrent callers share a single openPage round-trip. A drop or
- *  clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed
- *  the cache with a pre-write or previous-nexus detail. */
+/** Concurrent callers share a single openPage round-trip. A drop or clear mid-flight disowns the fetch: its caller still gets the read, but the landing can't seed the cache with a pre-write or previous-nexus detail. */
 export function fetchPageDetail(path: string): Promise<PageDetail | null> {
   const pending = inFlight.get(path)
   if (pending) return pending
@@ -40,8 +36,7 @@ export function fetchPageDetail(path: string): Promise<PageDetail | null> {
   return p
 }
 
-/** The save scheduler's write-through — the slot's body must never lag a pending write, or a
- *  remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
+/** The slot's body must never lag a pending write, or a remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
 export function writeThroughBody(path: string, body: string): void {
   const d = detailByPath.get(path)
   if (d) cachePageDetail({ ...d, body })
@@ -52,8 +47,7 @@ export function dropPageDetail(path: string): void {
   inFlight.delete(path)
 }
 
-/** Drop every warm `pageDetail` captured for `path` — a warm return would resurrect the pre-write
- *  value. Editor state and scroll stay warm; only the detail refetches. */
+/** A warm return would resurrect the pre-write value. Editor state and scroll stay warm; only the detail refetches. */
 export function dropCacheDetail(path: string): void {
   dropWarmDetail(path)
   detailByPath.delete(path)

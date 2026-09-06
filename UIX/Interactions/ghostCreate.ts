@@ -6,25 +6,21 @@ export const GHOST_DWELL_MS = 1500 // KNOB
 // How long a standing ghost survives the pointer resting on another anchor in its travel zone.
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
-// Watchdog for a closing ghost whose consumer never delivers `closed()`; a stranded `closing`
-// would reopen with no dwell on the next hover.
+// Watchdog for a closing ghost whose consumer never delivers `closed()`; a stranded `closing` would reopen with no dwell on the next hover.
 const GHOST_EXIT_BEAT_MS = 1000
 
-/** Published by a view whose surfaces pop native menus from inside memoized children, which
- *  caller-side wrapping can't reach. Pass-through by default. */
+/** Published by a view whose surfaces pop native menus from inside memoized children, which caller-side wrapping can't reach. */
 export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
 interface GhostAnchorOptions {
   dwellMs: number
   graceMs: number
-  /** Re-read when the dwell timer fires: a suppressor arriving mid-dwell must not leave a ghost
-   *  armed to snap in the instant it closes. */
+  /** Re-read when the dwell timer fires: a suppressor arriving mid-dwell must not leave a ghost armed to snap in the instant it closes. */
   suppressed: () => boolean
   travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
-/** Every handler is identity-stable for the hook's lifetime, so consumers hand them to contexts
- *  and memoized rows directly; only `ghost` changes across renders. */
+/** Every handler is identity-stable for the hook's lifetime, so consumers hand them to contexts and memoized rows directly; only `ghost` changes across renders. */
 export interface GhostAnchor {
   ghost: { anchorId: string; closing: boolean } | null
   onHover: (id: string, entering: boolean) => void

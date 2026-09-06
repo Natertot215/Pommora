@@ -1,6 +1,3 @@
-/* The floating-window surface every in-app window mounts: glass shell, toolbar, panels, and
-   the footer. Hosts own their own interior padding — this shell never assumes an edge-to-edge or an inset-ring layout. */
-
 .window {
   position: fixed;
   z-index: var(--z-floating);
@@ -17,7 +14,6 @@
   --window-panel-top: 16px;
   --window-footer-h: var(--subfield-h);
 
-  /* Inputs to the shared --toolbar-slide swallow (Animation/toolbar-slide.css). */
   --slide-panel-w: var(--window-panel-r-w);
   --slide-inset: var(--window-panel-inset);
   /* KNOB — the pair's home gap off the window's right edge; tracks the inset so the landing math stays true at any ring. */
@@ -50,11 +46,7 @@
 .window.is-panel-left-open {
   --io-l: 1;
 }
-/* The title-bar band. The toolbar strip itself is zero-height and transparent, so the move gesture
-   has no surface to land on — this one spans the top. It comes before the toolbar in the DOM, so
-   `z-index: 0` puts it over the body's flow without outranking anything drawn above: the toolbar's
-   own clusters and title sit at the same level and come later in the DOM, and the panels and the
-   resize corners rank higher outright. */
+/* The title-bar band. The toolbar strip itself is zero-height and transparent, so the move gesture has no surface to land on — this one spans the top. It comes before the toolbar in the DOM, so `z-index: 0` puts it over the body's flow without outranking anything drawn above. */
 .window-drag {
   position: absolute;
   top: 0;
@@ -64,10 +56,6 @@
   height: var(--window-toolbar-h);
 }
 
-/* The window's one toolbar: a zero-height strip whose lead/trail action clusters float over the
-   content. Buttons re-enable pointer-events individually, so clicks pass through the strip to the
-   content beneath it; the body reserves --window-toolbar-h (.window-body, or a window's own body)
-   so its content clears the clusters. */
 .window-toolbar {
   position: absolute;
   color: var(--label-control);
@@ -99,7 +87,6 @@
   right: calc(var(--window-panel-inset) + 4px);
 }
 
-/* The scroll core plus the right-pane squeeze; the top padding clears the floating clusters. */
 .window-body {
   flex: 1;
   min-width: 0;
@@ -122,7 +109,6 @@
   scrollbar-width: none;
 }
 
-/* The centered title slot both the web link and the page tab-strip title use — centered on the toolbar's action row. */
 .window-toolbar-title {
   position: absolute;
   top: calc(var(--window-panel-inset) + 4px);
@@ -132,8 +118,7 @@
   align-items: center;
   height: 20px;
   max-width: 60%;
-  /* The strip is click-through; an interactive title (the web link) opts back in. A label title
-     (.page-window-title) keeps its own pointer-events: none. */
+  /* The strip is click-through; an interactive title (the web link) opts back in. A label title (.page-window-title) keeps its own pointer-events: none. */
   pointer-events: auto;
 }
 
@@ -174,7 +159,6 @@
   min-width: 0;
 }
 
-/* Panels. An overlay panel rides the inset ring, carried by its driver with no transition of its own; an in-flow panel takes a column in the body row. */
 .window-panel {
   display: flex;
   flex-direction: column;
@@ -193,8 +177,7 @@
 .window-panel.window-panel-right-overlay,
 .window-panel.window-panel-left-overlay {
   position: absolute;
-  /* The content's top clearance is the PANEL's padding, not its column's — so the empty strip above
-     the first row is the panel itself, and the window's move gesture lands there. */
+  /* The content's top clearance is the PANEL's padding, not its column's — so the empty strip above the first row is the panel itself, and the window's move gesture lands there. */
   padding-top: calc(var(--surface-inset) + var(--window-panel-top));
   top: var(--window-panel-inset);
   bottom: var(--window-panel-inset);
@@ -240,8 +223,7 @@
 .window-panel-right-inflow {
   --pane-w: var(--window-panel-r-w);
 }
-/* The inflow strip is the gap column between panel and body; the doubled class takes the band's
-   own placement back off whatever order the sheets land in. */
+/* The inflow strip is the gap column between panel and body; the doubled class takes the band's own placement back off whatever order the sheets land in. */
 .resize-strip.window-panel-left-inflow-resize,
 .resize-strip.window-panel-right-inflow-resize {
   position: static;
@@ -259,7 +241,6 @@
   transition: none;
 }
 
-/* Footer: a bar pinned at the window bottom, its own border-top the flush body/footer divider. It squeezes left of an open right pane exactly as the body does, so it animates its padding too. */
 .window-footer {
   transition:
     height var(--duration-base) var(--ease-base),
@@ -300,7 +281,6 @@
   display: flex;
   align-items: center;
   gap: var(--window-trail-gap);
-  /* A host that reveals the pair drives --window-flow-reveal (its entry nudge); the swallow rides the
-     shared --toolbar-slide, so the two compose instead of clobbering. */
+  /* A host that reveals the pair drives --window-flow-reveal (its entry nudge); the swallow rides the shared --toolbar-slide, so the two compose instead of clobbering. */
   transform: translateX(var(--window-flow-reveal, 0px)) translateX(calc(-1 * var(--toolbar-slide)));
 }

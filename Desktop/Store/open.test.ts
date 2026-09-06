@@ -121,8 +121,8 @@ describe('openNexusDb', () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(dbPath, 'not a database', 'utf8')
     const db = openNexusDb(root)
-    expect(db).toBeNull() // the session runs without persistence
-    expect(await readFile(dbPath, 'utf8')).toBe('not a database') // byte-identical
+    expect(db).toBeNull()
+    expect(await readFile(dbPath, 'utf8')).toBe('not a database')
   })
 })
 

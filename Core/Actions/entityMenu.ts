@@ -14,7 +14,6 @@ export type EntityMenuAction =
   | 'lock'
   | 'reveal'
 
-/** A page draws the shared page menu whole, so the sidebar can't drift from the table, cards, and grips. */
 export function entityMenuItems(
   target: ContextTarget,
   creators: readonly Creator[],

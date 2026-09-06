@@ -17,7 +17,6 @@ describe('cellMenuModel', () => {
       ['View History', 'title:history'],
       ['Delete', 'title:delete'],
     ])
-    // An already-open page reads "Open" (focus, I-1) — same action either way.
     expect(cellMenuModel({ kind: 'title', alreadyOpen: true })[1].label).toBe('Open')
     expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
     expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
@@ -90,7 +89,6 @@ describe('cellMenuModel', () => {
   })
 
   it('a card’s two Removes are told apart by their words, not their position', () => {
-    // Two Removes spelled the same — one destructive to a value, one to the view — would differ only by position.
     const card = cellMenuModel({ kind: 'file', onChip: true, hideable: true })
     const labels = card.map((i) => i.label)
     expect(labels).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove from View'])
@@ -222,7 +220,6 @@ describe('cellMenuContextFor', () => {
       kind: 'clear-only',
       hideable: true,
     })
-    // remove-only MUST carry the hideable flag, or the model appends nothing and the menu never pops.
     const ctx = cellMenuContextFor(prop(), 'select', {}, false, { hideable: true })
     expect(ctx).toEqual({ kind: 'remove-only', hideable: true })
     expect(cellMenuModel(ctx as CellMenuContext).map((i) => i.action)).toEqual(['cell:hide'])

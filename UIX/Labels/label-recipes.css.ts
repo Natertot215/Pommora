@@ -5,9 +5,7 @@ const c = colorVars.color
 
 const FILE_MAX = '85px' // KNOB — how much of a filename a label shows before it truncates
 
-/** The label reads at the on-control tone every other label's text does; the glyph stands a step
- *  under it, so the name leads and the type follows. The pointer is its own: clicking it opens the
- *  file dialog, which is a gesture the cell around it doesn't offer. */
+/** The glyph stands a step under the label's on-control tone, so the name leads and the type follows. The pointer is its own: clicking it opens the file dialog, which is a gesture the cell around it doesn't offer. */
 export const fileChip = style({
   color: c.label.control,
   cursor: 'pointer',

@@ -1,10 +1,4 @@
-// Every writer of a container's sidecar rewrites that file WHOLE, so they all have to serialize
-// on one key: the sidecar's own path. A read-merge-write that takes any other key races its
-// siblings and silently drops whatever they just set.
-//
-// The page half is the same law across a path change: a relocate takes the SOURCE page's lock,
-// so a body write already in flight lands first, and one queued behind the move finds its path
-// gone and fails — rather than re-creating the vacated file around its stale content.
+// Every writer of a container's sidecar rewrites that file WHOLE, so they all serialize on the sidecar's own path; a read-merge-write on any other key races its siblings and silently drops what they just set. The page half is the same law across a path change: a relocate takes the SOURCE page's lock.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises'
@@ -62,7 +56,6 @@ describe('concurrent sidecar writers', () => {
     expect(sidecar?.set_order).toEqual(['s1'])
     expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
     expect(sidecar?.view_button).toBe('labeled')
-    // The sidecar's own identity is never a casualty of a merge that lost its base.
     expect(typeof sidecar?.id).toBe('string')
     expect('modified_at' in (sidecar ?? {})).toBe(false)
   })
@@ -78,8 +71,7 @@ describe('concurrent sidecar writers', () => {
 })
 
 describe('a value write racing a body write on one page', () => {
-  // `updatePageProperty` deliberately takes no lock of its own — its callers need a wider span —
-  // so this pins the law at the shape both of them use.
+  // `updatePageProperty` deliberately takes no lock of its own — its callers need a wider span — so this pins the law at the shape both of them use.
   it('keeps both, since each caller writes under the page key', async () => {
     const p = await createPage(folder, 'Note', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
@@ -103,8 +95,7 @@ describe('a rename racing the body write it interrupted', () => {
     const p = await createPage(folder, 'Old', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
 
-    // Both dispatched before either resolves — the shape of typing, then renaming inside the
-    // editor's autosave debounce.
+    // Both dispatched before either resolves — the shape of typing, then renaming inside the editor's autosave debounce.
     await Promise.all([updatePageBody(p.value.path, 'second'), renamePage(p.value.path, 'New')])
 
     const md = (await readdir(folder)).filter((f) => f.endsWith('.md'))

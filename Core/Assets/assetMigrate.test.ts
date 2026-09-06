@@ -155,7 +155,6 @@ describe('migrateAssets', () => {
     })
   })
 
-  // A value the migration writes that the resolver cannot read blanks every banner at once, so the two mechanisms are crossed rather than each tested alone.
   it('every rewritten value resolves against the map main now holds', async () => {
     await asset('one/Sunset.png', 'a')
     await asset('two/banner-dddddd44.jpg', 'b')
@@ -206,7 +205,6 @@ describe('migrateAssets', () => {
     const r = await migrateAssets(root)
     expect(r?.skipped.map((s) => s.store)).toEqual(['homepage.json'])
     expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBe('[[kept.png]]')
-    // The sweep waits: the file a skipped reference still names is the only copy of it.
     expect(r?.trashed).toBe(0)
     expect(await pathExists(join(root, '.nexus/assets/live/kept.png'))).toBe(true)
   })

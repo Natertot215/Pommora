@@ -5,10 +5,7 @@ import { mintBundle } from './bundle'
 import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { listEntries } from '../IO/walk'
 
-/** The underscore is load-bearing, not decoration: the artifact shares this folder under its own
- *  real name, so the record wears a prefix no entity may. Every naming gate refuses a hidden
- *  prefix — the same convention the walk hides by — and the atomic writer's temp sibling inherits
- *  this name's prefix, so it is skipped alongside Finder's litter. */
+/** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
 const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [

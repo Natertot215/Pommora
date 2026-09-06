@@ -29,7 +29,6 @@ const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_S
 const headingLineAt = (e: MouseEvent): HTMLElement | null =>
   gutterLineAt(e, `.cm-line.${HEADING_FOLD_LINE}`)
 
-/** A container emptied by the exclusions drops with them. */
 export function embedPickTree(
   nodes: readonly PickNode[],
   exclude: ReadonlySet<string>,
@@ -85,7 +84,6 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
   }
 }
 
-/** Delete drops the heading LINE only (its body survives), unlike a grip's whole-block Delete. */
 function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const opened = view.state.doc.lineAt(view.posAtDOM(headingEl))
   const level = headingParts(opened.text)?.hashes.length

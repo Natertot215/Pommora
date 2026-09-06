@@ -40,7 +40,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   }
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    e.stopPropagation() // the homepage title menu, not the banner's Change/Remove-photo menu underneath
+    e.stopPropagation()
     // No Edit Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
     const action = await popRowMenu(
       titleMenuItems({ toggleIcon: true, iconHidden, noEditIcon: true }),

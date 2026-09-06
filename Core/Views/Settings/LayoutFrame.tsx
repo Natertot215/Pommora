@@ -98,8 +98,7 @@ const scrubCardScale = (v: number, viewId: string): void => {
     el.style.setProperty('--card-scale', String(v))
 }
 
-// KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks
-// the tallest content (title + grid + four frame rows + the pinned footing), so it earns more room.
+// KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
 const LEAF_MIN_WIDTH = 225
 const LEAF_MIN_HEIGHT = 245

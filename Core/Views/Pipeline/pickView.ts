@@ -2,8 +2,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import { mintDefaultView, type SavedView } from '@pommora/core/Views/views'
 
-/** A Collection uses its own schema; a Set inherits its ancestor Collection's (schema lives only on
- *  the Collection). [] when the owning Collection can't be found. */
+/** A Set inherits its ancestor Collection's schema (schema lives only on the Collection); [] when that Collection can't be found. */
 export function resolveContainerSchema(
   tree: NexusTree,
   source: CollectionNode | SetNode,
@@ -15,8 +14,7 @@ export function resolveContainerSchema(
   return collections.find((c) => owns(c.sets))?.properties ?? []
 }
 
-/** The view to render: the per-machine active view if still present, else the first saved view, else
- *  a freshly-minted default (sentinel id until first saved). */
+/** The per-machine active view if still present, else the first saved view, else a freshly-minted default (sentinel id until first saved). */
 export function pickView(
   source: CollectionNode | SetNode,
   activeId: string | undefined,

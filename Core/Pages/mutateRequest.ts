@@ -40,8 +40,7 @@ export type MutateRequest =
       order?: string[]
     }
   | { op: 'createContainer'; parentPath: string; kind: MutableContainerKind; name: string }
-  // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops.
-  // `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
+  // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
   | {
       op: 'rename'
       path: string
@@ -65,7 +64,6 @@ export type MutateRequest =
   | { op: 'moveSet'; path: string; newParentPath: string; order: string[] }
   | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
   | { op: 'reorderTop'; key: StateOrderKey; order: string[] }
-  // — Registry-backed Contexts & Spaces (ids in memory; main resolves titles at the write) —
   | { op: 'createContextGroup'; name: string }
   | { op: 'createSpace'; contextId: string; name: string }
   | { op: 'renameContext'; contextId: string; newName: string }

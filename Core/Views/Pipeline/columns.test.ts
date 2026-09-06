@@ -27,9 +27,7 @@ describe('resolveColumns — fixture', () => {
     const cols = resolveColumns(v, fixtureSchema, CONTEXT_IDS)
     expect(ids(cols)).toEqual(['prop_status', '_title', 'ctx_projects', 'ctx_topics', 'ctx_areas'])
     expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'context', 'context', 'context'])
-    // prop_when is in the schema but in neither list → the allowlist keeps it off the table
     expect(cols.some((c) => c.id === 'prop_when')).toBe(false)
-    // fixture hides _modified_at and it is not default-on → never a column
     expect(cols.some((c) => c.id === '_modified_at')).toBe(false)
   })
 })

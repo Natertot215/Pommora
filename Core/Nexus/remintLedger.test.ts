@@ -36,8 +36,7 @@ const library = (pages: PageNode[], sets: SetNode[] = []): CollectionNode => ({
 })
 
 describe('projectBaseline', () => {
-  // The trash's listing resolves every bundle against one tree, and every resolution opens with a
-  // projection — so without this the walk runs once per row.
+  // The trash's listing resolves every bundle against one tree, and every resolution opens with a projection — so without this the walk runs once per row.
   it('projects one tree once, and a second tree separately', () => {
     const tree = treeWith([], [])
     expect(projectBaseline(tree)).toBe(projectBaseline(tree))
@@ -311,7 +310,6 @@ describe('runOpenLedger — the open sequence', () => {
     await runOpenLedger(root)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
 
-    // An uneventful open re-latches the same answer rather than drifting off it.
     await runOpenLedger(root)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
   })
@@ -332,17 +330,16 @@ describe('runOpenLedger — the open sequence', () => {
   it('with no prior evidence the eldest claimant records — the original never re-mints', async () => {
     const body = `---\nID: ${NOTES}\n---\nbody`
     await runOpenLedger(root)
-    // Closed window: the original renamed (birth time survives) AND copied. The copy's name
-    // sorts first, so a walk-order pick would crown it and re-mint the original.
+    // Closed window: the original renamed (birth time survives) AND copied. The copy's name sorts first, so a walk-order pick would crown it and re-mint the original.
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Zed.md'))
     await new Promise((r) => setTimeout(r, 20))
     await writeFile(join(root, 'Library', 'Aaa.md'), body)
 
-    await runOpenLedger(root) // the recorded path is gone: the entry drops
-    await runOpenLedger(root) // no prior: the eldest claimant records unmarked
+    await runOpenLedger(root)
+    await runOpenLedger(root)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
 
-    await runOpenLedger(root) // adjudication: the copy re-mints, the original keeps its id
+    await runOpenLedger(root)
     expect(await readFile(join(root, 'Library', 'Zed.md'), 'utf8')).toContain(NOTES)
     expect(await readFile(join(root, 'Library', 'Aaa.md'), 'utf8')).not.toContain(NOTES)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
@@ -354,8 +351,7 @@ describe('runOpenLedger — the open sequence', () => {
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'A.md'))
     await writeFile(join(root, 'Library', 'B.md'), body)
     await runOpenLedger(root)
-    // Two claimants, neither at the recorded path: the entry drops from the baseline, because
-    // two copies on disk are not a deletion and the id is in flux until one is adjudicated.
+    // Two claimants, neither at the recorded path: the entry drops from the baseline, because two copies on disk are not a deletion and the id is in flux until one is adjudicated.
     expect(readBaseline()?.[NOTES]).toBeUndefined()
   })
 

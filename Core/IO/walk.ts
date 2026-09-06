@@ -46,8 +46,7 @@ export async function corpusFilesUnder(
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const out: string[] = []
-  // Descended by hand so an out-of-corpus subtree is never entered: `.trash` only grows, and
-  // the prefix match makes pruning a directory identical to filtering its files.
+  // Descended by hand so an out-of-corpus subtree is never entered: `.trash` only grows, and the prefix match makes pruning a directory identical to filtering its files.
   const walk = async (dir: string, segs: string[]): Promise<void> => {
     for (const entry of await listEntries(dir)) {
       const next = [...segs, entry.name]

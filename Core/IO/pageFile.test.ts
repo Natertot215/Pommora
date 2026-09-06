@@ -136,8 +136,7 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
   })
 
   it('answers null for frontmatter that cannot round-trip, in either shape', () => {
-    // A tab-indented sequence never parses; an unresolved alias parses clean and refuses to
-    // serialize. Both would lose everything the parser did not recover.
+    // A tab-indented sequence never parses; an unresolved alias parses clean and refuses to serialize. Both would lose everything the parser did not recover.
     expect(
       renameFrontmatterKey(page('<Projects>:\n\t- Pommora'), '<Projects>', '<Ventures>', 'merge'),
     ).toBeNull()

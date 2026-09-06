@@ -1,11 +1,9 @@
-/* No overflow here: the pane's clip-path bounds the visuals and the editor's scroller owns the
-   scroll. */
+/* No overflow here: the pane's clip-path bounds the visuals and the editor's scroller owns the scroll. */
 .glance-body {
   position: relative;
 }
 
-/* The shield sits above the web guest in stacking order, so pointer events land on the host
-   pane until `.is-lifted` fades it away to reveal the site. */
+/* The shield sits above the web guest in stacking order, so pointer events land on the host pane until `.is-lifted` fades it away to reveal the site. */
 .glance-web,
 .glance-web-shield {
   position: absolute;
@@ -24,9 +22,7 @@
   opacity: 0;
 }
 
-/* The scroller scrolls, not the tile, so the warm seam's scroll capture reads the element that
-   actually moved. Grip menus, fold chevrons, and gutter actions are inactive here, so the gutter
-   lane reserves nothing. */
+/* The scroller scrolls, not the tile, so the warm seam's scroll capture reads the element that actually moved. */
 .glance-body .page-tile {
   --rail-inset: 0px;
 }
@@ -37,13 +33,11 @@
   overflow-y: auto !important;
   overscroll-behavior: contain;
 }
-/* KNOB — the pane's interior inset: no vertical padding (scroll-only chrome earns none),
-   symmetric sides. Text selects (read-only), so the I-beam stands. */
+/* KNOB — the pane's interior inset: no vertical padding (scroll-only chrome earns none), symmetric sides. */
 .glance-body .page-tile .mdpm-editor .cm-content {
   padding: 0 calc(14px * var(--page-detail-scale));
 }
-/* No chevron in the pane — with the caret disabled, clicking the heading itself is the fold
-   toggle. */
+/* No chevron in the pane — with the caret disabled, clicking the heading itself is the fold toggle. */
 .glance-body .mdpm-editor .cm-line.md-foldable::before {
   display: none;
 }

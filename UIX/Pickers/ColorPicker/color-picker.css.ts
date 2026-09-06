@@ -30,9 +30,7 @@ export const swatch = style({
   outlineOffset: '1px',
 })
 
-/** The selected cell rings in its own color at tint-primary. The dark seam under it is load-bearing
- *  at one square: the brightest grey's ring resolves to label-primary, which IS that square's fill,
- *  so without a separator the two merge into a single blob. */
+/** The selected cell rings in its own color at tint-primary. The dark seam under it is load-bearing at one square: the brightest grey's ring resolves to label-primary, which IS that square's fill, so without a separator the two merge into a single blob. */
 export const swatchSelected = style({
   boxShadow: `0 0 0 1px ${tintAt(c.system.black, 60)}`,
   outline: 'var(--width-200) solid var(--ring)',

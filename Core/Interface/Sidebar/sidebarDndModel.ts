@@ -10,8 +10,8 @@ export type Entry = {
   depth: number
   parentId: string | null
   parentPath: string | null
-  pageIds: string[] // [] for non-containers
-  containerIds: string[] // Collection→sets, Set→sub-sets ([] else)
+  pageIds: string[]
+  containerIds: string[]
 }
 export type Index = {
   byId: Map<string, Entry>

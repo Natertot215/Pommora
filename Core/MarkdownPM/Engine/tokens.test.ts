@@ -120,9 +120,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     expect(slice(t, w.contentRange)).toBe('Page')
   })
 
-  // The viewport projection rebuilds every token into a fresh literal, where a new span field is
-  // dropped with no type error and the editor silently resolves aliases. Field-set parity is what
-  // goes red for that, now and for whatever field is added next.
+  // The viewport projection rebuilds every token into a fresh literal, where a new span field is dropped with no type error and the editor silently resolves aliases. Field-set parity is what goes red for that.
   it('shifting a token carries every field the raw one has, offset alike', () => {
     const raw = byKind(tokenize('[[Q3 Plan|the plan]]'), 'wikiLink')[0]
     const moved = shiftToken(raw, 10)
@@ -146,9 +144,7 @@ describe('activeTokenIndices', () => {
     expect(activeTokenIndices(tokens, 0, 0).has(idx)).toBe(false)
   })
 
-  // Finishing a link leaves the caret on its closer and the link rendered. Merely CLICKING there is
-  // aiming at the syntax, and reveals it like any other construct — the distinction is the gesture,
-  // which the caller reports, not the offset.
+  // Merely CLICKING on the closer is aiming at the syntax, and reveals it like any other construct — the distinction is the gesture, which the caller reports, not the offset.
   it('a caret rested on the closer by finishing leaves it rendered', () => {
     const tokens = tokenize('[[P]]')
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')

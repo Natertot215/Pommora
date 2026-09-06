@@ -71,8 +71,7 @@ async function writeFreshId(
   fresh: string,
 ): Promise<Map<string, string> | null> {
   try {
-    // A page carries no views, so a landed page write returns an empty map, not null —
-    // null must keep its single meaning, a refused write.
+    // A page carries no views, so a landed page write returns an empty map, not null — null must keep its single meaning, a refused write.
     if (target.kind === 'page')
       return (await remintPageFile(join(root, target.path), target.id, fresh)) ? new Map() : null
     if (target.kind === 'context') return null
@@ -85,8 +84,7 @@ async function writeFreshId(
 
 async function remintPageFile(absFile: string, oldId: string, fresh: string): Promise<boolean> {
   return rewritePageSerialized(absFile, (content) => {
-    // Read fresh inside the lock: a file that no longer carries the contested id moved under
-    // us, and a blind stamp would overwrite an identity the walk never adjudicated.
+    // Read fresh inside the lock: a file that no longer carries the contested id moved under us, and a blind stamp would overwrite an identity the walk never adjudicated.
     if (splitFrontmatter(content)[ID_KEY] !== oldId) return null
     return mergeFrontmatter(content, { [ID_KEY]: fresh }, [ID_KEY], splitEnvelope(content).body)
   })
@@ -100,8 +98,7 @@ async function remintSidecar(
 ): Promise<Map<string, string> | null> {
   const file = sidecarPath(absFolder, kind)
   const viewIds = new Map<string, string>()
-  // Read fresh inside the lock: a container write that landed since the walk holds facts the
-  // stamp must carry forward, and a blind write would drop them.
+  // Read fresh inside the lock: a container write that landed since the walk holds facts the stamp must carry forward, and a blind write would drop them.
   const landed = await withSidecarLock(absFolder, kind, async () => {
     const current = await readJsonStrict(file)
     if (!current.ok || current.value.id !== oldId) return false

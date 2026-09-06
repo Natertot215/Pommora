@@ -14,9 +14,7 @@ function readMap(storage: Pick<Storage, 'getItem'>): OpenMap {
     const raw = storage.getItem(DISCLOSURE_KEY)
     const parsed: unknown = raw ? JSON.parse(raw) : null
     if (parsed !== null && typeof parsed === 'object') map = parsed as OpenMap
-  } catch {
-    // unreadable/corrupt map — start empty
-  }
+  } catch {}
   cached = { storage, map }
   return map
 }

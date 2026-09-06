@@ -22,9 +22,7 @@ export function isNavPath(root: string, path: string): boolean {
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
-// We DO watch .nexus/ — Contexts and settings/state live there, so external edits to them
-// must auto-refresh. Checks only the path BELOW the root, so a dot-segment in the root's own
-// absolute path (e.g. a nexus under ~/.something) can't blank the whole watch.
+// We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
@@ -36,15 +34,12 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
       segs.some(neverWatched) ||
-      // Tile bodies load through tiles:get, never the tree walk — a debounced body write must not
-      // cost a re-walk. The host's document stays watched, and so does the folder entry itself,
-      // since chokidar never descends into an ignored directory.
+      // Tile bodies load through tiles:get, never the tree walk — a debounced body write must not cost a re-walk. The host's document stays watched, and so does the folder entry itself, since chokidar never descends into an ignored directory.
       (segs[0] === NEXUS_DIR &&
         segs[1] === HOMEPAGE_HOST_DIRNAME &&
         segs.length >= 3 &&
         segs[2] !== TILE_DOC_FILENAME) ||
-      // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space
-      // never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
+      // Space hosts get the same treatment file-granularly: a tile `.md` inside a Space never walks, while `_space.json` (the tree reads banner/color/tags) stays watched.
       (segs[0] === NEXUS_DIR &&
         segs[1] === CONTEXTS_DIRNAME &&
         segs.length >= 5 &&

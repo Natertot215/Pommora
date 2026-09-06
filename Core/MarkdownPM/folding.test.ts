@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { headingOutline, headingSections, headingSrc } from './Engine/headingScan'
 
-// `#` is the first keystroke of every heading, and the parser calls it a valid empty heading. The
-// editor does not: it would hide itself to a blank line, take a chevron, open an unnamed outline row
-// under an empty persisted fold key, and swallow the paragraphs below it into a draggable section.
+// `#` is the first keystroke of every heading and the parser calls it a valid empty heading. The editor does not: it would hide itself to a blank line, take a chevron, open an unnamed outline row under an empty persisted fold key, and swallow the paragraphs below it into a draggable section.
 describe('a heading with no text is not a heading to this editor', () => {
   it('a bare marker opens no section and no outline row', () => {
     const doc = 'intro\n#\nbody a\nbody b'
@@ -46,7 +44,7 @@ describe('headingSections', () => {
     const doc = '# A\nbody\nmore\n# B\nx'
     const s = headingSections(headingSrc(doc))
     expect(s).toHaveLength(2)
-    expect(doc.slice(s[0].lineEnd, s[0].to)).toBe('\nbody\nmore') // up to the line before # B
+    expect(doc.slice(s[0].lineEnd, s[0].to)).toBe('\nbody\nmore')
     expect(doc.slice(s[1].lineEnd, s[1].to)).toBe('\nx')
   })
 
@@ -55,7 +53,7 @@ describe('headingSections', () => {
     const s = headingSections(headingSrc(doc))
     const top = s.find((x) => x.key === 'Top')!
     const sub = s.find((x) => x.key === 'Sub')!
-    expect(doc.slice(top.lineEnd, top.to)).toBe('\nintro\n## Sub\ndeep') // spans through the subsection
+    expect(doc.slice(top.lineEnd, top.to)).toBe('\nintro\n## Sub\ndeep')
     expect(doc.slice(sub.lineEnd, sub.to)).toBe('\ndeep')
   })
 
@@ -69,6 +67,6 @@ describe('headingSections', () => {
   it('drops a heading with no body (nothing to fold) but keeps ordinal stability', () => {
     const doc = '# Empty\n# Dupe\nx\n# Dupe\ny'
     const keys = headingSections(headingSrc(doc)).map((s) => s.key)
-    expect(keys).toEqual(['Dupe', 'Dupe 2']) // '# Empty' has no body → dropped; dupes disambiguate
+    expect(keys).toEqual(['Dupe', 'Dupe 2'])
   })
 })

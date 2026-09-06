@@ -6,11 +6,7 @@ import { tintAt } from '../../Theme/colors'
 import type { CellKey } from '@pommora/uix/Theme/colors'
 import * as s from './color-swatch.css'
 
-/**
- * The swatch-and-picker pair: a chip using the resolved color, and the grid it opens. Its open
- * state is its own. Greyscale is offered on request, resolved as a chip rather than painted raw —
- * see the picker.
- */
+/** The swatch-and-picker pair: a chip using the resolved color, and the grid it opens. Greyscale is offered on request, resolved as a chip rather than painted raw. */
 export function ColorSwatch({
   label,
   selected,

@@ -11,7 +11,6 @@ import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
 export type ConnMenuTarget = {
   surface?: ConnSurface
   hideable?: boolean
-  /** Kept apart from `apply`: the menu offers these only on a cell, so an editor host never has to refuse them. */
   onCell?: ConnCellApply
 } & (
   | {
@@ -53,7 +52,6 @@ export interface ConnectionsApi extends PageIndex {
   bypass?: (page: ConnPage) => void
 }
 
-/** One resolver behind the click path and both renderers, so a link can never be colored as one thing and act as another. */
 export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
 
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */

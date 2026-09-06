@@ -31,7 +31,6 @@ const flush = (): void => {
   rafCbs = []
   for (const cb of cbs) cb(0)
 }
-// Flush any pending frame so the module's coalescing flag resets between tests.
 afterEach(() => {
   flush()
   vi.unstubAllGlobals()

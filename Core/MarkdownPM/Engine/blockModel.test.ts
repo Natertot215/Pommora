@@ -79,7 +79,6 @@ describe('blockAt', () => {
     const b = blockAt(doc, doc.indexOf('quote two'))
     expect(b?.kind).toBe('blockquote')
     expect(slice(doc, b)).toBe('> quote one\n>\n> quote two')
-    // One block start, so no grip or drop slot appears mid-quote.
     expect(blockStarts(doc).filter((s) => s.kind === 'blockquote')).toHaveLength(1)
     expect(blockStarts(doc).some((s) => s.from === doc.indexOf('> quote two'))).toBe(false)
   })
@@ -301,8 +300,7 @@ describe('blockAt', () => {
     ])
   })
 
-  // A code/table block on the first line looks its previous line up off the top edge — that
-  // lookup must not crash the editor's initial parse.
+  // A code/table block on the first line looks its previous line up off the top edge — that lookup must not crash the editor's initial parse.
   it('a doc starting with a code fence does not crash and starts a code block at 0', () => {
     const doc = '```js\nconst x = 1\n```\npara'
     expect(() => blockStarts(doc)).not.toThrow()
@@ -354,7 +352,6 @@ describe('embed blocks', () => {
   })
 })
 
-// The citations section owns no block, the way a blank line owns none.
 describe('the citations section is inert to the block layer', () => {
   const doc = 'intro line\n\nbody [^1] text\n\n[^1]: one\ncontinued\n[^2]: two'
 

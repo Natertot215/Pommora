@@ -110,9 +110,7 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
 export async function seedContentIndex(root: string): Promise<void> {
   const indexed = readIndexedStats()
   if (!indexed) return
-  // The handle this seed started against. Every await below is a window for a nexus switch to
-  // swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database —
-  // so it bails wherever the identity moved, and the new session's own seed covers its nexus.
+  // The handle this seed started against. Every await below is a window for a nexus switch to swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database, so it bails wherever the identity moved.
   const db0 = contentIndexStore()
   reread = { db: db0, rels: [], cold: indexed.size === 0 }
   try {
@@ -127,21 +125,18 @@ export async function seedContentIndex(root: string): Promise<void> {
       if (st && prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
       const content = st && (await readTextOrNull(abs))
       if (!st || content === null) {
-        // Vanished mid-seed — the prune below drops its rows rather than trusting stale ones.
         seen.delete(rel)
         continue
       }
       if (contentIndexStore() !== db0) return
-      // A maintaining writer that landed while this file's read was in flight left a fresher
-      // row than the snapshot knew — keep theirs; this read predates their write.
+      // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
       const row = readIndexedStat(rel)
       if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
       reread.rels.push(rel)
     }
     if (contentIndexStore() !== db0) return
-    // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born
-    // while the seed ran is absent from the snapshot and must survive this pass.
+    // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born while the seed ran is absent from the snapshot and must survive this pass.
     for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
     markIndexReady()
   } catch (e) {

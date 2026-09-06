@@ -1,4 +1,3 @@
-// Pure source-line logic for list drag-to-reorder — the doc string and offsets only, so it is unit-testable without an editor.
 import { parseListMarkerPrefixed as parseListMarker } from './detect'
 import { lineOffsetsOf, quoteDepthOf } from '@pommora/core/Connections/markdownCode'
 import { scanOf } from './docScan'
@@ -63,8 +62,7 @@ export interface Slot {
   indent?: string
 }
 
-// The drop indent a block adopts is the target's lead, so dragging in or out of a callout re-prefixes
-// correctly. Leading `[ \t]*` first so an indented `  > - x` strips its `>` too.
+// The drop indent a block adopts is the target's lead, so dragging in or out of a callout re-prefixes correctly. Leading `[ \t]*` first so an indented `  > - x` strips its `>` too.
 const LEAD_RE = /^[ \t]*(?:>[ \t]?)*[ \t]*/
 
 /** Strips the head's lead by LENGTH off each line's own lead, so it can't silently skip a descendant that mixes tabs and spaces. */
@@ -100,7 +98,6 @@ function moveBlockChanges(doc: string, block: BlockRange, slot: Slot): ChangeSpe
   return [cut, { from: slot.at, to: slot.at, insert: `${blockText}\n` }]
 }
 
-/** A "run" is a maximal block of consecutive same-indent ordered lines; only the lines whose printed number changes are returned. */
 export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
   if (pos < 0 || pos > doc.length) return []
   const ls = lineStartAt(doc, pos)
@@ -122,8 +119,7 @@ export function renumberOrderedRun(doc: string, pos: number): ChangeSpec[] {
     runStart = prevStart
   }
 
-  // Renumbered from the run's SMALLEST present digit: a move only permutes the digits, so a list that began
-  // at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
+  // Renumbered from the run's SMALLEST present digit: a move only permutes the digits, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
   const isNested = (t: string): boolean =>
     t.trim() !== '' && t.startsWith(indent) && /^[ \t]/.test(t.slice(indent.length))
 
@@ -156,7 +152,6 @@ export function dropChanges(doc: string, block: BlockRange, slot: Slot): ChangeS
 
   const moved = applyChanges(doc, move)
 
-  // The insert's `from`, mapped through the prior cut, is the block's new start — the destination anchor.
   const [cut, ins] = move
   const cutLen = cut.to - cut.from
   const destAnchor = ins.from > cut.from ? ins.from - cutLen : ins.from
@@ -193,7 +188,6 @@ export function applyChanges(doc: string, changes: ChangeSpec[]): string {
   return out + doc.slice(cursor)
 }
 
-/** `b` as one replacement over `a`, trimmed to the span that differs — the idiom every rebuild-then-diff act ends on. */
 export function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
   if (a === b) return []
   let pre = 0
@@ -223,7 +217,6 @@ export function blockMoveChanges(
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
   if (tLine < 0) return null
-  // A blank line isn't a real boundary — snap forward to the next content line.
   while (tLine < lines.length && isBlank(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
@@ -233,8 +226,7 @@ export function blockMoveChanges(
   if (isBlank(bEnd + 1)) cutEnd = bEnd + 1
   else if (isBlank(bStart - 1)) cutStart = bStart - 1
 
-  // A block is delimited by a blank line, so both new seams — the insert and the hole the cut leaves — are
-  // guarded against fusing two non-blank lines into one list or paragraph.
+  // A block is delimited by a blank line, so both new seams — the insert and the hole the cut leaves — are guarded against fusing two non-blank lines into one list or paragraph.
   const out: string[] = []
   const sep = (): void => {
     if (out.length && out[out.length - 1].trim() !== '') out.push('')

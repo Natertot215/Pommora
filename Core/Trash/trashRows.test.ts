@@ -146,8 +146,7 @@ describe('trashRows — a bundle as the browser reads it', () => {
     expect((await rows()).map((r) => r.kind)).toEqual(['page'])
   })
 
-  // The discriminator does the excluding, not the missing artifact — a property bundle holds no
-  // artifact today, so a filter keyed on that would pass this test while excluding nothing.
+  // The discriminator does the excluding, not the missing artifact — a property bundle holds no artifact today, so a filter keyed on that would pass this test while excluding nothing.
   it('excludes a property record even when something sits beside it', () => {
     expect(
       trashRowOf(

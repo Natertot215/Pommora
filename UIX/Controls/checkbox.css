@@ -1,6 +1,4 @@
-/* The app's one checkbox look, shared by the editor's CodeMirror task-marker widget, the React
-   `Checkbox` control, and the property value glyph. inline-block keeps the baseline fixed so
-   toggling doesn't shift the box, and the mark is centered absolutely within it. */
+/* Shared by the editor's CodeMirror task-marker widget, the React `Checkbox` control, and the property value glyph. inline-block keeps the baseline fixed so toggling doesn't shift the box. */
 .checkbox {
   box-sizing: border-box;
   display: inline-block;
@@ -23,8 +21,7 @@
   transform: translate(-50%, -50%);
 }
 
-/* Filled-when-empty: a resting wash marks a value as unset rather than absent; a checked box's
-   own fill overrides it. */
+/* Filled-when-empty: a resting wash marks a value as unset rather than absent; a checked box's own fill overrides it. */
 .checkbox-filled {
   background: var(--fill-tertiary);
 }
@@ -33,8 +30,7 @@
   border-color: var(--checkbox-border);
 }
 
-/* Hover only applies to the interactive forms — the static value glyph leaves its row's hover to
-   speak — and a checked box keeps its fill through hover rather than washing out. */
+/* Hover only applies to the interactive forms — the static value glyph leaves its row's hover to speak — and a checked box keeps its fill through hover rather than washing out. */
 .checkbox:not(.checkbox-static):hover {
   background: var(--state-hover);
 }

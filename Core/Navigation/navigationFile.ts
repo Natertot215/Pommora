@@ -53,7 +53,7 @@ export async function writeNavigationState(
 ): Promise<void> {
   if ('recents' in patch) {
     const recents = cleanRefs(patch.recents ?? [])
-    writeValue('recents', recents.length ? recents : null) // an emptied list deletes its row
+    writeValue('recents', recents.length ? recents : null)
   }
   const touchesFile = FILE_KEYS.some((k) => k in patch) || 'banner' in patch
   if (!touchesFile) return

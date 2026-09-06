@@ -20,9 +20,7 @@ import {
 import { loadContextWorld } from './contextWrite'
 import { invalidName, invalidContextTitle } from '../Nexus/util'
 
-/** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the
- *  OLD key while a key already wearing the new title can only be inert or hand-authored — neither
- *  list is fresher, so dropping either would silently lose tags. */
+/** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
 function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
@@ -93,8 +91,7 @@ async function cascadeTitle(
 ): Promise<SweepResult> {
   const def = registry.contexts.find((c) => c.id === j.contextId)
   if (!def) return { touched: [], skipped: [], refused: [] }
-  // The key being rewritten comes from the journal, never the registry title, which may
-  // already read old or new.
+  // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
 }
 
@@ -145,8 +142,7 @@ async function settleJournal(root: string, j: RenameJournal, skipped: string[]):
   else await clearJournal(root, j)
 }
 
-/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle.
- *  A live failure aborts: best-effort reverse, journal cleared. */
+/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse and a cleared journal. */
 export async function renameContextOp(
   root: string,
   contextId: string,

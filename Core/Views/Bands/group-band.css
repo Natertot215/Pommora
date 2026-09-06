@@ -1,6 +1,4 @@
-/* Shared group-band chrome — the disclosure head (outline + glyph + hover "+") over the band body. The
-   table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the
-   cards' sibling seams. */
+/* Shared group-band chrome — the disclosure head over the band body. The table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the cards' sibling seams. */
 
 .group-band {
   --band-gap: calc(2 * var(--band-clearance));
@@ -28,8 +26,7 @@
   align-items: center;
   min-width: 0;
 }
-/* Direct child only, so a nested chip glyph (checkbox box) keeps its own color instead of the
-   shared icon tone. */
+/* Direct child only, so a nested chip glyph (checkbox box) keeps its own color instead of the shared icon tone. */
 .group-name {
   display: inline-flex;
   align-items: center;

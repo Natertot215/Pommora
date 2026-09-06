@@ -17,7 +17,6 @@ import {
 } from '@pommora/core/Connections/connections'
 import type { CodeMask } from '@pommora/core/Connections/markdownCode'
 
-/** `DocScan` extends it rather than restating the members, so a fifth kind is one edit instead of two that can disagree. */
 export interface DocLineScan {
   maths: [number, number][]
   embeds: EmbedLine[]

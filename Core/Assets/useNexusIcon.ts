@@ -5,7 +5,6 @@ import { host } from '../Platform/dialer'
 import { popRowMenu } from '../Platform/nativeMenus'
 import { nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 
-/** A photo outranks a glyph in display; a glyph outranks the default placeholder. */
 export function useNexusIcon() {
   const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
   const profileIcon = useSession((st) => st.tree?.nexus.profileIcon)
@@ -34,7 +33,6 @@ export function useNexusIcon() {
     if (profileImage) await mutate({ op: 'setCrop', image: profileImage, crop })
   }
 
-  // A re-pick adopts the new file and keeps the editor open on it; the adopted value lets the picker hold Save until the new image lands on the seat.
   const onRepick = async (source: string): Promise<string | undefined> => {
     let adopted: string | undefined
     await mutate({ op: 'setProfileImage', source }, undefined, (a) => {

@@ -22,9 +22,7 @@ type ButtonProps = Look & {
   labelCollapsed?: boolean
   revealOnHover?: boolean
   ghostRest?: boolean
-  /** Inside a Segmented run — the segment geometry rather than the pill's. */
   inRun?: boolean
-  /** Engaged — a toggle that is on, or a trigger whose menu is open. */
   pressed?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
 
@@ -113,8 +111,7 @@ export function Segmented({
   glass?: boolean
   labelCollapsed?: boolean
   className?: string
-  /** The run pill's own corner, independent of the size's `--btn-radius`. The glass clips to the
-   *  element's computed radius, so a CSS value (a var) works for both the glass and the cover. */
+  /** The glass clips to the element's computed radius, so a CSS value (a var) works for both the glass and the cover. */
   radius?: string
 }): React.JSX.Element {
   const buttons = segments.map((seg, i) => (
@@ -139,8 +136,7 @@ export function Segmented({
       />
     </Fragment>
   ))
-  // display/align stay INLINE: the glass layer's <Glass> root sets its own `display: inline-block`
-  // inline, which a class can't beat — so the run's flex centering has to be inline too, or the
+  // display/align stay INLINE: the glass layer's <Glass> root sets its own `display: inline-block` inline, which a class can't beat — so the run's flex centering has to be inline too, or the glass buttons lose vertical centering while the cover keeps it.
   // glass buttons lose vertical centering while the cover keeps it.
   const hostProps = {
     className: cx(s.container, s.size[size], className),

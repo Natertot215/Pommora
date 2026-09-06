@@ -14,8 +14,7 @@ export function readFormatState(
   embedSeat: boolean,
   citeSeat: boolean,
 ): FormatState {
-  // Inline marks are line-local, so tokenize only the caret's line (not the whole doc) and test
-  // membership in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
+  // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
   const ls = lineStartAt(doc, from)
   const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
@@ -25,8 +24,7 @@ export function readFormatState(
   const wraps = (kind: string): boolean =>
     tokens.some((tk) => tk.kind === kind && tk.contentRange[0] <= f && t <= tk.contentRange[1])
 
-  // List/heading state reads the line's INNER body so a `> - item` reports as a list — the render layer
-  // shows the bullet behind the `>`, and the menu must agree with what the user sees.
+  // List/heading state reads the line's INNER body so a `> - item` reports as a list — the render layer shows the bullet behind the `>`, and the menu must agree with what the user sees.
   const { body } = splitPrefix(line)
   const lm = parseListMarker(body)
   const hm = headingParts(body)

@@ -22,12 +22,10 @@ import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot } from './session'
 import type { NexusState } from './tree'
 
-// Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt save
-// can't land in the NEW nexus's sidecars. A count: the open path runs more than one pass.
+// Renderer-initiated sidecar saves are dropped while the session root swaps, so a mid-adopt save can't land in the NEW nexus's sidecars. A count: the open path runs more than one pass.
 let adoptingDepth = 0
 export const adopting = (): boolean => adoptingDepth > 0
 
-// Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
@@ -75,8 +73,7 @@ export async function openNexusSequence(
   return root
 }
 
-/** `latchRecord: false` is the mid-session re-point's opt-out — a re-point that latched would
- *  diff the live session against the launch baseline, reporting every change as drift. */
+/** `latchRecord: false` is the mid-session re-point's opt-out — a re-point that latched would diff the live session against the launch baseline, reporting every change as drift. */
 export async function adoptNexus(
   ctx: HostContext,
   path: string,
@@ -131,8 +128,7 @@ export const nexusHandlers = {
     return ok(true)
   },
 
-  // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session,
-  // stores, watcher, and recents at the new path.
+  // Not a mutate op: it re-targets the whole session, so adoptNexus re-opens the session, stores, watcher, and recents at the new path.
   'nexus:rename': withRoot(async (root, ctx, newName: unknown) => {
     if (typeof newName !== 'string') return fail('operation-failed', 'A name is required.')
     const trimmed = newName.trim()

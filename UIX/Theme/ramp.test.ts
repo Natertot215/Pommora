@@ -16,8 +16,7 @@ const c = colorVars.color
 const WHITE = c.system.white
 const BLACK = c.system.black
 
-// The five regularized rows must reproduce the ladder the sandbox settled by eye: 55 · 70 · 85
-// toward black, the anchor, then 85 · 70 · 55 · 40 toward white.
+// The five regularized rows must reproduce the ladder the sandbox settled by eye: 55 · 70 · 85 toward black, the anchor, then 85 · 70 · 55 · 40 toward white.
 describe('the single-anchor rows reproduce the settled ladder', () => {
   const DARK = [55, 70, 85]
   const LIGHT = [85, 70, 55, 40]
@@ -38,8 +37,7 @@ describe('the single-anchor rows reproduce the settled ladder', () => {
   })
 })
 
-// The blue row is the one the regularization MOVES — cells 0, 6 and 7 shift off the sandbox's
-// hand-tuned 70 / 80 / 55 onto the shared ladder. Pinned so the move is deliberate, never drift.
+// The blue row is the one the regularization MOVES — cells 0, 6 and 7 shift off the sandbox's hand-tuned 70 / 80 / 55 onto the shared ladder. Pinned so the move is deliberate, never drift.
 describe('the paired blue row', () => {
   it('seats both anchors exactly', () => {
     expect(cellColor('blue-1')).toBe(c.solid.blue)
@@ -66,16 +64,14 @@ describe('the paired blue row', () => {
 })
 
 describe('anchors', () => {
-  // Every anchor resolves to the design-system TOKEN, not the literal behind it, so a chip still
-  // indirects through --color-solid-* exactly as it did before the ramp existed.
+  // Every anchor resolves to the design-system TOKEN, not the literal behind it, so a chip still indirects through --color-solid-* exactly as it did before the ramp existed.
   it('round-trips every spectrum solid back to its own token', () => {
     for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]) {
       expect(cellColor(ANCHOR_CELLS[key])).toBe(c.solid[key])
     }
   })
 
-  // Consequence of that seat: grey-6 falls inside the darkness-offset zone, so a chip carrying the
-  // legacy `grey` renders a step darker than it did before the ramp. Pinned, not hidden.
+  // grey-6 falls inside the darkness-offset zone, so a chip carrying the legacy `grey` renders a step darker than it did before the ramp. Pinned, not hidden.
   it('renders the grey anchor darker than the bare solid, per the greyscale exception', () => {
     expect(cellPaint(ANCHOR_CELLS.grey).base).toBe(mixAt(c.solid.grey, 85, BLACK))
   })
@@ -134,8 +130,7 @@ describe('isColorKey', () => {
   })
 })
 
-// The refactor's baseline invariant: generating the palette from the ramp may not move any of the
-// ten anchors' rendered recipe. Grey is the one documented exception (see its own case above).
+// Generating the palette from the ramp may not move any of the ten anchors' rendered recipe. Grey is the one documented exception (see its own case above).
 describe('the anchors survive the generation unchanged', () => {
   it('renders each chromatic anchor exactly as the bare solid did', () => {
     const chromatic = (Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]).filter(
@@ -166,8 +161,7 @@ describe('labelColorFor', () => {
     }
   })
 
-  // grey-4 shares `default`'s VALUE but is a cell a user can deliberately pick, so it must keep its
-  // own key — collapsing it would make that square unclearable in the picker.
+  // grey-4 shares `default`'s VALUE but is a cell a user can deliberately pick, so it must keep its own key — collapsing it would make that square unclearable in the picker.
   it('keeps grey-4 distinct from default', () => {
     expect(labelColorFor('grey-4')).toBe('grey-4')
   })
@@ -181,8 +175,7 @@ describe('labelColorFor', () => {
     expect(labelColorFor('')).toBe('default')
   })
 
-  // The accent sentinel is produced by the two consumers that own the accent fallback; it must not
-  // round-trip in from disk.
+  // The accent sentinel is produced by the two consumers that own the accent fallback; it must not round-trip in from disk.
   it('refuses the accent sentinel', () => {
     expect(labelColorFor('accent')).toBe('default')
   })
@@ -198,8 +191,7 @@ describe('solidColorCss', () => {
     expect(solidColorCss('red')).toBe(cellColor(ANCHOR_CELLS.red))
   })
 
-  // The regression this exists to catch: before the ramp, a stepped key indexed a table holding only
-  // the ten solids and came back undefined — a link with no color, a checkbox with no fill.
+  // Before the ramp, a stepped key indexed a table holding only the ten solids and came back undefined — a link with no color, a checkbox with no fill.
   it('resolves a stepped cell key rather than coming back empty', () => {
     expect(solidColorCss('purple-6')).toBe(cellColor('purple-6'))
     expect(solidColorCss('purple-6')).toBeTruthy()

@@ -5,8 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameCascade } from './cascade'
 import { encodeLinkTarget } from '../Connections/links'
 
-// A body carrying every form a connection can take survives a real rename against real files on
-// disk. Per-task suites prove each piece; this proves they still agree all at once.
+// A body carrying every form a connection can take survives a real rename against real files on disk. Per-task suites prove each piece; this proves they still agree all at once.
 
 let root: string
 let host: string
@@ -21,8 +20,7 @@ const body = (): string =>
     '',
     '| Where | Link |',
     '| --- | --- |',
-    // A GFM cell escapes `|`, and `|` is the alias delimiter — so a connection given its own words
-    // inside a table reaches the cascade with a backslash sitting where the title ends.
+    // A GFM cell escapes `|`, and `|` is the alias delimiter — so a connection given its own words inside a table reaches the cascade with a backslash sitting where the title ends.
     `| In a cell | [[Q3 Plan\\|the roadmap]] |`,
     `| Unaliased | [[Q3 Plan]] |`,
     '',
@@ -56,8 +54,6 @@ describe('a rename reaches every form a connection takes', () => {
 
     expect(after).toContain('[[Q4 Plan]]')
     expect(after).toContain('![[Q4 Plan]]')
-    // The alias and the markdown label are the author's, and a rename changes which page a link
-    // points at, never what it says.
     expect(after).toContain('[[Q4 Plan|the roadmap]]')
     expect(after).toContain(`[the roadmap](${encodeLinkTarget('Q4 Plan')})`)
     // Scoped to the live lines: the fenced sample below still holds the old title, on purpose.
@@ -68,8 +64,7 @@ describe('a rename reaches every form a connection takes', () => {
   it('reaches a connection authored inside a table cell, escape and all', async () => {
     await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
     const after = await read()
-    // The escape is re-emitted exactly as it arrived: writing a bare pipe here would split the row
-    // into an extra column.
+    // The escape is re-emitted exactly as it arrived: writing a bare pipe here would split the row into an extra column.
     expect(after).toContain('[[Q4 Plan\\|the roadmap]]')
     expect(after).not.toContain('Q3 Plan\\|')
   })
@@ -90,8 +85,7 @@ describe('a rename reaches every form a connection takes', () => {
     expect(after).toContain('[[Q3 Plan]] and [x](Q3%20Plan)')
   })
 
-  // A re-encoded target has to remain something the prefilter still recognizes, or the SECOND
-  // rename of a page silently skips every markdown link that the first one rewrote.
+  // A re-encoded target has to remain something the prefilter still recognizes, or the SECOND rename of a page silently skips every markdown link that the first one rewrote.
   it('survives a second rename, and a title needing more encoding than the first', async () => {
     await renameCascade(root, 'Q3 Plan', 'Atomic Habits (Book)')
     expect(await read()).toContain(`[the roadmap](${encodeLinkTarget('Atomic Habits (Book)')})`)
@@ -102,8 +96,7 @@ describe('a rename reaches every form a connection takes', () => {
     expect(after).toContain('[[Plain|the roadmap]]')
   })
 
-  // rewritePageSerialized calls the rewriter unwrapped, and rename.ts turns a throw into a REVERTED
-  // rename — so one such body would make every rename in the nexus fail with a message naming nothing.
+  // rewritePageSerialized calls the rewriter unwrapped and rename.ts turns a throw into a REVERTED rename, so one such body would make every rename in the nexus fail with a message naming nothing.
   it('a %-bearing target does not throw the whole rename into a revert', async () => {
     await writeFile(host, `---\nid: p2\n---\nsee [x](Revenue 50% plan) and [[Q3 Plan]] end\n`)
     const r = await renameCascade(root, 'Q3 Plan', 'Q4 Plan')

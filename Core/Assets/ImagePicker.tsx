@@ -74,7 +74,6 @@ export function ImagePicker({
     if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
 
-  // A dedup (or a failed adopt) lands on the value already shown and releases the hold at once.
   const settleRepick = useCallback(
     (source: string): void => {
       if (!onRepick) return

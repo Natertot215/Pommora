@@ -2,12 +2,10 @@ import type { ActionItem } from './menuModel'
 import { connectionText } from '../Connections/connections'
 import { openLabel } from './toggleLabels'
 
-/** Copy Link's clipboard form: a copied page pastes as a working link, not as its name. */
 export function pageLinkText(title: string): string {
   return connectionText(title)
 }
 
-/** Copy Path's clipboard form: the location a person names a page by, not the disk's spelling. */
 export function pagePathText(nexusRelativePath: string): string {
   return nexusRelativePath.replace(/\.md$/i, '')
 }
@@ -26,7 +24,6 @@ export type PageMetaAction =
   | 'title:reveal'
   | 'title:delete'
 
-/** A submenu rather than an act: a leaf resolves as the move itself. */
 const PAGE_MOVE_ROW = 'title:moveto' as const
 
 export type PageMoveAction = `move:${string}`
@@ -39,7 +36,6 @@ export interface MoveTarget {
   children?: MoveTarget[]
 }
 
-/** The container the page already sits in shows disabled: a no-op rather than an absence. */
 export interface PageMoveContext {
   moveTargets?: MoveTarget[]
   currentParentPath?: string
@@ -49,7 +45,6 @@ function offersMove(ctx: PageMoveContext): boolean {
   return (ctx.moveTargets?.length ?? 0) > 0
 }
 
-/** A parent row cannot itself be picked, so a container repeats its name as its submenu's first row. */
 export function destinationRows<A>(
   targets: readonly MoveTarget[],
   action: (target: MoveTarget) => A,
@@ -157,7 +152,6 @@ export function pageMetaMenuItems(
   ]
 }
 
-/** Drawn from the same list in the same order, so subsets can't disagree; a leading separator is dropped. */
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,

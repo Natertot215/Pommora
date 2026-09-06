@@ -5,10 +5,7 @@ import './checkbox.css'
 
 type CheckboxSize = 'standard' | 'compact'
 
-/** The app's one checkbox. Interactive by default — a role, a label, and keyboard activation the
- *  editor's raw widget deliberately has none of; `readOnly` renders the same look as a plain value
- *  glyph the row around it toggles. `filled` gives the empty box a resting wash, and `color`
- *  overrides the accent the checked box tints from. */
+/** Interactive by default — a role, a label, and keyboard activation the editor's raw widget deliberately has none of; `readOnly` renders the same look as a plain value glyph the row around it toggles. */
 export function Checkbox({
   state,
   onChange,
@@ -67,8 +64,7 @@ export function Checkbox({
   )
 }
 
-// Drawn rather than pulled from the icon registry: this rides inside a 16px box at a stroke the
-// icon components don't offer, and the editor's widget emits the identical markup as a raw string.
+// Drawn rather than pulled from the icon registry: this rides inside a 16px box at a stroke the icon components don't offer, and the editor's widget emits the identical markup as a raw string.
 const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"

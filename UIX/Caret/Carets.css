@@ -1,4 +1,4 @@
-/* The Pommora caret — one text-insertion identity for the whole app: the drawn blinking bar (the "I", a CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
+/* One text-insertion identity for the whole app: the drawn blinking bar (a CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
 
 :root {
   --caret-width: 2px;
@@ -12,9 +12,7 @@
     text;
 }
 
-/* The browser caret is hidden so nativeCaret.ts (and the editor's own layer) can paint the drawn bar
-   over these at a JS-tracked position. The full `.cm-editor .cm-scroller .cm-content` path is what
-   out-specifies CM's baseTheme. */
+/* The browser caret is hidden so nativeCaret.ts (and the editor's own layer) can paint the drawn bar over these at a JS-tracked position. The full `.cm-editor .cm-scroller .cm-content` path is what out-specifies CM's baseTheme. */
 .cm-editor .cm-scroller .cm-content,
 input:not([type]),
 input[type="text"],

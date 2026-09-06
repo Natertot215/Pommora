@@ -1,5 +1,4 @@
-// The app's device-level config, not nexus data — which nexus to reopen, recents, trash mode.
-// Parametrized by the userData dir (not app.getPath) so the logic stays testable without Electron.
+// Device-level config, not nexus data. Parametrized by the userData dir (not app.getPath) so the logic stays testable without Electron.
 
 import { join } from 'node:path'
 import { stat } from 'node:fs/promises'
@@ -15,14 +14,12 @@ interface AppConfig {
 
 const FILE = 'pommora.json'
 
-/** The one place the unset field resolves to its default. */
 export const trashModeOf = (config: AppConfig): TrashMode => config.trashMode ?? DEFAULT_TRASH_MODE
 
 export function appConfigPath(userDataDir: string): string {
   return join(userDataDir, FILE)
 }
 
-/** Read the config, tolerating a missing or malformed file (→ empty defaults). */
 export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
   const obj = await readJsonObject(appConfigPath(userDataDir))
   if (!obj) return {}
@@ -35,11 +32,7 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
   }
 }
 
-/** Read-modify-write under its own lock, so concurrent writers (adopt, recents self-heal) can't
- *  each rebuild from a stale snapshot. `mutate`'s result is overlaid onto the raw object so a key
- *  this version doesn't model survives; `current` is that raw object, not `readAppConfig`'s
- *  validated projection. An unreadable file fails the write rather than replacing it — the read
- *  side stays lenient so launch still degrades to empty defaults. */
+/** Read-modify-write under its own lock, so concurrent writers can't each rebuild from a stale snapshot. `mutate`'s result is overlaid onto the raw object so a key this version doesn't model survives. An unreadable file fails the write rather than replacing it — the read side stays lenient so launch still degrades to empty defaults. */
 export async function updateAppConfig(
   userDataDir: string,
   mutate: (current: AppConfig) => AppConfig,
@@ -52,12 +45,10 @@ export async function updateAppConfig(
   if (!written.ok) throw new Error(written.error.message)
 }
 
-/** Prepend `path` to recents, removing any prior occurrence, and cap the list. */
 export function addRecent(recents: string[], path: string, cap = 10): string[] {
   return [path, ...recents.filter((p) => p !== path)].slice(0, cap)
 }
 
-/** True when `p` exists and is a directory. An unreadable dir surfaces later as a read error. */
 async function isExistingDir(p: string): Promise<boolean> {
   try {
     return (await stat(p)).isDirectory()
@@ -66,8 +57,7 @@ async function isExistingDir(p: string): Promise<boolean> {
   }
 }
 
-/** The persisted lastNexusPath if it still exists, else null. Never prompts — a launch
- *  must not block on a modal (headless runs and tests must not hang). */
+/** Never prompts — a launch must not block on a modal (headless runs and tests must not hang). */
 export async function resolveRestorePath(config: AppConfig): Promise<string | null> {
   if (config.lastNexusPath && (await isExistingDir(config.lastNexusPath))) {
     return config.lastNexusPath
@@ -75,8 +65,7 @@ export async function resolveRestorePath(config: AppConfig): Promise<string | nu
   return null
 }
 
-/** True when any path segment is a trash dir — a recents entry inside one is a deleted
- *  nexus that shouldn't resurface. */
+/** A recents entry inside a trash dir is a deleted nexus that shouldn't resurface. */
 export function isTrashedPath(p: string): boolean {
   return p.split('/').some((seg) => {
     const s = seg.toLowerCase()
@@ -84,7 +73,6 @@ export function isTrashedPath(p: string): boolean {
   })
 }
 
-/** Filter recents to live, non-trashed directories, order preserved. */
 export async function pruneRecents(recents: string[]): Promise<string[]> {
   const keep = await Promise.all(
     recents.map((p) => (isTrashedPath(p) ? Promise.resolve(false) : isExistingDir(p))),

@@ -1,5 +1,4 @@
-// biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are
-// plain strings with no identity but their position — the index IS the key.
+// biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are plain strings with no identity but their position — the index IS the key.
 import '../markdown-tables.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
@@ -444,7 +443,7 @@ export function MarkdownTable({
         if (!onResize(next)) setResize(null)
       },
       onAbort: () => setResize(null),
-      activation: 0, // a resize arms on the first move, the grid-edge precedent
+      activation: 0,
     })
   }
 

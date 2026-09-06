@@ -20,8 +20,7 @@ const { CELL, COLS } = s
 export interface IconPickerProps {
   open: boolean
   onClose: () => void
-  /** The element the pane anchors to (an icon glyph is an SVG, so `Element`, not just `HTMLElement`).
-   *  Omit ⇒ PickerMenu anchors to the picker's own mount point. */
+  /** An icon glyph is an SVG, so `Element`, not just `HTMLElement`. Omit ⇒ PickerMenu anchors to the picker's own mount point. */
   triggerRef?: RefObject<Element | null>
   value?: string
   onSelect?: (id: string) => void
@@ -85,13 +84,11 @@ export function IconPicker({
     [favs, favorites.onMenu, toggleFav],
   )
 
-  // `scrollEl` is a state-backed callback ref so the virtualizer re-runs the moment the element
-  // mounts (else the grid stays empty until the first re-render — e.g. a keystroke).
+  // `scrollEl` is a state-backed callback ref so the virtualizer re-runs the moment the element mounts (else the grid stays empty until the first re-render).
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
 
-  // Tells the virtualizer how far the list's top sits below the scroll container's top
-  // (the favorites strip + separator height).
+  // Tells the virtualizer how far the list's top sits below the scroll container's top (the favorites strip + separator height).
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
     if (listEl) setScrollMargin(listEl.offsetTop)

@@ -63,7 +63,6 @@ describe('the fold state machine', () => {
     ).toEqual(['One', 'Two'])
   })
 
-  // The entry remaps with the document; anything the reveal draws has to move with it, or the widget renders an empty box.
   it('an edit above a collapsed section keeps the section, and keeps what it draws', async () => {
     const view = await mountEditor({ initialBody: DOC })
     await fold(view, DOC.indexOf('# Two'))
@@ -76,7 +75,6 @@ describe('the fold state machine', () => {
     expect(after?.anchor).toBe(before.anchor + 'preamble\n\n'.length)
   })
 
-  // Without the prune, the body stays hidden behind a widget with no chevron anywhere to expand it.
   it('deleting a folded heading drops its fold rather than hiding the body forever', async () => {
     const view = await mountEditor({ initialBody: DOC })
     const at = DOC.indexOf('# Two')

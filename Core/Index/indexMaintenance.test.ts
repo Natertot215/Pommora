@@ -1,5 +1,4 @@
-// Task 9's must-agree: after every maintaining seam fires, the rows it kept current are
-// byte-identical to a from-scratch reconcile of the same disk.
+// After every maintaining seam fires, the rows it kept current are byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
@@ -31,7 +30,6 @@ const dump = (): unknown => {
   }
 }
 
-/** The maintained rows must equal what a from-scratch reconcile derives from the same disk. */
 async function expectMaintained(): Promise<void> {
   const maintained = dump()
   const db = sessionDb()
@@ -144,7 +142,6 @@ describe('the watcher maintains the rows', () => {
       [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }],
       { excluded: [], assetDir: ASSETS_DIR_REL },
     )
-    // An un-adopted folder's note updates rows without touching the tree.
     expect(added).toBe('patched')
     expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
     await expectMaintained()

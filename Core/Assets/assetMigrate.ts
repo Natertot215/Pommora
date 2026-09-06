@@ -51,7 +51,6 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   const homeFile = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
   const settingsFile = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
 
-  // Nexus-level singletons lead, so a file several owners share takes the nexus's own name.
   refs.push({
     store: 'navigation.json',
     owner: 'nexus-banner',
@@ -123,7 +122,6 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
   const { assetDir } = await readWatchScope(root)
   if (assetDir === ASSETS_DIR_REL) return null
 
-  // From the OLD root: the live map describes the destination and skips thumbnails, so it is the gate.
   const legacy = await buildAssetMap(root, ASSETS_DIR_REL)
   if (!Object.keys(legacy.files).length) return null
   const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], trashed: 0 }
@@ -149,7 +147,6 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     const digest = hashOf(bytes)
     let link = landed.get(digest)
     if (!link) {
-      // Byte-identical files collapse: the destination is flat, so name-sharing copies cannot coexist.
       const base = basename(hit)
       const ext = extname(base)
       const name = INVENTED.test(basename(base, ext)) ? `${ref.owner}${ext}` : base
@@ -170,7 +167,6 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     }
   }
 
-  // A skipped pass leaves the folder alone — that reference still names the only copy of its file.
   if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root)
   await refreshAssetMap(root)
 
@@ -194,7 +190,6 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
   return result
 }
 
-/** Through the trash, so nothing moved is unrecoverable; thumbnails go with their directories. */
 async function sweepLegacyRoot(root: string): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
   const files = (await listFilesRecursive(dir)).filter(

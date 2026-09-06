@@ -29,7 +29,6 @@ export interface StyleMenuContext {
   barCapable?: boolean
 }
 
-/** A url's three link forms and a number's are formats; the rest offer looks, a different word. */
 export function styleMenuLabel(type: PropertyType): string {
   return type === 'url' || type === 'number' ? 'Format' : 'Style'
 }
@@ -44,7 +43,6 @@ export function alignRows(
   }))
 }
 
-/** The ONE place that knows which types are style-addressable; datetime labels are format NAMES, never samples. */
 export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[] {
   const { type, current } = ctx
   const row =

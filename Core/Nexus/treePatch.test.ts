@@ -13,7 +13,6 @@ import {
   reorderPagesInTree,
 } from './treePatch'
 
-/** A two-Collection tree: Notes (with a nested Set) and Work. */
 function tree(): NexusTree {
   const notes: CollectionNode = {
     kind: 'collection',
@@ -177,8 +176,7 @@ describe('insertCreatedInTree', () => {
       { op: 'createContextGroup', name: 'Realms' },
       { id: 'g1', path: '.nexus/contexts/Realms' },
     )
-    // Mirrors createContextGroup exactly — no singular, so its create entry reads "New Space"; no
-    // icon, so it resolves to the kind's glyph and still follows a nexus default.
+    // Mirrors createContextGroup exactly — no singular, so its create entry reads "New Space"; no icon, so it resolves to the kind's glyph and still follows a nexus default.
     expect(withGroup?.contexts?.at(-1)?.def).toEqual({ id: 'g1', title: 'Realms' })
     const withSpace = insertCreatedInTree(
       withGroup as NexusTree,
@@ -268,8 +266,7 @@ describe('patchContextGroupsInTree', () => {
       op: 'setSpaceColor',
       spaceId: 'sp1',
     })
-    // The key survives the clear, undefined-valued — the factories emit every key the walk
-    // does, and stabilize counts keys, so a dropped one would read as drift.
+    // The key survives the clear, undefined-valued — the factories emit every key the walk does, and stabilize counts keys, so a dropped one would read as drift.
     expect(cleared?.contexts?.[0].spaces[0].color).toBeUndefined()
     expect('color' in (cleared?.contexts?.[0].spaces[0] ?? {})).toBe(true)
   })
@@ -377,10 +374,8 @@ describe('reorder transforms', () => {
   it('a moved page composed through reorderPages lands at its slot, not appended', () => {
     const base = tree()
     base.collections[1].pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
-    // Relocate alone appends (the pre-order behavior a bare movePage still shows)…
     const moved = relocateNodeInTree(base, 'Notes/A.md', 'Work')
     expect(moved?.collections[1].pages.map((p) => p.id)).toEqual(['p9', 'p1'])
-    // …the order write places it.
     const t = reorderPagesInTree(moved ?? base, 'Work', ['p1', 'p9'])
     expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1', 'p9'])
   })
@@ -392,7 +387,6 @@ describe('reorder transforms', () => {
 })
 
 describe('reparentPaths depth coverage (via rename + relocate)', () => {
-  /** Notes > Sub > Deep > C.md — a page two levels down, the recursion's real test. */
   function deepTree(): NexusTree {
     const t = tree()
     t.collections[0].sets[0].sets = [

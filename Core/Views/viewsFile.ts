@@ -1,5 +1,4 @@
-// A freshly-minted default view arrives with the `view_default` sentinel id; saveView swaps it
-// for a real `view_<ulid>` here (shared/ can't mint ids — see mintDefaultView).
+// A freshly-minted default view arrives with the `view_default` sentinel id; saveView swaps it for a real `view_<ulid>` here (shared/ can't mint ids).
 
 import { readContainerSidecar, type ContainerKind } from '../Nexus/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from './views'
@@ -9,7 +8,6 @@ import { writeSidecar, withSidecarLock } from '../IO/sidecar'
 
 const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views ?? []
 
-/** A `view_default` sentinel id is swapped for a real `view_<ulid>` and the assigned id returned. */
 export function saveView(
   folder: string,
   kind: ContainerKind,
@@ -29,7 +27,6 @@ export function saveView(
   })
 }
 
-/** Views not named in `orderedIds` ride along at the end (defensive). */
 export function reorderViews(
   folder: string,
   kind: ContainerKind,
@@ -50,7 +47,6 @@ export function reorderViews(
   })
 }
 
-/** A container always keeps ≥1 view. */
 export function deleteView(
   folder: string,
   kind: ContainerKind,

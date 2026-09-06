@@ -116,9 +116,7 @@ describe('linkDisplayText — no alias, the look decides', () => {
     )
   })
 
-  // Sort and filter call this with no look on purpose, so ordering is the same under every URL
-  // column whatever its property is configured to show. If the default branch ever became
-  // link-short, every URL column would silently re-order with no other symptom.
+  // Sort and filter call this with no look on purpose; a link-short default would silently re-order every URL column.
   it('the no-look call returns the raw URL — the pin sort and filter stand on', () => {
     expect(linkDisplayText('https://www.example.com/x')).toBe('https://www.example.com/x')
     expect(linkDisplayText('https://www.example.com/x', undefined, 'Example Domain')).toBe(
@@ -210,12 +208,10 @@ describe('a connection under the Link cell’s three menu actions', () => {
     })
   })
   it('Edit swaps a connection for an address, and an address back for a connection', () => {
-    // The connection's field showed its alias, so typing over it drops the alias with the rest.
     expect(urlValueFromEdit('example.com', CONNECTION, resolve)).toEqual({
       kind: 'url',
       value: 'https://example.com',
     })
-    // An ADDRESS's field shows only its URL, so its alias was never on screen to remove.
     expect(urlValueFromEdit('example.org', '[My Site](https://example.com)', resolve)).toEqual({
       kind: 'url',
       value: '[My Site](https://example.org)',

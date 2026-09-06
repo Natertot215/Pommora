@@ -179,7 +179,6 @@ const w = (p: string, c = ''): void => {
 let sidecar: string
 
 beforeAll(() => {
-  // --- sidecar-driven nexus (_pagecollection.json at the top, recursive _pageset.json below) ---
   sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
   d(join(sidecar, '.nexus'))
   w(join(sidecar, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1', createdAt: '2026' }))
@@ -208,7 +207,7 @@ beforeAll(() => {
   w(join(sidecar, 'Notes', 'Loose.md'), 'collection-root page')
   d(join(sidecar, 'Archive'))
   w(join(sidecar, 'Archive', '_pagecollection.json'), JSON.stringify({ id: 'col-arch' }))
-  d(join(sidecar, 'PlainFolder')) // no sidecar -> not a Collection in sidecar mode
+  d(join(sidecar, 'PlainFolder'))
 })
 
 afterAll(() => {
@@ -231,7 +230,6 @@ describe('readNexus — sidecar mode', () => {
   it('gates on _pagecollection.json, applies exclusion, reads schema + area color', async () => {
     const t = await readNexus(sidecar)
     expect(t.nexus.id).toBe('nx1')
-    // Archive excluded; PlainFolder has no sidecar
     expect(t.collections!.map((c) => c.title)).toEqual(['Notes'])
     const notes = t.collections![0]
     expect(notes.sets.map((s) => s.title)).toEqual(['Daily'])
@@ -261,7 +259,7 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
   it('hides a folder carrying _taskconfig/_eventconfig, whatever its name', async () => {
     const root = mk((r) => {
       d(join(r, 'My Reminders'))
-      w(join(r, 'My Reminders', '_taskconfig.json'), '{}') // renamed Tasks singleton
+      w(join(r, 'My Reminders', '_taskconfig.json'), '{}')
       d(join(r, 'Real'))
       w(join(r, 'Real', '_pagecollection.json'), JSON.stringify({ id: 'c' }))
     })
@@ -386,7 +384,7 @@ describe('readNexus — the walk names what it cannot read', () => {
     )
     d(join(root, '.nexus', 'contexts', 'Areas', 'Bad'))
     w(join(root, '.nexus', 'contexts', 'Areas', 'Bad', '_space.json'), '{corrupt')
-    d(join(root, '.nexus', 'contexts', 'Areas', 'Plain')) // no _space.json -> not a Space, silent
+    d(join(root, '.nexus', 'contexts', 'Areas', 'Plain'))
     d(join(root, 'Notes'))
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
     w(join(root, 'Notes', 'Entry.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDRS\n---\nbody')
@@ -395,7 +393,7 @@ describe('readNexus — the walk names what it cannot read', () => {
     d(join(root, 'Broken'))
     w(join(root, 'Broken', '_pagecollection.json'), '{nope')
     w(join(root, 'Broken', 'Inside.md'), `---\nID: ${INSIDE}\n---\nbody`)
-    d(join(root, 'PlainFolder')) // un-adopted, no sidecar -> silent
+    d(join(root, 'PlainFolder'))
   })
   afterAll(() => rmSync(root, { recursive: true, force: true }))
 
@@ -436,8 +434,7 @@ describe('readNexus — the walk names what it cannot read', () => {
 })
 
 describe('readNexus — the asset root leaves the tree and the corpus together', () => {
-  // shouldSkipDir and corpusFilesUnder are two independent skip tests over the same tree; a
-  // folder either leaves both or the index and the tree disagree about what exists.
+  // shouldSkipDir and corpusFilesUnder are two independent skip tests over the same tree; a folder either leaves both or the index and the tree disagree about what exists.
   const build = (asset_directory?: string): string => {
     const root = mkdtempSync(join(tmpdir(), 'pom-asset-'))
     mkdirSync(join(root, '.nexus'), { recursive: true })
@@ -470,8 +467,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
       }
       expect(visible).toContain('Notes')
       expect(corpus).toContain('Notes/note.md')
-      // A hidden name is the one folder the two disagree about on purpose: the tree hides it,
-      // while the cascade still sweeps and rewrites what it holds.
+      // A hidden name is the one folder the two disagree about on purpose: the tree hides it, while the cascade still sweeps and rewrites what it holds.
       expect(visible).not.toContain('_drafts')
       expect(corpus).toContain('_drafts/note.md')
     } finally {
@@ -520,8 +516,7 @@ describe('readNexus — personalization', () => {
     expect((await readNexus(mk({ personalization: { accent: 'blue' } }))).accent).toBe('blue')
     expect((await readNexus(mk({ personalization: { accent: 'system' } }))).accent).toBe('system')
   })
-  // The accent speaks the ramp's grammar now, so a stepped cell survives the read; a legacy solid
-  // name still does too, since nothing on disk was rewritten.
+  // The accent speaks the ramp's grammar now, so a stepped cell survives the read; a legacy solid name still does too, since nothing on disk was rewritten.
   it('accepts a ramp cell as the accent', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'purple-6' } }))).accent).toBe(
       'purple-6',
@@ -557,7 +552,7 @@ describe('readNexus — personalization', () => {
         personalization: {
           connectionColor: 'cyan',
           hideChevrons: true,
-          outlinerLines: 'nope', // not a boolean → dropped
+          outlinerLines: 'nope',
           defaultIcons: { collection: 'gallery-vertical-end', bogus: 'x' },
         },
       }),
@@ -567,16 +562,12 @@ describe('readNexus — personalization', () => {
     expect(t.personalization.outlinerLines).toBeUndefined()
     expect(t.personalization.defaultIcons).toEqual({ collection: 'gallery-vertical-end' })
   })
-  // The coercer gates the KIND key, never the glyph name — an override naming a glyph this build
-  // won't draw survives the disk round trip intact, and the renderer decides what to do with it
-  // (`entityIcon.test.ts` holds the resolving half). Validating names here would put the curated
-  // roster, which is a renderer fact, on the other side of the process boundary.
+  // The coercer gates the KIND key, never the glyph name — an override naming a glyph this build won't draw survives the disk round trip intact. Validating names here would put the curated roster, a renderer fact, on the other side of the process boundary.
   it('keeps an override verbatim, whatever glyph it names', async () => {
     const t = await readNexus(mk({ personalization: { defaultIcons: { context: 'anchor' } } }))
     expect(t.personalization.defaultIcons).toEqual({ context: 'anchor' })
   })
-  // Every boolean knob at once: a key the writer persists but the reader never parses is silently
-  // dropped, so the toggle appears to work and reverts on relaunch. Adding a knob adds it here.
+  // A key the writer persists but the reader never parses is silently dropped, so the toggle appears to work and reverts on relaunch. Adding a knob adds it here.
   it('every boolean knob survives the round-trip', async () => {
     const keys = [
       'hideChevrons',
@@ -597,8 +588,7 @@ describe('readNexus — personalization', () => {
     )
     for (const k of keys) expect(t.personalization[k], k).toBe(true)
   })
-  // A color setting the reader never parses is dropped on the way back in, which reads in the app as
-  // a picked color that reverts on relaunch.
+  // A color setting the reader never parses is dropped on the way back in, which reads in the app as a picked color that reverts on relaunch.
   it('every ramp-cell color survives the round-trip', async () => {
     const keys = [
       'connectionColor',
@@ -640,9 +630,7 @@ describe('readNexus — personalization', () => {
     expect(await at('dayMonthYear')).toBe('dayMonthYear')
     expect(await at('nonsense')).toBeUndefined()
   })
-  // Both halves in one test on purpose: a coercer that returned undefined unconditionally would
-  // satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real
-  // value as well as refusing a junk one.
+  // Both halves in one test on purpose: a coercer that returned undefined unconditionally would satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real value as well as refusing a junk one.
   it('the default link format survives the round-trip, and an unrecognized one reads as absent', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>
       (await readNexus(mk({ personalization: { defaultLinkFormat: v } }))).personalization
@@ -696,7 +684,6 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'pom-paths-'))
     d(join(root, '.nexus'))
-    // Collection -> Set -> Sub-Set -> Page.
     d(join(root, 'Notes', 'Daily', 'Morning'))
     w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
     w(join(root, '.nexus', 'settings.json'), '{}')

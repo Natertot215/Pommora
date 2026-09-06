@@ -4,7 +4,7 @@ import { buildPageIndex, type ConnPage } from './connectionsApi'
 const pages: ConnPage[] = [
   { id: '1', title: 'Project Atlas', path: 'v/Project Atlas.md' },
   { id: '2', title: 'Atlas', path: 'v/Atlas.md' },
-  { id: '3', title: 'Atlas', path: 'w/Atlas.md' }, // duplicate title → ambiguous
+  { id: '3', title: 'Atlas', path: 'w/Atlas.md' },
   { id: '4', title: 'Notes', path: 'v/Notes.md' },
 ]
 

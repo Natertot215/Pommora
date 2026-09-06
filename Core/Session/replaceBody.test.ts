@@ -20,7 +20,6 @@ afterEach(() => {
   clearCache()
 })
 
-/** A keystroke's save armed under fake timers, with `openPage` answering as given. */
 const armSave = (openPage: () => Promise<unknown>) => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))

@@ -16,7 +16,6 @@ import {
   type Edit,
 } from './edits'
 
-/** Apply an Edit to a doc → the resulting string (for readable assertions). */
 const apply = (doc: string, e: Edit): string => doc.slice(0, e.from) + e.insert + doc.slice(e.to)
 
 describe('list continuation (Enter)', () => {
@@ -97,8 +96,7 @@ describe('auto-pair + auto-delete', () => {
     expect(apply('*', e)).toBe('****')
     expect(e.selection).toBe(2)
   })
-  // Only the doubled form is a marker, so the first press must leave the character alone — a lone
-  // `~` or `=` is prose or arithmetic, and pairing it would put a closer in the middle of both.
+  // Only the doubled form is a marker, so the first press must leave the character alone — a lone `~` or `=` is prose or arithmetic, and pairing it would put a closer in the middle of both.
   for (const ch of ['~', '=']) {
     it(`${ch} does nothing alone and completes to ${ch}${ch}|${ch}${ch} on the second`, () => {
       expect(autoPair(scanDoc(''), 0, 0, ch)).toBeNull()
@@ -120,7 +118,6 @@ describe('auto-pair + auto-delete', () => {
     expect(autoDelete(scanDoc('{}'), 1, 1)).toBeNull()
   })
   it('[[ collapses the existing closer instead of stacking a stray ]', () => {
-    // doc is "[]" with caret after the first "[" (the first [ already auto-paired)
     const e = autoPair(scanDoc('[]'), 1, 1, '[')!
     expect(apply('[]', e)).toBe('[[]]')
     expect(e.selection).toBe(2)
@@ -274,7 +271,6 @@ describe('blockquote continuation (Enter)', () => {
 })
 
 describe('callout shorthand (||)', () => {
-  // The second `|` is intercepted; the first already sits at c-1 in the doc.
   it('expands `||` at line start to the callout head + a trailing exit line at doc end', () => {
     const doc = '|'
     expect(apply(doc, calloutShorthand(doc, 1, 1, '|')!)).toBe('> [!callout] \n')

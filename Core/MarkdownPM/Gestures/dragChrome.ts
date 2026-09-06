@@ -1,9 +1,6 @@
-// Shared drag chrome for both block-relocation gestures (list-item + whole-block): the in-place source shade
-// and the fixed accent insertion line, defined once instead of per gesture.
 import { StateEffect, StateField, type Line, type Range, type Text } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 
-// Walk the doc lines whose span intersects [from, to] inclusive (lineAt → next line at line.to + 1).
 export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line) => void): void {
   let line = doc.lineAt(from)
   while (line.from <= to) {
@@ -13,8 +10,7 @@ export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line
   }
 }
 
-// Shades the dragged block's lines in place via a StateField, since CM rebuilds line DOM on every
-// change (a raw class would be wiped, but line decorations survive). One field, one effect, both gestures.
+// A StateField, since CM rebuilds line DOM on every change (a raw class would be wiped, but line decorations survive).
 export const setShade = StateEffect.define<{ from: number; to: number } | null>()
 const shadeLine = Decoration.line({ class: 'md-li-drag-source' })
 
@@ -38,9 +34,7 @@ export const shadeField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 })
 
-// Imperative accent insertion line over the editor — no floating ghost, since the in-place shade
-// shows what's moving. position:fixed uses viewport coords, immune to the scroll-container
-// ambiguity an absolute child of scrollDOM has. Created/torn-down by the gesture; no React tree.
+// position:fixed uses viewport coords, immune to the scroll-container ambiguity an absolute child of scrollDOM has.
 export class Overlay {
   private line: HTMLElement | null = null
 
@@ -49,8 +43,7 @@ export class Overlay {
       const l = document.createElement('div')
       l.setAttribute('aria-hidden', 'true')
       l.className = 'drop-line'
-      // Viewport-fixed with explicit left/width per frame — the class's absolute + edge insets
-      // don't apply to a body-level overlay.
+      // Viewport-fixed with explicit left/width per frame — the class's absolute + edge insets don't apply to a body-level overlay.
       l.style.cssText = 'position:fixed;right:auto;z-index:var(--z-floating)'
       const dot = document.createElement('span')
       dot.className = 'drop-dot'
@@ -69,17 +62,14 @@ export class Overlay {
   }
 }
 
-/** One drop boundary, in viewport coords: where a drop there would insert, the y the pointer is
- *  measured against, and whatever the caller needs to draw and commit it. */
+/** One drop boundary, in viewport coords. */
 export interface Boundary<T> {
   at: number
   y: number
   slot: T
 }
 
-/** Snap to whichever boundary is vertically CLOSEST to the pointer, so the gap between two
- *  candidates splits at its midpoint instead of one of them owning the whole of it. Runs per
- *  pointermove over cached coords, so it reads no layout. */
+/** Snap to whichever boundary is vertically CLOSEST to the pointer, so the gap between two candidates splits at its midpoint. Runs per pointermove over cached coords, so it reads no layout. */
 export function nearestBoundary<T>(
   bs: readonly Boundary<T>[],
   clientY: number,

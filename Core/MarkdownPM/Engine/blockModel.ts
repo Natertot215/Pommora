@@ -1,5 +1,4 @@
-// The unified block resolver for block-drag. `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to /
-// headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
+// `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
 import { fenceRangesOf, parseListMarkerPrefixed, type CalloutLine } from './detect'
 import type { DocScan } from './docScan'
 import { headingSections } from './headingScan'
@@ -23,7 +22,6 @@ export interface Block {
   kind: BlockKind
 }
 
-// Per-line classification shared by blockAt and blockStarts, built once.
 interface BlockContext {
   lines: string[]
   n: number
@@ -56,8 +54,7 @@ function blockContext(scan: DocScan): BlockContext {
   const inEmbed = spanned(embeds)
   const inWebpage = spanned(webpages)
 
-  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A blank line breaks
-  // a run. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
+  // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
   const isMarker = (i: number): boolean => parseListMarkerPrefixed(lines[i]) !== null
   const isListCont = (i: number): boolean => lines[i].trim() !== '' && /^[ \t]/.test(lines[i])
   const mathOpenLine = maths.map(([f]) => starts.indexOf(f))
@@ -92,8 +89,7 @@ function blockContext(scan: DocScan): BlockContext {
   const heading = scan.headings
   const hr = scan.breaks
   const bq = scan.quotes.map((q, i) => q && !scan.literal[i])
-  // The citations section owns no block — reusing the unowned-line state costs two lines, where a BlockKind of
-  // its own would span five sites the compiler wouldn't all check.
+  // The citations section owns no block — reusing the unowned-line state costs two lines, where a BlockKind of its own would span five sites the compiler wouldn't all check.
   const cited = (i: number): boolean => scan.citations.mask[i] === 1
   const claimed = (i: number): boolean =>
     i < 0 ||
@@ -111,8 +107,7 @@ function blockContext(scan: DocScan): BlockContext {
     listMember[i] ||
     hr[i]
 
-  // Box-first precedence: code/table/math beat heading/list so a `#` inside one isn't mis-read, and hr beats
-  // paragraph so it's never absorbed. A blank line inside a math or fence range still resolves via the range.
+  // Box-first precedence: code/table/math beat heading/list so a `#` inside one isn't mis-read, and hr beats paragraph so it's never absorbed. A blank line inside a math or fence range still resolves via the range.
   const kindAt = (i: number): BlockKind | null => {
     if (i < 0 || i >= n) return null
     if (lines[i].trim() === '' || cited(i)) return null
@@ -186,8 +181,7 @@ export function blockAt(scan: DocScan, pos: number): Block | null {
     }
     case 'heading': {
       const sec = headingSections(scan).find((s) => s.from === starts[li])
-      // The section's `to` reaches the blank before the next heading — the fold wants that span, a block
-      // doesn't: the mover re-fences with one blank, so a trailing blank here compounds on every reorder.
+      // The section's `to` reaches the blank before the next heading — the fold wants that span, a block doesn't: the mover re-fences with one blank, so a trailing blank here compounds on every reorder.
       return sec
         ? {
             from: sec.from,
@@ -230,8 +224,7 @@ export function blockStarts(scan: DocScan): BlockStart[] {
   for (let i = 0; i < n; i++) {
     const kind = ctx.kindAt(i)
     if (kind === null) continue
-    // Range-backed kinds test by range identity, never the previous line's kind: a neighbor test would
-    // double-start a block whose interior holds a blank line, and swallow the second of two glued blocks.
+    // Range-backed kinds test by range identity, never the previous line's kind: a neighbor test would double-start a block whose interior holds a blank line, and swallow the second of two glued blocks.
     let first: boolean
     switch (kind) {
       case 'callout':

@@ -1,5 +1,4 @@
-// `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to
-// a sidecar without Pommora erasing them.
+// `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
@@ -27,15 +26,13 @@ export const cropsFile = z.looseObject({
   byImage: z.record(z.string(), crop.optional().catch(undefined)).optional().catch(undefined),
 })
 
-/** Deliberately non-discriminating — it validates any sidecar — so it must never stand in
- *  for the kind decision itself. */
+/** Deliberately non-discriminating — it validates any sidecar — so it must never stand in for the kind decision itself. */
 export const baseSidecar = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
 })
 
-// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection
-// validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
+// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
 export const pageCollectionSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   set_order: ulidList,
@@ -64,8 +61,7 @@ export const pageFrontmatter = z.looseObject({
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 
-/** The one kind → sidecar-schema table: a container's sidecar is read through this, never by
- *  naming the schema at the call site. */
+/** A container's sidecar is read through this table, never by naming the schema at the call site. */
 export type ContainerKind = 'collection' | 'set'
 type ContainerSidecar = z.infer<typeof pageCollectionSidecar> | z.infer<typeof pageSetSidecar>
 export const readContainerSidecar = (

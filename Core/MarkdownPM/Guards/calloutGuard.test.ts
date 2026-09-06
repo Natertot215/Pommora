@@ -9,7 +9,7 @@ const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean => 
 }
 
 describe('calloutGuard — a callout body prefix is uncorruptible', () => {
-  const doc = '> [!callout] head\n> body' // body line starts at 18, its `> ` prefix is [18, 20)
+  const doc = '> [!callout] head\n> body'
 
   it('blocks deleting the whole body `> ` in place (the atomic-expanded delete)', () => {
     expect(stripsCalloutPrefix(doc, 18, 20)).toBe(true)
@@ -18,17 +18,17 @@ describe('calloutGuard — a callout body prefix is uncorruptible', () => {
     expect(stripsCalloutPrefix(doc, 19, 20)).toBe(true)
   })
   it('ALLOWS a join — a delete reaching back past the line start (merges into the callout above)', () => {
-    expect(stripsCalloutPrefix(doc, 17, 20)).toBe(false) // deletes `\n> `
+    expect(stripsCalloutPrefix(doc, 17, 20)).toBe(false)
   })
   it('ALLOWS deleting a prefix-only body line — there is no content for the clamp to protect', () => {
-    const d = '> [!callout] head\n>\n> tail' // the bare `>` blank line sits at [18, 19)
+    const d = '> [!callout] head\n>\n> tail'
     expect(stripsCalloutPrefix(d, 18, 19)).toBe(false)
   })
   it('ALLOWS deleting content after the prefix', () => {
-    expect(stripsCalloutPrefix(doc, 20, 24)).toBe(false) // deletes "body"
+    expect(stripsCalloutPrefix(doc, 20, 24)).toBe(false)
   })
   it('ALLOWS stripping the HEAD prefix (intentional de-callout of the whole box)', () => {
-    expect(stripsCalloutPrefix(doc, 0, 13)).toBe(false) // `> [!callout] `
+    expect(stripsCalloutPrefix(doc, 0, 13)).toBe(false)
   })
   it('is a no-op for inserts (to <= from)', () => {
     expect(stripsCalloutPrefix(doc, 20, 20)).toBe(false)
@@ -39,8 +39,7 @@ describe('calloutGuard — a callout body prefix is uncorruptible', () => {
   })
 })
 
-// Proves the wired extension actually CANCELS the transaction (not just that the logic returns true). Runs on a
-// bare EditorState — no DOM — so it exercises the real transactionFilter end-to-end.
+// Proves the wired extension actually CANCELS the transaction. Runs on a bare EditorState — no DOM — so it exercises the real transactionFilter end-to-end.
 describe('calloutGuard — the wired filter cancels prefix-stripping transactions', () => {
   const doc = '> [!callout] head\n> body'
   const del = (from: number, to: number): string => {

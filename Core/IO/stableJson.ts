@@ -1,5 +1,4 @@
-/** Deterministic JSON: object keys sorted recursively, 2-space indent — byte-stable across writes,
- *  so re-saving unchanged data produces identical bytes and two shapes of one value compare. */
+/** Byte-stable across writes, so re-saving unchanged data produces identical bytes and two shapes of one value compare. */
 export function stableStringify(value: unknown): string {
   return JSON.stringify(sortKeys(value), null, 2)
 }

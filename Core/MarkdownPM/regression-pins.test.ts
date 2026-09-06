@@ -1,5 +1,4 @@
-// Pins for specific parser/editor bugs found during review — each case is a fixed break, kept
-// here so it can't quietly return. Grouped by the seam it guards.
+// Each case is a fixed break, kept here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
 import { codeMask, codeMaskOf, isInsideCode } from '@pommora/core/Connections/markdownCode'
 import { splitRow } from './Engine/Tables/codec'
@@ -66,7 +65,6 @@ describe('autoPair — doubled-marker branch', () => {
     expect(autoPair(scanDoc('snake_'), 6, 6, '_')).toBeNull()
   })
   it('still promotes a fresh pair to the doubled form', () => {
-    // `*|*` + `*` → `**|**` (consume the auto-inserted closer)
     expect(autoPair(scanDoc('**'), 1, 1, '*')).toEqual({
       from: 1,
       to: 1,
@@ -77,8 +75,7 @@ describe('autoPair — doubled-marker branch', () => {
 })
 
 describe('autoPair — never closes hard against a word', () => {
-  // The gate used to read only the character BEHIND the caret, so every opener closed into the text
-  // ahead of it: `|word` + `(` produced `(|)word`.
+  // The gate used to read only the character BEHIND the caret, so every opener closed into the text ahead of it: `|word` + `(` produced `(|)word`.
   const OPENERS = ['(', '[', '`', '"', "'", '*', '_']
   it('stays literal with a word immediately after the caret', () => {
     for (const ch of OPENERS) {
@@ -105,8 +102,7 @@ describe('autoPair — never closes hard against a word', () => {
     })
   })
   it('`_` is itself a word char, so its own closer has to be exempt from the guard', () => {
-    // The naive forward guard swallowed both underscore paths: `_word|_` lost its type-over and the
-    // doubled form could never promote.
+    // The naive forward guard swallowed both underscore paths: `_word|_` lost its type-over and the doubled form could never promote.
     expect(autoPair(scanDoc('_word_'), 5, 5, '_')).toEqual({
       from: 5,
       to: 5,
@@ -226,7 +222,6 @@ describe('renumberOrderedRun — nested lines are skipped, not terminators', () 
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
     const changes = renumberOrderedRun(doc, 0)
-    // 2. b keeps its number; the duplicate 2. c becomes 3.
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
   })
 })
@@ -259,7 +254,6 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
     const doc = '~~~\n[[LivePage]]\n~~~'
     const ranges = fenceRangesOf(scanDoc(doc).fences)
     expect(ranges.length).toBe(1)
-    // the connection sits inside the code range → renderer won't make it live
     expect(ranges[0][0]).toBeLessThanOrEqual(4)
     expect(ranges[0][1]).toBeGreaterThanOrEqual(15)
   })
@@ -343,9 +337,7 @@ describe('the viewport slice opens where the block context is self-evident', () 
     expect(sliceStartLine(scan, 12)).toBe(12)
   })
 
-  // A fence still being typed claims every line to EOF, so a viewport inside it has no line above
-  // where a slice could safely resume. The answer is the document's end — an empty slice, which is
-  // exactly right: everything from there down is code, and code carries no inline tokens.
+  // A fence still being typed claims every line to EOF, so a viewport inside it has no line above where a slice could safely resume. The answer is the document's end — everything from there down is code, and code carries no inline tokens.
   it('an unclosed fence resolves to the end of the document, not past the end of the line table', () => {
     const open = scanDoc('intro **bold**\n```js\ncode **not bold**\nmore')
     expect(sliceStartLine(open, 0)).toBe(0)
@@ -373,8 +365,7 @@ describe('the viewport slice opens where the block context is self-evident', () 
 })
 
 describe('isInsideCode answers exactly what codeMask answers, at every offset', () => {
-  // Every construct the two disagree about if the single-offset form stops being line-local:
-  // nested runs, tilde blocks, quoted fences, an unclosed opener, and a span left open at EOF.
+  // Every construct the two disagree about if the single-offset form stops being line-local: nested runs, tilde blocks, quoted fences, an unclosed opener, and a span left open at EOF.
   const doc = [
     'plain **bold** and `code` here',
     '`````md',
@@ -409,9 +400,7 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
     expect(disagreements).toEqual([])
   })
 
-  // The scan builds its mask off the pairing it already did, and the table and citation scans read
-  // that one. If it ever answered differently from the string form, a fence would hold code for one
-  // layer and prose for another.
+  // If the scan-built mask ever answered differently from the string form, a fence would hold code for one layer and prose for another.
   it('the scan-built mask agrees with the string-built one, offset for offset', () => {
     const s = scanDoc(doc)
     const fromScan = codeMaskOf(s.lines, s.lineStarts, (i) => s.fences[i] !== undefined)

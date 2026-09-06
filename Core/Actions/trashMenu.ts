@@ -13,14 +13,12 @@ interface TrashMenuContext {
   destinations?: MoveTarget[]
 }
 
-/** A count in the label would be the first anywhere in the app; the plural says as much. */
 function trashMenuLabels(batch: boolean): { restore: string; delete: string } {
   return batch
     ? { restore: 'Restore All', delete: 'Delete All' }
     : { restore: 'Restore', delete: 'Delete' }
 }
 
-/** A row whose home is gone turns Restore into a question of where; nowhere to put it is not nothing to do, so the row stays and reads disabled. */
 export function trashMenuItems(ctx: TrashMenuContext): ActionItem<TrashMenuAction>[] {
   const label = trashMenuLabels(ctx.batch)
   const restore: ActionItem<TrashMenuAction> = ctx.destinations
@@ -44,11 +42,9 @@ type TrashColumnAction = `format:${DateFormat}` | 'toggleTime'
 
 interface TrashColumnContext {
   format: DateFormat
-  /** Whether the clock currently shows — the action names the state it moves to. */
   timeShown: boolean
 }
 
-/** Picking the format in force is a no-op the menu shows rather than hides. */
 export function trashColumnMenuItems(ctx: TrashColumnContext): ActionItem<TrashColumnAction>[] {
   return [
     {

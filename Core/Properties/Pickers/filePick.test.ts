@@ -34,7 +34,6 @@ beforeEach(() => {
   }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
-    // A Directory is stored under the asset root, so the root has to be present for the join to be the thing under test.
     tree: { assetDirectory: 'file-assets' } as never,
   })
 })

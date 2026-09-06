@@ -1,5 +1,4 @@
-// Repairs deletes that touch a callout body line's hidden `> ` prefix instead of cancelling them — a flat cancel
-// made routine gestures silently dead, since their changes legitimately start at the line start.
+// Repairs deletes that touch a callout body line's hidden `> ` prefix instead of cancelling them — a flat cancel made routine gestures silently dead, since their changes legitimately start at the line start.
 import { type Annotation, EditorState, Transaction, type Extension } from '@codemirror/state'
 import type { calloutLines } from '../Engine/detect'
 import { tableSelfEdit } from '../Tables/sync'
@@ -11,8 +10,7 @@ export type GuardVerdict =
   | { kind: 'cancel' }
   | { kind: 'clamp'; from: number }
   | { kind: 'extend'; to: number }
-  /** The change replaced by these edits outright. A list, because a repair that MOVES text is two
-   *  disjoint edits — the swept range removed where it was, and the text written where it can live. */
+  /** A list, because a repair that MOVES text is two disjoint edits — the swept range removed where it was, and the text written where it can live. */
   | { kind: 'rewrite'; edits: readonly { from: number; to: number; insert: string }[] }
 
 export function calloutDeleteVerdict(
@@ -43,7 +41,6 @@ export function calloutDeleteVerdict(
   return { kind: 'ok' }
 }
 
-// Where the delete must extend to for a clean join, when it removes the newline before a body line but stops inside its `> ` prefix.
 function joinExtension(
   lines: string[],
   info: ReturnType<typeof calloutLines>,
@@ -63,8 +60,7 @@ function joinExtension(
   return null
 }
 
-/** A filter rebuilds its transaction from the start state, so a construct's own annotation is gone unless named
- *  here — and a downstream guard would read that write as a user edit. CM exposes no way to enumerate them. */
+/** A filter rebuilds its transaction from the start state, so a construct's own annotation is gone unless named here — and a downstream guard would read that write as a user edit. CM exposes no way to enumerate them. */
 function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
   const out: Annotation<unknown>[] = []
   const userEvent = tr.annotation(Transaction.userEvent)
@@ -103,7 +99,6 @@ export function verdictFilter(
     })
     if (cancel) return []
     if (!repaired) return tr
-    // The selection is left to default mapping — the caret lands where the repaired change puts it.
     return [
       {
         changes,

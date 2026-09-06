@@ -31,7 +31,6 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
     case 'registry-row':
       return [{ label: 'Rename', action: 'property:rename' }]
     case 'page-value':
-      // Nothing to clear on an empty row, so Clear stands down rather than showing inert.
       return ctx.filled
         ? [
             { label: 'Clear', action: 'value:clear' },

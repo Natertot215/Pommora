@@ -12,8 +12,7 @@ import { AssetImage, cropFor } from './AssetImage'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// A fresh version per test so the URL-keyed aspect cache (a module singleton) carries no entry between mounts.
-// entry between mounts, while the crop key (the rel) stays stable.
+// A fresh version per test so the URL-keyed aspect cache (a module singleton) carries no entry between mounts, while the crop key (the rel) stays stable.
 let ver = 100
 const freshMap = (): AssetMap => ({
   files: { 'cover.png': ['file-assets/Cover.png'] },

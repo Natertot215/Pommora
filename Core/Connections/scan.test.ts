@@ -1,7 +1,4 @@
-// The pattern-level behavior behind `mentionsTitle` — normalization, the code mask, bracket
-// tolerance, and the bounds on `pageLinkPattern` itself. The pattern has five other consumers
-// (the rewrite, the editor's tokens, its autocomplete), so the ReDoS and length-cap assertions
-// below guard all of them, not just this file.
+// `pageLinkPattern` has five other consumers (the rewrite, the editor's tokens, its autocomplete), so the ReDoS and length-cap assertions below guard all of them, not just this file.
 
 import { describe, it, expect } from 'vitest'
 import { extractMentions, mentionsTitle } from './scan'
@@ -38,7 +35,7 @@ describe('mentionsTitle', () => {
 
   it('tolerates internal brackets in a title (a `]` is content unless it closes the pair)', () => {
     expect(mentionsTitle('see [[Notes [WIP] final]]', 'notes [wip] final')).toBe(true)
-    expect(mentionsTitle('[[A]] then [[B]]', 'b')).toBe(true) // adjacent links still split
+    expect(mentionsTitle('[[A]] then [[B]]', 'b')).toBe(true)
   })
 
   it('caps title length and never backtracks on a pathological bracket run (ReDoS guard)', () => {
@@ -52,8 +49,7 @@ describe('mentionsTitle', () => {
 })
 
 describe('extractMentions MUST AGREE with mentionsTitle', () => {
-  // Every link syntax, every masking rule: the index's extractor and the cascade's per-file
-  // confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite.
+  // The index's extractor and the cascade's per-file confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite.
   const bodies = [
     'plain [[Alpha]] link',
     'aliased [[Alpha|shown words]] link',

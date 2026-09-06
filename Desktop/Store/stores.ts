@@ -39,9 +39,7 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
 
 const INDEX_TABLES = ['mentions', 'page_values', 'indexed_files'] as const
 
-// The prefix pair `path >= dir||'/' AND path < dir||'0'` selects `dir`'s descendants by range —
-// exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder
-// name over-match.
+// The prefix pair `path >= dir||'/' AND path < dir||'0'` selects `dir`'s descendants by range — exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndex(path, entry, stat) {
     db.prepare('DELETE FROM mentions WHERE path = ?').run(path)
@@ -54,8 +52,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     for (const [key, value] of Object.entries(entry.values)) {
       insValue.run(path, key, JSON.stringify(value) ?? 'null')
     }
-    // The gate row lands LAST, so a write that dies part-way leaves a stale stat and the next
-    // seed re-reads the file.
+    // The gate row lands LAST, so a write that dies part-way leaves a stale stat and the next seed re-reads the file.
     db.prepare('INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)').run(
       path,
       stat.mtimeMs,
@@ -77,9 +74,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   },
   renamePathPrefixIndex(oldDir, newDir) {
     for (const table of INDEX_TABLES) {
-      // The suffix offset is computed by SQL's own length() — SQLite counts characters where a
-      // JS .length counts UTF-16 units, and mixing the two swallows the separator after any
-      // astral character (an emoji folder name).
+      // The suffix offset is computed by SQL's own length() — SQLite counts characters where a JS .length counts UTF-16 units, and mixing the two swallows the separator after any astral character.
       db.prepare(
         `UPDATE OR REPLACE ${table} SET path = ? || substr(path, length(?) + 1) WHERE path >= ? || '/' AND path < ? || '0'`,
       ).run(newDir, oldDir, oldDir, oldDir)

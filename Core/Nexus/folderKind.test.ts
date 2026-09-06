@@ -43,8 +43,7 @@ describe('readAgendaRegistration', () => {
     )
   })
 
-  // A nexus that records nothing registers nothing — and every agenda config it holds is inert,
-  // which is the state every existing nexus is in until the Agenda work seeds its pair.
+  // A nexus that records nothing registers nothing — and every agenda config it holds is inert, which is the state every existing nexus is in until the Agenda work seeds its pair.
   it('registers nothing for an absent, empty or malformed field', () => {
     for (const identity of [
       null,
@@ -66,8 +65,6 @@ describe('readAgendaRegistration', () => {
 })
 
 describe('agendaContext', () => {
-  // No entries means no claims, which contests nothing — a root that cannot be listed is no
-  // evidence anything duplicated the recorded pair, so the registration stands.
   it('keeps the recorded registration when the root cannot be listed', async () => {
     const ctx = await agendaContext(
       join(root, 'gone'),
@@ -98,8 +95,7 @@ describe('resolveFolderKind', () => {
     expect(await resolveFolderKind(e, 'root', REG())).toBe('events-singleton')
   })
 
-  // The registration IS the guard: a hand-made config matches no record, so it stays inert bytes
-  // rather than becoming a second Tasks folder feeding the same list.
+  // The registration IS the guard: a hand-made config matches no record, so it stays inert bytes rather than becoming a second Tasks folder feeding the same list.
   it('leaves an unregistered agenda config unknown, however well-formed', async () => {
     const d = await dir('Fake Tasks', {
       [SIDECAR_FILENAME.taskConfig]: { id: 'ANOTHERULID000000000000000' },
@@ -145,7 +141,6 @@ describe('resolveFolderKind', () => {
     expect(await resolveFolderKind(d, 'root', REG())).toBe('unknown')
   })
 
-  // A raw nexus has no container sidecars at all; every root folder is a Collection by position.
   it('classifies a sidecar-less root folder as a Collection in raw mode', async () => {
     const d = await dir('Stray')
     expect(await resolveFolderKind(d, 'root', ADOPTING())).toBe('collection')

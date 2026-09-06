@@ -42,7 +42,6 @@ function Level({
   )
 }
 
-/** One mounted pane for every list menu the host has no native popper for; the request lives in the store the way a confirmation does. */
 export function RowMenuHost(): React.JSX.Element {
   const pending = useSession((st) => st.pendingRowMenu)
   // Held through the Bloom-out, so the pane keeps drawing the rows it was dismissed with.

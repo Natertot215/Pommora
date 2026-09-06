@@ -3,14 +3,12 @@ import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { linkMarkdown } from '@pommora/core/Web/pasteLink'
 import { editorHost } from '../api'
 
-// Page Title writes the Short Link first and swaps the label in when the fetch lands, since a title takes a round trip and may never arrive.
-// To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.
+// Page Title writes the Short Link first and swaps the label in when the fetch lands. To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.
 
 export interface PendingTitle {
   from: number
   to: number
   url: string
-  /** What was written. The rewrite declines unless the range still reads as this. */
   text: string
 }
 

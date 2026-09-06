@@ -31,7 +31,6 @@ describe('the footnote form answers to the clipboard alone', () => {
     expect(labels('   ', true, true)).toEqual([])
   })
 
-  // The pair is two disjoint sites, so the single-range writer has nothing to say about it.
   it('writes nothing through the shared writer', () => {
     expect(pasteAsWrite(pasteAsTarget(URL), 'footnote')).toBeNull()
     expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'footnote')).toBeNull()
@@ -74,7 +73,6 @@ describe('what the clipboard offers to become', () => {
     expect(labels('[[Alpha]]', true)).toEqual(['Connection', 'Markdown Link', 'Embedded Page'])
   })
 
-  // A tile forms only over an explicit http(s) address, and `![[…]]` cannot carry a `]`.
   it('withholds an embed the syntax could not spell', () => {
     expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
     expect(labels('[[Notes [WIP] final]]', true)).not.toContain('Embedded Page')
@@ -112,7 +110,6 @@ describe('what each form writes', () => {
     expect(written('[[Notes (draft)]]', 'markdown')).toBe('[Notes (draft)](Notes%20%28draft%29)')
   })
 
-  // An unescaped `]` ends the label early and the whole link tokenizes as nothing; `[` is ordinary text.
   it('escapes the bracket that would end the label early', () => {
     const text = written('[[Notes [WIP] final]]', 'markdown')
     expect(text).toBe('[Notes [WIP\\] final](Notes%20%5BWIP%5D%20final)')
@@ -121,7 +118,6 @@ describe('what each form writes', () => {
 
   it('writes each embed as the line its grammar reads', () => {
     expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
-    // A pasted address brings no words, so an empty label leaves the title to the link format at render.
     expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
     expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
   })

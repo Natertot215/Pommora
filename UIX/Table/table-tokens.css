@@ -1,6 +1,4 @@
-/* Table tokens — the single source for every tunable number in a table; retune a dimension by editing
-   one line here. Scoped to `.table` so the vars stay table-owned; a host rebinds what it needs — heading
-   fill, cell padding — in its own scope. */
+/* The single source for every tunable number in a table. Scoped to `.table` so the vars stay table-owned; a host rebinds what it needs — heading fill, cell padding — in its own scope. */
 .table {
   --zoom: 1; /* One knob scales text + chips + padding + widths together. */
 
@@ -12,15 +10,12 @@
   ); /* per-nesting-depth inset for Set-within-Set and group members — the shared disclosure step */
   --loose-inset: 8px; /* title inset for ungrouped/loose rows — tucked left of the cell-padding-x column inset */
 
-  /* The one token for every standard table hairline — column lines and row underlines; the heading
-     row's seams are heavier (see Heading below). */
+  /* The one token for every standard table hairline — column lines and row underlines; the heading row's seams are heavier (see Heading below). */
   --table-border-width: var(--width-125);
   --table-border: var(--table-border-width) solid var(--border-base);
   --cell-active-radius: 4px;
 
-  /* Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
-     heavier bottom seam, and segment dividers shorter than the row, like a segmented control; the
-     padding clears the label off both seams. */
+  /* Heading row — a faint fill, dimmed control text, a heavier bottom seam, and segment dividers shorter than the row; the padding clears the label off both seams. */
   --heading-fill: var(--fill-quinary);
   --heading-divider: var(--width-175) solid var(--border-base);
   --heading-segment: var(--border-base);
@@ -28,8 +23,7 @@
   --heading-segment-width: var(--width-200);
   --heading-padding-y: 8px;
 
-  /* Group sections bind to the seam law in group-band.css: the row rhythm is the shoulder — tune
-     --cell-padding-y, not this. */
+  /* Group sections bind to the seam law in group-band.css: the row rhythm is the shoulder — tune --cell-padding-y, not this. */
   --band-clearance: var(--cell-padding-y);
 
   --resizer-width: 8px;

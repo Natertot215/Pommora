@@ -1,6 +1,4 @@
-// A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is
-// tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled
-// against, so restore can never reintroduce a governed key nothing stands behind.
+// A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against, so restore can never reintroduce a governed key nothing stands behind.
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../IO/pageFile'
@@ -26,7 +24,6 @@ const fm = async (rel: string): Promise<Record<string, unknown>> =>
 const registry = (assigned: string[]): string =>
   JSON.stringify({ id: 'col-notes', properties: assigned })
 
-/** Delete `rel`, run `mutateWorld`, then restore — the shape every case here shares. */
 async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promise<void>) {
   const d = await handleMutate({ op: 'delete', path: rel, kind }, nexusDeps)
   expect(d.ok).toBe(true)
@@ -194,8 +191,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   })
 
   it('keeps a Multi-Select option deleted while it sat in the trash, and adopts it back', async () => {
-    // The definition still stands; the value it held no longer can. Both restore routes ask the
-    // same standing check, so this cannot survive here and be dropped by a property restore.
+    // The definition still stands; the value it held no longer can. Both restore routes ask the same standing check, so this cannot survive here and be dropped by a property restore.
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(
         join(root, '.nexus', 'properties.json'),
@@ -341,7 +337,6 @@ describe('a Space sidecar is a context root too', () => {
 
   it('a returning Context’s own key is left for the rekey, never judged mid-transit', async () => {
     await seedPassenger()
-    // Sapphire also tags a Space in its OWN Context — the passenger the delete deliberately keeps.
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
       JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),

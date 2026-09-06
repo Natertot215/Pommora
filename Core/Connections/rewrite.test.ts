@@ -21,15 +21,13 @@ describe('rewriteConnections', () => {
   })
 
   it('leaves non-matching links untouched; a matching embed follows the rename', () => {
-    // An embed names a page the same way a connection does — the sweep reaches both, so a page
-    // renamed away from a file-looking title carries its embeds with it.
+    // An embed names a page the same way a connection does — the sweep reaches both.
     expect(rewriteConnections('[[Other]] and ![[Old.png]]', 'Old.png', 'X')).toBe(
       '[[Other]] and ![[X]]',
     )
   })
 
   it('rewrites TO a title with internal brackets and it round-trips', () => {
-    // The healed link parses back to the same normalized title (no corruption of the surrounding text).
     const body = rewriteConnections('go to [[Old]] now', 'Old', 'New [v2] final')
     expect(body).toBe('go to [[New [v2] final]] now')
     expect(mentionsTitle(body, 'new [v2] final')).toBe(true)
@@ -94,15 +92,13 @@ describe('the embed sweep', () => {
 })
 
 describe('one title grammar across the layers', () => {
-  // The embed pattern, the renderer's embed regex, and the autocomplete's embed branch must accept
-  // the same titles — one corpus feeds all three shapes.
+  // The embed pattern, the renderer's embed regex, and the autocomplete's embed branch must accept the same titles — one corpus feeds all three shapes.
   const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', '']
   it('the shared pattern and the lone-line regex agree on every title', () => {
     for (const t of corpus) {
       const line = `![[${t}]]`
       const viaPattern = [...line.matchAll(pageEmbedPattern())].map((m) => m[1])
       const lone = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/.exec(line)?.[1] ?? null
-      // `]` breaks both the same way; `|` rides through both (an embed has no alias split).
       if (t.includes(']')) {
         expect(lone).not.toBe(t)
         expect(viaPattern).not.toContain(t)
@@ -114,8 +110,6 @@ describe('one title grammar across the layers', () => {
   })
 })
 
-// A `[]()` names a page now, so a rename that skipped it would break every markdown link the first
-// time its target was renamed.
 describe('the markdown-link sweep', () => {
   it('rewrites a target that names the renamed page, keeping the label', () => {
     expect(rewriteConnections('see [the notes](Old%20Title) end', 'Old Title', 'New Title')).toBe(
@@ -129,7 +123,6 @@ describe('the markdown-link sweep', () => {
     )
   })
 
-  // The rewriter matches whole targets, never path segments.
   it('leaves a URL alone even when its last segment collides', () => {
     const body = 'see [site](https://example.com/Old%20Title) end'
     expect(rewriteConnections(body, 'Old Title', 'New Title')).toBe(body)
@@ -140,8 +133,7 @@ describe('the markdown-link sweep', () => {
     expect(rewriteConnections(body, 'Old', 'New')).toBe(body)
   })
 
-  // rewritePageSerialized calls this unwrapped and rename.ts turns any throw into a REVERTED rename,
-  // so one `%`-bearing body would make every rename in the nexus fail permanently.
+  // rewritePageSerialized calls this unwrapped and rename.ts turns any throw into a REVERTED rename, so one `%`-bearing body would make every rename in the nexus fail permanently.
   it('a %-bearing body does not throw the rename into a revert', () => {
     const body = 'see [x](Revenue 50% plan) and [[Old]] end'
     expect(() => rewriteConnections(body, 'Old', 'New')).not.toThrow()
@@ -155,8 +147,7 @@ describe('the markdown-link sweep', () => {
   })
 })
 
-// A prefilter that misses what the rewriter would change means the body is never opened, and the
-// link rots silently. These two must never disagree about what counts as naming a page.
+// A prefilter that misses what the rewriter would change means the body is never opened and the link rots silently.
 describe('the prefilter agrees with the rewriter', () => {
   const bodies = [
     'see [the notes](Old%20Title) end',

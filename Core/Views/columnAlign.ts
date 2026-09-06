@@ -3,8 +3,7 @@ import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
 import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
 import { declaredType } from '../Properties/value'
 
-// The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered.
-// The reserved Modified timestamp keeps Title's left metadata treatment.
+// The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered. The reserved Modified timestamp keeps Title's left metadata treatment.
 const CENTERED = new Set(['checkbox', 'status', 'select', 'multi_select', 'context', 'datetime'])
 
 /** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */

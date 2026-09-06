@@ -39,8 +39,7 @@ export function Toolbar({
     if (!el) return
     const apply = (): void => {
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
-      // Both rects carry the cluster's ride transform, so their difference cancels it out.
-      // Measures the cover layer alone — the glass layer behind holds a hidden duplicate of every button.
+      // Both rects carry the cluster's ride transform, so their difference cancels it out. Measures the cover layer alone — the glass layer behind holds a hidden duplicate of every button.
       const right = el.getBoundingClientRect().right
       const next = Array.from(
         el.querySelectorAll<HTMLElement>('.toolbar-trio-cover button'),

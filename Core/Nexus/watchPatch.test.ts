@@ -29,8 +29,7 @@ const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
   absPath: abs(...segs),
 })
 
-// A sidecar-mode nexus with one Collection (one page), one Context group with one Space, and
-// one un-adopted folder holding a loose note — the live tree's whole vocabulary in miniature.
+// A sidecar-mode nexus with one Collection (one page), one Context group with one Space, and one un-adopted folder holding a loose note — the live tree's whole vocabulary in miniature.
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-watch-'))
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
@@ -184,8 +183,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
 })
 
 describe('settings leaves — the walk and the settings patch must never disagree', () => {
-  // readNexus.ts states the decoder, the walk's tree literal and applySettingsLeaves must never
-  // disagree; a per-function test cannot see that, so this drives both over the same bytes.
+  // The decoder, the walk's tree literal and applySettingsLeaves must never disagree; a per-function test cannot see that, so this drives both over the same bytes.
   it('an asset_directory appearing on disk reaches the live tree exactly as a fresh walk reads it', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({}))
     await refreshTree(root)
@@ -258,7 +256,6 @@ describe('classifyEvent', () => {
     expect(kind(ev('add', 'root-note.md'))).toBe('index-only')
     expect(kind(ev('change', 'Hidden', 'x.md'), ['Hidden'])).toBe('ignored')
 
-    // Structural walk inputs and the residue classes land on the default arm.
     expect(kind(ev('change', '.nexus', 'contexts.json'))).toBe('full-refresh')
     expect(kind(ev('change', '.nexus', 'properties.json'))).toBe('full-refresh')
     expect(kind(ev('change', '.nexus', 'state.json'))).toBe('full-refresh')
@@ -355,8 +352,7 @@ describe('the asset root outranks every other skip', () => {
   })
 
   it('the root escapes the cruft rules; what sits below it does not', async () => {
-    // A root named `.attachments` is what the exemption exists for — a `.DS_Store` synced into
-    // one is not.
+    // A root named `.attachments` is what the exemption exists for — a `.DS_Store` synced into one is not.
     expect(ignoredUnder(root, scope([], '.attachments'))(abs('.attachments', 'x.png'))).toBe(false)
     expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
     for (const junk of ['.DS_Store', 'node_modules', '.git'])
@@ -377,8 +373,7 @@ describe('the asset root outranks every other skip', () => {
     const after = getHeldAssetMap(root)
     expect(after).not.toBe(before)
     expect(Object.keys(after?.files ?? {})).toHaveLength(50)
-    // The same batch with the arm pointed elsewhere is a walk — both halves, or this proves
-    // nothing about the arm.
+    // The same batch with the arm pointed elsewhere is a walk — both halves, or this proves nothing about the arm.
     expect(await applyWatchEvents(root, events, scope([], 'Media'))).toBe('refresh')
   })
 
@@ -429,7 +424,6 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
     expect(asks(ev('change', '.nexus', 'properties.json'))).toBe(false)
     expect(asks(ev('change', 'Notes', '_pagecollection.json'))).toBe(false)
     expect(asks(ev('addDir', 'Archive', 'deep'), ['Archive'])).toBe(false)
-    // One qualifying event in a batch is enough.
     expect(
       touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], scope()),
     ).toBe(true)

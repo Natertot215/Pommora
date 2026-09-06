@@ -210,7 +210,7 @@ describe('sidebar drag — page↔Set seam', () => {
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
       path: 'C/P1.md',
-      newParentPath: 'C', // reorder within the collection — NOT 'C/S1'
+      newParentPath: 'C',
       order: ['p2', 'p1'],
     })
   })

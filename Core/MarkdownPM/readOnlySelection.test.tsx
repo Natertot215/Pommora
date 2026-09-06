@@ -39,10 +39,7 @@ const view = (): EditorView => {
   return v
 }
 
-// A read-only portal (the at-rest page/markdown embed) must stay SELECTABLE: MarkdownPM renders selection
-// natively (no drawSelection layer), so the content has to be a focusable contenteditable — editable stays
-// true. Flipping editable to false makes .cm-content contenteditable="false", which native selection can't
-// drive → dead text selection. This pins that.
+// A read-only portal must stay SELECTABLE: MarkdownPM renders selection natively (no drawSelection layer), so the content has to be a focusable contenteditable — editable stays true. Flipping editable to false makes .cm-content contenteditable="false", which native selection can't drive.
 describe('read-only portal keeps its content selectable', () => {
   it('a read-only embed leaves .cm-content contenteditable', async () => {
     await mount(true)
@@ -57,9 +54,7 @@ describe('read-only portal keeps its content selectable', () => {
   })
 })
 
-// EditorState.readOnly is ADVISORY — it doesn't block a programmatic view.dispatch({changes}) (formatKeymap,
-// the drag/table/checkbox commands). With editable=true the DOM no longer blocks them either, so a
-// changeFilter must drop doc changes while read-only, or Cmd+B would edit + autosave a read-only surface.
+// EditorState.readOnly is ADVISORY — it doesn't block a programmatic view.dispatch({changes}), and with editable=true the DOM no longer blocks them either, so a changeFilter must drop doc changes while read-only or Cmd+B would edit + autosave a read-only surface.
 describe('read-only portal blocks programmatic edits', () => {
   it('drops a doc-changing dispatch while read-only', async () => {
     await mount(true)

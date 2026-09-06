@@ -53,7 +53,6 @@ describe('styleMenuItems', () => {
       ['Number', 'style:look:number', false],
       ['Bar', 'style:look:bar', true],
     ])
-    // No max to fill against → Bar is gated out (picking it would silently show text).
     expect(items('number', { look: 'number' }).map((r) => r.label)).toEqual(['Number'])
   })
 

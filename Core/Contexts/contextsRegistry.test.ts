@@ -33,8 +33,7 @@ describe('readRegistry', () => {
     expect(onDisk.contexts).toHaveLength(3)
   })
 
-  // The open path is the ONLY seeder: every create reads the registry strictly and fails on a
-  // missing file, so a nexus that opens without one can never mint its first Context.
+  // The open path is the ONLY seeder: every create reads the registry strictly and fails on a missing file, so a nexus that opens without one can never mint its first Context.
   it('ensureContextsRegistry seeds a fresh nexus, and leaves an existing registry alone', async () => {
     await mkdir(nexusDir(root), { recursive: true })
     await ensureContextsRegistry(root)
@@ -81,8 +80,6 @@ describe('mutateRegistryFile', () => {
     expect(r.ok).toBe(false)
   })
 
-  // The file is read-modify-written whole, under its own per-path lock, so neither of two
-  // overlapping mutations may drop the other's change.
   it('concurrent mutations both land', async () => {
     await ensureContextsRegistry(root)
     await Promise.all([

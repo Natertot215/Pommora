@@ -16,8 +16,7 @@ import { serializeSchemaOp } from '../Properties/schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
-/** The tree is the wrong source here: it answers with a path-derived placeholder for a folder
- *  with no persisted id, which is an address rather than the identity recorded. */
+/** The tree is the wrong source here: it answers with a path-derived placeholder for a folder with no persisted id, which is an address rather than the identity recorded. */
 async function foldersById(root: string): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   for (const folder of await collectionFolders(root)) {

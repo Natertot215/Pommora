@@ -92,8 +92,7 @@ export function stepPixels(v: number, dtMs: number, frac: number): { px: number;
   return { px, frac: raw - px }
 }
 
-/** A direction scrolls only once the pointer has left its edge band, so grabbing an item already
- *  pinned at an edge doesn't rocket the container. */
+/** A direction scrolls only once the pointer has left its edge band, so grabbing an item already pinned at an edge doesn't rocket the container. */
 export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number; vy: number } {
   if (vy >= 0) intent.up = true
   if (vy <= 0) intent.down = true
@@ -219,8 +218,7 @@ export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams):
   return clamp(Math.abs(distance) / speed, minMs, maxMs)
 }
 
-/** The JS form of `easing.baseSnap`, which is ease-out quint — a CSS cubic-bezier can't drive a
- *  scrollTop, so the curve is stated twice on purpose. Change them together. */
+/** The JS form of `easing.baseSnap` (ease-out quint) — a CSS cubic-bezier can't drive a scrollTop, so the curve is stated twice on purpose. Change them together. */
 export function easeOutQuint(t: number): number {
   return 1 - (1 - t) ** 5
 }

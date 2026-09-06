@@ -11,9 +11,7 @@ import {
 } from './intents'
 import { codeBlockTextAt, scanDoc } from './docScan'
 
-// The live build assembles line intents from the per-version cache, re-deriving only the caret-affected lines.
-// This holds it byte-equivalent to the pure whole-doc reference at EVERY caret position, so a construct that
-// gains a caret dependency without joining caretAffectedLines goes red here.
+// The live build assembles line intents from the per-version cache, re-deriving only the caret-affected lines; this holds it byte-equivalent to the pure whole-doc reference at EVERY caret position, so a construct that gains a caret dependency without joining caretAffectedLines goes red here.
 describe('cached assembly ≡ pure derivation', () => {
   const corpus = [
     '- item\n\ttwo words here\n# Head\nbody\n---\npara',
@@ -38,8 +36,7 @@ describe('cached assembly ≡ pure derivation', () => {
     }
   })
 
-  // A window must yield exactly what the whole document yields for the lines it covers: every flag a construct's
-  // edge depends on was decided by the whole-document derivation, so no window may change one.
+  // Every flag a construct's edge depends on was decided by the whole-document derivation, so no window may change one.
   it.each(corpus.map((doc, i) => [i, doc] as const))('windowed, doc %#', (_i, doc) => {
     const scan = scanDoc(doc)
     const cached = docLineIntents(scan)

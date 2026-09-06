@@ -35,7 +35,6 @@ export interface RenameSlice {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
-  /** The page whose icon picker is open. One consumer, so it needs no owner fence. */
   iconPath: string | null
   beginIcon: (path: string) => void
   endIcon: () => void
@@ -45,8 +44,7 @@ export interface RenameSlice {
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
-  /** A view's values snapshot is fetched once per container open, so without this the renamed
-   *  column reads blank; the key pair rides along to re-key the optimistic overrides. */
+  /** A view's values snapshot is fetched once per container open, so without this the renamed column reads blank; the key pair rides along to re-key the optimistic overrides. */
   valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
   bumpContainerValues: (changes: ValueChange[]) => void
@@ -99,8 +97,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       const claims = s.renameClaims.filter((c) => c.token !== token)
       return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
     })
-    // A microtask, because StrictMode's simulated remount releases and re-claims in one act. A
-    // rename whose winning surface left is abandoned, never handed to a standing claimant.
+    // A microtask, because StrictMode's simulated remount releases and re-claims in one act. A rename whose winning surface left is abandoned, never handed to a standing claimant.
     queueMicrotask(() => {
       const s = get()
       if (released === undefined || s.renamingPath !== released.path) return

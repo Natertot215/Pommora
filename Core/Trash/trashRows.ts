@@ -14,9 +14,7 @@ function deletedAtOf(bundlePath: string): number | null {
   return Number.isNaN(t) ? null : t
 }
 
-/** The only surviving evidence of where something lived once its recorded parent is gone.
- *  `.trash` mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing
- *  the internal folders the live breadcrumb never shows — both prefixes come back off. */
+/** The only surviving evidence of where something lived once its recorded parent is gone. `.trash` mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing the internal folders the live breadcrumb never shows — both prefixes come back off. */
 function frozenCrumbs(bundlePath: string): TrashCrumb[] {
   const segments = dirname(bundlePath)
     .split('/')
@@ -45,9 +43,7 @@ function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: Nex
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
-/** The filter is the record's own discriminator rather than the absence of an artifact:
- *  `listBundles` waives the artifact requirement for a property bundle on purpose, so testing for
- *  one would admit it as a titleless, dateless row that Delete All would then destroy unread. */
+/** The filter is the record's own discriminator rather than the absence of an artifact: `listBundles` waives the artifact requirement for a property bundle on purpose, so testing for one would admit it as a titleless, dateless row that Delete All would then destroy unread. */
 export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property' || !artifactName) return null

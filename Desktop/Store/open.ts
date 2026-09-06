@@ -28,9 +28,7 @@ export function openNexusDb(nexusRoot: string): Db | null {
 
   if (existsSync(dbPath)) {
     const existing = openDb(dbPath).db
-    // A file that failed to OPEN (locked, mid-sync, transient I/O) is left intact — the
-    // session runs without persisted state and the next launch retries. Only a successful
-    // open reporting the wrong schema version earns the drop-and-recreate.
+    // A file that failed to OPEN (locked, mid-sync, transient I/O) is left intact — the session runs without persisted state and the next launch retries. Only a successful open reporting the wrong schema version earns the drop-and-recreate.
     if (!existing) {
       console.error(
         `nexus.db exists but could not be opened — running without persisted state: ${dbPath}`,
@@ -38,10 +36,7 @@ export function openNexusDb(nexusRoot: string): Db | null {
       return null
     }
     if (readMeta(existing, 'schema_version') === String(SCHEMA_VERSION)) {
-      // Additive DDL must reach databases that have already been opened — the idempotent
-      // re-apply is how a pre-index file gains the index tables without a version bump. A throw
-      // (read-only media, a lock) costs only the new tables: the session keeps its folds and
-      // tabs, and the index queries answer null so their callers scan.
+      // Additive DDL must reach databases that have already been opened — the idempotent re-apply is how a pre-index file gains the index tables without a version bump. A throw (read-only media, a lock) costs only the new tables: the session keeps its folds and tabs, and the index queries answer null so their callers scan.
       try {
         applySchema(existing)
         if (readMeta(existing, 'index_generation') !== String(INDEX_GENERATION)) {

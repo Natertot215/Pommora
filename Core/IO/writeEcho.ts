@@ -1,9 +1,6 @@
 const recent = new Map<string, number>()
 const WINDOW_MS = 2000
-// Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land
-// within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a
-// blind spot for a genuine EXTERNAL write into that folder. Long enough for the echo, short
-// enough that most-recent-wins staleness can't stretch to seconds.
+// Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
 const PREFIX_WINDOW_MS = 800
 
 export function recordWrite(absPath: string): void {

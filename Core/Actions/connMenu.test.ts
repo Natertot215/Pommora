@@ -38,7 +38,6 @@ describe('a link naming a page', () => {
     expect(actions({ open: 'detail' })).toContain('title:window')
     expect(actions({ windowed: true })).not.toContain('title:window')
     expect(actions({ windowed: true })).toContain('title:newtab')
-    // Showing in both leaves nowhere left to open it.
     const both = actions({ open: 'detail', windowed: true })
     expect(both).not.toContain('title:window')
     expect(both).not.toContain('title:newtab')

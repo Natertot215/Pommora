@@ -26,7 +26,6 @@ export const assetsHandlers = {
     return root === null ? EMPTY_ASSET_MAP : liveAssetMap(root)
   },
 
-  // A property's answer is relative to the ASSET root; the nexus's is relative to the nexus.
   'assets:chooseDir': withRoot(async (root, ctx, scope?: 'nexus' | 'property', at?: unknown) => {
     const forProperty = scope === 'property'
     const { assetDir } = await readWatchScope(root)
@@ -57,7 +56,6 @@ export const assetsHandlers = {
       next = valid.value
     }
     await writeAssetDirectory(root, next)
-    // A failure leaves every reference where it was rather than failing the change.
     try {
       await migrateAssets(root)
     } catch (e) {
@@ -90,7 +88,6 @@ export const assetsHandlers = {
     return path
   },
 
-  // Bounded by the pick; the DESTINATION is refused inside `adoptFile`, at the write.
   'assets:adopt': withRoot(async (root, ctx, source: string, subfolder?: string) => {
     if (!pickedPaths.has(source)) return fail('invalid-path', 'That file was not picked here.')
     const adopted = await adoptFile(root, source, {

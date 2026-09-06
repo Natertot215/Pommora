@@ -255,7 +255,6 @@ describe('ImagePicker', () => {
     await act(async () => {})
     expect(onRepick).toHaveBeenCalledWith('/abs/New.png')
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
-    // A dedup adopt lands on the value already shown, so the hold releases at once rather than deadlocking against a change that never lands.
     await act(async () => settle('[[Cover.png]]'))
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
     ;(window as { nexus?: unknown }).nexus = undefined
@@ -284,7 +283,6 @@ describe('ImagePicker', () => {
     await loadImage()
     await act(async () => byLabel('Choose Image')?.click())
     await act(async () => settle('[[New.png]]'))
-    // Save stays held — a crop now would write to the old image, before the new one lands.
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
     await mount(<ImagePicker value="[[New.png]]" {...base} />)
     await loadImage()

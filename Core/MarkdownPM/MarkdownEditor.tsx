@@ -81,7 +81,6 @@ interface Props {
   initialBody: string
   onChange: (body: string) => void
   host: EditorHost
-  /** Rendered above the body inside the shell; its height becomes the scroll-parked `--header-zone`. */
   header?: ReactNode
   scale?: number
   connections?: ConnectionsApi

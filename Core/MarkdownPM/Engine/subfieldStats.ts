@@ -21,11 +21,9 @@ interface PageStats {
   citations: number
 }
 
-/** Chrome and widgets are replaced by a NEWLINE rather than a space: newlines are stripped before characters are
- *  counted, so a space placeholder was itself counted and made a long fence add a character per line. */
+/** Chrome and widgets are replaced by a NEWLINE rather than a space: newlines are stripped before characters are counted, so a space placeholder was itself counted and made a long fence add a character per line. */
 const GONE = '\n'
 
-/** Read through the editor's own detectors rather than a private regex. A line that IS an embed is a tile and draws no prose. */
 function stripLineChrome(line: string): string {
   if (loneEmbedTitle(line) !== null) return ''
   if (loneWebpageEmbed(line)) return ''

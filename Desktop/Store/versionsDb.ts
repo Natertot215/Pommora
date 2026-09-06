@@ -27,9 +27,7 @@ function healthy(db: Db): boolean {
   }
 }
 
-/** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's
- *  store clause keeps covering it; nothing is deleted. Its journal is already gone — the handle's
- *  close reclaims a WAL and SHM whatever the file held. */
+/** A damaged store is set aside under a dated name that still ends in `.db`, so the watcher's store clause keeps covering it; nothing is deleted. */
 function quarantine(dbPath: string): void {
   try {
     renameSync(dbPath, dbPath.replace(/\.db$/, `.corrupt-${fileStamp()}.db`))
@@ -57,8 +55,7 @@ export function openVersionsDb(nexusRoot: string): Db | null {
   if (existsSync(dbPath)) {
     const { db: existing, errcode } = openDb(dbPath)
     if (existing && healthy(existing)) return withTable(existing)
-    // Locked, mid-sync, or unreadable is left intact for the next launch, as nexus.db is; only a
-    // damaged file, or one that fails its check, is set aside.
+    // Locked, mid-sync, or unreadable is left intact for the next launch, as nexus.db is; only a damaged file, or one that fails its check, is set aside.
     if (!existing && !damagedStore(errcode)) return null
     existing?.close()
     quarantine(dbPath)

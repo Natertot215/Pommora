@@ -15,7 +15,6 @@ import { dwellTarget, followTarget } from '../Links/linkClicks'
 import { CITE_GLYPH } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 
-// A cell's resting render WITHOUT a CodeMirror instance — only the focused cell mounts a real editor.
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,

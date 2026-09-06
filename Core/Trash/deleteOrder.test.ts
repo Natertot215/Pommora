@@ -1,6 +1,4 @@
-// The write-ahead pins: a delete's record must exist on disk BEFORE the step that destroys what
-// it describes. Every assertion here is taken from inside the arm's real code — the collaborators
-// are wrapped, never replaced — because ordering is invisible to an after-the-fact assertion.
+// A delete's record must exist on disk BEFORE the step that destroys what it describes. Every assertion here is taken from inside the arm's real code — the collaborators are wrapped, never replaced — because ordering is invisible to an after-the-fact assertion.
 
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../IO/pageFile'
@@ -18,7 +16,6 @@ const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
-/** The record as it stood when the destructive step ran — the whole point of these tests. */
 let atSweep: unknown
 let atSettle: unknown
 let settleFails = false
@@ -35,7 +32,6 @@ async function firstRecordUnder(dir: string): Promise<unknown> {
   return undefined
 }
 
-/** The one record under .trash, whatever bundle holds it. */
 const anyRecord = (): Promise<unknown> => firstRecordUnder(join(root, '.trash'))
 
 vi.mock('../Contexts/contextCascade', async (importOriginal) => {
@@ -147,8 +143,7 @@ describe('the record is written before the destruction it describes', () => {
 })
 
 describe('one unparseable page never fails the sweep around it', () => {
-  // A hand-written tab indent and an unresolvable alias are the two ways frontmatter refuses a
-  // field write. Either one used to abort the fan-out mid-destruction.
+  // A hand-written tab indent and an unresolvable alias are the two ways frontmatter refuses a field write. Either one used to abort the fan-out mid-destruction.
   const BROKEN = {
     'Tabbed.md': '---\nID: 01KVGMT8BFP350FZZXAMG1QDVX\n<Projects>:\n\t- Pommora\n---\nb',
     'Aliased.md': '---\nID: 01KVGMT8BFP350FZZXAMG1QDVY\nsomething: *word\n---\nb',
@@ -162,7 +157,6 @@ describe('one unparseable page never fails the sweep around it', () => {
         nexusDeps,
       )
       expect(r.ok).toBe(true)
-      // The sweep reached every page it could, and the erase and the move both landed.
       expect(await tagOf()).toBeUndefined()
       expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
       // The page nobody can parse is untouched, and the record admits the sweep was thin.
@@ -177,7 +171,6 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     settleFails = true
     const r = await handleMutate({ op: 'delete', path: 'Notes/Alpha.md', kind: 'page' }, nexusDeps)
     expect(r.ok).toBe(false)
-    // Nothing was destroyed — the page is still exactly where it was.
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     // The record survives as evidence, and the listing refuses to offer an unfinished deletion.
     expect(await anyRecord()).toMatchObject({ entity: 'page', id: PAGE_A })
@@ -191,8 +184,7 @@ describe('a deletion cut short leaves evidence, never silence', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(false)
-    // The sweep already ran, and the Space folder is still live — the accepted cost of ordering
-    // the record first. What it took is hand-readable in the record rather than lost.
+    // The sweep already ran, and the Space folder is still live — the accepted cost of ordering the record first. What it took is hand-readable in the record rather than lost.
     expect(await tagOf()).toBeUndefined()
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })

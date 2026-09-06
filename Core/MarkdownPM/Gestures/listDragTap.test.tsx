@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
-// The glyph is one press with two meanings: released in place it's a click (a checkbox toggles, a
-// bullet seats the caret), carried past the activation threshold it's a drag. Geometry — where a
-// drag actually lands — stays with the model suite; jsdom measures every rect as zero.
+// The glyph is one press with two meanings: released in place it's a click, carried past the activation threshold it's a drag. Geometry stays with the model suite; jsdom measures every rect as zero.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
@@ -31,7 +29,6 @@ const glyphOf = (view: EditorView): HTMLElement => {
   return el as HTMLElement
 }
 
-/** Press the glyph, travel `dx` px, release. Under ACTIVATION that is a click; past it, a drag. */
 async function pressGlyph(view: EditorView, dx: number): Promise<void> {
   await act(async () => {
     firePointer(glyphOf(view), 'pointerdown', { x: 0, y: 0 })
@@ -61,8 +58,7 @@ describe('a list glyph press is a click or a drag, never both', () => {
   })
 })
 
-// A page runs several editors at once, each mounting the cleanup plugin. The abort is the owner's
-// alone: a sibling unmounting mid-drag must leave the drag in progress alone.
+// A page runs several editors at once, each mounting the cleanup plugin: a sibling unmounting mid-drag must leave the drag in progress alone.
 describe('a sibling editor tearing down leaves a live drag alone', () => {
   it('only the view that started the gesture can abort it', async () => {
     const dragged = await mountEditor({ initialBody: '- [ ] task' })

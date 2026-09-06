@@ -116,8 +116,7 @@ export const cellColor = (key: CellKey): string => {
   return RAMP[family][step]
 }
 
-/** The brightest greys tint from a darkness offset so their wash still carries the light text. A
- *  separate knob from RAMP_STEP: the two retune on different axes. */
+/** The brightest greys tint from a darkness offset so their wash still carries the light text. A separate knob from RAMP_STEP: the two retune on different axes. */
 const DARKNESS_STEP = 15
 
 /** Greyscale borders ride label-tertiary — the row has no chroma of its own to outline with. */
@@ -147,16 +146,14 @@ export function labelColorFor(color: string | undefined): CellKey | 'default' {
   return isColorKey(color) ? (color as CellKey) : 'default'
 }
 
-/** The CSS color a palette key resolves to: its stored cell, or the runtime system accent when
- *  unset ("Default"). One source for the link cell/editor AND the checkbox cell/editor. */
+/** The CSS color a palette key resolves to: its stored cell, or the runtime system accent when unset ("Default"). One source for the link cell/editor AND the checkbox cell/editor. */
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--system-accent)'
   const key = labelColorFor(color)
   return cellColor(key === 'default' ? 'grey-4' : key)
 }
 
-/** `fallback` is what an unset color follows and resolves to no cell, so the picker rings nothing
- *  and the accent's own cell stays assignable. */
+/** `fallback` is what an unset color follows and resolves to no cell, so the picker rings nothing and the accent's own cell stays assignable. */
 export function resolveColor(
   color: string | undefined,
   fallback: string,

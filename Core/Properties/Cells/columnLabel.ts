@@ -2,7 +2,6 @@ import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@pommora/core/Pro
 import type { ContextIdentity } from '../contextIdentity'
 import { useSession } from '../../Session/store'
 
-// Built-in reserved columns with fixed English labels (context titles are registry data).
 export const RESERVED_LABEL: Readonly<Record<string, string>> = {
   [RESERVED_PROPERTY_ID.title]: 'Title',
   [RESERVED_PROPERTY_ID.createdAt]: 'Creation Time',

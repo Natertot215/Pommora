@@ -50,6 +50,5 @@ export function relative(from: string, to: string): string {
   return [...a.slice(i).map(() => '..'), ...b.slice(i)].join('/')
 }
 
-/** Joins a nexus-relative parent with a child, where an empty parent means the root itself. */
 export const relJoin = (parent: string, child: string): string =>
   parent ? `${parent}/${child}` : child

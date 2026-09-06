@@ -1,15 +1,11 @@
-// The languages a fence's info word can name, as plain data. It sits apart from the CodeMirror
-// wiring that loads them so the pure decoration layer can ask what a word resolves to without
-// pulling an editor into itself; the wiring reads this list rather than restating it.
+// Plain data, apart from the CodeMirror wiring that loads them, so the pure decoration layer can ask what a word resolves to without pulling an editor into itself.
 
-/** One language: what it is called, and every word a fence may spell it with. */
 interface CodeLang {
   name: string
   alias: readonly string[]
 }
 
-/** Ordered as the fence words read rather than by family — this is a list someone scans for the
- *  language they are about to write. */
+/** Ordered as the fence words read rather than by family — this is a list someone scans for the language they are about to write. */
 export const CODE_LANGS: readonly CodeLang[] = [
   { name: 'JavaScript', alias: ['js', 'javascript', 'jsx'] },
   { name: 'TypeScript', alias: ['ts', 'typescript', 'tsx'] },
@@ -51,8 +47,7 @@ export const CODE_LANGS: readonly CodeLang[] = [
   { name: 'Properties', alias: ['properties', 'ini'] },
 ]
 
-/** The proper name a fence's info word earns — `ts` reads as TypeScript, `sh` as Shell. Null where
- *  no language answers to the word: a fence that selected no parse wears no tag. */
+/** Null where no language answers to the word: a fence that selected no parse wears no tag. */
 export function codeLanguageName(info: string): string | null {
   const word = info.trim().toLowerCase()
   if (!word) return null

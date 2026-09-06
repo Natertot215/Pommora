@@ -29,24 +29,20 @@ export const size = {
 
 export type IconSize = keyof typeof size.icon
 
-/** The button geometry scale. The names are the public knob (a caller picks `size="button-large"`);
- *  the numbers behind each live with the button, in button-base.css.ts. */
+/** The names are the public knob (a caller picks `size="button-large"`); the numbers behind each live with the button, in button-base.css.ts. */
 export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'button-large'
 
 export const DISCLOSURE_INDENT = 14
 
 export const DROP_LINE_INSET = 2
 
-/** Grid tiles and MarkdownPM's embedded page tiles agree on this one minimum, so a
- *  resizable tile bottoms out the same wherever it can be grabbed. */
+/** Grid tiles and MarkdownPM's embedded page tiles agree on this one minimum, so a resizable tile bottoms out the same wherever it can be grabbed. */
 export const TILE_MIN_PX = 64
 
 /** KNOB — the height a resizable tile reports and occupies before a persisted one exists.*/
 export const TILE_DEFAULT_PX = 320
 
-/** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a tile
- *  widget measures, so the value the widget answers CM6 with has to add it back or the height model
- *  runs short by the gap for every tile on the page.*/
+/** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a tile widget measures, so the value the widget answers CM6 with has to add it back or the height model runs short by the gap for every tile on the page. */
 export const TILE_GAP_PX = 4
 
 const CHECKBOX_BASE = 'var(--checkbox-base, var(--accent))'

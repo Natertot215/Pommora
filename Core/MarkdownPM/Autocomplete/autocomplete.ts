@@ -18,7 +18,6 @@ export interface AutocompleteQuery {
 
 export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 
-/** A row that can be forgotten carries the gesture that forgets it, so the panel never learns what a page is. */
 export interface AcRow {
   value: string
   label: string
@@ -96,7 +95,6 @@ export function autocompleteQuery(
   return null
 }
 
-/** A page's containers are its path's folders, so the trail needs no tree. */
 export const pageRow = (p: ConnPage): AcRow => ({
   value: p.title,
   label: p.title,
@@ -108,7 +106,6 @@ export const pageRow = (p: ConnPage): AcRow => ({
     .map((title) => ({ title })),
 })
 
-/** An unresolved or ambiguous title offers nothing: there is no one page to have remembered a name. */
 export function aliasRows(
   conn: PageIndex,
   aliases: EditorHost['aliases'],
@@ -163,7 +160,6 @@ interface CommitEdit {
   anchor: number
 }
 
-/** Pure so the rules can be read and tested without an editor — the part a coordinate-less harness otherwise can't reach. */
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
@@ -179,7 +175,6 @@ export function commitEdit(
     }
   }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
-  // Accepting an alias finishes the link it belongs to, rather than leaving the caret inside it for a second gesture.
   if (ac.form === 'alias')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {
@@ -194,6 +189,5 @@ export function commitEdit(
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
 }
 
-// KNOB — how many suggestions are ranked before the rest are dropped; the pane's own max-height
-// decides how many of them are visible at once, and the list scrolls to the rest.
+// KNOB — how many suggestions are ranked before the rest are dropped; the pane's own max-height decides how many are visible at once.
 export const AC_MAX = 20

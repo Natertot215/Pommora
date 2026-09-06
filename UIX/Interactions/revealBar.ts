@@ -1,20 +1,16 @@
 import { useCallback, useRef, useState, type MouseEvent } from 'react'
 
-/** Tracked against the pointer rather than mounted as invisible buttons, so a generous reveal area
- *  never swallows clicks to the content beneath it. */
+/** Tracked against the pointer rather than mounted as invisible buttons, so a generous reveal area never swallows clicks to the content beneath it. */
 const REVEAL_NEAR_W = 260
 const REVEAL_NEAR_H = 120
 
-/** A zone measured from the surface's raw left edge can sit under an overlaying pane, leaving the
- *  pointer no way to reach it; the control's content box is where it visibly starts. */
+/** A zone measured from the surface's raw left edge can sit under an overlaying pane, leaving the pointer no way to reach it; the control's content box is where it visibly starts. */
 function leadOrigin(el: HTMLElement | null, fallback: number): number {
   if (!el) return fallback
   return el.getBoundingClientRect().left + Number.parseFloat(getComputedStyle(el).paddingLeft)
 }
 
-/** Tracks both reveal zones of a bar with a control at either end. The rect and lead origin are
- *  cached because a rect per mousemove forces a layout; a surface that can move under a still
- *  pointer calls `remeasure`. */
+/** The rect and lead origin are cached because a rect per mousemove forces a layout; a surface that can move under a still pointer calls `remeasure`. */
 export function useRevealNear(): {
   near: boolean
   nearLead: boolean

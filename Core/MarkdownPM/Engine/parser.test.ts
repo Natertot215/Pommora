@@ -23,8 +23,8 @@ describe('parse (mdast seam)', () => {
 describe('isInsideWikilink', () => {
   it('true inside [[...]], false past the closer', () => {
     const t = '[[ab]] x'
-    expect(isInsideWikilink(3, t)).toBe(true) // after "[[a"
-    expect(isInsideWikilink(7, t)).toBe(false) // at the space past "]]"
+    expect(isInsideWikilink(3, t)).toBe(true)
+    expect(isInsideWikilink(7, t)).toBe(false)
   })
 
   it('resets per line (an unclosed [[ does not bleed to the next line)', () => {

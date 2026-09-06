@@ -63,8 +63,7 @@ if (process.env.POMMORA_DEBUG_PORT) {
 // A second instance beside the live one: its own userData carries its own single-instance lock.
 if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)
 
-// file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives the
-// bundle a real origin. Both schemes must be registered before the app is ready.
+// file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives the bundle a real origin. Both schemes must be registered before the app is ready.
 const RENDERER_SCHEME = 'app'
 const ASSET_SCHEME = 'nexus-asset'
 protocol.registerSchemesAsPrivileged([
@@ -140,8 +139,7 @@ function refreshMenu(): void {
 
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   if (win.isDestroyed()) return
-  // No-nexus state normalizes to 1.0 so the welcome screen never inherits a prior nexus's host
-  // zoom (Electron zoom is per-render-host, shared).
+  // No-nexus state normalizes to 1.0 so the welcome screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
   const p = root ? await readLivePersonalization(root) : null
   setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
@@ -154,8 +152,7 @@ function createWindow(): void {
     width: 1280,
     height: 832,
     show: false,
-    // Title bar hidden but the native frame kept (macOS corner radius + shadow); traffic lights
-    // repositioned into the sidebar, which stays opaque to sample the window.
+    // Title bar hidden but the native frame kept (macOS corner radius + shadow); traffic lights repositioned into the sidebar, which stays opaque to sample the window.
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
     backgroundColor: WINDOW_BG,
@@ -248,9 +245,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
         void applyDefaultZoom(mainWindow)
       }
       try {
-        // The RAW user-facing path, not the canonical root: a nexus under an iCloud-synced
-        // ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in
-        // Open Recent and breaks restore if iCloud Desktop & Documents is later turned off.
+        // The RAW user-facing path, not the canonical root: a nexus under an iCloud-synced ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in Open Recent and breaks restore if iCloud Desktop & Documents is later turned off.
         await updateAppConfig(userData(), (cur) => ({
           lastNexusPath: path,
           recents: addRecent(cur.recents ?? [], path),
@@ -283,8 +278,7 @@ const tells: TellHandlers = {
 
 serveIpc(handlers, tells, hostContext)
 
-// Every write lock in this process is module state, so a second process on the same nexus would
-// race every write with no coordination: one instance is a correctness boundary.
+// Every write lock in this process is module state, so a second process on the same nexus would race every write with no coordination: one instance is a correctness boundary.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
@@ -333,8 +327,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Database writes commit synchronously, so close only tidies. Navigation intent is the one
-// operational write still owed to disk: defer the quit, settle it, re-quit.
+// Database writes commit synchronously, so close only tidies. Navigation intent is the one operational write still owed to disk: defer the quit, settle it, re-quit.
 let flushingBeforeQuit = false
 app.on('before-quit', (e) => {
   if (flushingBeforeQuit) return

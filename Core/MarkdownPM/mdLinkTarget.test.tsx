@@ -135,8 +135,7 @@ describe('following one', () => {
   })
 })
 
-// Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures
-// nothing, so a panel-driven version would only ever test the harness.
+// Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures nothing, so a panel-driven version would only ever test the harness.
 describe('picking a page inside the parens', () => {
   const row = { value: 'Work Notes', label: 'Work Notes', isPage: true, location: [] }
 
@@ -151,8 +150,7 @@ describe('picking a page inside the parens', () => {
     return { text, after: text.slice(edit.anchor) }
   }
 
-  // A markdown link renders as its label alone, so selecting it read as though the whole thing were selected;
-  // it rests past the closer instead, where finishing a connection leaves you.
+  // A markdown link renders as its label alone, so selecting it read as though the whole thing were selected; it rests past the closer instead, where finishing a connection leaves you.
   it('fills an empty label with the page title and rests past the link', () => {
     const doc = 'see []() end'
     const { text, after } = applied(doc, doc.indexOf('(') + 1)
@@ -167,7 +165,6 @@ describe('picking a page inside the parens', () => {
     expect(after).toBe(' end')
   })
 
-  // The link rests rendered on the closer BECAUSE the commit put the caret there.
   it('and the link reads as finished where the commit leaves the caret', () => {
     const doc = 'see [the notes](Work%20Notes) end'
     const tokens = tokenize(doc)
@@ -179,7 +176,6 @@ describe('picking a page inside the parens', () => {
   })
 })
 
-// A connection being typed should read as a link from its first character, not as prose that turns blue once a title matches.
 describe('a connection takes its color as it is typed', () => {
   it('an unresolved connection being typed wears the connection color', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wo]] end', connections: conn })
@@ -220,8 +216,7 @@ describe('a connection takes its color as it is typed', () => {
   })
 })
 
-// The body did not raise a glance for a page-naming markdown link, because the connection handler's hit-test
-// reads wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
+// The body did not raise a glance for a page-naming markdown link, because the connection handler's hit-test reads wikiLink tokens and this is a `link`. The dwell is the seam's, so the hook fires on the mouseover.
 describe('an internal markdown link glances like a connection', () => {
   it('arms the page glance on the drawn link', async () => {
     const glance = vi.fn()
@@ -278,7 +273,6 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
-  // Standing on its own the title IS the link's words, but it still earns the glyph confirming a page answers to it.
   it('a link wearing no pipe keeps its title tinted, and still wears the glyph', async () => {
     const view = await openAt('see [[Work Notes]] end', 10)
     expect(view.dom.querySelector('.md-conn-target')).toBeNull()

@@ -1,7 +1,4 @@
-// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file
-// and starts clean rather than migrating in place. That costs a user every device-local row at
-// once: folds, tabs, page aliases, dashboard layouts. The content index has its own generation
-// below so a change to what it records never reaches for that lever.
+// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file and starts clean rather than migrating in place. That costs a user every device-local row at once, so the content index has its own generation below and never reaches for that lever.
 
 import type { Db } from './driver'
 

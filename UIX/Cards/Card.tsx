@@ -88,8 +88,7 @@ export function CardTitle({
   )
 }
 
-/** The landing slot a card grid paints while one of its cards is in flight. Renders inside a
- *  standalone zone; the grouped engine draws its own across zones. */
+/** The landing slot a card grid paints while one of its cards is in flight. Renders inside a standalone zone; the grouped engine draws its own across zones. */
 export function CardDropSlot(): React.JSX.Element | null {
   const slot = useDropSlot()
   if (!slot) return null

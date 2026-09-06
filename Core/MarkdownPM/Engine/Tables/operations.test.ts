@@ -91,7 +91,7 @@ describe('operations', () => {
 
   it('clearColumn blanks the body cells of one column, keeps the header label', () => {
     const m = clearColumn(base, 1)
-    expect(m.header).toEqual(['a', 'b', 'c']) // header untouched
+    expect(m.header).toEqual(['a', 'b', 'c'])
     expect(m.rows[0]).toEqual(['1', '', '3'])
   })
 

@@ -26,7 +26,6 @@ export function nexusIconMenuItems(opts: {
   ]
 }
 
-/** Add resolves 'change': both routes open the image picker. */
 export function bannerMenuItems(
   opts: { noRemove?: boolean; noun?: string; add?: boolean } = {},
 ): ActionItem<BannerMenuAction>[] {
@@ -40,7 +39,6 @@ export function bannerMenuItems(
       ]
 }
 
-/** Edit Icon unless `noEditIcon` — the homepage sets its icon from the settings pane, not here. */
 export function titleMenuItems(
   opts: { toggleIcon?: boolean; iconHidden?: boolean; noEditIcon?: boolean } = {},
 ): ActionItem<TitleMenuAction>[] {

@@ -3,15 +3,12 @@ export const titleFromPath = (path: string): string =>
 
 export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 
-// NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a
-// Context value read off disk parses as a YAML scalar and `- 2024` must still match "2024".
+// NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a YAML scalar `- 2024` off disk must still match "2024".
 export function normalizeTitle(raw: unknown): string {
   return String(raw).trim().toLowerCase().normalize('NFC')
 }
 
-// Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair, so
-// `[[Notes [WIP] final]]` captures whole. The 255 cap is load-bearing: an unbounded run backtracks
-// quadratically on an unclosed `[`-run and freezes buildIndex and the live tokenizer.
+// Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run.
 export function pageLinkPattern(): RegExp {
   return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|([^\]\r\n]{0,255}))?\]\]/g
 }
@@ -24,8 +21,7 @@ interface LinkSpans {
   alias: [number, number] | null
 }
 
-// A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]`;
-// the backslash is the cell's, not the title's.
+// A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]` — the backslash is the cell's, not the title's.
 export const titleOf = (rawTitle: string): string =>
   rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
 

@@ -139,7 +139,7 @@ beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  mutateSpy = vi.fn(async () => true) // the reparent router gates its view write on this
+  mutateSpy = vi.fn(async () => true)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   selectSpy = vi.fn(async () => {})
   contextMenuSpy = vi.fn(async () => null)
@@ -360,7 +360,6 @@ describe('sub-group bucket band drag', () => {
     channels['view:loadValues'] = async () => SUB_VALUES
   })
 
-  // bands: A(0), A/active(1), A/complete(2), B(3), B/active(4)
   it('manual mode: same-set bucket reorder writes the view-level global sub_group.order', async () => {
     await mountTable(subGroupSource())
     await dragBand(2, 26)
@@ -504,7 +503,7 @@ describe('band reparent', () => {
         }),
     )
     await mountTable(structuralSource())
-    await dragBand(2, 12) // nest B into A — the commit defers behind the fs round-trip
+    await dragBand(2, 12)
     await drop()
     // Mid-flight, the user collapses a group (a sibling persist with fresh state).
     const outline = host.querySelectorAll('.group-band-drop-outline')[0]
@@ -522,7 +521,7 @@ describe('band reparent', () => {
 
   it('a de-nest between-slot reparents to the container root', async () => {
     await mountTable(structuralSource())
-    await dragBand(1, 50) // A1 → bottom half of B's zone? y=50 sits in B's top zone (48–72) → before B at root
+    await dragBand(1, 50)
     await drop()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'moveSet',

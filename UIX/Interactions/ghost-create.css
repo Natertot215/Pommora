@@ -1,7 +1,4 @@
-/* THE ghost — a hover-born stand-in for something that doesn't exist yet: the table's New Page row,
-   the grid's New Page card, the sidebar's New Page leaf, a property's New Option chip. It rests dimmed
-   and lifts toward presence under the pointer; the dim, the lift target, and the timing live here once
-   rather than in each surface. */
+/* THE ghost — a hover-born stand-in for something that doesn't exist yet. It rests dimmed and lifts toward presence under the pointer; the dim, the lift target, and the timing live here once rather than in each surface. */
 [data-ghost-root],
 [data-create] {
   cursor: pointer;

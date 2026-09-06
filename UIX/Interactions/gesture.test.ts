@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-// The skeleton's `live` lock is module state with no reset seam, so every test loads a fresh
-// module — the throwing-teardown test would otherwise strand the lock for the rest of the file.
+// The skeleton's `live` lock is module state with no reset seam, so every test loads a fresh module — the throwing-teardown test would otherwise strand the lock for the rest of the file.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { firePointer, stubPointerCapture } from './pointerHarness'
 import type { PointerGestureSpec } from './gesture'
@@ -193,9 +192,7 @@ describe('gesture skeleton hardening', () => {
   })
 })
 
-// A click-or-drag surface — a list glyph that toggles a checkbox, a heading grip that folds — needs
-// the release before activation to mean something. Only a release means it: every other way a
-// gesture ends is a cancel, and a cancel must never fire the click.
+// A click-or-drag surface needs the release before activation to mean something. Only a release means it: every other way a gesture ends is a cancel, and a cancel must never fire the click.
 describe('a release before activation is a tap, and only a release', () => {
   it('a sub-threshold release taps, without dropping or aborting', () => {
     const calls: string[] = []

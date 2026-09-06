@@ -11,8 +11,7 @@ export type PointerGestureSpec = {
   onActivate: (e: PointerEvent) => boolean | undefined
   onDragMove: (e: PointerEvent) => void
   onDrop: () => void
-  /** Release before activation. A cancel is not a tap: pointercancel, Escape, blur and a lost
-   *  release all route to `onAbort`. */
+  /** Release before activation. A cancel is not a tap: pointercancel, Escape, blur and a lost release all route to `onAbort`. */
   onTap?: () => void
   onAbort?: () => void
   teardown?: () => void
@@ -67,12 +66,10 @@ function detach(g: LiveGesture): void {
   }
 }
 
-/** `abort()` tears the gesture down only if it is still the live one, so a component unmounting
- *  mid-drag can't kill a sibling's. */
+/** `abort()` tears the gesture down only if it is still the live one, so a component unmounting mid-drag can't kill a sibling's. */
 export type GestureHandle = { abort: () => void }
 
-/** Pointer capture is deferred to activation so a sub-threshold tap keeps its click. A callback
- *  that throws aborts its own gesture rather than wedging the singleton. */
+/** Pointer capture is deferred to activation so a sub-threshold tap keeps its click. A callback that throws aborts its own gesture rather than wedging the singleton. */
 export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | null {
   const e = spec.event
   if (live || e.button !== 0 || !e.isPrimary) return null
@@ -172,8 +169,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   }
 }
 
-/** A refused begin must never overwrite the stored handle, or the unmount abort would leak the
- *  live gesture's listeners instead. Returns whether the gesture started. */
+/** A refused begin must never overwrite the stored handle, or the unmount abort would leak the live gesture's listeners instead. */
 export function usePointerGesture(): (spec: PointerGestureSpec) => boolean {
   const handle = useRef<GestureHandle | null>(null)
   useEffect(() => () => handle.current?.abort(), [])

@@ -43,7 +43,6 @@ export function splitWithOffsets(text: string): DocLines {
   return { text, lines, lineStarts }
 }
 
-/** The pairing itself is `fenceSpans` in the shared code module — the one pass both processes read. */
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
@@ -256,7 +255,6 @@ const boundTo = (label: string): ((x: { label: string }) => boolean) => {
   return (x) => foldLabel(x.label) === key
 }
 
-/** Every row a label claims — the binder and any duplicate that lost. A deletion takes the whole set, so it asks HERE. */
 export const citationsFor = (c: CitationScan, label: string): CitationEntry[] =>
   c.entries.filter(boundTo(label))
 
@@ -370,7 +368,6 @@ export function indentLevel(ws: string): number {
   return Math.min(MAX_NESTING_LEVEL, tabs + Math.floor(spaces / 2))
 }
 
-/** The single list-marker parser — every layer reads markers through this. `arrow`'s marker IS the on-disk glyph. */
 export interface ListMarker {
   kind: ListKind
   bullet?: string

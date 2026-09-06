@@ -6,8 +6,7 @@ import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
-// jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough — the
-// test asserts focus/activation, not pixel geometry. The flag enables React's act() in this env.
+// jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough. The flag enables React's act() in this env.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {

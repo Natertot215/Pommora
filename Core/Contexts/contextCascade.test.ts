@@ -16,7 +16,6 @@ const other = () => join(root, 'Notes', 'B.md')
 const csSidecar = () => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
 beforeEach(async () => {
-  // The journal slot's clear only lands for the live session's root, as production's does.
   root = await realpath(await mkdtemp(join(tmpdir(), 'pom-cascade-')))
   await openSession(root)
   await mkdir(nexusDir(root), { recursive: true })
@@ -100,7 +99,6 @@ describe('renameContextOp', () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
     expect(await readJournal(root)).toBeNull()
     expect(await regTitle('ctx_projects')).toBe('Projects')
-    // Positional stripping round-trips a glyph, so the title carries no ban of its own.
     expect((await renameContextOp(root, 'ctx_projects', 'No[pe')).ok).toBe(true)
     expect(await regTitle('ctx_projects')).toBe('No[pe')
   })
@@ -158,7 +156,7 @@ describe('renameSpaceOp', () => {
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
       JSON.stringify({ id: 'sp-sap' }),
     )
-    expect((await renameSpaceOp(root, 'sp-pom', 'Sapphire')).ok).toBe(false) // folder taken
+    expect((await renameSpaceOp(root, 'sp-pom', 'Sapphire')).ok).toBe(false)
     await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     const r = await renameSpaceOp(root, 'sp-pom', 'Sapphire')
     expect(r.ok).toBe(true)
@@ -168,8 +166,7 @@ describe('renameSpaceOp', () => {
 
 describe('skip-aware journal (D-7b)', () => {
   it('an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it', async () => {
-    // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to
-    // read it — the skip path, without needing a permission trick.
+    // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to read it — the skip path, without needing a permission trick.
     const broken = join(root, 'Notes', 'Broken.md')
     await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
@@ -178,7 +175,6 @@ describe('skip-aware journal (D-7b)', () => {
     const j = await readJournal(root)
     expect(j?.skipped).toEqual([broken])
 
-    // Replace it with a real file still carrying the OLD key — replay retries and completes.
     await rm(broken)
     await writeFile(broken, '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
     await replayPendingRename(root)
@@ -226,8 +222,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     const { captured, refused } = r.value
     expect(refused).toEqual([join(root, 'Notes', 'Alien.md')])
     expect((await fmOf(join(root, 'Notes', 'Alien.md')))['<Projects>']).toEqual(['Pommora'])
-    // Captures discriminate by id key: the ID page, the id-less legacy page (honest,
-    // unrestorable), and the Space sidecar.
+    // Captures discriminate by id key: the ID page, the id-less legacy page (honest, unrestorable), and the Space sidecar.
     expect(captured).toContainEqual({ id: PAGE_C, kind: 'page', values: ['Pommora'] })
     expect(captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
     expect(captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
@@ -256,10 +251,8 @@ describe('a delete sweep never strips a passenger (G-1a)', () => {
     const { unlinkContextKey } = await import('./contextCascade')
     const r = await unlinkContextKey(root, 'Projects', join(contextsDir(root), 'Projects'))
     expect(r.ok).toBe(true)
-    // The passenger keeps the key it will carry into the trash.
     const pom = JSON.parse(await readFile(pomSidecar(), 'utf8'))
     expect(pom['<Projects>']).toEqual(['Sapphire'])
-    // The control: the sweep still ran everywhere outside the subtree.
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect('<Projects>' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
   })
@@ -278,8 +271,7 @@ describe('a delete sweep never strips a passenger (G-1a)', () => {
 
 describe('replayPendingRename (D-7a crash windows)', () => {
   it('completes a rename crashed before the registry commit', async () => {
-    // Crash simulation: journal written, folder renamed, files NOT yet cascaded,
-    // registry still on the old title.
+    // Crash simulation: journal written, folder renamed, files NOT yet cascaded, registry still on the old title.
     await writeJournal(root, {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
@@ -346,7 +338,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       skipped: [],
     })
     await replayPendingRename(root)
-    // Untouched: the value "Pommora" now belongs to sp-new.
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
     expect(await readJournal(root)).toBeNull()
   })
@@ -390,7 +381,6 @@ describe('the journal slot law', () => {
     expect((await readJournal(root))?.contextId).toBe('ctx_projects')
     await clearJournal(root, stranger)
     expect(await readJournal(root)).not.toBeNull()
-    // The settle's re-write of the SAME rename with a new skip list updates the held record.
     await writeJournal(root, { ...owed, skipped: [] })
     expect((await readJournal(root))?.skipped).toEqual([])
     await clearJournal(root, owed)
@@ -404,8 +394,7 @@ describe('the journal slot law', () => {
       newTitle: 'Work',
       skipped: ['Notes/A.md'],
     })
-    // The user renames back — the newer intent must displace the abandoned one, or the next
-    // open's replay re-applies "Projects → Work" over their choice.
+    // The newer intent must displace the abandoned one, or the next open's replay re-applies "Projects → Work" over the user's choice.
     await writeJournal(root, {
       contextId: 'ctx_projects',
       oldTitle: 'Work',
@@ -416,8 +405,7 @@ describe('the journal slot law', () => {
   })
 
   it('a rename-back after a skip leaves nothing for the replay to revert', async () => {
-    // Strand a record by hand (the shape a skipped sweep leaves), then run the counter-rename
-    // end to end: its journal supersedes, its cascade lands, and the replay is inert.
+    // Strand a record by hand (the shape a skipped sweep leaves), then run the counter-rename end to end.
     await renameContextOp(root, 'ctx_projects', 'Work')
     await writeJournal(root, {
       contextId: 'ctx_projects',

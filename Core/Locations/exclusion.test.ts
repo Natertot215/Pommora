@@ -35,7 +35,6 @@ describe('shouldSkipDir', () => {
   it('skips the asset root and everything under it', () => {
     expect(shouldSkipDir('file-assets', 'file-assets', scope([], 'file-assets'))).toBe(true)
     expect(shouldSkipDir('Sub', 'file-assets/Sub', scope([], 'file-assets'))).toBe(true)
-    // The negative half: the same folder under a different asset root stays visible.
     expect(shouldSkipDir('file-assets', 'file-assets', scope([], 'Media'))).toBe(false)
   })
 })
@@ -71,7 +70,6 @@ describe('excludedMatcher', () => {
   it('compiles a list once — the per-entry and per-event callers reuse it', () => {
     const list = ['Archive']
     expect(excludedMatcher(list)).toBe(excludedMatcher(list))
-    // A settings edit hands over a new list, which compiles fresh.
     expect(excludedMatcher(['Archive'])).not.toBe(excludedMatcher(list))
   })
 })

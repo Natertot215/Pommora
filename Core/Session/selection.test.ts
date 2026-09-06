@@ -134,16 +134,13 @@ describe('reconcileSelection', () => {
         },
       ],
     }
-    // unchanged path → same reference
     const set1: SelectionState = { kind: 'set', id: 's1', path: 'C/S' }
     expect(reconcileSelection(t, set1)).toBe(set1)
-    // a deep Sub-Set is found too, and a stale path is refreshed
     expect(reconcileSelection(t, { kind: 'set', id: 's2', path: 'C/S/Old' })).toEqual({
       kind: 'set',
       id: 's2',
       path: 'C/S/Sub',
     })
-    // gone → dropped
     expect(reconcileSelection(t, { kind: 'set', id: 'gone', path: 'C/X' })).toEqual({
       kind: 'none',
     })

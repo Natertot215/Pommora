@@ -1,7 +1,6 @@
 import type { KeyboardEvent } from 'react'
 
-/** Re-dispatches Enter/Space through `.click()` so `onClick` gets a genuine MouseEvent. Pair with
- *  `role="button"` + `tabIndex={0}` on non-<button> elements. */
+/** Re-dispatches Enter/Space through `.click()` so `onClick` gets a genuine MouseEvent. Pair with `role="button"` + `tabIndex={0}` on non-<button> elements. */
 export function onActivateClick(e: KeyboardEvent<HTMLElement>): void {
   if (e.target !== e.currentTarget) return
   if (e.key !== 'Enter' && e.key !== ' ') return

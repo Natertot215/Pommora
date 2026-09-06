@@ -19,10 +19,7 @@ afterEach(async () => {
   await cleanupEditor()
 })
 
-// The title resolves and the alias is a DUPLICATED title, so the two spans disagree about status
-// as well as target. Reading the displayed span instead of the resolve span therefore changes the
-// rendered class and drops the click entirely — a fixture whose spans merely differ in text can't
-// show that, because the displayed text is correct either way.
+// The alias is a DUPLICATED title, so the two spans disagree about status as well as target: reading the displayed span instead of the resolve span changes the rendered class and drops the click entirely.
 const DOC = '[[Alpha|Beta]]'
 const opened = vi.fn()
 const conn: ConnectionsApi = {
@@ -34,15 +31,10 @@ const conn: ConnectionsApi = {
   open: (p: ConnPage) => opened(p.id),
 }
 
-// The same link with prose either side, so there are offsets OUTSIDE the token — `DOC` alone is the
-// whole document, where even 0 sits inside the link and no "caret elsewhere" case can be posed.
-// Token [2,16]; the displayed alias `Beta` is [10,14].
+// Prose either side, so there are offsets OUTSIDE the token — in `DOC` alone even 0 sits inside the link. Token [2,16]; the displayed alias `Beta` is [10,14].
 const PADDED = `x ${DOC} y`
 
-// CM seats the caret on mousedown, so a rule about "was I already editing this" has to be driven by
-// the real order — press, caret moves, click. A bare click() dispatch tests a sequence never run.
-// Re-queried per dispatch: activating the token changes its class, so CM replaces the element and a
-// held reference is detached — an event on it never reaches the editor.
+// CM seats the caret on mousedown, so "was I already editing this" has to be driven by the real order — press, caret moves, click. Re-queried per dispatch: activating the token changes its class, so CM replaces the element and a held reference is detached.
 const linkSpan = (view: EditorView): HTMLElement =>
   view.dom.querySelector('.md-connection-resolved') as HTMLElement
 
@@ -92,8 +84,7 @@ describe('every site resolves an aliased connection by the same span', () => {
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
-  // The table's hover handler reaches a cell connection through the DOM, with no token to ask, so
-  // the resolve key has to travel on the span. Reading its text would resolve the alias instead.
+  // The table's hover handler reaches a cell connection through the DOM, with no token to ask, so the resolve key has to travel on the span. Reading its text would resolve the alias instead.
   it('a cell connection carries its resolve key, not just its text', async () => {
     const host = await renderCell(DOC)
     const el = host.querySelector('.md-connection-resolved') as HTMLElement
@@ -105,15 +96,12 @@ describe('every site resolves an aliased connection by the same span', () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: PADDED, connections: conn })
     await act(async () => view.focus())
-    // Click point and pre-press caret both inside the displayed alias, so only the caret rule can
-    // suppress this — a point on the edge would pass for the wrong reason.
+    // Click point and pre-press caret both inside the displayed alias, so only the caret rule can suppress this — a point on the edge would pass for the wrong reason.
     pressAndClick(view, 12, 12)
     expect(opened).not.toHaveBeenCalled()
   })
 
-  // The cell renderer draws contentRange and skips to the token's end, so the two renderers agree
-  // only while the marker spans tile everything outside it. A degenerate `[[Title|]]` is where that
-  // tiling breaks if the trailing marker is pinned to two characters.
+  // The two renderers agree only while the marker spans tile everything outside contentRange. A degenerate `[[Title|]]` is where that tiling breaks if the trailing marker is pinned to two characters.
   it('an empty alias reads identically at both renderers', async () => {
     const view = await mountEditor({ initialBody: '[[Alpha|]]', connections: conn })
     expect(view.dom.textContent).toBe('Alpha')

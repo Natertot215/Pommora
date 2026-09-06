@@ -12,7 +12,7 @@ describe('docSpanTokens — the parse answers to the doc version and the span se
     const derive = vi.fn(() => tokenize(body))
     const first = docSpanTokens(doc, '0:30', derive)
     const second = docSpanTokens(doc, '0:30', derive)
-    expect(derive).toHaveBeenCalledTimes(1) // a caret move must not pay the mdast parse
+    expect(derive).toHaveBeenCalledTimes(1)
     expect(second).toBe(first)
     expect(first).toEqual(tokenize(body))
   })

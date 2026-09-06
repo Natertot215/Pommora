@@ -12,8 +12,7 @@ import { flushValueWrites } from './valuesChanged'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 
-/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
- *  The type only has to be one the value's kind can hold; the key comes from the name. */
+/** The writer takes a definition, not an id. The type only has to be one the value's kind can hold; the key comes from the name. */
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
   id,
   name: id.replace(/^prop_/, ''),
@@ -50,7 +49,7 @@ describe('createPage', () => {
     await createPage(typeDir, 'Dup')
     expect((await createPage(typeDir, 'Dup')).ok).toBe(false)
     expect((await createPage(typeDir, 'a/b')).ok).toBe(false)
-    expect((await createPage(typeDir, 'Note.md')).ok).toBe(false) // would yield Note.md.md
+    expect((await createPage(typeDir, 'Note.md')).ok).toBe(false)
   })
 
   it('writes resolved values in the birth write; blank values write no key', async () => {
@@ -102,7 +101,6 @@ describe('updatePageBody', () => {
   it('replaces the body and preserves frontmatter incl. foreign keys', async () => {
     const c = await createPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
-    // Inject a foreign frontmatter key to prove it survives a body update.
     const withForeign = assembleEnvelope(
       `${splitEnvelope(await readFile(c.value.path, 'utf8')).frontmatter}\nplugin_key: keep`,
       'one',

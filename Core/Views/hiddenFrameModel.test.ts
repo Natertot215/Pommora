@@ -46,7 +46,6 @@ describe('hiddenListIds', () => {
 
   it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
     const schema = [def('a'), def('b')]
-    // a is shown; b was added to the collection after the view existed → hidden, not lost
     expect(hiddenListIds(view(['a'], []), schema)).toEqual(['b', ...stamps])
   })
 
