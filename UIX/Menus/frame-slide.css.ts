@@ -1,37 +1,27 @@
 import { style } from '@vanilla-extract/css'
 import { duration, easing } from '../Animations'
 
-/** Clips the off-screen slot so the sliding panes stay inside the glass bounds. */
 export const viewport = style({ position: 'relative', overflow: 'hidden' })
 
-/** Idle: only WIDTH eases. Height tracks the measured content instantly, so an in-place growth (a
- *  Reveal unfolding, the elastic spacer collapsing) is owned by the child's own animation — the
- *  viewport just wraps it each frame instead of chasing a moving target with a lagging transition
- *  (the bounce). */
+/** Width only: height must track measured content instantly or it lag-chases an in-place growth. */
 export const viewportAnimated = style({
   transition: `width ${duration.base} ${easing.baseEase}`,
 })
 
-/** Navigation window only: height joins the ease so a slot-flip resizes in lockstep with the slide.
- *  Defined after `viewportAnimated` so, applied together, its width+height transition wins the tie. */
+/** Defined after `viewportAnimated` so, applied together, its width+height transition wins the tie. */
 export const viewportNav = style({
   transition: `width ${duration.base} ${easing.baseEase}, height ${duration.base} ${easing.baseEase}`,
 })
 
-/** Slots laid out left-to-right at their own size; top-aligned so each keeps its own height (not the taller one's). */
+/** Top-aligned so each slot keeps its own height, not the taller one's. */
 export const track = style({ display: 'flex', alignItems: 'flex-start' })
 export const trackAnimated = style({ transition: `transform ${duration.base} ${easing.baseEase}` })
 
-/** Each slot shrink-wraps its content (a column whose rows/dividers stretch to the widest row). */
 export const slot = style({ flex: '0 0 auto', display: 'flex', flexDirection: 'column' })
 
-/** A settled off-screen slot must not paint. The track is shifted by a measured width, and any
- *  disagreement between that shift and the slot's true edge leaves its neighbor showing as a
- *  hairline down the viewport's leading edge. Hidden rather than unmounted or `display:none`, so the
- *  slot keeps its box and the size observer still reads it. Only while settled — both slots paint
- *  through the slide, or the outgoing one would vanish instead of leaving. */
+/** Hidden rather than unmounted or `display:none`, so the slot keeps the box the size observer
+ *  reads; only while settled, or the outgoing slot would vanish instead of leaving. */
 export const slotIdle = style({ visibility: 'hidden' })
 
-/** The measured content box — the ResizeObserver watches this, so the min floors ride it (never the
- *  slot), and a slot's own MenuScrollFrame caps/scrolls within it. */
+/** The measured box the ResizeObserver watches, so the min floors ride it and never the slot. */
 export const slotContent = style({ flex: '0 0 auto', display: 'flex', flexDirection: 'column' })
