@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { nearestByTop, useInsertionDrag } from './insertionDrag'
-import type { MeasuredRow } from './reorderModel'
+import { type MeasuredRow, nextOrder, slotInGroup } from './reorderModel'
 import { DROP_LINE_INSET } from './shared'
 
 // This file owns the hit-testing only; the commits live in TableView and are passed in.
@@ -93,12 +93,9 @@ export function TableRowDnd({
       if (targetGroup === activeGroup) {
         if (!canReorderWithin) return null
         const order = rows.map((x) => x.id)
-        const beforeId = above ? near.id : (order[order.indexOf(near.id) + 1] ?? null)
-        const without = order.filter((x) => x !== id)
-        const idx = beforeId ? without.indexOf(beforeId) : without.length
-        const next = [...without.slice(0, idx), id, ...without.slice(idx)]
+        const next = nextOrder(order, id, slotInGroup(order, near, point.y, id).beforeId)
         // A slot reproducing the standing order is a noop — no line, no commit.
-        if (next.length === order.length && next.every((x, i) => x === order[i])) return null
+        if (next.every((x, i) => x === order[i])) return null
         return { lineY, left, width, commit: () => reorderTo(next, activeGroup, id) }
       }
       // Under location grouping the bands are folders, so a cross-band drop moves the page.

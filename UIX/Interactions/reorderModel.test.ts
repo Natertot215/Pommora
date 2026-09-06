@@ -44,4 +44,10 @@ describe('slotInGroup — insertion slot over a same-group sibling', () => {
       edge: 120,
     })
   })
+  it('crossing: that same slot fed to nextOrder is the standing order — the drop is a noop', () => {
+    const order = ['a', 'b', 'c']
+    expect(nextOrder(order, 'c', slotInGroup(order, row('b', 100), 115, 'c').beforeId)).toEqual(
+      order,
+    )
+  })
 })

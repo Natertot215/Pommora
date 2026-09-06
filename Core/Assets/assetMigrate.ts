@@ -16,7 +16,12 @@ import {
 import { corpusFiles, listEntries, listFilesRecursive } from '../IO/walk'
 import { trashFileFlat } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
-import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
+import {
+  readWatchScope,
+  updateCrops,
+  updateNexusConfig,
+  updateSettings,
+} from '../Settings/settings'
 import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
@@ -70,13 +75,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     owner: 'Homepage Banner',
     read: async () => (await readJsonObject(homeFile))?.banner,
     write: async (link) =>
-      (
-        await rmwJsonStrict(
-          homeFile,
-          (cur) => ({ ...cur, banner: link }),
-          () => ({}),
-        )
-      ).ok,
+      (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })
   for (const file of await sidecarsUnder(root)) {
     refs.push({

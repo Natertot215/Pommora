@@ -20,6 +20,9 @@ import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
 
+const noShape = (name: string): Result<never> =>
+  fail('invalid-property', `"${name}" was given a value it has no shape for.`)
+
 export async function createPage(
   parentDir: string,
   name: string,
@@ -38,9 +41,10 @@ export async function createPage(
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
     if (isBlankValue(value)) continue
-    const key = def.name
-    modeled[key] = encodeValue(value)
-    keys.push(key)
+    const encoded = encodeValue(value)
+    if (encoded === undefined) return noShape(def.name)
+    modeled[def.name] = encoded
+    keys.push(def.name)
   }
   await writePageFile(file, modeled, keys, opts.body ?? '')
   return ok({ id, path: file })
@@ -102,13 +106,7 @@ export async function updatePageProperty(
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
   const key = def.name
   const clear = value === null || isBlankValue(value)
-  return ok(
-    await setGovernedRootKeys(
-      root,
-      absFile,
-      clear ? {} : { [key]: encodeValue(value) },
-      [key],
-      world,
-    ),
-  )
+  const encoded = clear ? undefined : encodeValue(value)
+  if (!clear && encoded === undefined) return noShape(key)
+  return ok(await setGovernedRootKeys(root, absFile, clear ? {} : { [key]: encoded }, [key], world))
 }

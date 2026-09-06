@@ -7,6 +7,7 @@ import { splitFrontmatter } from '../IO/pageFile'
 import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from '../Locations/paths'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
+import { updateNexusConfig } from '../Settings/settings'
 import { adoptImageSource, dropReplacedAsset } from '../Assets/adoptFile'
 import { assetFileToDelete } from '../Assets/assetRoots'
 import { fault, ok, type Result } from '../Contract/result'
@@ -48,10 +49,8 @@ export async function setBannerOp(
   }
 
   let cfgPath: string
-  let seed: (() => Record<string, unknown>) | undefined
   if (req.kind === 'homepage') {
     cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
-    seed = () => ({})
   } else {
     const resolved = await resolveUnderRoot(root, req.path)
     if (!resolved.ok) return resolved
@@ -61,11 +60,12 @@ export async function setBannerOp(
   const prev = await assetFileToDelete(root, (await readJsonObject(cfgPath))?.banner)
   const adopted = await adopt()
   if (!adopted.ok) return adopted
-  const written = await rmwJsonStrict(
-    cfgPath,
-    (cur) => setOrDrop(cur, 'banner', adopted.value),
-    seed,
-  )
+  const patch = (cur: Record<string, unknown>): Record<string, unknown> =>
+    setOrDrop(cur, 'banner', adopted.value)
+  const written =
+    req.kind === 'homepage'
+      ? await updateNexusConfig(root, 'homepage', patch)
+      : await rmwJsonStrict(cfgPath, patch)
   if (!written.ok) return written
   await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
   return landed(adopted.value)
