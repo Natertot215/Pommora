@@ -38,7 +38,7 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 #### Post-v1
 
-No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`, and the restructure seated the `Mobile` and `Sync` workspaces they build into.
+No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`.
 
 ---
 

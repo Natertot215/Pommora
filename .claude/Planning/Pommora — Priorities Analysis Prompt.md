@@ -13,7 +13,7 @@ READ FIRST, IN THIS ORDER
 2. `.claude/ContextPM.md` — Current Focus, Immediate Work, Pending Focuses, Important Information, Known Issues, Recent Work. This is where the work stands and what Nathan has already flagged.
 3. `.claude/FrameworkPM.md` — the roadmap, completed and upcoming, and the prospects.
 4. `.claude/HistoryPM.md` — the index alone first (129 entries), then the last fifteen entries in full. The shape of what has been built recently tells you what the codebase has been optimized for.
-5. `.claude/Features/` — every doc's first-line `**Workspace:**` tag and its headings, then `CorePM.md`, `DesktopPM.md`, `DesignSystemPM.md`, and the two or three that cover whatever you end up going deep on.
+5. `.claude/Features/` — every doc's headings, then `CorePM.md`, `DesktopPM.md`, `DesignSystemPM.md`, and the two or three that cover whatever you end up going deep on.
 6. `.claude/Planning/` — `TilesV2-Spec.md` (the standing spec for the inspector arc), the two Mobile Companion documents, `PommoraPRD.md`, and `Pommora Monorepo — Delivery Claim.md`'s "Deviations and Open Items" plus "Not Done" sections (the restructure's own residue, already enumerated — do not re-derive it).
 7. `.claude/Guidelines/` — all four. A guideline exists because something went wrong once.
 8. The tree itself: `find Core UIX Desktop -maxdepth 2 -type d`, the root `package.json`, and `python3 .claude/scripts/loc.py` for where the mass sits.

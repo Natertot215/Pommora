@@ -1,6 +1,5 @@
 ## MarkdownPM
 
-**Workspace:** Core
 
 Pommora's Markdown editor, and the surface every Page body is written in. It behaves like a rich editor — styled headings, real bullets, rendered tables, live embeds — while the file underneath stays plain CommonMark and GFM. The syntax you type is exactly what gets saved, and everything the editor draws on top of it is presentation that never touches the disk, so a Page opened in any other Markdown tool reads as the same document. The editor also hosts the constructs Pommora adds on top of the standard: connections between pages, callouts, page and webpage embeds, and footnotes that number themselves.
 
@@ -105,12 +104,12 @@ The editor's design vocabulary is defined in one stylesheet as scoped custom-pro
 
 The root of everything: one size factor for structure, one derived factor for glyphs. `--tile-zoom` is a registered `<number>` so a tile's inline Scale interpolates.
 
-| Title | Token | Value · Scope |
-| --- | --- | --- |
-| Page Detail Factor | `--page-detail-scale` | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
-| Per-Tile Zoom | `@property --tile-zoom` | `<number>`, inherits, initial `1` |
-| Glyph Scale | `--glyph-scale` | `calc(var(--page-detail-scale) * var(--tile-zoom, 1))` · `.mdpm-shell` |
-| Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell` |
+| Title              | Token                   | Value · Scope                                                                   |
+| ------------------ | ----------------------- | ------------------------------------------------------------------------------- |
+| Page Detail Factor | `--page-detail-scale`   | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
+| Per-Tile Zoom      | `@property --tile-zoom` | `<number>`, inherits, initial `1`                                               |
+| Glyph Scale        | `--glyph-scale`         | `calc(var(--page-detail-scale) * var(--tile-zoom, 1))` · `.mdpm-shell`          |
+| Fold Chevron Size  | `--fold-chevron-size`   | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell`          |
 
 #### II. Header, Banner & Title
 

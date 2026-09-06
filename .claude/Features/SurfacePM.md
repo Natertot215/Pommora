@@ -1,6 +1,5 @@
 ## SurfacePM
 
-**Workspace:** Core
 
 A **surface** is what an embedded-tile host renders: real content — prose, a Page, a view, a webpage — inside one chassis, whether that chassis sits in a dashboard grid, on a page as an embed, in a floating window, or in the glance pane. The doc covers the embed framework every host renders through, the tile base they share, and **Tiles**, the composable dashboard layer that arranges surfaces into a mosaic: any **tile host** — an entity that owns a tile document — renders draggable, resizable tiles, and two hosts exist today, the Homepage and each Space. The layout engine beneath is `Core/Tiles/Layout/`, a pure split-tree model — the codec that reads and writes a layout, the split and resize operations, edge and rect geometry, hit-testing, and snapping, each tested on its own; the surfaces live alongside it in `Core/Tiles/Surfaces/`, and the engine knows nothing about what a tile holds or where the tree persists — hosts supply both through one props seam.
 

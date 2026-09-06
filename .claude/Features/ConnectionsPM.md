@@ -1,6 +1,5 @@
 ## Connections
 
-**Workspace:** Core
 
 A **Connection** is a link from one Page to another, written in the page's Markdown body. Two syntaxes spell one — the wikilink `[[Title]]` and the Markdown link `[Alias](Title)` whose target names a page — and the word covers both. A connection may also be held as the whole value of a Link property, where it reads as a connection rather than an address. Connections are the only page-to-page relation Pommora has; Contexts are the relation layer, and there is no relation-type property. 
 

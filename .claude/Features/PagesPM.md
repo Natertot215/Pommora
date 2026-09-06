@@ -1,6 +1,5 @@
 ## Pages
 
-**Workspace:** Core
 
 A Page is one Markdown file inside a Collection — the operational entity that holds free prose. It is a single Markdown file with YAML frontmatter for identity — keyed via `ID:` — and property values above a Markdown body, edited in MarkdownPM. Membership is by location: a file inside a Collection, or inside one of its Sets at any depth, is a Page of that Collection and conforms to that Collection's property schema, with no container field of its own. The body is portable Markdown and accessed via MarkdownPM, which can hold internal and external embeddings, as well as Connections to other Pages. Per-page interface state — heading folds, the header icon's visibility, per-table heading-column choices, the footnotes override, embedded tile heights and scaling factors — are persisted per-machine in `nexus.db`, and keyed by `ID:`.
 

@@ -1,14 +1,13 @@
 ## Desktop
 
-**Workspace:** Desktop
 
-The Electron host: the process that owns the machine, the window it draws into, and everything true only because Pommora is running as a desktop app. Core is the engine it mounts and knows nothing of Electron; this document covers the host around it. Per-domain depth lives in each domain's own document.
+What is true only because Pommora is running as a desktop app: the process that owns the machine, the window it draws into, native menus, the file watcher, and packaging. Per-domain depth lives in each domain's own document.
 
 ### The Shape of the App
 
-Two programs share one window. The **host** (`Desktop/main.ts`) is the one that touches the computer: it creates the window, registers the `nexus-asset://` protocol, holds the single-instance lock, pops native menus, and implements the machine seam Core reads and writes files through. The **window** is the React app: Core's interface plus the UIX kit, drawing everything and holding the working state, unable to touch a file directly. Between them sits a deliberately narrow **bridge** (`Desktop/Bridge`, typed by `Core/Contract/bridge.ts`): the window asks, the host answers, and every ask is declared in one shared contract both sides compile against.
+Two programs share one window. The **host** (`Desktop/main.ts`) is the one that touches the computer: it creates the window, registers the `nexus-asset://` protocol, holds the single-instance lock, pops native menus, and implements the machine seam Core reads and writes files through. The **window** is the React app, drawing everything and holding the working state, unable to touch a file directly. Between them sits a deliberately narrow **bridge** (`Desktop/Bridge`, typed by `Core/Contract/bridge.ts`): the window asks, the host answers, and every ask is declared in one shared contract both sides compile against.
 
-**Platform.** `Desktop/Platform` implements Core's machine seam — `nodeMachine.ts` for the filesystem over `node:fs`, `fileLock.ts` for the cross-process advisory lock. Nothing else in the repository imports `node:` or `electron` outside `Desktop/`.
+**Platform.** `Desktop/Platform` implements Core's machine seam — `nodeMachine.ts` for the filesystem over `node:fs`, `fileLock.ts` for the cross-process advisory lock.
 
 **Bridge.** Every channel is declared once, in a types-only map (`Core/Contract/bridge.ts`): its direction, what it carries, and what it answers with. `Desktop/Bridge/preload.ts` derives the whole `window.nexus` dialer from that map with one dialer per declared name, and `ipc.ts` registers every handler through one loop that demands a handler per channel, so a channel on only one side or a drifted signature is a build error. Requests that read or write data always answer with the `Result` envelope — the value, or a structured refusal naming what went wrong — and never throw across the boundary; a few channels answer more plainly, such as a menu resolving to the action chosen or to nothing, and each declares that beside itself.
 
@@ -44,4 +43,4 @@ Right-click menus are native and pop from the host. `rowMenu.ts` is the one popp
 
 ### Renderer
 
-`Desktop/Renderer` is the entry point alone: `index.html`, `main.tsx` mounting Core's `App`, the drag-region style, and the Vite environment types. Everything it mounts is host-neutral.
+`Desktop/Renderer` is the entry point alone: `index.html`, `main.tsx` mounting Core's `App`, the drag-region style, and the Vite environment types.

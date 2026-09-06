@@ -1,6 +1,5 @@
 ## Properties
 
-**Workspace:** Core
 
 Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A definition, its options included, is one shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property. Page Sets carry no schema of their own and inherit the Collection's.
 

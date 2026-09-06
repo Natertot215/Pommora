@@ -1,6 +1,5 @@
 ## View Types
 
-**Workspace:** Core
 
 A view is a saved presentation of a Collection's or a depth-1 Set's Pages. It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view types are registered in `Core/Views/views.ts` — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — of which Table and Cards have renderers; the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.
 

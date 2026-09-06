@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**The monorepo landed.** The repository is six workspaces at its root — `Core` (Pommora itself, one folder per thing it has), `UIX` (the design kit), `Desktop` (Electron), `Mobile` and `Sync` (seated, no code), and `Showcase`. Core reaches a machine only through `Core/Platform`, `Core/Contract` is the one channel table both sides derive from, and `Desktop/` is the only place Node and Electron are called. Along the way the 26 menu channels collapsed to one, the editor took an `EditorHost` from its mounter, the two write-path bugs were fixed, and the line count fell. Gates run from the repo root: `npm run typecheck && npm run test && npm run lint && npm run build`. Dev is `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the root; the built binary is `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333`.
+**The restructure landed.** The app is filed as `Core`, `UIX`, and `Desktop`, with every Node and Electron call behind `Core/Platform` and the desktop host, and one channel table both sides derive from. Along the way the 26 menu channels collapsed to one, the editor took an `EditorHost` from its mounter, the two write-path bugs were fixed, and the line count fell. Gates run from the repo root: `npm run typecheck && npm run test && npm run lint && npm run build`. Dev is `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the root; the built binary is `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333`.
 
 The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
@@ -88,7 +88,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-129 || The Repo Restructure
 **DATE:** 09-05-2026 → 09-06
 
-The repository became six workspaces at its root, `Core` filed by domain with every Node and Electron call behind `Core/Platform` and `Desktop/`, `Core/Contract` the one channel table, every list menu on one path, the editor on an `EditorHost`, and the comments, duplicates, and dead paths cut across the tree. The code lines fell from 69,459 to 68,679 on the run's counter and by 1,002 on a count that excludes test harnesses; the documentation was reconciled on a fixed character budget.
+The app was refiled as `Core`, `UIX`, and `Desktop`, with every Node and Electron call behind `Core/Platform` and the desktop host, one channel table, every list menu on one path, the editor on an `EditorHost`, and the comments, duplicates, and dead paths cut across the tree. The code lines fell from 69,459 to 68,679 on the run's counter and by 1,002 on a count that excludes test harnesses; the documentation was reconciled on a fixed character budget.
 
 #### PM-128 || Tiles
 **DATE:** 09-05-2026
