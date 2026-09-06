@@ -2,28 +2,16 @@ import { useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON } from '../../Assets/entityIconPolicy'
 import { ICON_PX, type IconSize } from '@pommora/uix/Theme/theme-vars.css'
-import { IconChoice } from '../../Assets/IconChoice'
-import { ImagePicker } from '../../Assets/ImagePicker'
+import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
 import * as s from './nexus-header.css'
 
 export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
-  const {
-    profileImage,
-    profileIcon,
-    openMenu,
-    editing,
-    closeEditor,
-    onSave,
-    onRepick,
-    pickerOpen,
-    setPickerOpen,
-    selectGlyph,
-  } = useNexusIcon()
+  const icon = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
-  const photoUrl = useAssetUrl(profileImage)
+  const photoUrl = useAssetUrl(icon.profileImage)
   const px = ICON_PX[size]
   const dim = { width: px, height: px }
   return (
@@ -35,32 +23,17 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
         style={dim}
         onContextMenu={(e) => {
           e.preventDefault()
-          void openMenu()
+          void icon.openMenu()
         }}
         title="Right-click to set an icon or photo"
       >
         {photoUrl ? (
-          <AssetImage value={profileImage} />
+          <AssetImage value={icon.profileImage} />
         ) : (
-          <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
+          <Icon name={icon.profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
         )}
       </span>
-      <IconChoice
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        triggerRef={ref}
-        value={profileIcon}
-        onSelect={selectGlyph}
-      />
-      <ImagePicker
-        open={editing}
-        value={profileImage ?? ''}
-        shape="circle"
-        boxAspect={1}
-        onCancel={closeEditor}
-        onSave={onSave}
-        onRepick={onRepick}
-      />
+      <NexusIconEditors icon={icon} triggerRef={ref} />
     </>
   )
 }

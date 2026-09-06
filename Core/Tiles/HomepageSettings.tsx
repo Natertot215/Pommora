@@ -6,10 +6,9 @@ import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON } from '../Assets/entityIconPolicy'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { AssetImage } from '../Assets/AssetImage'
-import { ImagePicker } from '../Assets/ImagePicker'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { FooterLockButton, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
-import { IconChoice } from '../Assets/IconChoice'
+import { NexusIconEditors } from '../Assets/NexusIconEditors'
 import { useNexusIcon } from '../Assets/useNexusIcon'
 import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 
@@ -23,20 +22,9 @@ export function SettingsScaffold(): React.JSX.Element | null {
   const locked = useSession((st) => st.hostLocks[tileHostKey(HOMEPAGE_HOST)] ?? false)
   const setHostLock = useSession((st) => st.setHostLock)
   const setLocked = (v: boolean): void => setHostLock(HOMEPAGE_HOST, v)
-  const {
-    profileImage,
-    profileIcon,
-    openMenu,
-    editing,
-    closeEditor,
-    onSave,
-    onRepick,
-    pickerOpen,
-    setPickerOpen,
-    selectGlyph,
-  } = useNexusIcon()
+  const icon = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
-  const photoUrl = useAssetUrl(profileImage)
+  const photoUrl = useAssetUrl(icon.profileImage)
   if (!tree || selection.kind !== 'homepage') return null
 
   return (
@@ -62,34 +50,19 @@ export function SettingsScaffold(): React.JSX.Element | null {
             size="button-medium"
             paddingX="0"
             className={s.iconButton}
-            onClick={() => void openMenu()}
+            onClick={() => void icon.openMenu()}
             aria-label="Change the nexus icon or photo"
           >
             {photoUrl ? (
-              <AssetImage value={profileImage} className={s.headerPhotoImg} />
+              <AssetImage value={icon.profileImage} className={s.headerPhotoImg} />
             ) : (
-              <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} />
+              <Icon name={icon.profileIcon ?? DEFAULT_NEXUS_ICON} />
             )}
           </Button>
           <InputField className={s.titleField}>{tree.nexus.name}</InputField>
         </div>
       </MenuScrollFrame>
-      <IconChoice
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        triggerRef={iconRef}
-        value={profileIcon}
-        onSelect={selectGlyph}
-      />
-      <ImagePicker
-        open={editing}
-        value={profileImage ?? ''}
-        shape="circle"
-        boxAspect={1}
-        onCancel={closeEditor}
-        onSave={onSave}
-        onRepick={onRepick}
-      />
+      <NexusIconEditors icon={icon} triggerRef={iconRef} />
     </>
   )
 }

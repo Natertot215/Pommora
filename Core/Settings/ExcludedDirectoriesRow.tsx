@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { PathField } from '@pommora/uix/Fields/PathField'
-import { MenuRowView } from '@pommora/uix/Menus'
+import { SettingsFieldRow } from './SettingsFieldRow'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
@@ -86,67 +86,57 @@ export function ExcludedDirectoriesRow({
   )
 
   return (
-    <MenuRowView
-      row={{
-        kind: 'item',
-        label,
-        caption: hint,
-        trailing: {
-          kind: 'field',
-          children: (
-            <span className={x.manageCluster}>
-              <span className={x.count}>{stored.length}</span>
+    <SettingsFieldRow label={label} hint={hint}>
+      <span className={x.manageCluster}>
+        <span className={x.count}>{stored.length}</span>
+        <Button
+          ref={triggerRef}
+          type="filled"
+          label="Manage"
+          pressed={open}
+          onClick={() => setOpen((o) => !o)}
+        />
+        <PickerMenu
+          open={open}
+          onDismiss={dismiss}
+          triggerRef={triggerRef}
+          bareSurface
+          style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
+        >
+          <div className={x.paneList}>
+            {stored.map((folder) => (
+              <Reveal key={folder} open enterOnMount={entering(folder)} fill>
+                {fieldRow(
+                  folder,
+                  (next) => rename(folder, next),
+                  () => void commit(stored.filter((f) => f !== folder)),
+                  folder,
+                )}
+              </Reveal>
+            ))}
+            {drafting ? (
+              <Reveal open enterOnMount fill key="draft">
+                {fieldRow(
+                  '',
+                  (n) => void commitDraft(n),
+                  () => setDrafting(false),
+                  'draft',
+                )}
+              </Reveal>
+            ) : null}
+            <div className={x.addRow}>
               <Button
-                ref={triggerRef}
-                type="filled"
-                label="Manage"
-                pressed={open}
-                onClick={() => setOpen((o) => !o)}
+                icon="plus"
+                label="Add Exclusion"
+                className={x.addButton}
+                paddingX="0"
+                disabled={drafting || busy}
+                onClick={() => setDrafting(true)}
               />
-              <PickerMenu
-                open={open}
-                onDismiss={dismiss}
-                triggerRef={triggerRef}
-                bareSurface
-                style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
-              >
-                <div className={x.paneList}>
-                  {stored.map((folder) => (
-                    <Reveal key={folder} open enterOnMount={entering(folder)} fill>
-                      {fieldRow(
-                        folder,
-                        (next) => rename(folder, next),
-                        () => void commit(stored.filter((f) => f !== folder)),
-                        folder,
-                      )}
-                    </Reveal>
-                  ))}
-                  {drafting ? (
-                    <Reveal open enterOnMount fill key="draft">
-                      {fieldRow(
-                        '',
-                        (n) => void commitDraft(n),
-                        () => setDrafting(false),
-                        'draft',
-                      )}
-                    </Reveal>
-                  ) : null}
-                  <div className={x.addRow}>
-                    <Button
-                      icon="plus"
-                      label="Add Exclusion"
-                      className={x.addButton}
-                      paddingX="0"
-                      disabled={drafting || busy}
-                      onClick={() => setDrafting(true)}
-                    />
-                  </div>
-                </div>
-              </PickerMenu>
-            </span>
-          ),
-        },
-      }}
-    />
+            </div>
+          </div>
+        </PickerMenu>
+      </span>
+    </SettingsFieldRow>
   )
 }
