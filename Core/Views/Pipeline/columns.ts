@@ -1,9 +1,7 @@
 // Column resolver. A schema property OR a context column shows iff it's in propertyOrder AND
 // not hidden — one allowlist, so a property added to a collection after a view already exists
 // AND a Context created after the view stay hidden until the user reveals them (creation never
-// visually changes an existing view). Title is always guaranteed. React divergences: emits only
-// {id, kind} — column width and the group/sort hoist before Title are render concerns.
-// Pure: no fs, no React.
+// visually changes an existing view).
 
 import type { ColumnKind, ResolvedColumn } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -21,7 +19,7 @@ function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
 
 /** Visible columns: propertyOrder verbatim, hidden skipped, stale ids (a dropped prop_* reference
  *  or a deleted Context) dropped — only a 'property' kind can be stale, since every other kind is
- *  the classification itself. A column shows ONLY if listed here — never auto-appended. */
+ *  the classification itself.*/
 function visibleColumns(
   view: SavedView,
   schema: PropertyDefinition[],

@@ -6,26 +6,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SavedView } from '@pommora/core/Views/views'
 import { type Band, propertyOrderAfterDrop, structuralOrderAfterDrop } from './bandDndModel'
 
-/** Which bands a view is showing — its grouping kind, and the property a property grouping keys on.
- *  Deliberately blind to the ORDER within that grouping, since a reorder must not retire its own
- *  optimistic patch. */
+/** Which bands a view is showing — its grouping kind, and the property a property grouping keys on.*/
 export function groupingKeyOf(view: SavedView): string {
   const g = view.group
   return g?.kind === 'property' ? `property:${g.property_id}` : (g?.kind ?? 'structural')
 }
 
 /** The patch a reorder drop writes, for the two band kinds every view renders. Null when the drop
- *  asks for something the current grouping can't express. A structural reorder under Location order
- *  is the one case with no patch to make — the filesystem IS the order there, so the caller writes
- *  it instead. */
+ *  asks for something the current grouping can't express. */
 export function bandReorderPatch(input: {
   dragged: Band
   beforeId: string | null
   view: SavedView
-  /** Every structural set id in tree order, collapsed subtrees included — the universe the order
-   *  merges against, so a filtered-out or folded sibling never loses its rank. */
   structuralIds: string[]
-  /** The property band keys present, in display order. */
   propertyKeys: string[]
 }): Partial<SavedView> | null {
   const { dragged, beforeId, view, structuralIds, propertyKeys } = input

@@ -20,7 +20,7 @@ afterEach(async () => {
 describe('setGovernedRootKeys', () => {
   it('writes one governed key and preserves foreign keys and comments', async () => {
     await writeFile(page, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'])
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
     expect(out).toContain('# keep me')
@@ -32,7 +32,7 @@ describe('setGovernedRootKeys', () => {
     await writeFile(page, '---\nid: p1\nStatus: Done\n---\nbody\n')
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(page, past, past)
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'])
     expect(Math.floor((await stat(page)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
@@ -41,7 +41,7 @@ describe('setGovernedRootKeys', () => {
       page,
       '---\nid: p1\n# keep\nStatus: Active\nDue: 2026-08-01\n<Projects>:\n  - Pommora\n---\n',
     )
-    await setGovernedRootKeys(page, { Status: 'Live' }, ['Status'])
+    await setGovernedRootKeys(dir, page, { Status: 'Live' }, ['Status'])
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Live')
     expect(out).toContain('Due: 2026-08-01')
@@ -51,19 +51,19 @@ describe('setGovernedRootKeys', () => {
 
   it('a governed key absent from the next values is deleted — that is how a clear is said', async () => {
     await writeFile(page, '---\nid: p1\nStatus: Active\n---\n')
-    await setGovernedRootKeys(page, {}, ['Status'])
+    await setGovernedRootKeys(dir, page, {}, ['Status'])
     expect(await readFile(page, 'utf8')).not.toContain('Status')
   })
 
   it('a Context unassign deletes its key too', async () => {
     await writeFile(page, '---\nid: p1\n<Projects>:\n  - Pommora\n---\n')
-    await setGovernedRootKeys(page, {}, ['<Projects>'])
+    await setGovernedRootKeys(dir, page, {}, ['<Projects>'])
     expect(await readFile(page, 'utf8')).not.toContain('<Projects>')
   })
 
   it('writes no modified_at — a legacy one survives as foreign frontmatter', async () => {
     await writeFile(page, '---\nid: p1\nmodified_at: 2020-01-01T00:00:00.000Z\n---\n')
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'])
     const out = await readFile(page, 'utf8')
     expect(out).toContain('modified_at: 2020-01-01T00:00:00.000Z')
     expect(out.match(/modified_at/g)).toHaveLength(1)
@@ -71,7 +71,10 @@ describe('setGovernedRootKeys', () => {
 
   it('writes the key plain — neither glyph needs quoting', async () => {
     await writeFile(page, '---\nid: p1\n---\n')
-    await setGovernedRootKeys(page, { Status: 'Done', '<Areas>': ['Work'] }, ['Status', '<Areas>'])
+    await setGovernedRootKeys(dir, page, { Status: 'Done', '<Areas>': ['Work'] }, [
+      'Status',
+      '<Areas>',
+    ])
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
     expect(out).toContain('<Areas>:')
@@ -108,7 +111,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\nPriority: High\n---\nbody\n')
-    await setGovernedRootKeys(page, {}, ['<Areas>'], world)
+    await setGovernedRootKeys(dir, page, {}, ['<Areas>'], world)
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Areas')
     expect(out).toContain('Priority:\n  - High')
@@ -116,7 +119,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('a clear deletes its key while a drifted sibling is repaired', async () => {
     await writeFile(page, '---\nid: p1\nPriority:\n  - High\nStatus: Open\n---\nbody\n')
-    await setGovernedRootKeys(page, {}, ['Priority'], world)
+    await setGovernedRootKeys(dir, page, {}, ['Priority'], world)
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Priority')
     expect(out).toContain('Status:\n  - Open')
@@ -130,7 +133,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
       select_options: [{ value: 'alpha', label: 'alpha' }],
     }
     await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')
-    const adoptions = await setGovernedRootKeys(page, { Status: ['Open'] }, ['Status'], {
+    const adoptions = await setGovernedRootKeys(dir, page, { Status: ['Open'] }, ['Status'], {
       ...world,
       defs: new Map([['Tags', tags]]),
     })

@@ -17,6 +17,7 @@ import { isColorKey } from '@pommora/uix/Theme/theme'
 import { ok, fail, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Locations/ids'
+import { createDisambiguated } from '../Locations/disambiguate'
 import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
 import { isMarkdownFile, listEntries } from '../IO/walk'
 import { machine } from '../Platform/machine'
@@ -136,7 +137,10 @@ export async function setPageContext(
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
     return ok(
-      await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], { ...world, defs }),
+      await setGovernedRootKeys(root, absFile, value ? { [key]: value } : {}, [key], {
+        ...world,
+        defs,
+      }),
     )
   })
   if (!adoptions.ok) return adoptions
@@ -218,21 +222,21 @@ export async function createContextGroup(
   // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently
   // share one folder with the existing group.
   const taken = new Set(reg.value.contexts.map((c) => normalizeTitle(c.title)))
-  let title = name
-  for (let n = 2; taken.has(normalizeTitle(title)) && n <= 50; n++) title = `${name} ${n}`
-  if (taken.has(normalizeTitle(title))) return fail('exists', `"${name}" already exists.`)
-  const id = newId()
-  const written = await mutateRegistryFile(root, (cur) => {
-    if (cur.contexts.some((c) => c.title === title)) return cur
-    // No icon: a fresh group resolves to the kind's glyph and follows a nexus default.
-    // Stamping one would outrank that override forever.
-    return { contexts: [...cur.contexts, { id, title }] }
+  return createDisambiguated(name, async (title) => {
+    if (taken.has(normalizeTitle(title))) return fail('exists', `"${title}" already exists.`)
+    const id = newId()
+    const written = await mutateRegistryFile(root, (cur) => {
+      if (cur.contexts.some((c) => c.title === title)) return cur
+      // No icon: a fresh group resolves to the kind's glyph and follows a nexus default.
+      // Stamping one would outrank that override forever.
+      return { contexts: [...cur.contexts, { id, title }] }
+    })
+    if (!written.ok) return written
+    if (!written.value.contexts.some((c) => c.id === id))
+      return fail('exists', `"${title}" already exists.`)
+    await machine().mkdir(join(contextsDir(root), title))
+    return ok({ id, path: contextDirRel(title) })
   })
-  if (!written.ok) return written
-  if (!written.value.contexts.some((c) => c.id === id))
-    return fail('exists', `"${title}" already exists.`)
-  await machine().mkdir(join(contextsDir(root), title))
-  return ok({ id, path: contextDirRel(title) })
 }
 
 export async function createSpace(

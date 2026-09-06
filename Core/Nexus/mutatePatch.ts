@@ -3,7 +3,12 @@
 // disk re-read through the walk's own readers — and the caller pushes when the tree object
 // moved. A write with no patch degrades to one verification walk, never a silently stale tree.
 
-import type { BannerOwnerKind, MutableKind, MutateRequest } from '../Pages/mutateRequest'
+import type {
+  BannerOwnerKind,
+  MutableKind,
+  MutateOutcome,
+  MutateRequest,
+} from '../Pages/mutateRequest'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   insertCreatedInTree,
@@ -32,11 +37,6 @@ import {
   patchTopOrderFromDisk,
 } from './watchPatch'
 import { CONTEXTS_DIR_REL } from '../Locations/nexusPaths'
-
-export interface MutateOutcome {
-  created?: { id: string; path: string }
-  renamed?: { path: string; name: string }
-}
 
 /** The pure-transform arms — the request (plus what actually landed) carries the whole fact.
  *  `'no-change'` means a value write or a trash-internal write cannot move the tree, so the

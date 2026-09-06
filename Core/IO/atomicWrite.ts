@@ -99,6 +99,19 @@ export function rmwJsonStrict(
   })
 }
 
+/** A JSON field written when the value is truthy and removed when it is not — the shape every
+ *  sidecar and config RMW wants. */
+export function setOrDrop(
+  cur: Record<string, unknown>,
+  key: string,
+  value: unknown,
+): Record<string, unknown> {
+  const next = { ...cur }
+  if (value) next[key] = value
+  else delete next[key]
+  return next
+}
+
 export function rewritePageSerialized(
   file: string,
   rewrite: (content: string) => string | null,

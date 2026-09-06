@@ -9,13 +9,13 @@ import {
   survivingChanges,
   type GovernedWorld,
 } from '../Properties/contextResolve'
-import { readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
+import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../IO/walk'
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { SPACE_SIDECAR } from '../Locations/paths'
-import { sweepAdmits } from '../Nexus/util'
+import { sweepGovernedRoots } from '../Properties/governedSweep'
 
 async function liveWorld(
   root: string,
@@ -52,14 +52,13 @@ export async function scrubReturning(
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
-  for (const file of pages) {
-    await rewritePageSerialized(file, (content) => {
-      if (!sweepAdmits(content)) return null
+  await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {
+    rewriteText: (content) => {
       const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
       if (!r.changed.length) return null
       return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
-    }).catch(() => false)
-  }
+    },
+  })
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
     await machine().lock(file, async () => {
       const raw = await readJsonObject(file)

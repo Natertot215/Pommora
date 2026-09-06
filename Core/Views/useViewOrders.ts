@@ -6,10 +6,7 @@ import { useEffect, useState } from 'react'
 import { host } from '../Platform/dialer'
 
 interface ViewOrders {
-  /** viewId → the manual order it was last dropped into. */
   viewOrders: Record<string, string[]>
-  /** Write one view's order. The wire write lands in the local copy too — nothing re-reads the
-   *  cache mid-session, so a stale local array would outlive the override that masks it. */
   persistViewOrder: (ids: string[]) => void
 }
 

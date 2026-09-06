@@ -11,10 +11,10 @@ import { atomicWriteFile } from '../IO/atomicWrite'
 import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from '../Nexus/readNexus'
-import { sessionRoot } from '../Nexus/session'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 
 export async function setGovernedRootKeys(
+  root: string | null,
   absFile: string,
   next: Record<string, unknown>,
   govern: readonly string[],
@@ -36,6 +36,6 @@ export async function setGovernedRootKeys(
   )
   if (content === existing) return adoptions
   await atomicWriteFile(absFile, content)
-  noteValueWrite(sessionRoot(), absFile)
+  noteValueWrite(root, absFile)
   return adoptions
 }
