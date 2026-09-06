@@ -11,7 +11,6 @@ import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { listFilesRecursive } from '../IO/walk'
 import { contextsDir, SPACE_SIDECAR } from '../Locations/paths'
-
 import { sweepAdmits } from '../Nexus/util'
 
 export type Raw = Record<string, unknown>
