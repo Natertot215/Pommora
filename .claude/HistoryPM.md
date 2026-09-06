@@ -2,7 +2,8 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 09-05-2026              | PM-128 | Tiles Framework |
+| 09-05-2026 → 09-06      | PM-129 | The Repo Restructure                                 |
+| 09-05-2026              | PM-128 | Tiles Framework                                      |
 | 09-04-2026              | PM-127 | The Resize Frame                                     |
 | 09-03-2026              | PM-126 | Active Cache Framework                               |
 | 09-02-2026              | PM-125 | Page File History                                    |
@@ -131,6 +132,16 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-129 || The Repo Restructure
+**DATE:** 09-05-2026 → 09-06
+
+The repository became a monorepo of six workspaces at its root — `Core`, `UIX`, `Desktop`, `Mobile`, `Sync`, and `Showcase` — and the `Pommora/` package with its `src/{main,preload,renderer,shared}` split by process dissolved. `Core` holds Pommora itself, one folder per thing it has (Nexus, Pages, Properties, Views, Tiles, Interface, Navigation, Settings, Assets, Actions, MarkdownPM, and the rest), each carrying that thing's logic, surfaces, and styles; `UIX` holds the design kit and imports nothing from Core; `Desktop` holds the Electron host. Core reaches a machine only through `Core/Platform` — a `Machine` interface with a filesystem, hashing, and a lock, plus the key-value, content-index, and snapshot store interfaces — whose one implementation is `Desktop/Platform/nodeMachine.ts` with the SQLite bodies under `Desktop/Store`; `Core/tsconfig.src.json` types Core's sources without Node so a reach around the seam fails to compile. `Core/Contract/bridge.ts` is the one channel table both sides derive from, reached through a dialer (`host().ask`) rather than a hand-built API object; `Desktop/main.ts` composes thirteen `Core/<Domain>/handlers.ts` maps behind a `HostContext`, and `Core/Nexus/mutate.ts` dispatches to per-domain operation modules over one governed sweep engine.
+
+Inside the domains, MarkdownPM re-nested into `Engine/` (the pure document model, nothing from CodeMirror or React) and ten folders named for what they hold, with `MarkdownEditor.tsx` taking an `EditorHost` its mounter builds in `Core/Pages/editorHost.tsx`; every list menu runs on one path — a model per menu in `Core/Actions`, one `row-menu` channel, one native popper in `Desktop/Actions/rowMenu.ts`, one in-app presenter in `Core/Interface/Menus/RowMenuHost.tsx`; every color value lives in `UIX/Theme/colors.ts` and motion has one source in `UIX/Animations/motion.ts`. The kill list, the duplicate collapses (`withRoot`, `splitFrontmatter`, `connectionsFor`, `pathSafety.escapes`, `DATE_FORMAT_LABELS`), five write-path fixes (the remint sidecar under its lock, `homepage.json` through `updateNexusConfig`, an unknown property kind refused rather than cleared, the table reorder's slot, the editor's live connections), the Showcase severed from Core, the harness scripts repointed, and the documentation reconciled followed. Comments across the three workspaces fell to one why per case under a twenty-line cap; the test suite grew from 321 files / 4,006 tests to 334 / 4,050; the code lines fell from 69,459 to 68,679.
+
+- **Commits:** `6efc6684^..60603de2`
+- **Diff:** Net −780 (non-test, non-comment; the strict count excluding harnesses and setup files −1,002)
 
 #### PM-128 || Tiles Framework
 **DATE:** 09-05-2026
