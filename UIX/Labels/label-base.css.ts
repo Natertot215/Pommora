@@ -2,7 +2,7 @@ import { globalStyle, style, styleVariants, type ComplexStyleRule } from '@vanil
 import { RAMP_FAMILIES, RAMP_STEPS, cellColor, cellPaint, type CellKey } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
-import { mixAt, tintAt } from '../Theme/tint'
+import { mixAt, tintAt } from '../Theme/colors'
 
 // Geometry for Pill + Label [Standard] chips; used by Status, Select, and Multi-Select.
 export const SIZE = {

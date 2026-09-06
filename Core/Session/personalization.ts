@@ -6,8 +6,8 @@ import {
   embedZoom,
   viewEmbedZoom,
 } from '@pommora/core/Settings/personalization'
-import type { CellKey } from '@pommora/uix/Theme/theme'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import type { CellKey } from '@pommora/uix/Theme/colors'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { cellColor, cellPaint } from '@pommora/uix/Theme/ramp'
 
 /** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,

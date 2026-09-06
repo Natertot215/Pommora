@@ -1,13 +1,13 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
-import type { IconSize } from '../Theme/size.css'
-import { duration, easing } from '../Animations'
+import type { IconSize } from '../Theme/theme-vars.css'
+import { duration, easing } from '../Animations/motion'
 import { accessoryButton, flushAffordance, footing, rowBox, rowDragging } from './menu-base.css'
 import { button as eyeToggleButton } from '../Elements/EyeToggle/eye-toggle.css'
 import { menuAnchor } from './menu-anchor'
 import { stack } from '../Theme/stack'
 import { fieldRing } from '../Fields/fieldRing'
-import { tintAt } from '../Theme/tint'
+import { tintAt } from '../Theme/colors'
 const c = colorVars.color
 
 // KNOBS — every ViewFrame tunable, grouped by what it controls.

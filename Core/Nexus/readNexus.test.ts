@@ -12,7 +12,7 @@ import {
 } from '../Settings/codec'
 import { ASSETS_DIR_REL } from '../Locations/nexusPaths'
 import { corpusFiles } from '../IO/walk'
-import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colorSetting'
+import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colors'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { HISTORY_DAYS } from '../Settings/personalization'
 

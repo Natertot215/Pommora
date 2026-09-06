@@ -54,10 +54,9 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
   }
 }
 
+// The container-title sizes are published as raw tokens (--text-title-*-size) and worn per style;
+// no weight class is minted for them.
 export const text = {
-  titleLarge: ramp('titleLarge'),
-  titleMedium: ramp('titleMedium'),
-  titleSmall: ramp('titleSmall'),
   headline: ramp('headline'),
   body: ramp('body'),
   callout: ramp('callout'),

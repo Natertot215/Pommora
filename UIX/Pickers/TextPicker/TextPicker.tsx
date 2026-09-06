@@ -1,5 +1,5 @@
 import type { CSSProperties, RefObject } from 'react'
-import { EditableInput } from '../../Fields'
+import { EditableInput } from '../../Fields/EditableInput'
 import { PickerMenu } from '../picker-base'
 import * as s from './text-picker.css'
 

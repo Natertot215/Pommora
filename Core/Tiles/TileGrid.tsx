@@ -3,7 +3,7 @@ import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscr
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
-import { TILE_MIN_PX } from '@pommora/uix/Theme/size.css'
+import { TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { findTile } from './Layout/model'
 import type { DividerRef, Edge, TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'

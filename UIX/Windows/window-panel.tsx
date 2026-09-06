@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'react'
-import { GlassPane } from '../Glass'
-import { paneSlide } from '../Animations'
+import { GlassPane } from '../Glass/glass-pane'
+import { paneSlide } from '../Animations/paneSlide'
 import { cx } from '../Utilities/cx'
 import { useResizeFrame } from '../Interactions/ResizeFrame'
 

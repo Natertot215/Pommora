@@ -8,7 +8,7 @@ import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { MenuSurface } from '@pommora/uix/Menus'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { condensedDate, formatDate } from '@pommora/core/Properties/formatValue'
-import { Label } from '@pommora/uix/Labels'
+import { Label } from '@pommora/uix/Labels/Label'
 
 function PopupButton({
   label,

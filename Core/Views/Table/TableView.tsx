@@ -52,7 +52,7 @@ import { text } from '@pommora/uix/Theme'
 import { IconChoice } from '../../Assets/IconChoice'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
+import { TextPicker } from '@pommora/uix/Pickers/TextPicker/TextPicker'
 import { numberDivisor } from '../../Properties/formatValue'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { ColumnHeader } from './ColumnHeader'
@@ -66,7 +66,7 @@ import {
 } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/tableDnd'
-import { solidColorCss } from '@pommora/uix/Theme/solidColor'
+import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Platform/openWebLink'
 import {
   linkAlias,

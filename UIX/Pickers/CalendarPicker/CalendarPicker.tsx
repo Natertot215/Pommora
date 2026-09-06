@@ -1,7 +1,7 @@
 import { EmptyValue } from '../../Elements/EmptyValue/EmptyValue'
 import { useEffect, useRef, useState } from 'react'
 import { Reveal } from '../../Animations/Reveal'
-import { Button } from '../../Buttons'
+import { Button } from '../../Buttons/Button'
 import { Icon } from '../../Symbols'
 import { DualSwitch } from '../../Controls/Switches/DualSwitch'
 import { usePointerGesture } from '../../Interactions/gesture'

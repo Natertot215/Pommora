@@ -1,22 +1,18 @@
 import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
-import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from './theme'
-import { tintAt } from './tint'
+import {
+  GREY_DEFAULT,
+  SHADOW_BASE,
+  SHADOW_STRONG,
+  SPECTRUM,
+  SURFACE,
+  SYSTEM,
+  WINDOW_BG,
+  tintAt,
+} from './colors'
 
-// Primitives — the base system palette. Grey/white/black are the single source for
-// every derived tone: labels are system-white at an opacity, fills and separators are
-// system-grey at one, and the states are grey washes but for the muted veil, which
-// darkens from system-black.
-const primitive = createGlobalTheme(':root', {
-  color: {
-    system: {
-      grey: '#71717A',
-      white: '#E8E8E8',
-      black: '#010101',
-    },
-  },
-})
+const primitive = createGlobalTheme(':root', { color: { system: SYSTEM } })
 
-// Each token's share is its own; the named ladder in `tint.ts` is for what a surface tints on purpose.
+// Each token's share is its own; the named ladder in `colors.ts` is for what a surface tints on purpose.
 const { grey, white, black } = primitive.color.system
 
 // Derived tokens mirrored from the Figma color collection.
@@ -32,16 +28,10 @@ const derived = createGlobalTheme(':root', {
       secondary: tintAt(white, 65),
       tertiary: tintAt(white, 35),
     },
-    // The app substrate — the base background's single source: theme.ts's WINDOW_BG, so the Electron window + this token never drift.
     background: {
       window: WINDOW_BG,
     },
-    // Content surfaces layered on the window.
-    surface: {
-      primary: '#202022',
-      secondary: '#2A2A2E',
-      tertiary: '#3A3A3E',
-    },
+    surface: SURFACE,
     // Overlay fills over a surface.
     fill: {
       primary: tintAt(grey, 20),
@@ -66,12 +56,10 @@ const derived = createGlobalTheme(':root', {
   },
 })
 
-// Shadows — the standard glass drop shadow, one source for every frost surface (Surface / dropdowns /
-// pickers). Not a color, but this is the design-system's named-token home. Consume via `shadowStandardVar`.
 globalStyle(':root', {
   vars: {
-    '--shadow-base': '0 8px 25px #00000040',
-    '--shadow-strong': '0 12px 30px #00000065',
+    '--shadow-base': SHADOW_BASE,
+    '--shadow-strong': SHADOW_STRONG,
   },
 })
 export const shadowStandardVar = 'var(--shadow-base)'

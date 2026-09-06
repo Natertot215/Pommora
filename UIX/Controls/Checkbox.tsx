@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { solidColorCss } from '../Theme/solidColor'
+import { solidColorCss } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
 import './checkbox.css'
 

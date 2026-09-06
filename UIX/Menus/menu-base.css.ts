@@ -1,22 +1,20 @@
 import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import { font, text } from '../Theme/typography.css'
-import { tintAt } from '../Theme/tint'
+import { tintAt } from '../Theme/colors'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 
-// KNOB — a row's height is never declared: it is the ramp's line plus one of two padding pairs, so the
-// tokens are named for the axis they pad and a surface picks Standard or Compact once for every row.
+// KNOB — a row's height is never declared: it is the ramp's line plus one of two paddings, and a
+// surface picks Standard or Compact (`menuCompact`) once for every row it draws.
 globalStyle(':root', {
   vars: {
-    '--row-height-standard': '6px',
-    '--row-height-compact': '4px',
-    '--row-width-standard': '6px',
-    '--row-width-compact': '4px',
-    '--row-pad-y': 'var(--row-height-standard)',
-    '--row-pad-x': 'var(--row-width-standard)',
+    '--row-pad-standard': '6px',
+    '--row-pad-compact': '4px',
+    '--row-pad-y': 'var(--row-pad-standard)',
+    '--row-pad-x': 'var(--row-pad-standard)',
     '--row-size': font.scale.body.size,
     '--row-line': font.scale.body.line,
   },
@@ -97,8 +95,8 @@ export const item = style([rowBox, rowShell])
 
 export const menuCompact = style({
   vars: {
-    '--row-pad-y': 'var(--row-height-compact)',
-    '--row-pad-x': 'var(--row-width-compact)',
+    '--row-pad-y': 'var(--row-pad-compact)',
+    '--row-pad-x': 'var(--row-pad-compact)',
     '--row-size': font.scale.control.size,
     '--row-line': font.scale.control.line,
   },

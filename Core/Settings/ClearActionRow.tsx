@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { MenuRowView } from '@pommora/uix/Menus'
 
 const CLEARED_MS = 1500

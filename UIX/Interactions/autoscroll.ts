@@ -218,7 +218,7 @@ export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams):
   return Math.min(maxMs, Math.max(minMs, Math.abs(distance) / speed))
 }
 
-/** The JS mirror of the `out` easing token (ease-out quint) — a CSS cubic-bezier can't drive a
+/** The JS form of `easing.baseSnap`, which is ease-out quint — a CSS cubic-bezier can't drive a
  *  scrollTop, so the curve is stated twice on purpose. Change them together. */
 export function easeOutQuint(t: number): number {
   return 1 - (1 - t) ** 5

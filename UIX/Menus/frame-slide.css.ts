@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { duration, easing } from '../Animations'
+import { duration, easing } from '../Animations/motion'
 
 export const viewport = style({ position: 'relative', overflow: 'hidden' })
 

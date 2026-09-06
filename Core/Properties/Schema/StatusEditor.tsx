@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import {
   addStatusOption,
   recolorStatusOption,
@@ -25,7 +25,7 @@ import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { heading } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
-import { labelColor, shape } from '@pommora/uix/Labels'
+import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { host } from '../../Platform/dialer'
 
 export function StatusEditor({

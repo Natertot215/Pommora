@@ -9,9 +9,9 @@ import {
   MenuDropdown,
   MenuScrollFrame,
 } from '@pommora/uix/Menus'
-import { tintAt } from '@pommora/uix/Theme/tint'
+import { tintAt } from '@pommora/uix/Theme/colors'
 import { cellColor } from '@pommora/uix/Theme/ramp'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { IconChoice } from '../Assets/IconChoice'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'

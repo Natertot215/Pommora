@@ -1,7 +1,7 @@
 // An entry that no longer resolves is RENDER-pruned, never dropped from storage — a cross-nexus switch resolves everything to null, and auto-deleting would wipe durable favorites.
 
 import type { NavRef } from '@pommora/core/Navigation/navRef'
-import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import { navKey } from './navRecents'
 
 export interface ResolvedNav {

@@ -1,32 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { PINK, RAMP_FAMILIES, RAMP_STEPS, SPECTRUM, isColorKey, type CellKey } from './theme'
+import {
+  PINK,
+  RAMP_FAMILIES,
+  RAMP_STEPS,
+  SPECTRUM,
+  isColorKey,
+  mixAt,
+  tintAt,
+  type CellKey,
+} from './colors'
 import { vars as colorVars } from './color.css'
-import { ANCHOR_CELLS, cellColor, cellPaint, cellRing } from './ramp'
-import { mixAt, tintAt } from './tint'
+import { ANCHOR_CELLS, cellColor, cellPaint, cellRing, labelColorFor, solidColorCss } from './ramp'
 
 const c = colorVars.color
 const WHITE = c.system.white
 const BLACK = c.system.black
-
-describe('mixAt', () => {
-  it('mixes toward an arbitrary color, not just transparent', () => {
-    expect(mixAt('#FFF', 40, '#000')).toBe('color-mix(in srgb, #FFF 40%, #000)')
-  })
-
-  it('honors the oklch space', () => {
-    expect(mixAt('#FFF', 25, '#000', 'oklch')).toBe('color-mix(in oklch, #FFF 25%, #000)')
-  })
-
-  it('returns the bare base at a full-strength amount', () => {
-    expect(mixAt('#FFF', 100, '#000')).toBe('#FFF')
-  })
-
-  it('routes a named step through its var, so the ladder stays live', () => {
-    expect(tintAt('#FFF', 'primary')).toBe(
-      'color-mix(in srgb, #FFF var(--tint-primary), transparent)',
-    )
-  })
-})
 
 // The five regularized rows must reproduce the ladder the sandbox settled by eye: 55 · 70 · 85
 // toward black, the anchor, then 85 · 70 · 55 · 40 toward white.
@@ -160,5 +148,68 @@ describe('the anchors survive the generation unchanged', () => {
 
   it('seats default on grey-4 so the two share one source', () => {
     expect(cellColor('grey-4')).toBe(c.solid.greyDefault)
+  })
+})
+
+describe('labelColorFor', () => {
+  it('normalizes every legacy solid name onto its anchor cell', () => {
+    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]) {
+      expect(labelColorFor(key)).toBe(ANCHOR_CELLS[key])
+    }
+  })
+
+  it('passes every cell in the grid straight through', () => {
+    for (const family of RAMP_FAMILIES) {
+      for (const step of RAMP_STEPS) {
+        expect(labelColorFor(`${family}-${step}`)).toBe(`${family}-${step}`)
+      }
+    }
+  })
+
+  // grey-4 shares `default`'s VALUE but is a cell a user can deliberately pick, so it must keep its
+  // own key — collapsing it would make that square unclearable in the picker.
+  it('keeps grey-4 distinct from default', () => {
+    expect(labelColorFor('grey-4')).toBe('grey-4')
+  })
+
+  it('falls back to default for absent or non-grammar names', () => {
+    expect(labelColorFor(undefined)).toBe('default')
+    expect(labelColorFor('chartreuse')).toBe('default')
+    expect(labelColorFor('gray')).toBe('default')
+    expect(labelColorFor('teal')).toBe('default')
+    expect(labelColorFor('red-8')).toBe('default')
+    expect(labelColorFor('')).toBe('default')
+  })
+
+  // The accent sentinel is produced by the two consumers that own the accent fallback; it must not
+  // round-trip in from disk.
+  it('refuses the accent sentinel', () => {
+    expect(labelColorFor('accent')).toBe('default')
+  })
+})
+
+describe('solidColorCss', () => {
+  it('falls back to the runtime accent when unset — the "Default" both editors label', () => {
+    expect(solidColorCss(undefined)).toBe('var(--system-accent)')
+  })
+
+  it('resolves a legacy anchor name to its own solid', () => {
+    expect(solidColorCss('red')).toBe(colorVars.color.solid.red)
+    expect(solidColorCss('red')).toBe(cellColor(ANCHOR_CELLS.red))
+  })
+
+  // The regression this exists to catch: before the ramp, a stepped key indexed a table holding only
+  // the ten solids and came back undefined — a link with no color, a checkbox with no fill.
+  it('resolves a stepped cell key rather than coming back empty', () => {
+    expect(solidColorCss('purple-6')).toBe(cellColor('purple-6'))
+    expect(solidColorCss('purple-6')).toBeTruthy()
+  })
+
+  it('resolves grey-4 as the cell a user picked, not as the neutral fallback', () => {
+    expect(solidColorCss('grey-4')).toBe(cellColor('grey-4'))
+  })
+
+  it('falls back to the neutral for a name outside the grammar', () => {
+    expect(solidColorCss('chartreuse')).toBe(cellColor('grey-4'))
   })
 })

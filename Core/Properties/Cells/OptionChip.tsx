@@ -1,8 +1,9 @@
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
 import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
-import { Label, optionShapeFor } from '@pommora/uix/Labels'
+import { Label } from '@pommora/uix/Labels/Label'
+import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
-import { labelColorFor } from '@pommora/uix/Theme/colorMap'
+import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { statusGroupGlyph, statusGroupOf } from './statusCycle'
 
 export interface OptionChipData {

@@ -1,7 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { titleReveal } from '@pommora/uix/Animations/animations.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
-import { duration } from '@pommora/uix/Animations'
+import { duration } from '@pommora/uix/Animations/motion'
 import { SEGMENT_H, segmentRow, settingsBtn } from '@pommora/uix/Elements/action-band.css'
 import {
   EMBED_SCALE_DEFAULT,
