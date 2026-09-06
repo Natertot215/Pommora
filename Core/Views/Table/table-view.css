@@ -16,7 +16,6 @@
 /* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the trailing 1fr filler track eat slack. */
 .table-grid {
   width: 100%;
-  /* Base density (--zoom) × the per-tile Scale (--tile-zoom, absent = 1), so the table scales as one unit within the grid tile's fixed inset. */
   zoom: calc(var(--zoom) * var(--tile-zoom, 1));
 }
 
@@ -65,7 +64,6 @@
 
 /* Chrome lives in group-band.css; this scopes the section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
-  /* No zoom of its own — it already scales inside .table-grid's compound zoom; reapplying here would square the factor. */
   padding-top: var(--band-gap);
 }
 .table-view .group-band.sub-band .group-band-row {
