@@ -9,6 +9,8 @@ import { readWindowsState, writeWindowsState } from '../Interface/windowState'
 import { readBaseline, runOpenLedger } from './remintLedger'
 import type { Baseline } from './remintLedger'
 import { adjudicate } from './remint'
+import { withSidecarLock } from '../IO/sidecar'
+import { readJsonStrict, writeJson } from '../IO/atomicWrite'
 import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { readTileDocAt, writeTileDocAt } from '../Tiles/tileDoc'
 
@@ -317,6 +319,33 @@ describe('the re-mint writes', () => {
     expect(baseline[PAGE].path).toBe(recorded.path)
     const [fresh] = freshIdsIn(baseline)
     expect(isUlidShaped(fresh)).toBe(true)
+  })
+
+  it('a container write held across the pass keeps both facts — the re-mint takes the sidecar lock', async () => {
+    await runOpenLedger(root)
+    await cp(join(root, 'Library', 'Fiction'), join(root, 'Library', 'Fiction copy'), {
+      recursive: true,
+    })
+    const copyDir = join(root, 'Library', 'Fiction copy')
+    const copyFile = join(copyDir, '_pageset.json')
+
+    let release = (): void => {}
+    const held = withSidecarLock(copyDir, 'set', async () => {
+      const cur = await readJsonStrict(copyFile)
+      await new Promise<void>((r) => {
+        release = r
+      })
+      if (cur.ok) await writeJson(copyFile, { ...cur.value, banner: 'Wallpaper.png' })
+    })
+    const pass = runOpenLedger(root)
+    await Promise.race([pass, new Promise((r) => setTimeout(r, 200))])
+    release()
+    await Promise.all([held, pass])
+
+    const copySet = JSON.parse(await readFile(copyFile, 'utf8'))
+    expect(copySet.banner).toBe('Wallpaper.png')
+    expect(copySet.id).not.toBe(SET)
+    expect(isUlidShaped(copySet.id)).toBe(true)
   })
 })
 

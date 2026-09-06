@@ -158,6 +158,20 @@ describe('table row drag — Esc abort', () => {
     expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
   })
 
+  it('a drop below the row the dragged one already follows is a no-op, not a slot above it', async () => {
+    await act(async () => {
+      firePointer(row('r3'), 'pointerdown', { x: 4, y: 60 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 4, y: 40 })
+    })
+    expect(host.querySelector('.drop-line')).toBeNull()
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    expect(reorderSpy).not.toHaveBeenCalled()
+  })
+
   it('detaches the keydown listener after the gesture settles', async () => {
     const adds = vi.spyOn(window, 'addEventListener')
     const removes = vi.spyOn(window, 'removeEventListener')

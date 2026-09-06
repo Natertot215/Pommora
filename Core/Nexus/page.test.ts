@@ -10,6 +10,7 @@ import { isUlid } from '../Locations/ids'
 import { closeSession, openSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
+import type { PropertyValue } from '../Properties/propertyValue'
 
 /** The writer takes a definition, not an id — tests name the property and this supplies the rest.
  *  The type only has to be one the value's kind can hold; the key comes from the name. */
@@ -204,6 +205,22 @@ describe('updatePageProperty', () => {
     await updatePageProperty(root, f, defOf('prop_status'), null)
     expect(await at('status')).toBeUndefined()
     expect(await at('tags')).toEqual(['a', 'b'])
+  })
+
+  it('a value kind the schema has no shape for is refused, never a clear', async () => {
+    const c = await createPage(typeDir, 'Unknown Kind', { body: 'x' })
+    if (!c.ok) throw new Error('setup failed')
+    const f = c.value.path
+    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+
+    const r = await updatePageProperty(root, f, defOf('prop_status'), {
+      kind: 'status',
+      value: 'done',
+    } as unknown as PropertyValue)
+
+    expect(splitFrontmatter(await readFile(f, 'utf8')).status).toEqual(['todo'])
+    expect(r.ok).toBe(false)
+    expect(r.ok || r.error.code).toBe('invalid-property')
   })
 
   it('errors when the page is missing', async () => {

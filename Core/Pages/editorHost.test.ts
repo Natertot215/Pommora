@@ -1,6 +1,12 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
+import { act, createElement, isValidElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { cachePageDetail } from '../Session/pageDetailCache'
-import { tileWarmSeam } from './editorHost'
+import type { EditorHost } from '../MarkdownPM/api'
+import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
+import { tileWarmSeam, useEditorHost } from './editorHost'
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const detail = (path: string, body: string) => ({
   id: path,
@@ -27,5 +33,37 @@ describe('tileWarmSeam', () => {
     expect(seam.restore()).toBeUndefined()
     cachePageDetail(detail('Edited.md', 'v1'))
     expect(seam.restore()).toBeUndefined()
+  })
+})
+
+describe('useEditorHost', () => {
+  it('a host seated at mount renders a tile against the live connections', async () => {
+    const connA = { generation: 'first' } as unknown as ConnectionsApi
+    const connB = { generation: 'second' } as unknown as ConnectionsApi
+    let seated: EditorHost | null = null
+    const Probe = ({ connections }: { connections: ConnectionsApi }): null => {
+      const built = useEditorHost({ connections })
+      seated ??= built
+      return null
+    }
+    const el = document.createElement('div')
+    const root = createRoot(el)
+    await act(async () => {
+      root.render(createElement(Probe, { connections: connA }))
+    })
+    await act(async () => {
+      root.render(createElement(Probe, { connections: connB }))
+    })
+
+    const tile = seated!.renderTile({
+      kind: 'page',
+      path: 'Note.md',
+      editing: false,
+      locked: false,
+      ancestors: [],
+      onBeginEdit: () => {},
+    })
+    expect(isValidElement(tile) && (tile.props as { connections: unknown }).connections).toBe(connB)
+    act(() => root.unmount())
   })
 })

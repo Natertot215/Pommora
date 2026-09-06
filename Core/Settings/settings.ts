@@ -15,28 +15,31 @@ import { fail, ok, type Result } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
 
 /** The one primitive every `.nexus` config writer funnels through: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
-async function updateNexusConfig(
+export function updateNexusConfig(
   root: string,
   file: keyof typeof NEXUS_CONFIG_FILES,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<Result<Record<string, unknown>>> {
+  return rmwJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, () => ({}))
+}
+
+export async function updateSettings(
+  root: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
-  const path = nexusConfig(root, NEXUS_CONFIG_FILES[file])
-  const written = await rmwJsonStrict(path, mutate, () => ({}))
+  const written = await updateNexusConfig(root, 'settings', mutate)
   if (!written.ok) throw new Error(written.error.message)
 }
 
-export const updateSettings = (
-  root: string,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
-): Promise<void> => updateNexusConfig(root, 'settings', mutate)
-
-export function updateCrops(
+export async function updateCrops(
   root: string,
   edit: (byImage: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
-  return updateNexusConfig(root, 'crops', (cur) => {
-    return { ...cur, byImage: edit(isPlainObject(cur.byImage) ? cur.byImage : {}) }
-  })
+  const written = await updateNexusConfig(root, 'crops', (cur) => ({
+    ...cur,
+    byImage: edit(isPlainObject(cur.byImage) ? cur.byImage : {}),
+  }))
+  if (!written.ok) throw new Error(written.error.message)
 }
 
 /** Served from the tree main already holds; the disk read covers the moments before a walk has installed one — launch-restore and adoption. */

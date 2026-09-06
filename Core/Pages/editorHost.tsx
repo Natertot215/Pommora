@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import { tableMenuItems } from '@pommora/core/Actions/tableMenu'
@@ -44,8 +44,12 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
   ],
 })
 
-/** Every member reads the store when called, so one host serves an editor for its whole mount. */
-function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
+/** Every member reads the store when called, so one host serves an editor for its whole mount;
+ *  the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
+function buildEditorHost(
+  { pageId, inert }: EditorHostOptions,
+  connRef: { readonly current: ConnectionsApi | undefined },
+): EditorHost {
   const state = useSession.getState
   return {
     settings: () => {
@@ -96,7 +100,7 @@ function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): Edi
           path={tile.path}
           editing={tile.editing}
           onBeginEdit={tile.onBeginEdit}
-          connections={connections}
+          connections={connRef.current}
           locked={tile.locked}
           ancestors={tile.ancestors}
           chrome="page"
@@ -118,11 +122,13 @@ function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): Edi
 
 /** Re-identified on the store facts the editor renders from, so its effects follow a toggle made anywhere. */
 export function useEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
+  const connRef = useRef(connections)
+  connRef.current = connections
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
   const aliases = useSession((s) => s.pageAliases)
   return useMemo(
-    () => buildEditorHost({ pageId, connections, inert }),
+    () => buildEditorHost({ pageId, inert }, connRef),
     [pageId, connections, inert, shown, cbLineCount, aliases],
   )
 }
