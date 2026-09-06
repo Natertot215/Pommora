@@ -80,9 +80,15 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **`page:open` does not raise the window.** A path opened from outside selects in place — opening is not focusing.
 - [ ] **Native separators reach the host on Windows.** `nexus:openPath`'s `getPathForFile` and `nodeMachine.realpath` emit them, and `posixPath` covers only what `Desktop/main.ts` hands over. On the same platform the five ex-radio menu groups — column Align and Style, grip Size and Scale, trash Format — draw a check rather than a bullet; macOS draws both states identically.
 - [ ] **`NativePickerContext` does not cross `reactWidget`'s detached roots.** Latent rather than live: nothing rendered under an editor widget mounts a `PickerControl` today.
-- [ ] **The line counter counts test harnesses as product code.** `editorHarness.ts`, `pointerHarness.ts`, `testTree.ts`, `propsAtRoot.ts`, and `pageValues.ts` are about 300 lines the ledger reads as product.
+- [ ] **`linkTitles:get` answers with a bare reply.** Its handler's `ensureCache` can throw, and a main-side throw then arrives at the renderer as an `{ok:false}` object that the cache slice stores as data; the other bare-reply `:get` channels (`activeViews`, `citations`, `aliases`) catch their own reads.
+- [ ] **`LayoutFrame.tsx` and `SettingsFrame.tsx` each declare the same four frame rows and three labels.** `SettingsFrame` imports `LayoutFrame`, so one shared table needs a third file; until then an icon changed in one drifts from the other.
 
 ### Recent Work
+
+#### PM-129 || The Repo Restructure
+**DATE:** 09-05-2026 → 09-06
+
+The repository became six workspaces at its root, `Core` filed by domain with every Node and Electron call behind `Core/Platform` and `Desktop/`, `Core/Contract` the one channel table, every list menu on one path, the editor on an `EditorHost`, and the comments, duplicates, and dead paths cut across the tree. The code lines fell from 69,459 to 68,679 on the run's counter and by 1,002 on a count that excludes test harnesses; the documentation was reconciled on a fixed character budget.
 
 #### PM-128 || Tiles
 **DATE:** 09-05-2026
@@ -104,10 +110,6 @@ Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `Core/Util
 
 A page's body accumulates device-local snapshots in `versions.db` under one capture rule, restorable from a Page History window reached by View History in every page menu and History beside Properties; a restore replaces the body alone and reaches every open editor, cancelling any save armed under it. Files & Links carries the four File History settings. The two-host lost update and the store's presence in NexusOS's repository are recorded under Known Issues; the external-edit reload through `replaceBody` is the next mechanism the arc seeded. A secondary review over six lenses, the tests, and a final regression pass landed after the closeout in five commits ending at `c770e9a4`, netting −11 lines against the arc.
 
-#### PM-124 || In-App Confirmation & Notifications
-**DATE:** 09-02-2026
-
-Every destructive confirmation moved out of main's native dialogs into one in-app window, `Core/Interface/Confirm/ConfirmationWindow.tsx`, behind named `ask*` wrappers in `Core/Interface/Confirm/confirmations.ts`; a new Confirm Before Deletion setting gates pages, tiles, and schema-less folders while Collections, Sets, views, and properties always ask. `Core/Interface/Notifications/NotificationLabel.tsx` reports the finished act with an Undo shaped by what left — a bundle-backed restore for files, a configuration re-save for a view.
 
 ### Guidelines
 

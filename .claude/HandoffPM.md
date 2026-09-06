@@ -7,7 +7,7 @@
 **Dates:** 09-05-2026 to 09-06-2026
 **Model:** Opus 5 · Fable 5.1 (Tasks 13 and 14)
 
-**The restructure is in, and the documentation phase closes it.** Tasks 0 through 18 landed over `7c7c7542..ffd56b07a`: the six workspaces, `shared/` dissolved into Core, UIX and Desktop, Core filed by domain, the Platform seam and the Contract split out of the Electron host, the 26 menu channels collapsed onto one, the editor taking an `EditorHost` from its mounter, the Phase 5 removals and the two write-path fixes, the Showcase severed from Core, and the harness scripts repointed at the new tree. Tasks 19 and 20 — this document's own phase — reconciled the `.claude` registry against what the moves made true, on a character budget rather than a free rewrite.
+**The restructure is in and closed out.** Tasks 0 through 18 landed over `7c7c7542..ffd56b07a`, the docs phase at `734baa79`, Gate 5 at `2053ee50`, and the closeout's five passes through `60603de2`; the run's counter ends at 68,679 code lines against 69,459 (−780), the strict count excluding harnesses at −1,002: the six workspaces, `shared/` dissolved into Core, UIX and Desktop, Core filed by domain, the Platform seam and the Contract split out of the Electron host, the 26 menu channels collapsed onto one, the editor taking an `EditorHost` from its mounter, the Phase 5 removals and the two write-path fixes, the Showcase severed from Core, and the harness scripts repointed at the new tree. Tasks 19 and 20 — this document's own phase — reconciled the `.claude` registry against what the moves made true, on a character budget rather than a free rewrite.
 
 **What the docs phase changed.** Every prefixed path citation and bare folder name in the registry was swept through the new tree and each rewritten path checked for existence; the 38 stale claims the A18 audit found were rewritten true — the casing misses, the wrong folders, the names that no longer exist, and the PRD's retired `PageID`/`TaskID`/`EventID` keys and `(Projects):` syntax. `ArchitecturePM` split at its own seams into `CorePM` (the Nexus layout, the data layer, the domains, the Platform seam, the Contract) and `DesktopPM` (Bridge, Store, FileWatch, Actions, Web, Capture, Config, Renderer), and every link retargeted. `DesignSystemPM`'s spine now mirrors `UIX`'s root categories, its `Components` heading gone and its atlas tables agreeing with the code. `MarkdownPM` §Architecture describes the Engine/host shape. Every Features doc carries a first-line workspace tag. `CLAUDE.md`'s Hard Rules restate for the monorepo — the host owns the machine, `Core/Contract` is the contract between any interface and any host — with the gates and both launch commands run from the root.
 
@@ -19,11 +19,11 @@
 - [x] Core reaches the machine only through `Core/Platform`; only `Desktop/` imports Node and Electron.
 - [x] Docs reconciled: paths swept, 38 claims corrected, `ArchitecturePM` split, Features tagged.
 - [x] `CLAUDE.md` Hard Rules restated; the Mobile plan's superseded tasks marked with a path table.
-- [ ] Gate 5: the closeout's simplification, attack, Delivery Claim, and Nathan's own pass.
+- [x] Gate 5 (`2053ee50`) and the closeout: the comment killer (`12f52789`), the Delivery Claim (`29c84ba1`, verified), the attack and its fixes (`817e967e`), the simplification (`60603de2`).
+- [ ] Nathan's own pass.
 
 #### Next Session
 
-- Gate 5 and the closeout: the whole-range simplification and attack, the Delivery Claim, the History entry, and the line ledger redone at the new sources.
 - Nathan's own pass — the app on his real Nexus for a day, and a flip through `Core`, `UIX`, and `Desktop` to say whether the filing reads the way it was meant to.
 - The five open questions in ContextPM's Open Calls, each cheap once decided.
 - The inspector arc still stands on `.claude/Planning/TilesV2-Spec.md`.

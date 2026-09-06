@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 10:40 PT",
+  updated: "09-06-2026 12:10 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -161,8 +161,11 @@ const DATA = {
     { at: "9d2fb001", label: "Tasks 19–20", lines: 68748 },
     { at: "2053ee50", label: "Gate 5", lines: 68748 },
     { at: "12f52789", label: "Closeout comments", lines: 68743 },
+    { at: "817e967e", label: "Closeout attack fixes", lines: 68742 },
+    { at: "60603de2", label: "Closeout simplification", lines: 68679 },
   ],
   gates: [
+    { name: "Closeout · 60603de2", text: "typecheck 0 (five projects; Core/tsconfig.src.json the seam's compile gate) · test 0 (334 / 4,050) · lint 0 (1,069) · build 0 · build:showcase 0\\ncomment killer 3,663 → 2,385 lines, 0 over the cap · Delivery Claim verified by a neutral agent (~130 assertions, five slips corrected) · attack over 7941edec..HEAD: three control findings, zero behavior bugs, nine candidates killed · simplification −63 with three small helpers\\nrun 69,459 → 68,679 (−780); strict count excluding harnesses −1,002" },
     { name: "Gate 5 · 2053ee50", text: "typecheck 0 · test 0 (334 / 4,050) · lint 0 (1,065) · build 0 · build:showcase 0\\nelectron imports → 14 files, all Desktop/ · @pommora/core in UIX → 0 · Pommora/ gone · six workspaces · test files 321 → 334 fully reconciled (six renames git lost, each paired; the colors merge 2 → 1) · Dead Vocabulary 0 each (assetMigrate/INVENTED live by ruling 46; Pommora/src → 2 in loc.py's legacy root by Task 18's ruling) · loc.py product 68,718 vs 69,704 baseline (−986) · the run's counter 68,748 vs 69,459 (−711)\\nsmoke (agent): state open, tree rendered, page body round-tripped and cmp-identical, native row-menu resolved null on Escape · Phase 5 range attacked to a conclusion: zero bugs" },
     { name: "Tasks 19–20 · 734baa79 · 9d2fb001", text: "registry 331,425 → 331,553 characters (+128 of ±250) · Dead Vocabulary in .claude → 0 each (controls: Core/ in CorePM 15, UIX/Menus in DesignSystemPM 3, Core/Platform in CLAUDE.md 1) · Main owns the filesystem → 0 · CorePM + DesktopPM exist, ArchitecturePM gone, [[ArchitecturePM → 0 · Workspace tags 19/19 · check-atlas: 16 tables checked, all agree · 254 path citations, 0 misses" },
     { name: "Tasks 17–18 · ffd56b07", text: "typecheck 0 · test 0 (334 / 4,050) · lint 0 (1,065 files) · build 0 · build:showcase 0\\n@pommora/core in Showcase → 0 · @renderer → 0 (control @pommora/uix → 18) · loc.py prints nine areas (product 68,718 + Showcase 2,155) · check-atlas runs to its count (16, all failing on Pommora/src SOURCE lines until Task 19) · comment-manifest 688 files / 3,664 lines / 12 over the cap · comment-ledger --verify 0 · Pommora/ in scripts → 2 (loc.py's legacy root for the history, kept)" },
@@ -192,6 +195,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Closeout complete. The comment killer, the Delivery Claim and its neutral verification, the attack (the seam's compile gate restored as Core/tsconfig.src.json; confirm.ts and fileHistory.ts host-neutral), and the simplification (the ConnectionsApi pairs, the icon-editor pair, the Settings field rows on small helpers) landed. History PM-129, ContextPM, HandoffPM written; the ledger rebuilt at the new sources. Nathan's own pass is the one pending item." },
     { when: "09-06-2026", text: "Closeout step 1 landed (12f52789): comments 3,663 → 2,385 lines over the three workspaces, every file at or under the cap, the ledger's token streams identical. Step 2, the Delivery Claim, dispatched." },
     { when: "09-06-2026", text: "Gate 5 landed (2053ee50): every Acceptance line green, the vocabulary at zero with its controls, the smoke clean, the Phase 5 range attacked with nothing broken. Phase 5 closed; the run stands −711 on its own counter and −986 on loc.py. Closeout opens with the whole-tree comment killer." },
     { when: "09-06-2026", text: "Tasks 19–20 landed (734baa79, 9d2fb001): the registry reconciled on a +128-character delta; CLAUDE.md +267 for the two restated Hard Rules and the corrected launch lines. Three audit claims were stale the other way (the debt already paid) and were retired; two drifts the audit missed corrected (accent.ts/personalization.ts under UIX/Theme; ImagePicker as a UIX picker). Gate 5 dispatched: acceptance lines, the vocabulary sweep, one smoke, the Phase 5 review." },
