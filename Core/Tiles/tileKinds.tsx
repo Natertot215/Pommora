@@ -1,4 +1,4 @@
-import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Connections'
+import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import {
   knownTile,
   type TileEntry,

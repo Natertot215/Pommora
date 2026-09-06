@@ -9,8 +9,8 @@ import {
   type ViewUpdate,
 } from '@codemirror/view'
 import { RangeSetBuilder, StateEffect, type Extension } from '@codemirror/state'
-import { tokenize } from '../Tokens'
-import { CiteRefWidget } from '../Editor/decorations'
+import { tokenize } from '../Engine/tokens'
+import { CiteRefWidget } from '../decorations'
 
 type OrdinalOf = (label: string) => number | null
 

@@ -1,9 +1,10 @@
-import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
-import { docScan } from '../Editor/docCache'
-import { foldLabel } from '../Detect'
-import type { DocScan } from '../Decorations/intent'
+import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
+import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
+import { docScan } from '../docCache'
+import { foldLabel } from '../Engine/detect'
+import type { DocScan } from '../Engine/docScan'
 import { focusAt } from '../Editor/caretPlacement'
-import { travelToCitation } from '../Editor/citationActions'
+import { travelToCitation } from '../Citations/citationActions'
 import {
   Facet,
   StateField,
@@ -14,11 +15,10 @@ import {
   type Transaction,
 } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
-import { createRoot, type Root } from 'react-dom/client'
-import { modelFromRegion } from './regions'
-import { parseDelimiter } from './codec'
+import { modelFromRegion } from '../Engine/Tables/regions'
+import { parseDelimiter } from '../Engine/Tables/codec'
 import { cellCommitChange, structuralEditChange, tableSelfEdit } from './sync'
-import { startBlockDrag } from '../Editor/blockDrag'
+import { startBlockDrag } from '../Gestures/blockDrag'
 import {
   moveColumn,
   moveRow,
@@ -35,11 +35,16 @@ import {
   fillCells,
   fillColumn,
   resizeColumns,
-} from './operations'
-import { encodeColumn, encodeRect, serializeOutline, type TablePayload } from './clipboard'
+} from '../Engine/Tables/operations'
+import {
+  encodeColumn,
+  encodeRect,
+  serializeOutline,
+  type TablePayload,
+} from '../Engine/Tables/clipboard'
 import { tableMergeGuard, tablePasteGuard } from './guard'
-import type { TableModel } from './model'
-import type { ConnectionsApi } from '../Connections'
+import type { TableModel } from '../Engine/Tables/model'
+import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
 import { host } from '../../Platform/dialer'
 
@@ -78,8 +83,7 @@ export function applySavedHeadingCols(view: EditorView, indices: number[]): void
 }
 
 let MarkdownTableComp: typeof import('./MarkdownTable').MarkdownTable | undefined
-interface TableDom extends HTMLElement {
-  _root?: Root
+interface TableDom extends ReactDom {
   _height?: HeightBox
   _ro?: ResizeObserver
 }
@@ -157,8 +161,7 @@ function copyTextFor(
   }
 }
 
-class TableWidget extends WidgetType {
-  private root: Root | undefined
+class TableWidget extends ReactWidget {
   private destroyed = false
 
   constructor(
@@ -275,13 +278,8 @@ class TableWidget extends WidgetType {
       })
       dom._ro.observe(dom)
     }
-    let root = dom._root
-    if (!root) {
-      root = createRoot(dom)
-      dom._root = root
-    }
-    this.root = root
-    root.render(
+    this.render(
+      dom,
       <TV
         model={this.model}
         cites={this.cites}
@@ -324,7 +322,7 @@ class TableWidget extends WidgetType {
 
   // Re-renders the React root in place, avoiding a CM destroy+recreate that would re-mount cell editors.
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    if (!MarkdownTableComp || !(dom as TableDom)._root) return false
+    if (!MarkdownTableComp || !this.mounted(dom)) return false
     this.renderInto(dom as TableDom, view)
     return true
   }
@@ -334,9 +332,7 @@ class TableWidget extends WidgetType {
     // Only a node that is genuinely being dropped reaches here — a widget replaced over a reused DOM
     // is never destroyed — so the observer measuring it goes with it rather than outliving the table.
     ;(dom as TableDom)._ro?.disconnect()
-    const root = this.root
-    this.root = undefined
-    if (root) queueMicrotask(() => root.unmount())
+    this.unmountSoon(dom as TableDom)
   }
 
   ignoreEvent(): boolean {

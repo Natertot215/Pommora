@@ -10,7 +10,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
-import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Connections'
+import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { glanceLink } from '../Interface/Glance/glanceLink'
 import {
   containersByPathOf,

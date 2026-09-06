@@ -3,7 +3,7 @@ import { Button } from '@pommora/uix/Buttons'
 import { containerCreators } from '@pommora/core/Pages/mutateRequest'
 import { type PageTarget, useSession } from '../../Session/store'
 import { findCollection } from '../../Session/treeIndex'
-import { pageStats } from '../../MarkdownPM/subfieldStats'
+import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 

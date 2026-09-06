@@ -1,4 +1,4 @@
-import type { ConnMenuTarget } from '../../MarkdownPM/Connections'
+import type { ConnMenuTarget } from '../../MarkdownPM/Links/connectionsApi'
 import {
   isConnCellAction,
   isConnUrlAction,
