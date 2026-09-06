@@ -19,16 +19,19 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACES = ["Core", "UIX", "Desktop", "Showcase"]
+WORKSPACES = ["Core", "UIX", "Desktop"]
 
 # The pre-monorepo layout. Every area lists the old prefixes it was assembled from, so one map
 # measures every commit on the branch and the earlier samples stay comparable.
 LEGACY_ROOT = "Pommora/src"
 
+# The showcase is not the app: its lines are excluded here and at every prefix it ever sat under,
+# so a legacy path does not fall through to App Chrome.
+SKIP_PREFIX = ["Showcase", "renderer/Showcase"]
+
 # Ordered: the first matching prefix wins, so specific paths precede their parents. Each entry is
 # (area, new prefixes, prefixes under the legacy root).
 AREAS = [
-    ("Showcase", ["Showcase"], ["renderer/Showcase"]),
     ("Editor — MarkdownPM", ["Core/MarkdownPM"], ["renderer/MarkdownPM"]),
     ("Design System", ["UIX"], ["renderer/DesignSystem"]),
     (
@@ -83,7 +86,6 @@ ORDER = [
     "Surfaces & Embeds",
     "Shared Contract",
     "Desktop Shell",
-    "Showcase",
 ]
 COLORS = [
     "#1C7629",
@@ -94,7 +96,6 @@ COLORS = [
     "#A24CCE",
     "#D93B31",
     "#0E7C86",
-    "#5A6270",
 ]
 
 SKIP_DIR = {"node_modules", "dist", "out", ".git", "testing"}
@@ -106,9 +107,13 @@ def area_of(rel: str) -> str | None:
         legacy = rel[len(LEGACY_ROOT) + 1 :]
         if legacy.startswith("renderer/src/"):
             legacy = "renderer/" + legacy[len("renderer/src/") :]
+        if any(legacy == p or legacy.startswith(p + "/") for p in SKIP_PREFIX):
+            return None
         for name, _, prefixes in AREAS:
             if any(legacy == p or legacy.startswith(p + "/") for p in prefixes):
                 return name
+        return None
+    if any(rel == p or rel.startswith(p + "/") for p in SKIP_PREFIX):
         return None
     for name, prefixes, _ in AREAS:
         if any(rel == p or rel.startswith(p + "/") for p in prefixes):

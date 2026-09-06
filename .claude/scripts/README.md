@@ -1,9 +1,9 @@
 ## Scripts
 
 `loc.py` counts the app's real code lines per area — TypeScript, TSX and CSS across the `Core`,
-`UIX`, `Desktop` and `Showcase` workspaces, with comments, blank lines, tests, type shims and build
-configuration excluded. Run it bare for the working tree, or with `--history` for one sample per day
-of the branch. Both forms emit the nine areas in stack order; `--history` also carries the swatch
+`UIX` and `Desktop` workspaces, with comments, blank lines, tests, type shims, build configuration
+and the `Showcase` excluded. Run it bare for the working tree, or with `--history` for one sample
+per day of the branch. Both forms emit the eight areas in stack order; `--history` also carries the swatch
 colors and the head SHA. Each area lists the pre-monorepo paths it was assembled from as well as its
 current ones, so a single map measures every commit on the branch and the earlier samples stay
 comparable; the one area that changed name carries its stored samples over through `RENAMED_FROM`.
