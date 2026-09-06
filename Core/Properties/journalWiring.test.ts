@@ -253,3 +253,30 @@ describe('the slot protects a stranded record', () => {
     })
   })
 })
+
+describe('a second nexus', () => {
+  it('sweeps and clears its own record while the session is open elsewhere', async () => {
+    const other = await realpath(await mkdtemp(join(tmpdir(), 'pom-jwire2-')))
+    await mkdir(join(other, '.nexus'), { recursive: true })
+    await writeFile(
+      join(other, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx2', createdAt: 'x' }),
+    )
+    await writeFile(join(other, '.nexus', 'settings.json'), '{}')
+    await mkdir(join(other, 'Col'), { recursive: true })
+    await createProperty(other, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await writeFile(
+      join(other, 'Col', '_pagecollection.json'),
+      JSON.stringify({ id: 'c2', properties: ['prop_s'] }),
+    )
+    await writeFile(
+      join(other, 'Col', 'A.md'),
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
+    )
+    const r = await editProperty(other, 'prop_s', { name: 'Phase' })
+    expect(r.ok).toBe(true)
+    expect(await readFile(join(other, 'Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
+    expect(await readSchemaJournal(other)).toBeNull()
+    await rm(other, { recursive: true, force: true })
+  })
+})

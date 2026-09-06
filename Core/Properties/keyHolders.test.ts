@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { rewritePageSerialized } from '../IO/atomicWrite'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
@@ -12,12 +11,12 @@ import { deleteProperty } from './deleteProperty'
 import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots } from './governedSweep'
 
-vi.mock('../IO/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../IO/atomicWrite')>()
-  return { ...mod, rewritePageSerialized: vi.fn(mod.rewritePageSerialized) }
+vi.mock('./governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./governedSweep')>()
+  return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
 })
 
-const openSpy = vi.mocked(rewritePageSerialized)
+const sweepSpy = vi.mocked(sweepGovernedRoots)
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
@@ -47,7 +46,7 @@ beforeEach(async () => {
   await writeFile(abs('Loose', 'Note.md'), '---\nStage: Draft\n---\n\nun-governed\n')
   openSessionDb(root)
   await seedContentIndex(root)
-  openSpy.mockClear()
+  sweepSpy.mockClear()
 })
 afterEach(async () => {
   dropLiveTree()
@@ -89,7 +88,8 @@ describe('the property cascades open only the holders', () => {
   it('an option rename opens exactly the 2 holders, and the un-governed note keeps its value', async () => {
     const r = await renameOption(root, 'prop_s', 'Draft', 'Sketch')
     expect(r.ok).toBe(true)
-    expect(openSpy).toHaveBeenCalledTimes(2)
+    const scope = sweepSpy.mock.calls[0]?.[1]
+    expect(scope?.kind === 'files' && scope.files).toHaveLength(2)
     expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
   })

@@ -2,8 +2,8 @@
 // On landing a view-bearing container whose views[] is empty, `ensureContainerView` mints once (an
 // in-flight map keyed by container id guards a re-select from double-firing). Every other view writer
 // routes through `saveViewAdopting` — a sentinel-holding write awaits the in-flight mint and saves
-// against the real id, never minting its own. Store-free: main confirms every view save by
-// patching its live tree and pushing, so no writer here needs the store.
+// against the real id, never minting its own.
+
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'

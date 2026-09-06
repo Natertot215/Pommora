@@ -13,9 +13,9 @@ import {
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey, type KeyCollision } from '../IO/pageFile'
-import { cascadePages } from './optionOps'
 import { collectionFolders } from './assignment'
-import { confirmedKeyHolders } from './keyHolders'
+import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
+import { sweepGovernedRoots } from './governedSweep'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -81,12 +81,14 @@ export async function createProperty(
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
 /** Returns the holders it could not read, so a journaled caller holds its record while any remain. */
-export function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
+export async function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
   // both holds the old one too.
-  return cascadePages(root, oldName, (content) =>
-    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER),
-  )
+  const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+    rewriteText: (content) => renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER),
+  })
+  return swept.skipped.length
 }
 
 type Rename = { from: string; to: string }

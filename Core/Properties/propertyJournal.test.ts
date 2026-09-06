@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { closeSession, openSession } from '../Nexus/session'
@@ -81,10 +81,12 @@ describe('clearSchemaJournal', () => {
     expect(await readSchemaJournal(root)).toEqual(SHAPES[0])
   })
 
-  it('leaves the record when the session root has moved on', async () => {
-    await writeSchemaJournal(root, SHAPES[0])
-    closeSession()
-    await clearSchemaJournal(root, SHAPES[0])
-    expect(JSON.parse(await readFile(journalPath(), 'utf8'))).toEqual(SHAPES[0])
+  it('clears a record on a nexus other than the open session', async () => {
+    const other = await realpath(await mkdtemp(join(tmpdir(), 'pom-pjournal2-')))
+    await mkdir(join(other, '.nexus'), { recursive: true })
+    await writeSchemaJournal(other, SHAPES[0])
+    await clearSchemaJournal(other, SHAPES[0])
+    expect(await readSchemaJournal(other)).toBeNull()
+    await rm(other, { recursive: true, force: true })
   })
 })

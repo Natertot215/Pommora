@@ -8,9 +8,9 @@ import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { reconcile } from '../Properties/reconcile'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
-import { sweepAdmits } from '../Nexus/util'
+import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
-import { pathExists, readJsonObject, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
+import { pathExists, readJsonObject, writeJson } from '../IO/atomicWrite'
 import { isMarkdownFile, listEntries } from '../IO/walk'
 import { machine } from '../Platform/machine'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
@@ -74,12 +74,17 @@ async function addContextValues(
     return [...existing, ...titles.filter((t) => !existing.includes(t))]
   }
   if (entry.kind === 'page') {
-    const abs = join(root, entry.path)
-    return rewritePageSerialized(abs, (content) => {
-      if (!sweepAdmits(content)) return null
-      const raw = splitFrontmatter(content)
-      return mergeFrontmatter(content, { [key]: merge(raw) }, [key], splitEnvelope(content).body)
-    }).catch(() => false)
+    const files = [join(root, entry.path)]
+    const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+      rewriteText: (content) =>
+        mergeFrontmatter(
+          content,
+          { [key]: merge(splitFrontmatter(content)) },
+          [key],
+          splitEnvelope(content).body,
+        ),
+    })
+    return swept.touched.length > 0
   }
   const file = join(root, entry.path, SPACE_SIDECAR)
   return machine().lock(file, async () => {

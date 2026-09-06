@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { PropertyDefinition } from '../Properties/properties'
 import { renameCascade } from './cascade'
+import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { createPage } from './page'
 import { createProperty } from '../Properties/registryProperty'
 import { splitFrontmatter } from './readNexus'
@@ -12,12 +13,16 @@ import { rewritePageSerialized } from '../IO/atomicWrite'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { seedContentIndex } from '../Index/indexSeed'
 
-vi.mock('../IO/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../IO/atomicWrite')>()
-  return { ...mod, rewritePageSerialized: vi.fn(mod.rewritePageSerialized) }
+vi.mock('../Properties/governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
+  return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
 })
 
-const openSpy = vi.mocked(rewritePageSerialized)
+const sweepSpy = vi.mocked(sweepGovernedRoots)
+const sweptFiles = (): string[] => {
+  const scope = sweepSpy.mock.calls[0]?.[1]
+  return scope?.kind === 'files' ? scope.files : []
+}
 
 let root: string
 let dir: string
@@ -98,12 +103,12 @@ describe('the cascade queries the index', () => {
     await seedFixture()
     openSessionDb(root)
     await seedContentIndex(root)
-    openSpy.mockClear()
+    sweepSpy.mockClear()
     const r = await renameCascade(root, 'Target', 'New Target')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.touched).toHaveLength(3)
-    expect(openSpy).toHaveBeenCalledTimes(3)
+    expect(sweptFiles()).toHaveLength(3)
     expect(await readFile(join(root, 'Loose', 'Note.md'), 'utf8')).toBe(
       'un-adopted [[New Target]]\n',
     )
@@ -112,14 +117,14 @@ describe('the cascade queries the index', () => {
 
   it('a null index falls back to the corpus scan — excluded folders unreachable either way', async () => {
     await seedFixture()
-    openSpy.mockClear()
+    sweepSpy.mockClear()
     const r = await renameCascade(root, 'Target', 'New Target')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.touched).toHaveLength(3)
     // The fallback reads the whole corpus — every filler too — but never the excluded note.
-    expect(openSpy).toHaveBeenCalledTimes(40)
-    expect(openSpy.mock.calls.some(([file]) => (file as string).includes('Hidden'))).toBe(false)
+    expect(sweptFiles()).toHaveLength(40)
+    expect(sweptFiles().some((file) => file.includes('Hidden'))).toBe(false)
     expect(await readFile(hidden(), 'utf8')).toBe('excluded [[Target]]\n')
   })
 })
