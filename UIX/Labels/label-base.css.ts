@@ -4,9 +4,7 @@ import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 import { mixAt, tintAt } from '../Theme/tint'
 
-// § VALUES — every number a label uses, one place each.
-
-// Geometry for Pill + Label [Standard] chips; used by Status, Select, and Multi-Select
+// Geometry for Pill + Label [Standard] chips; used by Status, Select, and Multi-Select.
 export const SIZE = {
   height: '20px',
   roomyHeight: '22px',
@@ -32,7 +30,6 @@ const labelBase = style([
   },
 ])
 
-// Geometry for the [Compact] style; same property assignment as [Standard].
 const chip = (radius: string): ComplexStyleRule => [
   labelBase,
   {
@@ -49,13 +46,11 @@ export const shape = {
 } as const
 export type LabelShape = keyof typeof shape
 
-// § COLOR — the tint recipe once, then one variant per palette key naming only its base.
-
 const BASE = 'var(--label-base)'
 const FILL = tintAt(BASE, 'primary')
 
-/** THE tint: fill, outline and text mixed off the base. `--melt-ground` must be STATED — left unset
- *  the declaration drops and the blurred twin inherits the text color, stacking a crisp duplicate. */
+/** `--melt-ground` must be STATED — left unset the declaration drops and the blurred twin inherits
+ *  the text color, stacking a crisp duplicate. */
 export const tinted = style({
   background: FILL,
   borderColor: tintAt(BASE, 'secondary'),
@@ -63,8 +58,8 @@ export const tinted = style({
   vars: { '--melt-ground': FILL, '--label-accent': BASE },
 })
 
-/** A palette key: what it tints from, the outline a row brings instead of mixing one, and the raw
- *  color where the base differs from it — the greyscale row darkens before it tints. */
+/** `outline` is the row's own instead of a mixed one; `accent` the raw color where it differs from
+ *  the base — the greyscale row darkens before it tints. */
 type Paint = { base: string; outline?: string; accent?: string }
 const variant = ({ base, outline, accent }: Paint): ComplexStyleRule => [
   tinted,
@@ -100,11 +95,8 @@ export const labelColor = styleVariants({
 /** The label palette keys — the single source consumers (cells, `colorMap`) target. */
 export type LabelColorName = keyof typeof labelColor
 
-// § TREATMENT — named only where it DIFFERS from the tint. Doubled selectors so a modifier holds
-// whatever the tint says.
-
-/** `neutral` moves the color to border and text over a colorless ground, so it reads as something
- *  you can open rather than a value; its × takes the accent the text mix would wash out. */
+// Treatments are named only where they DIFFER from the tint; the doubled selectors are what lets a
+// modifier hold over whatever the tint says.
 export const fill = {
   neutral: style({
     selectors: {

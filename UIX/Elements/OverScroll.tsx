@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import './over-scroll.css'
 
@@ -60,7 +61,7 @@ function wireCaps(): void {
       if (!cap) return
       const max = cap.scrollWidth - cap.clientWidth
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
-      const next = Math.max(0, Math.min(max, cap.scrollLeft + delta))
+      const next = clamp(cap.scrollLeft + delta, 0, max)
       if (next === cap.scrollLeft) return
       cap.scrollLeft = next
       markScroll(cap)
