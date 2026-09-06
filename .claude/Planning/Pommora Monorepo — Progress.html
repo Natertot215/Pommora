@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 08:10 PT",
+  updated: "09-06-2026 08:40 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -115,10 +115,10 @@ const DATA = {
     { name: "Phase 5", title: "Removals, fixes, docs", tasks: [
       { n: 15, title: "Kill list at high confidence", state: "pending" },
       { n: 16, title: "The two write-path bugs", state: "done", hash: "4198404f", note: "Five bugs red-first with sibling sweeps; tests 334 / 4,050; +3 code lines. Run stands −711 vs base." },
-      { n: 17, title: "Showcase severed", state: "running", note: "One Opus agent with Task 18." },
+      { n: 17, title: "Showcase severed", state: "done", hash: "ffd56b07", note: "Zero Core imports; the showcase builds; TileLab blank pending a ruling." },
       { n: 18, title: "Harness scripts", state: "pending", note: "Every script repointed; the comment ledgers stay." },
       { n: 19, title: "Docs path sweep and stale claims", state: "pending" },
-      { n: 20, title: "Rules, Architecture split, Mobile plan", state: "pending" },
+      { n: 20, title: "Rules, Architecture split, Mobile plan", state: "running", note: "CLAUDE.md restated and tight; ArchitecturePM → CorePM + DesktopPM; ContextPM with Nathan's pass the one pending item." },
     ], gate: { name: "Gate 5", state: "pending" } },
     { name: "Closeout", title: "Delivery Claim, verifier, attack, History, report", tasks: [
       { n: "—", title: "Delivery Claim → neutral verifier → attack → Nathan's own pass", state: "pending" },
@@ -157,8 +157,10 @@ const DATA = {
     { at: "eba69eda", label: "Gate 4", lines: 69000 },
     { at: "f2db2a34", label: "Task 15", lines: 68745 },
     { at: "4198404f", label: "Task 16", lines: 68748 },
+    { at: "ffd56b07", label: "Tasks 17–18", lines: 68748 },
   ],
   gates: [
+    { name: "Tasks 17–18 · ffd56b07", text: "typecheck 0 · test 0 (334 / 4,050) · lint 0 (1,065 files) · build 0 · build:showcase 0\\n@pommora/core in Showcase → 0 · @renderer → 0 (control @pommora/uix → 18) · loc.py prints nine areas (product 68,718 + Showcase 2,155) · check-atlas runs to its count (16, all failing on Pommora/src SOURCE lines until Task 19) · comment-manifest 688 files / 3,664 lines / 12 over the cap · comment-ledger --verify 0 · Pommora/ in scripts → 2 (loc.py's legacy root for the history, kept)" },
     { name: "Task 16 · 4198404f", text: "typecheck 0 · test 0 (334 / 4,050; +5 red-first) · lint 0 (1,065 files) · build 0\\nremint under withSidecarLock (red: the fresh id clobbered back) · homepage.json → 2 (the path constant, the migration's label) with updateNexusConfig → 9 · unknown kind refused (red: status: deleted) · tableDnd through slotInGroup + nextOrder with a crossing test · renderTile on the live connections (red: generation 'first')" },
     { name: "Task 15 · f2db2a34", text: "typecheck 0 · test 0 (334 / 4,045) · lint 0 (1,065 files) · build 0\\n19 deleted symbols → 0 each (control capSet → 11) · function isPlainObject → 1 · function splitFrontmatter → 1 · withRoot → definition + 26 sites · dead exports 0 of 2,854 · orphan files 0 · dead CSS classes 0\\nsmoke (agent): tree rendered, page body round-tripped and restored, the trash surface's Time Deleted column rendered · run −714 vs base" },
     { name: "Gate 4 · eba69eda", text: "typecheck 0 · test 0 (334 / 4,049) · lint 0 (1,067 files) · build 0\\none Opus simplify-and-attack review of e25db9ea..HEAD: −10; one live regression found and routed to Task 16 with its fix (renderTile's connections pinned at mount); the menu path and the host cleared item by item\\nTask 14's smoke stood as the gate's · run −459 vs base" },
@@ -185,6 +187,7 @@ const DATA = {
     { name: "Task 0 baseline", text: "typecheck: exit 0\ntest: 321 files / 4,006 tests, exit 0\nlint: 1,019 files, exit 0\nbuild: green\nloc.py total: 69,704\natlas: 16 tables · tracked files: 1,102" },
   ],
   log: [
+    { when: "09-06-2026", text: "Tasks 17–18 landed (ffd56b07): the Showcase builds again without Core (TileLab is a blank stage — its tiles are Core's by ruling; a kit seat or the leaf's retirement is Nathan's call, filed in ContextPM); the harness scripts walk the new tree and the ledger is republished with nine areas. Tasks 19–20 dispatched on a 331,425-character budget." },
     { when: "09-06-2026", text: "Task 16 landed (4198404f, +3): five bugs red-first. Bug 3's cause was encodeValue's fall-through returning undefined (a key drop), not isBlankValue; the same hole one door down in createPage's seeds fixed at the source. The writeJson sweep found five unlocked single-writer sites (identity, journalSlot, record, contextsRegistry, adopt) left with reasons; contextsRegistry's double-seed window resolves most-recent-wins. Tasks 17–18 dispatched." },
     { when: "09-06-2026", text: "Task 15 landed (f2db2a34, −255 of a −550 target): the audits' high-confidence lists were already consumed by Tasks 3–14 and the simplification pass — verified item by item; the tree has no dead export, no orphan file, no dead CSS class. The agent declined to buy the number by deleting the Tiles layout primitives the suite is written against or the equivalence oracles; recorded as such. Run −714 vs base. Task 16 dispatched." },
     { when: "09-06-2026", text: "Gate 4 landed (eba69eda, −10). Phase 4 closed; the run stands −459 vs base. Found: the editor's host facet is pinned at mount so an embedded tile's ConnectionsApi goes stale after a tree push (Task 16, with a red test; the fix is a ref read inside renderTile); ActionItem.confirm is write-only though ruling 35 keeps it (Nathan's call at ContextPM); RowMenuHost has no desktop caller by design (the phone's seat, ~110 lines). Task 15 dispatched with a −1,000 target." },
