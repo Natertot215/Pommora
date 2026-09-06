@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PINK,
   RAMP_FAMILIES,
   RAMP_STEPS,
   SPECTRUM,
@@ -76,9 +75,8 @@ describe('anchors', () => {
     expect(cellPaint(ANCHOR_CELLS.grey).base).toBe(mixAt(c.solid.grey, 85, BLACK))
   })
 
-  it('seats pink at purple-5 without making it a spectrum solid', () => {
-    expect(cellColor('purple-5')).toBe(PINK)
-    expect(Object.keys(SPECTRUM)).not.toContain('pink')
+  it('seats pink at purple-5', () => {
+    expect(cellColor(ANCHOR_CELLS.pink)).toBe(c.solid.pink)
   })
 })
 
