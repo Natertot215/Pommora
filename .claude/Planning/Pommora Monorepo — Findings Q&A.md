@@ -58,11 +58,12 @@ Only findings where your knowledge of how the app looks or behaves could change 
 > No. Keep as is
 
 13. **Naming You Will See in the Tree.** `Settings/IconPicker.tsx` exports `IconPicker`, the same name as the UIX component it wraps; `Properties/resolveContext.ts` is a render bag unrelated to `shared/contextResolve.ts` (A20 §1, A14 §6); default: `NexusIconPicker` and `viewResolveContext`.
+
 >Thats incredibly stupid. IconPicker needs to be the component where IconValue or IconChoice becomes something that decides the icon. This way the picker can live in UIX/ like it always should
 
 14. **Card Primitive Leaves the App Layer.** `Cards/Card.tsx` is the eight-part primitive both `CardsView` and `NavGallery` render (A11 §2); default: it becomes `UIX/Elements/Card` and the Cards *view* keeps its own folder.
 
-> UIX/Cards
+> UIX/Cards; the nav-gallery.css file likely can be removed as the TSX can hold the styles the rest of the app provides; if I’m wrong — ignore that 
 
 15. **The Subfield Order Knob Has No UI.** `subfieldOrder` round-trips to disk and is read by `Subfield.tsx:24`, but nothing in the app has ever written it (A16 §1, §2); default: keep the key and the disk round-trip, delete the unreachable store action.
 
