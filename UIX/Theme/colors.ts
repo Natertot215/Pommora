@@ -96,7 +96,7 @@ export const isColorKey = (s: string): boolean => COLOR_KEYS.has(s)
 
 // greyDefault is absent by construction: it lives beside SPECTRUM, not in it.
 export const SOLID_COLORS = Object.keys(SPECTRUM) as SolidColor[]
-export type SolidColor = keyof typeof SPECTRUM
+type SolidColor = keyof typeof SPECTRUM
 
 /** A ramp cell, a legacy solid name still on disk, or the sentinel naming what it inherits. */
 export type ColorSetting<Inherit extends string> = CellKey | SolidColor | Inherit

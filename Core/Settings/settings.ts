@@ -9,13 +9,13 @@ import type { WatchScope } from '../Locations/exclusion'
 import { readJsonObject, rmwJsonStrict } from '../IO/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from '../Locations/paths'
-import { excludedFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
+import { nexusFolderRefusal, readSettingsLeaves, scopeOf, type SettingsLeaves } from './codec'
 import { normalizeSeg, rootSegs } from '../Locations/exclusion'
 import { fail, ok, type Result } from '../Contract/result'
 import { isPlainObject } from '../Properties/propertyValue'
 
 /** The one primitive every `.nexus` config writer funnels through: a missing file starts empty; an unreadable one fails the write rather than replacing what's already on disk. */
-export async function updateNexusConfig(
+async function updateNexusConfig(
   root: string,
   file: keyof typeof NEXUS_CONFIG_FILES,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
@@ -132,7 +132,7 @@ export function sanitizeExclusions(folders: unknown): Result<string[]> {
   for (const entry of folders) {
     if (typeof entry !== 'string') return fail('operation-failed', 'A folder path is required.')
     const raw = entry.trim()
-    const refusal = excludedFolderRefusal(raw)
+    const refusal = nexusFolderRefusal(raw)
     if (refusal) return fail('invalid-path', refusal)
     const segs = rootSegs(raw)
     const rel = segs.join('/')

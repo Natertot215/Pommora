@@ -1,19 +1,15 @@
-import type {
-  ColumnStyle,
-  DateFormat,
-  TimeFormat,
-  WeekdayFormat,
+import {
+  DATE_FORMAT_LABELS,
+  DATE_FORMATS,
+  type ColumnStyle,
+  type DateFormat,
+  type TimeFormat,
+  type WeekdayFormat,
 } from '@pommora/core/Properties/columnStyles'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { MenuRowView, type MenuRow } from '@pommora/uix/Menus'
 
-const DATE_OPTIONS: { value: DateFormat; label: string }[] = [
-  { value: 'monthDayYear', label: 'MM/DD/YYYY' },
-  { value: 'dayMonthYear', label: 'DD/MM/YYYY' },
-  { value: 'short', label: 'Short Date' },
-  { value: 'full', label: 'Full Date' },
-  { value: 'relative', label: 'Relative' },
-]
+const DATE_OPTIONS = DATE_FORMATS.map((value) => ({ value, label: DATE_FORMAT_LABELS[value] }))
 const WEEKDAY_OPTIONS: { value: WeekdayFormat; label: string }[] = [
   { value: 'long', label: 'Full' },
   { value: 'short', label: 'Short' },

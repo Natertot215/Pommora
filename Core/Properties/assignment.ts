@@ -1,4 +1,5 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { isPlainObject } from './propertyValue'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { join } from '../Locations/posix'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
@@ -26,15 +27,17 @@ const write = async (
   ids: string[],
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
-export function withoutCacheBlock(
+/** The one writer of a sidecar's `property_cache` block — an absent block value removes the entry,
+ *  and an emptied cache leaves no key behind. */
+export function patchCacheBlock(
   sidecar: Record<string, unknown>,
   propertyId: string,
+  blockValue?: Record<string, unknown>,
 ): Record<string, unknown> {
-  const all = sidecar.property_cache
-  const next = { ...sidecar }
-  if (typeof all !== 'object' || all === null) return next
-  const cache = { ...(all as Record<string, unknown>) }
-  delete cache[propertyId]
+  const cache = { ...(isPlainObject(sidecar.property_cache) ? sidecar.property_cache : {}) }
+  if (blockValue) cache[propertyId] = blockValue
+  else delete cache[propertyId]
+  const next: Record<string, unknown> = { ...sidecar }
   if (Object.keys(cache).length) next.property_cache = cache
   else delete next.property_cache
   return next

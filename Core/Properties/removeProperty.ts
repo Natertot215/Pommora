@@ -1,4 +1,5 @@
 import { contentId } from '../Nexus/identityMark'
+import { patchCacheBlock } from './assignment'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../IO/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
@@ -6,7 +7,7 @@ import { sidecarPath } from '../Locations/paths'
 import { readTextOrNull, rmwJsonStrict } from '../IO/atomicWrite'
 import { folderCorpus, indexWrittenPage } from '../Index/indexSeed'
 import { sweepGovernedRoots } from './governedSweep'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { isBlankValue, isPlainObject, reconcilePropertyValue } from './propertyValue'
@@ -42,7 +43,7 @@ async function removeInner(
   for (const file of files) {
     const content = await readTextOrNull(file)
     if (content === null) continue
-    const fields = readFrontmatterFields(content)
+    const fields = splitFrontmatter(content)
     const id = contentId(fields)
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
@@ -60,20 +61,6 @@ async function removeInner(
   const text = (content: string): string | null => stripPageMember(content, key)
   await sweepGovernedRoots(root, { kind: 'files', files }, { text })
   return ok(null)
-}
-
-function patchCacheBlock(
-  cur: Record<string, unknown>,
-  propertyId: string,
-  blockValue: Record<string, unknown> | undefined,
-): Record<string, unknown> {
-  const cache = { ...(isPlainObject(cur.property_cache) ? cur.property_cache : {}) }
-  if (blockValue) cache[propertyId] = blockValue
-  else delete cache[propertyId]
-  const next: Record<string, unknown> = { ...cur }
-  if (Object.keys(cache).length) next.property_cache = cache
-  else delete next.property_cache
-  return next
 }
 
 export async function restoreCachedValues(
@@ -94,7 +81,7 @@ export async function restoreCachedValues(
   for (const file of await folderCorpus(root, collectionFolder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
-    const id = contentId(readFrontmatterFields(content))
+    const id = contentId(splitFrontmatter(content))
     if (id) byId.set(id, file)
   }
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {

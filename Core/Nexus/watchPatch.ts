@@ -1,4 +1,5 @@
 import { join } from '../Locations/posix'
+import { escapes } from '../Locations/pathSafety'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import { asString, asStringArray } from '../Locations/coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
@@ -56,7 +57,7 @@ export interface WatchEvent {
   absPath: string
 }
 
-export type WatchClass =
+type WatchClass =
   | { kind: 'page-upsert'; rel: string }
   | { kind: 'page-remove'; rel: string }
   | { kind: 'container-meta'; dirRel: string }
@@ -72,7 +73,7 @@ export type WatchClass =
 
 const toPosixRel = (root: string, absPath: string): string | null => {
   const rel = relPosix(root, absPath)
-  return !rel || rel.startsWith('..') ? null : rel
+  return !rel || escapes(rel) ? null : rel
 }
 
 function findContainer(tree: NexusTree, dirRel: string): CollectionNode | SetNode | null {

@@ -4,7 +4,7 @@
 import { invalidBasename } from '../Properties/contexts'
 import { hiddenName } from '../Locations/exclusion'
 import { admitContentFile } from './identityMark'
-import { frontmatterWritable, readFrontmatterFields } from '../IO/pageFile'
+import { frontmatterWritable, splitFrontmatter } from '../IO/pageFile'
 
 /** Rejects path separators, dot dirs, and a trailing managed extension (writers append that
  *  themselves — "Note.md" would otherwise yield "Note.md.md"). Single source across page + folder CRUD. */
@@ -31,7 +31,7 @@ export function invalidContextTitle(title: string): boolean {
  *  deliberately: the sweeps exist to change or clear values, and gating on membership alone would
  *  leave a page holding the very value a Remove ran to clear. */
 export function sweepAdmitsBody(content: string): boolean {
-  return admitContentFile(readFrontmatterFields(content), 'page').state !== 'unknown'
+  return admitContentFile(splitFrontmatter(content), 'page').state !== 'unknown'
 }
 
 /** Whether a nexus-wide sweep may rewrite this page's fields — identity admits it, and its

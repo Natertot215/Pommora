@@ -3,7 +3,7 @@ import { solidColorCss } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
 import './checkbox.css'
 
-export type CheckboxSize = 'standard' | 'compact'
+type CheckboxSize = 'standard' | 'compact'
 
 /** The app's one checkbox. Interactive by default — a role, a label, and keyboard activation the
  *  editor's raw widget deliberately has none of; `readOnly` renders the same look as a plain value

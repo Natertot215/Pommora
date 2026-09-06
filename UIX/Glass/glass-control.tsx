@@ -4,7 +4,7 @@ import { Glass, type GlassOptics } from '@samasante/liquid-glass'
 /** Apple "Liquid Glass" via @samasante/liquid-glass — real edge refraction, not a flat frost.
  *  CONTROL_OPTICS is the tuned look; layout is the consumer's. GlassSegment is the small-control
  *  variant (the switch knob); menus use GlassSurface. */
-export const CONTROL_OPTICS: Partial<GlassOptics> = {
+const CONTROL_OPTICS: Partial<GlassOptics> = {
   strength: 0.0,
   depth: 0.3,
   curvature: 0.45,

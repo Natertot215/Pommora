@@ -3,7 +3,7 @@ import { machine } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
 import { isMarkdownFile, listEntries } from '../IO/walk'
 import { resolveUnderRoot } from '../Locations/pathSafety'
-import { assetDirRefusal } from './codec'
+import { nexusFolderRefusal } from './codec'
 import { SIDECARS, relPosix } from '../Locations/paths'
 
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
@@ -11,7 +11,7 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
   if (!rel) return fail('invalid-path', 'The nexus root itself cannot hold assets.')
   const resolved = await resolveUnderRoot(root, rel)
   if (!resolved.ok) return resolved
-  const refusal = assetDirRefusal(rel)
+  const refusal = nexusFolderRefusal(rel)
   if (refusal) return fail('invalid-path', refusal)
   const stats = await machine()
     .stat(resolved.value)

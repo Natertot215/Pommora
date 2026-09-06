@@ -50,7 +50,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   const { removeProperty } = await import('./removeProperty')
   const { createPage, updatePageProperty } = await import('../Nexus/page')
   const { readFile } = await import('node:fs/promises')
-  const { readFrontmatterFields } = await import('../IO/pageFile')
+  const { splitFrontmatter } = await import('../IO/pageFile')
   const mk = async (name: string): Promise<string> => {
     const r = await createProperty(root, { id: '', name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')
@@ -82,10 +82,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     expect(assigned).toContain(pB)
     expect(assigned).not.toContain(pC)
     expect(Object.values(cached?.values ?? {})).toEqual([7])
-    const fm = readFrontmatterFields(await readFile(page.value.path, 'utf8')) as Record<
-      string,
-      unknown
-    >
+    const fm = splitFrontmatter(await readFile(page.value.path, 'utf8')) as Record<string, unknown>
     expect(fm.Gone).toBeUndefined()
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)

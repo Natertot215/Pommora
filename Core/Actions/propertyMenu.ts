@@ -2,14 +2,14 @@ import type { ActionItem } from './menuModel'
 
 // Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm dialog.
 
-export type PropertyMenuContext =
+type PropertyMenuContext =
   | { kind: 'editor'; name: string }
   | { kind: 'assigned-row'; name: string }
   | { kind: 'registry-row'; name: string }
   /** Neither Clear nor Remove touches the schema: the property stays assigned to its Collection. */
   | { kind: 'page-value'; name: string; filled: boolean }
 
-export type PropertyMenuAction =
+type PropertyMenuAction =
   | 'property:rename'
   | 'property:remove'
   | 'property:destroy'

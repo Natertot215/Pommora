@@ -5,7 +5,7 @@ import type { PropertyDefinition } from './properties'
 import { type Adoption, encodeValue, isBlankValue, reconcilePropertyValue } from './propertyValue'
 import type { SpaceNode } from '../Nexus/tree'
 
-export type ResolvedLinks = Map<string, string[]>
+type ResolvedLinks = Map<string, string[]>
 
 const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
 
@@ -53,7 +53,7 @@ export function resolveContextKeys(
   return links
 }
 
-export interface Reconciled {
+interface Reconciled {
   root: Record<string, unknown>
   changed: string[]
   adoptions: Adoption[]

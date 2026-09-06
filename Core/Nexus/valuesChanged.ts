@@ -3,11 +3,10 @@
 // grouped by container, with page ids resolved from the live tree.
 
 import { getLiveTree } from './liveTree'
+import { escapes } from '../Locations/pathSafety'
+import { parentOf } from './treePatch'
 import { relPosix } from '../Locations/paths'
 import type { NexusTree, ValueChange } from './tree'
-
-export const containerOf = (rel: string): string =>
-  rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : ''
 
 // One root at a time: a note under another root is a session that moved, and the old root's
 // unflushed writes have no window left to reach.
@@ -16,9 +15,9 @@ let ledger: { root: string; byRel: Map<string, Set<string>> } | null = null
 export function noteValueWrite(root: string | null, absFile: string): void {
   if (root === null) return
   const rel = relPosix(root, absFile)
-  if (!rel || rel.startsWith('..')) return
+  if (!rel || escapes(rel)) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
-  const container = containerOf(rel)
+  const container = parentOf(rel)
   const files = ledger.byRel.get(container) ?? new Set<string>()
   ledger.byRel.set(container, files)
   files.add(rel)

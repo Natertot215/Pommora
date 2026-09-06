@@ -19,7 +19,7 @@ export function checkboxToggleChange(doc: string, pos: number): ChangeSpec | nul
 }
 
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-export interface BlockRange {
+interface BlockRange {
   from: number
   to: number
 }

@@ -56,7 +56,7 @@ const TABLER_FILE_TYPES = {
   zip: IconFileTypeZip,
 } satisfies Record<string, LucideIcon>
 
-export type FileTypeExt = keyof typeof TABLER_FILE_TYPES
+type FileTypeExt = keyof typeof TABLER_FILE_TYPES
 export const FILE_TYPE_EXTS = Object.keys(TABLER_FILE_TYPES) as FileTypeExt[]
 
 const ALIASES: Record<string, FileTypeExt> = {

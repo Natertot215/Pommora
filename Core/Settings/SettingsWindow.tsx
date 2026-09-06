@@ -18,7 +18,7 @@ import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { stepsWith, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormat'
+import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_TIME_FORMAT,

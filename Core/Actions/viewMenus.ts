@@ -2,13 +2,13 @@ import type { ActionItem } from './menuModel'
 import type { ViewButton, ViewStyle } from '../Views/viewRow'
 import { iconLabel } from './toggleLabels'
 
-export type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
+type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
-export type ViewButtonMenuAction = 'toggle-title'
+type ViewButtonMenuAction = 'toggle-title'
 
-export type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size-${number}`
+type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size-${number}`
 
-export type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
+type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
 
 /** The full six, unlike the block grip's picker: an embed title is chrome, not document structure. */
 const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const

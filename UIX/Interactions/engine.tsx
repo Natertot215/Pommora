@@ -77,7 +77,7 @@ type ZoneValue = {
 }
 const ZoneCtx = createContext<ZoneValue | null>(null)
 
-export type ZoneProps = {
+type ZoneProps = {
   ids: string[]
   onReorder?: (activeId: string, overId: string) => void
   disabled?: boolean

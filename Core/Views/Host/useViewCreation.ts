@@ -26,7 +26,7 @@ import { groupKeyToValue } from '../reassign'
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
 const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
 
-export interface ViewCreationConfig {
+interface ViewCreationConfig {
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
@@ -49,7 +49,7 @@ export interface ViewCreationConfig {
   onCreated: (created: { id: string; path: string }) => void
 }
 
-export interface ViewCreation {
+interface ViewCreation {
   bandAdd: (setKey: string) => Promise<boolean>
   createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
   createAfter: (row: ViewRow) => Promise<boolean>

@@ -5,10 +5,9 @@ import { tableMenuItems } from '@pommora/core/Actions/tableMenu'
 import { citationMenuModel } from '@pommora/core/Actions/citationMenu'
 import type { EditorHost, EditorMenuApi } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import type { WarmSeam } from '../MarkdownPM/warmSeam'
+import { mapWarmSeam, type WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, useSession } from '../Session/store'
 import { readPageDetail } from '../Session/pageDetailCache'
-import { fenceWarm } from '../Navigation/warmTabs'
 import { host } from '../Platform/dialer'
 import { popRowMenu } from '../Platform/nativeMenus'
 import { cancelGlance, closeGlance, insideGlance } from '../Interface/Glance/glanceAction'
@@ -16,7 +15,7 @@ import { glanceLink } from '../Interface/Glance/glanceLink'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 
-export interface EditorHostOptions {
+interface EditorHostOptions {
   pageId?: string
   connections?: ConnectionsApi
   /** A surface that only shows a document neither glances nor drives the native format menu. */
@@ -33,17 +32,8 @@ const nativeEditorMenu: EditorMenuApi = {
 const tileCache = new Map<string, { editorState: unknown; scrollTop: number }>()
 
 export function tileWarmSeam(chain: readonly string[]): WarmSeam {
-  const key = chain.join('\n')
   const path = chain[chain.length - 1]
-  return {
-    restore: () => {
-      // A page edited elsewhere since the capture invalidates the whole entry — selection and history are positions into a doc that no longer exists.
-      const kept = fenceWarm(tileCache.get(key), readPageDetail(path)?.body)
-      if (!kept) tileCache.delete(key)
-      return kept
-    },
-    capture: (state) => tileCache.set(key, state),
-  }
+  return mapWarmSeam(tileCache, chain.join('\n'), () => readPageDetail(path)?.body)
 }
 
 const pickNode = (c: CollectionNode | SetNode): PickNode => ({
@@ -55,7 +45,7 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
 })
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount. */
-export function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
+function buildEditorHost({ pageId, connections, inert }: EditorHostOptions): EditorHost {
   const state = useSession.getState
   return {
     settings: () => {

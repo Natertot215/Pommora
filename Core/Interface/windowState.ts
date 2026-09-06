@@ -2,12 +2,14 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { EMPTY_WINDOWS, type WindowSetRecord, type WindowsFile } from './Windows/windowRecord'
 import { toNavRef, type NavRef } from '../Navigation/navRef'
 import { readValue, writeValue } from '../Platform/localState'
-import { isTabRef } from './tabsState'
+import { isNavRef, TAB_KINDS } from '../Navigation/navRef'
 
 function readRecord(v: unknown): WindowSetRecord | null {
   if (!isPlainObject(v) || !Array.isArray(v.tabs)) return null
   const tabs = v.tabs
-    .map((t) => (isPlainObject(t) && isTabRef(t.target) ? { target: toNavRef(t.target) } : null))
+    .map((t) =>
+      isPlainObject(t) && isNavRef(t.target, TAB_KINDS) ? { target: toNavRef(t.target) } : null,
+    )
     .filter((t): t is { target: NavRef } => t !== null)
   const activeIndex =
     typeof v.activeIndex === 'number' && Number.isInteger(v.activeIndex) && v.activeIndex >= 0

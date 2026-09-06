@@ -1,6 +1,6 @@
 import type { Box } from './shared'
 
-export type Dir = { x: number; y: number }
+type Dir = { x: number; y: number }
 
 export const ARROW_DIRS: Record<string, Dir> = {
   ArrowUp: { x: 0, y: -1 },

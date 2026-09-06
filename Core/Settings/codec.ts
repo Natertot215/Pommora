@@ -140,6 +140,7 @@ export interface SettingsLeaves {
   profileSubtitle: string
 }
 
+/** A refused value takes the default rather than narrowing the walk or widening the protocol handler's containment check — `.nexus/contexts` would drop every Space from the walk. */
 export function nexusFolderRefusal(raw: string): string | null {
   const segs = rootSegs(raw)
   if (
@@ -153,14 +154,9 @@ export function nexusFolderRefusal(raw: string): string | null {
   return null
 }
 
-/** A refused value takes the default rather than narrowing the walk or widening the protocol handler's containment check — `.nexus/contexts` would drop every Space from the walk. */
-export const assetDirRefusal = nexusFolderRefusal
-
-export const excludedFolderRefusal = nexusFolderRefusal
-
 function readAssetDirectoryLeaf(v: unknown): string {
   const raw = asString(v)?.trim() ?? ''
-  return assetDirRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
+  return nexusFolderRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
 }
 
 function readExcludedLeaf(v: unknown): string[] {
@@ -170,7 +166,7 @@ function readExcludedLeaf(v: unknown): string[] {
   for (const item of v) {
     if (typeof item !== 'string') continue
     const raw = item.trim()
-    if (!raw || excludedFolderRefusal(raw)) continue
+    if (!raw || nexusFolderRefusal(raw)) continue
     const segs = rootSegs(raw)
     const key = segs.map(normalizeSeg).join('/')
     if (seen.has(key)) continue

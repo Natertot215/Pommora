@@ -9,7 +9,7 @@ import { AssetImage } from '../Assets/AssetImage'
 import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { moveByKey } from './navRecents'
-import { splitSearch, useNavData } from './useNavData'
+import { useNavData } from './useNavData'
 import { NavGallery } from './NavGallery'
 import { NavList } from './NavList'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
@@ -37,7 +37,7 @@ export function NavView(): React.JSX.Element {
       noRemove: !ownBanner,
     })
   const [query, setQuery] = useState('')
-  const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
+  const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const open = (target: NavRef): void => go(target)
   const openNew = (target: NavRef): void => go(target, undefined, { newTab: true })
 
@@ -83,7 +83,7 @@ export function NavView(): React.JSX.Element {
         {results ? (
           <NavGallery
             pins={[]}
-            items={results.items}
+            items={results}
             frozenLayout
             onSelect={open}
             onOpenNewTab={openNew}

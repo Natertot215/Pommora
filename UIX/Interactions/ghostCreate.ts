@@ -14,7 +14,7 @@ const GHOST_EXIT_BEAT_MS = 1000
  *  caller-side wrapping can't reach. Pass-through by default. */
 export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
-export interface GhostAnchorOptions {
+interface GhostAnchorOptions {
   dwellMs: number
   graceMs: number
   /** Re-read when the dwell timer fires: a suppressor arriving mid-dwell must not leave a ghost

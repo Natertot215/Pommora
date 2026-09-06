@@ -166,7 +166,6 @@ function DraggableRow(props: {
 export function NavList({
   items,
   pins,
-  extras,
   reorderable,
   onReorderRecent,
   onSelect,
@@ -174,7 +173,6 @@ export function NavList({
 }: {
   items: ResolvedNav[]
   pins?: ResolvedNav[]
-  extras?: { key: string; title: string; kind: string }[]
   reorderable?: boolean
   onReorderRecent?: (activeKey: string, overKey: string) => void
   onSelect: (target: NavRef) => void
@@ -195,7 +193,7 @@ export function NavList({
         : [],
     [reorderable, pins, items],
   )
-  if (items.length === 0 && pinRows.length === 0 && !extras?.length) return null
+  if (items.length === 0 && pinRows.length === 0) return null
   const recents = reorderable ? items : []
 
   const commitReorder = (orderIds: string[], groupKey: string, activeId: string): void => {
@@ -217,13 +215,6 @@ export function NavList({
           <NavRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
         ),
       )}
-      {extras?.map((e) => (
-        <MenuItem key={e.key} disabled detail={e.kind}>
-          <span title="This result can't be opened" style={{ pointerEvents: 'auto' }}>
-            {e.title}
-          </span>
-        </MenuItem>
-      ))}
     </div>
   )
   return (

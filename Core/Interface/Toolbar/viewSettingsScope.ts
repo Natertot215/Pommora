@@ -1,6 +1,6 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 
-export type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'none'
+type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'none'
 
 export function viewSettingsScope(selection: SelectionState): ViewSettingsScope {
   switch (selection.kind) {

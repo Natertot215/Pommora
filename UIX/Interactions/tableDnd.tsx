@@ -7,21 +7,14 @@ import {
   type ReactNode,
 } from 'react'
 import { nearestByTop, useInsertionDrag } from './insertionDrag'
+import type { MeasuredRow } from './reorderModel'
 import { DROP_LINE_INSET } from './shared'
 
 // This file owns the hit-testing only; the commits live in TableView and are passed in.
 
 type Slot = { lineY: number; left: number; width: number; commit: () => void }
-type MeasuredRow = {
-  id: string
-  top: number
-  bottom: number
-  mid: number
-  left: number
-  contentRight: number
-  group: string
-}
-type Snapshot = { rows: MeasuredRow[]; boxTop: number; boxLeft: number }
+type TableRow = MeasuredRow & { left: number; contentRight: number; group: string }
+type Snapshot = { rows: TableRow[]; boxTop: number; boxLeft: number }
 
 type Value = {
   draggingId: string | null
@@ -63,7 +56,7 @@ export function TableRowDnd({
       const box = content.current
       if (!box) return null
       const boxRect = box.getBoundingClientRect()
-      const measured: MeasuredRow[] = []
+      const measured: TableRow[] = []
       for (const r of rows) {
         if (r.id === excludeId) continue
         const el = els.current.get(r.id)

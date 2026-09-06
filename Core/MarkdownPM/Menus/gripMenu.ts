@@ -14,7 +14,7 @@ import { focusRange } from '../caretPlacement'
 import { webpageEmbedUrlSpan } from '@pommora/core/Web/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
 
-export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
+const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
 export const HOT_MENU_LINES = [...GRIP_MENU_LINES, HEADING_FOLD_LINE]

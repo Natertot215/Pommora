@@ -15,7 +15,7 @@ import { DropLine } from './DropLine'
 import { armAutoScroll } from './autoscroll'
 import { announce } from './a11y'
 
-export interface InsertionDragSpec<Slot, Snap> {
+interface InsertionDragSpec<Slot, Snap> {
   /** Taken at activation, retaken lazily after an invalidation. Null fails the resolve closed. */
   take: (id: string) => Snap | null
   resolve: (id: string, point: { x: number; y: number }, snap: Snap) => Slot | null

@@ -6,7 +6,7 @@ import { clamp } from '../Utilities/clamp'
 
 export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 export type ResizeGrip = ResizeEdge | 'move'
-export type ResizePhase = 'move' | 'drop' | 'abort'
+type ResizePhase = 'move' | 'drop' | 'abort'
 
 export interface Size {
   w: number
@@ -36,7 +36,7 @@ export interface ResizeFrameSpec<R extends Partial<Rect>> {
   onChange: (next: R, phase: ResizePhase) => void
 }
 
-export interface ResizeFrameHandle {
+interface ResizeFrameHandle {
   start: (grip: ResizeGrip) => (e: ReactPointerEvent<HTMLElement>) => void
   active: ResizeGrip | null
   /** The handles, rendered as direct children of the box they resize. */

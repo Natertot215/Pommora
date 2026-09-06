@@ -10,7 +10,6 @@ import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { useActiveView } from '../Host/useActiveView'
 import { useSaveView } from '../ViewTileScope'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { PaneDrop, FrameRow } from '@pommora/uix/Interactions/frameDndModel'
@@ -163,26 +162,5 @@ export function VisibilityList({
         />
       </FrameDnd>
     </MenuScrollFrame>
-  )
-}
-
-export function HiddenFrame({
-  source,
-  schema,
-  onBack,
-}: {
-  source: CollectionNode | SetNode
-  schema: PropertyDefinition[]
-  onBack: () => void
-}): React.JSX.Element | null {
-  const { view } = useActiveView(source, schema)
-  return (
-    <VisibilityList
-      source={source}
-      schema={schema}
-      view={view}
-      onBack={onBack}
-      current="Visibility"
-    />
   )
 }

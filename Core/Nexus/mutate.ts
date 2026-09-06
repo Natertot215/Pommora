@@ -86,11 +86,6 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return resolved.ok ? done(await emptyBundle(root, resolved.value, deps)) : resolved
     }
 
-    case 'setProfileSubtitle': {
-      await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: req.subtitle.slice(0, 30) }))
-      return ok({})
-    }
-
     case 'setProfileImage':
       return setProfileImageOp(ctx, req)
 

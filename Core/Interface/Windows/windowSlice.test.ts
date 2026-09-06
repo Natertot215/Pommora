@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import type { ReconcileIndex } from '../../Session/selection'
+import type { ReconcileIndex } from '../../Session/reconcileSelection'
 import { useSession } from '../../Session/store'
 
 const indexOf = (pages: Record<string, string>): ReconcileIndex => ({

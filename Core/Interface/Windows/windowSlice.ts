@@ -4,7 +4,7 @@ import {
   type WindowsFile,
 } from '@pommora/core/Interface/Windows/windowRecord'
 import { type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
-import { type ReconcileIndex, reconcileWith } from '../../Session/selection'
+import { type ReconcileIndex, reconcileWith } from '../../Session/reconcileSelection'
 import { reconcileIndexOf } from '../../Session/treeIndex'
 import { liveTarget, makeTabId } from '../../Navigation/tabsModel'
 import {
@@ -37,7 +37,6 @@ export interface WindowSlice {
   reorderWindowTabs: (activeId: string, overId: string) => void
   closeWindowTab: (id: string, exit?: 'dismiss' | 'engulf') => void
   closeWindow: (reason?: 'dismiss' | 'engulf') => void
-  setNavOverride: (on: boolean) => void
   navOpen: boolean
   openNav: () => void
   closeNav: () => void
@@ -187,7 +186,6 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       set({ pageWindow: next, windowExit: morphing ? 'morph' : 'dismiss' })
       mirrorWindows()
     },
-    setNavOverride: (on) => saveWindowsFile({ ...get().windowsFile, navOverride: on }),
     openWindowTab: (target) => {
       const cur = get().pageWindow
       if (!cur) {

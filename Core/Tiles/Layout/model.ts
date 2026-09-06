@@ -29,7 +29,7 @@ export interface TileLayout {
 
 export type Edge = 'n' | 's' | 'e' | 'w'
 
-export interface NodePath {
+interface NodePath {
   band: number
   path: number[]
 }

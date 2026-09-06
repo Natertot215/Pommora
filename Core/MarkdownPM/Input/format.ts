@@ -38,8 +38,9 @@ const WRAP = {
 } as const
 
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
-  if (fmt === 'link') return toggleLink(doc, from, to)
-  if (fmt === 'connection') return toggleConnection(doc, from, to)
+  if (fmt === 'link') return toggleWrap(doc, from, to, 'link', '[', ']()', (_f, t) => t + 3)
+  if (fmt === 'connection')
+    return toggleWrap(doc, from, to, 'wikiLink', '[[', ']]', (f, t) => (f === t ? f + 2 : t + 2))
   const kind = fmt as keyof typeof WRAP & TokenKind
   const existing = tokenize(doc).find(
     (tk) => tk.kind === kind && tk.contentRange[0] <= from && to <= tk.contentRange[1],
@@ -64,9 +65,18 @@ export function toggleInline(doc: string, from: number, to: number, fmt: InlineF
   }
 }
 
-function toggleLink(doc: string, from: number, to: number): FormatEdit {
+function toggleWrap(
+  doc: string,
+  from: number,
+  to: number,
+  kind: 'link' | 'wikiLink',
+  open: string,
+  close: string,
+  /** Where the caret lands on a fresh wrap — inside a link's empty `()`, past a connection's `]]`. */
+  caret: (from: number, to: number) => number,
+): FormatEdit {
   const existing = tokenize(doc).find(
-    (tk) => tk.kind === 'link' && tk.range[0] <= from && to <= tk.range[1],
+    (tk) => tk.kind === kind && tk.range[0] <= from && to <= tk.range[1],
   )
   if (existing) {
     return {
@@ -81,38 +91,14 @@ function toggleLink(doc: string, from: number, to: number): FormatEdit {
   }
   return {
     changes: [
-      { from, to: from, insert: '[' },
-      { from: to, to, insert: ']()' },
+      { from, to: from, insert: open },
+      { from: to, to, insert: close },
     ],
-    selection: to + 3, // inside the empty ()
+    selection: caret(from, to),
   }
 }
 
-function toggleConnection(doc: string, from: number, to: number): FormatEdit {
-  const existing = tokenize(doc).find(
-    (tk) => tk.kind === 'wikiLink' && tk.range[0] <= from && to <= tk.range[1],
-  )
-  if (existing) {
-    return {
-      changes: [
-        {
-          from: existing.range[0],
-          to: existing.range[1],
-          insert: doc.slice(...existing.contentRange),
-        },
-      ],
-    }
-  }
-  return {
-    changes: [
-      { from, to: from, insert: '[[' },
-      { from: to, to, insert: ']]' },
-    ],
-    selection: from === to ? from + 2 : to + 2,
-  }
-}
-
-export function listMarkerText(kind: ListKind, n = 1): string {
+function listMarkerText(kind: ListKind, n = 1): string {
   switch (kind) {
     case 'ordered':
       return `${n}. `

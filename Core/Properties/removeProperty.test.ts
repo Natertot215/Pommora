@@ -11,7 +11,7 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { readSidecar } from '../IO/sidecar'
 import { readRegistry } from './propertiesRegistry'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
 
@@ -64,7 +64,7 @@ afterEach(async () => {
 })
 
 const pageValue = async (path: string): Promise<unknown> =>
-  (readFrontmatterFields(await readFile(path, 'utf8')) as Record<string, unknown>)[liveDef.name]
+  (splitFrontmatter(await readFile(path, 'utf8')) as Record<string, unknown>)[liveDef.name]
 const sidecar = async (): Promise<Record<string, unknown> | null> =>
   (await readSidecar(folder, 'collection', pageCollectionSidecar)) as Record<string, unknown> | null
 const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
@@ -187,10 +187,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await updatePageProperty(root, c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
-    const root2 = readFrontmatterFields(await readFile(c.value.path, 'utf8')) as Record<
-      string,
-      unknown
-    >
+    const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8')) as Record<string, unknown>
     expect(root2[selDef.name]).toEqual(['2024-01-01'])
   })
 
@@ -211,7 +208,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     })
     await removeProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)
-    const fm = readFrontmatterFields(await readFile(p.value.path, 'utf8'))
+    const fm = splitFrontmatter(await readFile(p.value.path, 'utf8'))
     expect(fm.Tags).toEqual(['alpha'])
     const def = (await readRegistry(root)).defs[tags.value.id]
     expect(def.select_options?.map((o) => o.value)).toEqual(['alpha'])

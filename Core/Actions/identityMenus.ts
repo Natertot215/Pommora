@@ -1,13 +1,13 @@
 import type { ActionItem } from './menuModel'
 import { iconLabel } from './toggleLabels'
 
-export type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'removePhoto' | 'removeIcon'
+type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'removePhoto' | 'removeIcon'
 
 export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 
-export type BannerMenuAction = 'change' | 'edit' | 'remove'
+type BannerMenuAction = 'change' | 'edit' | 'remove'
 
-export type IconFavoriteMenuAction = 'toggle'
+type IconFavoriteMenuAction = 'toggle'
 
 export function nexusIconMenuItems(opts: {
   hasPhoto: boolean

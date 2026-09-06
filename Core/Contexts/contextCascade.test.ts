@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { splitFrontmatter } from '../IO/pageFile'
 import { mkdtemp, realpath, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { renameContextOp, renameSpaceOp, replayPendingRename } from './contextCascade'
 import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Locations/paths'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { pathExists } from '../IO/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
 

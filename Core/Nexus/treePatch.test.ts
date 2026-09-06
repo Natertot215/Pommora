@@ -11,7 +11,6 @@ import {
   renameNodeInTree,
   reorderChildrenInTree,
   reorderPagesInTree,
-  reorderTopInTree,
 } from './treePatch'
 
 /** A two-Collection tree: Notes (with a nested Set) and Work. */
@@ -290,9 +289,7 @@ describe('patchContextGroupsInTree', () => {
     expect(
       patchContextGroupsInTree(tree(), { op: 'renameContext', contextId: 'g1', newName: 'X' }),
     ).toBeNull()
-    expect(
-      patchContextGroupsInTree(groupedTree(), { op: 'setProfileSubtitle', subtitle: 'x' }),
-    ).toBeNull()
+    expect(patchContextGroupsInTree(groupedTree(), { op: 'setProfileIcon', icon: 'x' })).toBeNull()
   })
 })
 
@@ -353,9 +350,9 @@ describe('patchNodeInTree', () => {
 })
 
 describe('reorder transforms', () => {
-  it('reorderTop reorders top collections, unknown ids keep relative order at the end', () => {
-    const t = reorderTopInTree(tree(), 'collection_order', ['c2'])
-    expect(t.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
+  it('an empty parent path reorders top collections, unknown ids keep relative order at the end', () => {
+    const t = reorderChildrenInTree(tree(), '', ['c2'])
+    expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
   it("reorderChildren reorders a collection's sets", () => {

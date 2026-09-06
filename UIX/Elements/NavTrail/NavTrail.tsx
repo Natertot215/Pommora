@@ -16,7 +16,7 @@ export interface TrailSegment {
 
 export const NO_TRAIL: TrailSegment[] = []
 
-export interface NavTrailProps {
+interface NavTrailProps {
   segments: readonly TrailSegment[]
   iconSize?: IconSize
   chevronSize?: 'control' | 'caption'

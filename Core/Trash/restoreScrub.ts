@@ -11,9 +11,9 @@ import {
 } from '../Properties/contextResolve'
 import { readJsonObject, writeJson } from '../IO/atomicWrite'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../IO/walk'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { SPACE_SIDECAR } from '../Locations/paths'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 

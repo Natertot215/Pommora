@@ -8,12 +8,12 @@ export interface Rect {
   h: number
 }
 
-export interface DividerRect extends Rect {
+interface DividerRect extends Rect {
   ref: DividerRef
   extentPx: number
 }
 
-export interface BandEdgeRect extends Rect {
+interface BandEdgeRect extends Rect {
   band: number
 }
 

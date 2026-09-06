@@ -3,7 +3,7 @@ import { duration, ms } from '@pommora/uix/Animations/motion'
 
 const EXIT_MS = ms(duration.base) + ms(duration.fast)
 
-export interface TabClose<E> {
+interface TabClose<E> {
   liveEntries: E[]
   renderEntries: { entry: E; ghost: boolean }[]
   firstLive: number

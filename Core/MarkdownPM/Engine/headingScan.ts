@@ -8,7 +8,7 @@ import {
 } from './detect'
 
 /** `DocScan` satisfies it structurally, so a caller holding the cached whole-document scan asks without re-splitting. */
-export interface HeadingSrc {
+interface HeadingSrc {
   lines: string[]
   lineStarts: number[]
   headings: readonly boolean[]
@@ -25,7 +25,7 @@ export function headingSrc(text: string): HeadingSrc {
   }
 }
 
-export interface HeadingSection {
+interface HeadingSection {
   from: number
   lineEnd: number
   level: number

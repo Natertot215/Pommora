@@ -37,7 +37,7 @@ export interface ConnPage {
   icon?: string
 }
 
-export interface ConnResolution {
+interface ConnResolution {
   status: LinkStatus
   page?: ConnPage
 }

@@ -25,7 +25,7 @@ export interface DocLineScan {
   citations: CitationScan
 }
 
-export function constructExclusions(
+function constructExclusions(
   d: DocLines,
   fences: [number, number][],
   tables: readonly TableRegion[],

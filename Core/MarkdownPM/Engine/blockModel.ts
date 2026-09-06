@@ -4,7 +4,7 @@ import { fenceRangesOf, parseListMarkerPrefixed, type CalloutLine } from './dete
 import type { DocScan } from './docScan'
 import { headingSections } from './headingScan'
 
-export type BlockKind =
+type BlockKind =
   | 'heading'
   | 'list'
   | 'callout'
@@ -217,7 +217,7 @@ export function blockAt(scan: DocScan, pos: number): Block | null {
   }
 }
 
-export interface BlockStart {
+interface BlockStart {
   from: number
   kind: BlockKind
 }

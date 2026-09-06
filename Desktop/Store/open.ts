@@ -8,7 +8,7 @@ import {
   SCHEMA_VERSION,
   truncateIndex,
   writeMeta,
-} from './schema'
+} from './ddl'
 import { nexusDir } from '@pommora/core/Locations/paths'
 
 export const DB_FILENAME = 'nexus.db'

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import {
-  allStructuralIds,
   bandSlot,
   buildBandIndex,
   canNest,
@@ -58,12 +57,6 @@ describe('flattenBands', () => {
       { id: 'open', kind: 'property', depth: 0, parentId: null },
       { id: 'done', kind: 'property', depth: 0, parentId: null },
     ])
-  })
-})
-
-describe('allStructuralIds', () => {
-  it('returns the FULL tree id set in tree order, collapsed subtrees included, never ungrouped', () => {
-    expect(allStructuralIds(tree)).toEqual(['A', 'A1', 'A2', 'B', 'B1'])
   })
 })
 

@@ -7,7 +7,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from './spend'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { readSidecar } from '../IO/sidecar'
 import { closeSession, openSession } from '../Nexus/session'
 import { assignProperty } from '../Properties/assignment'
@@ -34,7 +34,7 @@ const assigns = async (folder: string, id: string): Promise<boolean> => {
 }
 
 const valueOn = async (absPage: string, name: string): Promise<unknown> =>
-  readFrontmatterFields(await readFile(absPage, 'utf8'))[name]
+  splitFrontmatter(await readFile(absPage, 'utf8'))[name]
 
 /** Create Priority, assign it to both collections, and return its id. */
 async function seedPriority(): Promise<string> {

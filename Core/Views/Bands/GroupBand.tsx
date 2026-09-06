@@ -144,7 +144,7 @@ export function resolveBandHead(
   }
 }
 
-export interface BandDragHandle {
+interface BandDragHandle {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: React.PointerEvent) => void }
   isDragging: boolean

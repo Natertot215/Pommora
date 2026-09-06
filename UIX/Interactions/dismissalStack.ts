@@ -1,6 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 
-export type DismissalEntry = {
+type DismissalEntry = {
   layer: () => Element | null
   trigger?: () => Element | null
   dismiss?: () => void

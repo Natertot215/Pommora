@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { splitFrontmatter } from '../IO/pageFile'
 import { ID_KEY } from './identityMark'
 import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,7 +16,7 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession, sessionRoot } from './session'
 import { flushValueWrites } from './valuesChanged'
-import { splitFrontmatter, readNexus } from './readNexus'
+import { readNexus } from './readNexus'
 import { pathExists } from '../IO/atomicWrite'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
@@ -506,27 +507,6 @@ describe('handleMutate — review-round hardening', () => {
     if (clash.ok) return
     expect(clash.error.code).toBe('exists')
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
-  })
-
-  it('setProfileSubtitle writes settings.profile_subtitle, preserving other settings keys', async () => {
-    await writeFile(
-      join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ version: 1, outside_key: 'blue' }),
-    )
-    const r = await handleMutate(
-      { op: 'setProfileSubtitle', subtitle: 'A second brain.' },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    const cfg = JSON.parse(await read('.nexus/settings.json'))
-    expect(cfg.profile_subtitle).toBe('A second brain.')
-    expect(cfg.outside_key).toBe('blue') // foreign keys preserved
-    expect(cfg.version).toBe(1)
-  })
-
-  it('setProfileSubtitle clamps to 30 chars', async () => {
-    await handleMutate({ op: 'setProfileSubtitle', subtitle: 'x'.repeat(50) }, nexusDeps)
-    expect(JSON.parse(await read('.nexus/settings.json')).profile_subtitle.length).toBe(30)
   })
 
   const pickImage = async (name: string, body = 'img-bytes'): Promise<string> => {

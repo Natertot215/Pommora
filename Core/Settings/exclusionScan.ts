@@ -9,7 +9,7 @@ import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText } from '../Properties/governedSweep'
 import { assetMatcher, rootSegs } from '../Locations/exclusion'
 import { isMarkdownFile, listEntries } from '../IO/walk'
-import { mergeFrontmatter, readFrontmatterFields, splitEnvelope } from '../IO/pageFile'
+import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { SIDECAR_FILENAME } from '../Locations/paths'
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
@@ -57,7 +57,7 @@ export async function excludedArtifacts(
 }
 
 const clearRewrite: RewriteText = (content) => {
-  const keys = Object.keys(readFrontmatterFields(content))
+  const keys = Object.keys(splitFrontmatter(content))
   const remove = keys.filter((k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null)
   if (remove.length === 0) return null
   return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)

@@ -12,13 +12,9 @@ import type { ActionItem } from './menuModel'
 
 export type StyleAction = `style:${string}:${string}`
 
-export type ColumnMenuAction =
-  | 'column:hide'
-  | 'column:toggle-icons'
-  | `align:${ColumnAlign}`
-  | StyleAction
+type ColumnMenuAction = 'column:hide' | 'column:toggle-icons' | `align:${ColumnAlign}` | StyleAction
 
-export interface ColumnMenuContext {
+interface ColumnMenuContext {
   align: ColumnAlign
   alignable: boolean
   hideable: boolean

@@ -3,6 +3,7 @@
 // against, so restore can never reintroduce a governed key nothing stands behind.
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { splitFrontmatter } from '../IO/pageFile'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -10,7 +11,7 @@ import { pathExists } from '../IO/atomicWrite'
 import { handleMutate, type MutateDeps } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Locations/paths'
 import { listBundles } from './spend'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { closeSession, openSession } from '../Nexus/session'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'

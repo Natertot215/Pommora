@@ -9,7 +9,7 @@ import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { readRegistry } from './propertiesRegistry'
 import { readRecord } from '../Trash/record'
 import { readSidecar } from '../IO/sidecar'
@@ -101,7 +101,7 @@ describe('deleteProperty', () => {
     expect(recordedBeforeScrub).toBe(true)
     const values = (record as { values: Record<string, unknown> }).values
     for (const path of [p1.value.path, p2.value.path]) {
-      const pid = readFrontmatterFields(await readFile(path, 'utf8'))[ID_KEY] as string
+      const pid = splitFrontmatter(await readFile(path, 'utf8'))[ID_KEY] as string
       expect(values[pid]).toEqual(['hi'])
     }
   })

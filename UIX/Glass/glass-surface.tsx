@@ -17,7 +17,7 @@ import { cx } from '../Utilities/cx'
  *  right edge (omitted = centered); `animationClass` rides the frost and the outline together, never
  *  a shared wrapper (an opacity-animated ancestor becomes the frost's backdrop root and samples
  *  nothing). */
-export interface NotchOptions {
+interface NotchOptions {
   insetRight?: number
   animationClass?: string
 }

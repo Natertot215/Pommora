@@ -28,7 +28,7 @@ export type EditorSettings = Pick<
 > & { pasteInverse: string | undefined }
 
 /** What the editor mounts in place of an embed line; the host owns the tile components. */
-export type TileMount =
+type TileMount =
   | {
       kind: 'page'
       path: string

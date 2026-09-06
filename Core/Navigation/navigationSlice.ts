@@ -15,7 +15,11 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import type { StoredTabSet } from '@pommora/core/Interface/Windows/windowRecord'
-import { type ReconcileIndex, reconcileSelection, reconcileWith } from '../Session/selection'
+import {
+  type ReconcileIndex,
+  reconcileSelection,
+  reconcileWith,
+} from '../Session/reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Session/treeIndex'
 import { moveByKey, navKey, RECENTS_CAP, recordRecent, removeRecentByKey } from './navRecents'
 import { dropCapturedOutside } from './thumbMarkers'
@@ -92,12 +96,7 @@ export interface NavigationSlice {
   goForward: () => void
   crumbDepth: SelectTarget | null
   navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
-  navSlide: {
-    tabId: string
-    dir: 'back' | 'forward'
-    seq: number
-    source: 'history' | 'tab' | 'select'
-  } | null
+  navSlide: NavSlide | null
   recents: NavRef[]
   favorites: NavRef[]
   pinned: NavRef[]
@@ -119,6 +118,21 @@ export interface NavigationSlice {
   patchPagesFor: (req: MutateRequest) => void
   resetNavigation: () => void
 }
+
+interface NavSlide {
+  tabId: string
+  dir: 'back' | 'forward'
+  seq: number
+  source: 'history' | 'tab' | 'select'
+}
+
+/** Each stamp bumps the sequence: the view plays a slide once per new number, never per render. */
+const slide = (
+  prior: NavSlide | null,
+  tabId: string,
+  dir: NavSlide['dir'],
+  source: NavSlide['source'],
+): NavSlide => ({ tabId, dir, seq: (prior?.seq ?? 0) + 1, source })
 
 function sameShownTarget(sel: SelectionState, t: SelectTarget): boolean {
   if (sel.kind !== t.kind) return false
@@ -313,12 +327,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       tabs: get().tabs.map((t) =>
         t.id === active.id ? { ...t, navIndex: i, target: resolved } : t,
       ),
-      navSlide: {
-        tabId: active.id,
-        dir: i < active.navIndex ? 'back' : 'forward',
-        seq: (s.navSlide?.seq ?? 0) + 1,
-        source: 'history',
-      },
+      navSlide: slide(s.navSlide, active.id, i < active.navIndex ? 'back' : 'forward', 'history'),
     })
     void get().select(resolved, { record: false })
     persistTabs()
@@ -369,7 +378,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set((st) => ({
         activeTabId: id,
         tabMru: pushMru(st.tabMru, id),
-        navSlide: { tabId: id, dir, seq: (st.navSlide?.seq ?? 0) + 1, source: 'tab' },
+        navSlide: slide(st.navSlide, id, dir, 'tab'),
       }))
       syncActiveDetail()
       persistTabs()
@@ -389,12 +398,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         tabMru: pushMru(s.tabMru, res.activeTabId),
         ...(swaps
           ? {
-              navSlide: {
-                tabId: res.activeTabId,
-                dir: 'forward' as const,
-                seq: (s.navSlide?.seq ?? 0) + 1,
-                source: 'tab' as const,
-              },
+              navSlide: slide(s.navSlide, res.activeTabId, 'forward', 'tab'),
             }
           : {}),
       })
@@ -546,12 +550,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           ...(sameShownTarget(s.selection, target)
             ? {}
             : {
-                navSlide: {
-                  tabId: pending.activeTabId,
-                  dir: 'forward' as const,
-                  seq: (s.navSlide?.seq ?? 0) + 1,
-                  source: 'select' as const,
-                },
+                navSlide: slide(s.navSlide, pending.activeTabId, 'forward', 'select'),
               }),
         })
         if (opened) commitRecents(recordRecent(s.recents, target, RECENTS_CAP))

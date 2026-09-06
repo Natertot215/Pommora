@@ -1,5 +1,5 @@
 import { basename, join } from '../Locations/posix'
-import { parseDocument } from 'yaml'
+import { splitFrontmatter } from '../IO/pageFile'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
@@ -64,20 +64,6 @@ export function resolveEntityContexts(
   return links.size ? Object.fromEntries(links) : undefined
 }
 
-export function splitFrontmatter(content: string): Json {
-  if (!content.startsWith('---')) return {}
-  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
-  if (!m) return {} // opening fence with no close -> treat whole file as body
-  try {
-    const parsed: unknown = parseDocument(m[1]).toJSON()
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Json)
-      : {}
-  } catch {
-    return {} // unrecoverable YAML -> still a valid page, empty frontmatter
-  }
-}
-
 const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
@@ -116,7 +102,7 @@ function retainContextKeys(node: object, raw: Json): void {
   if (kept) rawContextByNode.set(node, kept)
 }
 
-export interface PageRecord {
+interface PageRecord {
   node: PageNode
   fm: Json
   mtimeMs: number | null

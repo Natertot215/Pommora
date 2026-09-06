@@ -10,7 +10,7 @@ import {
   rewritePreservingTimes,
 } from '../IO/atomicWrite'
 import { readSidecar, writeSidecar } from '../IO/sidecar'
-import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from '../IO/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../IO/pageFile'
 import { asString } from '../Locations/coerce'
 import { baseSidecar } from './schemas'
 import { recordWrite } from '../IO/writeEcho'
@@ -50,7 +50,7 @@ async function reHomeRegistered(
 async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const content = await machine().readText(absFile)
   if (content === null) return false
-  if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
+  if (admitContentFile(splitFrontmatter(content), kind).state !== 'missing') return false
   const { body } = splitEnvelope(content)
   const st = await machine().stat(absFile)
   if (!st) return false

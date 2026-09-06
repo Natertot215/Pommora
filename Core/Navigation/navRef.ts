@@ -1,3 +1,5 @@
+import { isPlainObject } from '../Properties/propertyValue'
+
 export type SelectionState =
   | { kind: 'none' }
   | { kind: 'homepage' }
@@ -17,6 +19,27 @@ export type NavRef =
 
 export function toNavRef(t: NavRef | SelectTarget): NavRef {
   return t.kind === 'homepage' ? { kind: 'homepage' } : { kind: t.kind, id: t.id }
+}
+
+const NAV_KINDS = new Set<string>([
+  'homepage',
+  'context',
+  'space',
+  'collection',
+  'set',
+  'page',
+  'task',
+  'event',
+])
+
+/** A tab never seats an Agenda entity. */
+export const TAB_KINDS = new Set<string>(
+  [...NAV_KINDS].filter((k) => k !== 'task' && k !== 'event'),
+)
+
+export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v is NavRef {
+  if (!isPlainObject(v) || typeof v.kind !== 'string' || !kinds.has(v.kind)) return false
+  return v.kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 
 export interface NavigationState {

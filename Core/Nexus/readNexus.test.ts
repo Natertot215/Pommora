@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { splitFrontmatter } from '../IO/pageFile'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
-import { readNexus, splitFrontmatter } from './readNexus'
+import { readNexus } from './readNexus'
 import {
-  excludedFolderRefusal,
+  nexusFolderRefusal,
   readCommands,
   readPersonalization,
   readSettingsLeaves,
@@ -80,17 +81,17 @@ describe('readSettingsLeaves: asset_directory', () => {
   })
 })
 
-describe('excludedFolderRefusal', () => {
+describe('nexusFolderRefusal', () => {
   it('refuses an empty, absolute, backslash, escaping, or app-owned path', () => {
-    expect(excludedFolderRefusal('')).not.toBeNull()
-    expect(excludedFolderRefusal('/Archive')).not.toBeNull()
-    expect(excludedFolderRefusal('Archive\\Old')).not.toBeNull()
-    expect(excludedFolderRefusal('../Escape')).not.toBeNull()
-    expect(excludedFolderRefusal('.nexus')).not.toBeNull()
+    expect(nexusFolderRefusal('')).not.toBeNull()
+    expect(nexusFolderRefusal('/Archive')).not.toBeNull()
+    expect(nexusFolderRefusal('Archive\\Old')).not.toBeNull()
+    expect(nexusFolderRefusal('../Escape')).not.toBeNull()
+    expect(nexusFolderRefusal('.nexus')).not.toBeNull()
   })
   it('accepts a nested path and a plain content folder', () => {
-    expect(excludedFolderRefusal('Archive/Old')).toBeNull()
-    expect(excludedFolderRefusal('Vault A')).toBeNull()
+    expect(nexusFolderRefusal('Archive/Old')).toBeNull()
+    expect(nexusFolderRefusal('Vault A')).toBeNull()
   })
 })
 

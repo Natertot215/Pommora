@@ -8,7 +8,7 @@ const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 export type ViewType = (typeof VIEW_TYPES)[number]
 
 const VIEW_FORMATS = ['standard', 'compact'] as const
-export type ViewFormat = (typeof VIEW_FORMATS)[number]
+type ViewFormat = (typeof VIEW_FORMATS)[number]
 
 export const isCompact = (view: { format?: ViewFormat }): boolean =>
   (view.format ?? 'standard') === 'compact'
@@ -138,7 +138,7 @@ const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
-export const VIEW_STATE_KEYS = ['collapsed_groups'] as const
+const VIEW_STATE_KEYS = ['collapsed_groups'] as const
 export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
 
 export function pickViewState(view: SavedView): ViewState {

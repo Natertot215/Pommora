@@ -36,7 +36,7 @@ interface SpaceRef {
   dir: string
 }
 
-export interface ContextWorld extends GovernedWorld {
+interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
 }

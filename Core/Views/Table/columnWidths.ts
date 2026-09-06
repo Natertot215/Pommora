@@ -3,7 +3,7 @@ import { defaultStyleFor } from '@pommora/core/Properties/columnStyles'
 import { declaredType } from '../../Properties/value'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
 
-export interface ColumnWidth {
+interface ColumnWidth {
   min: number
   default: number
   max: number
