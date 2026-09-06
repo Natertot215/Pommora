@@ -839,6 +839,7 @@ Sequence: dispatch the lane's agents when Task 6 (Fable) dispatches, not before,
 
 ### Rulings
 
+- 09-06-2026 (Nathan): `caretSeat` → `caretPlacement` (identifier and file, wherever it lives). MarkdownPM's `Tables/widget.css` → `markdown-tables.css` at the domain root. Every color declaration and value lives in `UIX/Theme`, in one file; a color declared anywhere else (a stranded pink included) moves there at Task 12. Tasks 19 and 20 (both parts of the docs work) run on Opus.
 - 09-06-2026 (Nathan): a small stylesheet collapses only when it has a sibling `.css.ts` or domain sheet to bind to, or an element style that describes it fully. `autoscroll`, `progress-bar`, and the like stay as files because nothing of theirs exists to fold into. `nav-gallery.css` folds into `NavGallery.tsx` where the TSX can describe it.
 **Findings Q&A rulings (09-06-2026, Nathan; `// Planning // Pommora Monorepo — Findings Q&A.md`).** Binding on every remaining task. Two standing rules ride every item: a file's contents must match its name, and only fixes that stay true regardless of future direction are made here.
 
