@@ -35,8 +35,6 @@ export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'b
 
 export const DISCLOSURE_INDENT = 14
 
-export const RAIL_INSET = 20
-
 export const DROP_LINE_INSET = 2
 
 /** Grid tiles and MarkdownPM's embedded page tiles agree on this one minimum, so a
@@ -50,13 +48,6 @@ export const TILE_DEFAULT_PX = 320
  *  widget measures, so the value the widget answers CM6 with has to add it back or the height model
  *  runs short by the gap for every tile on the page.*/
 export const TILE_GAP_PX = 4
-
-export const RADIUS_FULL = '999px'
-export const DROP_LINE_THICKNESS = 2
-export const DROP_DOT_SIZE = 7
-export const LIST_OUTLINE_WIDTH = 2
-export const LIST_OUTLINE_GAP = 3
-export const PARK_CLEARANCE = 14
 
 const CHECKBOX_BASE = 'var(--checkbox-base, var(--accent))'
 
@@ -93,7 +84,7 @@ globalStyle(':root', {
     '--width-150': '1.5px',
     '--width-175': '1.75px',
     '--width-200': '2px',
-    '--radius-full': RADIUS_FULL,
+    '--radius-full': '999px',
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
     '--state-muted': colorVars.color.state.muted,
@@ -101,15 +92,15 @@ globalStyle(':root', {
     '--state-inactive': STATE_OPACITY.inactive,
     '--drag-line': 'var(--accent)',
     '--drop-slot-fill': tintAt('var(--accent)', 'tertiary'),
-    '--drop-line-thickness': `${DROP_LINE_THICKNESS}px`,
-    '--drop-dot-size': `${DROP_DOT_SIZE}px`,
+    '--drop-line-thickness': '2px',
+    '--drop-dot-size': '7px',
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
     '--tile-default-height': `${TILE_DEFAULT_PX}px`,
     '--tile-gap': `${TILE_GAP_PX}px`,
-    '--list-outline-width': `${LIST_OUTLINE_WIDTH}px`,
+    '--list-outline-width': '2px',
     '--list-outline-color': 'var(--border-light)',
     '--list-outline-radius': 'var(--radius-full)',
-    '--list-outline-gap': `${LIST_OUTLINE_GAP}px`,
+    '--list-outline-gap': '3px',
     '--fade-light': '12px',
     '--fade-base': '16px',
     '--fade-strong': '20px',
@@ -143,9 +134,9 @@ globalStyle(':root', {
     '--text-caption-size': font.scale.caption.size,
     '--text-footnote-size': font.scale.footnote.size,
     '--text-subline-size': font.scale.subline.size,
-    '--park-clearance': `${PARK_CLEARANCE}px`,
+    '--park-clearance': '14px',
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
-    '--rail-inset-base': `${RAIL_INSET}px`,
+    '--rail-inset-base': '20px',
     '--rail-inset': 'var(--rail-inset-base)',
     // A CSS mask, not an <Icon> — the fold chevron paints on a line ::before, which can't host a component.
     '--grip-glyph': GRIP_GLYPH,
