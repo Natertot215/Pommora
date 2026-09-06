@@ -6,6 +6,8 @@
       "types": [
         "./*.ts",
         "./*.tsx",
+        "./*/index.ts",
+        "./*/index.tsx",
         "./*"
       ],
       "default": "./*"

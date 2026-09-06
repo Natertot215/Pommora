@@ -1,0 +1,72 @@
+import type { CSSProperties } from 'react'
+
+export type Box = {
+  left: number
+  top: number
+  width: number
+  height: number
+  cx: number
+  cy: number
+}
+export type DropState = 'idle' | 'dragging' | 'dropping' | 'pending'
+export type Modifier = (
+  t: { x: number; y: number },
+  ctx: { activeRect: Box; bounds: Box | null },
+) => { x: number; y: number }
+
+export type DragNotify = {
+  onDragStart?: (e: { activeId: string }) => void
+  onDragOver?: (e: { activeId: string; overId: string | null }) => void
+  onDragEnd?: (e: { activeId: string; overId: string | null }) => void
+  onDragCancel?: (e: { activeId: string }) => void
+}
+
+export type DragItem = {
+  setNodeRef: (el: HTMLElement | null) => void
+  style: CSSProperties
+  handle: Record<string, unknown>
+  isDragging: boolean
+}
+
+export const ACTIVATION = 5 // px the pointer must travel before a drag starts (vs. a click)
+// The inset's one source is the size tokens — the CSS side reads it as `--drop-line-inset`.
+export { DROP_LINE_INSET } from '../Theme/size.css'
+export const GHOST_OFFSET = { x: 12, y: 8 }
+export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
+
+export function suppressNextClick(): void {
+  const swallow = (e: MouseEvent): void => {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+  document.addEventListener('click', swallow, { capture: true, once: true })
+  window.setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0)
+}
+/** A cancelled drag's release is still coming and must not read as a click; a new press first means
+ *  that release was lost (the cancel came from a blur). */
+export function suppressReleaseClick(): void {
+  const onUp = (): void => {
+    document.removeEventListener('pointerdown', onDown, true)
+    suppressNextClick()
+  }
+  const onDown = (): void => document.removeEventListener('pointerup', onUp)
+  document.addEventListener('pointerup', onUp, { once: true })
+  document.addEventListener('pointerdown', onDown, { capture: true, once: true })
+}
+export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch — kills flicker
+export const SETTLE_FALLBACK = 80 // ms slack past the transition for the commit fallback (paint-start delay)
+
+export function toBox(el: HTMLElement): Box {
+  const r = el.getBoundingClientRect()
+  return {
+    left: r.left,
+    top: r.top,
+    width: r.width,
+    height: r.height,
+    cx: r.left + r.width / 2,
+    cy: r.top + r.height / 2,
+  }
+}
+
+/** Integer-ish px for transforms — `.toFixed(1)` keeps sub-pixel sharpness on Retina without blur. */
+export const px = (n: number): string => `${n.toFixed(1)}px`

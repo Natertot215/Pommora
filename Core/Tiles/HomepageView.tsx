@@ -1,0 +1,22 @@
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { TileHost } from './TileHost'
+import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
+
+// Module-level: a fresh literal per render would churn every tile memo downstream.
+const HOMEPAGE_HOST = { kind: 'homepage' } as const
+
+export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.Element {
+  return (
+    <InterfaceScaffold
+      owner={{
+        path: '',
+        kind: 'homepage',
+        name: tree?.nexus.name ?? 'Home',
+        banner: tree?.homepage.banner,
+        headingIconHidden: tree?.homepage.headingIconHidden,
+      }}
+    >
+      <TileHost key={tree?.nexus.rootPath} host={HOMEPAGE_HOST} />
+    </InterfaceScaffold>
+  )
+}

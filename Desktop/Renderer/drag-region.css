@@ -1,0 +1,9 @@
+/* The window-drag regions the Electron frameless window needs; the shell's own layout is Core's. */
+.titlebar,
+.sidebar-titlebar {
+  -webkit-app-region: drag;
+}
+
+.open-btn {
+  -webkit-app-region: no-drag;
+}

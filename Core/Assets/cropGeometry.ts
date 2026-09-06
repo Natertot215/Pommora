@@ -1,5 +1,5 @@
 import type { Crop } from '../Nexus/schemas'
-import { clamp } from '../Utilities/clamp'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 
 export interface CoverStyle {
   backgroundSize: string

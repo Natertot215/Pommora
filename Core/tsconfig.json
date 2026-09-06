@@ -7,7 +7,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true

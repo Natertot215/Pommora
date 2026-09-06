@@ -2,10 +2,24 @@
   "name": "@pommora/uix",
   "private": true,
   "exports": {
+    "./Animations": "./Animations/index.ts",
+    "./Buttons": "./Buttons/index.ts",
+    "./Elements/EyeToggle": "./Elements/EyeToggle/index.ts",
+    "./Elements/NavTrail": "./Elements/NavTrail/index.ts",
+    "./Fields": "./Fields/index.ts",
+    "./Glass": "./Glass/index.ts",
+    "./Labels": "./Labels/index.ts",
+    "./Menus": "./Menus/index.ts",
+    "./Pickers/PickerControl": "./Pickers/PickerControl/index.ts",
+    "./Pickers/TextPicker": "./Pickers/TextPicker/index.ts",
+    "./Symbols": "./Symbols/index.tsx",
+    "./Theme": "./Theme/index.ts",
     "./*": {
       "types": [
         "./*.ts",
         "./*.tsx",
+        "./*/index.ts",
+        "./*/index.tsx",
         "./*"
       ],
       "default": "./*"
