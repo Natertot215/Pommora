@@ -12,7 +12,7 @@
 
 ### Sources
 
-- [[ArchitecturePM]] — the two-process shape, the bridge, the watcher, the persistence tiers; "Cross-device sync — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term prospect" goes false.
+- [[CorePM]] — the two-process shape, the bridge, the watcher, the persistence tiers; "Cross-device sync — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term prospect" goes false.
 - [[PommoraPRD]] §Audience, §Core Constraints — "cloud-sync-ready", "a mobile companion app is a near-term focus"; the storage philosophy sync must preserve byte-for-byte.
 - [[ConfigurationPM]] §General — the Settings leaf that gains Account and Sync sections.
 - [[Dependencies]] — the vetted library catalog; every new library sits behind a seam.
@@ -40,7 +40,7 @@
 - **A-3:** [confirmed] V0 establishes the long-term architecture and does not care much about interface quality. Deletions and trash travel, and updates are live: a change on one open device reaches the other without a manual action.
 - **A-4:** [confirmed] A sync server is in scope.
 - **A-5:** [confirmed] No paid Apple Developer membership today. Every step is gated on the Simulator with no signing, and the plan carries the device path end to end so that buying the account is the only thing between the Simulator and the phone.
-- **A-6:** [open] The repository is restructured into a monorepo first, before any new folder lands; the local folder and the session's working directory stay where they are. The candidate layout is one root with four workspaces, `Core`, `Desktop`, `Mobile`, and `Sync`, the `Pommora/` package folder dissolving into them; the exact architecture is decided at the plan's stop before Task 0 runs.
+- **A-6:** [confirmed] The repository is restructured into a monorepo first, before any new folder lands; the local folder and the session's working directory stay where they are. The layout is one root with six workspaces — `Core`, `UIX`, `Desktop`, `Mobile`, `Sync`, and `Showcase` — the `Pommora/` package folder dissolved into them. Done, under [[Pommora Monorepo — Implementation Plan]]; that plan's own log carries the architecture and every ruling behind it.
 - **A-7:** [confirmed] V0 mobile scope, in two steps. The arc that ships regardless: the phone holds the Nexus as a Files-visible synced folder with a sign-in and status shell, and nothing of the desktop renderer mounts. Behind a separate go and a phone product spec (the plan's Phase 8): read the tree, open a page, edit the body, create a page, rename, delete a page or container into the trash, move, reorder, open and switch tabs, through the renderer's existing menus opened by a long press. Space and Context deletes, properties, schema, views, and restore wait. No expectation of a pleasant experience; nothing else needs 1-to-1 parity.
 - **A-8:** [confirmed] MarkdownPM ships on mobile as-is, no mobile toolbar.
 - **A-9:** [confirmed] Bottom bar items: Collections, Spaces, Tabs, Navigation, Settings. No Sync action and no Agenda placeholder. Tap behavior takes the simplest reading; nothing is designed.
@@ -104,7 +104,7 @@
 
 #### H — Desktop Integration
 
-- **H-1:** [assumed] The desktop sync client runs in main (it owns the files and the watcher); the sync model itself lives in `Core/engine` and is host-neutral.
+- **H-1:** [assumed] The desktop sync client runs in the host (it owns the files and the watcher); the sync model itself lives in `Sync` and is host-neutral, reaching a machine through `Core/Platform` as every other engine module does.
 - **H-2:** [assumed] Sync state per Nexus (last sequence, per-item base, keyed by the remote Nexus id) is a scope in `local_state`; the server address and the signed-in device token are app-level, in the app config and the platform's secret store, since they belong to the machine rather than to any Nexus. Disconnecting keeps the bases so reconnecting resumes.
 - **H-3:** [confirmed] Settings › General gains two sections, Account (sign in, sign out, the server, the device's name) and Sync (create the remote from this Nexus or connect to it, the Nexus password, status, Sync Now, Disconnect). Connect lists only remotes whose id matches this Nexus and refuses a mismatch with the reason; Create against an id the server already holds becomes Connect. Every action has its inverse. The design of the sections is Nathan's: the plan stops to ask before they are built.
 - **H-4:** [assumed] A remote version landing over a page the desktop has open is not reloaded into the editor in v0; the outgoing text is captured into page file history first and the landing is itself a retained remote version, so the next autosave can overwrite it without losing either. The watcher-driven external-edit reload is the named successor.
@@ -124,8 +124,8 @@
 
 #### K — Reconciliation (what goes false)
 
-- **K-1:** [assumed] [[ClaudeOS|CLAUDE.md]] hard rule "Main owns the filesystem. All fs/Node lives in `src/main`" restates as: the host owns the filesystem, main on desktop and the Capacitor host on mobile, and the engine reaches it only through the host seam; main is still the only place Node and Electron APIs are called on desktop. Every path the repo's docs cite is restated for the four workspaces.
-- **K-2:** [assumed] [[ArchitecturePM]] replaces "placing the Nexus in a synced folder gives device-to-device sync" with a Pommora Sync section and gains the engine, its two hosts, the sync state row, and the app-level account row.
+- **K-1:** [confirmed] The rules and paths are restated for the monorepo, and the phone adds nothing to them: [[ClaudeOS|CLAUDE.md]] now reads "the host owns the machine — Core reaches it only through `Core/Platform`; Desktop's implementation is the only place Node and Electron are called," which a Capacitor host satisfies by implementing the same seam. H-1 is where the sync client's own placement is decided.
+- **K-2:** [assumed] [[CorePM]] replaces "placing the Nexus in a synced folder gives device-to-device sync" with a Pommora Sync section and gains the engine, its two hosts, the sync state row, and the app-level account row.
 - **K-3:** [assumed] [[PommoraPRD]] moves sync and mobile into scope and drops iCloud Drive as the sync story.
 - **K-4:** [assumed] [[FrameworkPM]] drops "sync, mobile" from the no-commitment list; a version entry records the arc.
 - **K-5:** [assumed] [[ConfigurationPM]] gains the Account and Sync sections with where each value is stored.
@@ -157,7 +157,6 @@
 - OAuth providers (Sign in with Apple, Google) — deferred by ruling 09-04-2026; don't-foreclose: sign-in yields a device token behind one seam.
 - Chunked transfer and large-file handling — why deferred: a Nexus is pages plus modest assets; don't-foreclose: the store call carries size and hash.
 - Mobile toolbar, touch-tuned editor, bottom-bar design — by ruling.
-- The list-menu generalization: every list menu drawn from one shared model on both hosts, the per-surface menu channels collapsing into one, the desktop's in-app pane — why deferred: v0 needs the phone to reach the existing menus, not a redesign.
 - Phone-local edit-burst capture between syncs — why deferred: the remote retains every synced version; don't-foreclose: the capture rule is the page write's host policy.
 - Watcher-driven reload of an open editor on an external edit (H-4) — the Known Issue's own successor.
 - Blob folder or Postgres storage — why deferred: SQLite blobs carry a personal Nexus; don't-foreclose: the store is one module behind the request handlers.

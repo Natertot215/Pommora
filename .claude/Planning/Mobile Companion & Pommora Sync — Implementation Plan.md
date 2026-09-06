@@ -3,6 +3,19 @@
 > **Status:** written, pending review · not ratified; execution deferred (09-04-2026) · Task 0 restructures the repo first; Phases 1–7 ship regardless; Phase 8 waits on a go and the phone's product spec · Spec: [[Mobile Companion & Pommora Sync — Decision Log]] · Research: [[Mobile Companion & Pommora Sync — Research]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Counts below were taken 09-04-2026 at `e79702e3`.
 
+> **Standing (09-06-2026):** Task 0 and Phase 8 are superseded. [[Pommora Monorepo — Implementation Plan]] restructured the repository into six workspaces and moved the renderer into them; both pieces of work this plan sequenced ahead of itself are done, and its own layout — `src/engine`, `Pommora/Sync`, `Pommora/Mobile`, `Core/engine` — never existed. Every path below reads through this table; the remaining phases stand as written.
+>
+> | This plan says | The repository has |
+> | --- | --- |
+> | `Pommora/src/main/…` | `Core/<domain>/…`, with the Electron residue in `Desktop/` |
+> | `Pommora/src/renderer/…` | `Core/<domain>/…` for surfaces, `UIX/<category>/…` for the kit |
+> | `Pommora/src/shared/…` | `Core/Contract`, `Core/<domain>`, or `UIX/Theme` by subject |
+> | `Pommora/src/preload` | `Desktop/Bridge` |
+> | `src/engine`, `Core/engine` | `Core` itself; the machine seam is `Core/Platform` |
+> | `Pommora/Sync`, `Pommora/Mobile` | `Sync/`, `Mobile/` at the repository root |
+> | the host seam Task 0 would add | `Core/Platform/machine.ts`, implemented by `Desktop/Platform` |
+> | "run from `Pommora/`" | from the repository root |
+
 **Goal**
 
 Pommora gains its own end-to-end-encrypted file synchronization and an iOS companion. At the end, `Pommora/Sync` is one self-hostable Node process shipped as a container; `src/engine` holds the read-and-page-write chain and the sync client behind one filesystem seam that main binds to Node and the phone binds to Capacitor; `Pommora/Mobile` is a Capacitor iOS project that renders the existing renderer with a floating bottom bar; and Settings › General carries Account and Sync sections. Nathan can turn Obsidian Sync off, create a remote Nexus from `~/NexusOS` without moving it, connect the phone to that Nexus, and have both devices edit the same files with live updates, deletions and trash bundles crossing, catch-up on reopen, and page history retained on the server.
@@ -145,7 +158,7 @@ A behavior-preserving move. Baseline invariant: 318 test files / 3,981 tests, li
 
 #### Task 0: The monorepo
 
-**Requirement:** 10
+**Requirement:** 10 — superseded; see the Standing note above.
 
 **Declared stop, before implementation:** an app-wide, long-term monorepo is step 1 and its exact architecture is yet to be decided (log A-6); the layout below is the candidate, and Nathan settles the architecture here before a folder moves.
 
@@ -1470,6 +1483,8 @@ The closeout of the arc that ships regardless.
 ---
 
 ### Phase 8 — The renderer port (behind a go)
+
+Superseded; see the Standing note above. The renderer moved into `Core` and `UIX` with the restructure, so the 2,900-line move this phase describes has already happened; what remains of it is the phone's own product spec.
 
 Opens only on Nathan's explicit go after Gate 5 and a phone product spec that names what the phone is for; if the spec answers "capture and read" rather than "the desktop's editor", this phase is re-planned, not executed. A behavior-preserving refactor plus additive. Baseline invariant: the test-file and test counts at Gate 7 and the same after every move; no test body changes except import paths; `npm run build` green. Budget: about +650 lines new (holder adapter, shared table, scope map, api 300, pane 150, hold 60, bottom bar 80) against about 2,900 moved; preload shrinks from 195 lines to about 40.
 
