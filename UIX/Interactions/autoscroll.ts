@@ -5,17 +5,13 @@ export type Axis = 'x' | 'y' | 'xy'
 export interface Params {
   edge: number // px band from a container edge where scroll engages
   speed: number // px/second at the true edge, at the acceleration floor
-  ramp: number // proximity exponent (2 = quadratic)
-  accelStart: number // speed multiplier at the start of a scroll run (>0, eases in)
-  accelMax: number // speed multiplier after a sustained scroll (the acceleration ceiling)
+  ramp: number // proximity exponent, 2 being quadratic
+  accelStart: number // speed multiplier at the start of a run; must be > 0
+  accelMax: number
   accelDist: number // px of accumulated scroll to climb from start → max
 }
 
-/** The tuning knobs, as the CSS var a surface overrides and the value it falls back to. These are
- *  read through `getComputedStyle`, never `var()`, so a token audit searching for consumers finds
- *  none — this map is the one place they exist, feeding both the `:root` declaration
- *  (autoscroll.css.ts) and the read below, so a default can never be tuned in one and not the other.
- *  Any surface may override one on itself or an ancestor (`.sidebar { --autoscroll-speed }`). */
+/** Read through `getComputedStyle`, never `var()`, so a token audit finds no consumers. */
 export const AUTOSCROLL_KNOBS = {
   edge: ['--autoscroll-edge', '48px'],
   speed: ['--autoscroll-speed', '840px'],
@@ -46,8 +42,7 @@ export function scrollableInAxis(
   return x || y
 }
 
-/** Axis-aware so a vertical drag skips an x-only ancestor (e.g. a horizontal-scroll shell) to
- *  reach the real y-scroller. */
+/** Axis-aware so a vertical drag skips an x-only ancestor to reach the real y-scroller. */
 export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLElement | null {
   let n = el?.parentElement ?? null
   while (n) {
@@ -77,7 +72,7 @@ export function edgeVelocity(
   return 0
 }
 
-/** `accelStart` MUST be > 0: at 0 the loop would scroll 0px, accumulate 0 distance, and deadlock. */
+// At accelStart 0 the loop would scroll 0px, accumulate 0 distance, and deadlock.
 export function accelFactor(scrolled: number, { accelStart, accelMax, accelDist }: Params): number {
   if (accelDist <= 0) return accelMax
   return accelStart + (accelMax - accelStart) * Math.min(1, scrolled / accelDist)
@@ -96,9 +91,8 @@ export function stepPixels(v: number, dtMs: number, frac: number): { px: number;
   return { px, frac: raw - px }
 }
 
-/** A direction may scroll only after the pointer has been OUTSIDE that direction's edge band at
- *  least once since drag start — so grabbing an item already pinned at an edge doesn't
- *  immediately rocket the container. */
+/** A direction scrolls only once the pointer has left its edge band, so grabbing an item already
+ *  pinned at an edge doesn't rocket the container. */
 export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number; vy: number } {
   if (vy >= 0) intent.up = true
   if (vy <= 0) intent.down = true
@@ -109,10 +103,6 @@ export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number
     vy: (vy < 0 && !intent.up) || (vy > 0 && !intent.down) ? 0 : vy,
   }
 }
-
-// One drag at a time (pointer capture guarantees it). It self-owns a termination backstop
-// (blur/visibilitychange/pointercancel) so a focus-steal can't strand it running — but stops the
-// LOOP only; each surface still aborts its own gesture on its own up/cancel/blur.
 
 interface StartCfg {
   getPoint: () => { x: number; y: number }
@@ -129,7 +119,7 @@ interface Live {
   axis: Axis
   params: Params
   onScrolled?: () => void
-  dist: number // accumulated |scroll px| for THIS run — resets when the scroll stops, drives acceleration
+  dist: number
   last: number | null
   frac: { x: number; y: number }
   intent: Intent
@@ -138,8 +128,7 @@ interface Live {
 
 let live: Live | null = null
 
-// Upper bound on a single frame's dt. A velocity×dt loop teleports if rAF stalls (a jank spike,
-// display sleep/wake) and resumes with a huge gap — cap it so the worst case is one small step.
+// A velocity×dt loop teleports if rAF stalls and resumes with a huge gap.
 const MAX_FRAME_MS = 50
 
 function readParams(el: HTMLElement): Params {
@@ -161,10 +150,7 @@ function readParams(el: HTMLElement): Params {
 
 export type { StartCfg }
 
-/** Arms the vertical edge-scroll for a drag just picked up, resolving the scroller here (rather
- *  than in `startAutoScroll`) so a drag in an unscrollable container never enters the loop at all.
- *  Returns an INSTANCE-scoped stopper — a no-op if another drag has since replaced it — safe to
- *  call from unmount cleanup after ownership may have changed. */
+/** Resolves the scroller up front, so an unscrollable container never enters the loop. */
 export function armAutoScroll(
   dragEl: HTMLElement | null,
   getPoint: () => { x: number; y: number },
@@ -177,10 +163,10 @@ export function armAutoScroll(
 
 export function startAutoScroll(cfg: StartCfg): () => void {
   stopAutoScroll()
-  stopGlide() // a drag takes the scroller from any travel in flight
+  stopGlide()
   const axis = cfg.axis ?? 'xy'
   const scroller = cfg.scroller ?? findScroller(cfg.dragEl ?? null, axis)
-  if (!scroller) return () => {} // no scrollable container — the drag still works, just no auto-scroll
+  if (!scroller) return () => {}
   const onBackstop = (): void => stopAutoScroll()
   window.addEventListener('blur', onBackstop)
   document.addEventListener('visibilitychange', onBackstop)
@@ -247,19 +233,14 @@ export function stopGlide(): void {
   glide = null
 }
 
-/** Travel `scroller` to `to` over a distance-proportional beat. Returns an instance-scoped stopper.
- *
- *  `to` may be a THUNK, re-read every frame so a lazily-rendered host's sharpening estimate is
- *  followed rather than landed on and corrected afterward. Cancels on any real scroll input — a
- *  glide that keeps pulling while the reader scrolls away fights them. Honors reduced-motion by
- *  arriving immediately. */
+/** A thunk `to` is re-read per frame, following a lazy host's sharpening estimate. */
 export function scrollGlide(
   scroller: HTMLElement,
   to: number | (() => number),
   params: GlideParams,
   onArrive?: () => void,
 ): () => void {
-  stopAutoScroll() // one owner of programmatic scrolling at a time
+  stopAutoScroll()
   stopGlide()
   const seek = typeof to === 'function' ? to : (): number => to
   const target = (): number =>
@@ -271,11 +252,9 @@ export function scrollGlide(
     onArrive?.()
     return () => {}
   }
-  // The beat is fixed from the opening distance, so a destination that shifts underfoot changes where
-  // the travel lands but never how long it takes.
+  // Fixed from the opening distance: a shifting destination changes where it lands, not how long.
   const ms = glideMs(target() - from, params)
-  // Timed from the first FRAME, not from dispatch: the gap between them is dead time the easing would
-  // otherwise have already spent by the time anything is drawn.
+  // Timed from the first frame, not dispatch — the gap is dead time the easing would have spent.
   let started: number | null = null
   const onInterrupt = (): void => stopGlide()
   for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
@@ -335,6 +314,6 @@ function tick(ts: number): void {
     L.dist += Math.abs(sx.px) + Math.abs(sy.px)
     L.onScrolled?.()
   }
-  if (live !== L) return // onScrolled stopped or replaced this loop — don't resurrect the old one
+  if (live !== L) return // onScrolled stopped or replaced this loop
   L.raf = requestAnimationFrame(tick)
 }

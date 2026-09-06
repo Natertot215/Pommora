@@ -9,10 +9,7 @@ import {
 import { nearestByTop, useInsertionDrag } from './insertionDrag'
 import { DROP_LINE_INSET } from './shared'
 
-// Table row drag — the sidebar drop-line gesture: an insertion line marks the slot, the picked-up
-// row mutes in place, no row displaces. A slot in the dragged row's own group reorders it; a slot
-// in another group reassigns the grouped property. Commits live in TableView and are passed in —
-// this file owns only the hit-testing.
+// This file owns the hit-testing only; the commits live in TableView and are passed in.
 
 type Slot = { lineY: number; left: number; width: number; commit: () => void }
 type MeasuredRow = {
@@ -51,9 +48,8 @@ export function TableRowDnd({
   canReassign: boolean
   /** True under plain location grouping: the bands ARE folders, so a cross-band drop MOVES the page. */
   canRelocate?: boolean
-  /** Commit a within-group reorder: the new flat order of row ids + the reordered group's key (so the
-   *  caller can map a structural group to its on-disk container for the page_order write) + the dragged
-   *  row's id (for callers whose commit is (active, over)-shaped). */
+  /** The group key lets a caller map a structural group to its on-disk container for the
+   *  page_order write; `activeId` serves callers whose commit is (active, over)-shaped. */
   reorderTo: (orderIds: string[], groupKey: string, activeId: string) => void
   reassign: (activeId: string, targetGroupKey: string) => void
   relocate?: (activeId: string, targetGroupKey: string) => void
@@ -63,7 +59,6 @@ export function TableRowDnd({
   const content = useRef<HTMLDivElement | null>(null)
 
   const drag = useInsertionDrag<Slot, Snapshot>({
-    // The dragged row is left out — it's never a drop target.
     take: (excludeId) => {
       const box = content.current
       if (!box) return null
@@ -74,8 +69,8 @@ export function TableRowDnd({
         const el = els.current.get(r.id)
         if (!el) continue
         const rect = el.getBoundingClientRect()
-        // End the line at the content edge (where the columns stop), not the full row — the row spans the
-        // trailing 1fr filler too, so rect.right would run the line into the empty gutter past the last column.
+        // The row spans a trailing 1fr filler, so rect.right would run the line into the empty
+        // gutter past the last column.
         const filler = el.querySelector('.cell-filler')
         const contentRight = filler ? filler.getBoundingClientRect().left : rect.right
         measured.push({
@@ -91,8 +86,7 @@ export function TableRowDnd({
       measured.sort((a, b) => a.top - b.top)
       return { rows: measured, boxTop: boxRect.top, boxLeft: boxRect.left }
     },
-    // The nearest row + which half the cursor is in fixes the slot; that row's group is the target
-    // group (drop above row R or below it, the slot sits in R's group either way).
+    // The nearest row's group is the target group: above it or below it, the slot sits in that group.
     resolve: (id, point, s) => {
       const activeGroup = rows.find((r) => r.id === id)?.groupKey
       if (activeGroup === undefined || s.rows.length === 0) return null
@@ -110,12 +104,11 @@ export function TableRowDnd({
         const without = order.filter((x) => x !== id)
         const idx = beforeId ? without.indexOf(beforeId) : without.length
         const next = [...without.slice(0, idx), id, ...without.slice(idx)]
-        // A slot that reproduces the standing order is a noop — no line, no commit.
+        // A slot reproducing the standing order is a noop — no line, no commit.
         if (next.length === order.length && next.every((x, i) => x === order[i])) return null
         return { lineY, left, width, commit: () => reorderTo(next, activeGroup, id) }
       }
-      // A drop in a DIFFERENT band: under location grouping the bands are folders (move the page);
-      // under a reassignable property grouping it rewrites the grouped value; otherwise it's inert.
+      // Under location grouping the bands are folders, so a cross-band drop moves the page.
       if (canRelocate) return { lineY, left, width, commit: () => relocate(id, targetGroup) }
       if (!canReassign) return null
       return { lineY, left, width, commit: () => reassign(id, targetGroup) }
@@ -151,8 +144,7 @@ export function TableRowDnd({
   )
 }
 
-/** Make a data row draggable + registered for hit-testing: put `ref` on the row, spread `handle` on the
- *  grip. `isDragging` mutes the row in place. */
+/** `ref` on the row, `handle` spread on the grip. `isDragging` mutes the row in place. */
 export function useTableRowDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

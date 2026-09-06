@@ -1,45 +1,39 @@
 import { createContext, useEffect, useRef, useState } from 'react'
 
-// The dwell before a ghost extends — ONE value across every view's ghost; grace is per-view
-// (a flush table ghost tolerates zero, a card ghost across the grid gap can't).
+// The dwell is one value across every view's ghost; grace stays per-view.
 export const GHOST_DWELL_MS = 1500 // KNOB
 
-// How long a standing ghost survives the pointer resting on another anchor inside its travel
-// zone — the cards crossed en route to a ghost that wrapped onto the next grid row.
+// How long a standing ghost survives the pointer resting on another anchor in its travel zone.
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
-// The exit watchdog: a closing ghost whose consumer never delivers `closed()` — its exit motion
-// unmounted behind a render gate, or it closed while a mask held it out of the DOM — clears
-// itself after this beat. A stranded `closing` would reopen with no dwell on the next hover.
+// Watchdog for a closing ghost whose consumer never delivers `closed()`; a stranded `closing`
+// would reopen with no dwell on the next hover.
 const GHOST_EXIT_BEAT_MS = 1000
 
-/** The suppress handle, published by a view whose surfaces pop native menus from inside
- *  memoized children (Cards) — caller-side wrapping can't reach those pops. Defaults to a
- *  pass-through, so a surface with no ghost host above it pops its menu unwrapped. */
+/** Published by a view whose surfaces pop native menus from inside memoized children, which
+ *  caller-side wrapping can't reach. Pass-through by default. */
 export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
 export interface GhostAnchorOptions {
   dwellMs: number
   graceMs: number
-  /** Re-read at the dwell timer's fire time — a suppressor arriving mid-dwell (a cell editor,
-   *  a naming session) must not leave a ghost armed to snap in the instant it closes. */
+  /** Re-read when the dwell timer fires: a suppressor arriving mid-dwell must not leave a ghost
+   *  armed to snap in the instant it closes. */
   suppressed: () => boolean
   travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
-/** Every handler is identity-stable for the hook's lifetime — consumers hand them to contexts
+/** Every handler is identity-stable for the hook's lifetime, so consumers hand them to contexts
  *  and memoized rows directly; only `ghost` changes across renders. */
 export interface GhostAnchor {
   ghost: { anchorId: string; closing: boolean } | null
   onHover: (id: string, entering: boolean) => void
   onGhostEnter: () => void
   onGhostLeave: () => void
-  /** Claims the anchor for a create and unmounts the ghost in the same act — the real row
-   *  takes its seat, so a fast double-click can't create twice. */
+  /** Claims the anchor and unmounts the ghost in one act, so a fast double-click can't create twice. */
   take: () => string | null
   closed: () => void
-  /** Synchronous full clear, no exit motion — the anchor left the pipeline, the view changed
-   *  mode, or a pointer went down (a drag must never measure a grid the ghost still occupies). */
+  /** Synchronous full clear, no exit motion — a drag must never measure a grid the ghost occupies. */
   clear: (anchorId?: string) => void
   suppressWrap: <T>(menu: () => Promise<T>) => Promise<T>
 }
@@ -123,8 +117,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
     }
     const take = (): string | null => {
-      // Every timer dies with the take — a dwell armed on a row crossed en route to the ghost
-      // must not fire after the create and pop a ghost nobody is hovering.
+      // A dwell armed on a row crossed en route must not fire after the create.
       clearTimer('dwell')
       clearTimer('grace')
       clearTimer('exit')
@@ -151,10 +144,8 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   })
 
   useEffect(() => () => handlers.clear(), [handlers])
-  // Any pointerdown outside the ghost stands it down synchronously — before a drag can cross
-  // its activation threshold and freeze item rects over a grid the ghost still occupies. The
-  // ghost's own pointerdown survives (its click is the create). Bound unconditionally: a press
-  // must also kill a PENDING dwell, or the ghost mounts mid-drag and shifts the frozen rows.
+  // Stands the ghost down before a drag can freeze item rects over a grid it still occupies. Bound
+  // unconditionally: a press must kill a pending dwell too, or the ghost mounts mid-drag.
   useEffect(() => {
     const down = (e: PointerEvent): void => {
       const el = e.target instanceof Element ? e.target : null
@@ -167,9 +158,8 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   return { ghost, ...handlers }
 }
 
-/** The anchor left the consumer's pipeline (a reload, a filter, a regroup, a tree change) —
- *  clears ghost STATE, not just its render: a stranded `closing` would reopen with no dwell on
- *  the next hover. Unconditional by design; the clear is a no-op once the anchor is gone. */
+/** Clears ghost state, not just its render, when the anchor leaves the consumer's pipeline: a
+ *  stranded `closing` would reopen with no dwell on the next hover. */
 export function useClearStrandedGhost(
   api: GhostAnchor,
   anchors: { has: (anchorId: string) => boolean },

@@ -45,8 +45,7 @@ export function FrameDnd({
   rows: FrameRow[]
   labelFor: (id: string) => string
   onDrop: (drop: PaneDrop) => void
-  /** The region/slot semantics — defaults to the Properties frame's; the Visibility frame injects
-   *  its own (hidden region inert, drag-in unhides). */
+  /** Defaults to the Properties frame's; the Visibility frame injects its own. */
   slot?: typeof frameSlot
   children: ReactNode
 }): React.JSX.Element {
@@ -58,8 +57,7 @@ export function FrameDnd({
   const box = useRef<HTMLDivElement | null>(null)
 
   const drag = useInsertionDrag<Slot, Snapshot>({
-    // Row geometry, the row set, and the region rects ride one snapshot. A vanished region fails
-    // the resolve closed — a stale slot must not survive to the drop.
+    // One snapshot for rows, row set and region rects, so a vanished region fails the resolve closed.
     take: () => {
       const boxEl = box.current
       const assignedEl = regionEls.current.assigned
@@ -77,9 +75,8 @@ export function FrameDnd({
       const boxRect = boxEl.getBoundingClientRect()
       const assignedRect = assignedEl.getBoundingClientRect()
       const allRect = allEl.getBoundingClientRect()
-      // Regions own their FIELD, not just their rendered rows: assigned runs down to the All
-      // Properties heading, and the all region runs to the frame's bottom edge — the empty space
-      // around short lists is a legal drop zone, never a dead no-op.
+      // Regions own their field, not just their rendered rows, so the empty space around a short
+      // list is a legal drop zone.
       return {
         rows: measured,
         byId,
@@ -102,10 +99,9 @@ export function FrameDnd({
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => box.current,
     armFrom: () => box.current,
-    // `button` beyond the shared guard: a row's +, the outline, and rename inputs never arm a drag.
+    // A row's +, the outline, and rename inputs never arm a drag.
     alsoBlock: 'button',
-    // An active drag's Escape must cancel the DRAG, not let the Toolbar's useDismiss close the
-    // whole menu; a sub-threshold press leaves Escape to the host.
+    // An active drag's Escape cancels the drag rather than closing the host menu.
     swallowActiveEscape: true,
     watch: rows,
   })
@@ -140,7 +136,7 @@ export function FrameDnd({
   )
 }
 
-/** One draggable property row — the WHOLE row is the drag surface (buttons inside never arm one). */
+/** The whole row is the drag surface; buttons inside never arm one. */
 export function RowShell({ id, children }: { id: string; children: ReactNode }): React.JSX.Element {
   const { ref, handle, isDragging } = usePaneDrag(id)
   return (

@@ -1,16 +1,14 @@
-// Engine-agnostic by construction: a drag engine calls beginDragDisclose/endDragDisclose around
-// its gesture, and GroupBand registers each collapsed header — neither needs to know about the
-// other. The hit-test rides a window pointermove + elementFromPoint so it works under pointer
-// capture too (where pointerenter never fires).
+// The hit-test rides a window pointermove + elementFromPoint so it works under pointer capture,
+// where pointerenter never fires.
 
-const DWELL_MS = 500 // ~half a second — the deliberate hold before a folded group springs open
+const DWELL_MS = 500
 
-const targets = new Map<HTMLElement, () => void>() // collapsed header → its expand
-let drags = 0 // active-drag refcount (only one at a time, but refcount survives unbalanced calls)
+const targets = new Map<HTMLElement, () => void>()
+let drags = 0 // refcounted so unbalanced calls can't strand the listener
 let hovered: HTMLElement | null = null
 let timer: number | null = null
 let lastCheck = 0
-let remeasure: (() => void) | null = null // the active engine re-snapshots its drop geometry
+let remeasure: (() => void) | null = null
 let remeasureRaf: number | null = null
 
 function clearHover(): void {
@@ -23,10 +21,8 @@ function clearHover(): void {
 
 const SETTLE_MS = 250 // covers the disclosure animation, with slack for its start-of-frame skew
 
-// After a band springs open, mounted rows shift the layout for the length of the disclosure
-// animation — so the engine's drop geometry re-aims every frame until the reveal settles. A
-// discrete once-then-settle pair left a gap: a move between the two ticks re-took the snapshot
-// mid-animation and cleared its dirty flag, so a release inside the gap committed that geometry.
+// Re-aims every frame until the reveal settles: a discrete once-then-settle pair left a gap where
+// a move re-took the snapshot mid-animation and cleared its dirty flag.
 function scheduleRemeasure(): void {
   if (!remeasure) return
   if (remeasureRaf != null) cancelAnimationFrame(remeasureRaf)
@@ -41,8 +37,7 @@ function scheduleRemeasure(): void {
 }
 
 function onMove(e: PointerEvent): void {
-  // Throttle the hit-test well under the dwell — a folded header only needs to be noticed once inside
-  // the half-second window, not every frame (elementFromPoint is a layout read).
+  // Throttled well under the dwell: elementFromPoint is a layout read.
   const now = performance.now()
   if (now - lastCheck < 100) return
   lastCheck = now
