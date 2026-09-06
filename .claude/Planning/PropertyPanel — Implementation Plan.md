@@ -309,10 +309,10 @@ return (
 
 **Verify — automated**
 
-- [ ] New `PropertyPicker.pane.test.tsx`, red first — expect 6 failures naming the missing props, then green: each of the three kinds renders its own body; options takes `center` with an `anchorX` and `right` without, datetime and file take `auto` (B28); a `revealOnly` entry calls `onReveal` and never `onCommit`; a targeted entry slides to the value pane; `chooserInitial` opens pre-drilled (B25); `onCommit` carries its `entry` on the chooser path.
-- [ ] `git diff --stat UIX/` → empty. `UIX/Pickers/` is untouched by this task.
-- [ ] `npm run typecheck` green — `target` optional keeps all three existing callers compiling.
-- [ ] `npm run test` green, count = baseline + 6. `npm run lint` green.
+- [x] New `PropertyPicker.pane.test.tsx`, green (7 tests — the `anchorX` centre/no-centre case is two `it`s): each kind renders its own body; options centres with an `anchorX` and does not without (B28); a `revealOnly` entry calls `onReveal` and never `onCommit`; a targeted entry slides to the value pane; `chooserInitial` opens pre-drilled (B25); `onCommit` carries its `entry` on the chooser path.
+- [x] `git diff --stat UIX/` → empty of this task's edits. `UIX/Pickers/` untouched.
+- [x] `npm run typecheck` green — `target` optional keeps all existing callers compiling.
+- [x] `npm run test` green, count = baseline + 7 (4050 → 4057). `npm run lint` green.
 
 **Verify — user**
 
@@ -737,7 +737,7 @@ without deleting more than it grows is out of scope — report it under Sequence
 ### Progress
 
 - [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
-  - [ ] Task 1 — target union + chooser pane · `<commit>`
+  - [x] Task 1 — target union + chooser pane · `<commit>`
   - [ ] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
   - [ ] Task 3 — Table's two mounts; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
@@ -757,10 +757,15 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **`TextPicker` is untouched, and `UIX/Pickers/` is out of scope entirely.** An earlier draft extracted its inner field into a new `TextField` so text kinds could live inside `PropertyPicker`. Nathan struck it: the field already exists, `TextPicker` is already ONE component with five callers across all three surfaces, and folding a shared component into another shared component buys nothing while orphaning a working one. `PropertyPicker` absorbs only what is hand-rolled per surface — options, datetime, file, and the two choosers.
 - **Named locals earn their place or are inlined.** `valuePane`, `PropertyPickKind`, the `Pane` descriptor, `nonce`, `keepNull`, `textTarget`, `shown`, and six caller-side adapters were cut for having one writer and one reader. `pickTargetFor` survives because three call sites read it.
 - **Three defects reported and declined.** The Cards Add ▸ number/file empty pane, the panel's unmount-while-open, and the add-flow's discarded null were raised from the census. Nathan: the first is not real, the second resolves when the panel inherits the new picker, the third is fine. None is a task.
+- **Task 1 open question — the chooser header's flat padding is kept, via a 3-line `property-picker.css.ts`.** The "no behavior change — no exceptions" bound resolves the open question toward preservation: `card-add-top-flat` (`--row-pad-y: 0px`) dies with `CardAddPicker`, so `chooserTop = style([topRow, { vars: { '--row-pad-y': '0px' } }])` replaces it. Composing `topRow` (not a bare sibling class) guarantees the override lands after it in the cascade — a separate vanilla-extract class would only win by import-order luck. File count lands at −3. **Confirm at Gate 1** that the Cards Add chooser back-row still reads flat.
 
 ### Open Against Later Tasks
 
 ### Deviations
+
+- **Task 1 — the pane test is +7, not the fenced +6.** The B28 "centres with `anchorX`, not without" behavior is two `it`s (one per branch) rather than one, for a legible failure. Coverage added, none removed; baseline is 4050 → 4057.
+- **Task 1 — `commit` passes `entry` only when drilled, not `onCommit(v, picked ?? undefined)`.** The fenced form emits a trailing `undefined` second argument on the direct path, which breaks the baseline `cellGestures` multi-select assertion's exact single-arg `toHaveBeenCalledWith`. `picked ? onCommit(v, picked) : onCommit(v)` preserves that baseline test verbatim; no runtime behavior differs for any real caller.
+- **Gate residue corrected (struck TextField extraction).** The Gate checklist's "test count = baseline + 11" and "the `picker-base.test.tsx` rewrite is a signature move" are leftovers from the extraction Nathan struck (Rulings: `UIX/Pickers/` untouched). No `UIX/Pickers/` file is touched. Real test add is **+10**: 7 (Task 1 pane) + 3 (Task 4 panel).
 
 ### Lessons
 

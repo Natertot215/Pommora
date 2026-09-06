@@ -1,14 +1,37 @@
-import type { RefObject } from 'react'
-import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import { type RefObject, useEffect, useState } from 'react'
+import type { ColumnLook, ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
+import { MenuItem, MenuTopRow } from '@pommora/uix/Menus'
+import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { useHeld } from '@pommora/uix/Animations/useHeld'
 import type { PickKind } from './massAssign'
+import { DatetimeValuePicker } from './DatetimeValuePicker'
+import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
+import { chooserTop } from './property-picker.css'
+import { PathField } from '@pommora/uix/Fields/PathField'
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
+
+export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
+  | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
+  | { kind: 'datetime'; dateFormat?: ColumnStyle['date_format'] }
+  | { kind: 'file' }
+)
+
+export type PickEntry = {
+  id: string
+  name: string
+  icon: IconName
+  // `target` null with `revealOnly` false is a dependent kind: the caller takes it back through `onReveal` and opens its own popup (a TextPicker, or the file dialog), which is why the chevron keys off `revealOnly` rather than off `target`.
+  revealOnly: boolean
+  target: PickTarget | null
+}
 
 /** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values. Groups are containers, never pickable chips. */
 export const optionsOf = (def: PropertyDefinition): PickOption[] => {
@@ -40,51 +63,145 @@ export const syntheticContextDef = (id: string): PropertyDefinition => ({
 })
 
 export function PropertyPicker({
-  def,
-  current,
+  target,
+  chooser,
+  chooserInitial,
   open,
   triggerRef,
   anchorX,
+  onCommit,
+  onReveal,
+  onDismiss,
+  def,
+  current,
   look,
   contextOptions,
-  onCommit,
-  onDismiss,
 }: {
-  def: PropertyDefinition
-  current: PropertyValue | null
+  target?: PickTarget | null
+  chooser?: PickEntry[]
+  chooserInitial?: string
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   anchorX?: number
+  onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
+  onReveal?: (entry: PickEntry) => void
+  onDismiss: () => void
+  def?: PropertyDefinition
+  current?: PropertyValue | null
   look?: ColumnLook
   contextOptions?: PickOption[]
-  onCommit: (value: PropertyValue | null) => void
-  onDismiss: () => void
 }): React.JSX.Element | null {
-  const { options, selected, pick } = pickSemantics(
-    def,
-    current,
-    onCommit,
-    onDismiss,
-    contextOptions,
+  const held = useHeld(target ?? null, open)
+  const [picked, setPicked] = useState<PickEntry | null>(null)
+  useEffect(() => {
+    setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
+  }, [open, chooser, chooserInitial])
+
+  // The flat props are the hazard bridge for callers not yet migrated; Task 5 removes them, and every one is an options popup.
+  const t =
+    picked?.target ??
+    held ??
+    (def
+      ? ({ kind: 'options', def, current: current ?? null, look, contextOptions } as const)
+      : null)
+  const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
+
+  const origin = t?.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
+
+  const pane = !t ? null : t.kind === 'options' ? (
+    (() => {
+      const { options, selected, pick } = pickSemantics(
+        t.def,
+        t.current,
+        commit,
+        onDismiss,
+        t.contextOptions,
+      )
+      return (
+        <PropertyOptionRows
+          def={t.def}
+          look={t.look}
+          contextOptions={t.contextOptions}
+          options={options}
+          selected={selected}
+          onPick={pick}
+        />
+      )
+    })()
+  ) : t.kind === 'datetime' ? (
+    <DatetimeValuePicker value={t.current} dateFormat={t.dateFormat} onCommit={commit} />
+  ) : (
+    <PathField
+      label={t.def.name}
+      value=""
+      empty="Choose a file"
+      browseLabel="Choose File"
+      onBrowse={() =>
+        pickFileInto(t.def, t.current ?? { kind: 'null' }, null, (v) => {
+          commit(v)
+          onDismiss()
+        })
+      }
+      onCommit={(raw) => {
+        if (raw.trim()) adoptPathInto(t.def, t.current ?? { kind: 'null' }, raw.trim(), commit)
+        onDismiss()
+      }}
+    />
   )
 
   return (
     <PickerMenu
+      solid
       open={open}
       onDismiss={onDismiss}
       triggerRef={triggerRef}
-      solid
-      origin={anchorX !== undefined ? 'center' : 'right'}
+      origin={chooser ? 'auto' : origin}
       anchorX={anchorX}
     >
-      <PropertyOptionRows
-        def={def}
-        look={look}
-        contextOptions={contextOptions}
-        options={options}
-        selected={selected}
-        onPick={pick}
-      />
+      {chooser ? (
+        <FrameSlide
+          open={picked !== null}
+          minWidth={120}
+          minHeight={0}
+          root={
+            chooser.length === 0 ? (
+              <div style={{ minWidth: 96, height: 24 }} />
+            ) : (
+              <div>
+                {chooser.map((e) => (
+                  <MenuItem
+                    key={e.id}
+                    leading={<Icon name={e.icon} size="body" />}
+                    trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
+                    onClick={() => {
+                      if (e.target) return setPicked(e)
+                      onReveal?.(e)
+                      onDismiss()
+                    }}
+                  >
+                    {e.name}
+                  </MenuItem>
+                ))}
+              </div>
+            )
+          }
+          detail={
+            picked && (
+              <div>
+                <MenuTopRow
+                  label="Properties"
+                  current={picked.name}
+                  onBack={() => setPicked(null)}
+                  className={chooserTop}
+                />
+                {pane}
+              </div>
+            )
+          }
+        />
+      ) : (
+        pane
+      )}
     </PickerMenu>
   )
 }
