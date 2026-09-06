@@ -8,7 +8,7 @@ export interface GlanceRequest {
 
 /** KNOB — one dwell per glance surface; further surfaces add their own rows. */
 export const GLANCE_DWELL = { link: 1000 } as const
-type GlanceDwell = keyof typeof GLANCE_DWELL
+export type GlanceDwell = keyof typeof GLANCE_DWELL
 
 export const GLANCE_BODY_ATTR = 'data-glance'
 
@@ -18,6 +18,15 @@ export function insideGlance(el: Element): boolean {
 
 let present: ((next: GlanceRequest | null) => void) | null = null
 let pending: ReturnType<typeof setTimeout> | null = null
+
+// Presenter-domain flag: true only while a live pane shows. Read imperatively by ghost suppression at dwell-fire, no reactivity.
+let shown = false
+export function glanceShown(): boolean {
+  return shown
+}
+export function setGlanceShown(v: boolean): void {
+  shown = v
+}
 
 export function setGlancePresenter(fn: ((next: GlanceRequest | null) => void) | null): void {
   present = fn
