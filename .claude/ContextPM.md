@@ -36,8 +36,7 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **`showError` versus `notifyError`.** Two error surfaces stand side by side and neither was made the other's; the store's `mutate` reports a failed write through `error:show`, and the notification label is its own path. One of them is the app's answer for a failed act.
 - [ ] **`ActionItem.confirm` is write-only.** Two `optionMenu` rows set it and no presenter reads it. It stays by ruling, as the in-app surfaces' seat for a confirming row; either a presenter honors it or the field goes.
 - [ ] **`RowMenuHost` has no desktop caller.** `Desktop/main.ts` wires `HostContext.menu` to the native popper unconditionally, so the in-app presenter — about 110 lines — is the phone's seat and unreachable today.
-- [ ] **`ALL_ICONS` stays Lucide-only.** The 23 Tabler glyphs are imported by name where they are used, and folding them into the searchable registry would add tiles to the Icon Picker that no curation covers.
-- [ ] **TileLab shows a blank stage.** The Showcase leaf's tiles are Core's, and Showcase imports nothing from Core; either the kit grows a tile seat of its own or the leaf retires.
+
 
 #### II. Next-Feature Candidates
 
