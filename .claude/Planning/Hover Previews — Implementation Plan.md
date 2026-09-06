@@ -148,9 +148,9 @@ export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefine
 **Assumed by:** Task 2 (`armPreview` Off-gate), Task 3 (codec + settings row + pane grace).
 
 **Verify — automated**
-- [ ] Red first: unit test `coercePreviewPersistence('5s'|undefined|'garbage'|7)` and `previewLingerMs('1s'|'10s'|'always'|undefined)` — expect module-export failures, then green.
-- [ ] Degenerate: `coercePreviewPersistence(undefined)` → `undefined`; `previewLingerMs(undefined)` → 1000.
-- [ ] `npm run typecheck` green.
+- [x] Red first: unit test `coercePreviewPersistence('5s'|undefined|'garbage'|7)` and `previewLingerMs('1s'|'10s'|'always'|undefined)` — expect module-export failures, then green.
+- [x] Degenerate: `coercePreviewPersistence(undefined)` → `undefined`; `previewLingerMs(undefined)` → 1000.
+- [x] `npm run typecheck` green.
 
 **Verify — user**
 - [ ] *(none.)*
@@ -634,7 +634,7 @@ useEffect(() => {
 ### Progress
 
 - [ ] **Phase 1** — One setting owns persistence · base `38a4d8e2c`
-  - [ ] Task 1 — Persistence type + resolver · `<commit>`
+  - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `PENDING1`
   - [ ] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `<commit>`
   - [ ] Task 3 — Picker replaces slider (hazard window) · `<commit>`
 - [ ] **Phase 2** — Dwell slots

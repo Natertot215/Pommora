@@ -98,6 +98,7 @@ export interface Personalization {
   ribbonOrder?: string[]
   interfaceScale?: number
   hoverPreviewLinger?: number
+  previewPersistence?: PreviewPersistence
   fileHistory?: boolean
   historyDays?: number
   historyInterval?: number
@@ -148,4 +149,31 @@ export function coerceHoverLinger(v: unknown): number | undefined {
   if (typeof v !== 'number' || !Number.isFinite(v)) return undefined
   const s = Math.round(v)
   return s >= 1 ? Math.min(HOVER_LINGER_MAX, s) : undefined
+}
+
+// One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
+export type PreviewPersistence = 'off' | '1s' | '5s' | '10s' | 'always'
+export const PREVIEW_PERSISTENCE_DEFAULT: PreviewPersistence = '1s'
+const PREVIEW_PERSISTENCE_VALUES: readonly PreviewPersistence[] = [
+  'off',
+  '1s',
+  '5s',
+  '10s',
+  'always',
+]
+
+export function coercePreviewPersistence(v: unknown): PreviewPersistence | undefined {
+  return PREVIEW_PERSISTENCE_VALUES.find((p) => p === v)
+}
+
+const PREVIEW_LINGER_MS: Record<Exclude<PreviewPersistence, 'off'>, number> = {
+  '1s': 1000,
+  '5s': 5000,
+  '10s': 10000,
+  always: Number.POSITIVE_INFINITY,
+}
+
+// Live-pane dismiss grace in ms; 'off' is narrowed out by callers before this runs. 'always' yields Infinity — no timer.
+export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefined): number {
+  return v === undefined ? 1000 : PREVIEW_LINGER_MS[v]
 }
