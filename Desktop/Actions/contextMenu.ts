@@ -1,7 +1,3 @@
-// Per-kind native context menu for a sidebar entity: the renderer hands over a ContextTarget, the
-// items run host-side, and the renderer is signalled to refetch on change. Rename and Delete are
-// absent from that host-side set — one needs an inline field, the other a confirmation.
-
 import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
@@ -29,8 +25,7 @@ import type {
 } from '@pommora/core/Pages/mutateRequest'
 import { openLabel } from '@pommora/core/Actions/toggleLabels'
 
-/** Collections and Sets route through the shared rule so this menu and the subfield's add button
- *  can't drift. A Context group offers "New <Singular>", resolved by the folder's title. */
+/** Routed through the shared rule so this menu and the subfield's add button can't drift. */
 async function creatorsFor(
   root: string,
   kind: MutableKind,
@@ -54,8 +49,7 @@ async function creatorsFor(
   }
 }
 
-/** `onChanged` fires after any successful mutation, carrying what ran so the caller can confirm
- *  the live tree the way every renderer-driven mutation is confirmed. */
+/** `onChanged` carries what ran, so the caller confirms the live tree as any mutation is confirmed. */
 export async function showContextMenu(
   win: BrowserWindow,
   target: ContextTarget,
@@ -81,15 +75,13 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
-  // Renderer-supplied, so it resolves through the root guard: an unguarded join would let `..`
-  // reveal a file outside the nexus.
+  // Renderer-supplied: an unguarded join would let `..` reveal a file outside the nexus.
   const reveal = async (): Promise<void> => {
     const r = await resolveUnderRoot(root, target.path)
     if (r.ok) shell.showItemInFolder(r.value)
   }
 
-  /** Renderer-side work travels as a push, because only the renderer holds the tab set and the
-   *  sibling order; the rest lands here. */
+  /** Renderer-side work travels as a push: only the renderer holds the tab set and the sibling order. */
   const runPageAction = async (action: PageMetaAction | PageMoveAction): Promise<void> => {
     if (action.startsWith('move:'))
       return run({ op: 'movePage', path: target.path, newParentPath: action.slice(5) })
@@ -129,8 +121,7 @@ export async function showContextMenu(
     }
   }
 
-  // A page's menu is the shared model, whole, so it can't drift from the ones the table, the cards
-  // and the row grips pop. A container's is a different menu, not a subset of it.
+  // The shared model, whole, so it can't drift from the ones the table, cards and grips pop.
   if (target.kind === 'page') {
     items.push(
       ...rowTemplate(
@@ -165,8 +156,7 @@ export async function showContextMenu(
   for (const c of creators) items.push({ label: c.label, click: () => void run(c.req) })
   if (creators.length) items.push({ type: 'separator' })
 
-  // Native menus can't take text, so this only opens the renderer's inline field; the commit
-  // still goes through mutate.
+  // Native menus can't take text, so this only opens the renderer's inline field.
   items.push({
     label: 'Rename',
     click: () => push(win, 'begin-rename', { path: target.path, host: target.host }),
@@ -188,8 +178,7 @@ export async function showContextMenu(
   }
   items.push({ label: 'Reveal Location', click: () => void reveal() })
 
-  // Resolve on dismissal, not at pop: a surface holding a hover affordance down (the ghost's
-  // suppress) needs the close to release it.
+  // Resolve on dismissal, not at pop: a surface holding a hover affordance down needs the close to release it.
   await new Promise<void>((resolve) => {
     Menu.buildFromTemplate(items).popup({ window: win, callback: resolve })
   })

@@ -1,5 +1,4 @@
 import type { ZoomOption } from './gripMenu'
-// The tile menu as a model: the in-app pane and the native menu both draw from it.
 
 import {
   type DrillPickItem,
@@ -52,8 +51,7 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
     nodes.map((n) => {
       if (n.submenu) {
         const rows = drill(n.submenu, wrap)
-        // A branch with nothing under it is a leaf that can't be taken, not an empty branch — an
-        // empty submenu opens onto blank space instead of saying there is nothing to pick.
+        // An empty submenu opens onto blank space instead of saying there is nothing to pick.
         return rows.length > 0
           ? { label: n.label, action: 'tile:open' as const, submenu: rows }
           : { label: n.label, action: 'tile:open' as const, disabled: true }

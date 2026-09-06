@@ -1,7 +1,3 @@
-// The link right-click menu — one model behind every surface that pops one, so the actions a link
-// offers can't depend on where it was right-clicked. Sits apart from `connections.ts` the way
-// `cellMenu.ts` sits apart from the cell: that module states the grammar, this one the actions.
-
 import type { ActionItem } from './menuModel'
 import { pageMetaMenuSubset, type PageMetaAction } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
@@ -80,8 +76,7 @@ function closingRows(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
   ]
 }
 
-/** The link right-click menu, as rows. A web address reaches no page, so nothing needing one is
- *  offered — instead it gets the items that edit the link itself. */
+/** A web address reaches no page, so nothing needing one is offered. */
 export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
   const authoring: ActionItem<ConnMenuAction>[] = ctx.editable
     ? [
@@ -118,8 +113,7 @@ export function connMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[
     ]
   }
 
-  // A page already in hand isn't somewhere to be opened: each open item answers to its own
-  // surface, so a page showing in both offers neither.
+  // A page already in hand isn't somewhere to be opened, so one showing in both offers neither.
   const opens = pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.open === 'tab').filter(
     (r) =>
       !(r.action === 'title:newtab' && ctx.open === 'detail') &&

@@ -7,8 +7,7 @@ import {
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 
-/** Pop the property menu natively. `property:destroy` resolves unconfirmed — the renderer asks,
- *  because it is the renderer that performs the destroy. */
+/** `property:destroy` resolves unconfirmed — the renderer asks, because it performs the destroy. */
 export function popPropertyMenu(
   win: BrowserWindow,
   ctx: PropertyMenuContext,

@@ -1,5 +1,3 @@
-// A channel with no handler, or a mismatched signature, is a compile error here.
-
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
 import type { FileHistoryMenuAction } from '../Actions/fileHistoryMenu'
 import type {
@@ -66,10 +64,8 @@ export interface PickFileOptions {
   any?: boolean
 }
 
-/** Request/response channels (`invoke` → `handle`). `args` labels become the derived dialer's
- *  parameter names. */
+/** `args` labels become the derived dialer's parameter names. */
 export interface Asks {
-  // Nexus / session
   'nexus:state': { args: []; reply: NexusState }
   'nexus:choose': { args: []; reply: Result<boolean> }
   'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
@@ -88,14 +84,11 @@ export interface Asks {
   'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
   'exclusions:choose': { args: []; reply: Result<string | null> }
   'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
-  // The confirmation names how many folders are about to be swept, counted at the moment of asking.
   'exclusions:count': { args: []; reply: Result<number> }
 
-  // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
   'page:updateBody': { args: [relPath: string, body: string]; reply: Result<null> }
 
-  // File history — snapshots keyed by page id; restore answers the page's live path.
   'history:list': { args: [pageId: string]; reply: Result<number[]> }
   'history:read': { args: [pageId: string, ts: number]; reply: Result<string> }
   'history:restore': { args: [pageId: string, ts: number]; reply: Result<{ path: string }> }
@@ -129,7 +122,6 @@ export interface Asks {
   'aliases:get': { args: []; reply: Record<string, string[]> }
   'aliases:set': { args: [pageId: string, aliases: string[]]; reply: Result<null> }
 
-  // Views + container config
   'views:save': {
     args: [containerPath: string, kind: 'collection' | 'set', view: SavedView]
     reply: Result<{ id: string }>
@@ -155,7 +147,6 @@ export interface Asks {
     reply: Result<Record<string, PageValues>>
   }
 
-  // Schema (container-scoped) + registry-wide property ops
   'schema:add': {
     args: [containerPath: string, def: PropertyDefinition]
     reply: Result<{ id: string }>
@@ -213,7 +204,6 @@ export interface Asks {
   'property:removeStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:clearStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
 
-  // Tiles
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<null> }
   'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<{ id: string }> }
@@ -239,7 +229,6 @@ export interface Asks {
     reply: Result<{ id: string }>
   }
 
-  // Settings / personalization / theme
   'subfield:get': { args: []; reply: SubfieldConfig | null }
   'subfield:set': { args: [config: SubfieldConfig]; reply: Result<null> }
   'navViewModes:get': { args: []; reply: NavViewModes | null }
@@ -250,7 +239,6 @@ export interface Asks {
   }
   'theme:systemAccent': { args: []; reply: string | null }
 
-  // Navigation / tabs / windows / thumbnails
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
   'tabs:load': { args: []; reply: Result<StoredTabSet | null> }
@@ -278,7 +266,6 @@ export interface Asks {
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'trash:report': { args: [message: string, detail: string]; reply: void }
 
-  // The write path + dialogs + external
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'context-menu': { args: [target: ContextTarget]; reply: void }
@@ -295,7 +282,6 @@ export interface Asks {
   'linkTitles:get': { args: []; reply: Record<string, string> }
   'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 
-  // Native menus — each resolves the picked action, or null on dismiss
   'view-button-menu': {
     args: [current: { viewButton: ViewButton }]
     reply: ViewButtonMenuAction | null
@@ -375,7 +361,6 @@ export interface Pushes {
   'assets:changed': AssetMap
   'nexus:changed': NexusTree
   'values:changed': ValueChange[]
-  // A host's document changed on disk under an open host — the host re-reads it.
   'tiles:changed': TileHostRef
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string

@@ -1,7 +1,3 @@
-// Built from the OS `context-menu` event, so spelling, Share, Speech and the edit roles come
-// native, plus formatting submenus drawn from the renderer's last-pushed FormatState — Electron's
-// static params cannot see CM6 state.
-
 import { Menu, clipboard } from 'electron'
 import type {
   BrowserWindow,
@@ -25,8 +21,7 @@ export function setFormatState(s: FormatState): void {
   lastState = s
 }
 
-// Grips are editable content, so the generic editor menu would fire over them too; the renderer
-// flags the hover before the right-press so each grip's own menu is the only one.
+// Grips are editable content, so the generic editor menu would fire over them; the renderer flags the hover first.
 let gripHot = false
 export function setGripHot(on: boolean): void {
   gripHot = on
@@ -65,8 +60,7 @@ function systemItems(
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
     ...(editorFocused ? pasteAsItems(wc) : []),
-    // The `pasteAndMatchStyle` role would take back ⌘⇧V, which now belongs to the inverse paste
-    // command (→ ConfigurationPM §Commands).
+    // The `pasteAndMatchStyle` role would take back ⌘⇧V, which belongs to the inverse paste command.
     {
       label: 'Paste Without Formatting',
       enabled: f.canPaste,
@@ -185,8 +179,7 @@ function pommoraItems(
   ]
 }
 
-// The clipboard is read here rather than pushed from the renderer: the `context-menu` event fires
-// in the same turn as the right-click, so the renderer cannot read it in time.
+// Read here rather than pushed: the `context-menu` event fires in the same turn as the right-click.
 function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
   const rows = pasteAsRows(
     clipboard.readText(),

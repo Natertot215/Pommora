@@ -20,13 +20,11 @@ export const factorChoice = (f: number): PickerOption<string> => ({
   label: `${f.toFixed(2)}x`,
 })
 
-/** The steps a scale picker offers, admitting an off-step current value so a hand-typed factor
- *  still has a row to sit selected on. */
+/** Admits an off-step current value so a hand-typed factor still has a row to sit selected on. */
 export const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-/** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
- *  a menu; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
+/** Two options toggle in place — never a menu; three+ pop a centered PickerMenu. */
 export function PickerControl<T extends string>({
   ariaLabel,
   value,
@@ -39,10 +37,7 @@ export function PickerControl<T extends string>({
   value: T
   options: readonly PickerOption<T>[]
   onPick: (v: T) => void
-  /** A control whose value can also be written out. A right press turns the trigger's value into a
-   *  field holding `text`, selected and ready to overwrite, without opening the list at all. A value
-   *  worn with a unit hands that unit over as `suffix`: it stays drawn beside the field, so the mark
-   *  never leaves and the digits stay where they were read. */
+  /** A right press turns the trigger into a field holding `text`, selected, without opening the list. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
   /** Opaque menu surface — for pickers that open over another pane (the tile Scale idiom). */
   solid?: boolean
@@ -53,9 +48,7 @@ export function PickerControl<T extends string>({
   const native = useNativeMenus()
   const isToggle = options.length === 2
 
-  // The OS draws the same list from the same options — no leading glyph, since a system menu draws
-  // its own marks and there is no honest way to hand it one; the chosen row reads as a checkmark
-  // instead.
+  // No leading glyph: a system menu draws its own marks, and the chosen row reads as a checkmark.
   const popNative = (): void => {
     const items = options.map((o) => ({
       label: o.label,
@@ -63,8 +56,7 @@ export function PickerControl<T extends string>({
       checked: o.value === value,
     }))
     void popRowMenu(items, ref.current).then((picked) => {
-      // Resolved back through the options rather than cast: the reply is a bare string by the
-      // time it crosses, and only a value this control actually offered may be committed.
+      // Resolved through the options rather than cast: the reply is a bare string by the time it crosses.
       const chosen = options.find((o) => o.value === picked)
       if (chosen) onPick(chosen.value)
     })
@@ -77,8 +69,7 @@ export function PickerControl<T extends string>({
   }
 
   const chevron = <Icon name="chevrons-up-down" size="control" />
-  // The host span outlives the swap below, so the menu keeps measuring one box while the button it
-  // holds becomes a field and back.
+  // The host span outlives the swap, so the menu keeps measuring one box across it.
   const trigger = (
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
@@ -109,8 +100,7 @@ export function PickerControl<T extends string>({
           className={s.trigger}
           aria-label={ariaLabel}
           onClick={onTrigger}
-          // The right press is the door: it opens the field outright, without the list, and reaches
-          // the trigger whether or not a native list would have taken the left one.
+          // Reaches the trigger whether or not a native list would have taken the left press.
           onContextMenu={
             typeable
               ? (e) => {

@@ -1,6 +1,3 @@
-// How one paste departs from the nexus-wide ⌘V default without touching a setting. Read off the
-// clipboard's text alone — no page index, no round trip.
-
 import { embeddableTitle, pageEmbedText, pageLinkPattern } from '../Connections/connections'
 import {
   MD_LINK,
@@ -28,7 +25,6 @@ export const PASTE_AS_PREFIX = 'pasteAs:'
 
 export type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: string } | null
 
-/** Null unless the whole clipboard IS the wikilink; anything around it is prose. */
 function wholeWikiLink(s: string): string | null {
   const m = pageLinkPattern().exec(s)
   return m && m[0] === s ? m[1] : null
@@ -80,8 +76,7 @@ export function pasteAsRows(
   embedSeat: boolean,
   citeSeat: boolean,
 ): readonly PasteAsRow[] {
-  // Footnote reads the clipboard, not `pasteAsTarget`: that reader refuses the newline a
-  // multi-paragraph clipboard carries, which is exactly what the footnote normalizes.
+  // Footnote reads the clipboard, not `pasteAsTarget`: that reader refuses the newline it normalizes.
   const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
   const target = pasteAsTarget(clipboard)
   if (!target) return footnote
@@ -103,8 +98,7 @@ export interface LinePaste {
   text: string
 }
 
-/** Null where `target` and `form` don't belong together, since a menu can stay open while the
- *  clipboard changes under it. The link forms return what a formatted paste returns. */
+/** Null where `target` and `form` don't belong together: a menu can stay open while the clipboard changes. */
 export function pasteAsWrite(
   target: PasteAsTarget,
   form: PasteAsForm,

@@ -12,8 +12,7 @@ import { interfaceScaleZoom } from '../Config/interfaceScale'
 
 type AdoptFn = (path: string) => Promise<void>
 
-/** The window a menu accelerator acts on — the focused one, falling back to the captured `win`
- *  (which can be stale: the menu outlives a window lifecycle), dead targets resolving to null. */
+/** The captured `win` can be stale: the menu outlives a window lifecycle. */
 const menuTarget = (win: BrowserWindow): BrowserWindow | null => {
   const w = BrowserWindow.getFocusedWindow() ?? win
   return w.isDestroyed() ? null : w
@@ -24,13 +23,10 @@ const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
   if (w) stepHostZoom(w.webContents, dir)
 }
 
-// Renderer-driven items send a 'menu:action' string the renderer handles; main-side items
-// (Open Recent, Reveal, Reload) act here. Rebuilt whenever the session or recents change.
 export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promise<void> {
   const userData = app.getPath('userData')
   const stored = (await readAppConfig(userData)).recents ?? []
-  // Drop deleted (trashed) nexuses so Open Recent never lists a dead path; self-heal the
-  // stored list when the prune removes any.
+  // Drop trashed nexuses so Open Recent never lists a dead path.
   const recents = await pruneRecents(stored)
   if (recents.length !== stored.length) {
     await updateAppConfig(userData, () => ({ recents }))
@@ -56,8 +52,6 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         { label: 'Open Nexus…', click: () => send('open') },
         { label: 'Open Recent', submenu: recentItems },
         { type: 'separator' },
-        // Renderer-driven: the store resolves the target container from the current
-        // selection. Enabled only with a nexus open (nothing to create into otherwise).
         {
           label: 'New Tab',
           accelerator: 'CmdOrCtrl+N',
@@ -84,8 +78,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           accelerator: 'CmdOrCtrl+R',
           click: () => {
             const w = menuTarget(win)
-            // Reload is the deliberate verification point: forget the held tree so the booting
-            // renderer's read walks disk fresh instead of serving from memory.
+            // Forget the held tree so the booting renderer's read walks disk fresh.
             if (w) {
               dropLiveTree()
               w.webContents.reload()
@@ -96,9 +89,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         { role: 'close' },
       ],
     },
-    // `editMenu` spelled out so Paste and Match Style keeps its act while giving up its
-    // accelerator — the role claims ⌘⇧V main-side, so the chord would never reach the renderer
-    // otherwise (→ ConfigurationPM §Commands).
+    // Spelled out so Paste and Match Style gives up ⌘⇧V, which the role claims main-side (→ ConfigurationPM §Commands).
     {
       label: 'Edit',
       submenu: [
@@ -127,8 +118,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           click: () => send('toggle-sidebar'),
         },
         { type: 'separator' },
-        // ⌘0 resets to the nexus's interface scale (personalization.interfaceScale), not a
-        // hardcoded 1.0 — read fresh so a settings.json edit takes effect without a relaunch.
+        // Read fresh, so a settings.json edit to interfaceScale takes effect without a relaunch.
         {
           label: 'Actual Size',
           accelerator: 'CmdOrCtrl+0',
@@ -139,9 +129,8 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
             if (w) setHostZoom(w.webContents, interfaceScaleZoom(scale))
           },
         },
-        // De-roled: the native zoom roles act on whatever WebContents holds focus — a focused
-        // guest webview would zoom itself, bypassing the guest-zoom sync. The hidden item keeps
-        // the role's unshifted ⌘= alias (US layout) alive.
+        // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync.
+        // The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
         { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
         {
           label: 'Zoom In',

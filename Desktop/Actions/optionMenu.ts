@@ -6,8 +6,7 @@ import {
 } from '@pommora/core/Actions/optionMenu'
 import { popReturningMenu } from './returningMenu'
 
-/** Pop the option menu natively. Remove and Clear resolve unconfirmed — the renderer asks, because
- *  it is the renderer that performs the strip. */
+/** Remove and Clear resolve unconfirmed — the renderer asks, because it performs the strip. */
 export function popOptionMenu(
   win: BrowserWindow,
   ctx: OptionMenuContext,

@@ -4,8 +4,6 @@ import { COLUMN_ALIGNS, type ColumnAlign } from '@pommora/core/Views/views'
 
 type StyleAction = `style:${string}:${string}`
 
-/** The Align submenu shared by the view column header and the markdown table's column grip — one
- *  radio per alignment, the current one checked. */
 export function alignSubmenu(
   current: ColumnAlign | null | undefined,
   pick: (a: `align:${ColumnAlign}`) => () => void,
@@ -18,9 +16,7 @@ export function alignSubmenu(
   }))
 }
 
-/** The Style submenu template shared by the column-header and cell menus: each row is a radio, and a
- *  `separatorBefore` row is preceded by a separator (Electron scopes radio groups per separator run,
- *  so the datetime menu's date/time radios check independently). */
+/** Electron scopes radio groups per separator run, so `separatorBefore` keeps the date and time radios independent. */
 export function styleSubmenu(
   rows: StyleMenuItem[],
   pick: (a: StyleAction) => () => void,
