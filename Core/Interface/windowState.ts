@@ -18,9 +18,9 @@ function readRecord(v: unknown): WindowSetRecord | null {
 
 function readOpen(v: unknown): WindowsFile['open'] {
   if (!isPlainObject(v)) return null
-  const flavor = v.flavor
-  return (flavor === 'page' || flavor === 'nav') && typeof v.originId === 'string'
-    ? { flavor, originId: v.originId }
+  const kind = v.kind
+  return (kind === 'page' || kind === 'nav') && typeof v.originId === 'string'
+    ? { kind, originId: v.originId }
     : null
 }
 

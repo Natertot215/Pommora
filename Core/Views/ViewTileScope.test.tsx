@@ -6,8 +6,8 @@ import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView, ViewState } from '@pommora/core/Views/views'
 import { useSession } from '../Session/store'
-import { GroupFrame } from './GroupFrame'
-import { SettingsFrame } from './SettingsFrame'
+import { GroupFrame } from './Settings/GroupFrame'
+import { SettingsFrame } from './Settings/SettingsFrame'
 import {
   resolveViewWrite,
   useSaveView,

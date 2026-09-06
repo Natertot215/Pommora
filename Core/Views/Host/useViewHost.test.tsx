@@ -5,13 +5,13 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
-import { useSession } from '../Session/store'
+import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { ViewHost } from './ViewHost'
-import { propsAtRoot } from './propsAtRoot'
-import { pageValues } from './pageValues'
+import { propsAtRoot } from '../propsAtRoot'
+import { pageValues } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import { stubDialer } from '../vitest.setup'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

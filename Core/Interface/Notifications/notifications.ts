@@ -1,4 +1,4 @@
-import { useSession } from '../Session/store'
+import { useSession } from '../../Session/store'
 
 export interface Notification {
   message: string

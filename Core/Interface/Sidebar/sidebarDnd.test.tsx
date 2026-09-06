@@ -31,6 +31,8 @@ const tree = {
     },
   ],
   contexts: [],
+  nexus: {},
+  personalization: { defaultIcons: {} },
 } as unknown as NexusTree
 
 function Row({ id }: { id: string }): React.JSX.Element {
@@ -173,6 +175,8 @@ describe('sidebar drag — page↔Set seam', () => {
       },
     ],
     contexts: [],
+    nexus: {},
+    personalization: { defaultIcons: {} },
   } as unknown as NexusTree
 
   const renderSeam = async (
@@ -249,6 +253,8 @@ describe('sidebar drag — page↔Set seam', () => {
         },
       ],
       contexts: [],
+      nexus: {},
+      personalization: { defaultIcons: {} },
     } as unknown as NexusTree
     await act(async () => {
       root.render(
@@ -297,6 +303,8 @@ describe('sidebar drag — the line marks where the drop lands', () => {
       },
     ],
     contexts: [],
+    nexus: {},
+    personalization: { defaultIcons: {} },
   } as unknown as NexusTree
 
   const line = (): HTMLElement | undefined =>

@@ -1,5 +1,5 @@
 import type { SavedView } from './views'
-import { notifyError } from '../Interface/notifications'
+import { notifyError } from '../Interface/Notifications/notifications'
 import { host } from '../Platform/dialer'
 
 export const restoreView = async (

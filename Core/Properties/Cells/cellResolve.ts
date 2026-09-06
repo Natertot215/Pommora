@@ -2,7 +2,7 @@ import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { ResolveContext } from '../resolveContext'
+import type { ValueContext } from '../valueContext'
 
 export function findOption(
   columnId: string,
@@ -27,7 +27,7 @@ export function optionLabel(
 export function groupLabel(
   group: ResolvedGroup,
   view: SavedView,
-  ctx: ResolveContext,
+  ctx: ValueContext,
   setNames: Map<string, string>,
 ): string {
   if (group.kind === 'ungrouped') return ''

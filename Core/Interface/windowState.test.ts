@@ -21,7 +21,7 @@ const file: WindowsFile = {
   origins: {
     p1: { tabs: [{ target: { kind: 'page', id: 'p2' } }], activeIndex: 0 },
   },
-  open: { flavor: 'page', originId: 'p1' },
+  open: { kind: 'page', originId: 'p1' },
 }
 
 describe('readWindowsState', () => {
@@ -63,7 +63,7 @@ describe('sanitizeWindows', () => {
         activeIndex: 0,
       },
       origins: {},
-      open: { flavor: 'weird', originId: 'p1' },
+      open: { kind: 'weird', originId: 'p1' },
     })
     expect(clean?.navSet?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
     expect(clean?.open).toBeNull()

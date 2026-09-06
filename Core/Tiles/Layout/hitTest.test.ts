@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import { insertBand } from './ops'
 import { computeGeometry } from './rects'
 import { hitTest } from './hitTest'
@@ -42,13 +43,13 @@ describe('hitTest', () => {
 
   it('holds the previous edge near a quadrant diagonal (hysteresis)', () => {
     const prev = { kind: 'tile', id: 'a', edge: 'n' } as const
-    expect(hitTest(geo, two, 'b', 500, 102, 10, prev)).toEqual(prev)
-    expect(hitTest(geo, two, 'b', 500, 110, 10, prev)).toEqual({
+    expect(hitTest(geo, two, 'b', 500, 102, 10, prev, HYSTERESIS)).toEqual(prev)
+    expect(hitTest(geo, two, 'b', 500, 110, 10, prev, HYSTERESIS)).toEqual({
       kind: 'tile',
       id: 'a',
       edge: 's',
     })
-    expect(hitTest(geo, two, 'a', 500, 300, 10, prev)).toEqual({
+    expect(hitTest(geo, two, 'a', 500, 300, 10, prev, HYSTERESIS)).toEqual({
       kind: 'tile',
       id: 'b',
       edge: 'n',

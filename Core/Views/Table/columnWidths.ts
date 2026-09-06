@@ -1,6 +1,6 @@
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { defaultStyleFor } from '@pommora/core/Properties/columnStyles'
-import { declaredType } from '../Properties/value'
+import { declaredType } from '../../Properties/value'
 import { ICON_PX } from '@pommora/uix/Theme/size.css'
 
 export interface ColumnWidth {

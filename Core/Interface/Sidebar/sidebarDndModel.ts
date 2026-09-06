@@ -1,5 +1,6 @@
-import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
+import { nodesOf } from '../../Session/treeIndex'
 
 export type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
 export type Entry = {
@@ -21,55 +22,24 @@ export type Index = {
 
 export function buildIndex(tree: NexusTree): Index {
   const byId = new Map<string, Entry>()
-  const addPages = (
-    pages: PageNode[],
-    parentId: string,
-    parentPath: string,
-    depth: number,
-  ): void => {
-    for (const p of pages)
-      byId.set(p.id, {
-        id: p.id,
-        kind: 'page',
-        path: p.path,
-        depth,
-        parentId,
-        parentPath,
-        pageIds: [],
-        containerIds: [],
-      })
-  }
-  const walkSet = (s: SetNode, parentId: string, parentPath: string, depth: number): void => {
-    const subs = s.sets ?? []
-    byId.set(s.id, {
-      id: s.id,
-      kind: 'set',
-      path: s.path,
-      depth,
-      parentId,
-      parentPath,
-      pageIds: s.pages.map((p) => p.id),
-      containerIds: subs.map((x) => x.id),
+  const collectionIds: string[] = []
+  for (const r of nodesOf(tree)) {
+    if (r.kind !== 'collection' && r.kind !== 'set' && r.kind !== 'page') continue
+    const parent = r.parents.at(-1) ?? null
+    byId.set(r.id, {
+      id: r.id,
+      kind: r.kind,
+      path: r.path,
+      depth: r.parents.length,
+      parentId: parent?.id ?? null,
+      parentPath: parent?.path ?? null,
+      pageIds: [],
+      containerIds: [],
     })
-    addPages(s.pages, s.id, s.path, depth + 1)
-    for (const sub of subs) walkSet(sub, s.id, s.path, depth + 1)
+    if (r.kind === 'collection') collectionIds.push(r.id)
+    const holder = parent && byId.get(parent.id)
+    if (holder) (r.kind === 'page' ? holder.pageIds : holder.containerIds).push(r.id)
   }
-  const walkCollection = (c: CollectionNode): void => {
-    byId.set(c.id, {
-      id: c.id,
-      kind: 'collection',
-      path: c.path,
-      depth: 0,
-      parentId: null,
-      parentPath: null,
-      pageIds: c.pages.map((p) => p.id),
-      containerIds: c.sets.map((s) => s.id),
-    })
-    addPages(c.pages, c.id, c.path, 1)
-    for (const s of c.sets) walkSet(s, c.id, c.path, 1)
-  }
-  const collections = [...(tree.collections ?? [])]
-  for (const c of collections) walkCollection(c)
 
   const spaceIdsByContext = new Map<string, string[]>()
   const contextGroupIds: string[] = []
@@ -101,12 +71,7 @@ export function buildIndex(tree: NexusTree): Index {
       g.spaces.map((s) => s.id),
     )
   }
-  return {
-    byId,
-    collectionIds: collections.map((c) => c.id),
-    spaceIdsByContext,
-    contextGroupIds,
-  }
+  return { byId, collectionIds, spaceIdsByContext, contextGroupIds }
 }
 
 export function setContainerOf(entry: Entry, idx: Index): Entry | null {

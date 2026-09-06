@@ -9,7 +9,7 @@ import {
   type Option,
 } from '@pommora/core/Properties/optionModel'
 import type { PropertyType } from '@pommora/core/Properties/properties'
-import { askClearOption, askRemoveOption } from '../../Interface/confirmations'
+import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
 import { cx } from '@pommora/uix/Utilities/cx'
 import {
   GhostOptionChip,

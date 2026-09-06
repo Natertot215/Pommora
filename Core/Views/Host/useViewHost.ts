@@ -11,31 +11,31 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import { applyValueAtRoot, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { useSession } from '../Session/store'
-import { useSaveView } from './ViewTileScope'
+import { useSession } from '../../Session/store'
+import { useSaveView } from '../ViewTileScope'
 import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
-} from '../Properties/contextOptions'
-import { contextIdsOf } from '../Properties/contextIdentity'
-import { declaredType } from '../Properties/value'
-import { buildResolveContext } from '../Properties/resolveContext'
-import { buildSetIcons, buildSetNames, buildSetPaths } from '../Properties/Cells/cellResolve'
-import { hideShown, unhide } from './hiddenFrameModel'
-import { resolveBandHead } from './GroupBand'
-import { resolveContainerSchema } from './Pipeline/pickView'
-import { bucketKey, flattenContainer, groupsStructurally } from './Pipeline/group'
-import { resolveView } from './Pipeline/resolveView'
-import { resolvedSortCount, resolveManualOrder } from './Pipeline/sort'
+} from '../../Properties/contextOptions'
+import { contextIdsOf } from '../../Properties/contextIdentity'
+import { declaredType } from '../../Properties/value'
+import { buildValueContext } from '../../Properties/valueContext'
+import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'
+import { hideShown, unhide } from '../hiddenFrameModel'
+import { resolveBandHead } from '../Bands/GroupBand'
+import { resolveContainerSchema } from '../Pipeline/pickView'
+import { bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
+import { resolveView } from '../Pipeline/resolveView'
+import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride, useContainerValues } from './useValuesEpoch'
 import { useViewOrders } from './useViewOrders'
-import { groupingKeyOf, useBandOrdering } from './useBandOrdering'
+import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { writeContextValue } from './contextCellWrite'
-import { mergeStyleRecords } from './viewMerge'
-import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from './TableView/reassign'
-import { sameIds } from './creationOrder'
+import { mergeStyleRecords } from '../viewMerge'
+import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
+import { sameIds } from '../creationOrder'
 
 export interface ViewHostUpward {
   foldOverrides: { current: (v: SavedView) => SavedView }
@@ -188,8 +188,8 @@ export function useViewHost(
   }, [groupPropId, sortKeys, liveView.sort, schema, columns])
 
   const ctx = useMemo(
-    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
+    () => (tree ? buildValueContext(tree, schema, assetMap) : null),
+    // buildValueContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
     [tree?.contexts, schema, assetMap],
   )
   const setNames = useMemo(() => buildSetNames(source), [source])

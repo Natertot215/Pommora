@@ -14,7 +14,7 @@ import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView } from '@pommora/core/Views/views'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { confirmDelete } from '../../Interface/confirmations'
+import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme/typography.css'
@@ -46,7 +46,7 @@ import { thumbKey, thumbRel } from '@pommora/core/Locations/nexusPaths'
 import { navKey } from '../../Navigation/navRecents'
 import { findCollectionForSet } from '../../Session/treeIndex'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
-import type { ViewHostApi } from '../useViewHost'
+import type { ViewHostApi } from '../Host/useViewHost'
 import { subtreeIds } from '../Pipeline/group'
 import {
   GHOST_DWELL_MS,
@@ -57,14 +57,14 @@ import {
 } from '@pommora/uix/Interactions/ghostCreate'
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { useStyleFor } from '../columnStyles'
-import { groupKeyToValue } from '../TableView/reassign'
-import { ViewGroupBand } from '../ViewGroupBand'
-import { BandDnd, type BandDrop } from '../BandDnd'
-import { flattenBands } from '../bandDndModel'
-import { bandReorderPatch } from '../useBandOrdering'
+import { useStyleFor } from '../Host/columnStyles'
+import { groupKeyToValue } from '../reassign'
+import { ViewGroupBand } from '../Bands/ViewGroupBand'
+import { BandDnd, type BandDrop } from '../Bands/BandDnd'
+import { flattenBands } from '../Bands/bandDndModel'
+import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
-import type { ResolveContext } from '../../Properties/resolveContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Session/treeIndex'
 
@@ -77,7 +77,7 @@ import {
   addEntriesFor,
   orderAddableEntries,
   shownColumnsFor,
-} from '../cardValueInput'
+} from './cardValueInput'
 import { pageMoveContext, runPageSendAction } from '../../Interface/Menus/pageMenuActions'
 import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
@@ -619,7 +619,7 @@ function GhostCard({
   banner: CardBanner
   view: SavedView
   columns: ResolvedColumn[]
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   iconName: string
   onEnter: () => void
   onLeave: () => void
@@ -745,7 +745,7 @@ interface PageCardProps {
   banner: CardBanner
   nexusId: string
   columns: ResolvedColumn[]
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   loc?: TrailSegment[]
   onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
@@ -859,7 +859,7 @@ const CardFace = memo(function CardFace({
   naming: boolean
   view: SavedView
   banner: CardBanner
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   crumbs: TrailSegment[]
   src: string | undefined
   cover?: string
@@ -968,7 +968,7 @@ function OverlayFace({
   row: ViewRow
   view: SavedView
   banner: CardBanner
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   crumbs: TrailSegment[]
   cover?: string
   iconName: string

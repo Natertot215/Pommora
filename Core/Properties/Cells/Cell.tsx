@@ -17,7 +17,7 @@ import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
 import { solidColorCss } from '@pommora/uix/Theme/solidColor'
 import { CheckboxGlyph } from './checkboxLook'
-import type { ResolveContext } from '../resolveContext'
+import type { ValueContext } from '../valueContext'
 import { FileChip, SpaceChip } from '@pommora/uix/Labels'
 
 export function Cell({
@@ -31,7 +31,7 @@ export function Cell({
 }: {
   row: ViewRow
   column: ResolvedColumn
-  ctx: ResolveContext
+  ctx: ValueContext
   hideIcon: boolean
   style: ColumnStyle
   showFullLink?: boolean

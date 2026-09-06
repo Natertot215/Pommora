@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildResolveContext } from './resolveContext'
+import { buildValueContext } from './valueContext'
 import { EMPTY_ASSET_MAP, type NexusTree } from '@pommora/core/Nexus/tree'
 
 const tree = {
@@ -25,15 +25,15 @@ const tree = {
   personalization: {},
 } as unknown as NexusTree
 
-describe('buildResolveContext', () => {
+describe('buildValueContext', () => {
   it('bundles schema + the identity seam Space map', () => {
-    const ctx = buildResolveContext(tree, [], EMPTY_ASSET_MAP)
+    const ctx = buildValueContext(tree, [], EMPTY_ASSET_MAP)
     expect(ctx.schema).toEqual([])
     expect(ctx.contextsById.get('a1')?.title).toBe('Personal')
     expect(ctx.contextsById.get('t1')?.title).toBe('Reading')
   })
 
   it('returns undefined for an unknown id', () => {
-    expect(buildResolveContext(tree, [], EMPTY_ASSET_MAP).contextsById.get('nope')).toBeUndefined()
+    expect(buildValueContext(tree, [], EMPTY_ASSET_MAP).contextsById.get('nope')).toBeUndefined()
   })
 })

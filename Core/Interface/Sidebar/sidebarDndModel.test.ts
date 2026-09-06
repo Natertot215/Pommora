@@ -56,6 +56,8 @@ const tree = {
       ],
     },
   ],
+  nexus: {},
+  personalization: { defaultIcons: {} },
 } as unknown as NexusTree
 
 describe('buildIndex', () => {

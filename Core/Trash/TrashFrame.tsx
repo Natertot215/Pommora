@@ -10,9 +10,8 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
-import { askEmptyTrash } from '../Interface/confirmations'
+import { askEmptyTrash } from '../Interface/Confirm/confirmations'
 import type { MutateRequest } from '@pommora/core/Pages/mutateRequest'
-import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { DEFAULT_TIME_FORMAT, type Personalization } from '@pommora/core/Settings/personalization'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { PropertyTypeIcon } from '../Properties/Cells/PropertyTypes'
@@ -23,8 +22,6 @@ import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
-
-const EMPTY_COLLECTIONS: CollectionNode[] = []
 
 const PLURALS: Record<TrashRow['kind'], string> = {
   page: 'pages',
@@ -69,7 +66,6 @@ export function TrashFrame(): React.JSX.Element {
   const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const tree = useSession((s) => s.tree)
-  const collections = useSession((s) => s.tree?.collections ?? EMPTY_COLLECTIONS)
   const mutate = useSession((s) => s.mutate)
   const load = useSession((s) => s.load)
   const [rows, setRows] = useState<TrashRow[] | null>(null)
@@ -184,7 +180,7 @@ export function TrashFrame(): React.JSX.Element {
         ? {
             destinationKind,
             destinations:
-              destinationKind === 'context' ? contextTargets(tree) : containerTargets(collections),
+              destinationKind === 'context' ? contextTargets(tree) : containerTargets(tree),
           }
         : {}),
     })

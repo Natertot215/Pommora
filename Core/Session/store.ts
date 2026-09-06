@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { EMBED_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
-import { wireViewAdopted } from '../Views/viewMint'
+import { wireViewAdopted } from '../Views/Host/viewMint'
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from '../Interface/layoutSlice'

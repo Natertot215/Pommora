@@ -1,4 +1,4 @@
-import { EntityIcon } from '../Assets/EntityIcon'
+import { EntityIcon } from '../../Assets/EntityIcon'
 import { Button } from '@pommora/uix/Buttons'
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
@@ -11,22 +11,22 @@ import { base } from '@pommora/uix/Fields'
 import { asRenderableIcon, Icon } from '@pommora/uix/Symbols'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
-import { RenamableTitle } from '../Interface/RenamableTitle'
-import { declaredType } from '../Properties/value'
-import { findOption, groupLabel } from '../Properties/Cells/cellResolve'
-import { CheckboxGlyph } from '../Properties/Cells/checkboxLook'
-import { formatBucketLabel } from '../Properties/formatValue'
-import type { ResolveContext } from '../Properties/resolveContext'
+import { RenamableTitle } from '../../Interface/RenamableTitle'
+import { declaredType } from '../../Properties/value'
+import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
+import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
+import { formatBucketLabel } from '../../Properties/formatValue'
+import type { ValueContext } from '../../Properties/valueContext'
 import './group-band.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { dropOutline, dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { SpaceChip } from '@pommora/uix/Labels'
-import { OptionChip } from '../Properties/Cells/OptionChip'
+import { OptionChip } from '../../Properties/Cells/OptionChip'
 
 export function resolveBandHead(
   group: ResolvedGroup,
   view: SavedView,
-  ctx: ResolveContext,
+  ctx: ValueContext,
   setNames: Map<string, string>,
   setIcons: Map<string, string | undefined>,
   source: CollectionNode | SetNode,

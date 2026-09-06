@@ -6,16 +6,16 @@ import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import type { ContextOption } from '../../Properties/contextOptions'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
-import { useStyleFor } from '../columnStyles'
+import { useStyleFor } from '../Host/columnStyles'
 import { linkEditText, urlValueFromEdit } from '@pommora/core/Connections/linkValue'
 import { resolveTitle } from '../../Properties/Cells/linkResolve'
 import { solidColorCss } from '@pommora/uix/Theme/solidColor'
-import type { ResolveContext } from '../../Properties/resolveContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { PropertyPicker, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { useSession } from '../../Session/store'
 import { DatetimeValuePicker } from '../../Properties/Pickers/DatetimeValuePicker'
 import { CardAddPicker } from './CardAddPicker'
-import { addColumn, addEntriesFor, type AddEntry } from '../cardValueInput'
+import { addColumn, addEntriesFor, type AddEntry } from './cardValueInput'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { adoptPathInto, pickFileInto } from '../../Properties/Pickers/filePick'
@@ -55,7 +55,7 @@ export function CardPickerHost({
   add: AddPickerRequest | null
   rowById: Map<string, ViewRow>
   view: SavedView
-  ctx: ResolveContext
+  ctx: ValueContext
   columns: ResolvedColumn[]
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   contextOptionsFor: (column: ResolvedColumn) => ContextOption[] | null

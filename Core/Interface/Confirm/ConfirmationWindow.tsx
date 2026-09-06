@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useSession } from '../Session/store'
+import { useSession } from '../../Session/store'
 import { Button } from '@pommora/uix/Buttons'
 import { GlassWindow } from '@pommora/uix/Glass'
 import { useHeldPresence, windowIn, windowOut } from '@pommora/uix/Animations'

@@ -1,12 +1,12 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { iconNameOr } from '@pommora/uix/Symbols'
-import { useSession } from '../Session/store'
-import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Session/treeIndex'
-import { useActiveView } from './useActiveView'
+import { useSession } from '../../Session/store'
+import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../../Session/treeIndex'
+import { useActiveView } from '../Host/useActiveView'
 import { ViewFrame } from './ViewFrame'
-import * as s from '../Interface/Toolbar/toolbar-menu.css'
-import { host } from '../Platform/dialer'
+import * as s from '../../Interface/Toolbar/toolbar-menu.css'
+import { host } from '../../Platform/dialer'
 
 /** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
 export function ViewMenu(): React.JSX.Element | null {

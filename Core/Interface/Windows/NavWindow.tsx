@@ -17,7 +17,7 @@ import { windowTargetOf, useSession } from '../../Session/store'
 import { splitSearch, useNavData } from '../../Navigation/useNavData'
 import { NavList } from '../../Navigation/NavList'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
-import { PagePanel } from './PageWindow'
+import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
@@ -93,7 +93,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
   const pageWindow = useSession((s) => s.pageWindow)
-  const pageTarget = useSession((s) => (s.pageWindow?.flavor === 'nav' ? windowTargetOf(s) : null))
+  const pageTarget = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
   // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
     if (!pageTarget) {
@@ -117,7 +117,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     closeNav()
     openNewTab()
   }
-  const hasTabs = pageWindow?.flavor === 'nav' && pageWindow.tabs.length > 1
+  const hasTabs = pageWindow?.kind === 'nav' && pageWindow.tabs.length > 1
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const [editing, setEditing] = useState(false)
@@ -143,7 +143,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       rootRef={rootRef}
       closing={closing}
       onClose={closeNav}
-      // The pane closes first — an Escape during the flavor-swap exit is the shell's own closing gate.
+      // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
@@ -185,7 +185,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         className: 'navwindow-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && pageTarget && <PagePanel target={pageTarget} />}
+            {inspectorOpen && pageTarget && <PagePropertyRows variant="panel" page={pageTarget} />}
           </div>
         ),
       }}

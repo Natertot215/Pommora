@@ -99,7 +99,7 @@ export function WindowTabStrip({
                     )}
                     <WindowTabItem
                       entry={entry}
-                      navFlavor={pageWindow?.flavor === 'nav'}
+                      navKind={pageWindow?.kind === 'nav'}
                       active={!ghost && entry.tab.id === activeTabId}
                       closing={ghost}
                       onActivate={() => activateWindowTab(entry.tab.id)}
@@ -118,14 +118,14 @@ export function WindowTabStrip({
 
 function WindowTabItem({
   entry,
-  navFlavor,
+  navKind,
   active,
   closing,
   onActivate,
   onClose,
 }: {
   entry: Entry
-  navFlavor: boolean
+  navKind: boolean
   active: boolean
   closing: boolean
   onActivate: () => void
@@ -135,7 +135,7 @@ function WindowTabItem({
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
   // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
   const res =
-    navFlavor && entry.res?.icon === 'map'
+    navKind && entry.res?.icon === 'map'
       ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS.page }
       : entry.res
   const drag = useDragItem(entry.tab.id)

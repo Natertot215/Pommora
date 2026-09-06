@@ -19,7 +19,7 @@ import {
 import { resolveTitle, validateLink } from '../../Properties/Cells/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
-import type { ResolveContext } from '../../Properties/resolveContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
@@ -39,7 +39,7 @@ export function CardValue({
 }: {
   row: ViewRow
   column: ResolvedColumn
-  ctx: ResolveContext
+  ctx: ValueContext
   style: ColumnStyle
   onCommit: (column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void

@@ -2,9 +2,9 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@pommora/core/Views/views'
-import { askDeleteView } from '../Interface/confirmations'
-import { notifyDeleted, notifyError } from '../Interface/notifications'
-import { restoreView } from './restoreView'
+import { askDeleteView } from '../../Interface/Confirm/confirmations'
+import { notifyDeleted, notifyError } from '../../Interface/Notifications/notifications'
+import { restoreView } from '../restoreView'
 import { Button } from '@pommora/uix/Buttons'
 import { Icon, iconNameOr } from '@pommora/uix/Symbols'
 import { Menu, MenuItem, MenuFooting, MenuScrollFrame, AccessoryButton } from '@pommora/uix/Menus'
@@ -13,15 +13,15 @@ import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { LayoutFrame } from './LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
 import type { PaneDrop, FrameRow, frameSlot } from '@pommora/uix/Interactions/frameDndModel'
-import { useSaveView, useViewTileScope } from './ViewTileScope'
+import { useSaveView, useViewTileScope } from '../ViewTileScope'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { labelColorFor } from '@pommora/uix/Theme/colorMap'
 import { RenamableLabel } from '@pommora/uix/Fields'
-import { IconChoice } from '../Assets/IconChoice'
-import { useSession } from '../Session/store'
+import { IconChoice } from '../../Assets/IconChoice'
+import { useSession } from '../../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
-import * as vd from '../Interface/Toolbar/toolbar-menu.css'
-import { host } from '../Platform/dialer'
+import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
+import { host } from '../../Platform/dialer'
 
 const PANE_SQUARE = 225
 
@@ -69,6 +69,7 @@ export function ViewFrame({
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
   const scope = useViewTileScope()
+  // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []
   const rows = views.length ? views : [mintDefaultView(schema)]

@@ -1,4 +1,3 @@
-import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import type { Edge, TileLayout } from './model'
 import type { TileGeometry } from './rects'
 
@@ -15,6 +14,7 @@ export function hitTest(
   py: number,
   bandZonePx = 10,
   prev: DropTarget = null,
+  hysteresisPx = 0,
 ): DropTarget {
   if (py < bandZonePx) return { kind: 'band', index: 0 }
   // Append owns only the pad BELOW the content — the last band's south edges stay targetable.
@@ -38,7 +38,7 @@ export function hitTest(
     const best = dists[0]?.[0] ?? 'e'
 
     if (prev?.kind === 'tile' && prev.id === id && prev.edge !== best) {
-      const margin = HYSTERESIS / Math.min(r.w, r.h)
+      const margin = hysteresisPx / Math.min(r.w, r.h)
       const prevDist = dists.find(([edge]) => edge === prev.edge)?.[1] ?? Infinity
       const bestDist = dists[0]?.[1] ?? 0
       if (prevDist - bestDist < margin) return prev

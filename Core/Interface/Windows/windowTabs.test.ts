@@ -183,7 +183,7 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
     const file = useSession.getState().windowsFile
     expect(file.origins.x).toBeUndefined()
     expect(file.origins.y?.tabs).toEqual([{ target: { kind: 'page', id: 'y' } }])
-    expect(file.open).toEqual({ flavor: 'page', originId: 'y' })
+    expect(file.open).toEqual({ kind: 'page', originId: 'y' })
   })
 
   it('closing the last tab retires the set — a re-summon starts fresh; the X keeps it (H-3)', () => {
@@ -207,12 +207,12 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
   })
 })
 
-describe('windowTabs — the nav flavor (H-2)', () => {
+describe('windowTabs — the nav kind (H-2)', () => {
   it('the map sentinel tab refuses to close; page tabs around it close normally', () => {
     useSession.getState().openNavWindow()
     useSession.getState().openWindowTab(page('x'))
     const p = useSession.getState().pageWindow!
-    expect(p.flavor).toBe('nav')
+    expect(p.kind).toBe('nav')
     const mapId = p.tabs[0].id
     useSession.getState().closeWindowTab(mapId)
     expect(useSession.getState().pageWindow).toBe(p)
@@ -249,8 +249,8 @@ describe('windowTabs — warmth (H-8)', () => {
   })
 })
 
-describe('windowTabs — the NavWindow flavor entry (H-2/H-3)', () => {
-  it('openNav seeds the nav flavor with the remembered set (map tab active); closeNav keeps it durable', () => {
+describe('windowTabs — the NavWindow kind entry (H-2/H-3)', () => {
+  it('openNav seeds the nav kind with the remembered set (map tab active); closeNav keeps it durable', () => {
     useSession.setState({
       windowsFile: {
         navSet: {
@@ -264,7 +264,7 @@ describe('windowTabs — the NavWindow flavor entry (H-2/H-3)', () => {
     useSession.getState().openNav()
     const p = useSession.getState().pageWindow!
     expect(useSession.getState().navOpen).toBe(true)
-    expect(p.flavor).toBe('nav')
+    expect(p.kind).toBe('nav')
     expect(p.tabs.map((t) => t.target.kind)).toEqual(['navwindow', 'page'])
     expect(p.activeTabId).toBe(p.tabs[0].id)
 

@@ -1,8 +1,8 @@
 // frameDnd doesn't fit: its two-region assigned/all vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
-import type { Band, BandIndex, BandSlot } from './bandDndModel'
-import { bandSlot, buildBandIndex, canNest } from './bandDndModel'
+import type { Band, BandIndex, BandSlot } from '../Bands/bandDndModel'
+import { bandSlot, buildBandIndex, canNest } from '../Bands/bandDndModel'
 
 export interface GroupingDrop {
   kind: 'reorder' | 'reparent'

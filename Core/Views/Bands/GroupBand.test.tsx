@@ -7,7 +7,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { EMPTY_ASSET_MAP, type CollectionNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { GroupConfig, SavedView } from '@pommora/core/Views/views'
-import type { ResolveContext } from '../Properties/resolveContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { resolveBandHead } from './GroupBand'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -35,7 +35,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_date', name: 'When', type: 'datetime' },
 ] as PropertyDefinition[]
 
-const ctx: ResolveContext = {
+const ctx: ValueContext = {
   schema,
   contextsById: new Map(),
   contexts: new Map(),
@@ -179,7 +179,7 @@ describe('resolveBandHead', () => {
 })
 
 describe('resolveBandHead — Context grouping', () => {
-  const ctxWithSpace: ResolveContext = {
+  const ctxWithSpace: ValueContext = {
     ...ctx,
     contextsById: new Map([
       ['sp1', { title: 'Pommora', icon: 'rocket', color: 'mint', contextId: 'ctx_projects' }],

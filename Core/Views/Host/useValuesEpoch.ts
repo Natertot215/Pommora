@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
-import { useSession } from '../Session/store'
-import { host } from '../Platform/dialer'
+import { useSession } from '../../Session/store'
+import { host } from '../../Platform/dialer'
 
 export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
 export type Overrides = Record<string, OverrideEntry>

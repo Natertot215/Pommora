@@ -8,7 +8,7 @@ import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { Cell } from './Cell'
-import type { ResolveContext } from '../resolveContext'
+import type { ValueContext } from '../valueContext'
 import { propsAtRoot } from '../../Views/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -57,7 +57,7 @@ const ctx = {
   schema,
   contextsById: new Map(),
   assets: EMPTY_ASSET_MAP,
-} as unknown as ResolveContext
+} as unknown as ValueContext
 
 const col = (id: string): ResolvedColumn => ({ id, kind: 'property' })
 const rowWith = (properties: Record<string, unknown>): ViewRow =>

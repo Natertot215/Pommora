@@ -511,13 +511,13 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     expect(p?.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'x' })
   })
 
-  it('keeps the nav flavor alive through a reconcile: dead page tabs drop, the map tab stays', async () => {
+  it('keeps the nav kind alive through a reconcile: dead page tabs drop, the map tab stays', async () => {
     useSession.getState().openNavWindow()
     useSession.getState().openWindowTab({ id: 'b', path: 'Notes/B.md' })
 
     await useSession.getState().applyTree(treeWith([]))
     const p = useSession.getState().pageWindow
-    expect(p?.flavor).toBe('nav')
+    expect(p?.kind).toBe('nav')
     expect(p?.tabs.map((t) => t.target.kind)).toEqual(['navwindow'])
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })

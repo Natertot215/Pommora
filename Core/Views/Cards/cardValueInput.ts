@@ -7,11 +7,11 @@ import { isBlankValue } from '@pommora/core/Properties/propertyValue'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { isCompact, type SavedView } from '@pommora/core/Views/views'
-import { hiddenListIds } from './hiddenFrameModel'
-import { contextIdsOf, contextsByIdOf } from '../Properties/contextIdentity'
-import { resolveFieldValue } from '../Properties/value'
-import { columnLabel } from '../Properties/Cells/columnLabel'
-import type { ResolveContext } from '../Properties/resolveContext'
+import { hiddenListIds } from '../hiddenFrameModel'
+import { contextIdsOf, contextsByIdOf } from '../../Properties/contextIdentity'
+import { resolveFieldValue } from '../../Properties/value'
+import { columnLabel } from '../../Properties/Cells/columnLabel'
+import type { ValueContext } from '../../Properties/valueContext'
 
 /** Checkbox is deliberately excluded from the pane split (its box on the card is the toggle); Context columns pane via contextOptions rather than this set. */
 export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
@@ -29,7 +29,7 @@ export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
 export function shownColumnsFor(
   row: ViewRow,
   columns: ResolvedColumn[],
-  ctx: ResolveContext,
+  ctx: ValueContext,
   compactLayout: boolean,
 ): ResolvedColumn[] {
   return columns.filter(
@@ -44,7 +44,7 @@ export function shownColumnsFor(
 export function addEntriesFor(
   row: ViewRow,
   view: SavedView,
-  ctx: ResolveContext,
+  ctx: ValueContext,
   columns: ResolvedColumn[],
   tree: NexusTree | null = null,
   capitalize = false,
