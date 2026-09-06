@@ -16,8 +16,7 @@ import { armAutoScroll } from './autoscroll'
 import { announce } from './a11y'
 
 export interface InsertionDragSpec<Slot, Snap> {
-  /** Frozen geometry for the drag of `id` — taken at activation, retaken lazily after an
-   *  invalidation. Null fails the resolve closed: no slot survives a vanished surface. */
+  /** Taken at activation, retaken lazily after an invalidation. Null fails the resolve closed. */
   take: (id: string) => Snap | null
   resolve: (id: string, point: { x: number; y: number }, snap: Snap) => Slot | null
   commit: (id: string, slot: Slot, snap: Snap) => void
@@ -99,8 +98,8 @@ export function useInsertionDrag<Slot, Snap>(
     resolveSlot()
   }
 
-  // A mid-drag list change (a watcher push) re-renders rows — stale rects must not survive it,
-  // and a release with no further move must still commit against the fresh slot.
+  // A mid-drag list change re-renders rows; a release with no further move must still commit
+  // against the fresh slot.
   useEffect(() => {
     if (dragged.current) invalidate()
     else snap.markDirty()
@@ -129,8 +128,8 @@ export function useInsertionDrag<Slot, Snap>(
         dragged.current = { id, grabX, label: cfg.label(id) }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         announce(`Picked up ${dragged.current.label}.`)
-        // No re-resolve callback: the loop's own scrollBy raises the window scroll the
-        // invalidation hook below already answers — one path, never a stale-rect re-aim.
+        // No re-resolve callback: the loop's scrollBy raises the window scroll `onWindowScroll`
+        // already answers, so there is one re-aim path.
         stopScroll.current = armAutoScroll(cfg.armFrom?.() ?? el, () => lastPoint.current)
         resolveSlot()
         return true

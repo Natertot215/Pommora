@@ -9,9 +9,8 @@ interface Chord {
   shift: boolean
 }
 
-// A spec is a string from the commands map, and every press asks the same handful of them the same
-// question. Parsing per press meant a split, two array passes and a Set allocated on every keystroke
-// the editor takes — the one thing a keydown path must not do.
+// Parsing per press cost a split, two array passes and an allocation on every keystroke the editor
+// takes.
 const chords = new Map<string, Chord | null>()
 
 function chordOf(spec: string): Chord | null {

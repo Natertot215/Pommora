@@ -30,7 +30,7 @@ export function announce(message: string): void {
   region.textContent = message
 }
 
-/** Ensure the hidden keyboard-instructions element exists (target of every draggable's describedby). */
+/** The target of every draggable's `aria-describedby`. */
 export function ensureInstructions(): void {
   if (typeof document === 'undefined' || instructions) return
   instructions = document.createElement('div')
