@@ -1,0 +1,141 @@
+import { describe, it, expect } from 'vitest'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
+import { resolveAssetUrl, resolveAssetValue, resolveFileValue } from './assetUrl'
+import { assetUrl } from '../Platform/assetUrl'
+
+const map: AssetMap = {
+  files: {
+    'banner.png': ['file-assets/Banner.png'],
+    'img.png': ['file-assets/a/IMG.png', 'file-assets/b/IMG.png'],
+  },
+  version: 7,
+}
+
+describe('resolveAssetValue', () => {
+  it('resolves a wikilink by filename', () => {
+    expect(resolveAssetValue('[[Banner.png]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/Banner.png',
+    })
+    expect(resolveAssetValue('[[banner.PNG]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/Banner.png',
+    })
+  })
+
+  it('resolves on the title half of an aliased wikilink', () => {
+    expect(resolveAssetValue('[[Banner.png|the header]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/Banner.png',
+    })
+  })
+
+  it('takes the first by sorted path where several answer to one name', () => {
+    expect(resolveAssetValue('[[IMG.png]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/a/IMG.png',
+    })
+  })
+
+  it('a wikilink naming nothing is unresolved, never a broken image', () => {
+    expect(resolveAssetValue('[[Missing.png]]', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveAssetUrl('[[Missing.png]]', map)).toBeNull()
+  })
+
+  it('a web address passes through as its own address', () => {
+    for (const url of [
+      'https://example.com/a.png',
+      'http://x.test/b.jpg',
+      'data:image/png;base64,AA',
+    ])
+      expect(resolveAssetValue(url, map)).toEqual({ kind: 'external', url })
+  })
+
+  it('a raw nexus-relative path passes through as a path', () => {
+    expect(resolveAssetValue('.nexus/assets/nx1/banner-a.jpg', map)).toEqual({
+      kind: 'asset',
+      rel: '.nexus/assets/nx1/banner-a.jpg',
+    })
+    // A bare filename is a path, not a website — the dotted-host reading would break every asset.
+    expect(resolveAssetValue('Banner.png', map)).toEqual({ kind: 'asset', rel: 'Banner.png' })
+  })
+
+  it('an empty or absent value renders nothing', () => {
+    expect(resolveAssetValue('', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveAssetValue('   ', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveAssetUrl(null, map)).toBeNull()
+    expect(resolveAssetUrl(undefined, map)).toBeNull()
+  })
+
+  it('agrees with parseConnectionText about what a whole-string wikilink is', () => {
+    // An asset value and a Link property value are read by the same grammar; a spelling one
+    // accepts and the other rejects would be a silent divergence.
+    for (const raw of ['[[Banner.png]]', '[[Banner.png|alias]]', '  [[Banner.png]]  '])
+      expect(parseConnectionText(raw) !== null).toBe(resolveAssetValue(raw, map).kind === 'asset')
+    for (const raw of ['[[Banner.png', 'Banner.png]]', 'https://x.test/a.png', ''])
+      expect(parseConnectionText(raw)).toBeNull()
+  })
+})
+
+describe('assetUrl', () => {
+  it('survives the round-trip the protocol handler makes, whatever the user named the file', () => {
+    // The handler reads `new URL(url).pathname` and decodes it; `#` and `?` would otherwise end
+    // the path early and 404 a file that is sitting right there.
+    for (const rel of [
+      '.nexus/assets/nx/banner-a.png',
+      'file-assets/Draft #2.png',
+      'file-assets/What? Now.png',
+      'file-assets/Café shot.png',
+      'file-assets/a b.png',
+    ]) {
+      const back = decodeURIComponent(new URL(`${assetUrl(rel)}?v=3`).pathname).replace(/^\/+/, '')
+      expect(back).toBe(rel)
+    }
+  })
+})
+
+describe('resolveAssetUrl', () => {
+  it('carries the map version so a re-saved file is re-requested', () => {
+    expect(resolveAssetUrl('[[Banner.png]]', map)).toBe(`${assetUrl('file-assets/Banner.png')}?v=7`)
+  })
+  it('leaves a web address unversioned — it is not ours to bust', () => {
+    expect(resolveAssetUrl('https://example.com/a.png', map)).toBe('https://example.com/a.png')
+  })
+})
+
+describe('resolveFileValue', () => {
+  it('agrees with resolveAssetValue on a wikilink naming one file', () => {
+    expect(resolveFileValue('[[Banner.png]]', map)).toEqual(
+      resolveAssetValue('[[Banner.png]]', map),
+    )
+  })
+
+  it('takes the first by sorted path where several answer to one name', () => {
+    expect(resolveFileValue('[[IMG.png]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/a/IMG.png',
+    })
+  })
+
+  it('a bare filename is unresolved, never read as a path', () => {
+    // resolveAssetValue's third branch would call this a nexus-relative asset. A hand-edit or an
+    // agent writing `- Report.pdf` under the key is an ordinary producer here, and reading it as a
+    // path would render it as resolved while naming a file that is not there.
+    expect(resolveFileValue('file-assets/Banner.png', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveAssetValue('file-assets/Banner.png', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/Banner.png',
+    })
+  })
+
+  it('an empty value and a name nothing answers to are both unresolved', () => {
+    expect(resolveFileValue('', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveFileValue('   ', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveFileValue('[[Missing.pdf]]', map)).toEqual({ kind: 'unresolved' })
+  })
+
+  it('a web address is unresolved — a file value names a file, not a site', () => {
+    expect(resolveFileValue('https://acme.io/report.pdf', map)).toEqual({ kind: 'unresolved' })
+  })
+})

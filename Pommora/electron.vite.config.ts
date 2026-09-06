@@ -11,10 +11,12 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
   },
   renderer: {
-    resolve: {
-      alias: { '@renderer': resolve('src/renderer') },
-    },
+    root: resolve(__dirname, '../Desktop/Renderer'),
     plugins: [react(), vanillaExtractPlugin()],
+    build: {
+      outDir: resolve(__dirname, 'out/renderer'),
+      rollupOptions: { input: resolve(__dirname, '../Desktop/Renderer/index.html') },
+    },
     // Preview worktree only (uncommitted): node_modules is a symlink to the main
     // checkout, whose real path is outside this worktree — relax Vite's fs allow-list
     // so fonts/assets load. Not for the committed config.

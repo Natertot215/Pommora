@@ -1,7 +1,7 @@
 {
   "name": "pommora-react",
   "version": "0.0.1",
-  "description": "Pommora — React + TypeScript + Electron rebuild (Phase 1: window + glass sidebar scaffold)",
+  "description": "Pommora \u2014 React + TypeScript + Electron rebuild (Phase 1: window + glass sidebar scaffold)",
   "main": "./out/main/index.js",
   "author": "Naterot",
   "license": "MIT",
@@ -13,8 +13,6 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
-    "showcase": "vite",
-    "build:showcase": "vite build",
     "package": "electron-vite build && electron-builder",
     "format": "biome format --write .",
     "lint": "biome check .",

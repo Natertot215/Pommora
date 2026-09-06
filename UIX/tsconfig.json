@@ -6,9 +6,10 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "strict": true,
+    "skipLibCheck": true,
     "noEmit": true,
-    "types": []
+    "types": ["vite/client"]
   },
-  "include": ["**/*"],
+  "include": ["**/*", "../Core/Platform/dialer.ts"],
   "exclude": ["node_modules"]
 }
