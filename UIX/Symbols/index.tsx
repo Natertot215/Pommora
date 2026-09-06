@@ -184,9 +184,7 @@ export const asRenderableIcon = (value: unknown): string | undefined =>
     : undefined
 
 export const iconNameOr = (value: unknown, fallback: IconName): string =>
-  typeof value === 'string' && (value in icons || lucideGlyph(value) !== undefined)
-    ? value
-    : fallback
+  asRenderableIcon(value) ?? fallback
 
 const iconSizeVars = sizeTokens.icon
 const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in iconSizeVars

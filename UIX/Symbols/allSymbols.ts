@@ -1,9 +1,7 @@
 import { icons as lucideIcons, type LucideIcon } from 'lucide-react'
 
-/** A Lucide PascalCase component name → its canonical kebab id. Validated against lucide-react's own
- *  per-icon dist filenames — the sole outlier is a legacy alias with no canonical file. Digits split
- *  from letters on both sides, so `Grid3x3 → grid-3-x-3`, `Columns3Cog →
- *  columns-3-cog`; consecutive capitals break before the final word, so `AArrowDown → a-arrow-down`. */
+/** Validated against lucide-react's own per-icon dist filenames — the sole outlier is a legacy
+ *  alias with no canonical file. */
 export function toKebabIconId(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')

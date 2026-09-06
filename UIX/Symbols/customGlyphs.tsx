@@ -18,7 +18,6 @@ const svgBase = {
   strokeLinejoin: 'round' as const,
 }
 
-/** Sized to the table/gallery glyph height. */
 export const ListRounded = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (
     <svg ref={ref} aria-hidden="true" width={size} height={size} {...svgBase} {...rest}>
@@ -44,8 +43,6 @@ export const CardsGrid = forwardRef<SVGSVGElement, LucideProps>(
   ),
 ) as unknown as LucideIcon
 
-/** Wrap a Tabler glyph so it renders at the curated set's visual size. Every Tabler adoption goes
- *  through here — the scale is one fact, not one per glyph. */
 export const asTablerGlyph = (glyph: LucideIcon): LucideIcon => {
   const Tabler = glyph as unknown as LucideIcon
   return forwardRef<SVGSVGElement, LucideProps>(({ size = 24, ...rest }, ref) => (
