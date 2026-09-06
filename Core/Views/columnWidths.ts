@@ -9,10 +9,7 @@ export interface ColumnWidth {
   max: number
 }
 
-// Keyed by declaredType's outputs ('title' | 'context' | a PropertyType).
-// Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall; every
-// other type carries a deliberate finite max. Mins stay so a stale saved value can't squash a
-// column below legibility.
+// Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
 const WIDTHS: Record<string, ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },
@@ -31,8 +28,7 @@ const WIDTHS: Record<string, ColumnWidth> = {
 
 const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 
-// Per-look min overrides, keyed [type][look], replacing the type's base min (default + max stay
-// type-level). Status, select and multi-select are one option-chip family, so they share OPTION_MIN.
+// Per-look min overrides replace the type's base min; status, select and multi-select are one option-chip family, so they share OPTION_MIN.
 const OPTION_MIN = { compact: 65, standard: 80 } as const
 const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   checkbox: { switch: 70 },
@@ -43,9 +39,7 @@ const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
 
 const HEADER_ICON_BUMP = ICON_PX.body + 6
 
-/** The {min, default, max} width for a column, keyed by its declared type (unknown → a sane
- *  fallback). `contextIds` is what makes a Context column classify as such — omit it and one takes
- *  the fallback instead of the Context width. */
+/** `contextIds` is what makes a Context column classify as such — omit it and one takes the fallback instead of the Context width. */
 export function widthFor(
   columnId: string,
   schema: PropertyDefinition[],
@@ -55,10 +49,7 @@ export function widthFor(
   return (t !== undefined && WIDTHS[t]) || FALLBACK
 }
 
-/** A column's effective min width — the type's base min, replaced by the per-style min wherever the
- *  table defines one (a Switch checkbox needs room the checkbox min can't give; a Standard option chip
- *  carries a label where a Compact one carries a glyph). `look` omitted resolves the type's DEFAULT
- *  look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
+/** `look` omitted resolves the type's DEFAULT look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
 export function minWidthFor(
   columnId: string,
   schema: PropertyDefinition[],
@@ -75,7 +66,6 @@ export function minWidthFor(
   return (override ?? base) + bump
 }
 
-/** Clamp a (resized) width to a column's [min, max] — the min is style-aware via `minWidthFor`. */
 export function clampWidth(
   width: number,
   columnId: string,

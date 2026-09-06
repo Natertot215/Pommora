@@ -16,8 +16,7 @@ export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }):
     )
   return (
     <InterfaceScaffold owner={owner}>
-      {/* Keyed per Space: the surface's debounced saves and editor session must never
-          carry across an in-place host swap. */}
+      {/* Keyed per Space: the surface's debounced saves and editor session must never carry across an in-place host swap. */}
       <TileHost key={id} host={host} />
     </InterfaceScaffold>
   )

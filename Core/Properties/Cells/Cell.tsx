@@ -20,9 +20,6 @@ import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from '../resolveContext'
 import { FileChip, SpaceChip } from '@pommora/uix/Labels'
 
-/** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value
- *  routes through the resolution context so no raw id ever shows; an empty/unknown value renders
- *  nothing. */
 export function Cell({
   row,
   column,
@@ -37,11 +34,8 @@ export function Cell({
   ctx: ResolveContext
   hideIcon: boolean
   style: ColumnStyle
-  /** While this cell's Rename popover is open, show the raw URL instead of the alias, so you can see
-   *  what you're aliasing (a url cell only). */
   showFullLink?: boolean
-  /** Commits the value that remains after a chip's hover × (null = the property clears entirely).
-   *  Only Standard chips wire it — Compact looks clear via their menu instead. */
+  /** Only Standard chips wire it — Compact looks clear via their menu instead. */
   remove?: (next: PropertyValue | null) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
@@ -54,13 +48,11 @@ export function Cell({
   }
 
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  // A status value is a bare label on disk, indistinguishable from a select — the schema is the
-  // only thing that knows the declared type.
+  // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
   const dt = declaredType(column.id, ctx.schema)
   const def = ctx.schema.find((d) => d.id === column.id)
 
-  // A checkbox column always shows its box, keyed off the schema TYPE rather than value presence,
-  // so it toggles in place without first assigning the property.
+  // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
   if (dt === 'checkbox') {
     const checked = v.kind === 'checkbox' && v.value
     const color = def?.checkbox_color
@@ -173,8 +165,7 @@ export function Cell({
         <OverScroll className="cell-chips">
           {v.value.map((f, i) => (
             <span
-              // Positional, never the value: two identical wikilinks would collide as keys and
-              // send the hover-× to the wrong one.
+              // Positional, never the value: two identical wikilinks would collide as keys and send the hover-× to the wrong one.
               key={String(i)}
               {...{ [SEGMENT_INDEX_ATTR]: i }}
             >

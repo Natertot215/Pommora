@@ -1,6 +1,4 @@
-// The pure model is shared (bandDndModel: slots, nest cycle-guard, order math); only the drop
-// semantics live here. frameDnd doesn't fit: its two-region assigned/all vocabulary has no
-// parent/nest concept, and the hierarchy list needs reparent drops.
+// frameDnd doesn't fit: its two-region assigned/all vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import type { Band, BandIndex, BandSlot } from './bandDndModel'
@@ -15,8 +13,7 @@ export interface GroupingDrop {
 type Snapshot = { index: BandIndex; boxTop: number; endY: number }
 type Slot = BandSlot & { topInBox: number }
 
-/** The list is small and single-instance, so rows register through props rather than React
- *  Context. `bands` is the visible flat row list, identity-stable across per-move re-renders. */
+/** The list is small and single-instance, so rows register through props rather than React Context; `bands` must be identity-stable across per-move re-renders. */
 export function useGroupingListDrag({
   bands,
   nestable,
@@ -58,13 +55,11 @@ export function useGroupingListDrag({
     },
     resolve: (id, point, s) => {
       const slot = bandSlot(s.index, point.y, id, s.endY)
-      // A nest slot on a non-nestable list (the flat Custom chips / flat sub-grouped sets) or an
-      // illegal nest resolves to nothing — no line, no commit.
+      // A nest slot on a non-nestable list, or an illegal nest, resolves to nothing — no line, no commit.
       if (slot?.nestInto && (!nestable || !canNest(id, slot.nestInto, bands))) return null
       return slot ? { ...slot, topInBox: slot.lineY - s.boxTop } : null
     },
     commit: (id, slot) => {
-      // The same classification bandDnd runs — the caller never re-derives it.
       const parentId = bands.find((b) => b.id === id)?.parentId
       const reorders = !slot.nestInto && slot.impliedParentId === parentId
       onDrop(id, {

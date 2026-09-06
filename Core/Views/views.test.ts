@@ -229,7 +229,6 @@ describe('mint seam', () => {
   })
   it('mintDefaultView mints title-only (every prop + Context columns hidden) with the table glyph', () => {
     const v = mintDefaultView(schema)
-    // Context columns take no entry — absence from property_order is what hides them.
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
     expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
     expect(v.icon).toBe('table')

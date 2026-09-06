@@ -1,8 +1,6 @@
 import { useEffect, useReducer } from 'react'
 
-// One natural aspect (height ÷ width) per resolved URL, filled behind a synchronous read: the paint
-// path may not await, so a miss answers undefined and repaints once for however many URLs land in
-// the same frame. null is the sentinel for an image that won't load.
+// Filled behind a synchronous read: the paint path may not await, so a miss answers undefined and repaints once for however many URLs land in the same frame. null means an image that won't load.
 const aspects = new Map<string, number | null>()
 const loading = new Set<string>()
 const listeners = new Set<() => void>()

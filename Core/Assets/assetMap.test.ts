@@ -114,8 +114,7 @@ describe('patchAssetMap', () => {
     const changed = patchAssetMap(built, 'file-assets/a.png', 'change', 'file-assets')
     expect(changed.files).toEqual(built.files)
     expect(changed.version).toBeGreaterThan(built.version)
-    // An add gives its own consumer a new path already; bumping here would re-request every
-    // mounted image in the nexus for one file a sync delivered.
+    // An add already gives its consumer a new path; bumping would re-request every mounted image for one file a sync delivered.
     expect(patchAssetMap(built, 'file-assets/b.png', 'add', 'file-assets').version).toBe(
       built.version,
     )
@@ -141,15 +140,13 @@ describe('patchAssetMap', () => {
   })
 
   it("the root's own segments are exempt from the cruft rule", async () => {
-    // A root named `.attachments` is the case the exemption exists for; applying the rule to the
-    // root itself yields a permanently empty map.
+    // A root named `.attachments` is the case the exemption exists for; applying the rule to the root itself yields a permanently empty map.
     await put('.attachments', 'Keep.png')
     const map = await buildAssetMap(root, '.attachments')
     expect(map.files['keep.png']).toEqual(['.attachments/Keep.png'])
     expect(
       patchAssetMap(map, '.attachments/New.png', 'add', '.attachments').files['new.png'],
     ).toEqual(['.attachments/New.png'])
-    // Below the root the rule still governs.
     expect(patchAssetMap(map, '.attachments/.DS_Store', 'add', '.attachments')).toBe(map)
   })
 

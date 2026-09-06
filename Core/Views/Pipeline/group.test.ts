@@ -109,7 +109,7 @@ describe('flattenContainer + structural grouping', () => {
       ['setB', 'structural-set'],
       ['_ungrouped', 'ungrouped'],
     ])
-    expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub']) // subtree flat in the band, not nested
+    expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub'])
     expect(groups[0].children).toBeUndefined()
     expect(itemIds(groups[1])).toEqual(['p_b'])
     expect(itemIds(groups[2])).toEqual(['p_root'])
@@ -132,7 +132,7 @@ describe('flattenContainer + structural grouping', () => {
       undefined,
       true,
     )
-    expect(itemIds(groups[0])).toEqual(['p_sub', 'p_a']) // a sub-set page ordered before the top set's own
+    expect(itemIds(groups[0])).toEqual(['p_sub', 'p_a'])
   })
 
   it('locationFlatten (Sort by Location): concatenates every band into one force-open headerless band', () => {
@@ -147,16 +147,16 @@ describe('flattenContainer + structural grouping', () => {
       [],
       setTree,
       null,
-      ['_ungrouped'], // a stale collapse from structural mode must NOT hide the flattened band
+      ['_ungrouped'],
       'bottom',
       undefined,
-      true, // flattenStructural
-      true, // locationFlatten
+      true,
+      true,
     )
     expect(groups.map((g) => [g.key, g.kind])).toEqual([['_ungrouped', 'ungrouped']])
     // location order: setA's subtree (p_a, p_sub), then setB (p_b), then the root tail (bottom)
     expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub', 'p_b', 'p_root'])
-    expect(groups[0].isCollapsed).toBe(false) // force-open despite the stale _ungrouped collapse
+    expect(groups[0].isCollapsed).toBe(false)
   })
 
   it('locationFlatten wins over a property group (mutually exclusive)', () => {
@@ -177,7 +177,7 @@ describe('flattenContainer + structural grouping', () => {
       'bottom',
       undefined,
       false,
-      true, // locationFlatten forces flat regardless of the property group
+      true,
     )
     expect(groups.map((g) => g.kind)).toEqual(['ungrouped'])
   })

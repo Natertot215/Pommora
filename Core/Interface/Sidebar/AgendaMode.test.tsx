@@ -28,8 +28,7 @@ describe('AgendaMode', () => {
     expect(host.textContent).toContain('No tasks or events')
   })
 
-  // The sidebar's mode-exit overlay mounts a SECOND copy of the outgoing layer, so the mode must
-  // stay renderable with no IPC reachable at all.
+  // The mode-exit overlay mounts a SECOND copy of the outgoing layer, so the mode must stay renderable with no IPC reachable at all.
   it('renders without touching the IPC', async () => {
     ;(globalThis as { nexus?: unknown }).nexus = undefined
     await mount()

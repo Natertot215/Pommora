@@ -69,9 +69,7 @@ describe('bandReorderPatch', () => {
   })
 })
 
-// The patch says how ONE grouping's bands are ordered, so it must not outlive that grouping — the
-// Grouping pane writes the view independently, and a patch held past its change would mask the new
-// grouping with the old one's order until the next view switch.
+// The patch says how ONE grouping's bands are ordered, so it must not outlive that grouping — the Grouping pane is an independent writer.
 describe('groupingKeyOf', () => {
   const g = (over: Partial<SavedView>): SavedView => view(over)
 

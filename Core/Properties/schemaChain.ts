@@ -1,7 +1,4 @@
-// One serialized chain for the schema-mutation entry points (assign / remove / reorder /
-// delete). They read-modify-write collection sidecars with no per-file guard, so two
-// overlapping IPC ops could land a stale sidecar snapshot over a fresh write. Wrap entry
-// points ONLY: a chained fn awaiting another chained fn deadlocks.
+// The schema-mutation entry points read-modify-write collection sidecars with no per-file guard, so two overlapping IPC ops could land a stale snapshot over a fresh write. Wrap entry points ONLY: a chained fn awaiting another chained fn deadlocks.
 
 let chain: Promise<unknown> = Promise.resolve()
 

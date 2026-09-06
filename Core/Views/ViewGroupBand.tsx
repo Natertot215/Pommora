@@ -8,11 +8,7 @@ import { useBandDrag } from './BandDnd'
 import type { ResolveContext } from '../Properties/resolveContext'
 import { host } from '../Platform/dialer'
 
-/** The band adapter every view renders: it holds the `useBandDrag` hook (which throws outside
- *  `<BandDnd>`, so it can't live in the shared presentational GroupBand) and the native Set context
- *  menu, then hands the resolved glyph + drag wiring to GroupBand. The disclosure body — rows, cards,
- *  nested child bands — arrives as children, so what a band CONTAINS stays the renderer's business
- *  and what a band IS stays here. */
+/** Holds `useBandDrag`, which throws outside `<BandDnd>` and so can't live in the shared presentational GroupBand. */
 export function ViewGroupBand({
   group,
   view,

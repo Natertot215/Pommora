@@ -70,7 +70,6 @@ const mount = async (v: SavedView): Promise<void> => {
   })
 }
 const texts = (): string => host.textContent ?? ''
-/** A picker's rows portal out of the host — the open menu reads from the document. */
 const menuTexts = (): string => document.body.textContent ?? ''
 const openPicker = async (label: string): Promise<void> => {
   await act(async () => {
@@ -189,7 +188,7 @@ describe('GroupFrame rows', () => {
       )
     })
     expect(texts()).toContain('Alpha')
-    expect(texts()).not.toContain('Nested') // hidden by default — disclose on demand
+    expect(texts()).not.toContain('Nested')
     expect(texts()).toContain('Beta')
     const alphaRow = [...host.querySelectorAll('*')]
       .filter((el) => el.textContent === 'Alpha')
@@ -210,7 +209,7 @@ describe('GroupFrame rows', () => {
       )
     })
     expect(texts()).toContain('Alpha')
-    expect(texts()).not.toContain('Nested') // flat set list under sub-grouping
+    expect(texts()).not.toContain('Nested')
   })
 
   it('footings: Ungrouped + Hide Empty Groups under every grouping; Separation under numeric date formats', async () => {
@@ -297,7 +296,7 @@ describe('GroupFrame rows', () => {
         },
       }),
     )
-    expect(texts()).toContain('Open') // the status group heading
+    expect(texts()).toContain('Open')
     expect(texts()).toContain('Todo')
     expect(texts()).not.toContain('Options')
     await mount(
@@ -325,7 +324,7 @@ describe('GroupFrame rows', () => {
         },
       }),
     )
-    expect(texts()).toContain('Location') // the truthful label — the table IS structural
+    expect(texts()).toContain('Location')
     expect(texts()).toContain('Sub-Group')
   })
 

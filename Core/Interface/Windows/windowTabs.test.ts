@@ -169,9 +169,9 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
     useSession.getState().openNavWindow()
     const p = useSession.getState().pageWindow!
     expect(p.tabs[0].target.kind).toBe('navwindow')
-    useSession.getState().reorderWindowTabs(p.tabs[0].id, p.tabs[1].id) // move the map → refused
+    useSession.getState().reorderWindowTabs(p.tabs[0].id, p.tabs[1].id)
     expect(useSession.getState().pageWindow).toBe(p)
-    useSession.getState().reorderWindowTabs(p.tabs[1].id, p.tabs[0].id) // land on the map → refused
+    useSession.getState().reorderWindowTabs(p.tabs[1].id, p.tabs[0].id)
     expect(useSession.getState().pageWindow).toBe(p)
   })
 
@@ -189,7 +189,7 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
   it('closing the last tab retires the set — a re-summon starts fresh; the X keeps it (H-3)', () => {
     useSession.getState().openWindow(page('x'))
     useSession.getState().openWindowTab(page('y'))
-    useSession.getState().closeWindow() // X: the set stays remembered, open clears
+    useSession.getState().closeWindow()
     let file = useSession.getState().windowsFile
     expect(file.origins.x?.tabs).toHaveLength(2)
     expect(file.open).toBeNull()
@@ -201,7 +201,7 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
     useSession.getState().closeWindowTab(useSession.getState().pageWindow!.tabs[0].id)
     file = useSession.getState().windowsFile
     expect(useSession.getState().pageWindow).toBeNull()
-    expect(file.origins.x).toBeUndefined() // emptied → retired
+    expect(file.origins.x).toBeUndefined()
     useSession.getState().openWindow(page('x'))
     expect(useSession.getState().pageWindow?.tabs).toHaveLength(1)
   })
@@ -266,12 +266,11 @@ describe('windowTabs — the NavWindow flavor entry (H-2/H-3)', () => {
     expect(useSession.getState().navOpen).toBe(true)
     expect(p.flavor).toBe('nav')
     expect(p.tabs.map((t) => t.target.kind)).toEqual(['navwindow', 'page'])
-    expect(p.activeTabId).toBe(p.tabs[0].id) // the map tab lands active (the gallery is the landing)
+    expect(p.activeTabId).toBe(p.tabs[0].id)
 
     useSession.getState().closeNav()
     expect(useSession.getState().pageWindow).toBeNull()
     expect(useSession.getState().navOpen).toBe(false)
-    // Only the page tab persists — the gallery sentinel re-seeds on every openNav.
     expect(useSession.getState().windowsFile.navSet?.tabs).toEqual([
       { target: { kind: 'page', id: 'n' } },
     ])

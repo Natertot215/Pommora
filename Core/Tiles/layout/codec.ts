@@ -1,12 +1,8 @@
-// The layout is app-owned and its document has one writer, so decoding is a parse rather than a repair:
-// ops.ts renormalizes ratios and collapses single-child splits on every mutation, and
-// tilePatchProblem gates the shape at the IPC boundary, so anything that reached storage is
-// already the tree validateLayout describes.
+// Decoding is a parse rather than a repair: ops.ts renormalizes on every mutation and tilePatchProblem gates the shape at the IPC boundary, so anything that reached storage is already the tree validateLayout describes.
 
 import { rawLayoutSchema } from '@pommora/core/Tiles/tiles'
 import type { TileLayout } from './model'
 
-/** A stored layout, or null when absent or malformed (the host opens empty). */
 export function decodeLayout(raw: unknown): TileLayout | null {
   const parsed = rawLayoutSchema.safeParse(raw)
   return parsed.success ? (parsed.data as TileLayout) : null

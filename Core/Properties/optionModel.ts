@@ -1,6 +1,4 @@
-// Pure option-array transforms shared by the renderer panes and the main-process option ops. An
-// option's `value` IS its title (value=label), so identity keys on the value string. No I/O, no React
-// — unit-tested in isolation; the IPC ops and panes are thin over these.
+// An option's `value` IS its title (value=label), so identity keys on the value string.
 
 import type { OptionAppearance, PropertyType, StatusGroup, StatusOption } from './properties'
 
@@ -13,8 +11,6 @@ export type Option = {
   group_id?: string
 }
 
-/** The empty-name fallback when a rename field is left blank: Select / Multi → "Label"; Status → its
- *  group's label (so an unnamed status option reads as its group). */
 export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
   return type === 'status' ? (groupLabel ?? 'Label') : 'Label'
 }
@@ -31,8 +27,6 @@ function mapStatusOption(
   return groups.map((g) => ({ ...g, options: mapOption(g.options, value, fn) }))
 }
 
-/** A falsy value drops the key entirely rather than writing it — the chip then falls back to
- *  whatever its group or its type defaults to. */
 function withField<T extends { value: string }, K extends keyof T>(
   o: T,
   key: K,
@@ -46,8 +40,7 @@ export function addOption(
   options: Option[],
   title: string,
   groupId?: string,
-  /** Omitted appends — the ghost slot passes the seat it was standing in, so an option created off a
-   *  chip takes that chip's place in the order rather than the list's end. */
+  /** Omitted appends — the ghost slot passes the seat it was standing in, so an option created off a chip takes that chip's place in the order. */
   atIndex?: number,
 ): Option[] {
   const next = { value: title, label: title, ...(groupId ? { group_id: groupId } : {}) }
@@ -55,12 +48,10 @@ export function addOption(
   return [...options.slice(0, i), next, ...options.slice(i)]
 }
 
-/** Adds to one status group (matched by id). No color, so the chip inherits the group's until recolored. */
 export function addStatusOption(
   groups: StatusGroup[],
   groupId: string,
   title: string,
-  /** Where in the group the new option lands; omitted appends. */
   atIndex?: number,
 ): StatusGroup[] {
   return groups.map((g) => {
@@ -71,7 +62,6 @@ export function addStatusOption(
   })
 }
 
-/** undefined clears the key → the chip falls back to its group's color. */
 export function recolorStatusOption(
   groups: StatusGroup[],
   value: string,
@@ -89,7 +79,6 @@ export function renameStatusOption(
   return mapStatusOption(groups, oldValue, (o) => ({ ...o, value: newTitle, label: newTitle }))
 }
 
-/** Rename a group's display label (by group id); its calendar-locked id + its options are untouched. */
 export function relabelStatusGroup(
   groups: StatusGroup[],
   groupId: string,
@@ -98,8 +87,7 @@ export function relabelStatusGroup(
   return groups.map((g) => (g.id === groupId ? { ...g, label } : g))
 }
 
-/** Same group = a reorder; a different group = a cross-group move that inherits the new group's color
- *  unless it carries its own. toIndex is in the target group's without-the-dragged coordinate space. */
+/** toIndex is in the target group's without-the-dragged coordinate space; a cross-group move inherits the new group's color unless it carries its own. */
 export function moveStatusOption(
   groups: StatusGroup[],
   value: string,
@@ -129,8 +117,6 @@ export function recolorOption(
   return mapOption(options, value, (o) => withField(o, 'color', color))
 }
 
-/** undefined removes the field → the chip falls back to the type default, single tag for select and
- *  double for multi. */
 export function setOptionIcon(
   options: Option[],
   value: string,
@@ -139,7 +125,6 @@ export function setOptionIcon(
   return mapOption(options, value, (o) => withField(o, 'icon', icon))
 }
 
-/** Filled is the default, so it clears the key rather than being written. */
 export function setOptionAppearance(
   options: Option[],
   value: string,
@@ -150,7 +135,6 @@ export function setOptionAppearance(
   )
 }
 
-/** undefined removes the field → the chip falls back to its group's glyph. */
 export function setStatusOptionIcon(
   groups: StatusGroup[],
   value: string,
@@ -169,7 +153,6 @@ export function setStatusOptionAppearance(
   )
 }
 
-/** Move the option with `value` to `toIndex` (in the without-the-dragged coordinate space). */
 export function reorderOption(options: Option[], value: string, toIndex: number): Option[] {
   const moved = options.find((o) => o.value === value)
   if (!moved) return options

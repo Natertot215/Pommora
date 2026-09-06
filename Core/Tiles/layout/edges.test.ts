@@ -56,7 +56,7 @@ describe('resolveEdge', () => {
     let bands = insertBand({ bands: [] }, 0, 'top', 200)
     bands = insertBand(bands, 1, 'bottom', 160)
     expect(resolveEdge(bands, 'bottom', 'n')).toEqual({ kind: 'bandpair', above: 0 })
-    expect(resolveEdge(bands, 'top', 'n')).toBeNull() // first band — nothing above
+    expect(resolveEdge(bands, 'top', 'n')).toBeNull()
 
     const splitAbove = insertBand(
       splitAtTile(insertBand({ bands: [] }, 0, 'x', 200), 'x', 'e', 'y'),

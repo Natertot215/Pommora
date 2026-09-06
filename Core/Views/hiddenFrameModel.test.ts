@@ -22,7 +22,6 @@ const view = (property_order: string[], hidden_properties: string[]): SavedView 
 describe('hiddenListIds', () => {
   it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
     const schema = [def('a'), def('b'), def('c')]
-    // b is shown (in property_order); a and c are hidden
     expect(hiddenListIds(view(['b'], ['c', 'a']), schema)).toEqual(['a', 'c', ...stamps])
   })
 
@@ -53,7 +52,6 @@ describe('hiddenListIds', () => {
 
   it('interleaves hidden and unaccounted props in collection order', () => {
     const schema = [def('a'), def('b'), def('c')]
-    // a hidden, b shown, c unaccounted → hidden zone is a then c
     expect(hiddenListIds(view(['b'], ['a']), schema)).toEqual(['a', 'c', ...stamps])
   })
 })
@@ -91,7 +89,7 @@ describe('placeInShown', () => {
   })
 
   it('reveals an unaccounted prop — drag-in writes it into property_order (then it shows)', () => {
-    const v = view([title, 'a'], []) // 'new' is in neither list
+    const v = view([title, 'a'], [])
     expect(placeInShown(v, [title, 'a'], [title, 'a'], 'new', 2)).toEqual({
       property_order: [title, 'a', 'new'],
       hidden_properties: [],
@@ -121,7 +119,6 @@ describe('hideShown / unhide', () => {
       property_order: ['a'],
       hidden_properties: ['b'],
     })
-    // Still has its slot → re-emits there, order unchanged.
     expect(unhide(view(['a'], ['a']), 'a')).toEqual({
       property_order: ['a'],
       hidden_properties: [],

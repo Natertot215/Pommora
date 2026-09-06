@@ -9,8 +9,7 @@ const STYLE_OPTIONS: { value: CheckboxLook; label: string }[] = [
   { value: 'switch', label: 'Switch' },
 ]
 
-/** The two controls write to different scopes: Color → the property def (`setCheckboxColor`,
- *  applies everywhere), Style → this view's `column_styles` alone. */
+/** Different scopes: Color → the property def (applies everywhere), Style → this view's `column_styles` alone. */
 export function CheckboxEditor({
   color,
   look,

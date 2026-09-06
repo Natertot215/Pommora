@@ -219,7 +219,7 @@ describe('tabsModel — cycle (I-11)', () => {
 describe('tabsModel — reconcileTabs (I-2a)', () => {
   // A reconcile stub over a live-path map: absent id = deleted, changed path = renamed/moved.
   const against = (live: Record<string, string>) => (t: SelectTarget) => {
-    if (!('id' in t)) return t // homepage — the singleton never reconciles away
+    if (!('id' in t)) return t
     const path = live[t.id]
     if (path === undefined) return null
     return 'path' in t && t.path !== path ? ({ ...t, path } as SelectTarget) : t
@@ -331,7 +331,7 @@ describe('tabsModel — hydrateTabs (the lockstep owner)', () => {
     )
     expect(t.target).toEqual(pt('b'))
     expect(t.navStack).toEqual([pt('a'), pt('b')])
-    expect(t.navIndex).toBe(1) // 'gone' pruned ahead of it — the pointer re-based, not re-found
+    expect(t.navIndex).toBe(1)
   })
 
   it('re-points a desynced stored index at the target by key', () => {

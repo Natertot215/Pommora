@@ -1,5 +1,3 @@
-// Shared NexusTree fixture for the Navigation unit tests (search + resolve). One of each entity kind,
-// with a nested Set so location-chain resolution is exercised. Not shipped — imported only by *.test.
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Locations/nexusPaths'
 

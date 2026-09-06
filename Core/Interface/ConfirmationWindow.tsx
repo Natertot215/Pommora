@@ -11,8 +11,7 @@ import * as s from './confirmation-window.css'
 export function ConfirmationWindow(): React.JSX.Element | null {
   const pending = useSession((st) => st.pendingConfirm)
   const shown = useHeldPresence(pending)
-  // The held value only once the panel is actually in the DOM — the presence hook mounts a render
-  // late, so keying the effects on `pending` would focus a panel that does not exist yet.
+  // Keyed on the panel actually being in the DOM — the presence hook mounts a render late, so keying on `pending` would focus a panel that does not exist yet.
   const active = shown && !shown.closing ? shown.held : null
   const panelRef = useRef<HTMLDivElement>(null)
   const settleRef = useRef(pending?.settle)
@@ -32,8 +31,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
     if (!active) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return
-      // A focused button answers through its own activation; taking Enter here too would answer
-      // twice. The panel itself holding focus is the resting state, and does take it.
+      // A focused button answers through its own activation; taking Enter here too would answer twice.
       const onButton =
         document.activeElement instanceof HTMLButtonElement &&
         panelRef.current?.contains(document.activeElement) === true
@@ -42,8 +40,7 @@ export function ConfirmationWindow(): React.JSX.Element | null {
         settleRef.current?.(!defaultRef.current)
       }
     }
-    // Capture, so the question answers before the surface underneath consumes the key — a scrim
-    // stops pointers, and the editor behind it would otherwise take Return for a newline.
+    // Capture, so the question answers before the surface underneath consumes the key — the editor behind the scrim would otherwise take Return for a newline.
     document.addEventListener('keydown', onKey, true)
     return () => document.removeEventListener('keydown', onKey, true)
   }, [active])

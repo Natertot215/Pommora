@@ -1,7 +1,6 @@
 import { MenuSurface } from '@pommora/uix/Menus'
 import { anchorRight } from './toolbar-menu.css'
 
-// A blank placeholder at a fixed ceiling — content pulled back until the design lands.
 export function NavMenu({
   closing = false,
   notchInsetRight,

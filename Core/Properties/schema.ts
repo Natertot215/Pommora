@@ -1,6 +1,3 @@
-// Pure validation over a PropertyDefinition[] — the typed gate a definition passes before it
-// enters the registry. No I/O.
-
 import {
   hasSelectOptions,
   isReservedPropertyId,
@@ -9,9 +6,7 @@ import {
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
 
-/** A property name in the context of a schema: unique case-insensitively, excluding the def
- *  identified by `excludeId` (for rename). Empty and reserved-prefix names are refused before
- *  this — `invalidPropertyName` owns that gate at the callers. */
+/** Empty and reserved-prefix names are refused before this — `invalidPropertyName` owns that gate at the callers. */
 export function validateName(
   name: string,
   existing: PropertyDefinition[],
@@ -41,8 +36,7 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** Option titles (their `value`s) must be unique within a property. No minimum count — a Select may
- *  hold zero options. Enforced at create AND on every option edit (add / rename / reorder). */
+/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit. */
 export function validateOptionValues(options: { value: string }[]): Result<null> {
   const values = options.map((o) => o.value)
   if (new Set(values).size < values.length) {

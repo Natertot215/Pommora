@@ -43,7 +43,7 @@ describe('formatDate', () => {
 })
 
 describe('formatDate weekday + reshaped full', () => {
-  const iso = '2026-07-06' // a Monday
+  const iso = '2026-07-06'
   it('full is weekday-free: Month Ordinal, Year', () => {
     expect(formatDate(iso, 'full', 'none')).toBe('July 6th, 2026')
   })

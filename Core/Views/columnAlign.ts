@@ -7,9 +7,7 @@ import { declaredType } from '../Properties/value'
 // The reserved Modified timestamp keeps Title's left metadata treatment.
 const CENTERED = new Set(['checkbox', 'status', 'select', 'multi_select', 'context', 'datetime'])
 
-/** The default alignment for a column, from its declared type. Title is always left (its primary
- *  icon+text treatment); unknown types fall back to left. `contextIds` is what makes a Context
- *  column classify as such — omit it and one reads as an unknown type. */
+/** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */
 export function defaultAlignFor(
   columnId: string,
   schema: PropertyDefinition[],

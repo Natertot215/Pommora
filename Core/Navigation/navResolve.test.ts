@@ -82,7 +82,7 @@ describe('resolveIndexOf + resolveWith (index built once, O(1) per entry)', () =
     const index = resolveIndexOf(makeTree())
     expect(resolveWith(index, { kind: 'page', id: 'p1' })?.title).toBe('Alpha')
     expect(resolveWith(index, { kind: 'page', id: 'ghost' })).toBeNull()
-    expect(resolveWith(index, { kind: 'task', id: 'tk1' })).toBeNull() // agenda absent from the index
+    expect(resolveWith(index, { kind: 'task', id: 'tk1' })).toBeNull()
   })
 })
 

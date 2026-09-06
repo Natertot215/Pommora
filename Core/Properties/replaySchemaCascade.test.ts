@@ -1,6 +1,4 @@
-// The crash-window suite: each window is the exact on-disk state a killed op leaves — built by
-// running the same internals the live op runs, stopped between steps — and the replay must land
-// the same disk an uninterrupted op lands.
+// The crash-window suite: each window is the exact on-disk state a killed op leaves, and the replay must land the same disk an uninterrupted op lands.
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
@@ -34,7 +32,6 @@ afterEach(async () => {
 
 const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
 
-/** A nexus with one Collection assigning `prop_s` (select Stage: Draft/Done) over two holder pages. */
 async function seedNexus(): Promise<string> {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'pom-replay-')))
   roots.push(root)
@@ -63,8 +60,6 @@ async function seedNexus(): Promise<string> {
 const page = (root: string, name: string): Promise<string> =>
   readFile(join(root, 'Col', `${name}.md`), 'utf8')
 
-/** The post-commit pre-sweep crash state of a Stage→Phase rename, with page A already folded
- *  (the sweep died between its two files) — journal exactly as editProperty leaves it. */
 async function renameCrashState(root: string): Promise<void> {
   await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Stage', to: 'Phase' })
   await mutateRegistry(root, (registry) => ({
@@ -265,8 +260,7 @@ describe('option replay', () => {
   })
 
   it('a settled remove record — the value already off the def — clears without stripping', async () => {
-    // The op finished (value dropped from the def) and only its clear failed; the user then
-    // re-set the value on a page. The stale record must not take that value with it.
+    // The op finished and only its clear failed; the user then re-set the value on a page, and the stale record must not take that value with it.
     const root = await seedNexus()
     await openSession(root)
     expect((await removeOption(root, 'prop_s', 'Draft')).ok).toBe(true)
@@ -284,11 +278,9 @@ describe('unreadable holders hold the record', () => {
     await openSession(root)
     await chmod(join(root, 'Col', 'B.md'), 0o000)
     expect((await deleteProperty(root, 'prop_s')).ok).toBe(true)
-    // The op finished its registry but held the record for the straggler.
     expect((await readRegistry(root)).defs.prop_s).toBeUndefined()
     expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
     expect(await replaySchemaCascade(root).then(() => readSchemaJournal(root))).not.toBeNull()
-    // The page becomes readable again — the next open finishes the job.
     await chmod(join(root, 'Col', 'B.md'), 0o644)
     await replaySchemaCascade(root)
     expect(await page(root, 'B')).not.toContain('Stage')

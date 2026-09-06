@@ -161,8 +161,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         iconOpen={iconOpen}
         onIconClick={() => setIconOpen(true)}
         onCommit={(next) => {
-          // The header is the VIEW's identity in scope — renaming the source
-          // folder from an embed is exactly the mutation the scope exists to prevent.
+          // The header is the VIEW's identity in scope — renaming the source folder from an embed is exactly the mutation the scope exists to prevent.
           if (scope) {
             if (next && next !== view.name) scope.persistConfig({ ...view, name: next })
           } else void submitRename(node.path, node.kind, next)

@@ -127,8 +127,7 @@ describe('applyFilter — match mode + recursion', () => {
 })
 
 describe('applyFilter — a blank value answers no positive comparison', () => {
-  // The text ops sit one case-block from `is` and carry the identical shape. A Link column is the
-  // reachable path: url is the creatable type whose operator set is the text matrix.
+  // The text ops sit one case-block from `is` and carry the identical shape; a Link column is the reachable path.
   const rows = [
     row('none', { props: {} }),
     row('has', { props: { prop_url: 'https://example.com' } }),
@@ -178,8 +177,7 @@ describe('applyFilter — per-type matrix', () => {
       row('b', { props: { prop_num: 1 } }),
       row('c', { props: {} }),
     ]
-    // c has no value: it satisfies no positive comparison. A rule the user CAN'T author (no
-    // operand) still abstains — that's a different case from a row simply having nothing.
+    // A rule the user CAN'T author (no operand) still abstains — a different case from a row simply having nothing.
     expect(
       ids(rows, {
         match: 'all',
@@ -294,8 +292,7 @@ describe('applyFilter — per-type matrix', () => {
         rules: [{ property_id: 'prop_st', op: 'contains', value: 'pe' }],
       }),
     ).toEqual(['open'])
-    // The regression this pins: a dropped case sends every rule to the no-op default, which
-    // matches every row rather than none.
+    // The regression this pins: a dropped case sends every rule to the no-op default, which matches every row rather than none.
     expect(
       ids([done, open], {
         match: 'all',
@@ -313,8 +310,7 @@ describe('applyFilter — per-type matrix', () => {
         rules: [{ property_id: 'ctx_areas', op: 'contains', value: 'area1' }],
       }),
     ).toEqual(['rA'])
-    // rC holds no areas, so is_not_empty must exclude something — otherwise the assertion
-    // cannot tell a working evaluator from a no-op that passes every row.
+    // rC holds no areas, so is_not_empty must exclude something — otherwise the assertion cannot tell a working evaluator from a no-op that passes every row.
     const rC = row('rC', {})
     expect(
       ids([rA, rB, rC], {
@@ -352,8 +348,7 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['bare'])
   })
 
-  // A stamp always carries a time, so a bare-day operand must compare by calendar day the way
-  // `is` does: a page saved the evening of the 1st is on or before the 1st, not after the 2nd.
+  // A stamp always carries a time, so a bare-day operand must compare by calendar day: a page saved the evening of the 1st is on or before the 1st, not after the 2nd.
   it('a bare-day Before/After keeps a same-day stamp, in the local form the batch mints', () => {
     const evening = row('evening', { modifiedAt: '2026-09-01T21:00:00' })
     const onOrBefore = (value: string) =>
@@ -474,8 +469,7 @@ describe('applyFilter — location presence', () => {
     expect(run('is_not')).toEqual(['c'])
   })
 
-  // Is/Isn't are the EXACT parent; Contains is any-depth. A page in a nested child matches the
-  // ancestor under Contains but NOT under Is — that distinction is the whole reason both exist.
+  // Is/Isn't are the EXACT parent; Contains is any-depth — that distinction is the whole reason both exist.
   it('Is matches only the immediate parent Set, Contains matches any depth', () => {
     const deep: ViewRow[] = [{ ...row('deep'), parentSetId: 'set_child' }]
     const tree = [{ id: 'set_a', children: [{ id: 'set_child', children: [] }] }]

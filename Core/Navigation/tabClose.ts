@@ -1,22 +1,17 @@
 import { useMemo, useState } from 'react'
 import { duration, ms } from '@pommora/uix/Animations'
 
-/** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole
- *  sequence lands. */
 const EXIT_MS = ms(duration.base) + ms(duration.fast)
 
 export interface TabClose<E> {
   liveEntries: E[]
-  /** Live entries with each ghost spliced back at the index it closed from. */
   renderEntries: { entry: E; ghost: boolean }[]
   firstLive: number
   ghostCount: number
   requestClose: (id: string) => void
 }
 
-/** Store-first tab close, shared by the toolbar bar and the window strip: the tab leaves the store
- *  immediately (a re-click spawns fresh instead of resurrecting a zombie) while a GHOST stays
- *  rendered for the width-collapse exit. */
+/** Store-first: the tab leaves the store immediately so a re-click spawns fresh instead of resurrecting a zombie, while a GHOST stays rendered for the width-collapse exit. */
 export function useTabClose<E extends { tab: { id: string } }>(
   entries: E[],
   close: (id: string) => void,

@@ -78,7 +78,7 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
         localStorage.setItem(SIDEBAR_WIDTH.key, String(get().sidebarWidth))
         localStorage.setItem(INSPECTOR_WIDTH.key, String(get().inspectorWidth))
       } catch {
-        // widths just won't persist
+        // widths just will not persist
       }
     },
 

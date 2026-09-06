@@ -10,10 +10,7 @@ import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 
-// Band drag — group headers reorder/reparent via the shared insertion-line frame. The GLYPH is the
-// drag surface; this file owns only the snapshot and the drop classification (reorder vs reparent,
-// routed by the slot's implied parent vs the dragged band's current parent) — the caller never
-// re-derives it.
+// This file owns only the snapshot and the drop classification (reorder vs reparent, routed by the slot's implied parent vs the dragged band's current parent) — the caller never re-derives it.
 
 export type BandDrop =
   | { kind: 'reorder'; beforeId: string | null }
@@ -37,7 +34,6 @@ export function BandDnd({
   nestable = true,
   children,
 }: {
-  /** The visible band list (flattenBands over the live collapsed set) — snapshot state during a drag. */
   bands: Band[]
   labelFor: (id: string) => string
   onDrop: (draggedId: string, drop: BandDrop) => void
@@ -49,8 +45,7 @@ export function BandDnd({
   const box = useRef<HTMLDivElement | null>(null)
 
   const drag = useInsertionDrag<Slot, Snapshot>({
-    // Geometry AND the band list ride one snapshot — a mid-drag tree swap re-renders headers, so
-    // both go stale together and re-measure together, lazily.
+    // Geometry AND the band list ride one snapshot — a mid-drag tree swap re-renders headers, so both go stale together and re-measure together, lazily.
     take: () => {
       const el = box.current
       if (!el) return null
@@ -122,8 +117,6 @@ export function BandDnd({
   )
 }
 
-/** Make a group header a band-drag participant: `ref` on the header (the measured row), `handle`
- *  spread on the GLYPH — the only drag surface. `isNestTarget` highlights a hovered nest zone. */
 export function useBandDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

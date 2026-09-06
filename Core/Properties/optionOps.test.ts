@@ -118,8 +118,7 @@ describe('setOptions', () => {
     const gate = new Promise<void>((r) => {
       release = r
     })
-    // Occupy the shared schema chain with a gated op, THEN fire setOptions. If setOptions rode a
-    // different lock it would slip past the gate and land first (the cross-chain race, finding #3).
+    // Occupy the shared schema chain with a gated op, THEN fire setOptions: on a different lock it would slip past the gate and land first.
     const slow = serializeSchemaOp(async () => {
       await gate
       order.push('schema-op')
@@ -268,7 +267,7 @@ describe('renameStatusOption', () => {
   it('rejects a rename colliding with another option value property-wide (no page writes)', async () => {
     const id = await mkStatus()
     const page = await statusPageHolding(id, 'Open')
-    const r = await renameStatusOption(root, id, 'Open', 'Active') // 'Active' already lives in another group
+    const r = await renameStatusOption(root, id, 'Open', 'Active')
     expect(r.ok).toBe(false)
     expect(await readFile(page, 'utf8')).toContain('Open')
   })

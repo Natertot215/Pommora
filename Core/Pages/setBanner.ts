@@ -1,6 +1,4 @@
-// One banner, four owners: a page's frontmatter, the NavView's state file, the homepage config,
-// and a container sidecar. The adopted file is written to its owner before the replaced one is
-// dropped, so a failed write never points at a deleted file.
+// The adopted file is written to its owner before the replaced one is dropped, so a failed write never points at a deleted file.
 
 import { machine } from '../Platform/machine'
 import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'

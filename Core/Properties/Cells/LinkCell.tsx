@@ -14,12 +14,7 @@ import { resolveConnection } from '../../Session/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/solidColor'
 import { openWebLink } from '../../Platform/openWebLink'
 
-/** The url-cell body, split out so ONLY url cells pay for the page-title store subscription + the
- *  on-demand fetch — Cell's other branches stay pure renders under the row memo. The alias always wins;
- *  a Page Title cell with no alias resolves the fetched title (subscribed narrowly to just this URL, so
- *  a title landing re-renders this one cell, never its siblings) and shows the domain until then. Only
- *  that one format fetches; the other two are derived from the URL itself.
- *  Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. */
+/** Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. Only the Page Title format fetches; the other two derive from the URL itself. */
 export function LinkCell({
   raw,
   def,
@@ -28,10 +23,7 @@ export function LinkCell({
 }: {
   raw: string
   def: PropertyDefinition | undefined
-  /** The column's resolved look — this view's override of how the link reads, already defaulted to
-   *  the property's own Format. */
   look?: ColumnLook
-  /** While this cell's Rename popover is open, show the full URL instead of the alias/title (see Cell). */
   showFullLink?: boolean
 }): React.JSX.Element | null {
   const target = readLink(raw)
@@ -53,8 +45,7 @@ export function LinkCell({
         className={cx('cell-link', def?.link_underline && 'cell-link-underline')}
         style={{ color: solidColorCss(def?.link_color) }}
         href={url}
-        // A card is a whole-surface drag handle; without this an anchor's native link-drag hijacks the
-        // gesture (spawns the OS link ghost + pointercancel) and the card drag dies.
+        // A card is a whole-surface drag handle; without this an anchor's native link-drag hijacks the gesture and the card drag dies.
         draggable={false}
         onClick={(e) => {
           e.preventDefault()
@@ -69,17 +60,11 @@ export function LinkCell({
   )
 }
 
-/** A Link value naming a page reads as the connection it is — the connection color, and a click that
- *  opens the page rather than an address. The property's own link Format, Color and Underline are
- *  address concepts and don't apply: there is one way a connection reads, and it is the one the
- *  editor already draws. */
 function ConnectionCell({
   target,
   showTitle,
 }: {
   target: Extract<LinkTarget, { kind: 'page' }>
-  /** While this cell's Rename popover is open, show the page it names rather than the alias being
-   *  written over it — the same reading the address branch gives its own full URL. */
   showTitle: boolean
 }): React.JSX.Element {
   const tree = useSession((s) => s.tree)

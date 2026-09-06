@@ -48,8 +48,7 @@ async function removeInner(
     if (raw === undefined) continue
     if (id) values[id] = raw
   }
-  // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't
-  // revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
+  // Cache + unassign FIRST under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
       { ...cur, properties: ids.filter((id) => id !== propertyId) },
@@ -88,8 +87,7 @@ export async function restoreCachedValues(
   const block = cacheAll?.[propertyId]
   if (!isPlainObject(block) || !isPlainObject(block.values)) return ok(null)
 
-  // No readable definition → the cache stays whole: a def that reappears later still finds
-  // everything waiting.
+  // No readable definition → the cache stays whole: a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
   const byId = new Map<string, string>()

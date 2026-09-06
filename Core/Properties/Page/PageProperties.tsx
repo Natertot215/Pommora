@@ -41,10 +41,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
 
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
   const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
-  // Keyed on the NEXUS, not the tree: both sets are about this session's reading of this nexus, and
-  // a tree push means only that something on disk moved. Assigning a Space writes contextValues,
-  // which IS tree data — so keying on tree identity tore down the multi-toggle Context picker on
-  // the very pick that opened it.
+  // Keyed on the NEXUS, not the tree: assigning a Space writes contextValues, which IS tree data, so keying on tree identity tore down the multi-toggle Context picker on the very pick that opened it.
   const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)

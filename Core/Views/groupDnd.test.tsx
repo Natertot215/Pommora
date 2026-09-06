@@ -9,7 +9,6 @@ import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 
 stubPointerCapture()
 
-// Flat property bands — no nest zones, so every slot is a clean before/after split.
 const BANDS: Band[] = [
   { id: 'A', kind: 'property', depth: 0, parentId: null },
   { id: 'B', kind: 'property', depth: 0, parentId: null },
@@ -71,7 +70,6 @@ describe('grouping drag snapshot invalidation', () => {
     await act(async () => {
       firePointer(window, 'pointermove', { x: 10, y: 44 })
     })
-    // Below B's midline → before C, whose top edge is 48.
     expect(lineY()).toBe('48px')
 
     // The scroller moves the rows up by 10 while the container's own box holds still.
@@ -127,8 +125,7 @@ describe('grouping drag snapshot invalidation', () => {
     await act(async () => {
       firePointer(window, 'pointerup')
     })
-    // Fresh rects: 30 sits in A's top zone (24–48) → before A. Stale rects still resolve
-    // before B.
+    // Fresh rects: 30 sits in A's top zone → before A. Stale rects still resolve before B.
     expect(dropSpy).toHaveBeenCalledExactlyOnceWith('C', {
       kind: 'reorder',
       targetParentId: null,

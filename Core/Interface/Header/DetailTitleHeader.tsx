@@ -52,8 +52,7 @@ export function DetailTitleHeader({
           onContextMenu={editing ? undefined : openMenu}
         />
       )}
-      {/* A refused rename needs no revert here — the field unmounts on commit and the resting
-          span keeps showing the live title until the tree confirms a change. */}
+      {/* A refused rename needs no revert — the field unmounts on commit and the resting span shows the live title until the tree confirms. */}
       <RenamableLabel
         renames="title"
         editing={editing}

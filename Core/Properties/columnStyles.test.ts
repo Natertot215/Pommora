@@ -24,21 +24,16 @@ describe('defaultStyleFor', () => {
     expect(defaultStyleFor('url')).toEqual({ look: 'link-full' })
   })
 
-  // A url column reads the way its property says to unless its view says otherwise, so the property's
-  // own Format is what the default resolves to rather than a constant that would override it.
+  // A url column reads the way its property says to unless its view says otherwise, so the default resolves to the property's own Format rather than a constant.
   it('takes a url column’s default from the property’s own Format', () => {
     expect(defaultStyleFor('url', { link_display: 'link-title' })).toEqual({ look: 'link-title' })
   })
 
-  // A column saved under the two names this vocabulary replaced keeps no look at all, and falls back
-  // to its property's Format — which is what it was showing regardless.
   it('drops a look saved under the vocabulary this replaced', () => {
     expect(columnStyle.parse({ look: 'full' }).look).toBeUndefined()
     expect(columnStyle.parse({ look: 'title' }).look).toBeUndefined()
   })
 
-  // A file column has no look to choose, so a view saved while it did keeps none — the same
-  // mechanism, and the whole of the compatibility story for the two that went.
   it('drops the looks a file column used to carry, and offers it no default', () => {
     expect(columnStyle.parse({ look: 'filename' }).look).toBeUndefined()
     expect(columnStyle.parse({ look: 'path' }).look).toBeUndefined()

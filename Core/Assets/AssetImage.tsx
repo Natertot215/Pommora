@@ -26,12 +26,9 @@ interface Props {
   className?: string
   style?: CSSProperties
   fallback?: ReactNode
-  /** A live crop that overrides the stored one — the editor's draft, painted before it is saved. */
   preview?: Crop
 }
 
-/** The one element that draws a stored image. With no crop it is a plain `<img>` and loads no
- *  aspect; with one it paints the `coverStyle` box, observing its own size to pick the fill axis. */
 export function AssetImage({ value, className, style, fallback = null, preview }: Props) {
   const map = useSession((s) => s.assetMap)
   const crops = useSession((s) => s.tree?.crops)

@@ -1,6 +1,4 @@
-// The image types Pommora serves and adopts. Main's asset protocol answers with these, the
-// picker offers them, and the adopter refuses anything else — one list, so a file the dialog
-// offers is always one the banner can show.
+// One list for main's asset protocol, the picker, and the adopter — so a file the dialog offers is always one the banner can show.
 
 export const ASSET_MIME: Record<string, string> = {
   '.png': 'image/png',

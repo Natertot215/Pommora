@@ -57,7 +57,6 @@ const collection = (view?: Partial<SavedView>): CollectionNode =>
     ],
   }) as unknown as CollectionNode
 
-/** Col/Parent/A + Col/Parent/B — depth-2 siblings, so pickView hands BOTH the sentinel view id. */
 const deepSets = (): { a: SetNode; b: SetNode } => {
   const sub = (id: string, title: string): Record<string, unknown> => ({
     kind: 'set',
@@ -173,7 +172,7 @@ describe('the reset keys', () => {
     act(() => api?.setManualOverride(['p2', 'p1']))
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     expect(api?.manualOrder).toEqual(['p2', 'p1'])
-    await mount(collection()) // same content, new object — the watcher echo
+    await mount(collection())
     expect(api?.manualOrder).toBeUndefined()
     expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
@@ -352,7 +351,6 @@ describe('the values epoch', () => {
   })
 })
 
-/** A[pA] — one Set so structural grouping has a band to relocate into. */
 const setCollection = (view?: Partial<SavedView>): CollectionNode =>
   ({
     kind: 'collection',

@@ -1,8 +1,4 @@
-// The view-mint machinery: entry-mint is the SOLE place a container's default view is born.
-// On landing a view-bearing container whose views[] is empty, `ensureContainerView` mints once (an
-// in-flight map keyed by container id guards a re-select from double-firing). Every other view writer
-// routes through `saveViewAdopting` — a sentinel-holding write awaits the in-flight mint and saves
-// against the real id, never minting its own.
+// entry-mint is the SOLE place a container's default view is born (an in-flight map keyed by container id guards a re-select from double-firing); every other writer routes through `saveViewAdopting`, which awaits the in-flight mint rather than minting its own.
 
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -12,8 +8,7 @@ import { host } from '../Platform/dialer'
 
 const inFlight = new Map<string, Promise<string>>()
 
-// Wired by the store at creation — a sentinel adoption must land in the activeViews slice,
-// and this module stays store-free.
+// Wired by the store at creation — a sentinel adoption must land in the activeViews slice, and this module stays store-free.
 let onViewAdopted: (containerId: string, viewId: string) => void = () => {}
 export function wireViewAdopted(fn: (containerId: string, viewId: string) => void): void {
   onViewAdopted = fn
@@ -37,7 +32,6 @@ export function ensureContainerView(
   void mint.catch(() => inFlight.delete(source.id))
 }
 
-/** The ONE view writer every surface calls.*/
 export async function saveViewAdopting(
   source: CollectionNode | SetNode,
   view: SavedView,

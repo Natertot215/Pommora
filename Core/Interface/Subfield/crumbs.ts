@@ -6,14 +6,11 @@ import type { SelectTarget } from '../../Session/store'
 import { ancestryOf, type TrailNode } from '../../Session/treeIndex'
 import { findSpace } from '../../Session/treeIndex'
 
-/** The kinds that sit on a spine — every other selection has no breadcrumb path at all. */
 type SpineTarget = Extract<SelectTarget, { kind: 'collection' | 'set' | 'page' }>
 
 const hasSpine = (target: SelectTarget): target is SpineTarget =>
   target.kind === 'collection' || target.kind === 'set' || target.kind === 'page'
 
-/** The ordered spine from a target's collection down to the target itself. Null when the target
- *  no longer resolves. */
 function spineOf(tree: NexusTree, target: SelectTarget): TrailNode[] | null {
   return hasSpine(target) ? ancestryOf(tree, target) : null
 }
@@ -30,11 +27,7 @@ const targetOf = (node: TrailNode): SelectTarget | null => {
   }
 }
 
-/**
- * The deepest node the breadcrumb should draw to, updated as navigation moves. The depth holds
- * while walking up its own spine, so the segments left behind stay dimmed and re-navigable; going
- * deeper or branching onto a different path makes `target` the new depth.
- */
+/** The depth holds while walking up its own spine, so the segments left behind stay dimmed and re-navigable; going deeper or branching makes `target` the new depth. */
 export function crumbDepthFor(
   tree: NexusTree | null,
   prev: SelectTarget | null,
@@ -46,11 +39,6 @@ export function crumbDepthFor(
   return prevChain?.some((n) => n.id === target.id) ? prev : target
 }
 
-/**
- * Breadcrumb segments for the open view. The spine runs from the collection to the deepest node
- * visited (`depth`) — the collection and depth-1 set navigate, deeper sub-sets are plain, the
- * current node is inert, and every segment past it is dimmed and clickable to re-descend.
- */
 export function subfieldCrumbs(
   tree: NexusTree | null,
   selection: SelectionState,
@@ -75,7 +63,6 @@ export function subfieldCrumbs(
       if (!currentChain)
         return selection.kind === 'page' ? [{ title: titleFromPath(selection.path) }] : []
       const currentPos = currentChain.length - 1
-      // Extend to the deepest visited node when it descends from the current one.
       const deepChain = depth ? spineOf(tree, depth) : null
       const spine =
         deepChain &&

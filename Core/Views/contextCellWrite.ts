@@ -3,13 +3,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { patchOverride, type SetOverrides } from './useValuesEpoch'
 
-/**
- * The optimistic context write both container views share: patch the row's resolved ids into
- * the `contextValues` rider on the value-override layer, since loadValues never re-reads
- * mid-session — the rider wins over the tree's own resolution while the commit is in flight.
- * Then fire setContext (ids out; main resolves titles at the write boundary). `base` is the
- * frontmatter to patch over, so each caller keeps its own resolved shape.
- */
+/** loadValues never re-reads mid-session, so the resolved ids are patched onto the value-override layer's `contextValues` rider, which wins while the commit is in flight. */
 export function writeContextValue(
   row: Pick<ViewRow, 'id' | 'path' | 'contextValues'>,
   contextId: string,

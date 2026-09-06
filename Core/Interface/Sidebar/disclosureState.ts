@@ -1,12 +1,10 @@
-// Transient UI chrome — regeneratable, not portable content — so it lives in app-level
-// localStorage, not `.nexus/`. Storage is a parameter so behavior is testable without a DOM.
+// Transient UI chrome — regeneratable, not portable content — so it lives in app-level localStorage, not `.nexus/`.
 
 type OpenMap = Record<string, boolean>
 
 export const DISCLOSURE_KEY = 'pommora.sidebar.disclosure'
 
-// Parsed once per storage object and mutated through saveOpen thereafter — a full JSON.parse per
-// mount adds up fast.
+// Parsed once per storage object and mutated through saveOpen thereafter — a full JSON.parse per mount adds up fast.
 let cached: { storage: Pick<Storage, 'getItem'>; map: OpenMap } | null = null
 
 function readMap(storage: Pick<Storage, 'getItem'>): OpenMap {
@@ -23,7 +21,6 @@ function readMap(storage: Pick<Storage, 'getItem'>): OpenMap {
   return map
 }
 
-/** A disclosure's saved open state, or `fallback` when unset. */
 export function loadOpen(
   storage: Pick<Storage, 'getItem'>,
   key: string,
@@ -33,7 +30,6 @@ export function loadOpen(
   return typeof value === 'boolean' ? value : fallback
 }
 
-/** Persist a disclosure's open state, merged into the existing map. */
 export function saveOpen(
   storage: Pick<Storage, 'getItem' | 'setItem'>,
   key: string,

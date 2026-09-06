@@ -1,8 +1,4 @@
-// Type-aware view filter. A per-rule, per-type operator matrix with nested groups (a rule child
-// may itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`), title + context +
-// any-depth location matrices, and multi-operand `values[]` chip ops. `op` raw strings are
-// snake_case (on-disk parity). Match modes are all = AND and any = OR at every depth; negation
-// lives on the per-rule operators. Pure: no fs, no React. (See NO_OP below for the abstain rule.)
+// Match modes are all = AND and any = OR at every depth; negation lives on the per-rule operators. See NO_OP below for the abstain rule.
 
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
@@ -16,7 +12,6 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 
-/** Operator raw strings — snake_case = the on-disk `op` values. */
 export const FILTER_OPS = {
   is: 'is',
   isNot: 'is_not',
@@ -44,17 +39,14 @@ const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 type Op = string
 type Expected = string | undefined
 
-/** A rule that cannot be applied — an unknown op, a dead property or set, or an operand the user
- *  hasn't supplied yet. Distinct from `false` so it abstains instead of voting either way. */
+/** Distinct from `false` so it abstains instead of voting either way. */
 const NO_OP = null
 type Verdict = boolean | typeof NO_OP
 
 /** The ops that are complete without an operand; everything else is unauthored until one arrives. */
 const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
-/** Per-applyFilter location resolver — a set id to its descendant-id Set (self included), built
- *  ONCE per operand and membership-tested per row (never a per-row ancestor walk). Unknown set
- *  id → undefined → no-op pass. */
+/** Built ONCE per operand and membership-tested per row — never a per-row ancestor walk. Unknown set id → undefined → no-op pass. */
 type LocationIndex = (setId: string) => ReadonlySet<string> | undefined
 
 function makeLocationIndex(setTree: SetTreeNode[]): LocationIndex {
@@ -76,7 +68,6 @@ function makeLocationIndex(setTree: SetTreeNode[]): LocationIndex {
   }
 }
 
-/** Filter rows by a (possibly nested) FilterGroup. undefined ⇒ no filtering. */
 export function applyFilter(
   rows: ViewRow[],
   filter: FilterGroup | undefined,
@@ -101,11 +92,8 @@ function matchesGroup(
   locate: LocationIndex,
   contextIds: readonly string[],
 ): Verdict {
-  // A GROUP abstains too, and must — returning `true` here would hand the parent a vote its own
-  // NO_OP filter can't strip, so a fully-unauthored `(A and B)` inside `(A and B) or C` would read
-  // as a match and suppress C's filtering entirely.
+  // A GROUP abstains too, and must: returning `true` would hand the parent a vote its NO_OP filter can't strip, so a fully-unauthored `(A and B)` inside `(A and B) or C` would suppress C entirely.
   if (group.rules.length === 0) return NO_OP
-  // Only rules that can actually be applied get a vote — a no-op verdict never reads as a MATCH.
   const votes = group.rules
     .map((node) =>
       isGroup(node)
@@ -131,10 +119,8 @@ function evaluateRule(
 ): Verdict {
   if (!FILTER_OP_SET.has(rule.op)) return NO_OP
 
-  // Location — not a property: membership of the row's parent set in the operand's subtree.
   if (rule.property_id === RESERVED_PROPERTY_ID.location) {
-    // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Every location op is
-    // any-of over the chosen Sets; Is/Isn't test the immediate parent, Contains/Doesn't any depth.
+    // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Is/Isn't test the immediate parent, Contains/Doesn't any depth.
     const want = rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
     if (want.length === 0) return NO_OP
     const parent = row.parentSetId
@@ -146,7 +132,7 @@ function evaluateRule(
       case FILTER_OPS.isInside:
       case FILTER_OPS.isNotInside: {
         const trees = want.map(locate).filter((t): t is ReadonlySet<string> => t !== undefined)
-        if (trees.length === 0) return NO_OP // every id dead — nothing to apply
+        if (trees.length === 0) return NO_OP
         const hit = parent != null && trees.some((t) => t.has(parent))
         return rule.op === FILTER_OPS.isInside ? hit : !hit
       }
@@ -156,7 +142,7 @@ function evaluateRule(
   }
 
   const t = declaredType(rule.property_id, schema, contextIds)
-  if (t === undefined) return NO_OP // property absent from schema/registry
+  if (t === undefined) return NO_OP
   // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
   if (!OPERANDLESS_OPS.has(rule.op) && rule.value == null && !rule.values?.length) return NO_OP
   return evaluateByType(
@@ -184,8 +170,7 @@ function evaluateByType(
       return evaluateDate(v, op, expected)
     case 'checkbox':
       return evaluateCheckbox(v, op, expected)
-    // Status stores its bare label like a select, but this switch reads the DECLARED TYPE, not
-    // the value's kind — dropping the case here sends every Status rule to the no-op default.
+    // This switch reads the DECLARED TYPE, not the value's kind — dropping the Status case sends every Status rule to the no-op default.
     case 'status':
     case 'select':
     case 'url':
@@ -199,7 +184,7 @@ function evaluateByType(
       return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
     case 'file':
       return evaluatePresence(v, op)
-    default: // any unmodeled type → no-op pass
+    default:
       return true
   }
 }
@@ -236,15 +221,12 @@ function textValue(v: PropertyValue): string | null {
     case 'select':
       return v.value
     case 'url':
-      // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains`/`is` on an
-      // aliased link tests the visible text, not its raw `[alias](url)` markdown.
+      // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains` on an aliased link tests the visible text, not its raw markdown.
       return linkDisplayText(v.value)
     default:
       return null
   }
 }
-
-// An unmatched op is a no-op pass.
 
 function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   const n = v.kind === 'number' ? v.value : null
@@ -282,13 +264,10 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   }
 }
 
-/** Calendar-day truncation for date `is`: both sides compared by their ISO date component —
- *  never exact-ms equality (a stored T14:30 must match its picked bare day). String truncation, not
- *  Date math: the stored day IS the authored day regardless of the viewer's timezone. */
+/** Both sides compared by their ISO date component, never exact-ms equality. String truncation, not Date math: the stored day IS the authored day regardless of the viewer's timezone. */
 const dayOf = (iso: string): string => iso.slice(0, 10)
 
-/** A bare-day operand orders by calendar day, the same truncation `is` uses — a page saved the
- *  evening of the 1st is on or before the 1st. An operand carrying a time orders by instant. */
+/** A bare-day operand orders by calendar day, the same truncation `is` uses; an operand carrying a time orders by instant. */
 function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
   const raw = v.kind === 'datetime' ? v.value : null
   const bareDay = expected != null && !expected.includes('T')
@@ -333,10 +312,7 @@ function evaluateCheckbox(v: PropertyValue, op: Op, expected: Expected): boolean
   }
 }
 
-/** The one set-membership core for multi_select AND id-lists (Context columns/context). An empty `want` on
- *  the any-shaped op passes — a mid-authoring empty chip set never blanks the table;
- *  contains_all passes empty for free ([].every()). Returns undefined for ops it doesn't own, so
- *  each caller keeps its own single-operand/presence branches. */
+/** An empty `want` on the any-shaped op passes — a mid-authoring empty chip set never blanks the table. Returns undefined for ops it doesn't own. */
 function matchesSet(xs: string[], op: Op, want: string[]): boolean | undefined {
   switch (op) {
     case FILTER_OPS.containsAny:
@@ -356,10 +332,10 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
     case FILTER_OPS.is:
-      if (values?.length) return s !== null && values.includes(s) // any-of
+      if (values?.length) return s !== null && values.includes(s)
       return expected == null ? true : s !== null && s === expected
     case FILTER_OPS.isNot:
-      if (values?.length) return s === null ? true : !values.includes(s) // none-of
+      if (values?.length) return s === null ? true : !values.includes(s)
       return expected == null ? true : s !== expected
     case FILTER_OPS.contains:
       return expected == null ? true : (s?.toLowerCase().includes(expected.toLowerCase()) ?? false)
@@ -396,9 +372,7 @@ function evaluateMulti(v: PropertyValue, op: Op, expected: Expected, values?: st
   }
 }
 
-/** Context-column / id-list membership + presence. DELIBERATE asymmetry, stated so
- *  nobody "fixes" it: is/contains with a missing SINGLE operand → false (cannot match) — while the chip-shaped set ops (matchesSet + values[]) pass on an empty operand set,
- *  because a mid-authoring chip row must never blank the table. */
+/** DELIBERATE asymmetry, stated so nobody "fixes" it: is/contains with a missing SINGLE operand → false, while the chip-shaped set ops pass on an empty operand set, because a mid-authoring chip row must never blank the table. */
 function evaluateList(ids: string[], op: Op, expected: Expected, values?: string[]): boolean {
   const want = values ?? (expected != null ? [expected] : [])
   const set = matchesSet(ids, op, want)
@@ -410,7 +384,7 @@ function evaluateList(ids: string[], op: Op, expected: Expected, values?: string
       return ids.length > 0
     case FILTER_OPS.is:
     case FILTER_OPS.contains:
-      if (values?.length) return values.some((w) => ids.includes(w)) // any-of
+      if (values?.length) return values.some((w) => ids.includes(w))
       return expected == null ? false : ids.includes(expected)
     case FILTER_OPS.isNot:
     case FILTER_OPS.doesNotContain:
@@ -420,7 +394,6 @@ function evaluateList(ids: string[], op: Op, expected: Expected, values?: string
   }
 }
 
-/** File: presence only (is/contains/etc. are no-op passes). */
 function evaluatePresence(v: PropertyValue, op: Op): boolean {
   const empty = isBlankValue(v)
   switch (op) {

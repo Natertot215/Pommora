@@ -8,14 +8,10 @@ import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
 import { host } from '../Platform/dialer'
 
-/** What the header draws, passed as one object rather than five props so a host — page view, floating
- *  window, embedded tile — hands over the page it's showing. Never read from the store: a window
- *  window draws a page that is not the active one. */
 export interface HeaderPage {
   path: string
   title: string
   cover?: string
-  /** The page's own glyph. Absent draws no icon at all — the header stays as it was. */
   icon?: string
   iconHidden?: boolean
 }
@@ -28,12 +24,6 @@ interface Props {
   onEditIcon: () => void
 }
 
-/**
- * The page editor's header: a full-bleed cover band (the frontmatter `cover` key) with the title
- * overlaid bottom-left, or — with no cover — a hover Add-Banner strip above the title. The title is
- * the shared DetailTitleHeader (right-click → Rename / Edit Icon / Show Icon); the banner has its own
- * right-click → Change / Remove. Both menus are native + separate, never overlapping.
- */
 export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   { page, onToggleIcon, onRename, onEditIcon },
   ref,

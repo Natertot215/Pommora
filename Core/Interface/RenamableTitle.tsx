@@ -3,9 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
 import { RenamableLabel } from '@pommora/uix/Fields'
 
-/** `renamingPath` is set by the native context menu's Rename via `begin-rename`. Every host
- *  surface claims when it becomes the target; the fence resolves one winner, so a path visible
- *  on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
+/** The fence resolves one winner, so a path visible on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
 export function RenamableTitle({
   path,
   kind,
@@ -23,8 +21,7 @@ export function RenamableTitle({
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
   const renamingCreate = useSession((s) => s.renamingCreate)
-  // Guarded through the target check so claim/release churn only ever re-renders the one
-  // path's fields — never every mounted title in the app.
+  // Guarded through the target check so claim/release churn only re-renders the one path's fields, never every mounted title in the app.
   const winner = useSession((s) => (s.renamingPath === path ? s.renameWinner : null))
   const cancelRename = useSession((s) => s.cancelRename)
   const submitRename = useSession((s) => s.submitRename)

@@ -1,7 +1,4 @@
-// A mosaic of independent column stacks. The page is a vertical stack of bands; inside a band,
-// ROW splits divide width by ratios, COLUMN nodes stack children, and every tile owns its own
-// pixel height. Columns flow independently: a short column simply ends (ragged ends are legal);
-// trapped holes between tiles can't exist by construction.
+// Columns flow independently: a short column simply ends (ragged ends are legal), so trapped holes between tiles can't exist by construction.
 
 export interface RowNode {
   kind: 'row'
@@ -30,24 +27,20 @@ export interface TileLayout {
   bands: Band[]
 }
 
-/** Which edge of a target region a drop lands on — determines split direction + order. */
 export type Edge = 'n' | 's' | 'e' | 'w'
 
-/** Address of a node inside a band: child indices from the band root. */
 export interface NodePath {
   band: number
   path: number[]
 }
 
-/** The boundary between children[index] and children[index+1] of the split at `path`. */
 export interface DividerRef extends NodePath {
   index: number
 }
 
 export const emptyLayout = (): TileLayout => ({ bands: [] })
 
-/** A node's height: a tile owns it, a column sums its stack (+gaps), a row is
- *  as tall as its tallest child (shorter children end ragged). */
+/** A row is as tall as its tallest child; shorter children end ragged. */
 export function nodeHeight(node: LayoutNode, gap: number): number {
   if (node.kind === 'tile') return node.h
   if (node.kind === 'column') {
@@ -119,8 +112,6 @@ export function cloneLayout(layout: TileLayout): TileLayout {
   return { bands: layout.bands.map((b) => ({ node: cloneNode(b.node) })) }
 }
 
-/** Beyond the shape the schema holds (splits of 2+, a ratio per child): ratios sum to 1, tile
- *  heights are positive, ids unique. */
 export function validateLayout(layout: TileLayout): string[] {
   const problems: string[] = []
   const walk = (node: LayoutNode, where: string): void => {

@@ -13,9 +13,7 @@ export function snapAxis(value: number, candidates: number[], threshold: number)
   return bestDistance <= threshold ? best : value
 }
 
-// Dedupe by rounded key but keep RAW positions — a snap must land exactly on the
-// neighbor's edge, and a rounded candidate vs a fractional boundary would commit
-// noise-level deltas on every near-aligned drag.
+// Dedupe by rounded key but keep RAW positions — a rounded candidate against a fractional boundary would commit noise-level deltas on every near-aligned drag.
 const dedupe = (values: number[]): number[] => {
   const seen = new Set<number>()
   const out: number[] = []

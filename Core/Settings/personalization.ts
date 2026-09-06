@@ -62,9 +62,6 @@ export const TAB_CACHE = {
 export function clampInt(v: unknown, min: number, max: number): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? clamp(Math.round(v), min, max) : undefined
 }
-/** The `personalization` object in `.nexus/settings.json`. Every field optional; absent = the built-in
- *  default. A new toggle is a field here, a `readPersonalization` row, and an apply-map row. Icon names
- *  stay bare strings so this file owes the renderer nothing. */
 export interface Personalization {
   accent?: AccentSetting
   connectionColor?: ConnectionColorSetting
@@ -80,7 +77,6 @@ export interface Personalization {
   outlinerLines?: boolean
   codeblockLineCount?: boolean
   navCloseOnSelect?: boolean
-  /** Dropped by default — the old words describe the old page; the alias stays remembered either way. */
   removeTitleOnLinkChange?: boolean
   aliasPickerOnCommit?: boolean
   defaultIcons?: Partial<Record<EntityIconKind, string>>
@@ -97,11 +93,9 @@ export interface Personalization {
   pauseMediaOnTabSwitch?: boolean
   nativeHighlight?: boolean
   pickerSelection?: PickerSelection
-  /** Wiki-link clicks open the Page Window; ⌘-click takes the other route. */
   connectionsOpenInPreview?: boolean
   plainUnresolvedLinks?: boolean
   ribbonOrder?: string[]
-  /** Applied main-side (webContents zoom); ⌘ +/− nudge live from it. */
   interfaceScale?: number
   hoverPreviewLinger?: number
   fileHistory?: boolean
@@ -114,7 +108,6 @@ export interface Personalization {
   timeFormat?: TimeFormatSetting
   trashDateFormat?: DateFormat
   trashHideTime?: boolean
-  /** A pasted URL wraps the selection as its label rather than replacing it; the inverse chord flips this. */
   pasteLinkIntoText?: boolean
   defaultLinkFormat?: LinkDisplay
   openLinksInApp?: boolean
@@ -136,8 +129,7 @@ export function coerceScale(v: unknown, fallback: number): number {
   return clamp(v, SCALE_MIN, SCALE_MAX)
 }
 
-/** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the
- *  editor's before taking the same zoom a page embed does. */
+/** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the editor's before taking the same zoom a page embed does. */
 export const EMBED_SCALE_DEFAULT = 0.9
 export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
 export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)

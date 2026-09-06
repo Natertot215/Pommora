@@ -37,8 +37,7 @@ describe('updateSettings — serialized RMW (G-1)', () => {
   })
 
   it('concurrent writes to different keys never clobber', async () => {
-    // Fired together: unserialized read-modify-writes each merge onto the SAME stale snapshot and
-    // the last write wins, dropping the others. serializeOnFile forces them to queue, so all land.
+    // Fired together: unserialized read-modify-writes each merge onto the SAME stale snapshot and the last write wins. serializeOnFile forces them to queue, so all land.
     await Promise.all([
       updateSettings(root, (c) => ({ ...c, a: 1 })),
       updateSettings(root, (c) => ({ ...c, b: 2 })),
@@ -139,7 +138,6 @@ describe('the live-tree fast path', () => {
       excluded_folders: ['Archive'],
     })
     await refreshTree(root)
-    // The file is gone; every answer below can only come from the tree.
     await rm(path(), { force: true })
     expect(await readPermanentDelete(root)).toBe(true)
     expect(await readInterfaceScale(root)).toBe(1.5)

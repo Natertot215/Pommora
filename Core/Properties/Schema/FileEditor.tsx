@@ -3,8 +3,7 @@ import { useSession } from '../../Session/store'
 import { MenuIndex } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-/** The path is relative to the asset root rather than to the nexus, so re-pointing the root
- *  carries it along. */
+/** Relative to the asset root rather than to the nexus, so re-pointing the root carries it along. */
 export function FileEditor({
   directory,
   onSetDirectory,

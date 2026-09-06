@@ -28,7 +28,6 @@ export interface WindowSlice {
   windowSlide: { dir: 'back' | 'fwd'; seq: number } | null
   windowExit: 'dismiss' | 'engulf' | 'morph'
   openWindow: (target: WindowTarget) => void
-  /** The page whose history window is open; null = closed. */
   historyTarget: WindowTarget | null
   openHistory: (target: WindowTarget) => void
   closeHistory: () => void
@@ -43,8 +42,7 @@ export interface WindowSlice {
   openNav: () => void
   closeNav: () => void
   toggleNav: () => void
-  /** The in-app browser's summoned address; null = closed. The sequence makes every summon a
-   *  distinct event, so re-clicking a link the window has navigated away from still re-aims it. */
+  /** The sequence makes every summon a distinct event, so re-clicking a link the window has navigated away from still re-aims it. */
   browserSummon: { url: string; seq: number } | null
   browserSeq: number
   openBrowser: (url: string) => void
@@ -71,8 +69,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     return { dir: to < from ? 'back' : 'fwd', seq: ++windowSlideSeq }
   }
 
-  // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by
-  // the stored (page-only) order.
+  // The gallery sentinel never persists — only the page tabs write, and activeIndex counts by the stored (page-only) order.
   const toWindowRecord = (win: WindowState): WindowSetRecord => {
     const pages = win.tabs.filter(
       (t): t is WindowTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
@@ -175,8 +172,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     openNavWindow: () => {
       const cur = get().pageWindow
       if (cur?.flavor === 'nav') return
-      // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its
-      // rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
+      // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
       const morphing = cur?.flavor === 'page'
       if (morphing) stashWindowMorph()
       const { tabs: pages } = reconcileRecord(get().windowsFile.navSet)
@@ -252,8 +248,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
 
     browserSummon: null,
-    // Monotonic across closes: living outside the summon object, a re-summon inside the window's
-    // exit presence (which skips the remount) still reads as a new event.
+    // Monotonic across closes: living outside the summon object, a re-summon inside the window's exit presence still reads as a new event.
     browserSeq: 0,
     openBrowser: (url) =>
       set((s) => {
@@ -262,8 +257,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }),
     closeBrowser: () => set({ browserSummon: null }),
 
-    // A deleted page's flush would hit a dead path, which the crud guard refuses — the stale
-    // body is never written anywhere.
+    // A deleted page's flush would hit a dead path, which the crud guard refuses.
     reconcileWindow: (index) => {
       const cur = get().pageWindow
       if (cur) {

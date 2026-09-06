@@ -189,16 +189,15 @@ const mountTable = async (source: CollectionNode): Promise<void> => {
   await act(async () => {
     root.render(<ViewHost source={source} />)
   })
-  await act(async () => {}) // flush the loadValues/activeViews promises
+  await act(async () => {})
 }
 
 const statusCell = (): HTMLElement => {
   const cells = host.querySelectorAll<HTMLElement>('.data-cell')
-  return cells[1] // property_order: _title, prop_status, prop_done
+  return cells[1]
 }
 
-// The value picker is ONE table-level self-managed pane portaled to document.body (escaping the
-// table's overflow clip) — its DOM lives outside `host`, so query it through the portal marker.
+// The value picker is ONE table-level pane portaled to document.body (escaping the table's overflow clip), so query it through the portal marker.
 const pickerButtons = (): HTMLButtonElement[] => [
   ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
 ]
@@ -226,7 +225,6 @@ describe('status cell gestures', () => {
     await act(async () => {
       option?.click()
     })
-    // The exit presence holds the pane through its Bloom-out, then unmounts it.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 450))
     })
@@ -290,14 +288,11 @@ describe('optimistic value persistence', () => {
   it('a just-assigned value survives a source-identity change (watcher echo) — the assign-vanish guard', async () => {
     await mountTable(sourceWith())
     const doneCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[2]
-    // Check the box → optimistic valueOverride (prop_done: true); the check glyph shows.
     await act(async () => {
       doneCell().click()
     })
     expect(doneCell().querySelector('svg')).toBeTruthy()
-    // A watcher self-echo re-mints `source`'s object identity (same id/path, so the container-open
-    // effect stays put). The value override must NOT be dropped — else the glyph reverts to the frozen
-    // pre-assign values, which is the ~1/10 assign-vanish this guards.
+    // A watcher self-echo re-mints `source`'s object identity; the value override must NOT be dropped, or the glyph reverts to the frozen pre-assign values — the assign-vanish this guards.
     await act(async () => {
       root.render(<ViewHost source={sourceWith()} />)
     })
@@ -307,7 +302,7 @@ describe('optimistic value persistence', () => {
 })
 
 describe('Context cells', () => {
-  const contextCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // ctx_areas last
+  const contextCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6]
 
   it("click opens the context picker listing the Context's Spaces; toggling writes setContext", async () => {
     await mountTable(sourceWith())
@@ -521,7 +516,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
       beta?.click()
     })
     expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['a', 'b'] })
-    expect(onDismiss).not.toHaveBeenCalled() // multi stays open
+    expect(onDismiss).not.toHaveBeenCalled()
 
     const alpha = pickerButtons().find((b) => b.textContent?.includes('Alpha'))
     await act(async () => {
@@ -590,13 +585,13 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       propertyId: 'prop_status',
       value: null,
     })
-    expect(host.textContent).not.toContain('Not started') // no picker options mounted
+    expect(host.textContent).not.toContain('Not started')
   })
 
   it('a multi-select pill × removes just THAT option', async () => {
     await mountChips()
     const removes = removesIn(cell(2))
-    expect(removes.length).toBe(2) // one × per pill
+    expect(removes.length).toBe(2)
     await act(async () => {
       removes[0].click()
     })
@@ -655,9 +650,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   })
 })
 
-// The stamp and the hit-test are the two halves of "which file did I click," and they live in
-// different files — `Cell.tsx` writes `data-segment-index`, `filePick.ts` reads it back off the
-// clicked node. Only a DOM gesture crosses them; a unit test on either half passes while they drift.
+// The stamp and the hit-test are the two halves of "which file did I click" and live in different files — only a DOM gesture crosses them, so a unit test on either half passes while they drift.
 describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const twoFiles = (): CollectionNode => {
     const s = sourceWith()

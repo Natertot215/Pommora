@@ -1,15 +1,9 @@
-// Resolved cell + group-header text for the table render: option VALUES become their schema
-// label, Context ULIDs become Context titles — so no raw id ever reaches screen.
-
 import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import type { ResolveContext } from '../resolveContext'
 
-/** A select/status option for a stored value, via the column's schema def — undefined if the column
- *  isn't a select/status or the value is unknown. Chip cells read `color` and (Compact) `icon`; text
- *  resolution reads `label`. */
 export function findOption(
   columnId: string,
   value: string,
@@ -60,12 +54,8 @@ function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => 
 export const buildSetNames = (source: CollectionNode | SetNode): Map<string, string> =>
   buildSetMap(source, (s) => s.title)
 
-/** Set id → its per-entity icon across a container's Set subtree — undefined means the folder
- *  default. */
 export const buildSetIcons = (source: CollectionNode | SetNode): Map<string, string | undefined> =>
   buildSetMap(source, (s) => s.icon)
 
-/** Set id → its real path — the band-drag reparent commit needs paths for moveSet (a ResolvedGroup
- *  carries only the id). */
 export const buildSetPaths = (source: CollectionNode | SetNode): Map<string, string> =>
   buildSetMap(source, (s) => s.path)

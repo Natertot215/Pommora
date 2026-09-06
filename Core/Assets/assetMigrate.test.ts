@@ -155,8 +155,7 @@ describe('migrateAssets', () => {
     })
   })
 
-  // A value the migration writes that the resolver cannot read is a silent blanking of every
-  // banner at once, so the two mechanisms are crossed rather than each tested alone.
+  // A value the migration writes that the resolver cannot read blanks every banner at once, so the two mechanisms are crossed rather than each tested alone.
   it('every rewritten value resolves against the map main now holds', async () => {
     await asset('one/Sunset.png', 'a')
     await asset('two/banner-dddddd44.jpg', 'b')

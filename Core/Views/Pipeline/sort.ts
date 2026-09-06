@@ -1,7 +1,4 @@
-// Multi-key view sort — decorate-sort, select/status by schema option order, a type-complete
-// property branch per PropertyType. `sort[]` is honored in array
-// order (priority = index), each criterion compared until one breaks the tie, then stable input
-// order. Pure: no fs, no React.
+// `sort[]` is honored in array order (priority = index), each criterion compared until one breaks the tie, then stable input order.
 
 import type { SortCriterion } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
@@ -26,9 +23,7 @@ const numericLess: Less = (a, b) => (a as number) < (b as number)
 const ciLess: Less = (a, b) =>
   (a as string).localeCompare(b as string, undefined, { sensitivity: 'accent' }) < 0
 
-/** Map each select/status option value to its position so those types sort by the author's option
- *  order, not alphabetically (select options first, then status options flattened across the
- *  groups). Unknown/absent values rank last. */
+/** Select/status sort by the author's option order, not alphabetically; unknown or absent values rank last. */
 function optionOrderIndex(def: PropertyDefinition): Record<string, number> {
   const index: Record<string, number> = {}
   def.select_options?.forEach((o, i) => {
@@ -59,7 +54,7 @@ function rank(
 
 function numberOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
   const v = resolveFieldValue(row, propertyId, schema)
-  return v.kind === 'number' ? v.value : Number.NEGATIVE_INFINITY // absent sorts first ascending
+  return v.kind === 'number' ? v.value : Number.NEGATIVE_INFINITY
 }
 
 function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
@@ -68,37 +63,30 @@ function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]):
     const t = Date.parse(v.value)
     if (!Number.isNaN(t)) return t
   }
-  return Number.NEGATIVE_INFINITY // absent / unparseable sorts first ascending
+  return Number.NEGATIVE_INFINITY
 }
 
 function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
   const v = resolveFieldValue(row, propertyId, schema)
-  return v.kind === 'checkbox' && v.value ? 1 : 0 // false (0) < true (1); absent = false
+  return v.kind === 'checkbox' && v.value ? 1 : 0
 }
 
-/** Orderable text for the text-ish types `buildCriterion` routes here (url, multiSelect, file).
- *  select/status sort via `rank()` (schema option order) and never reach this; relation/absent
- *  have no orderable text → "". */
 function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
     case 'url':
-      // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased
-      // link never sorts by its raw `[alias](url)` markdown.
+      // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased link never sorts by its raw markdown.
       return linkDisplayText(v.value)
     case 'multiSelect':
       return v.value.join(',')
     case 'file':
-      // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the
-      // leading bracket and order by whatever follows it.
+      // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the leading bracket and order by whatever follows it.
       return v.value.map(fileName).join(',')
     default:
       return ''
   }
 }
 
-/** Resolve one criterion to an extract+less pair, or null when the property isn't sortable
- *  (unknown id, or a Context column). */
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
   if (c.property_id === RESERVED_PROPERTY_ID.title)
@@ -106,9 +94,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
   switch (declaredType(c.property_id, schema)) {
     case 'select':
     case 'status': {
-      // A Custom criterion ranks by its own order; direction is moot for it. Options the saved order
-      // predates rank after the listed ones — left at MAX_SAFE_INTEGER they tie with the no-value
-      // rows and interleave, which is the same appended tail `configuredOrder` gives the group path.
+      // Options the saved order predates rank after the listed ones — at MAX_SAFE_INTEGER they tie with the no-value rows and interleave, the same appended tail `configuredOrder` gives the group path.
       if (c.order?.length) {
         const def = schema.find((d) => d.id === c.property_id)
         const listed = new Set(c.order)
@@ -138,13 +124,11 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }
     default:
-      return null // undefined → not sortable
+      return null
   }
 }
 
-/** The EFFECTIVE criteria count — only what buildCriterion resolves (a deleted property or
- *  Context-column criterion sorts by nothing). TableView's drag/manual-order gates read this, never the raw array
- *  length, so a dead criterion can't retire row reorder. */
+/** TableView's drag/manual-order gates read this, never the raw array length, so a dead criterion can't retire row reorder. */
 export function resolvedSortCount(
   sort: SortCriterion[] | undefined,
   schema: PropertyDefinition[],
@@ -152,9 +136,6 @@ export function resolvedSortCount(
   return (sort ?? []).filter((c) => buildCriterion(c, schema) !== null).length
 }
 
-/** Build a stable multi-key group-sorter, or null when no criterion is usable (caller keeps input
- *  order). Decorate-sort: each row's key tuple is extracted ONCE, then criteria are compared in
- *  array order (priority = index); full ties hold input order. */
 export function makeSorter(
   sort: SortCriterion[] | undefined,
   schema: PropertyDefinition[],
@@ -163,9 +144,7 @@ export function makeSorter(
   const resolved = (sort ?? [])
     .map((c) => buildCriterion(c, schema))
     .filter((rc): rc is ResolvedCriterion => rc !== null)
-  // The per-machine manual order (viewOrders) is the LOWEST-priority tiebreaker: it reorders
-  // only rows already equal on every real sort key, and is the sole comparator when a view is grouped
-  // but unsorted. A row absent from the manual order ranks last (appended after the placed ones).
+  // The per-machine manual order is the LOWEST-priority tiebreaker: it reorders only rows already equal on every real sort key, and is the sole comparator when a view is grouped but unsorted.
   const manualIndex = manualOrder?.length
     ? new Map(manualOrder.map((id, i) => [id, i] as const))
     : null
@@ -191,16 +170,14 @@ export function makeSorter(
           if (less(ka, kb)) return 1
         }
       }
-      if (a.manual !== b.manual) return a.manual - b.manual // manual order breaks remaining ties
-      return a.offset - b.offset // stable: input order among full ties
+      if (a.manual !== b.manual) return a.manual - b.manual
+      return a.offset - b.offset
     })
     return decorated.map((d) => d.row)
   }
 }
 
-/** The per-view manual order fed to the sorter (shared by Table and Cards): an active drag override
- *  always wins; otherwise the persisted per-machine order applies only when the view is sorted or
- *  grouped — on a plain view viewOrders is not a primary order. */
+/** An active drag override always wins; the persisted per-machine order applies only when the view is sorted or grouped — on a plain view viewOrders is not a primary order. */
 export function resolveManualOrder(
   sortedOrGrouped: boolean,
   manualOverride: string[] | null,

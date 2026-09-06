@@ -33,8 +33,7 @@ beforeEach(() => {
   }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
-    // A Directory is stored under the asset root, so the root has to be present for the join to
-    // be the thing under test rather than a no-op.
+    // A Directory is stored under the asset root, so the root has to be present for the join to be the thing under test.
     tree: { assetDirectory: 'file-assets' } as never,
   })
 })
@@ -72,8 +71,7 @@ describe('fileChipIndex', () => {
   })
 
   it('reads DOWN from nothing — a row wrapping its labels is the value’s area, not a label', () => {
-    // `closest` walks up, so the row a handler's `currentTarget` names can only ever answer null.
-    // This is why the clicked node travels separately from the element an editor anchors to.
+    // `closest` walks up, so the row a handler's `currentTarget` names can only answer null — which is why the clicked node travels separately from the element an editor anchors to.
     const row = '<div class="row"><span data-segment-index="0"><b class="a">A.pdf</b></span></div>'
     expect(fileChipIndex(at(row, '.row'))).toBeNull()
     expect(fileChipIndex(at(row, '.a'))).toBe(0)
@@ -101,7 +99,6 @@ describe('runFilePick', () => {
 
   it('an unresolved label falls back to the property’s Directory, never the dialog’s own memory', async () => {
     await runFilePick(def({ file_directory: 'Attachments' }), held(['[[Gone.pdf]]']), 0)
-    // The dialog opens under the ASSET root, never at a same-named folder off the nexus root.
     expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Attachments' })
   })
 

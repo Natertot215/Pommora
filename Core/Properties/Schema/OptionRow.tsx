@@ -76,8 +76,6 @@ export function OptionRow({
       />
     )
   }
-  // Editing the glyph previews the Compact variant whatever the view's look is, the mirror of rename
-  // revealing the full name — you see the option as its icon while you pick it.
   if (iconEditing) {
     return (
       <span className={s.optionAnchor} ref={iconAnchor}>

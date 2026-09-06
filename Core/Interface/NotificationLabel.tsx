@@ -49,15 +49,13 @@ export function NotificationLabel(): React.JSX.Element {
     return () => cancelAnimationFrame(raf)
   }, [note, shown])
 
-  // The slide out is what retires it — the label is gone from the frame before the state clears.
   useEffect(() => {
     if (!note || shown) return
     const t = setTimeout(() => dismiss(note.id), BASE_MS)
     return () => clearTimeout(t)
   }, [note, shown, dismiss])
 
-  // Proximity rather than hover: the pointer heading for the action reaches the drain before it
-  // does, so the label can't leave out from under a reach.
+  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach.
   useEffect(() => {
     if (!note || !shown) return
     let rect: DOMRect | null = null
@@ -74,8 +72,7 @@ export function NotificationLabel(): React.JSX.Element {
         e.clientY > rect.top - r &&
         e.clientY < rect.bottom + r
     }
-    // The hold needs a release: a pointer that leaves the window stops reporting, and a `near`
-    // left standing would freeze the drain on a label nothing is reaching for.
+    // A pointer that leaves the window stops reporting, and a `near` left standing would freeze the drain on a label nothing is reaching for.
     const release = (): void => {
       nearRef.current = false
     }

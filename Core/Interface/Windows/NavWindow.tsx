@@ -26,8 +26,7 @@ import './nav-window.css'
 
 const RAIL = { min: 120, def: 200, max: 320 }
 
-// Matched against the press target itself, so child content — row internals, card bodies, the
-// search input — never arms a window move.
+// Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
   '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .window-tabwrap, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
@@ -44,15 +43,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
 
   // Placement freezes at open — new recents activity must not reshuffle the list under the cursor.
-  // Re-snapshots on reopen; still filtered against live pin/membership so a pin or removal drops out.
   const [frozenRecents, setFrozenRecents] = useState(resolvedRecents)
   const shownRecents = useMemo(() => {
     const pinned = new Set(resolvedPins.map((p) => p.key))
     const live = new Set(resolvedRecents.map((r) => r.key))
     return frozenRecents.filter((r) => live.has(r.key) && !pinned.has(r.key))
   }, [frozenRecents, resolvedPins, resolvedRecents])
-  // A drag is the one thing that bypasses the freeze, and commits the SHOWN order wholesale — the
-  // store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
+  // A drag commits the SHOWN order wholesale: the store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderShownRecent = (activeKey: string, overKey: string): void => {
     const next = moveByKey(frozenRecents, (r) => r.key, activeKey, overKey)
@@ -64,8 +61,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // An open sourced from a live Page Window FLIPs from its stashed rect; the css intro is
-  // canceled pre-paint so only one motion plays.
+  // An open sourced from a live Page Window FLIPs from its stashed rect; the css intro is canceled pre-paint so only one motion plays.
   const rootRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const from = consumeWindowMorph()
@@ -85,7 +81,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: ms(duration.base), easing: easing.baseEase },
     )
   }, [])
-  // The inspector is PAGE TABS ONLY (deliberate) — it dies on the map return.
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
@@ -224,8 +219,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               />
             </div>
             <div className="navwindow-main-scroll over-scroll">
-              {/* `extras` has no card form, so Gallery is passed none at all — inert hits surface
-                  in List only. */}
               {viewMode === 'gallery' ? (
                 <NavGallery
                   pins={results ? [] : resolvedPins}

@@ -18,7 +18,6 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
-// A datetime property with no saved column_styles → the editor reflects the resolved type default.
 const dateDef: PropertyDefinition = { id: 'prop_due', name: 'Due', type: 'datetime' }
 const source = { id: 'col1', kind: 'collection', path: 'Col', title: 'Col', views: [] } as never
 

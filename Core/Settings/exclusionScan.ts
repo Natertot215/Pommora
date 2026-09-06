@@ -1,6 +1,4 @@
-// The one place in the app that deliberately reads inside an excluded folder — every other
-// enumerator prunes them. The Agenda layer stays out: a folder carrying a Task or Event config is
-// skipped whole.
+// The one place in the app that deliberately reads inside an excluded folder — every other enumerator prunes them.
 
 import { join } from '../Locations/posix'
 import { machine } from '../Platform/machine'
@@ -71,8 +69,7 @@ export async function clearExclusionData(
   assetDir: string,
 ): Promise<Result<ClearReport>> {
   const { pages, sidecars } = await excludedArtifacts(root, excluded, assetDir)
-  // Best-effort: a sidecar that won't delete (locked, permission-denied, a sync placeholder) is
-  // skipped so the page sweep still runs, rather than aborting the whole pass mid-way.
+  // Best-effort: a sidecar that won't delete is skipped so the page sweep still runs, rather than aborting the whole pass mid-way.
   let removed = 0
   for (const sidecar of sidecars) {
     const gone = await machine()

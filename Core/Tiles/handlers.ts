@@ -18,8 +18,7 @@ import {
 
 type TileCtx = { root: string; dir: string }
 
-// Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must never
-// carry path segments.
+// Tile ids gate on isUlid — the id becomes a filename, so a renderer-supplied value must never carry path segments.
 async function tileHostAnd(host: unknown, tileId?: unknown): Promise<Result<TileCtx>> {
   if (adopting()) return BUSY
   const root = sessionRoot()

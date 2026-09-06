@@ -2,8 +2,6 @@ import { z } from 'zod'
 
 const SIGIL = ['<', '>'] as const
 
-/** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
- *  creation. Any other Context has none; its Spaces read "New Space". */
 export type ContextDef = { id: string; title: string; singular?: string; icon?: string }
 
 /** Array position IS the display order — no ordinal semantics anywhere. */
@@ -32,8 +30,6 @@ export function parseContextKey(key: string): string | null {
     : null
 }
 
-/** The one path-safety core every entity title shares — a name that cannot be a folder or file
- *  basename. Callers add whatever their own layer forbids on top of it. */
 export function invalidBasename(name: string): boolean {
   const trimmed = name.trim()
   return (

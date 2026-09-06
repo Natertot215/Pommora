@@ -68,7 +68,6 @@ function pagePickerItems(
   return tree.collections.map(collectionItem)
 }
 
-// Sub-Sets carry no views, so only depth-1 Sets drill here.
 function viewPickerItems(
   tree: NexusTree,
   defaultIcons?: Partial<Record<EntityIconKind, string>>,
@@ -84,7 +83,6 @@ function viewPickerItems(
   const collectionItem = (c: CollectionNode): ViewPickerItem => ({
     label: c.title,
     icon: entityIcon('collection', c.icon, defaultIcons),
-    // The collection's own views sit ABOVE its Sets (a deliberate ordering); + Custom stays the pinned footer.
     submenu: [
       ...containerViews(c),
       ...c.sets.map((s) => ({
@@ -116,8 +114,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const { layout, tiles, ready, setLayout, commitLayout, refreshEntries, saveTiles, setBusy } =
     useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
-  // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write
-  // would land after the trash and resurrect the file as an entry-less orphan.
+  // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write would land after the trash and resurrect the file as an entry-less orphan.
   const removing = useRef(new Set<string>())
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -165,8 +162,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   useEffect(() => {
     if (!editingId) return
-    // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not
-    // swallow the click-out.
+    // Capture phase — a gesture handler's stopPropagation (the grid's handles/edges) must not swallow the click-out.
     const onDown = (e: PointerEvent): void => {
       if (!(e.target as Element | null)?.closest?.('.tile.is-editing-tile')) setEditingId(null)
     }
@@ -223,8 +219,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     },
     [nativeMenus],
   )
-  // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the
-  // dismissal that cleared it — otherwise React tears the pane out before it can retract.
+  // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the dismissal that cleared it.
   const menu = useHeld(handleMenu, handleMenu !== null)
   // Held with the anchor: a delete with confirmation waived drops the entry inside the retract.
   const menuTile = useHeld(handleMenu ? entries.get(handleMenu.id) : undefined, handleMenu !== null)
@@ -240,8 +235,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     (id: string, style: TileStyle) => mutateEntry(id, (raw) => ({ ...raw, style })),
     [mutateEntry],
   )
-  // Toggles off the STRICT boolean — a foreign truthy `locked` (e.g. 1) parses to unlocked, so the
-  // first click must lock, not delete-to-no-op.
+  // Toggles off the STRICT boolean — a foreign truthy `locked` parses to unlocked, so the first click must lock, not delete-to-no-op.
   const toggleLock = useCallback(
     (id: string) =>
       mutateEntry(id, (raw) => withKey(raw, 'locked', raw.locked === true ? undefined : true)),
@@ -263,8 +257,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     (id: string) => {
       void askRemoveTile().then((ok) => {
         if (!ok) return
-        // Order is load-bearing: suppress the tile's editor flush, layout first
-        // (invisible orphan beats a dead box on a crash), then the entry + file.
+        // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
         removing.current.add(id)
         setEditingId((cur) => (cur === id ? null : cur))
         commitLayout((cur) => removeLeaf(cur, id))
@@ -282,7 +275,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         entry?.style === 'borderless' ? 'is-borderless' : null,
         editingId === id ? 'is-editing-tile' : null,
         entry?.locked ? 'is-locked' : null,
-        handleMenu?.id === id ? 'handle-pinned' : null, // the open picker's anchor stays shown
+        handleMenu?.id === id ? 'handle-pinned' : null,
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
     },
@@ -344,8 +337,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     title: menuLoc.title,
     icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
   }
-  // Assigned rather than called: the gesture handler is memoized against the preference alone, so
-  // it must reach the current build through a ref rather than closing over this render's tiles.
+  // Assigned rather than called: the gesture handler is memoized against the preference alone, so it must reach the current build through a ref.
   popNativeMenu.current = (id, el) => {
     const entry = entries.get(id)
     if (!entry || !pickers) return

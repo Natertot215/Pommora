@@ -117,8 +117,8 @@ describe('checkbox looks', () => {
 
   it('renders the empty box even with no stored value — always checkable in place', () => {
     mount(rowWith({}), 'prop_done', { look: 'checkbox' })
-    expect(host.querySelector('span')).toBeTruthy() // the box renders...
-    expect(host.querySelector('svg')).toBeNull() // ...unchecked, no glyph
+    expect(host.querySelector('span')).toBeTruthy()
+    expect(host.querySelector('svg')).toBeNull()
   })
 
   it('switch renders unchecked with no stored value', () => {
@@ -129,7 +129,7 @@ describe('checkbox looks', () => {
   it('checked box tints from the property color via --checkbox-base', () => {
     mount(rowWith({ prop_pin: true }), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
-    expect(box?.style.getPropertyValue('--checkbox-base')).not.toBe('') // a chosen color to tint from
+    expect(box?.style.getPropertyValue('--checkbox-base')).not.toBe('')
     expect(box?.className).toContain('checkbox-checked')
   })
 
@@ -141,7 +141,7 @@ describe('checkbox looks', () => {
   })
 
   it('a colorless checked box leaves --checkbox-base unset so it follows the accent recipe', () => {
-    mount(rowWith({ prop_done: true }), 'prop_done', { look: 'checkbox' }) // prop_done has no checkbox_color
+    mount(rowWith({ prop_done: true }), 'prop_done', { look: 'checkbox' })
     const box = host.querySelector('span')
     expect(box?.className).toContain('checkbox-checked')
     expect(box?.style.getPropertyValue('--checkbox-base')).toBe('')

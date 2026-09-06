@@ -9,5 +9,4 @@ export const fill = style({
   backgroundRepeat: 'no-repeat',
 })
 
-/** The Homepage's nexus photo, sized by the icon step the call site passes. */
 export const photo = style({ flex: '0 0 auto', borderRadius: '50%' })

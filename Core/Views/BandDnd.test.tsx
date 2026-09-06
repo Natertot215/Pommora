@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level gesture tests over the pointer harness — geometry truth lives in the CDP pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -113,7 +112,7 @@ describe('band drag gesture', () => {
   })
 
   it('classifies a same-parent drop as reorder', async () => {
-    await drag('B', 2) // above A: implied parent root == B's parent
+    await drag('B', 2)
     await act(async () => {
       firePointer(window, 'pointerup')
     })
@@ -121,7 +120,7 @@ describe('band drag gesture', () => {
   })
 
   it('classifies a parent-changing between-slot as reparent', async () => {
-    await drag('A1', 2) // above A: implied parent root ≠ A1's parent A
+    await drag('A1', 2)
     await act(async () => {
       firePointer(window, 'pointerup')
     })
@@ -178,9 +177,9 @@ describe('band drag gesture', () => {
   })
 
   it('classifies a middle-zone hover as nest-into with the target highlighted', async () => {
-    await drag('B', 36) // middle of A1 (24–48; zone 31.2–40.8)
+    await drag('B', 36)
     expect(host.querySelector('[data-band="A1"]')?.getAttribute('data-nest')).toBe('true')
-    expect(line()).toBeNull() // the highlight replaces the line
+    expect(line()).toBeNull()
     await act(async () => {
       firePointer(window, 'pointerup')
     })

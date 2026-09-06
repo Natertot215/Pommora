@@ -37,11 +37,9 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     layout: null,
   })
 
-  // Async continuations (IPC .then) must never build on a render-captured layout — a gesture
-  // committing during the await would be silently overwritten.
+  // Async continuations must never build on a render-captured layout — a gesture committing during the await would be silently overwritten.
   const liveLayout = useRef<TileLayout>(state.layout)
-  // The last save's promise: a disk change is read only after the local write it may race has
-  // landed, so the user's own last action never silently reverts.
+  // A disk change is read only after the local write it may race has landed, so the user's own last action never silently reverts.
   const lastSave = useRef<Promise<unknown>>(Promise.resolve())
 
   const liveTiles = useRef<unknown[]>(state.tiles)
@@ -50,7 +48,6 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   const hostKey = tileHostKey(host)
   const setHostLock = useSession((s) => s.setHostLock)
   const storeLock = useSession((s) => s.hostLocks[hostKey])
-  // What the document holds; the store's value diverging from it is a toggle to write.
   const docLock = useRef<boolean | null>(null)
   const adopt = useCallback(
     (target: TileHostRef, doc: { layout: unknown; tiles: unknown[]; locked: boolean }) => {
@@ -101,9 +98,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     const saved = lastSave.current
     await saved
     const r = await dialer().ask('tiles:get', target)
-    // A host swapped in place, or a local edit issued during the read (written or still in its
-    // debounce), leaves what came back stale — that edit's own echo pushes again, so dropping this
-    // one loses nothing.
+    // A host swapped in place, or a local edit issued during the read, leaves what came back stale — that edit's own echo pushes again, so dropping this one loses nothing.
     if (
       !r.ok ||
       key !== tileHostKey(hostRef.current) ||
@@ -149,8 +144,7 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     [flush],
   )
 
-  // Structural mutations write the layout now, before their entry op, so a crash leaves an
-  // invisible orphan rather than a dead box.
+  // Structural mutations write the layout now, before their entry op, so a crash leaves an invisible orphan rather than a dead box.
   const commitLayout = useCallback(
     (update: TileLayout | ((cur: TileLayout) => TileLayout)) => {
       setLayout(typeof update === 'function' ? update(liveLayout.current) : update)

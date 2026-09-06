@@ -92,8 +92,7 @@ export function NumberEditor({
   const family: NumberFamily = config.number_family ?? 'number'
   const isPercent = family === 'percent'
   const fraction = config.number_fraction ?? false
-  // The SAME bar-capable test the cell render and the Style menu use, so all three surfaces agree on
-  // when Bar is offered.
+  // The SAME bar-capable test the cell render and the Style menu use, so all three surfaces agree on when Bar is offered.
   const barCapable = numberDivisor(config) !== undefined
 
   return (

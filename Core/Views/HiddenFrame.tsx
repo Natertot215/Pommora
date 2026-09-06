@@ -32,8 +32,7 @@ function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   return <PropertyTypeIcon type="context" size={s.ICON.doc} />
 }
 
-/** Lives outside the frame so rows never remount on its re-renders; the region keys
- *  ('assigned' = shown, 'all' = hidden) are the FrameDnd group names. */
+/** The region keys ('assigned' = shown, 'all' = hidden) are the FrameDnd group names. */
 function VisibilityGroups({
   shownIds,
   hiddenIds,
@@ -128,8 +127,7 @@ export function VisibilityList({
   const contextIds = contextIdsOf(tree)
   const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
   const hiddenIds = hiddenListIds(view, schema, contextIds)
-  // The hidden list's own membership, not hidden_properties: a prop absent from property_order
-  // (a title-only mint, or one created after the view) is hidden by absence and reads as such.
+  // The hidden list's own membership, not hidden_properties: a prop absent from property_order is hidden by absence and reads as such.
   const hiddenSet = new Set(hiddenIds)
   const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
 

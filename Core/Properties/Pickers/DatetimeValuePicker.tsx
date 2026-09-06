@@ -4,9 +4,6 @@ import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker/CalendarPick
 import { useSession } from '../../Session/store'
 import { formatDate } from '../formatValue'
 
-/** The shared datetime editing surface: owns the value↔ISO mapping, the date_format remap, and
- *  the reactive time format so no call site rebuilds them. The caller owns the mount + dismissal
- *  (a PickerMenu). */
 export function DatetimeValuePicker({
   value,
   dateFormat,

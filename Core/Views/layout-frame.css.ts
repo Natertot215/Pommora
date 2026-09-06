@@ -20,8 +20,7 @@ export const grid = style({
   padding: `${GRID.edgeY}px 0`,
 })
 
-/** The glyph is opaque, not a white-alpha label tone: an alpha tone doubles where the glyph's own
- *  strokes overlap and its soft edges read as aliasing — an opaque hex composites clean. */
+/** The glyph is opaque, not a white-alpha label tone: an alpha tone doubles where the glyph's own strokes overlap and its soft edges read as aliasing. */
 export const tile = style({
   aspectRatio: `${GRID.tileAspect}`,
   display: 'flex',

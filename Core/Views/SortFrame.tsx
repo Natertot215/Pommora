@@ -15,8 +15,7 @@ import { useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 
 type Direction = SortCriterion['direction']
 
-/** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer
- *  what the extractor can't rank. */
+/** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer what the extractor can't rank. */
 const SORTABLE_PANE = new Set([
   'select',
   'status',

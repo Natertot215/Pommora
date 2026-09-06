@@ -6,8 +6,7 @@ describe('containerCreators — a container offers the same things wherever it i
     containerCreators(kind, 'Some/Path').map((c) => c.req.op)
 
   it('offers a Set the same operations it offers a Collection', () => {
-    // The defect this pins: the sidebar's context menu gave a Set no way to make a nested one,
-    // while the subfield's add button did. Sets nest to any depth, so the pair is the same.
+    // The defect this pins: the sidebar's context menu gave a Set no way to make a nested one, while the subfield's add button did.
     expect(ops('set')).toEqual(ops('collection'))
     expect(ops('collection')).toEqual(['createPage', 'createContainer'])
   })
