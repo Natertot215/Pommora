@@ -6,7 +6,7 @@ import { GroupBand, resolveBandHead } from './GroupBand'
 import { bandShowsAdd } from './cardsBand'
 import { useBandDrag } from './BandDnd'
 import type { ValueContext } from '../../Properties/valueContext'
-import { showEntityMenu } from '../../Interface/Sidebar/entityMenuActions'
+import { showEntityMenu } from '../../Interface/Menus/entityMenuActions'
 
 /** Holds `useBandDrag`, which throws outside `<BandDnd>` and so can't live in the shared presentational GroupBand. */
 export function ViewGroupBand({

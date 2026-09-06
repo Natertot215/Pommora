@@ -4,9 +4,9 @@ import {
   type WindowsFile,
 } from '@pommora/core/Interface/Windows/windowRecord'
 import { type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
-import { type ReconcileIndex, reconcileWith } from '../../Session/reconcileSelection'
-import { reconcileIndexOf } from '../../Nexus/treeIndex'
-import { liveTarget, makeTabId } from '../../Navigation/tabsModel'
+import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
+import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { liveTarget, makeTabId } from '../Navigation/tabsModel'
 import {
   closeTabIn,
   deriveTarget,
@@ -14,11 +14,11 @@ import {
   type WindowState,
   type WindowTab,
   reorderTabIn,
-} from './windowTabs'
-import { clearWindowCache, dropWindowCache } from './windowCache'
-import { stashWindowMorph } from './windowMorph'
-import type { SessionState, Slice } from '../../Session/sessionState'
-import { host } from '../../Platform/dialer'
+} from '../Interface/Windows/windowTabs'
+import { clearWindowCache, dropWindowCache } from '../Interface/Windows/windowCache'
+import { stashWindowMorph } from '../Interface/Windows/windowMorph'
+import type { SessionState, Slice } from './sessionState'
+import { host } from '../Platform/dialer'
 
 export type WindowTarget = { id: string; path: string }
 

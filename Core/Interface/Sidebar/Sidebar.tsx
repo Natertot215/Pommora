@@ -51,7 +51,7 @@ import {
   dropOutlineOpen,
   dropOutlineSpacer,
 } from '@pommora/uix/Menus/listed-outline.css'
-import { showEntityMenu } from './entityMenuActions'
+import { showEntityMenu } from '../Menus/entityMenuActions'
 
 function showContextFor(node: {
   kind: MutableKind

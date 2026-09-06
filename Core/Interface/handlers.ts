@@ -12,9 +12,9 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs } from '../Settings/devicePrefs'
-import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
+import { readTabsState, sanitizeTabSet, writeTabsState } from '../Navigation/tabsState'
 import type { GlanceSize } from './Windows/windowRecord'
-import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowState'
+import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
 
 const isEmptyValue = (v: unknown): boolean =>
   v === '' ||

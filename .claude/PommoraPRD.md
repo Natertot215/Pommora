@@ -6,7 +6,7 @@
 
 ### Vision
 
-A personal management platform combining Obsidian's customization and local-first ethos with Notion's database and view capabilities. Pommora is a simpler Notion that's also a more capable Obsidian — without the trade-offs that push people to bounce between the two.
+Pommora is a personal management and all-in-one productivity app aimed at providing an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. The long-term vision is an alternative to cloud-based enterprise organizational and project management tools that provides local-first security, case-specific customization, and an agentic-accessible and advantaged platform. 
 
 Pages are Markdown documents that live inside **Page Collections** — folder-based database entities that carry a shared property schema and saved views. A Collection nests **Page Sets** to any depth: schema-less organizing sub-folders that inherit the Collection's schema. **Contexts** are free-standing, user-defined groups of **Spaces** — the things content tags and gathers under (the registry seeds Areas, Topics, and Projects as ordinary entries). The whole product is a folder of plain files the user owns outright.
 

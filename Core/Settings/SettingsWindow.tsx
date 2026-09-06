@@ -54,7 +54,7 @@ import {
 } from '@pommora/core/Properties/columnStyles'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../Session/store'
-import { TrashFrame } from '../Trash/TrashFrame'
+import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
