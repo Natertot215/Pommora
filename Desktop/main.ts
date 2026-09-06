@@ -55,11 +55,18 @@ import {
   wheelGuest,
 } from './Web/webGuests'
 
+// FIRST, ahead of anything that could read a path: the name resolves userData, and Electron caches
+// that directory on its first read. Pinned rather than inherited from the package name, which a
+// workspace rename moves — dev and the packaged build answer to one app-support folder, so a rename
+// cannot strand the machine's preferences, recent Nexuses, and web logins in the folder it left.
+app.setName('Pommora')
+
 installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(p) })
 
 if (process.env.POMMORA_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.POMMORA_DEBUG_PORT)
 }
+
 // A second instance beside the live one: its own userData carries its own single-instance lock.
 if (process.env.POMMORA_USERDATA) app.setPath('userData', process.env.POMMORA_USERDATA)
 
