@@ -14,6 +14,7 @@ import {
 } from './Links/connectionsApi'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
+import { scanOf } from './Engine/docScan'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -137,10 +138,10 @@ describe('following one', () => {
 // Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures
 // nothing, so a panel-driven version would only ever test the harness.
 describe('picking a page inside the parens', () => {
-  const row = { value: 'Work Notes', label: 'Work Notes', isPage: true }
+  const row = { value: 'Work Notes', label: 'Work Notes', isPage: true, location: [] }
 
   const applied = (doc: string, caret: number): { text: string; after: string } => {
-    const ac = autocompleteQuery(doc, caret)!
+    const ac = autocompleteQuery(scanOf(doc), caret)!
     expect(ac.form).toBe('target')
     const edit = commitEdit(ac, row)
     let text = doc
@@ -226,7 +227,8 @@ describe('an internal markdown link glances like a connection', () => {
     const glance = vi.fn()
     const view = await mountEditor({
       initialBody: `see [the notes](${encodeLinkTarget('Work Notes')}) end`,
-      connections: { ...conn, glance },
+      connections: conn,
+      host: { glance: { arm: glance, cancel: () => {}, close: () => {}, contains: () => false } },
     })
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })
@@ -324,7 +326,8 @@ describe('a website link previews live', () => {
     const glance = vi.fn()
     const view = await mountEditor({
       initialBody: 'see [GitHub](https://github.com) end',
-      connections: { ...conn, glance },
+      connections: conn,
+      host: { glance: { arm: glance, cancel: () => {}, close: () => {}, contains: () => false } },
     })
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })

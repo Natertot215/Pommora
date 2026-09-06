@@ -5,6 +5,7 @@ import type { ConnectionsApi, ConnPage } from './connectionsApi'
 import { followTarget } from './links'
 import { applyLinkAction } from './linkEdit'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
+import { editorHost } from '../api'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -67,18 +68,20 @@ function connHitAt(
 export function connectionClicks(getApi: GetApi): Extension {
   return pointerHandlers<ConnHit>({
     hoverGate: '.md-connection-resolved',
-    armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => connHitAt(getApi(), view, event),
-    follow: ({ page }, _view, event) =>
+    follow: ({ page }, view, event) =>
       page
-        ? followTarget({ kind: 'page', page }, '', getApi(), event.metaKey, event.target as Element)
+        ? followTarget(
+            { kind: 'page', page },
+            '',
+            getApi(),
+            event.metaKey,
+            event.target as Element,
+            view.state.facet(editorHost).glance,
+          )
         : null,
-    dwell: ({ page }, el) => {
-      const glance = getApi()?.glance
-      return page && glance
-        ? () => glance({ kind: 'page', id: page.id, path: page.path }, el)
-        : null
-    },
+    dwell: ({ page }, el, glance) =>
+      page ? () => glance.arm({ kind: 'page', id: page.id, path: page.path }, el) : null,
     menu: ({ hit, page }, view) => {
       const menu = getApi()?.menu
       if (!page || !menu) return null

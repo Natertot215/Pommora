@@ -1,15 +1,12 @@
-// A leaf on purpose — the pane reaches into MarkdownPM and MarkdownPM's pointer path reaches this, so it imports nothing and the pane claims the presenter slot at mount.
-
-export type GlanceTarget =
-  | { kind: 'page'; id: string; path: string }
-  | { kind: 'site'; url: string }
+// A runtime leaf on purpose — the pane reaches into MarkdownPM and the editor's host reaches this, so it imports only a type and the pane claims the presenter slot at mount.
+import type { GlanceTarget } from '../../MarkdownPM/api'
 
 export interface GlanceRequest {
   target: GlanceTarget
   el: Element
 }
 
-/** KNOB — one dwell per host kind; a host names its row. */
+/** KNOB — one dwell per glance surface; further surfaces add their own rows. */
 export const GLANCE_DWELL = { link: 1000 } as const
 export type GlanceDwell = keyof typeof GLANCE_DWELL
 

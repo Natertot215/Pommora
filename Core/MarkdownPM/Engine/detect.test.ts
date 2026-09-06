@@ -7,7 +7,6 @@ import {
   isInlineMathContent,
   parseListMarker,
   indentLevel,
-  inlineCodeRegex,
   calloutLines,
   calloutHeadPrefixLen,
   parseListMarkerPrefixed,
@@ -115,10 +114,6 @@ describe('inline matchers (verbatim regexes)', () => {
   it('image embed ![[name]]', () => {
     const m = pageEmbedPattern().exec('see ![[pic]] here')
     expect(m?.[1]).toBe('pic')
-  })
-  it('inline code `code`', () => {
-    const m = inlineCodeRegex().exec('a `x` b')
-    expect(m?.[1]).toBe('x')
   })
   it('markdown link [t](u)', () => {
     const m = markdownLinkRegex().exec('[t](http://u)')

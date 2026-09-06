@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize, activeTokenIndices, shiftToken, type Token } from './tokens'
+import { scanOf } from './docScan'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
 const slice = (text: string, r: [number, number]): string => text.slice(r[0], r[1])
@@ -63,6 +64,35 @@ describe('inline regex tokens + overlap rules', () => {
     const t = '[t](http://u)'
     const l = byKind(tokenize(t), 'link')[0]
     expect(slice(t, l.contentRange)).toBe('t')
+  })
+})
+
+describe('inline code is the run-length pairing the code mask reads', () => {
+  it('a double-backtick span holding a backtick is one code token over the whole span', () => {
+    const t = 'a ``code with ` inside`` b'
+    const code = byKind(tokenize(t), 'inlineCode')
+    expect(code).toHaveLength(1)
+    expect(slice(t, code[0].contentRange)).toBe('code with ` inside')
+    expect(code[0].markerRanges.map((m) => slice(t, m))).toEqual(['``', '``'])
+  })
+
+  it('an unclosed opener styles nothing', () => {
+    expect(byKind(tokenize('a `open b'), 'inlineCode')).toHaveLength(0)
+  })
+})
+
+describe('display math is the block model’s pairing', () => {
+  it('a lone `$$` with no lone closer colors nothing, whatever `$$` prose holds later', () => {
+    const doc = '$$\nformula\n\nprose $$ 5 and $$ 6'
+    expect(byKind(tokenize(doc, scanOf(doc).maths), 'blockLatex')).toEqual([])
+  })
+
+  it('a lone-line pair is one token whose markers are the two `$$` lines', () => {
+    const doc = 'p\n$$\nx = 1\n$$\nq'
+    const [tex] = byKind(tokenize(doc, scanOf(doc).maths), 'blockLatex')
+    expect(slice(doc, tex.range)).toBe('$$\nx = 1\n$$')
+    expect(slice(doc, tex.contentRange)).toBe('\nx = 1\n')
+    expect(tex.markerRanges.map((m) => slice(doc, m))).toEqual(['$$', '$$'])
   })
 })
 

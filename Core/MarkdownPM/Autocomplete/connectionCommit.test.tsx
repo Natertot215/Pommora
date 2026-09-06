@@ -2,8 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
-import { useSession } from '../../Session/store'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge, seedHost } from '../editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -77,13 +76,13 @@ describe('the picker stands down when it has nothing to add', () => {
 
 describe('retargeting an aliased connection obeys the strip setting', () => {
   it('drops the alias by default — the old words describe the old page', async () => {
-    useSession.setState({ personalization: {} })
+    seedHost({})
     const { doc } = await pickFirst('[[Alp|the one]]', 4)
     expect(doc).toBe('[[Alpha]]')
   })
 
   it('carries the alias across when the setting is off', async () => {
-    useSession.setState({ personalization: { removeTitleOnLinkChange: false } })
+    seedHost({ settings: { removeTitleOnLinkChange: false } })
     const { doc } = await pickFirst('[[Alp|the one]]', 4)
     expect(doc).toBe('[[Alpha|the one]]')
   })

@@ -9,7 +9,6 @@ import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { glanceLink } from '../Glance/glanceLink'
 import { showConnectionMenu } from '../Menus/connectionMenu'
 import { moveByKey } from '../../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../../Session/treeIndex'
@@ -132,7 +131,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, openWindowTab, select])

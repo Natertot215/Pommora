@@ -2,11 +2,11 @@ import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
 import type { ConnEditAction } from '@pommora/core/Actions/connMenu'
-import { useSession } from '../../Session/store'
 import type { ConnectionsApi } from './connectionsApi'
 import { tokenize, type Token } from '../Engine/tokens'
-import { focusRange } from '../Editor/caretPlacement'
+import { focusRange } from '../caretPlacement'
 import { restedOnLink } from '../Gestures/linkGestures'
+import { editorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 /** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
@@ -88,7 +88,8 @@ function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at
   if (!alias.trim()) return
   const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
-  if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
+  if (res.status === 'resolved' && res.page)
+    view.state.facet(editorHost).aliases.remember(res.page.id, alias)
 }
 
 function collapseAt(view: EditorView, at: number): void {

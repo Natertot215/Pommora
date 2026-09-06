@@ -6,11 +6,10 @@ import {
   decorationsFor,
   docLineIntents,
   NO_CARET,
-  codeBlockTextAt,
-  scanDoc,
   tokenIntents,
   type DecoIntent,
-} from './docScan'
+} from './intents'
+import { codeBlockTextAt, scanDoc } from './docScan'
 
 // The live build assembles line intents from the per-version cache, re-deriving only the caret-affected lines.
 // This holds it byte-equivalent to the pure whole-doc reference at EVERY caret position, so a construct that

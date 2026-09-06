@@ -9,9 +9,8 @@ import {
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@pommora/core/Actions/citationMenu'
 import { isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
-import { useSession } from '../../Session/store'
 import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
-import { focusRange } from '../Editor/caretPlacement'
+import { focusRange } from '../caretPlacement'
 import type { CitationScan } from '../Engine/detect'
 import {
   citationGesture,
@@ -23,8 +22,8 @@ import {
 } from './citationEdits'
 import { docScan } from '../docCache'
 import { editAcrossCitations } from '../folding'
-import { travelTo } from '../Editor/travel'
-import { host } from '../../Platform/dialer'
+import { travelTo } from '../travel'
+import { editorHost } from '../api'
 
 /** `reveal` writes the page's visibility rather than folding behind the host's back, so every surface showing that page agrees. */
 export interface CitationHost {
@@ -74,7 +73,7 @@ function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec
   const scan = docScan(view.state.doc)
   const marker = scan.citations.markers.find((m) => m.from === set.mapPos(markerFrom, -1))
   const entry = marker && citationFor(scan.citations, marker.label)
-  if (!entry || useSession.getState().personalization.jumpToCitation === false) {
+  if (!entry || view.state.facet(editorHost).settings().jumpToCitation === false) {
     focusRange(view, marker?.to ?? markerFrom)
     return true
   }
@@ -152,7 +151,7 @@ export function applyCitationAction(
       return
     case 'cite:copy':
       // The raw reference, not the citation's text: pasting it back IS the second reference.
-      void host().ask('clipboard:write', `[^${(marker ?? entry)?.label ?? ''}]`)
+      void view.state.facet(editorHost).clipboard.write(`[^${(marker ?? entry)?.label ?? ''}]`)
       return
     case 'cite:delete': {
       const changes = marker

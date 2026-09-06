@@ -1,5 +1,5 @@
 // The embedded-page tile. A StateField owns the replaces because only static decorations reach CM's height map.
-import { createElement, Fragment, lazy, Suspense, type ReactNode } from 'react'
+import { createElement, Fragment, type ReactNode } from 'react'
 import {
   EditorSelection,
   EditorState,
@@ -29,14 +29,14 @@ import { DEFAULT_ZOOM, zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
 import { loneEmbedTitle } from '../Engine/detect'
 import { claimedEmbeds } from '../Engine/embedRanges'
-import { healTileScrolls, tileWarmSeam } from './tileCache'
+import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
+import { editorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 export interface EmbedHost {
   getConn: () => ConnectionsApi | undefined
   ancestors: readonly string[]
-  self?: () => string | undefined
   saveHeights?: (heights: Record<string, number>) => void
   saveZooms?: (zooms: Record<string, number>) => void
   tabActive?: () => boolean
@@ -75,21 +75,8 @@ interface EmbedTiles {
   unformed: number
 }
 
-const LazyPageTile = lazy(() =>
-  import('../../Tiles/Surfaces/PageTile').then((m) => ({ default: m.PageTile })),
-)
-
 const tileTree = (body: ReactNode, handle: ReactNode): ReactNode =>
-  createElement(
-    Fragment,
-    null,
-    createElement(
-      Suspense,
-      { fallback: null },
-      createElement('div', { className: 'tile-base-body' }, body),
-    ),
-    handle,
-  )
+  createElement(Fragment, null, createElement('div', { className: 'tile-base-body' }, body), handle)
 
 function EmbedResizeHandle({
   view,
@@ -166,17 +153,15 @@ class EmbedTileWidget extends ReactWidget {
     this.render(
       dom,
       tileTree(
-        createElement(LazyPageTile, {
+        view.state.facet(editorHost).renderTile({
+          kind: 'page',
           path: this.path,
           editing: this.editing,
+          locked: !this.interactive,
+          ancestors: this.ancestors,
           onBeginEdit: () => {
             if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
           },
-          connections: host.getConn(),
-          locked: !this.interactive,
-          ancestors: this.ancestors,
-          chrome: 'page',
-          warm: tileWarmSeam([...this.ancestors, this.path]),
         }),
         this.interactive && host.saveHeights
           ? createElement(EmbedResizeHandle, { view, span: dom, targetId: this.targetId })
@@ -257,10 +242,6 @@ function observersFor(view: EditorView): WebObservers {
   return o
 }
 
-const LazyWebTile = lazy(() =>
-  import('../../Tiles/Surfaces/WebTile').then((m) => ({ default: m.WebTile })),
-)
-
 class WebpageTileWidget extends ReactWidget {
   constructor(
     readonly url: string,
@@ -297,7 +278,8 @@ class WebpageTileWidget extends ReactWidget {
     this.render(
       dom,
       tileTree(
-        createElement(LazyWebTile, {
+        view.state.facet(editorHost).renderTile({
+          kind: 'webpage',
           url: this.url,
           label: this.label,
           visible: this.pageSurface && dom._visible === true,
@@ -727,8 +709,6 @@ export function embedExclusions(state: EditorState): Set<string> {
   // Page ranges only: a webpage label collides with real titles by construction, and would delete that page from the pool.
   for (const t of embedTileRanges(state)) if (t.kind === 'page') out.add(normalizeTitle(t.title))
   for (const a of host.ancestors) out.add(normalizeTitle(titleFromPath(a)))
-  const self = host.self?.()
-  if (self) out.add(normalizeTitle(self))
   return out
 }
 

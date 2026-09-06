@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
+import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -33,6 +34,7 @@ async function mount(cites: string): Promise<void> {
   await act(async () =>
     root.render(
       createElement(MarkdownTable, {
+        host: testHost(),
         model,
         cites,
         onCellCommit: noop,
@@ -75,6 +77,7 @@ describe('a resting cell draws a marker as the number the document gives it', ()
     await act(async () =>
       root.render(
         createElement(MarkdownTable, {
+          host: testHost(),
           model,
           cites: 'NOTE=3',
           onCellCommit: noop,
@@ -166,6 +169,7 @@ describe('an entered cell follows the numbering too', () => {
     await act(async () =>
       root.render(
         createElement(MarkdownTable, {
+          host: testHost(),
           model,
           cites: 'NOTE=3',
           onCellCommit: noop,

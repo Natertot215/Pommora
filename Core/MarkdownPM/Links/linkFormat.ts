@@ -3,10 +3,10 @@ import type { ConnUrlAction } from '@pommora/core/Actions/connMenu'
 import { unescapeAlias } from '@pommora/core/Connections/links'
 import { linkPaste } from '@pommora/core/Web/pasteLink'
 import type { LinkDisplay } from '@pommora/core/Properties/properties'
-import { useSession } from '../../Session/store'
 import { linkTarget, tokenize, type Token } from '../Engine/tokens'
-import { focusRange } from '../Editor/caretPlacement'
+import { focusRange } from '../caretPlacement'
 import { awaitTitle } from './pendingTitle'
+import { type EditorHost, editorHost } from '../api'
 
 export interface LinkActionText {
   insert: string
@@ -24,6 +24,7 @@ export function linkActionText(
   text: string,
   tk: Token,
   action: ConnUrlAction,
+  titles: EditorHost['linkTitles'],
 ): LinkActionText | null {
   const url = linkTarget(text, tk)
   const label = text.slice(tk.contentRange[0], tk.contentRange[1])
@@ -37,16 +38,20 @@ export function linkActionText(
       return { insert: '', url, wantsTitle: false }
     // Spelled out rather than sliced off the id, which would put a second, weaker definition of a link form here.
     case 'format:link-full':
-      return formatted(url, 'link-full')
+      return formatted(url, 'link-full', titles)
     case 'format:link-short':
-      return formatted(url, 'link-short')
+      return formatted(url, 'link-short', titles)
     case 'format:link-title':
-      return formatted(url, 'link-title')
+      return formatted(url, 'link-title', titles)
   }
 }
 
-function formatted(url: string, display: LinkDisplay): LinkActionText {
-  const { text, wantsTitle } = linkPaste(url, display, useSession.getState().linkTitles[url])
+function formatted(
+  url: string,
+  display: LinkDisplay,
+  titles: EditorHost['linkTitles'],
+): LinkActionText {
+  const { text, wantsTitle } = linkPaste(url, display, titles.get(url) ?? undefined)
   return { insert: text, url, wantsTitle }
 }
 
@@ -72,7 +77,8 @@ export function applyUrlLinkAction(
     return
   }
 
-  const edit = linkActionText(line.text, tk, action)
+  const titles = view.state.facet(editorHost).linkTitles
+  const edit = linkActionText(line.text, tk, action, titles)
   if (!edit) return
   const span = { from: at(tk.range[0]), to: at(tk.range[1]) }
   const to = span.from + edit.insert.length
@@ -86,5 +92,5 @@ export function applyUrlLinkAction(
       ? awaitTitle.of({ from: span.from, to, url: edit.url, text: edit.insert })
       : undefined,
   })
-  if (edit.wantsTitle) useSession.getState().resolveLinkTitle(edit.url)
+  if (edit.wantsTitle) titles.resolve(edit.url)
 }

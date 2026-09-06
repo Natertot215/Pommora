@@ -1,7 +1,7 @@
 // Only the native caret is hidden, not the selection — unlike drawSelection's all-or-nothing takeover.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
-import { embedTileRanges } from '../Embeds/embedWidget'
+import { embedTileRanges } from './Embeds/embedWidget'
 
 // A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box itself — so draw where the seat's insertion will land.
 function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null {

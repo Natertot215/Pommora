@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
-import { sectionEnd, type OutlineHeading } from '../Engine/headingScan'
+import { sectionEnd, type OutlineHeading } from '../../MarkdownPM/Engine/headingScan'
 import { moveHeadingSection } from '../../Pages/pageEditor'
 
 // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { Icon } from '@pommora/uix/Symbols'
-import { closeGlance, insideGlance } from '../../Interface/Glance/glanceAction'
 import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from '@pommora/core/Actions/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -15,6 +14,7 @@ import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engin
 import { foldLabel } from '../Engine/detect'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
+import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 function alignClass(align: Align): string {
@@ -89,6 +89,7 @@ function slotAt(axis: Axis, geom: Geom, rel: number): number {
 }
 
 export function MarkdownTable({
+  host,
   model,
   cites,
   headingColumn = false,
@@ -110,6 +111,7 @@ export function MarkdownTable({
   connections,
   readOnly,
 }: {
+  host: EditorHost
   model: TableModel
   cites?: string
   headingColumn?: boolean
@@ -464,6 +466,7 @@ export function MarkdownTable({
     if (active?.row === row && active.col === col) {
       return (
         <CellEditor
+          host={host}
           initial={display}
           connections={connections}
           ordinalOf={ordinalOf}
@@ -488,6 +491,7 @@ export function MarkdownTable({
     }
     return (
       <StaticCell
+        host={host}
         text={display}
         cites={cites}
         ordinalOf={ordinalOf}
@@ -495,7 +499,7 @@ export function MarkdownTable({
         readOnly={readOnly}
         onCite={onCite}
         onActivate={(coords, sweep) => {
-          closeGlance()
+          host.glance?.close()
           caretCoords.current = coords
           initialSelect.current = null
           sweepFrom.current = sweep ?? null
@@ -507,7 +511,7 @@ export function MarkdownTable({
           onSettled?.()
         }}
         onSelect={(range) => {
-          closeGlance()
+          host.glance?.close()
           caretCoords.current = null
           initialSelect.current = range
           sweepFrom.current = null
@@ -544,7 +548,7 @@ export function MarkdownTable({
       ref={wrapRef}
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
       onContextMenuCapture={(e) => {
-        if (!insideGlance(e.currentTarget)) closeGlance()
+        if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
       }}
       onMouseOver={trackHover}
       onMouseLeave={() => {

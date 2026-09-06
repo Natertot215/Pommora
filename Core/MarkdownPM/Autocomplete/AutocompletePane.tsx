@@ -7,58 +7,45 @@ import { MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Labels/HoverRemove'
 import { useKeepInView } from './useKeepInView'
-import { NavTrail, NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
-import { ancestryOf } from '../../Session/treeIndex'
-import { useSession } from '../../Session/store'
-import type { AcRow, ConnectionForm } from './autocomplete'
+import type { AcRow } from './autocomplete'
+import type { AcState } from './useConnectionAutocomplete'
 
 interface Props {
-  open: boolean
+  ac: AcState | null
   candidates: AcRow[]
   index: number
-  form: ConnectionForm
-  caretX: number
-  caretTop: number
-  caretBottom: number
-  bounds?: { left: number; right: number }
-  query: string
   onPick: (row: AcRow) => void
 }
 
-export function AutocompletePane({
-  open,
-  candidates,
-  index,
-  form,
-  caretX,
-  caretTop,
-  caretBottom,
-  bounds,
-  query,
-  onPick,
-}: Props): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const live = open && candidates.length > 0
-  const last = useRef({ candidates, index, form, caretX, caretTop, caretBottom, bounds, query })
-  if (live) last.current = { candidates, index, form, caretX, caretTop, caretBottom, bounds, query }
+const CLOSED: AcState = {
+  query: '',
+  from: 0,
+  to: 0,
+  form: 'link',
+  caretX: 0,
+  caretTop: 0,
+  caretBottom: 0,
+  bounds: { left: 0, right: 0 },
+}
+
+export function AutocompletePane({ ac, candidates, index, onPick }: Props): React.JSX.Element {
+  const live = ac !== null && candidates.length > 0
+  // The last live geometry stays through the closing animation.
+  const last = useRef({ ac: CLOSED, candidates, index })
+  if (live) last.current = { ac, candidates, index }
 
   const v = last.current
-  const matchLen = v.query.length
+  const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
   const cameFrom = useRef<AcRow[]>([])
-  if (live && v.form !== 'alias') cameFrom.current = v.candidates
+  if (live && v.ac.form !== 'alias') cameFrom.current = v.candidates
   useEffect(() => {
-    if (!open) cameFrom.current = []
-  }, [open])
-  const sliding = v.form === 'alias' && cameFrom.current.length > 0
-
-  const locationOf = (row: AcRow): TrailSegment[] => {
-    if (!tree || !row.isPage || !row.pageId) return NO_TRAIL
-    const chain = ancestryOf(tree, { kind: 'page', id: row.pageId })
-    return chain ? chain.slice(0, -1).map((n) => ({ title: n.title })) : NO_TRAIL
-  }
+    if (ac === null) cameFrom.current = []
+  }, [ac])
+  const sliding = v.ac.form === 'alias' && cameFrom.current.length > 0
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-ac-slot">
@@ -70,7 +57,7 @@ export function AutocompletePane({
           selected={active && i === v.index}
           subLabel={
             <NavTrail
-              segments={locationOf(row)}
+              segments={row.location}
               overScroll={false}
               iconSize="footnote"
               className={text.subline.standard}
@@ -113,10 +100,10 @@ export function AutocompletePane({
     <PickerMenu
       glass="window"
       open={live}
-      anchorX={v.caretX}
-      anchorY={v.caretTop}
-      anchorHeight={v.caretBottom - v.caretTop}
-      bounds={v.bounds}
+      anchorX={v.ac.caretX}
+      anchorY={v.ac.caretTop}
+      anchorHeight={v.ac.caretBottom - v.ac.caretTop}
+      bounds={v.ac.bounds}
       origin="center"
       manageFocus={false}
       contentClassName="mdpm-ac"

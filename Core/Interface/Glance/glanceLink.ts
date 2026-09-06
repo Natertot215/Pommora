@@ -1,5 +1,4 @@
-import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import type { GlanceTarget } from '../../MarkdownPM/api'
 import { armGlance } from './glanceAction'
 
-export const glanceLink: NonNullable<ConnectionsApi['glance']> = (target, el) =>
-  armGlance(target, el, 'link')
+export const glanceLink = (target: GlanceTarget, el: Element): void => armGlance(target, el, 'link')

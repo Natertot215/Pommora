@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { autocompleteQuery, commitEdit, connectionInsert } from './autocomplete'
+import { autocompleteQuery as queryOf, commitEdit, connectionInsert } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
+import { scanOf } from '../Engine/docScan'
+
+const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false) =>
+  queryOf(scanOf(doc), caret, allowEmbeds)
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 
@@ -16,6 +20,14 @@ describe('autocompleteQuery', () => {
   })
   it('suppresses image embeds ![[…]]', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
+  })
+  it('never opens inside a fenced block, however plain the line reads', () => {
+    const doc = 'intro\n```\nsee [[Pro]] end\n```\nafter'
+    expect(autocompleteQuery(doc, doc.indexOf('Pro') + 2)).toBeNull()
+  })
+  it('never opens inside inline code', () => {
+    const doc = 'see `[[Pro]]` end'
+    expect(autocompleteQuery(doc, doc.indexOf('Pro') + 2)).toBeNull()
   })
   it('opens the alias form from inside an alias, spanning only the alias', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
@@ -163,7 +175,12 @@ describe('a label the picker writes is markdown, not plain text', () => {
   it('escapes a bracket-bearing title into the label slot', () => {
     const doc = 'see []() end'
     const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    const edit = commitEdit(ac, { value: 'Notes [WIP]', label: 'Notes [WIP]', isPage: true })
+    const edit = commitEdit(ac, {
+      value: 'Notes [WIP]',
+      label: 'Notes [WIP]',
+      isPage: true,
+      location: [],
+    })
     const written = edit.changes.reduceRight(
       (t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to),
       doc,
@@ -175,8 +192,8 @@ describe('a label the picker writes is markdown, not plain text', () => {
 })
 
 describe('what accepting a suggestion finishes', () => {
-  const page = { value: 'Alpha', label: 'Alpha', isPage: true, pageId: 'p1' }
-  const alias = { value: 'the plan', label: 'the plan', isPage: false }
+  const page = { value: 'Alpha', label: 'Alpha', isPage: true, pageId: 'p1', location: [] }
+  const alias = { value: 'the plan', label: 'the plan', isPage: false, location: [] }
 
   it('accepting an alias steps past the whole link, not just the alias', () => {
     const doc = 'a [[Alpha|th]] b'

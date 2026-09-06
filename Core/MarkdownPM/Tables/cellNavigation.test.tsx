@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
+import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
 // jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough — the
@@ -30,6 +31,7 @@ const model: TableModel = {
 
 const noop = (): void => {}
 const props = {
+  host: testHost(),
   model,
   onCellCommit: noop,
   onExit: noop,

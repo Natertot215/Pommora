@@ -1,11 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { docString } from './docCache'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
+import { EDITOR_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
 import { markdownDecorations } from './decorations'
-import { markdownInput } from './Editor/input'
+import { markdownInput } from './Input/markdownInput'
 import {
   tableWidgetExtension,
   applySavedHeadingCols,
@@ -32,10 +33,10 @@ import {
   setEmbedZooms,
 } from './Embeds/embedWidget'
 import { embeddable } from './Engine/embedRanges'
-import { customCaret } from './Editor/caret'
-import { customSelection } from './Editor/selection'
+import { customCaret } from './caret'
+import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
-import { registerScrollHeal } from './Embeds/tileCache'
+import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutAtomic } from './Guards/calloutAtomic'
 import { calloutGuard } from './Guards/calloutGuard'
 import { citationGuard } from './Guards/citationGuard'
@@ -53,14 +54,8 @@ import {
   applyCitationsVisibility,
   type FoldsApi,
 } from './folding'
-import {
-  applyEditorAction,
-  claimEditorMenu,
-  ownsEditorMenu,
-  releaseEditorMenu,
-  type EditorMenuApi,
-} from './Menus/menu'
-import { formatKeymap } from './Editor/formatKeymap'
+import { applyEditorAction, claimEditorMenu, ownsEditorMenu, releaseEditorMenu } from './Menus/menu'
+import { formatKeymap } from './Input/formatKeymap'
 import { embedSeatAt } from './Embeds/embedInsert'
 import { readFormatState } from './Input/formatState'
 import type { FormatState } from '@pommora/core/Actions/editorMenu'
@@ -71,51 +66,30 @@ import {
   whenAcOpen,
 } from './Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
-import { citationsVisible, useSession } from '../Session/store'
 import type { ConnectionsApi } from './Links/connectionsApi'
-import { PageHeader } from '../Pages/PageHeader'
 import type { WarmSeam } from './warmSeam'
-import { host as dialer } from '../Platform/dialer'
+import { type EditorHost, editorHost } from './api'
 import './markdown-pm.css'
 
 export const EDITOR_BASE_PT = 15
-export const ZOOM_DEFAULT = 1
-export const ZOOM_MIN = 0
-export const ZOOM_MAX = 2
 
-export function clampZoom(z: number): number {
-  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z))
-}
-
-export function zoomMultiplier(z: number): number {
-  return 2 ** (clampZoom(z) - 1)
-}
-
-export function zoomFontSize(z: number): number {
-  return EDITOR_BASE_PT * zoomMultiplier(z)
+export function zoomFontSize(scale: number): number {
+  return EDITOR_BASE_PT * coerceScale(scale, EDITOR_SCALE_DEFAULT)
 }
 
 interface Props {
   initialBody: string
   onChange: (body: string) => void
-  title?: string
-  // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
-  onRename?: (newName: string) => void | Promise<boolean>
-  path?: string
-  cover?: string
-  onEditIcon?: () => void
-  icon?: string
-  iconHidden?: boolean
-  onToggleIcon?: () => void
-  zoom?: number
+  host: EditorHost
+  /** Rendered above the body inside the shell; its height becomes the scroll-parked `--header-zone`. */
+  header?: ReactNode
+  scale?: number
   connections?: ConnectionsApi
   embedAncestors?: readonly string[]
   embedHeights?: EmbedHeightsApi
   embedZooms?: EmbedHeightsApi
   folds?: FoldsApi
-  pageId?: string
   tableHeadingColumns?: TableHeadingColsApi
-  menu?: EditorMenuApi
   autoFocus?: boolean
   readOnly?: boolean
   edgeFade?: boolean
@@ -127,23 +101,15 @@ interface Props {
 export function MarkdownEditor({
   initialBody,
   onChange,
-  title,
-  onRename,
-  path,
-  cover,
-  onEditIcon,
-  icon,
-  iconHidden,
-  onToggleIcon,
-  zoom = ZOOM_DEFAULT,
+  host,
+  header,
+  scale = EDITOR_SCALE_DEFAULT,
   connections,
   embedAncestors,
   embedHeights,
   embedZooms,
   folds,
-  pageId,
   tableHeadingColumns,
-  menu,
   autoFocus = false,
   readOnly = false,
   edgeFade = false,
@@ -153,18 +119,17 @@ export function MarkdownEditor({
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const lastReadOnly = useRef(readOnly)
-  const host = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const hostRef = useRef(host)
+  hostRef.current = host
   const connectionsRef = useRef(connections)
   connectionsRef.current = connections
   const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
   embedAncestorsRef.current = embedAncestors ?? []
-  const pageTitleRef = useRef(title)
-  pageTitleRef.current = title
   const embedHeightsRef = useRef(embedHeights)
   embedHeightsRef.current = embedHeights
   const embedZoomsRef = useRef(embedZooms)
@@ -175,8 +140,6 @@ export function MarkdownEditor({
   tableHeadingColsRef.current = tableHeadingColumns
   const activeRef = useRef(active)
   activeRef.current = active
-  const menuRef = useRef(menu)
-  menuRef.current = menu
   const registerRef = useRef(register)
   registerRef.current = register
   const lastFormatRef = useRef<FormatState | null>(null)
@@ -186,7 +149,7 @@ export function MarkdownEditor({
     if (connections) viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
   }, [connections])
 
-  const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
+  const cbLineCount = host.settings().codeblockLineCount
   useEffect(() => {
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
@@ -196,11 +159,9 @@ export function MarkdownEditor({
     if (view) rerenderWebTiles(view)
   }, [active])
 
-  const citesShown = useSession((s) => citationsVisible(s, pageId))
+  const citesShown = host.citations.shown()
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
-  const pageIdRef = useRef(pageId)
-  pageIdRef.current = pageId
   // The first change this effect carries is the nexus-wide seed settling in, not a user toggle.
   const followed = useRef(false)
   useEffect(() => {
@@ -212,10 +173,11 @@ export function MarkdownEditor({
 
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
+    host,
     (q) => {
       const conn = connectionsRef.current
       if (!conn) return []
-      if (q.form === 'alias') return aliasRows(conn, q.title, q.query)
+      if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
       const embed = q.form === 'embed'
       let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
       if (embed) {
@@ -228,9 +190,10 @@ export function MarkdownEditor({
   )
 
   useEffect(() => {
-    const parent = host.current
+    const parent = editorRef.current
     if (!parent) return
     const extensions = [
+      editorHost.of(hostRef.current),
       // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
       EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
@@ -266,7 +229,6 @@ export function MarkdownEditor({
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
-        self: () => pageTitleRef.current,
         saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
         saveZooms: embedZoomsRef.current ? (z) => embedZoomsRef.current?.save(z) : undefined,
         tabActive: () => activeRef.current,
@@ -275,8 +237,7 @@ export function MarkdownEditor({
       listRenumberOnDelete,
       blockHandles,
       blockGripHover((line) =>
-        dialer().tell(
-          'editor:grip-hot',
+        hostRef.current.menus.gripHot(
           !!line && HOT_MENU_LINES.some((c) => line.classList.contains(c)),
         ),
       ),
@@ -292,10 +253,7 @@ export function MarkdownEditor({
       connectionClicks(() => connectionsRef.current),
       citationHost.of({
         shown: () => citesShownRef.current,
-        reveal: () => {
-          const id = pageIdRef.current
-          if (id) useSession.getState().setCitationsVisible(id, true)
-        },
+        reveal: () => hostRef.current.citations.set(true),
       }),
       citationOrder,
       citationPointer(() => connectionsRef.current),
@@ -316,8 +274,8 @@ export function MarkdownEditor({
       markdownFolding(
         (keys) => foldsRef.current?.save(keys),
         () => {
-          const id = pageIdRef.current
-          if (id) useSession.getState().toggleCitations(id)
+          const { citations } = hostRef.current
+          citations.set(!citations.shown())
         },
       ),
       EditorView.updateListener.of((u) => {
@@ -341,7 +299,7 @@ export function MarkdownEditor({
             !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])
           if (changed) {
             lastFormatRef.current = fs
-            menuRef.current?.pushState(fs)
+            hostRef.current.menus.format?.pushState(fs)
           }
         }
 
@@ -409,7 +367,7 @@ export function MarkdownEditor({
       })
     else requestAnimationFrame(restoreScroll)
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
-    const unsubMenu = menuRef.current?.onAction((action) => {
+    const unsubMenu = hostRef.current.menus.format?.onAction((action) => {
       if (ownsEditorMenu(view)) applyEditorAction(view, action)
     })
     return () => {
@@ -445,10 +403,11 @@ export function MarkdownEditor({
   }, [readOnly, autoFocus])
 
   useEffect(() => {
-    const header = titleRef.current
     const shell = shellRef.current
-    if (!header || !shell) return
-    const apply = (): void => shell.style.setProperty('--header-zone', `${header.offsetHeight}px`)
+    const header = shell?.firstElementChild
+    if (!shell || !header || header === editorRef.current) return
+    const apply = (): void =>
+      shell.style.setProperty('--header-zone', `${(header as HTMLElement).offsetHeight}px`)
     apply()
     const ro = new ResizeObserver(apply)
     ro.observe(header)
@@ -459,30 +418,11 @@ export function MarkdownEditor({
     <div
       ref={shellRef}
       className="mdpm-shell"
-      style={{ '--editor-font-size': `${zoomFontSize(zoom)}px` } as React.CSSProperties}
+      style={{ '--editor-font-size': `${zoomFontSize(scale)}px` } as React.CSSProperties}
     >
-      {title !== undefined && path !== undefined && (
-        <PageHeader
-          ref={titleRef}
-          page={{ path, title, cover, icon, iconHidden }}
-          onRename={onRename ?? ((): void => {})}
-          onToggleIcon={onToggleIcon}
-          onEditIcon={onEditIcon ?? ((): void => {})}
-        />
-      )}
-      <div ref={host} className="mdpm-editor" />
-      <AutocompletePane
-        open={ac !== null}
-        candidates={candidates}
-        index={acIndex}
-        form={ac?.form ?? 'link'}
-        caretX={ac?.caretX ?? 0}
-        caretTop={ac?.caretTop ?? 0}
-        caretBottom={ac?.caretBottom ?? 0}
-        bounds={ac?.bounds}
-        query={ac?.query ?? ''}
-        onPick={commit}
-      />
+      {header}
+      <div ref={editorRef} className="mdpm-editor" />
+      <AutocompletePane ac={ac} candidates={candidates} index={acIndex} onPick={commit} />
     </div>
   )
 }

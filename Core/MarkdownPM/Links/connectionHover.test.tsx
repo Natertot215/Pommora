@@ -3,12 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
-import { glanceLink } from '../../Interface/Glance/glanceLink'
-import { GLANCE_DWELL, cancelGlance, setGlancePresenter } from '../../Interface/Glance/glanceAction'
+import type { EditorHost } from '../api'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
-
-const PAST_DWELL = GLANCE_DWELL.link + 50
-const MID_DWELL = Math.floor(GLANCE_DWELL.link / 2)
 
 class ResizeObserverStub {
   observe(): void {}
@@ -18,28 +14,31 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 stubEditorBridge()
-const present = vi.fn()
+const arm = vi.fn()
+const cancel = vi.fn()
+const glance: NonNullable<EditorHost['glance']> = {
+  arm,
+  cancel,
+  close: () => {},
+  contains: (el) => el.closest('[data-glance]') !== null,
+}
 beforeEach(() => {
-  vi.useFakeTimers()
-  present.mockClear()
-  setGlancePresenter(present)
+  arm.mockClear()
+  cancel.mockClear()
 })
 afterEach(async () => {
-  cancelGlance()
-  setGlancePresenter(null)
-  vi.useRealTimers()
   await cleanupEditor()
 })
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
-  glance: glanceLink,
 }
+const TARGET = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' }
 
 // jsdom draws no layout, so posAtCoords can't hit-test — the pin has to be inside the displayed title's content span, since the edges beside the syntax are left to caret placement.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
-  const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
+  const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn, host: { glance } })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
   const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
   expect(span).toBeTruthy()
@@ -51,43 +50,32 @@ const over = (span: HTMLElement): void => {
 }
 
 describe('the connection dwell', () => {
-  it('fires exactly once after the delay with the link element in hand', async () => {
+  it('arms the host with the page and the link element in hand', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(MID_DWELL)
-    expect(present).not.toHaveBeenCalled()
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).toHaveBeenCalledTimes(1)
-    expect(present).toHaveBeenCalledWith({
-      target: { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
-      el: span,
-    })
+    expect(arm).toHaveBeenCalledTimes(1)
+    expect(arm).toHaveBeenCalledWith(TARGET, span)
   })
 
-  it('a click inside the window consumes it — nothing fires afterward', async () => {
+  it('a click consumes it — the host is told to stand down', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).not.toHaveBeenCalled()
+    expect(cancel).toHaveBeenCalled()
   })
 
-  it('a context-menu inside the window consumes it the same way', async () => {
+  it('a context-menu consumes it the same way', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).not.toHaveBeenCalled()
+    expect(cancel).toHaveBeenCalled()
   })
 
   it('re-entry over a link that was just acted on does not re-arm', async () => {
     const { span } = await mountLink()
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     over(span)
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).not.toHaveBeenCalled()
+    expect(arm).not.toHaveBeenCalled()
   })
 
   it('leaving the link clears that, so a later dwell works', async () => {
@@ -95,30 +83,28 @@ describe('the connection dwell', () => {
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
     over(span)
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).toHaveBeenCalledTimes(1)
+    expect(arm).toHaveBeenCalledTimes(1)
   })
 
   it('mouseout cancels; re-entry re-arms fresh', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).not.toHaveBeenCalled()
+    expect(cancel).toHaveBeenCalled()
     over(span)
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).toHaveBeenCalledTimes(1)
+    expect(arm).toHaveBeenCalledTimes(2)
   })
 
-  it('a body without the hook arms nothing — the glance never glances itself', async () => {
-    const { glance: _omitted, ...bare } = conn
-    const view = await mountEditor({ initialBody: '[[Alpha]]', connections: bare })
+  it('a host without a glance arms nothing', async () => {
+    const view = await mountEditor({
+      initialBody: '[[Alpha]]',
+      connections: conn,
+      host: { glance: false },
+    })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
     const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
     over(span)
-    vi.advanceTimersByTime(PAST_DWELL)
-    expect(present).not.toHaveBeenCalled()
+    expect(arm).not.toHaveBeenCalled()
   })
 })
 
@@ -133,6 +119,7 @@ describe('inside a glance', () => {
     const view = await mountEditor({
       initialBody: '[[Alpha]] and [site](https://example.com)',
       connections: { ...conn, open },
+      host: { glance },
     })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
     const page = view.dom.querySelector('.md-connection-resolved') as HTMLElement

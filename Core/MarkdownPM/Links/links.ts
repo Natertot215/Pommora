@@ -2,12 +2,12 @@ import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { hasWebScheme, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { linkTarget, tokenize } from '../Engine/tokens'
-import { insideGlance } from '../../Interface/Glance/glanceAction'
 import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from './connectionsApi'
 import { openWebLink } from '../../Platform/openWebLink'
 import { MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
+import { type EditorHost, editorHost } from '../api'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -49,8 +49,9 @@ export function followTarget(
   api: ConnectionsApi | undefined,
   bypass: boolean,
   el: Element,
+  glance: EditorHost['glance'],
 ): (() => void) | null {
-  if (target.kind === 'invalid' || insideGlance(el)) return null
+  if (target.kind === 'invalid' || glance?.contains(el)) return null
   if (target.kind === 'page') {
     if (!api) return null
     const page = target.page
@@ -63,17 +64,16 @@ export function followTarget(
 export function dwellTarget(
   target: MdTarget,
   url: string,
-  api: ConnectionsApi | undefined,
+  glance: NonNullable<EditorHost['glance']>,
   el: Element,
 ): (() => void) | null {
-  const glance = api?.glance
-  if (!glance || target.kind === 'invalid') return null
+  if (target.kind === 'invalid') return null
   if (target.kind === 'page') {
     const { id, path } = target.page
-    return () => glance({ kind: 'page', id, path }, el)
+    return () => glance.arm({ kind: 'page', id, path }, el)
   }
   const web = normalizeLinkUrl(url)
-  return hasWebScheme(web) ? () => glance({ kind: 'site', url: web }, el) : null
+  return hasWebScheme(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
 }
 
 // A link naming a page raises the same glance, which the connection handler can't do: its hit-test reads wikiLink tokens and this is a `link`.
@@ -81,13 +81,19 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
     hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
-    armable: () => getApi()?.glance !== undefined,
     hitAt: (view, event) => linkUnder(view, getApi, event),
-    follow: (hit, _view, event) =>
+    follow: (hit, view, event) =>
       hit.onText
-        ? followTarget(hit.target, hit.url, getApi(), event.metaKey, event.target as Element)
+        ? followTarget(
+            hit.target,
+            hit.url,
+            getApi(),
+            event.metaKey,
+            event.target as Element,
+            view.state.facet(editorHost).glance,
+          )
         : null,
-    dwell: (hit, el) => (hit.onText ? dwellTarget(hit.target, hit.url, getApi(), el) : null),
+    dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, hit.url, glance, el) : null),
     menu: (hit, view) => {
       const menu = getApi()?.menu
       if (!menu || !hit.onText || hit.target.kind === 'invalid') return null

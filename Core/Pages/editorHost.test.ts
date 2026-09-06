@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { cachePageDetail } from '../../Session/pageDetailCache'
-import { tileWarmSeam } from './tileCache'
+import { cachePageDetail } from '../Session/pageDetailCache'
+import { tileWarmSeam } from './editorHost'
 
 const detail = (path: string, body: string) => ({
   id: path,

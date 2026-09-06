@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { embedInsertAfter } from './embedInsert'
 import { autocompleteQuery } from '../Autocomplete/autocomplete'
+import { scanOf } from '../Engine/docScan'
 
 describe('embedInsertAfter', () => {
   it('fences below a block with content following', () => {
@@ -59,7 +60,7 @@ describe('embedInsertAfter', () => {
     const c = embedInsertAfter(doc, 4, '![[]]')
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
     expect(next).toBe('para\n\n![[]]\n\nnext')
-    const q = autocompleteQuery(next, c.caret - 2, true)
+    const q = autocompleteQuery(scanOf(next), c.caret - 2, true)
     expect(q).toMatchObject({ form: 'embed', query: '' })
     expect(next.slice(q?.from, q?.to)).toBe('![[]]')
   })

@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
+import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -39,6 +40,7 @@ async function mount(): Promise<void> {
   await act(async () =>
     root.render(
       createElement(MarkdownTable, {
+        host: testHost(),
         model,
         onCellCommit: noop,
         onExit: noop,
