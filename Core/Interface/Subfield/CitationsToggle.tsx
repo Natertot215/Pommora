@@ -2,7 +2,7 @@ import { citationsLabel } from '@pommora/core/Actions/toggleLabels'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { onActivateClick } from '@pommora/uix/Interactions/activate'
 import { citationsVisible, useSession } from '../../Session/store'
-import { pageStats } from '../../MarkdownPM/subfieldStats'
+import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'
 import type { SubfieldPage } from './subfieldItems'
 
 export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.JSX.Element | null {

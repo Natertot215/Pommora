@@ -15,7 +15,7 @@ import {
   type ConnectionsApi,
   type ConnPage,
   type PageIndex,
-} from '../MarkdownPM/Connections'
+} from '../MarkdownPM/Links/connectionsApi'
 import { navKey } from '../Navigation/navRecents'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'

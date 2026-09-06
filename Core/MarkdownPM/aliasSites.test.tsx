@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi, type ConnPage } from './Connections'
+import { buildPageIndex, type ConnectionsApi, type ConnPage } from './Links/connectionsApi'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
 

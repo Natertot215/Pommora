@@ -1,8 +1,8 @@
 import { Annotation } from '@codemirror/state'
-import type { DocScan } from '../Decorations/intent'
-import { modelFromRegion } from './regions'
-import { cellToSource, serialize } from './codec'
-import type { TableModel } from './model'
+import type { DocScan } from '../Engine/docScan'
+import { modelFromRegion } from '../Engine/Tables/regions'
+import { cellToSource, serialize } from '../Engine/Tables/codec'
+import type { TableModel } from '../Engine/Tables/model'
 
 // Marks a transaction as the table widget editing its own source. The widget StateField remaps its
 // decorations (keeping the widget + its focused cell editor mounted) instead of rebuilding from the doc;

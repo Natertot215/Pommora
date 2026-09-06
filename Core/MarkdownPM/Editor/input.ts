@@ -14,17 +14,15 @@ import {
   shiftEnterEdit,
   indentListOnTab,
   outdentListOnShiftTab,
-  lineStartAt,
-  lineEndAt,
   type Edit,
-} from '../Input'
-import { aliasSpanAt } from '@pommora/core/Connections/connections'
-import { commitAliasOnEnter } from './linkEdit'
-import { embedTileRanges } from './embedWidget'
-import type { DocScan } from '../Decorations/intent'
-import { commitCitation, seedTypedCitation } from './citationActions'
-import { citationDeleteIntent } from './citationEdits'
-import { docScan, docString } from './docCache'
+} from '../Input/edits'
+import { refusedInAlias } from '../Guards/aliasGuard'
+import { commitAliasOnEnter } from '../Links/linkEdit'
+import { embedTileRanges } from '../Embeds/embedWidget'
+import type { DocScan } from '../Engine/docScan'
+import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
+import { citationDeleteIntent } from '../Citations/citationEdits'
+import { docScan, docString } from '../docCache'
 
 function apply(view: EditorView, edit: Edit | null): boolean {
   if (!edit) return false
@@ -105,14 +103,6 @@ const onShiftTab = (view: EditorView): boolean => {
   const s = view.state.selection.main
   apply(view, outdentListOnShiftTab(docString(view.state.doc), s.from, s.to))
   return true
-}
-
-/** `]` would truncate the link the caret is sitting in — the same treatment `|` gets in a title. Exported
- *  because the page editor and a table cell run different input handlers, and the guard belongs to the alias. */
-export function refusedInAlias(doc: string, at: number, text: string): boolean {
-  if (text !== ']') return false
-  const ls = lineStartAt(doc, at)
-  return aliasSpanAt(doc.slice(ls, lineEndAt(doc, at)), at - ls) !== null
 }
 
 // Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.

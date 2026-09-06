@@ -1,20 +1,20 @@
 import { Fragment, memo, useRef } from 'react'
-import { linkTarget, tokenize, type Token } from '../Tokens'
-import { MD_LINK_CLASS } from '../Editor/decorations'
-import { CONTENT_CLASS } from '../Decorations/intent'
+import { linkTarget, tokenize, type Token } from '../Engine/tokens'
+import { MD_LINK_CLASS } from '../decorations'
+import { CONTENT_CLASS } from '../Engine/docScan'
 import {
   resolveMdTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
   type MdTarget,
-} from '../Connections'
+} from '../Links/connectionsApi'
 import { titleOf } from '@pommora/core/Connections/connections'
-import { linkActionText, linkHalves } from '../Editor/linkFormat'
-import { wikiAuthorTarget } from '../Editor/linkEdit'
+import { linkActionText, linkHalves } from '../Links/linkFormat'
+import { wikiAuthorTarget } from '../Links/linkEdit'
 import { cancelGlance, closeGlance, insideGlance } from '../../Interface/Glance/glanceAction'
-import { dwellTarget, followTarget } from '../Editor/links'
+import { dwellTarget, followTarget } from '../Links/links'
 import { useSession } from '../../Session/store'
-import { CITE_GLYPH } from '../Editor/citationPointer'
+import { CITE_GLYPH } from '../Citations/citationPointer'
 
 // A cell's resting render WITHOUT a CodeMirror instance — only the focused cell mounts a real editor.
 export function renderCellContent(

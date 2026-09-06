@@ -4,7 +4,7 @@ import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { bumpBodyEpoch, cachePageDetail, clearCache } from '../../Session/pageDetailCache'
 
-vi.mock('../../MarkdownPM', () => ({
+vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
   MarkdownEditor: (p: { initialBody: string }) => {
     const [body] = useState(p.initialBody)
     return createElement('div', { className: 'stub-editor' }, body)

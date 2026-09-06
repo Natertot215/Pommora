@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { zoomFontSize, zoomMultiplier, clampZoom, EDITOR_BASE_PT } from './zoom'
+import { zoomFontSize, zoomMultiplier, clampZoom, EDITOR_BASE_PT } from './MarkdownEditor'
 
 describe('editor zoom mapping (2^(z-1))', () => {
   it('1.0 is the 15pt base (1×)', () => {
