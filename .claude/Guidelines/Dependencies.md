@@ -1,6 +1,6 @@
 ## Dependencies — Catalog + Distribution
 
-The vetted library menu and what shipping a real build takes. Each library is tagged **Decided** (in `package.json` today), **Candidate** (named, not yet installed), or **Not-yet-needed** (deferred phase). Reconcile against `Pommora/package.json` before trusting any version.
+The vetted library menu and what shipping a real build takes. Each library is tagged **Decided** (in `package.json` today), **Candidate** (named, not yet installed), or **Not-yet-needed** (deferred phase). Reconcile against the root and workspace `package.json` files before trusting any version.
 
 ### Libraries
 
@@ -15,13 +15,13 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 
 - **React 19** + **TypeScript 6** — **Decided.**
 - **vanilla-extract** (`@vanilla-extract/css` + vite-plugin) — typed, zero-runtime CSS-in-TS; the token layer authors `*.css.ts`. **Decided.** (Tailwind was the pre-build guess — not used.)
-- **lucide-react** — the curated icon registry in `DesignSystem/Symbols/` driven by `SymbolsPM.md`. **Decided.** **`@tabler/icons-react` stays installed as a second source** to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
+- **lucide-react** — the curated icon registry in `UIX/Symbols/` driven by `SymbolsPM.md`. **Decided.** **`@tabler/icons-react` stays installed as a second source** to pull from per-icon (import its `Icon*`, register it, pass `strokeWidth={1.75}` to match Lucide's weight). (Material Symbols + a `symbols.json` indirection layer was the pre-build guess — not used. A user-swappable icon library, incl. SF Symbols, remains a possible future setting.)
 - **@fontsource-variable/inter** — the app font. **Decided.**
 
 #### State · Data · Search
 
 - **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store. **Decided.**
-- **`node:sqlite`** (WAL) — synchronous SQLite behind `db//driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
+- **`node:sqlite`** (WAL) — synchronous SQLite behind `Desktop/Store/driver.ts`, holding device-local operational state and the content index. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
 - **zod 4** — schema = codec = type for sidecars + frontmatter. **Decided.** `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
 - **ulidx** — monotonic ULID ids. **Decided.**
 - **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
@@ -30,9 +30,9 @@ The vetted library menu and what shipping a real build takes. Each library is ta
 
 #### Drag-and-Drop · Block Layout
 
-- **PommoraDND** — the **in-house drag-and-drop engine** (behind the `interactions/drag.tsx` seam): measure-once, no mid-drag array churn, pointer-capture single sensor, closest-center + hysteresis, decide-then-animate; constraints, auto-scroll, keyboard + ARIA. **Decided + shipped** — replaced `@dnd-kit` entirely. Spec → `Features/PommoraDND.md`.
+- **PommoraDND** — the **in-house drag-and-drop engine** (behind the `UIX/Interactions/drag.tsx` seam): measure-once, no mid-drag array churn, pointer-capture single sensor, closest-center + hysteresis, decide-then-animate; constraints, auto-scroll, keyboard + ARIA. **Decided + shipped** — replaced `@dnd-kit` entirely. Spec → [[PommoraDND]].
 - **@dnd-kit** — the reference engine PommoraDND was dissected from. **Replaced + uninstalled** — no longer a dependency or import; kept here only as a historical anchor.
-- **react-grid-layout** — responsive, draggable + resizable **grid** layout with breakpoints; React-only, MIT. Fits 2-D **dashboard / widget** composition — the Homepage composed-blocks dashboard. Distinct from PommoraDND (which owns linear / nested reorder), not a substitute. **Candidate** — verify React 19 compatibility + maintenance health at adoption time.
+- **react-grid-layout** — responsive, draggable + resizable **grid** layout with breakpoints; React-only, MIT. Fits 2-D **dashboard / widget** composition — the Homepage's tiled dashboard. Distinct from PommoraDND (which owns linear / nested reorder), not a substitute. **Candidate** — verify React 19 compatibility + maintenance health at adoption time.
 
 ### Distribution — Packaging, Signing, Notarization
 

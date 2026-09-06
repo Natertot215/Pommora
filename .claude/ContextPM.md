@@ -2,11 +2,13 @@
 
 ### Current Focus
 
-**The Tiles arc is closed.** `renderer/Tiles/` is the tile system, every drag in the app runs on `Interactions/gesture.ts`, a tile kind is one entry in each of three tables, and each host's document is `_tiles.json` in its folder — synced with `.nexus/` and reloaded live when it changes on disk. The closeout re-ran every gate as a polish: the arc nets negative, the legacy row migration is retired (a machine that never ran it carries its rows over by hand), the tile chassis class is `.tile-base`, and the Features doc is [[SurfacePM]] with Tiles as its section. The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
+**The monorepo landed.** The repository is six workspaces at its root — `Core` (Pommora itself, one folder per thing it has), `UIX` (the design kit), `Desktop` (Electron), `Mobile` and `Sync` (seated, no code), and `Showcase`. Core reaches a machine only through `Core/Platform`, `Core/Contract` is the one channel table both sides derive from, and `Desktop/` is the only place Node and Electron are called. Along the way the 26 menu channels collapsed to one, the editor took an `EditorHost` from its mounter, the two write-path bugs were fixed, and the line count fell. Gates run from the repo root: `npm run typecheck && npm run test && npm run lint && npm run build`. Dev is `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the root; the built binary is `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333`.
+
+The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
 
-- [ ] 
+- [ ] **Nathan's own pass over the restructured app.** A day on the real Nexus — pages, properties, views, tiles, menus, windows, settings, history, trash — and a flip through `Core`, `UIX`, and `Desktop` to say whether the filing reads the way it was meant to.
 
 ### Pending Focuses
 
@@ -22,9 +24,8 @@
 
 The behavioral half — correctness, performance, and the structural moves inside the processes. Each is a session of its own, each verified by something a typecheck cannot supply, and none of it is visible from the interface.
 
-- [ ] **The `main/index.ts` split.** Roughly 110 channel implementations share a file containing window creation, protocol registration, and application lifecycle, which makes it the one file every parallel session collides on. The bridge seam itself is excellent and is not what moves: `serveBridge` already takes a plain object, so the channels become per-domain partial maps spread into one. The first step is carving out the context they all close over — the shared refusals, the path resolvers, the confirm-and-push helpers, and the window reference itself — since every domain map needs it and none of them can own it. A `session` handler kind hoists the repeated no-nexus guard into `ipc.ts`'s boundary-policy union, and the confirm-and-push helpers take a send function instead of closing over `mainWindow`, which is the multi-window transport seam.
-- [ ] **Neither renderer virtualizes.** `@tanstack/react-virtual` is installed and used only by the icon picker. A 2,000-page Collection with eight columns contains around 18,000 elements, and every pipeline re-run reconciles them all. Group bands complicate it, so the scoped version virtualizes the flat, ungrouped case first, where the win is largest and the band machinery is absent.
-- [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher in the file-owning process, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
+- [ ] **Neither view renderer virtualizes.** `@tanstack/react-virtual` is installed and used only by the icon picker. A 2,000-page Collection with eight columns contains around 18,000 elements, and every pipeline re-run reconciles them all. Group bands complicate it, so the scoped version virtualizes the flat, ungrouped case first, where the win is largest and the band machinery is absent.
+- [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy CRUD modules, where later ones were written inline, and each arm moves when its file is next touched.
 
 #### II. Open Calls
 
@@ -32,7 +33,11 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
-- [ ] **`WEB_PARTITION` has no settled home.** The webview session name sits in `Desktop/Web/partition.ts`, but three of its four readers (the web tile, the web window, the glance's site branch) are Core surfaces after the monorepo move, so Core would import Desktop. The string itself is host-neutral; the `<webview>` that consumes it is Electron's. Candidates: `Core/Web` as the web-surface slot's constant, or a value the host hands the surface through Platform. Decide before Task 5 lands the three surfaces.
+- [ ] **`showError` versus `notifyError`.** Two error surfaces stand side by side and neither was made the other's; the store's `mutate` reports a failed write through `error:show`, and the notification label is its own path. One of them is the app's answer for a failed act.
+- [ ] **`ActionItem.confirm` is write-only.** Two `optionMenu` rows set it and no presenter reads it. It stays by ruling, as the in-app surfaces' seat for a confirming row; either a presenter honors it or the field goes.
+- [ ] **`RowMenuHost` has no desktop caller.** `Desktop/main.ts` wires `HostContext.menu` to the native popper unconditionally, so the in-app presenter — about 110 lines — is the phone's seat and unreachable today.
+- [ ] **`ALL_ICONS` stays Lucide-only.** The 23 Tabler glyphs are imported by name where they are used, and folding them into the searchable registry would add tiles to the Icon Picker that no curation covers.
+- [ ] **TileLab shows a blank stage.** The Showcase leaf's tiles are Core's, and Showcase imports nothing from Core; either the kit grows a tile seat of its own or the leaf retires.
 
 #### II. Next-Feature Candidates
 
@@ -61,10 +66,9 @@ Findings where the correct answer isn't established in the codebase — design a
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
 - [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `tiles.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, `aliases.set`, `headingIcon.set`, `glance.save`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at sixteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
-- [ ] **The renderer's remaining filing and style rows.** `Sidebar/sidebarDndModel` → `Interactions/reorderModel` and `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker` (each has zero importers in its own folder); the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `MarkdownPM/Tables/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across Tiles, the Views, and the toolbar.
-- [ ] **Two renders of a page's property rows.** `Properties/PageProperties.tsx` and the inspector in `Windows/PageWindow.tsx` share `usePropertyRows` and `PropertyValueEditors`, but each still renders the row itself — label, value cell, inline editor, the row and value menus — on its own styling system (`page-properties.css` against the `page-window-insp-*` classes). One row component both surfaces mount closes it.
+- [ ] **The remaining style rows.** the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `Desktop/Renderer/main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `Core/Views/Table/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across Tiles, the Views, and the toolbar.
 - [ ] **Table perf ceilings.** Tables render every row without virtualization, so a very long collection will eventually feel it, and a value edited outside the app doesn't live-refresh an open table.
-- [ ] **Scroll waits by timer, and the signal can't simply replace it.** `revealPageOffset` sleeps for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
+- [ ] **Scroll waits by timer, and the signal can't simply replace it.** `travel.ts` sleeps `FOLD_SETTLE_MS` for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
 
 ### Known Issues
 
@@ -72,6 +76,11 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] MarkdownPM Tables have autocorrect blocked, likely due to their inactive-until-entry design; numbered lists also have their periods flagged as incorrect by an autocorrect. 
 - [ ] **The in-app two-host lost update.** Two editors holding one page — the content pane and the Page Window, or a page and its embed — each save their own body with no lock between them, so the later keystroke writes over the earlier host's text. The watcher-driven reload through `replaceBody` is the mechanism that closes it.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
+- [ ] **Five single-writer `writeJson` sites run unlocked.** `Nexus/identity.ts`, `Properties/journalSlot.ts`, `Trash/record.ts`, `Nexus/adopt.ts`, and `Contexts/contextsRegistry.ts` each has one writer today; the registry's seed-on-absent write is the one real double-seed window, benign under most-recent-wins.
+- [ ] **`page:open` does not raise the window.** A path opened from outside selects in place — opening is not focusing.
+- [ ] **Native separators reach the host on Windows.** `nexus:openPath`'s `getPathForFile` and `nodeMachine.realpath` emit them, and `posixPath` covers only what `Desktop/main.ts` hands over. On the same platform the five ex-radio menu groups — column Align and Style, grip Size and Scale, trash Format — draw a check rather than a bullet; macOS draws both states identically.
+- [ ] **`NativePickerContext` does not cross `reactWidget`'s detached roots.** Latent rather than live: nothing rendered under an editor widget mounts a `PickerControl` today.
+- [ ] **The line counter counts test harnesses as product code.** `editorHarness.ts`, `pointerHarness.ts`, `testTree.ts`, `propsAtRoot.ts`, and `pageValues.ts` are about 300 lines the ledger reads as product.
 
 ### Recent Work
 
@@ -83,12 +92,12 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 #### PM-127 || The Resize Frame
 **DATE:** 09-04-2026
 
-Every drag-to-size and drag-to-move gesture on one box — the floating windows, the glance pane, the sidebar and inspector strips, the window side panes — runs through `useResizeFrame` in `Interactions/ResizeFrame.tsx` on the shared pointer engine; a host owns its rect and declares its floor, ceiling, whether it is equilateral, and whether it is outlined. `FloatingWindow.tsx` and the two strip sheets are gone.
+Every drag-to-size and drag-to-move gesture on one box — the floating windows, the glance pane, the sidebar and inspector strips, the window side panes — runs through `useResizeFrame` in `UIX/Interactions/ResizeFrame.tsx` on the shared pointer engine; a host owns its rect and declares its floor, ceiling, whether it is equilateral, and whether it is outlined. `FloatingWindow.tsx` and the two strip sheets are gone.
 
 #### PM-126 || Active Cache Framework
 **DATE:** 09-03-2026
 
-Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `DesignSystem/Util/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
+Three hand-rolled insertion-order LRUs collapsed onto one `capSet` in `Core/Utilities/capMap.ts`; the per-tab warm and page-detail caps rose to 50. The parked-tab count became a user setting — Active Tab Cache (`personalization.tabCache`, 5–20, default 5), read live in `ContentView`'s `useHosts`. A default-on Pause Media on Tab Switch toggle pauses a parked tab's webpage-guest media through the new `webGuestMedia:pause` channel, one-directional by decision — returning never resumes — with the tab-active signal threaded through CodeMirror state to the detached-root `WebTile`.
 
 #### PM-125 || Page File History
 **DATE:** 09-02-2026
@@ -98,7 +107,7 @@ A page's body accumulates device-local snapshots in `versions.db` under one capt
 #### PM-124 || In-App Confirmation & Notifications
 **DATE:** 09-02-2026
 
-Every destructive confirmation moved out of main's native dialogs into one in-app window, `Windows/ConfirmationWindow.tsx`, behind named `ask*` wrappers in `Windows/confirmations.ts`; a new Confirm Before Deletion setting gates pages, tiles, and schema-less folders while Collections, Sets, views, and properties always ask. `Interface/NotificationLabel.tsx` reports the finished act with an Undo shaped by what left — a bundle-backed restore for files, a configuration re-save for a view.
+Every destructive confirmation moved out of main's native dialogs into one in-app window, `Core/Interface/Confirm/ConfirmationWindow.tsx`, behind named `ask*` wrappers in `Core/Interface/Confirm/confirmations.ts`; a new Confirm Before Deletion setting gates pages, tiles, and schema-less folders while Collections, Sets, views, and properties always ask. `Core/Interface/Notifications/NotificationLabel.tsx` reports the finished act with an Undo shaped by what left — a bundle-backed restore for files, a configuration re-save for a view.
 
 ### Guidelines
 

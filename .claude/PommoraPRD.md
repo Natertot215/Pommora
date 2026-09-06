@@ -28,7 +28,7 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 ### Domain Model
 
-Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities via parenthesized Context keys at the frontmatter or the JSON root.
+Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities via angle-bracket Context keys at the frontmatter or the JSON root.
 
 | PARA Term   | Pommora Term                  | Layer        |
 | ----------- | ----------------------------- | ------------ |
@@ -56,22 +56,22 @@ A **Context** is a user-defined, free-standing group of **Spaces**, owned by a r
 | **Page Collection** | Top container for Pages; assigns their nexus-wide properties  | "Collection"      |
 | **Page Set**        | Recursive sub-folder inside a Collection; inherits the schema | "Set" / "Sub-Set" |
 | **Page**            | Markdown document — prose plus frontmatter                    | "Page"            |
-| **Task**            | Reminder-shaped `.md`, keyed `TaskID`                         | "Task"            |
-| **Event**           | Calendar-shaped `.md`, keyed `EventID`                        | "Event"           |
+| **Task**            | Reminder-shaped `.md`, its `ID` marked `T`                    | "Task"            |
+| **Event**           | Calendar-shaped `.md`, its `ID` marked `E`                    | "Event"           |
 
 A Collection assigns which registry properties its Pages validate, and that schema applies at any depth. Tasks and Events are Agenda’s two peer kinds, each in its own singleton folder; the properties catalog spans all kinds.
 
 #### Singletons
 
-- **Homepage** — one composed-blocks dashboard per Nexus, the landing surface; always reachable and not user-deletable, its config file written by the first banner or heading-icon edit.
+- **Homepage** — one tiled dashboard per Nexus, the landing surface; always reachable and not user-deletable, its config file written by the first banner or heading-icon edit.
 - **Settings** — per-Nexus interface preferences, the accent color among them.
 
 #### Identity and linking
 
-- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognized and left alone. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
+- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under one `ID` key, and the kind is the eleventh character of the ULID itself (`P`, `T`, or `E`), which is also how a file placed in the wrong folder is recognized and left alone. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time. Within a container, a colliding Page creation auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
-Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections, or as Markdown link `[Title](Page)` syntax. 
+Operational entities tag Spaces through angle-bracket Context keys — `<Projects>:` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections, or as Markdown link `[Title](Page)` syntax. 
 
 ---
 
@@ -108,7 +108,7 @@ A Page is a Markdown document — one continuous stream, not a stack of blocks. 
 Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held per-machine in the database rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
 
 - **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
-- **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
+- **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only.
 
 Each Collection decides where its Pages open — the main detail pane, or the floating Page Window. The editor architecture and the page entity carry their own docs.
 
@@ -124,24 +124,24 @@ Moving a Page **across Collections** never strips — its values ride along, the
 
 `.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row. There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
-A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar.
+A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's angle-bracket key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same angle-bracket keys in a Space's own sidecar.
 
 #### Agenda (Tasks + Events)
 
 The calendar layer, two peer kinds, each in its own singleton folder that the nexus registers by the config sidecar's ID — a config it does not record is inert:
 
-- **Tasks** (`.md`, `TaskID`) — reminder-shaped.
-- **Events** (`.md`, `EventID`) — calendar-event-shaped.
+- **Tasks** (`.md`, `ID` marked `T`) — reminder-shaped.
+- **Events** (`.md`, `ID` marked `E`) — calendar-event-shaped.
 
-Their fields are an open question — what replaces the removed inherited shape is the Agenda work's to decide, the built-in **Status** among it. Both carry the same parenthesized Context keys as Pages. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores.
+Their fields are an open question — what replaces the removed inherited shape is the Agenda work's to decide, the built-in **Status** among it. Both carry the same angle-bracket Context keys as Pages. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores.
 
 #### Properties
 
 Property **definitions** live in one nexus-wide registry (`.nexus/properties.json`) — defined once, assigned by any Collection, one shared definition and option set everywhere; an agenda config carries identity and nothing else. Property **values** live in each entity's frontmatter or JSON. A property's identity is a stable ULID held in the registry; its name is the key its values write under, unique nexus-wide, and a rename sweeps every page holding it. The v1 catalog:
 
-- **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
+- **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **Link**, **Context** (registry-minted, one per Context), **Creation Time** and **Last Modified** (both derived), and **File**.
 
-There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles.
+There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are angle-bracket title keys at the entity root over bare Space titles.
 
 #### Views
 

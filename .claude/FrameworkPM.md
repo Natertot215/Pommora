@@ -10,11 +10,11 @@ The React + Electron build rebuilt the Swift paradigm from the ground up, reache
 
 #### v0.5.x — The Baseline Hardened
 
-Since the baseline: Cards as the second renderer with its interaction hardening and picker-host architecture; the certified cleanup campaign (one-walk mutations, shared interaction primitives); Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane; the truing campaign against real code; one syntax for every Pommora-owned key, with operational state moved into `nexus.db`; the hardening campaign — one strict read-modify-write, the parallel walk, the guard audit, and the HOIST design-system consolidation; and the erasure campaigns — Swift parity removed wholesale, navigation persistence consolidated onto one `navigation.json` contract; and the live-tree & content-index arc — main holds the tree, writes and watcher events patch it in place, and the rename and property cascades open only the files the index names.
+Since the baseline: Cards as the second renderer with its interaction hardening and picker-host architecture; the certified cleanup campaign (one-walk mutations, shared interaction primitives); Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane; the truing campaign against real code; one syntax for every Pommora-owned key, with operational state moved into `nexus.db`; the hardening campaign — one strict read-modify-write, the parallel walk, the guard audit, and the HOIST design-system consolidation; and the erasure campaigns — Swift parity removed wholesale, navigation persistence consolidated onto one `navigation.json` contract; the live-tree & content-index arc — Core holds the tree, writes and watcher events patch it in place, and the rename and property cascades open only the files the index names; and the repository restructure into six workspaces, which put Pommora's engine and interface in `Core`, the design kit in `UIX`, and everything Electron in `Desktop`, behind one machine seam and one channel contract.
 
 #### UPCOMING VERSIONS
 
-The near-term structural queue — the store split and the Pages-in-DB storage-model session — rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. The cross-cluster prerequisite is in place: `nexus.db` carries the content index — which pages mention which titles, and which property keys and values each carries — seeded at open and kept current by every writer, alongside a main-owned live tree that retires the write-path re-walk. Linked-From, backlinks, ContextView, and full-text search build on it; the FTS table is the one piece of schema still unwritten.
+The near-term structural queue rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. The cross-cluster prerequisite is in place: `nexus.db` carries the content index — which pages mention which titles, and which property keys and values each carries — seeded at open and kept current by every writer, alongside a main-owned live tree that retires the write-path re-walk. Linked-From, backlinks, ContextView, and full-text search build on it; the FTS table is the one piece of schema still unwritten.
 
 #### v0.6.0 — The View Renderers
 
@@ -38,7 +38,7 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 #### Post-v1
 
-No phase commitments — Sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them. The catalog is Prospects below.
+No phase commitments — Sub-pages, independent UI titles, a graph view, and a plugin system among them. The catalog is Prospects below. The mobile companion and Pommora Sync have their own plan and decision log in `// Planning`, and the restructure seated the `Mobile` and `Sync` workspaces they build into.
 
 ---
 

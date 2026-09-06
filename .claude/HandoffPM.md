@@ -1,74 +1,73 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Re-run the Tiles arc's review gates and closeout against .claude/Planning/Tiles — Implementation Plan.md … Make sure this is solid and ready-to-ship; while preserving TilesV2-Spec.md as a Planning/ doc which captures the decision logs pre-paving towards the inspector … When done, commit to Origin. Each of Nathan's manual passes has been verified."* Then, mid-run: two agents per lens; the delta must be negative; the review reduces what the plan introduced rather than adding glue; don't leave things broken; retire the migration with no helper code; push origin on final closure.*
+> **User Prompt:** *"The repository becomes a monorepo at its current root: Core, UIX, Desktop, Mobile and Sync seated, Showcase compiling. The `Pommora/` package folder and the `src/{main,preload,renderer,shared}` split by process dissolve. Every file has a home named for what it is, or its homelessness is a stated decision."* Then, through the run: gates from the root chained with `&&`; moves are `git mv`; no new visible UI; a task that grows beyond its Becomes stops and reports; every simplification pass dual-briefed to report bugs as well as complexity.
 
 #### Current Focus
 
-**Session ID:** c6dd673e-55a1-45d2-b95b-12da6896d315
-**Dates:** 09-04-2026 to 09-05-2026
-**Model:** Fable 5.1
+**Dates:** 09-05-2026 to 09-06-2026
+**Model:** Opus 5 · Fable 5.1 (Tasks 13 and 14)
 
-**The Tiles arc is closed and pushed.** The closeout re-ran every gate as a polish: per phase, two simplifiers on disjoint file sets, then two correctness reviewers and two attackers read-only, every finding folded or ruled in the plan's Log; then a whole-range pass, the Delivery Claim rewritten and checked by two neutral verifiers, and two full-range attacks. The arc nets −6 actionable lines over `043ee930..506cf3fb` (comments and tests excluded); the row migration is retired by Nathan's call, the tile chassis class is `.tile-base`, and the Features doc is [[SurfacePM]] with Tiles as its section. Nathan verified the seven items of his own pass by hand; the plan's Status is closed.
+**The restructure is in, and the documentation phase closes it.** Tasks 0 through 18 landed over `7c7c7542..ffd56b07a`: the six workspaces, `shared/` dissolved into Core, UIX and Desktop, Core filed by domain, the Platform seam and the Contract split out of the Electron host, the 26 menu channels collapsed onto one, the editor taking an `EditorHost` from its mounter, the Phase 5 removals and the two write-path fixes, the Showcase severed from Core, and the harness scripts repointed at the new tree. Tasks 19 and 20 — this document's own phase — reconciled the `.claude` registry against what the moves made true, on a character budget rather than a free rewrite.
 
-**What the closeout fixed, in the order found.** Phase 1: a frame drag back to its origin restores and does not drop, a release at the start's size does not drop, the release after a cancelled drag is not a click (the handle menu had opened on it; CalendarPicker's day cells had re-picked), a move decided mid-settle survives the grid's unmount, the grid's six never-passed props are module knobs. Phase 3: the handle menu opens at its root each time and holds its entry through a waived delete, its Link rows and drill leaves refuse where the model does, `knownEntry` derives from the recipe table, one `reviseTile` under remove and the two converts, one `tileFilePath`. Phase 4: every `tiles:*` channel refuses while a nexus adopts, the Homepage host remounts per nexus, one JSON decode reads a BOM as encoding, a body the read fails on renders inert rather than empty, the document writer returns its failure. Whole range: the six tile-id channels share one prologue, the strict read's result is one `fail`, the migration is gone. Closeout attack: one layout definition (the schema holds the split and ratio-count rules; every NexusOS file passes), a body is trashed only when its document write landed.
+**What the docs phase changed.** Every prefixed path citation and bare folder name in the registry was swept through the new tree and each rewritten path checked for existence; the 38 stale claims the A18 audit found were rewritten true — the casing misses, the wrong folders, the names that no longer exist, and the PRD's retired `PageID`/`TaskID`/`EventID` keys and `(Projects):` syntax. `ArchitecturePM` split at its own seams into `CorePM` (the Nexus layout, the data layer, the domains, the Platform seam, the Contract) and `DesktopPM` (Bridge, Store, FileWatch, Actions, Web, Capture, Config, Renderer), and every link retargeted. `DesignSystemPM`'s spine now mirrors `UIX`'s root categories, its `Components` heading gone and its atlas tables agreeing with the code. `MarkdownPM` §Architecture describes the Engine/host shape. Every Features doc carries a first-line workspace tag. `CLAUDE.md`'s Hard Rules restate for the monorepo — the host owns the machine, `Core/Contract` is the contract between any interface and any host — with the gates and both launch commands run from the root.
 
-**Recorded and not built, by Nathan's ruling that the closeout adds no glue:** a `_tiles.json` whose layout the codec refuses opens empty and the first gesture writes the empty layout over it; a move inside the 300 ms save debounce is lost to ⌘R or ⌘Q; a refused `tiles:save` is silent. Each is a few lines when wanted. Two items stay Nathan's call in the plan's Open Against Later Tasks: the host-lock toggle's blink under a reload, and a webpage tile persisting its window-capped height over the stored one.
-
-**Not this session's:** Nathan's own comment trims in nine files outside the tile system, four Planning docs and `Pommora/build/icon.png` deleted in the working tree — left uncommitted, since the icon is the packaged app's and the deletions were not asked for here.
+**What the run left standing.** Five open questions reached ContextPM rather than being decided here: `showError` versus `notifyError`, `ActionItem.confirm` as a write-only field, `RowMenuHost` without a desktop caller, `ALL_ICONS` staying Lucide-only, and TileLab's blank stage. The Windows notes, the five unlocked single-writer `writeJson` sites, `page:open` not raising a window, and the latent `NativePickerContext` gap are recorded under Known Issues.
 
 #### Completion Criteria
 
-- [x] Every phase gate re-run: simplify, review, attack; every finding folded or ruled.
-- [x] The Delivery Claim rewritten, verified by two neutral verifiers, attacked over the full range.
-- [x] The arc nets negative; the Dead Vocabulary sweep at zero against its control (26).
-- [x] TilesV2-Spec written; SurfacePM restored; Context, Handoff, and History PM-128 current.
-- [x] Nathan's own pass verified; the plan closed; pushed to origin.
+- [x] Six workspaces at the root; `Pommora/` dissolved; gates green from the root.
+- [x] Core reaches the machine only through `Core/Platform`; only `Desktop/` imports Node and Electron.
+- [x] Docs reconciled: paths swept, 38 claims corrected, `ArchitecturePM` split, Features tagged.
+- [x] `CLAUDE.md` Hard Rules restated; the Mobile plan's superseded tasks marked with a path table.
+- [ ] Gate 5: the closeout's simplification, attack, Delivery Claim, and Nathan's own pass.
 
 #### Next Session
 
-- The inspector: the tab strip, the reserved Collection and Pages tabs, custom tabs under `.nexus/inspector/<id>/` reading the reserved `state.json` key, a `state-leaf` watcher arm the moment that key gains a writer, per-tab warmth through the tile cache's warm seam. The standing spec is `.claude/Planning/TilesV2-Spec.md`.
-- Panel kinds (properties, backlinks, list) and webpage as a surface kind: one shared entry, one renderer entry, a copy arm if needed, and a component each.
-- Live body reload for markdown tiles rides the page editor's external-edit arc.
-- `comment-ledger.mjs --unit` crashes on nine of fourteen units over casing drift in `comment-units.json` (pre-existing; a tooling chore for the next comment pass).
+- Gate 5 and the closeout: the whole-range simplification and attack, the Delivery Claim, the History entry, and the line ledger redone at the new sources.
+- Nathan's own pass — the app on his real Nexus for a day, and a flip through `Core`, `UIX`, and `Desktop` to say whether the filing reads the way it was meant to.
+- The five open questions in ContextPM's Open Calls, each cheap once decided.
+- The inspector arc still stands on `.claude/Planning/TilesV2-Spec.md`.
 
 #### Feedback
 
-- "Don't overcomplicate the review — the purpose is to reduce complexity the plan introduced rather than applying more glue." / "Delta must be negative, total amount of stuff must be reduced; it's a polish of what's done, not more stuff added." / "Don't leave things broken, just don't add what doesn't belong."
-- "Tile-chassis needs to be renamed tile-base like I told you to." / "You should not have removed the SurfacePM doc — Tiles are a sub-section of that doc."
+- "Every claim reworded to be true, on a tight line budget." / "`CLAUDE.md` stays tight: rules restated, nothing added that does not apply to the whole project."
+- "Documentation reconciliation runs as its own targeted phase after the code is still."
 
 #### Session Pointers
 
-- The spec and the plan: `.claude/Planning/TilesV2-Spec.md`, `.claude/Planning/Tiles — Implementation Plan.md` (the Log: Rulings, the four Gate blocks, Closeout re-run rulings, Open Against Later Tasks, Deviations, Sequenced After; the Delivery Claim under Closeout).
-- The tile system: `Pommora/src/renderer/Tiles/` (`TileGrid.tsx`, `TileHost.tsx`, `TileHandleMenu.tsx`, `tileKinds.tsx`, `useTileDoc.ts`, `Surfaces/`); the contract `Pommora/src/shared/tiles.ts`; main's `tiles.ts`, `tileDoc.ts`, `tileHostAnd` and `onTile` in `index.ts`; the watcher arm in `watcher.ts` / `watchPatch.ts`.
-- The delta yardstick in the session scratchpad: `delta.py <base> <head|WT>` (actionable = non-blank, non-comment, non-test lines under `Pommora/src`).
+- The plan and its evidence: `.claude/Planning/Pommora Monorepo — Implementation Plan.md` (Goal, Global Constraints, Dead Vocabulary, the Log's Rulings and Deviations), the Decision Log, and `.claude/Planning/MonorepoAudit/A01–A20`.
+- The docs phase's own input: `MonorepoAudit/A18-docs-reconciliation.md` — the doc × pattern table, the 38 misses by class, the folders no doc named, and the doc-to-workspace map.
+- The atlas gate: `node .claude/scripts/check-atlas.mjs` reads every `**SOURCE:**` table in `.claude/Features` against the code it names; the doc changes, never the code.
 
 #### Working Notes
 
-- A simplifier told to hold behavior will still remove a ratified structure (the copy arm) when it reads as one-armed; the fold has to check each removal against the plan's requirements before keeping it.
-- `firePointer(window, …)` does not reach `document` listeners in jsdom; a listener that must see a real release lives on `document` and the test fires the event on the element.
-- Nathan's parallel session confirmed the comment trims were Nathan's own hand edits; the unattributed-edits rule bundles them only where a file also carries this session's change.
+- A doc's path citations resolve more reliably by basename against `git ls-files` than by replaying a plan's move tables; the tables describe intent, the tree describes fact.
+- `check-atlas.mjs` cannot see a CSS variable a template literal generates, so a token that exists only at runtime must be described in prose rather than claimed in a table cell.
+- The registry's character budget is what keeps a reconciliation from becoming a rewrite: a true claim that needs more words is paid for by a redundant sentence in the same registry.
+- A folder-spined document pays for the spine when the folders move. `DesignSystemPM` was the only one, and reordering it to `ls UIX` was mechanical only because each section was already self-contained; the sections that had drifted into groupings rather than folders — `Components`, `Composite Shells` — were the ones that had to be taken apart by hand.
+- Three of the audit's stale claims were stale in the other direction: the debt they described had already been paid. The two renders of a page's property rows are one `PagePropertyRows` mounted by both surfaces, the `main/index.ts` split happened in Task 8, and `WEB_PARTITION` settled in `Core/Web`. A reconciliation has to re-probe the finding, not just the wording.
 
 #### Changes
 
 **FILES ADDED**
 
-- .claude/Planning/TilesV2-Spec.md
+- .claude/Features/DesktopPM.md
 
 **FILES MOVED**
 
-- .claude/Features/TilesPM.md → SurfacePM.md
-
-**FILES REMOVED**
-
-- Pommora/src/main/tilesMigrate.ts · tilesMigrate.test.ts
+- .claude/Features/ArchitecturePM.md → CorePM.md
 
 **FILES MODIFIED**
 
-- .claude: ContextPM.md · HandoffPM.md · HistoryPM.md; Features: SurfacePM · DesignSystemPM; Planning: Tiles — Implementation Plan
-- Pommora/src/shared: tiles.ts · tileMenu.ts (+tests)
-- Pommora/src/main: index.ts · tiles.ts · tileDoc.ts · paths.ts · watcher.ts · sidecarIO.ts · IO/atomicWrite.ts · CRUD/contextWrite.ts · Database/localState.ts (+tests)
-- Pommora/src/renderer: Interactions/gesture.ts · shared.ts · ResizeFrame.tsx; Interface/HomepageView.tsx; MarkdownPM/Editor/embedWidget.tsx; Tiles/TileGrid.tsx · TileHost.tsx · TileHandleMenu.tsx · useTileDoc.ts · tileZoom.ts · tile-base.css · tile-grid.css · handle-menu.css.ts · ViewTileScope.tsx · Core/model.ts · Core/hitTest.ts · Surfaces/* (+tests)
+- .claude: CLAUDE.md · ContextPM.md · HandoffPM.md · FrameworkPM.md · PommoraPRD.md
+- .claude/Features: all nineteen docs — the path sweep, the workspace tags, DesignSystemPM's spine, MarkdownPM's architecture
+- .claude/Guidelines: Dependencies · Development-Environment · Editor-Internals · Web-Guests
+- .claude/Planning: both Mobile Companion documents — Task 0 and Phase 8 superseded with a path table; A-6, K-1, and the Prospect restated
+
+**VERIFIED**
+
+- Every backtick path token in the registry resolves against the tree; the retargeted wiki-links reach zero; `check-atlas.mjs` reports sixteen tables agreeing with source; the Dead Vocabulary tokens read zero against their controls.
 
 **COMMITS**
 
-- `fbe76db2` Phase 1 · `7fb7c997` Phase 2 · `f0363567` Phase 3 · `624822cc` Phase 4 · `4cda638e` the whole-range polish · `506cf3fb` the closeout attack folded · the docs commit that follows.
+- Tasks 0–18 over `7c7c7542..ffd56b07a` (75 commits); the docs phase's own commit and Gate 5 follow.

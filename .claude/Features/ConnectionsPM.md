@@ -1,10 +1,12 @@
 ## Connections
 
+**Workspace:** Core
+
 A **Connection** is a link from one Page to another, written in the page's Markdown body. Two syntaxes spell one — the wikilink `[[Title]]` and the Markdown link `[Alias](Title)` whose target names a page — and the word covers both. A connection may also be held as the whole value of a Link property, where it reads as a connection rather than an address. Connections are the only page-to-page relation Pommora has; Contexts are the relation layer, and there is no relation-type property. 
 
 ### Syntax + Scope
 
-The grammar lives in `src/shared/connections.ts` (the wikilink) and `src/shared/links.ts` (the markdown link), shared code both processes read so the editor's tokenizer and main's rename rewriter can never disagree about what a link is. One normalization — trim, case-fold, NFC — is applied to every title on every side, so the scanner, the resolver, and the uniqueness check always agree.
+The grammar lives in `Core/Connections/connections.ts` (the wikilink) and `Core/Connections/links.ts` (the markdown link), shared code both processes read so the editor's tokenizer and main's rename rewriter can never disagree about what a link is. One normalization — trim, case-fold, NFC — is applied to every title on every side, so the scanner, the resolver, and the uniqueness check always agree.
 
 - **Wikilinks** — `[[Title]]` resolves by its title. `[[Title|Alias]]` shows the alias and still resolves by the title; the title and its pipe join the hidden markers and reveal with the caret like any other syntax. A title can't contain `|`, and the name rule rejects one at creation.
 - **Markdown links** — `[Label](Title)` names a page through its target, percent-encoded so spaces and parentheses survive. A target that carries a scheme or a path separator addresses something outside the Nexus and is never read as a page title, so a URL can't reach a page by its last segment. The label is the author's own text.
@@ -20,7 +22,7 @@ Every title the scanner finds is looked up in an in-memory map built from the pa
 
 ### The Rename Cascade
 
-Because a connection's identity is its title, renaming a page rewrites every body that names the old title. `src/main/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
+Because a connection's identity is its title, renaming a page rewrites every body that names the old title. `Core/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
 
 ### Rendering
 
@@ -30,7 +32,7 @@ Clicking a connection opens the page, routed by **Open Connections In Preview** 
 
 ### The Link Menu
 
-Right-clicking any link, wherever it sits, opens one native menu built from one model (`src/shared/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
+Right-clicking any link, wherever it sits, opens one native menu built from one model (`Core/Actions/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
 
 | Action | Page Connection | Website Link |
 | --- | --- | --- |
@@ -45,7 +47,7 @@ A read-only surface — a glance pane, an embedded page at rest — offers the o
 
 ### Autocomplete
 
-One picker (`MarkdownPM/autocomplete.ts`, driven by `useConnectionAutocomplete`) serves every place a connection is typed — the page editor, table cells, and markdown block tiles — anchored below the caret and flipping above only to stay in the viewport. Arrows move the selection, Return commits, Escape closes, and each key falls through to the editor while the panel is closed. The pane shows as many suggestions as its height allows and scrolls to the rest, carrying the selection with it as the arrows move past the last visible row. A page row names its location beneath its title — the containers it sits in, drawn from the same ancestry every trail in the app reads. Accepting a page that opens an alias slot doesn't close the panel: the suggestions push aside on the shared `FrameSlide` and the remembered aliases take their place, so the two lists read as one surface rather than two openings. What it offers depends on where the caret is:
+One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnectionAutocomplete`) serves every place a connection is typed — the page editor, table cells, and markdown block tiles — anchored below the caret and flipping above only to stay in the viewport. Arrows move the selection, Return commits, Escape closes, and each key falls through to the editor while the panel is closed. The pane shows as many suggestions as its height allows and scrolls to the rest, carrying the selection with it as the arrows move past the last visible row. A page row names its location beneath its title — the containers it sits in, drawn from the same ancestry every trail in the app reads. Accepting a page that opens an alias slot doesn't close the panel: the suggestions push aside on the shared `FrameSlide` and the remembered aliases take their place, so the two lists read as one surface rather than two openings. What it offers depends on where the caret is:
 
 - **Inside `[[ ]]`** — Pages nexus-wide, matched by title prefix; an empty query lists nothing.
 - **Inside `![[ ]]`** — the same pool, minus pages already embedded, the host chain, and titles the embed grammar can't express. Page-body editors only.

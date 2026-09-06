@@ -18,17 +18,16 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### Codebase Information
 
-Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `DesignSystem/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
+Pommora is a monorepo of six workspaces at the root: **Core** (Pommora itself — one folder per thing it has, holding that thing's logic, surfaces, and styles), **UIX** (the design kit, design only), **Desktop** (Electron), **Mobile** and **Sync** (seated), and **Showcase**. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `UIX/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
 
-- **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Database//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand, and codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Pommora/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
+- **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design iteration happens beforehand; codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Showcase/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system. The showcase is **never** a priority during development.
 - **TS-native on-disk format:** bare, natively typed values under bare property-name keys and `<Context>` keys, zod-validated.
 
 ### Hard Rules
 
-- **Main owns the filesystem.** All fs/Node lives in `src/main`, reached from the renderer only through the **narrow typed IPC** bridge in `src/preload` (contextBridge).
-- **`src/shared/types.ts` is the cross-process contract.** No fs, no React there.
-- **IPC never throws across the boundary** — data channels return the shared `Result` envelope (`{ ok: true, value } | { ok: false, error }`, the error structured with a code) and every channel is declared once in `src/shared/bridge.ts`; both sides derive from that map, so adding a channel is one entry and a mismatched end is a compile error.
+- **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place Node and Electron are called; UIX reaches nothing outside itself.
+- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts` and both sides derive from it; data channels answer with the `Result` envelope (`{ ok: true, value } | { ok: false, error }`, the error structured with a code) and never throw across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
@@ -38,15 +37,15 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 
 #### Testing Conventions
 
-- **The visual iteration scratchpad** — `renderer/Utilities/iteration-window`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
-- **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages, data manipulation, and the rest are accepted, and the preferred verification when Nathan can't visually confirm; the one requirement is that any change made is reverted when done.
-- **Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is `biome check` — the linter AND the formatter — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A write that bypasses the hook (a shell-driven edit) bypasses the formatter, which is why the gate checks it; `npm run format` repairs one.
-- **Launch the GUI** — copy-paste, run from `Pommora/` (HMR + CDP armed on `9333`):
+- **The visual iteration scratchpad** — `Core/Utilities/IterationWindow.tsx`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
+- **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages and data manipulation are accepted, and the preferred verification when Nathan can't visually confirm; the one requirement is that any change made is reverted when done.
+- **Gates**, all from the repo root. `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers all four `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is `biome check` — the linter AND the formatter — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A shell-driven edit bypasses the hook, which is why the gate checks it; `npm run format` repairs one.
+- **Launch the GUI** — copy-paste, from the repo root (HMR + CDP armed on `9333`):
   ```
-  env -u ELECTRON_RUN_AS_NODE npm run dev -- --remote-debugging-port=9333
+  env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev
   ```
-  The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes. After `npm run build`, `env -u ELECTRON_RUN_AS_NODE ./node_modules/.bin/electron .` runs the built binary instead. `TEST_NEXUS_PATH` only steers tests, never the running app.
-- **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch. Kill any test instances once you're done with them — don't leave them running.
+  `POMMORA_DEBUG_PORT` arms CDP; a `--remote-debugging-port` flag does not survive the hop into the Desktop workspace. The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node and the app crashes. After `npm run build`, `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333` runs the built binary instead; `POMMORA_USERDATA=$HOME/…` points it at a scratch app-support folder (`~` does not expand inside the assignment). `TEST_NEXUS_PATH` only steers tests, never the running app.
+- **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first launch dies with `Error: Electron uninstall`; run `./node_modules/.bin/electron --version` once to download it. Kill test instances when you're done.
 
 ### Locked Decisions
 
@@ -58,7 +57,7 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 
 #### Important Information
 
-- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to an Electron + TypeScript + React architecture for better long-term maintainability. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
+- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to TypeScript and React for better long-term maintainability. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — subordinate to the daily Pommora grind — it brings similar capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
-- **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.
-- **Mobile Companion:** A mobile companion app is a near-term focus, which has already been discussed but without formal planning.
+- **NexusOS** is both an Obsidian vault *and* a Pommora Nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian fixtures until Pommora is completed.
+- **Mobile Companion:** A mobile companion app is a near-term focus; its plan and decision log sit in `// Planning`.

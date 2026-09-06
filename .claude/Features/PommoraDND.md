@@ -1,10 +1,12 @@
 ## PommoraDND
 
+**Workspace:** UIX
+
 Pommora's in-house drag-and-drop engine, owning the interaction layer the way MarkdownPM owns the editor. It has no drag dependency; it is scoped to a known reality — Chromium-only, React-only, a known set of surfaces — and adds what a general library leaves out: pointer capture, hysteresis, and a frame-accurate commit. Every draggable surface goes through it rather than reaching for a library of its own, which is what lets a drag feel the same wherever it starts.
 
 ### The Seam
 
-**SOURCE:** `Pommora/src/renderer/Interactions/gesture.ts` · `Pommora/src/renderer/Interactions/drag.tsx` · `Pommora/src/renderer/MarkdownPM/Editor/editorGesture.ts`
+**SOURCE:** `UIX/Interactions/gesture.ts` · `UIX/Interactions/drag.tsx` · `Core/MarkdownPM/Gestures/editorGesture.ts`
 
 One gesture runs at a time. A press becomes a drag only once it travels far enough to mean one, and from that moment the gesture owns the pointer until it ends; Escape, a release outside the window, or the window losing focus all abandon it cleanly, and a surface that disappears mid-drag takes its gesture with it. A release that never traveled far enough is a click instead, and only an actual release counts, so one affordance can honestly do both jobs — a list glyph in the editor ticks a checkbox when pressed and moves the item when dragged. Scrub controls — a pane's resize edge, a slider, panning a photo, dragging a window by its chrome — respond from the instant of the press with no threshold, since there is no click to protect.
 
@@ -29,15 +31,15 @@ The first of the engine's two drop treatments: neighbors reflow to open the gap 
 
 ### Insertion Line
 
-The second treatment, for where the drop point has to be exact — the sidebar tree, a view's group bands, the editor's blocks. Nothing displaces: an Apple-style line marks the drop, the picked-up row stays muted in place, and a ghost follows the cursor through a portal. One frame owns the lifecycle (`Interactions/insertionDrag.tsx`): point tracking, the frozen geometry snapshot and its invalidations — any scroll, a mid-drag list change, a sprung-open disclosure — autoscroll, the line and ghost chrome, and the announcements, over the pointer-gesture skeleton. Each surface passes only its drop model: how to measure, how a point becomes a slot (null declines — a noop drop draws no line and commits nothing), what a slot commits, and its wording; the models stay pure and unit-tested, handing the caller one classified commit, a reorder or a reparent. In the sidebar that commit lands optimistically wherever a pure tree transform can express it; in the view bands it resolves through one shared patch held until the write returns, with a Set band's whole region reading as one nest-into target and a flat surface turning nesting off. The editor's block drag keeps its own lifecycle while wearing the same chrome.
+The second treatment, for where the drop point has to be exact — the sidebar tree, a view's group bands, the editor's blocks. Nothing displaces: an Apple-style line marks the drop, the picked-up row stays muted in place, and a ghost follows the cursor through a portal. One frame owns the lifecycle (`UIX/Interactions/insertionDrag.tsx`): point tracking, the frozen geometry snapshot and its invalidations — any scroll, a mid-drag list change, a sprung-open disclosure — autoscroll, the line and ghost chrome, and the announcements, over the pointer-gesture skeleton. Each surface passes only its drop model: how to measure, how a point becomes a slot (null declines — a noop drop draws no line and commits nothing), what a slot commits, and its wording; the models stay pure and unit-tested, handing the caller one classified commit, a reorder or a reparent. In the sidebar that commit lands optimistically wherever a pure tree transform can express it; in the view bands it resolves through one shared patch held until the write returns, with a Set band's whole region reading as one nest-into target and a flat surface turning nesting off. The editor's block drag keeps its own lifecycle while wearing the same chrome.
 
 ### Autoscroll
 
-One app-wide primitive drives every drag's edge-scroll (`Interactions/autoscroll.ts`): a singleton frame loop each drag source feeds, started at activation and stopped through the instance-scoped stopper it returns, so a bystander surface's teardown can't halt a live drag. The loop scrolls one fixed scroller resolved once at drag start — handed in by the caller, or found by an axis-aware walk to the nearest ancestor that scrolls in the needed axis — reads the last pointer point every frame so holding still at an edge keeps scrolling, and advances in pixels per second scaled by the frame delta, so the speed is identical at any refresh rate. Distance-based acceleration eases a run in from a floor toward a ceiling, and direction-intent withholds a direction until the pointer has left that edge band once, so grabbing an item already pinned at an edge doesn't rocket the container.
+One app-wide primitive drives every drag's edge-scroll (`UIX/Interactions/autoscroll.ts`): a singleton frame loop each drag source feeds, started at activation and stopped through the instance-scoped stopper it returns, so a bystander surface's teardown can't halt a live drag. The loop scrolls one fixed scroller resolved once at drag start — handed in by the caller, or found by an axis-aware walk to the nearest ancestor that scrolls in the needed axis — reads the last pointer point every frame so holding still at an edge keeps scrolling, and advances in pixels per second scaled by the frame delta, so the speed is identical at any refresh rate. Distance-based acceleration eases a run in from a floor toward a ceiling, and direction-intent withholds a direction until the pointer has left that edge band once, so grabbing an item already pinned at an edge doesn't rocket the container.
 
 The tunables are custom properties declared at `:root`, overridable on any ancestor, and read once at drag start.
 
-**SOURCE:** `Pommora/src/renderer/Interactions/autoscroll.ts`
+**SOURCE:** `UIX/Interactions/autoscroll.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
