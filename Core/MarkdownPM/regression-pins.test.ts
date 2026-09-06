@@ -1,6 +1,6 @@
 // Each case is a fixed break, kept here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask, codeMaskOf, isInsideCode } from '@pommora/core/Connections/markdownCode'
+import { codeMask, codeMaskOf, isInsideCode } from './Engine/markdownCode'
 import { splitRow } from './Engine/Tables/codec'
 import { tokenize } from './Engine/tokens'
 import {

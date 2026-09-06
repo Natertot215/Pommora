@@ -1,7 +1,7 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from './parser'
-import { codeMask, inlineSpans } from '@pommora/core/Connections/markdownCode'
+import { codeMask, inlineSpans } from './markdownCode'
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'

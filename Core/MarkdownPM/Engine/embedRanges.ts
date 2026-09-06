@@ -15,7 +15,7 @@ import {
   normalizeTitle,
   type LinkStatus,
 } from '@pommora/core/Connections/connections'
-import type { CodeMask } from '@pommora/core/Connections/markdownCode'
+import type { CodeMask } from './markdownCode'
 
 export interface DocLineScan {
   maths: [number, number][]

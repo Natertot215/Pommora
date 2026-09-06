@@ -8,7 +8,7 @@ import {
 } from './connections'
 import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from './links'
 import { linkNamesTitle, readLink } from './linkValue'
-import { codeMask } from './markdownCode'
+import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 
 /** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. An alias and a markdown link's label ride through. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
