@@ -83,7 +83,7 @@ a{color:var(--accent)}
 </main>
 <script>
 const DATA = {
-  updated: "09-06-2026 04:00 PT",
+  updated: "09-06-2026 06:30 PT",
   base: "7941edec",
   baseline: { typecheck: "exit 0", tests: "321 files / 4,006 tests", lint: "1,019 files clean", build: "green", loc: "69,704" },
   phases: [
@@ -102,9 +102,9 @@ const DATA = {
       { n: 7, title: "Dialer replaces the api object", state: "done", hash: "1c052c1a", note: "Preload 201 → 26 lines; 222 sites in 68 files on host().ask; leaf table 149 rows, 147 pure renames. Non-test −12 (the wider call form ate the savings)." },
       { n: 8, title: "main/index.ts splits by domain", state: "done", hash: "4f6a8898", note: "Fable. Twelve Core handler maps behind HostContext; Desktop/main.ts 357 lines; Pommora/ gone; net −353 non-test. Smoke green." },
       { n: 9, title: "Dispatcher bodies and the one sweep", state: "done", hash: "838b1fa0", note: "mutate.ts 633 → 178; one governed sweep engine; a second nexus's journal clears (red-green). Non-test +151 (fourteen files' import blocks). Found: an unknown property kind erases the value (Task 16)." },
-    ], gate: { name: "Gate 2", state: "running", note: "Task 9's smoke stands as the gate's; one simplifier review of 90e2436b..HEAD in flight." } },
+    ], gate: { name: "Gate 2", state: "done", hash: "de8c32b8", note: "Two Opus reviewers; −120 gross; a second assetUrl writer and the last sessionRoot reach-in fixed; tests 322 / 3,992." } },
     { name: "Phase 3", title: "Filing inside the domains · review → polish → move, Fable reviews each domain before its re-nest", tasks: [
-      { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "pending", note: "flavor → kind across Windows (47 sites)." },
+      { n: 10, title: "Interface, Views, Properties, Tiles, Navigation, Settings settle", state: "running", note: "Review → polish first (two Opus agents by domain, the Q&A rulings applied), then the move. flavor → kind across Windows (47 sites)." },
       { n: 11, title: "MarkdownPM re-nests; the model separates", state: "pending" },
       { n: 12, title: "UIX settles at its root; motion has one definition", state: "pending" },
     ], gate: { name: "Gate 3", state: "pending", note: "One smoke launch." } },
@@ -141,8 +141,10 @@ const DATA = {
     { at: "1c052c1a", label: "Task 7", lines: 69826 },
     { at: "4f6a8898", label: "Task 8", lines: 69639 },
     { at: "838b1fa0", label: "Task 9", lines: 69757 },
+    { at: "de8c32b8", label: "Gate 2", lines: 69748 },
   ],
   gates: [
+    { name: "Gate 2 · de8c32b8", text: "typecheck 0 · test 0 (322 / 3,992) · lint 0 · build 0\\nwindow.nexus in Core → dialer.ts only · ipcMain → Bridge/ipc.ts only · installMachine/installStores one call each · sessionRoot() below handlers → 0" },
     { name: "Task 9 · 838b1fa0", text: "typecheck 0 · test 0 (322 / 3,991) · lint 0 (1,084 files) · build 0\nwc mutate.ts → 178 · cascadePages → 0 · sweepGovernedRoots → 14 call sites · second-root journal test red → green\nsmoke (agent): mutate setProperty + setIcon round-tripped to frontmatter; restored" },
     { name: "Task 8 · 4f6a8898", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 (1,071 files) · build 0\ntest ! -d Pommora · ipcMain.handle sites → 1 · BrowserWindow in Core → 0 · electron in Core → 0\nsmoke (agent): state open, 7 collections; page:open + updateBody round-tripped; restored" },
     { name: "Task 7 · 1c052c1a", text: "typecheck 0 · test 0 (322 / 3,990) · lint 0 · build 0\nrg window.nexus Core outside Platform → 0 · LegacyApi → 0 · preload dir gone\nsmoke (agent): nexus exposes ask/tell/on/openDropped; state open; page:open + updateBody round-tripped; restored" },
