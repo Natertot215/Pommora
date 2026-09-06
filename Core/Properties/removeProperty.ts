@@ -3,9 +3,9 @@ import { stripPageMember } from './pageValue'
 import { readSidecar } from '../IO/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { sidecarPath } from '../Locations/paths'
-import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../IO/atomicWrite'
+import { readTextOrNull, rmwJsonStrict } from '../IO/atomicWrite'
 import { folderCorpus, indexWrittenPage } from '../Index/indexSeed'
-import { noteValueWrite } from '../Nexus/valuesChanged'
+import { sweepGovernedRoots } from './governedSweep'
 import { readFrontmatterFields } from '../IO/pageFile'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
@@ -58,15 +58,9 @@ async function removeInner(
     ),
   )
   if (!written.ok) return written
-  for (const file of files) {
-    const wrote = await rewritePageSerialized(file, (content) =>
-      sweepAdmits(content) ? stripPageMember(content, key) : null,
-    )
-    if (wrote) {
-      noteValueWrite(root, file)
-      await indexWrittenPage(root, file)
-    }
-  }
+  await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+    rewriteText: (content) => stripPageMember(content, key),
+  })
   return ok(null)
 }
 

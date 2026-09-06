@@ -4,14 +4,11 @@
 // flow as Result, never thrown.
 
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
-import { rewritePageSerialized } from '../IO/atomicWrite'
-import { indexWrittenPage } from '../Index/indexSeed'
-import { noteValueWrite } from '../Nexus/valuesChanged'
 import { validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
+import { sweepGovernedRoots } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
-import { sweepAdmits } from '../Nexus/util'
 import { replacePageValue, stripPageValue } from './pageValue'
 import { ok, fail, type Result } from '../Contract/result'
 import type { Adoption } from './propertyValue'
@@ -170,8 +167,12 @@ async function resolveForCascade(
 
 /** Strips `value` — the shared tail of clear and remove on both Select and Status, which
  *  differ only in the type check that resolved `key`. */
-function stripCascade(root: string, key: string, value: string): Promise<number> {
-  return cascadePages(root, key, (content) => stripPageValue(content, key, value))
+async function stripCascade(root: string, key: string, value: string): Promise<number> {
+  const files = await keyHolderFiles(root, key, await collectionFolders(root))
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+    rewriteText: (content) => stripPageValue(content, key, value),
+  })
+  return swept.skipped.length
 }
 
 /** Def-gated so an op the registry will refuse outright journals nothing. Staged BEFORE the
@@ -238,10 +239,11 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
         return edit
       }
       const key = edit.value
-      const skipped = await cascadePages(root, key, (content) =>
-        replacePageValue(content, key, oldValue, newTitle),
-      )
-      if (!skipped) await clearSchemaJournal(root, record)
+      const files = await keyHolderFiles(root, key, await collectionFolders(root))
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+        rewriteText: (content) => replacePageValue(content, key, oldValue, newTitle),
+      })
+      if (!swept.skipped.length) await clearSchemaJournal(root, record)
       return ok(null)
     })
 }
@@ -274,32 +276,6 @@ function removeOp(requireType: RequireType) {
       await clearSchemaJournal(root, record)
       return dropped
     })
-}
-
-/** Each page's read-modify-write runs under its file lock — the SAME lock the cell-write path
- *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other. Per
- *  file, not all-or-nothing: a partly-applied rename/strip is recoverable by re-running. Returns
- *  how many holders it could not read; a journaled caller holds its record while any remain. */
-export async function cascadePages(
-  root: string,
-  key: string,
-  rewrite: (content: string) => string | null,
-): Promise<number> {
-  const folders = await collectionFolders(root)
-  let unreadable = 0
-  for (const file of await keyHolderFiles(root, key, folders)) {
-    let read = false
-    const wrote = await rewritePageSerialized(file, (content) => {
-      read = true
-      return sweepAdmits(content) ? rewrite(content) : null
-    })
-    if (!read) unreadable++
-    if (wrote) {
-      noteValueWrite(root, file)
-      await indexWrittenPage(root, file)
-    }
-  }
-  return unreadable
 }
 
 export const renameOption = renameOp(requireOptionType, editSelectOptions)

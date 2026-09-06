@@ -1,14 +1,12 @@
 import { join } from '../Locations/posix'
 import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
-import { rewritePageSerialized } from '../IO/atomicWrite'
-import { sweepAdmitsBody } from './util'
+import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections, rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { normalizeTitle } from '../Connections/connections'
 import { ok, type Result } from '../Contract/result'
 import { queryMentions } from '../Index/contentIndex'
-import { frontmatterValues, indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
-import { noteValueWrite } from './valuesChanged'
+import { frontmatterValues, nexusCorpus } from '../Index/indexSeed'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { isRegisteredPropertyName, propertyNames } from '../Properties/properties'
 
@@ -18,13 +16,11 @@ export async function renameCascade(
   newTitle: string,
 ): Promise<Result<{ touched: string[] }>> {
   const oldKey = normalizeTitle(oldTitle)
-  const touched: string[] = []
   const rels = queryMentions(oldKey) ?? (await nexusCorpus(nexusRoot))
   const names = propertyNames(Object.values((await readRegistry(nexusRoot)).defs))
-  for (const rel of rels) {
-    const file = join(nexusRoot, rel)
-    const wrote = await rewritePageSerialized(file, (content) => {
-      if (!sweepAdmitsBody(content)) return null // connections live only on files the tree admits
+  const files = rels.map((rel) => join(nexusRoot, rel))
+  const swept = await sweepGovernedRoots(nexusRoot, { kind: 'files', files }, () => null, {
+    rewriteText: (content) => {
       const { body } = splitEnvelope(content)
       const values = Object.fromEntries(
         Object.entries(frontmatterValues(content)).filter(([k]) =>
@@ -38,12 +34,7 @@ export async function renameCascade(
         : body
       if (newBody === body && keys.length === 0) return null
       return mergeFrontmatter(content, patch, keys, newBody)
-    })
-    if (wrote) {
-      touched.push(file)
-      noteValueWrite(nexusRoot, file)
-      await indexWrittenPage(nexusRoot, file)
-    }
-  }
-  return ok({ touched })
+    },
+  })
+  return ok({ touched: swept.touched })
 }

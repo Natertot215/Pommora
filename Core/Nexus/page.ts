@@ -15,6 +15,7 @@ import { PAGE_MODELED_KEYS } from './identityMark'
 import { errText, ok, fail, type Result } from '../Contract/result'
 import { pathExists, invalidName } from './util'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
+import { sessionRoot } from './session'
 import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
@@ -101,6 +102,12 @@ export async function updatePageProperty(
   const key = def.name
   const clear = value === null || isBlankValue(value)
   return ok(
-    await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key], world),
+    await setGovernedRootKeys(
+      sessionRoot(),
+      absFile,
+      clear ? {} : { [key]: encodeValue(value) },
+      [key],
+      world,
+    ),
   )
 }

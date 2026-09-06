@@ -9,7 +9,7 @@ import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { removeFromRegistry, renameSweep } from './registryProperty'
 import { stripKeyRewrite, unassignAndPurge } from './deleteProperty'
-import { cascadePages, dropOptionFromDef } from './optionOps'
+import { dropOptionFromDef } from './optionOps'
 import { optionValues } from './properties'
 import { replacePageValue, stripPageValue } from './pageValue'
 import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
@@ -72,10 +72,11 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       // `from`, holds both — a refused duplicate's residue — or neither) is not this record's.
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
       const key = def.name
-      const skipped = await cascadePages(root, key, (content) =>
-        replacePageValue(content, key, journal.from, journal.to),
-      )
-      return skipped > 0
+      const files = await keyHolderFiles(root, key, await collectionFolders(root))
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+        rewriteText: (content) => replacePageValue(content, key, journal.from, journal.to),
+      })
+      return swept.skipped.length > 0
     }
     case 'option-remove': {
       // Pages-first order holds the value in the def until the strip completes, so the value
@@ -83,10 +84,11 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const def = defs[journal.id]
       if (!def || !optionValues(def).includes(journal.value)) return false
       const key = def.name
-      const skipped = await cascadePages(root, key, (content) =>
-        stripPageValue(content, key, journal.value),
-      )
-      if (skipped > 0) return true
+      const files = await keyHolderFiles(root, key, await collectionFolders(root))
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
+        rewriteText: (content) => stripPageValue(content, key, journal.value),
+      })
+      if (swept.skipped.length > 0) return true
       await dropOptionFromDef(root, journal.id, journal.value)
       return false
     }
