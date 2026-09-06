@@ -14,7 +14,7 @@ import {
 import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { isRecentWrite } from '@pommora/core/IO/writeEcho'
-import { push as pushToWindow } from './ipc'
+import { push as pushToWindow } from '../Bridge/ipc'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'

@@ -9,12 +9,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@pommora/core/*": ["../Core/*"],
-      "@pommora/uix/*": ["../UIX/*"],
-      "@pommora/desktop/*": ["../Desktop/*"]
-    },
     "noEmit": true
   },
-  "include": ["../Desktop/Renderer/**/*", "../Desktop/Web/**/*"]
+  "include": ["Renderer/**/*"]
 }
