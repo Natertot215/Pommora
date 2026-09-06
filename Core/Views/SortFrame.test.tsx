@@ -69,7 +69,6 @@ const mount = async (v: SavedView): Promise<void> => {
   })
 }
 const texts = (): string => host.textContent ?? ''
-/** A picker's rows portal out of the host — the open menu reads from the document. */
 const menuTexts = (): string => document.body.textContent ?? ''
 const click = async (el: Element | null | undefined): Promise<void> => {
   await act(async () => {
@@ -78,15 +77,12 @@ const click = async (el: Element | null | undefined): Promise<void> => {
 }
 const openPicker = (label: string): Promise<void> =>
   click(document.querySelector(`button[aria-label="${label}"]`))
-/** The LAST match: the trigger states the current value, the menu row that follows it is the pick. */
 const pickOption = (t: string): Promise<void> =>
   click(
     [...document.querySelectorAll('button, [role="button"]')]
       .filter((e) => e.textContent === t)
       .at(-1),
   )
-/** A clickable from anywhere, since a menu portals to body. Matched by ROLE, not tag: a menu row is
- *  a `role="button"` div. */
 const clickable = (match: (el: Element) => boolean): Element | undefined =>
   [...document.querySelectorAll('button, [role="button"]')].find(match)
 
@@ -125,7 +121,7 @@ describe('SortFrame rows', () => {
     expect(menuTexts()).toContain('Last Modified')
     expect(menuTexts()).toContain('Status')
     expect(menuTexts()).toContain('When')
-    expect(menuTexts()).toContain('Attachment') // file ranks by its filename, so it is offered
+    expect(menuTexts()).toContain('Attachment')
     await pickOption('Status')
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
@@ -158,7 +154,7 @@ describe('SortFrame rows', () => {
         ],
       }),
     )
-    expect(texts()).toContain('Reversed') // the sub Order shares the primary's per-type vocabulary
+    expect(texts()).toContain('Reversed')
     await mount(
       view({
         sort: [
@@ -167,7 +163,7 @@ describe('SortFrame rows', () => {
         ],
       }),
     )
-    expect(texts()).toContain('Descending') // a checkbox sub reads the value vocabulary
+    expect(texts()).toContain('Descending')
   })
 
   it('None on Sort By writes sort: undefined — never []', async () => {
@@ -209,7 +205,7 @@ describe('SortFrame rows', () => {
     await click(trigger)
     await click(clickable((el) => el.textContent === 'Custom'))
     expect(lastSaved().sort).toEqual([
-      { property_id: 'prop_status', direction: 'descending', order: ['done', 'todo'] }, // seeded reversed
+      { property_id: 'prop_status', direction: 'descending', order: ['done', 'todo'] },
     ])
     await mount(
       view({
@@ -217,7 +213,7 @@ describe('SortFrame rows', () => {
       }),
     )
     expect(texts()).toContain('Custom')
-    expect(texts()).toContain('Options') // the draggable CustomList heading
+    expect(texts()).toContain('Options')
     expect(texts().indexOf('Done')).toBeLessThan(texts().indexOf('Todo'))
   })
 
@@ -235,7 +231,7 @@ describe('SortFrame rows', () => {
 
   it('a status primary shows the example order; Reversed flips the run', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
-    expect(texts()).toContain('Open') // the status group heading
+    expect(texts()).toContain('Open')
     expect(texts().indexOf('Todo')).toBeLessThan(texts().indexOf('Done'))
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'descending' }] }))
     expect(texts().indexOf('Done')).toBeLessThan(texts().indexOf('Todo'))

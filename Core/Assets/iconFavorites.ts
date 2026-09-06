@@ -5,7 +5,6 @@ import { host } from '../Platform/dialer'
 
 const NONE: string[] = []
 
-/** The nexus's favorite icons, bound for the IconPicker — personalization state plus the native menu. */
 export function useIconFavorites(): IconFavorites {
   const ids = useSession((st) => st.personalization.favoriteIcons) ?? NONE
   const setPersonalization = useSession((st) => st.setPersonalization)

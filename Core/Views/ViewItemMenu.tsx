@@ -9,7 +9,6 @@ import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { host } from '../Platform/dialer'
 
-/** The view's own "…" — Duplicate, and a Delete that asks first. */
 export function ViewItemMenu({
   source,
   view,

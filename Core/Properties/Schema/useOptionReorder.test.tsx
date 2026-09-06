@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level gesture tests over the pointer harness — geometry truth lives in the CDP pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

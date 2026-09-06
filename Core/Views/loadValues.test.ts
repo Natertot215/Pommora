@@ -33,14 +33,11 @@ describe('loadValues', () => {
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual([P1, P2])
     expect(values[P1].frontmatter['<Areas>']).toEqual(['Work'])
-    // Wrapped keys ride the loose frontmatter unmodeled — the batch read needs no schema at all.
     expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('in_progress')
     expect((values[P2].frontmatter as Record<string, unknown>)['<Count>']).toBe(7)
   })
 
-  // Local-clock form, the shape the date picker writes: a filter's calendar-day truncation and
-  // the cell's rendering must land on the same day, which a UTC `Z` string breaks every evening
-  // west of Greenwich.
+  // Local-clock form, the shape the date picker writes: a filter's calendar-day truncation and the cell's rendering must land on the same day, which a UTC `Z` string breaks west of Greenwich.
   it("carries the file's mtime and the id's time in the machine's local clock", async () => {
     const tz = process.env.TZ
     process.env.TZ = 'America/New_York'
@@ -71,9 +68,7 @@ describe('loadValues', () => {
     expect(Date.parse(values[P1].createdAt!)).toBe(Math.floor(decodeTime(P1) / 1000) * 1000)
   })
 
-  // An identity-less page must reach the value batch whole, not just as a key — a row that lands
-  // in the map with its values dropped renders blank, which reads as data loss rather than as a
-  // page awaiting adoption.
+  // An identity-less page must reach the value batch whole — a row landing in the map with its values dropped renders blank, which reads as data loss rather than a page awaiting adoption.
   it('keys an id-less page by its adopted id, carrying its values intact', async () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
@@ -91,8 +86,7 @@ describe('loadValues', () => {
     expect(values[keys[0]].createdAt).toBeNull()
   })
 
-  // An editor that clears a field leaves `banner:` with a null value; the page still has an id,
-  // still has properties, and still has a mtime — none of which a blank banner may take away.
+  // An editor that clears a field leaves `banner:` null; the page still has an id, properties, and a mtime — none of which a blank banner may take away.
   it('keeps a page whose icon or banner is null in the batch, values intact', async () => {
     await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
@@ -107,8 +101,7 @@ describe('loadValues', () => {
     expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('Active')
   })
 
-  // A push names the pages it touched; reading only those keeps a body autosave from re-reading
-  // the whole container on every pause.
+  // A push names the pages it touched; reading only those keeps a body autosave from re-reading the whole container on every pause.
   it('reads only the named pages, resolved through the live tree', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl' }))

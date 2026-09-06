@@ -63,7 +63,6 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-/** The value a page holds for the property under test, read at its own key. */
 const pageValue = async (path: string): Promise<unknown> =>
   (readFrontmatterFields(await readFile(path, 'utf8')) as Record<string, unknown>)[liveDef.name]
 const sidecar = async (): Promise<Record<string, unknown> | null> =>
@@ -87,27 +86,24 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect((sc?.properties as string[] | undefined) ?? []).not.toContain(propId)
     expect('modified_at' in (sc ?? {})).toBe(false)
     const block = await cacheBlock()
-    // The block is the values map and nothing else — no timestamp field rides along.
     expect(Object.keys(block ?? {})).toEqual(['values'])
     const vals = Object.values(block?.values ?? {})
     expect(vals).toHaveLength(2)
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
-  // Remove exists to CLEAR a value; identity only decides whether it can be handed back. A page
-  // carrying no identity key must still be stripped, or Remove leaks the very value it ran to
-  // clear — and it must not be cached under a synthetic id it would never be found by again.
+  // A page carrying no identity key must still be stripped, or Remove leaks the very value it ran to clear — and it must not be cached under a synthetic id it would never be found by again.
   it('strips an identity-less page too, caching nothing for it', async () => {
     const raw = await readFile(pageA, 'utf8')
     await writeFile(pageA, raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), ''))
-    expect(await pageValue(pageA)).toEqual(['active']) // still holds the value, just no identity
+    expect(await pageValue(pageA)).toEqual(['active'])
 
     const r = await removeProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageValue(pageA)).toBeUndefined() // stripped regardless
+    expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()
     const vals = Object.values((await cacheBlock())?.values ?? {})
-    expect(vals).toEqual([['done']]) // only the identified page is restorable
+    expect(vals).toEqual([['done']])
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
@@ -143,10 +139,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       ],
     } as Partial<PropertyDefinition>)
     await assignProperty(root, folder, propId)
-    expect(await pageValue(pageA)).toBeUndefined() // 'active' is no longer a live option
+    expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toEqual(['done'])
-    // The entry leaves the cache only by restoring — a rejected value waits for its option
-    // to come back rather than being spent on a restore that never happened.
+    // The entry leaves the cache only by restoring — a rejected value waits for its option to come back rather than being spent on a restore that never happened.
     const block = (await cacheBlock()) as { values: Record<string, unknown> }
     expect(Object.keys(block.values)).toHaveLength(1)
     expect(Object.values(block.values)).toEqual([['active']])

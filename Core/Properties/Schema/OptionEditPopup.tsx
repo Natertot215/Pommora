@@ -18,8 +18,6 @@ const APPEARANCE_OPTIONS = [
   { value: 'clear', label: 'Clear' },
 ] as const satisfies readonly PickerOption<OptionAppearance>[]
 
-/** The one editor an option's square-pen opens: identity (icon + title) over the color grid over
- *  the Appearance footing. Each act commits through its own existing write — nothing batches. */
 export function OptionEditPopup({
   open,
   type,
@@ -47,8 +45,7 @@ export function OptionEditPopup({
   const [iconOpen, setIconOpen] = useState(false)
   return (
     <>
-      {/* manageFocus off: opening is inspection, not an edit — neither field takes focus until
-          clicked, so nothing rings or selects on open. */}
+      {/* manageFocus off: opening is inspection, not an edit — nothing rings or selects on open. */}
       <PickerMenu
         open={open}
         onDismiss={onDismiss}

@@ -42,7 +42,6 @@ describe('propertyDefinition', () => {
       type: 'status',
       icon: 'circle',
       status_groups: defaultStatusSeed(),
-      // foreign / display-config keys ride through (looseObject)
       display_as: 'pill',
       plugin_meta: { keep: true },
     }
@@ -72,9 +71,7 @@ describe('propertyDefinition', () => {
     }
   })
 
-  // The rename from `link-url` rides on this: an unrecognized stored value drops to undefined, and
-  // the call site's default is the mode `link-url` already meant, so a def written by an older build
-  // lands exactly where it was.
+  // An unrecognized stored value drops to undefined and the call site's default is the mode `link-url` already meant, so a def written by an older build lands exactly where it was.
   it('drops an unrecognized link_display to undefined rather than failing the def', () => {
     const parsed = propertyDefinition.parse({
       id: 'p',

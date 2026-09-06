@@ -88,8 +88,7 @@ describe('the control writes one row, and clears it on the default', () => {
   })
 })
 
-// One state, two controls, one writer: the divider reports its press to the same flip the
-// footer's control calls, so the two can never disagree about what a toggle means.
+// One state, two controls, one writer: the divider reports its press to the same flip the footer's control calls, so the two can never disagree.
 describe('the divider and the footer control write the same row', () => {
   const flip = (): void => useSession.getState().toggleCitations('page-1')
 

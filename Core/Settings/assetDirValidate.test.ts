@@ -29,9 +29,7 @@ describe('validateAssetDir', () => {
     expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'file-assets/photos' })
   })
 
-  // A folder the chooser accepts and the reader coerces back to the default is a setting that
-  // silently does nothing: the pick succeeds, the key is stored, and every asset resolves against
-  // `.nexus/assets` anyway. One rule, asked of one owner.
+  // A folder the chooser accepts and the reader coerces back to the default is a setting that silently does nothing — the pick succeeds, the key is stored, and every asset resolves against `.nexus/assets` anyway.
   it('refuses exactly what the settings reader refuses, and accepts exactly what it keeps', async () => {
     for (const name of ['a\\b', '.nexus', '.trash']) {
       const abs = await dir(name)
@@ -68,8 +66,7 @@ describe('validateAssetDir', () => {
   })
 
   it('refuses content NESTED under the folder, not only its own entries', async () => {
-    // The asset root is pruned by segment prefix, so a Collection three levels down would vanish
-    // from the tree and the index alongside it.
+    // The asset root is pruned by segment prefix, so a Collection three levels down would vanish from the tree and the index alongside it.
     const abs = await dir('Media')
     await dir('Media', 'a', 'b')
     await writeFile(join(root, 'Media', 'a', 'b', 'note.md'), 'text')

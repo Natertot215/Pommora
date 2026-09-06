@@ -48,8 +48,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     else if (action === 'toggleIcon') await toggleHeadingIcon()
   }
 
-  // The homepage IS the nexus, so its title renames the root folder via renameNexus — not
-  // submitRename, which the other title header (below) uses.
+  // The homepage IS the nexus, so its title renames the root folder via renameNexus rather than submitRename.
   const commitHome = (next: string): void => {
     setEditingHome(false)
     void host()

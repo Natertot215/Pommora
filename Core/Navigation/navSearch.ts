@@ -1,7 +1,3 @@
-// Client-side title search over the live tree — title/kind only; full-text/body search is a
-// deferred Prospect resting on a SQLite FTS layer. The index carries a ready-to-select NavRef per
-// hit and is memoized per tree; filterNav is pure and re-runs per keystroke.
-
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 
 export interface SearchEntry {
@@ -12,10 +8,7 @@ export interface SearchEntry {
   lower: string
 }
 
-/** Fuzzy subsequence score of an already-lowercased `t` against an already-lowercased `q`, or null
- *  when `q` isn't a subsequence. Rewards contiguous runs + word-start hits so substring/prefix
- *  matches rank highest. Exported for surfaces outside navigation whose subjects carry no `NavRef`
- *  to put in a `SearchEntry` — one scorer, however the caller holds its rows. */
+/** Exported for surfaces outside navigation whose subjects carry no `NavRef` to put in a `SearchEntry` — one scorer, however the caller holds its rows. */
 export function fuzzyScore(t: string, q: string): number | null {
   let ti = 0
   let score = 0
@@ -36,7 +29,6 @@ export function fuzzyScore(t: string, q: string): number | null {
   return score - t.length * 0.01 // gentle tiebreak toward shorter titles
 }
 
-/** Empty query → no results (the surface shows recents/favorites instead). */
 export function filterNav(index: SearchEntry[], query: string, limit = 50): SearchEntry[] {
   const q = query.trim().toLowerCase()
   if (!q) return []

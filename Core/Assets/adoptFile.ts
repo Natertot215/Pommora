@@ -1,6 +1,3 @@
-// Bringing an outside file into the nexus: the one seam every adoption goes through, so a picked
-// image, a dropped attachment and a file-property pick all land under the same rules.
-
 import { basename, extname, join } from '../Locations/posix'
 import { machine } from '../Platform/machine'
 import { resolveUnderRoot } from '../Locations/pathSafety'

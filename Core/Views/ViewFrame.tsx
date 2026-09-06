@@ -69,7 +69,6 @@ export function ViewFrame({
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
   const scope = useViewTileScope()
-  // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []
   const rows = views.length ? views : [mintDefaultView(schema)]

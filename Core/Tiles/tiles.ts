@@ -151,7 +151,6 @@ type TileMenuSource = 'pages' | 'views'
 
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
-  /** The kind owns a `<id>.md` beside the document. */
   fileBacked: boolean
   menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
 }
@@ -191,7 +190,6 @@ export interface ViewPick {
 }
 export type ViewPickerItem = DrillPickItem<ViewPick>
 
-/** Null for shapes this build doesn't know — the caller keeps the raw value and renders inert. */
 export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as TileEntry) : null
@@ -209,8 +207,7 @@ export interface TileDocPatch {
   locked?: boolean
 }
 
-/** Main-side gate for a tiles:save patch — a shape CHECK only: the ORIGINAL values are what get
- *  written, since zod's parse output strips unknown keys and foreign keys must survive. */
+/** A shape CHECK only: the ORIGINAL values are what get written, since zod's parse output strips unknown keys and foreign keys must survive. */
 export function tilePatchProblem(patch: TileDocPatch): string | null {
   if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
     return 'Malformed layout.'

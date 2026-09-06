@@ -17,7 +17,6 @@ import '../Interface/Header/content-banner.css'
 import './nav-view.css'
 
 export function NavView(): React.JSX.Element {
-  // resolvedRecents arrives already pin-deduped (useNavData filters against the pin set).
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
   const viewMode = useSession((s) => s.navViewMode)
   // NavWindow's freeze-at-open is for its persistent pane — NavView opens fresh each time.
@@ -81,8 +80,6 @@ export function NavView(): React.JSX.Element {
         </div>
       )}
       <div className="nav-view-scroll over-scroll">
-        {/* Search always renders Gallery cards (frozen layout) — the toggle governs only the
-            recents/empty view. */}
         {results ? (
           <NavGallery
             pins={[]}

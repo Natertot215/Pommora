@@ -26,8 +26,6 @@ const page = (n: string, fm: string): Promise<void> =>
     `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`,
   )
 
-/** 30 pages in the governing Collection, 2 holding the key; one un-adopted note also holds it
- *  and must stay outside every property pen's reach. */
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-keyh-'))
   await mkdir(abs('.nexus'), { recursive: true })

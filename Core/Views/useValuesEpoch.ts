@@ -4,7 +4,6 @@ import type { PageValues } from '@pommora/core/Views/viewRow'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
 
-// `write` is the mutate the override waits on; null once it landed.
 export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
@@ -33,8 +32,7 @@ export const patchOverride = (
   )
 }
 
-// A push naming page ids retires their overrides outright (the external write landed later and
-// wins); one naming none — a batch that degraded to a walk — retires only the settled ones.
+// A push naming page ids retires their overrides outright (the external write landed later and wins); one naming none retires only the settled ones.
 export const retireSettled = (
   o: Overrides | null,
   pageIds: readonly string[] | null,
@@ -58,20 +56,14 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
   )
 }
 
-/** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a
- *  container push re-reads only the pages it names, merging them in, and retires the overrides
- *  the push settles — only once the refetch lands, since a row retired ahead of it paints its
- *  identity-only fallback for the round trip. A push that names none (a batch that degraded to a
- *  walk) re-reads the container whole. A superseded whole refetch still retires: a settled
- *  override left standing would mask the disk until the next push. */
+/** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); overrides retire only once the refetch lands, since a row retired ahead of it paints its identity-only fallback for the round trip. */
 function useValuesEpoch(
   path: string,
   setValues: Dispatch<SetStateAction<Record<string, PageValues>>>,
   setValueOverride?: SetOverrides,
 ): void {
   const valuesEpoch = useSession((st) => st.valuesEpoch)
-  // A scoped read superseded by a newer push on the same path still lands (its pages are not the
-  // newer read's); one superseded by a container swap must not — its pages belong to the old map.
+  // A scoped read superseded by a newer push on the same path still lands (its pages are not the newer read's); one superseded by a container swap must not.
   const live = useRef(path)
   live.current = path
   useEffect(() => {
@@ -105,8 +97,7 @@ function useValuesEpoch(
   }, [valuesEpoch, path, setValues, setValueOverride])
 }
 
-/** The canonical values for the opened container supersede any optimistic patches still
- *  standing, and `canceled` keeps a fast container swap from landing the old path's read. */
+/** `canceled` keeps a fast container swap from landing the old path's read. */
 export function useContainerValues(
   path: string,
   setValueOverride?: SetOverrides,

@@ -59,8 +59,7 @@ export function PageTile({
   ancestors?: readonly string[]
   chrome?: 'none' | 'page'
 }): React.JSX.Element {
-  // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh
-  // slot before the remounting editor reads it.
+  // The seed and the editor's key move in one render: a replaced body re-seeds from the fresh slot before the remounting editor reads it.
   const epoch = useBodyEpoch(path)
   const [seed, setSeed] = useState(() => {
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
@@ -114,8 +113,7 @@ export function PageTile({
           cover={entry.cover}
           onChanged={() =>
             void fetchPageDetail(path).then((detail) => {
-              // Merge the cover only — nulling would unmount the live editor mid-edit and race the
-              // debounced body write; the body seed stays untouched.
+              // Merge the cover only — nulling would unmount the live editor mid-edit and race the debounced body write.
               if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail) } : l))
             })
           }

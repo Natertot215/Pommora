@@ -85,8 +85,6 @@ const COL_SHIFT_HYSTERESIS = 25
 // KNOB — how long a left ghost survives before its collapse starts; 0 closes on leave immediately.
 const GHOST_GRACE_MS = 0
 
-/** The datetime cell's picker shell: PickerMenu portals off the cell (escaping the table's overflow
- *  clip) and self-dismisses via its own backdrop. */
 function DatetimeCellPicker({
   open,
   triggerRef,
@@ -154,58 +152,32 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   } = host
   const styleFor = useStyleFor()
   const selection = useSession((s) => s.selection)
-  // Local column layers — resize + align apply instantly and stay OUT of `liveView` so a resize
-  // doesn't re-run the pipeline; the fold ref carries them into every host persist.
+  // Local column layers stay OUT of `liveView` — a resize must not re-run the pipeline.
   const [widthOverride, setWidthOverride] = useState<Record<string, number>>({})
   const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
   const [collapsing, setCollapsing] = useState<string | null>(null)
-  // Columns whose tracks are sliding to a wider per-style min after a look change: enables the
-  // same grid-template-columns transition as Hide for one beat, cleared on transitionend. Populated by
-  // a render-phase detection (below) so it fires for EVERY look-write path — the column menu AND the
-  // property pane — through one mechanism, not a per-call-site trigger.
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
   const prevLooks = useRef<Record<string, string | undefined>>({})
-  // Live column smooth-shift: the dragged column index + the slot it's over. Deliberately
-  // NOT the cursor delta — that changes per pointermove and rides a grid-level CSS var instead
-  // (--col-drag-x), so a drag frame never re-renders the unmemoized row/cell tree. Transient —
-  // set on grab + slot flips, cleared on drop; column indices into the resolved `columns`.
   const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
   const beginGesture = usePointerGesture()
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  // The page a title:icon menu targeted (captured before the menu await — the row is out of scope by
-  // the time the picker commits). The cell element is what the picker anchors to.
   const [iconTarget, setIconTarget] = useState<{ path: string; icon?: string } | null>(null)
   const iconCellRef = useRef<HTMLElement | null>(null)
-  // Columns fit → the rounded content-inset look; columns overflow → the right inset flattens and
-  // the table h-scrolls to the glass edge (the left gutter holds). One read per pane resize /
-  // track-set change — never per scroll or per pointermove.
   const [overflowing, setOverflowing] = useState(false)
-  // The column sum (pre-zoom px), readable from the overflow check without a stale closure. The
-  // check compares THIS against the box — a scrollWidth read floors at clientWidth, so any
-  // is-content-bigger comparison built on it can latch.
+  // The column sum, read from here rather than scrollWidth: scrollWidth floors at clientWidth, so an is-content-bigger comparison built on it latches.
   const reflowRef = useRef(0)
-  // The one in-cell editing surface (picker · editor). Cleared on dismiss; the
-  // exit presence keeps a PICKER mounted through its Bloom-out (reading the last target from the
-  // ref while `editing` is already null) — the editor unmounts instantly.
   const [editing, setEditing] = useState<{
     rowId: string
     colId: string
     mode: 'picker' | 'editor' | 'rename'
-    // Bumped on each rename OPEN so the popover's key changes — a reopened cell mounts a fresh
-    // TextPicker + field instead of reviving the prior session's measured position and stale input.
     nonce?: number
-    // A just-created page's naming session: the field opens EMPTY (the page is literally
-    // "Untitled" on disk) and its commit rides the create — disambiguating, cascade-free.
     fromCreate?: true
   } | null>(null)
-  // A column resize is in progress (set on grab, cleared on commit) — a grid-level flag so the borderless
-  // table reveals its vertical dividers while you resize (its reorder twin is colDrag → col-dragging-active).
   const [resizing, setResizing] = useState(false)
   const triggerElRef = useRef<HTMLElement | null>(null)
   const lastPicker = useRef<{ rowId: string; colId: string } | null>(null)
   if (editing?.mode === 'picker')
     lastPicker.current = { rowId: editing.rowId, colId: editing.colId }
-  // Its rename twin — the TextPicker alias field keeps its exiting cell through the Bloom-out the same way.
   const renameNonce = useRef(0)
   const lastRename = useRef<{ rowId: string; colId: string; nonce: number } | null>(null)
   if (editing?.mode === 'rename') {
@@ -217,9 +189,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setCollapsing(null)
     setColDrag(null)
   }, [view.id])
-  // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
-  // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime
-  // width:100% pins it, and nothing here needs to fire). Each fires one cheap read, never per-scroll.
   useEffect(() => {
     const el = host.seam.viewRootRef.current
     if (!el) return
@@ -240,7 +209,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return () => ro.disconnect()
   }, [])
 
-  // The visible band list (headers only) — BandDnd's hit-test universe, snapshot at drag activation.
   const bands = useMemo(() => flattenBands(groups, collapsed), [groups, collapsed])
   const childIdsOf = (nodes: SetTreeNode[], id: string): string[] | null => {
     for (const n of nodes) {
@@ -250,10 +218,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
     return null
   }
-  // Global sub-order — dragging one set's bucket reorders that bucket across EVERY set. A cross-set
-  // drag arrives as kind 'reparent' (bandDnd routes by impliedParentId) and is STILL a global
-  // reorder: only the beforeId's bucket value matters, targetParentId is ignored. The key→bucket map
-  // builds once per drop, never a walk per lookup.
   const subGroupOrderPatch = (
     sub: NonNullable<SavedView['sub_group']>,
     draggedId: string,
@@ -275,10 +239,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       sub_group: { ...sub, order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket) },
     }
   }
-  // The band drop router (already classified by BandDnd). The two orders every view writes go
-  // through the shared patch; the table adds the two only it can render — a sub-group bucket's
-  // global order, and a reparent as moveSet with the destination's CURRENT fs children plus the
-  // moved id appended (the visual slot persists only in group_order).
   const onBandDrop = (draggedId: string, drop: BandDrop): void => {
     const dragged = bands.find((b) => b.id === draggedId)
     if (!dragged) return
@@ -300,8 +260,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (sub) commitBand(sub)
       return
     }
-    // The id universe is the SET TREE, never the rendered groups: a filter prunes emptied bands out
-    // of `groups`, and merging against that would drop their stored order along with them.
+    // The id universe is the set tree, never the rendered groups — a filter prunes emptied bands out of `groups`, and merging against that drops their stored order.
     const structural = bandReorderPatch({
       dragged,
       beforeId: drop.beforeId,
@@ -312,9 +271,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!structural) return
     if (drop.kind === 'reorder') {
       if (structuralGrouping && liveView.structural_order_mode === 'location') {
-        // Location mode — the same-parent reorder IS the filesystem write; group_order stays
-        // untouched (preserved for the flip back to Custom). The reparent branch below is mode-blind
-        // by design: its group_order write is the slot preservation.
         const parentPath = dragged.parentId === null ? source.path : setPaths.get(dragged.parentId)
         const siblingIds =
           dragged.parentId === null
@@ -339,9 +295,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ? setTree.map((n) => n.id)
         : childIdsOf(setTree, drop.targetParentId)
     if (!path || !destPath || !destChildIds) return
-    // One drop, two writers, possibly ONE sidecar (a de-nest to root): the fs move lands before the
-    // view write — views.save and set_order are both read-modify-writes on the container sidecar.
-    // A failed move (a name collision at the destination) commits NOTHING — no phantom order.
+    // The fs move lands before the view write: views.save and set_order are both read-modify-writes on the container sidecar, so a failed move commits nothing.
     void (async () => {
       if (
         !(await mutate({
@@ -366,8 +320,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setOrderOverride(next)
     persistView({ property_order: next })
   }
-  // Resize applies live (a separate override, so the pipeline doesn't re-run) and returns the clamped
-  // width so the header tracks the real edge; commit persists the merged widths.
   const resizeColumn = (id: string, width: number): number => {
     const clamped = clampWidth(
       Math.round(width),
@@ -380,16 +332,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setWidthOverride((prev) => ({ ...prev, [id]: clamped }))
     return clamped
   }
-  // The pre-drag override is captured at resize start so an abort restores it EXACTLY — an entry
-  // absent before the drag is deleted, never written back as an explicit width that a later persist
-  // would carry to disk.
+  // Captured at resize start so an abort restores exactly — an entry absent before the drag is deleted, never written back as a width a later persist would carry to disk.
   const resizeBaseline = useRef<{ id: string; value: number | undefined } | null>(null)
   const startResize = (id: string): void => {
     resizeBaseline.current = { id, value: widthOverride[id] }
     setResizing(true)
   }
-  // The baseline is consumed by the abort and cleared by whichever end fires — never by teardown,
-  // which the skeleton runs BEFORE onAbort.
+  // Cleared by whichever end fires, never by teardown — the skeleton runs teardown BEFORE onAbort.
   const abortResize = (): void => {
     const b = resizeBaseline.current
     if (!b) return
@@ -414,9 +363,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       },
     })
   }
-  // Hide animates the column shut on the disclosure token: setCollapsing drives its grid track to
-  // 0 (colWidth → 0, animated via .col-hiding); commitHide fires on the header's grid-template-columns
-  // transitionend, dropping the column from the pipeline + persisting.
   const hideColumn = (id: string): void => {
     setCollapsing(id)
   }
@@ -427,10 +373,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setHiddenOverride(hidden)
     persistView({ hidden_properties: hidden })
   }
-  // Per-column align/style resolved ONCE per change, not per call site per render (styleFor
-  // allocates) — the id-keyed maps serve the header, track, reflow, and menu readers; the
-  // positional arrays below serve the row path. Each reader's resolver fallback covers a column a
-  // watcher push removed mid-gesture.
   const resolveAlign = (id: string): ColumnAlign =>
     alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
   const resolveStyle = (id: string): ColumnStyle => styleFor(id, schema, liveView)
@@ -442,9 +384,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     [columns, schema, liveView, alignOverride, contextIds],
   )
   const colAlign = (id: string): ColumnAlign => alignById.get(id) ?? resolveAlign(id)
-  // A column header's glyph, gated by the per-view Column Icons toggle (`hide_column_icons`), which
-  // defaults ON (icons hidden). A Context column wears the Context's OWN icon — a shared type glyph
-  // would render every Context identically — and a schema-less column (unknown type) gets none.
   const iconsShown = !(liveView.hide_column_icons ?? true)
   const headerIcon = (id: string): React.ReactNode => {
     if (!iconsShown) return null
@@ -464,7 +403,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </span>
       )
     }
-    // A def-less id can still be a reserved column, whose registry type only declaredType supplies.
     const t = declaredType(id, schema)
     if (t === undefined) return null
     return (
@@ -480,13 +418,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       column_alignments: { ...liveView.column_alignments, ...alignOverride, [id]: align },
     })
   }
-  // Whether a number column can render a bar (percent, or fraction + a denominator) — the ONE gate the
-  // cell render, the cell menu, and the header menu share so all three agree on when Bar is offered.
   const numberBarCapable = (colId: string, type: ReturnType<typeof declaredType>): boolean =>
     type === 'number' && numberDivisor(schema.find((d) => d.id === colId)) !== undefined
-  // Right-click a header → native column menu: Align + Style + Hide. Title is the primary
-  // column — fixed left, not hideable, no style — so it pops nothing. The style ctx rides only for a
-  // schema-declared property type; the shared builder decides which types actually get items.
   const openHeaderMenu = async (
     id: string,
     isTitle: boolean,
@@ -515,17 +448,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (parsed) setStylePatch(id, parsed.key, parsed.value)
     }
   }
-  // Acting stops propagation so the row's select doesn't also fire; anything else bubbles.
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
-    // Ctrl+Click is macOS's secondary-click: it fires `click` alongside `contextmenu`. Bail so the
-    // right-click menu wins instead of the click acting under it (e.g. opening a link's browser tab).
+    // Ctrl+Click is macOS's secondary-click: it fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
     if (e.ctrlKey) return
-    // Capture the clicked cell for the table-level picker's placement (harmless on non-picker clicks).
     triggerElRef.current = e.currentTarget as HTMLElement
     if (col.kind === 'title') {
-      // The ONLY navigate: row-click narrowed to the title cell; row background is a no-op.
-      // A page-preview Collection routes to the Page Window instead; ⌘-click is always
-      // the explicit full-page bypass, to a new tab.
       e.stopPropagation()
       const owner =
         source.kind === 'collection'
@@ -544,24 +471,18 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
     if (col.kind !== 'property') return
     const t = declaredType(col.id, schema)
-    // The shared click semantics (cycle/toggle/picker/datetime) live in one router; only the
-    // surface-specific tails (number/url placement) stay here.
     const value = resolveFieldValue(row, col.id, schema)
     const def = schema.find((d) => d.id === col.id)
     const shared = sharedValueClickAction(t, value)
     if (shared) {
       e.stopPropagation()
       if (shared.kind === 'commit') setProperty(row, col.id, shared.value)
-      // A file value is filled through the OS dialog: a chip replaces the file it names and opens
-      // at that file's own folder, the value's own area adds and opens at the property's Directory.
       else if (shared.kind === 'file') {
         if (def)
           pickFileInto(def, value, fileChipIndex(e.target), (n) => setProperty(row, col.id, n))
       } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
-      // A Bar-look cell has no text to replace in place, so it edits through the TextPicker dropdown (the
-      // link's rename popover, reused); a Number-look cell keeps the inline text editor.
       if (colStyle(col.id).look === 'bar') {
         renameNonce.current += 1
         setEditing({ rowId: row.id, colId: col.id, mode: 'rename', nonce: renameNonce.current })
@@ -570,9 +491,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }
     } else if (t === 'url') {
       e.stopPropagation()
-      // Filled → open the address (matching the rendered <a>); empty → the inline field to type one
-      // in. A value naming a page is opened by that anchor alone — it navigates rather than browses,
-      // and the cell around it must not fall through to the editor and lose the click.
       const v = resolveFieldValue(row, col.id, schema)
       const raw = v.kind === 'url' ? v.value : undefined
       const url = urlClickTarget(raw)
@@ -587,7 +505,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (v.kind === 'url') return linkEditText(v.value)
     return ''
   }
-  // A lone '-'/'.' fails to parse and reverts rather than clearing the value.
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
     const fromCreate = editing?.fromCreate
     setEditing(null)
@@ -612,7 +529,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       const n = Number.parseFloat(trimmed)
       if (!Number.isNaN(n)) setProperty(row, col.id, { kind: 'number', value: n })
     } else if (t === 'url') {
-      // Edit rewrites the URL but rides the current alias along (urlValueFromEdit); empty clears.
       const cur = resolveFieldValue(row, col.id, schema)
       const next = urlValueFromEdit(
         trimmed,
@@ -622,9 +538,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       if (next !== undefined) setProperty(row, col.id, next)
     }
   }
-  // The inline text/number editor, mounted in the editing cell and REPLACING its content. The value
-  // pickers (status/select/multi/context) + the datetime picker are the table-level `cellPicker` below
-  // — they portal off the cell, so they never live inside it (and so never clip to the table's scroll).
   const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
     if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
       return null
@@ -641,7 +554,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         onCancel={() => setEditing(null)}
       />
     )
-    // A title rename keeps the page glyph seated beside the field — the icon isn't part of the text.
     if (col.kind !== 'title' || liveView.hide_page_icons) return editor
     return (
       <span className="cell-rename">
@@ -651,8 +563,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
-  // A reserved Context column has no schema def — a minimal synthetic one satisfies the picker,
-  // whose options come from `contextOptions` anyway.
   const pickerDefOf = (
     col: ResolvedColumn,
   ): { def: PropertyDefinition; contextOptions: ContextOption[] | null } | null => {
@@ -662,10 +572,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       (contextOptions ? syntheticContextDef(col.id) : undefined)
     return def ? { def, contextOptions } : null
   }
-  // ONE self-managed picker/datetime pane for the whole table, hung off the editing cell and
-  // portaled to a body top layer so it escapes the table's overflow clip. `open` blooms it in on a
-  // picker cell, out when editing clears; lastPicker keeps the exiting cell's content through the
-  // out; the per-cell key remeasures on a cell switch.
   const cellPicker = (): React.ReactNode => {
     const cell = editing?.mode === 'picker' ? editing : lastPicker.current
     const row = cell && rowById.get(cell.rowId)
@@ -749,10 +655,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       />
     )
   }
-  // The rename popover — a TextPicker hung off the editing cell (like cellPicker), for a link's alias.
-  // Its --accent is scoped to the link's own color, so the field's focus stroke wears it; committing an
-  // empty alias drops it back to a bare URL. The alias always wins at render, so this is the only surface
-  // that sets it (Edit rewrites the URL and preserves it).
   const renameField = (): React.ReactNode => {
     const cell = editing?.mode === 'rename' ? editing : lastRename.current
     const row = cell && rowById.get(cell.rowId)
@@ -761,8 +663,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const v = resolveFieldValue(row, col.id, schema)
     const open = editing?.mode === 'rename'
     const key = `${cell.rowId}:${cell.colId}:${cell.nonce}`
-    // A Bar-look number edits its value through this same dropdown (no color scope — the app accent), with
-    // a label-tertiary "/ N" out-of hint to its right so the value reads as a numerator over the total.
     if (declaredType(col.id, schema) === 'number') {
       const divisor = numberDivisor(schema.find((d) => d.id === col.id))
       return (
@@ -802,8 +702,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       />
     )
   }
-  // Right-click a cell → its native menu (always a menu, never an action) — the shared builder
-  // decides which items each type gets.
   const openCellMenu = async (
     row: ViewRow,
     col: ResolvedColumn,
@@ -811,16 +709,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   ): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
-    // Captured before the await — the synthetic event is recycled by the time the menu resolves, so
-    // the rename popover can't read `e.currentTarget` then (it anchors the TextPicker off this cell).
-    // Resolved through the cell so a grip-borne open anchors off the cell rather than the grip.
+    // Captured before the await — React recycles the synthetic event, so the popover can't read `e.currentTarget` once the menu resolves.
     const el = e.currentTarget as HTMLElement
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
     const dt = declaredType(col.id, schema)
-    // A cell holding a live link pops the LINK menu — the same one the editor pops on the same
-    // link. Only a cell with no link in it (empty, or a title no page answers to) falls through to
-    // the cell menu, which is all a value with nothing to open can offer.
     if (dt === 'url') {
       const v = resolveFieldValue(row, col.id, schema)
       const target = linkValueMenuTarget(v.kind === 'url' ? v.value : '', (action) => {
@@ -893,8 +786,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
   }
 
-  // Saved widths are clamped to the type's [min, max] — a stale/out-of-range saved value can't
-  // squash a column below legibility or stretch it past its cap.
   const resolveWidth = (id: string): number =>
     clampWidth(
       widthOverride[id] ?? liveView.column_widths?.[id] ?? widthFor(id, schema, contextIds).default,
@@ -911,10 +802,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const colWidth = (id: string): number =>
     collapsing === id ? 0 : (widthById.get(id) ?? resolveWidth(id))
 
-  // Every prop a DataRow receives must hold identity across unrelated re-renders (a tree push, an
-  // editing toggle, a drag frame), so React.memo can bail per row.
-
-  // The row path's positional arrays, derived from the same id-keyed resolution.
   const { alignByCol, styleByCol } = useMemo(
     () => ({
       alignByCol: columns.map((c) => colAlign(c.id)),
@@ -922,10 +809,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }),
     [columns, alignById, styleById],
   )
-  // Slide detection: mark any column whose look just changed to one whose rendered width grows,
-  // so its track eases to the new per-style min. Render-phase + a prev-look ref, so it catches EVERY
-  // look-write path — the column menu's live override AND the property pane's persisted view — through
-  // this one point (the setState is guarded, so it settles in a single extra render, no loop).
   const widened: string[] = []
   columns.forEach((c, i) => {
     const look = styleByCol[i].look
@@ -943,17 +826,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       widened.push(c.id)
   })
   if (widened.some((id) => !sliding.has(id))) setSliding((s) => new Set([...s, ...widened]))
-  // The gap-shift geometry for a live column drag — identity changes on slot flips only (the
-  // cursor-follow is the grid-level CSS var), which is exactly when rows must re-render.
   const dragShift = useMemo(() => {
     if (!colDrag) return null
-    // A watcher or pane write can reshape `columns` mid-drag — a vanished or re-pointed source
-    // column ends the shift rather than throwing or painting a neighbor.
+    // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.
     const src = columns[colDrag.from]
     return src && src.id === colDrag.id
       ? { from: colDrag.from, to: colDrag.to, width: colWidth(src.id) }
       : null
-    // colWidth's inputs (widths, collapsing) are static during a drag; keying on colDrag + columns is the change surface.
   }, [colDrag, columns])
   const [mass, setMass] = useState<{ colId: string; rowIds: string[] } | null>(null)
   const [massOpen, setMassOpen] = useState(false)
@@ -978,10 +857,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     cellSweep.begin(row.id, col.id, e)
     return true
   }
-  // A swept set can degrade under the open picker (a filter drops a picked row, an external
-  // delete) — below two live rows the picker can't render, so it closes and the highlight clears
-  // rather than stranding. Undo entries die with their container: a revert must never write
-  // pages no surface is showing.
   const massDegraded =
     mass !== null &&
     massOpen &&
@@ -1000,8 +875,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     [source.path],
   )
-  // ONE stable handler identity for every row — calls read the freshest closures through the ref,
-  // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const titleCol = columns.find((c) => c.kind === 'title')
   const cellApiRef = useRef({
     openCellMenu,
@@ -1023,8 +896,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     columns,
     rowById,
   }
-  // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
-  // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
   editingRef.current = editing
   const ghostApi = useGhostAnchor({
@@ -1035,15 +906,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghost = ghostApi.ghost
   const holdGhost = ghostApi.suppressWrap
   useClearStrandedGhost(ghostApi, rowById)
-  // An editing target the pipeline no longer emits (a filtered-out newborn's create-rename, a
-  // reload dropping the row) clears — a stranded `editing` would suppress the ghost for the
-  // life of the mount.
   const strandedEditId = editing !== null && !rowById.has(editing.rowId) ? editing.rowId : null
   useEffect(() => {
     if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
   }, [strandedEditId])
-  // In-view creation opens the title cell as an ordinary uncommitted rename whose field is
-  // empty — the table's naming surface is its own cell editor.
   const titleColId = titleCol?.id
   const openCreateRename = (created: { id: string }): void => {
     if (titleColId)
@@ -1056,31 +922,19 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       click: (row, col, e) => cellApiRef.current.onCellClick(row, col, e),
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
       remove: (row, col, next) => cellApiRef.current.commitValue(row, col, next),
-      // The grip pops the title cell's own menu — one menu for the row, wherever it's asked for.
       grip: (row, e) => {
         const col = cellApiRef.current.titleCol
         if (col) void cellApiRef.current.openCellMenu(row, col, e)
       },
       sweep: (row, col, e) => cellApiRef.current.startSweep(row, col, e),
-      // Identity-stable straight off the hook — no ref detour needed.
       hover: (row, entering) => ghostApi.onHover(row.id, entering),
     }),
     [],
   )
-  // The inline editor's target cell (mode 'editor' only — the picker is the table-level cellPicker).
-  // Flows to rows as a primitive so ONLY the editing row re-renders on open/close.
   const overlayTarget = editing?.mode === 'editor' ? editing : null
-  // The rename popover leaves its cell in flow (unlike the editor overlay), but flips it to the full URL
-  // while open so you see what you're aliasing. Threaded like overlayCol — only the renamed row re-renders.
   const renameTarget = editing?.mode === 'rename' ? editing : null
-  // The cell being edited in ANY mode (picker/editor/rename) — flows to rows as a primitive for the faint
-  // active-cell reveal under Hide Borders; only the editing row re-renders on open/close.
   const activeCell = editing ? { rowId: editing.rowId, colId: editing.colId } : null
-  // Row drag: the flat data-row order + each row's group key + path, feeding the drop-line DnD
-  // (tableDnd). Where you drop disambiguates — same group reorders, a different group reassigns.
-  // Memoized so a selection / resize / drag-frame render doesn't re-walk every group and rebuild both
-  // Maps. Lives ABOVE the empty/loading returns — a hook after a conditional return crashes React the
-  // moment the condition flips (an empty collection gaining its first page).
+  // Above the early returns — a hook after a conditional return crashes React the moment the condition flips.
   const { dataRows, rowPath } = useMemo(() => {
     const rows: { id: string; path: string; groupKey: string }[] = []
     const collect = (g: ResolvedGroup): void => {
@@ -1094,8 +948,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
   }, [groups])
 
-  // The sub-group drop targets: composite band key -> its set + bucket dimensions. Above the
-  // early returns like every hook in this component (see dataRows).
   const subTargets = useMemo(() => {
     const m = new Map<string, { setId: string | null; bucket: string | null }>()
     for (const g of groups) {
@@ -1114,49 +966,26 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   host.seam.bandBucket.current = (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key)
   host.seam.onCreated.current = openCreateRename
 
-  // The Apple table model: EVERY column — title included —
-  // holds its resolved width. While the sum fits the pane the trailing filler eats the slack (the capped,
-  // content-inset look); the moment any resize/add pushes the sum past the pane, the grid extends beyond
-  // the window and the whole view h-scrolls. No column is ever compressed to absorb growth.
   const reflowWidth = columns.reduce((sum, c) => sum + colWidth(c.id), 0)
   reflowRef.current = reflowWidth
   const cols = `${columns.map((c) => `${colWidth(c.id)}px`).join(' ')} 1fr`
-  // Lead-cell left padding for ungrouped/loose rows: --loose-inset tucks the title a touch left of the
-  // cell-padding-x column inset; each nesting layer adds one --row-indent step. The grip + chevron
-  // live in the views gutter via absolute CSS, independent of this.
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
-  // A group header's chevron + folder glyph read as one cluster in the views gutter (with the row grips),
-  // so the header is indented by nesting ALONE — no cell-padding-x base (that base is the data cells'
-  // text inset). Its members keep the normal indent, one --row-indent step inside the header.
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
-  // Column smooth-shift: grab a header → the whole column (header + every body cell + divider)
-  // slides with the cursor, neighbors shifting by the dragged column's width to open the gap, the
-  // track order committing on drop. The shared gesture skeleton drives it (the header re-renders
-  // mid-drag, so a node-bound listener would drop). `zoom` divides the screen delta back into the
-  // grid's pre-zoom track space. The target slot is edge-based: whichever column's span the dragged
-  // column's center sits over, with a sticky hysteresis zone around the current slot. Edge-based
-  // (not closest-center) so a far column can't shift while the dragged one is still mid-traverse
-  // over a wide neighbor. A horizontal scroll re-bases the edges and re-resolves the slot.
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
-    if (e.button !== 0) return // left-button drags; a right-press falls through to the column menu
+    if (e.button !== 0) return
     e.preventDefault()
     const header = e.currentTarget as HTMLElement
     const grid = header.closest('.table-grid') as HTMLElement | null
     if (!grid) return
-    // Geometry snapshot lives in the ACTIVATION, not the press — widths can't change mid-drag, so
-    // the cumulative offsets are computed once there (a per-move rect + width loop is a forced
-    // layout in the drag hot path), and a pending-phase scroll (trackpad inertia settling under a
-    // fresh press) can't strand a press-time origin the active-only scroll hook would never fix.
+    // Snapshot in the activation, not the press: a per-move rect loop forces layout in the drag hot path, and a pending-phase scroll would strand a press-time origin.
     let zoom = 1
     let startCenter = 0
     let startX = 0
     let gridLeft = 0
     let widths: number[] = []
     let lefts: number[] = []
-    // null until activation — a sub-threshold press is a click, not a drag, so the highlight band
-    // never flashes and a jittery click can't reorder.
     const dragId = columns[from].id
     let current: { from: number; to: number; id: string } | null = null
     let lastX = e.clientX
@@ -1165,10 +994,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
       const cur = current?.to ?? from
-      // Edge-based slot: which column's span the dragged column's center is actually over. Hold the
-      // current slot until the center leaves its span by COL_SHIFT_HYSTERESIS (a sticky zone — no flicker
-      // at a boundary). This is correct for wildly-varying widths where a closest-center rule would let a
-      // far column shift while the dragged one is still mid-traverse over a wide neighbor (e.g. Title).
       const curLeft = gridLeft + lefts[cur]
       const curRight = curLeft + widths[cur]
       let to = cur
@@ -1184,10 +1009,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           }
         }
       }
-      // The cursor-follow is a grid-level var (one style write; the .col-dragging cells consume
-      // it) — React state updates only on activation + slot flips, never per move. Anchored to the
-      // column's FLOWED center, which scrolls with the grid, so an auto-scroll can't slide the
-      // lifted column off the pointer.
       grid.style.setProperty(
         '--col-drag-x',
         `${(projected - (gridLeft + lefts[from] + widths[from] / 2)) / zoom}px`,
@@ -1197,22 +1018,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         setColDrag(current)
       }
     }
-    // A committed release reorders (move + clear batch into one render — reorderColumn is React
-    // state — so the settle is a single frame, no snap-back flash); a no-op release and an abort
-    // just clear without reordering. The commit is id-based end to end, so a stale slot resolves
-    // to a no-op inside reorderColumn rather than needing an index guard here.
     beginGesture({
       el: header,
       event: e,
       onActivate: (ev) => {
-        // The CSS density factor (screen px per pre-zoom track px) — the RESOLVED `zoom`, which
-        // compounds the base density token (--zoom) with the per-tile Scale (--tile-zoom on a
-        // grid tile). Read the computed property, not the --zoom token alone, so a scaled
-        // tile's drag maps 1:1; NOT back-solved from the header's rendered width ÷ its track width
-        // (that ratio bakes in the grid's layout slack).
+        // Read computed so a scaled tile's drag maps 1:1 — not the --zoom token alone, and never back-solved from rendered width ÷ track width (that bakes in layout slack).
         zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1
         const hr = header.getBoundingClientRect()
-        startCenter = hr.left + hr.width / 2 // the dragged column's center; it tracks the cursor 1:1
+        startCenter = hr.left + hr.width / 2
         startX = ev.clientX
         lastX = ev.clientX
         gridLeft = grid.getBoundingClientRect().left
@@ -1223,8 +1036,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           lefts[i] = acc
           acc += widths[i]
         }
-        // A wide table h-scrolls by construction — the edge loop reaches columns past the shell's
-        // fold, and the window scroll hook re-bases + re-resolves off its scrollBy.
         const sc = findScroller(grid, 'x')
         if (sc) {
           stopScroll = startAutoScroll({
@@ -1261,18 +1072,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       },
     })
   }
-  // The gap-shift translateX for a header during the current drag — the same formula the body cells
-  // use (gapShift over the memoized dragShift). The SUBJECT's cursor-follow is not here — it rides
-  // the grid-level --col-drag-x var on the .col-dragging cells (per-move, no state).
   const colTransform = (ci: number): string | undefined => gapShift(dragShift, ci)
 
-  // Cross-group drop: write the dragged page's grouped property to the destination group's value
-  // (the no-value band clears it), patching the loaded values now so the row re-groups before the write
-  // round-trips (loadValues never re-runs mid-session).
-  // Under sub-grouping the destination key is COMPOSITE (set/bucket), so the drop carries two
-  // dimensions: a bucket change writes the property; a set change is a REAL movePage into
-  // that set — the property write lands first, while the page still has its current path.
-  // Both band drops patch the same key the same way — the group property's own value on that row.
   const patchBandValue = (pageId: string, value: PropertyValue | null): PageFrontmatter | null => {
     const def = schema.find((d) => d.id === groupPropId)
     if (!def) return null
@@ -1311,16 +1112,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const patched = patchBandValue(pageId, value)
     if (patched) patchOverride(setValueOverride, pageId, patched, write)
   }
-  // Cross-folder move (plain location grouping): a row dropped into a DIFFERENT location band relocates
-  // the page into that band's Set (the root band → the container itself). movePage; the tree reload
-  // reflects it (like the sidebar's reparent — no optimistic value patch, since a move isn't a value).
   const relocateRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
     if (!path || !destPath || destPath === parentOf(path)) return
-    // The band drop carries no index — the moved row joins the destination's end, but the order
-    // still writes whole: absent, main's fallback re-ranks the destination by title. A stale
-    // viewOrders entry (a formerly sorted config) would otherwise paint the row's old rank.
     const order = [...containerPages(destPath), pageId]
     const spliceLive = (existing: string[]): string[] => [
       ...existing.filter((id) => id !== pageId),
@@ -1330,12 +1125,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
     void mutate({ op: 'movePage', path, newParentPath: destPath, order })
   }
-  // Within-group reorder commit — tableDnd hands the new flat order + the reordered group's key. An
-  // unsorted structural/flat view is ordered by the canonical on-disk page_order, so it writes that
-  // group's container page_order (movePage, same parent = a pure reorder — the whole point of a
-  // filesystem-first table). A sorted / property-grouped view instead writes the per-view manual
-  // tiebreaker (viewOrders). setManualOverride gives instant feedback either way: the pipeline reads it
-  // as the sort tiebreaker, and it agrees with the page_order the fs reload brings back.
   const reorderTo = (orderIds: string[], groupKey: string, activeId: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
@@ -1356,33 +1145,17 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     reassignBySortRun(orderIds, groupKey, activeId)
   }
 
-  // The hover ghost row — pure chrome on the shared mechanism (useGhostAnchor): pixels only, no
-  // page until the click, which runs the same immediate-create act as New Page Below. Dismissal
-  // exits on the same Reveal collapse the entrance rode — `closing` holds the row mounted through
-  // it, and onCollapsed unmounts. A create skips the exit: the real row takes the seat.
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
     if (anchor) void newPageAdjacent(anchor, 'below')
   }
 
-  // A row drops its top divider (.row-lead) only when no VISIBLE data row sits directly above it — the
-  // divider is a between-rows line. Headered groups: their first row follows the header, so it's always
-  // lead. The ungrouped band has no header, so its first row is lead until a visible row precedes it.
-  // `renderedAnyRow` counts only rows that actually render: a collapsed group's items build (the .map runs)
-  // but never mount, so they mustn't mark it — else the band after a collapsed group keeps a stray divider
-  // with nothing above it. `visible` carries each group's shown/hidden state down through nesting.
   let renderedAnyRow = false
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
     const isCollapsed = collapsed.has(g.key)
     const itemsVisible = visible && !isCollapsed
-    // A headered group's members (+ any nested child group) sit one nesting step INSIDE it (a --row-indent
-    // step, via indent()), so the disclosure hierarchy reads — you can see what's within a group vs the
-    // base level. The ungrouped root band has no header, so its rows stay flush at the base indent.
     const itemDepth = g.kind === 'ungrouped' ? depth : depth + 1
-    // A headered group's pages nest in the same gutter-anchored lane as its glyph (groupIndent, no
-    // cell-pad base) — so they nudge left with the folder and sit one --row-indent step inside it; the
-    // ungrouped root keeps the normal indent (its rows land under the Title column).
     const memberIndent = g.kind === 'ungrouped' ? indent : groupIndent
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {
@@ -1427,12 +1200,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }),
       ...(g.children ?? []).flatMap((child) => renderRows(child, itemDepth, itemsVisible)),
     ]
-    // Ungrouped root band: no header, no disclosure — its rows sit flush in the grid.
     if (g.kind === 'ungrouped') return members
-    // Headered group: the head stays put; its members live in a Reveal so collapse/expand animates the
-    // rows (grid-rows 0fr↔1fr) on the same --disclosure motion as the chevron, and collapsed rows leave
-    // the DOM. Each row keeps its own grid reading the inherited --cols, so wrapping never breaks the
-    // column alignment.
     return [
       <ViewGroupBand
         key={`gb-${g.key}`}
@@ -1446,8 +1214,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         onAdd={
           g.kind === 'structural-set' && setPaths.has(g.key) ? () => bandAdd(g.key) : undefined
         }
-        // Only a Collection's direct-child Sets open (the sidebar's selectable rule) — deeper sub-Sets
-        // are expand-only organizing folders.
         onOpen={
           g.kind === 'structural-set' &&
           source.kind === 'collection' &&
@@ -1505,15 +1271,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             )}
             style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
           >
-            {/* Header band — each header grabs to smooth-shift its whole column; the filler sits
-              outside the columns, inert. The transitionend on the animated track set commits a column
-              hide — transform transitions (the drag) carry a different propertyName, so they pass. */}
             <div
               className="table-head"
               onTransitionEnd={(e) => {
                 if (e.propertyName !== 'grid-template-columns') return
-                commitHide() // no-op unless a hide is in flight
-                setSliding((s) => (s.size ? new Set() : s)) // the style-min slide(s) settled
+                commitHide()
+                setSliding((s) => (s.size ? new Set() : s))
               }}
             >
               {columns.map((c, i) => (
@@ -1535,12 +1298,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
                 />
               ))}
-              {/* Trailing filler in the 1fr track — also the :last-child anchor that keeps the last real
-                column's right divider (Table.css). Empty but load-bearing; don't remove. */}
+              {/* Empty but load-bearing: the :last-child anchor that keeps the last real column's right divider (Table.css). */}
               <div className="cell-filler" aria-hidden="true" />
             </div>
-            {/* Rows — the drop-line DnD (tableDnd) wraps the whole grid; band heads aren't row
-              drag items. */}
             {groups.flatMap((g) => renderRows(g, 0, true))}
           </div>
         </TableRowDnd>
@@ -1552,8 +1312,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   )
 }
 
-/** One stable per-table handler set for the memoized rows — identities never change; calls read
- *  the freshest closures through a ref in TableView. */
 type RowCellApi = {
   menu: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
@@ -1564,8 +1322,6 @@ type RowCellApi = {
   hover: (row: ViewRow, entering: boolean) => void
 }
 
-/** The hover ghost row — pure chrome until its click creates. It enters on the shared disclosure
- *  Reveal (the same 0fr↔1fr motion group collapse rides), opening on its first painted frame. */
 function GhostRow({
   padLeft,
   columns,
@@ -1598,8 +1354,6 @@ function GhostRow({
         onPointerLeave={onLeave}
         onClick={onCreate}
       >
-        {/* Lead chrome is positional (a real row's grip/indent live in cell 0), but the New Page
-            glyph is the TITLE's — it sits wherever the title column sits in the track order. */}
         {columns.map((c, i) => (
           <div
             key={c.id}
@@ -1622,8 +1376,6 @@ function GhostRow({
 
 type DragShift = { from: number; to: number; width: number }
 
-/** The gap-shift translateX for a cell during a column drag (the dragged column itself rides the
- *  grid-level --col-drag-x var, not an inline transform). */
 function gapShift(d: DragShift | null, ci: number): string | undefined {
   if (!d) return undefined
   if (d.to < d.from && ci >= d.to && ci < d.from) return `translateX(${d.width}px)`
@@ -1631,12 +1383,6 @@ function gapShift(d: DragShift | null, ci: number): string | undefined {
   return undefined
 }
 
-// One data row + its hover-revealed drag grip. Memoized so a row re-renders only when ITS inputs
-// change — every prop is identity-stable across unrelated renders (tree pushes, another row's editing,
-// drag frames); `overlayCol` flips only for the row holding the inline editor. The grip sits in the
-// lead cell's gutter lane, the same slot the group disclosure chevron occupies, so handles align with
-// the chevrons and the row content lines up with the group headers. useTableRowDrag mutes the row
-// while it's lifted.
 const DataRow = memo(function DataRow({
   row,
   columns,
@@ -1665,7 +1411,6 @@ const DataRow = memo(function DataRow({
   api: RowCellApi
   overlayCol: string | null
   renameCol: string | null
-  /** The cell being edited in this row (any mode) — its data-cell wears the faint accent active ring. */
   activeCol: string | null
   hideIcon: boolean
   selected: boolean
@@ -1686,10 +1431,6 @@ const DataRow = memo(function DataRow({
       )}
       onPointerEnter={() => api.hover(row, true)}
       onPointerLeave={() => api.hover(row, false)}
-      // The whole row is a drag surface, not just the gutter grip — grabbing ANY cell arms the reorder, so a
-      // horizontal scroll that pushes the grip out of reach can't block it. A press-release (no move past
-      // ACTIVATION) is each CELL's gesture (only the title navigates; the row background is a no-op);
-      // only a real drag reorders. Gated with the grip when reorder is disabled.
       {...(dragDisabled ? {} : handle)}
     >
       {columns.map((c, i) => {
@@ -1697,12 +1438,7 @@ const DataRow = memo(function DataRow({
           transform: gapShift(dragShift, i),
           textAlign: alignByCol[i],
         }
-        // The lead cell's indent (loose-inset + group nesting) is a LEFT treatment — it tucks left-read
-        // content like the Title. A centered first column (a checkbox/switch/chip moved before the Title)
-        // must NOT get it: the indent eats the narrow cell and shoves the control off-center / past the
-        // fold, so it clips left. Center-aligned lead → no padding, the control centers in the full cell.
         if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
-        // Borderless reveal: the edited cell wears the faint accent ring (Table.css, no-borders only).
         const stateCx = activeCol === c.id && 'cell-active'
         const editor = overlayCol === c.id ? api.overlay(row, c) : null
         const content = editor ?? (
@@ -1736,14 +1472,11 @@ const DataRow = memo(function DataRow({
               if (!isDragging) api.click(row, c, e)
             }}
           >
-            {/* The grip renders even with reorder retired (a multi-key sort) — it still owns the
-                row's menu, whose New Page pair must stay reachable in every mode. */}
             {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
             <span
               className="row-grip"
               {...(dragDisabled ? {} : handle)}
-              // A right-press is defaulted away exactly as the drag gestures default the left —
-              // preventing only the context menu comes too late to stop a seated caret.
+              // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
               onPointerDown={(e) => {
                 if (e.button === 2) {
                   e.preventDefault()
@@ -1782,7 +1515,6 @@ const DataRow = memo(function DataRow({
           </div>
         )
       })}
-      {/* 1fr-track filler + last-column divider anchor (see table head). */}
       <div className="cell-filler" aria-hidden="true" />
     </div>
   )

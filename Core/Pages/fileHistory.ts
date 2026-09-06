@@ -96,9 +96,6 @@ async function arm(root: string, pageId: string, source: SnapshotSource): Promis
   timers.set(pageId, { source, timer })
 }
 
-/** The one body-write path. The text being overwritten is offered first — at once when a foreign
- *  writer left it or a restore is replacing it — and the quiet timer is re-armed. The caller
- *  pushes the value change. */
 export async function writeBody(
   root: string,
   absPath: string,

@@ -110,8 +110,7 @@ function GalleryCard({
 
   const active = selection.kind !== 'none' && navKey(selection) === it.key
   const src = `${assetUrl(thumbRel(nexusId, thumbKey(it.key)))}?v=${version}`
-  // The drag engine fires a synthesized click after a pointer drag — don't treat a reorder-drop as a
-  // navigation (mirrors TableView's `!isDragging` guard).
+  // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not read as a navigation.
   const open = (): void => {
     if (!drag?.isDragging) onSelect(it.target)
   }

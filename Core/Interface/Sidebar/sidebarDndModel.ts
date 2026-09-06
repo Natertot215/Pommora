@@ -1,6 +1,3 @@
-// Pure model behind the sidebar drag behavior — no React, no DOM, so it's unit-testable.
-// `buildIndex` flattens the tree into everything commit + the indicator need.
-
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import { contextDirRel } from '@pommora/core/Locations/nexusPaths'
 
@@ -22,9 +19,6 @@ export type Index = {
   contextGroupIds: string[]
 }
 
-/** Depths match the sidebar's rendered indent (Collection 0 → Sets 1 → Sub-Sets 2 …; pages one
- *  deeper than their container). Contexts are leaf rows at depth 1, nested under their group's
- *  disclosure at depth 0. */
 export function buildIndex(tree: NexusTree): Index {
   const byId = new Map<string, Entry>()
   const addPages = (
@@ -115,9 +109,6 @@ export function buildIndex(tree: NexusTree): Index {
   }
 }
 
-/** The container (Collection or Set) a dragged Set would join, resolved from whatever row the
- *  pointer is over. Returns null for a context — a Set may only live inside a Collection or
- *  another Set. The caller guards against self/descendant drops. */
 export function setContainerOf(entry: Entry, idx: Index): Entry | null {
   switch (entry.kind) {
     case 'collection':
@@ -130,12 +121,10 @@ export function setContainerOf(entry: Entry, idx: Index): Entry | null {
       return parent.kind === 'collection' || parent.kind === 'set' ? parent : null
     }
     default:
-      return null // area / topic / project
+      return null
   }
 }
 
-/** True when `targetId` is `ancestorId` itself or one of its descendants. Blocks dropping a Set
- *  into its own subtree. */
 export function isSelfOrDescendant(targetId: string, ancestorId: string, idx: Index): boolean {
   let cur: string | null = targetId
   while (cur) {

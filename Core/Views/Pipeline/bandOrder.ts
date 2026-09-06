@@ -1,7 +1,4 @@
-// Applies a view's manual structural band order (SavedView.group_order — one flat set-id array
-// covering every nesting level) to resolved groups. Listed sets lead in array order, unlisted
-// sets trail in fs order; non-structural groups (the ungrouped tail) HOLD their slot, so the
-// view-level ungrouped_placement survives a manual band order. Pure: no fs, no React.
+// Listed sets lead in array order, unlisted sets trail in fs order; non-structural groups HOLD their slot, so the view-level ungrouped_placement survives a manual band order.
 
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 

@@ -1,30 +1,23 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 
-// The one reorder implementation under both option editors — `useOptionReorder` adapts it to a flat
-// list. A drag can reorder within a group OR cross into another group (including an empty one); on
-// drop it calls onMove(value, toGroupId, toIndex) — toIndex in the target group's
-// without-the-dragged space, matching optionModel.moveStatusOption.
+// onMove's toIndex is in the target group's without-the-dragged space, matching optionModel.moveStatusOption.
 
 type SnapRow = { value: string; top: number; bottom: number }
 type SnapGroup = { id: string; top: number; bottom: number; rows: SnapRow[] }
 type Slot = { groupId: string; top: number; to: number }
 
-/** Passing `order` keeps the hook's geometry snapshot aligned with what's actually rendered;
- *  it must be identity-stable across the hook's own per-move re-renders. */
+/** `order` must be identity-stable across the hook's own per-move re-renders — it is the geometry snapshot's alignment. */
 export function useStatusReorder(
   order: { id: string; values: string[] }[],
   labelFor: (value: string) => string,
   onMove: (value: string, toGroupId: string, toIndex: number) => void,
 ): {
-  /** The groups' shared wrapper — the scroll-invalidation target. */
   containerRef: (el: HTMLDivElement | null) => void
   registerGroup: (groupId: string, el: HTMLElement | null) => void
   registerRow: (value: string, el: HTMLElement | null) => void
   onRowPointerDown: (value: string, e: ReactPointerEvent) => void
   dragging: string | null
-  /** The landing slot's group and its group-relative line seat — the editors draw the line
-   *  inside the group it lands in, not on the shared host. */
   drop: { groupId: string; top: number } | null
   ghost: ReactNode
 } {
@@ -32,9 +25,7 @@ export function useStatusReorder(
   const groupEls = useRef(new Map<string, HTMLElement>())
   const rows = useRef(new Map<string, HTMLElement>())
 
-  // Groups partition the pointer axis by boundary midpoints, so every clientY resolves to exactly
-  // one group. A destination that wouldn't move resolves to null, so the line never promises a
-  // move the drop then declines.
+  // Groups partition the pointer axis by boundary midpoints, so every clientY resolves to exactly one group; a destination that wouldn't move resolves to null.
   const drag = useInsertionDrag<Slot, SnapGroup[]>({
     take: () =>
       order.map((grp) => {
@@ -72,10 +63,8 @@ export function useStatusReorder(
           : index === 0
             ? grp.rows[0].top
             : (grp.rows[index - 1].bottom + grp.rows[index].top) / 2
-      // A same-group drop past the original slot shifts down by one (moveStatusOption inserts in
-      // the WITHOUT space while the snapshot indexes the WITH space); cross-group needs no shift.
-      // A value the live order no longer holds has no move to make — a delete landing mid-drag
-      // leaves the gesture aimed at a row that is gone, and the drop declines rather than guessing.
+      // A same-group drop past the original slot shifts down by one (moveStatusOption inserts in the WITHOUT space while the snapshot indexes the WITH space); cross-group needs no shift.
+      // A value the live order no longer holds has no move to make — a delete landing mid-drag leaves the gesture aimed at a row that is gone.
       const fromGroup = order.find((grp) => grp.values.includes(value))
       if (!fromGroup) return null
       const fromIndex = fromGroup.values.indexOf(value)

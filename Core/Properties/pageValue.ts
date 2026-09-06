@@ -1,5 +1,4 @@
-// Option lists are edited IN PLACE (filter/map on the raw list), never decode-to-strings→
-// re-encode: a page may carry foreign / non-string elements, and an op must touch only its target.
+// Option lists are edited IN PLACE, never decode-to-strings→re-encode: a page may carry foreign or non-string elements, and an op must touch only its target.
 
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
@@ -8,8 +7,6 @@ type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 
 const SKIP = Symbol('skip')
 
-/** Preserves foreign content. Returns SKIP when the value doesn't hold `target`; otherwise the
- *  next value (null = delete key). */
 function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | typeof SKIP {
   const xs = Array.isArray(raw) ? raw : [raw]
   const names = (el: unknown, value: string): boolean =>
@@ -17,8 +14,7 @@ function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | ty
     String(el) === value
   if (!xs.some((el) => names(el, target))) return SKIP
   if (edit.op === 'replace') {
-    // Renaming into a value the list already holds would duplicate it — merge by dropping the
-    // target instead. `to !== target` keeps a no-op rename from deleting the value.
+    // Renaming into a value the list already holds would duplicate it — merge by dropping the target instead; `to !== target` keeps a no-op rename from deleting the value.
     if (edit.to !== target && xs.some((el) => names(el, edit.to)))
       return xs.filter((el) => !names(el, target))
     return xs.map((el) => (names(el, target) ? edit.to : el))
@@ -53,8 +49,6 @@ export function replacePageValue(
   return applyEdit(content, key, oldValue, { op: 'replace', to: newValue })
 }
 
-/** Null means the page didn't hold it — the caller writes nothing, so an unrelated page is
- *  never rewritten. */
 export function stripPageMember(content: string, key: string): string | null {
   const root = splitFrontmatter(content) as Record<string, unknown>
   if (!(key in root)) return null

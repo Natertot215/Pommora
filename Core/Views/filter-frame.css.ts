@@ -52,8 +52,7 @@ export const fieldLabel = style({
   textAlign: 'left',
 })
 
-/** The margin lives on this WRAPPER rather than the glyph: the checkbox box carries a `zoom`,
- *  which would scale its own margin. */
+/** The margin lives on this WRAPPER rather than the glyph: the checkbox box carries a `zoom`, which would scale its own margin. */
 export const leadGlyph = style([side, { marginRight: LEAD_GAP }])
 
 export const controlField = style([cellField, { flex: '0 0 auto' }])

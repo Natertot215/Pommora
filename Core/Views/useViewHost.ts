@@ -44,7 +44,6 @@ export interface ViewHostUpward {
   onCreated: { current: (created: { id: string; path: string }) => void }
 }
 
-/** The one object a renderer draws from — the hook's return, so the shape has a single writer. */
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const stylesCaughtUp = (
@@ -68,8 +67,7 @@ export function useViewHost(
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
 
-  // Optimistic property patches keyed by page id: the loaded values never re-read on a write, so
-  // a changed row re-groups only because this patch feeds the pipeline.
+  // The loaded values never re-read on a write, so a changed row re-groups only because this optimistic patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
   const values = useContainerValues(source.path, setValueOverride)
 
@@ -89,9 +87,7 @@ export function useViewHost(
     groupingKeyOf(view),
   )
 
-  // Host layers reset on the id STRINGS, never `[source]` identity (breaks useBandOrdering's
-  // echo-survival) — and `source.id` must be in the array, since sibling sub-Sets below depth 1
-  // share the DEFAULT_VIEW_ID sentinel and would leak layers between each other on `[view.id]` alone.
+  // Host layers reset on the id STRINGS, never `[source]` identity, and `source.id` must be in the array: sibling sub-Sets below depth 1 share the DEFAULT_VIEW_ID sentinel and would leak layers on `[view.id]` alone.
   useEffect(() => {
     setOrderOverride(null)
     setHiddenOverride(null)
@@ -100,14 +96,11 @@ export function useViewHost(
     resetBand()
     setCollapsed(new Set(view.collapsed_groups ?? []))
   }, [source.id, view.id])
-  // A fresh tree carries canonical page_order, so drop the optimistic MANUAL ORDER it was masking —
-  // VALUES deliberately do NOT reset here, since clearing valueOverride on this identity change would
-  // revert a just-assigned value whenever a watcher echo re-mints `source` (the assign-vanish).
+  // A fresh tree carries canonical page_order, so drop the manual-order override it masked — VALUES deliberately do NOT reset, since clearing them on this identity change would revert a just-assigned value on a watcher echo (the assign-vanish).
   useEffect(() => {
     setManualOverride(null)
   }, [source])
-  // Drop an override once the canonical view catches it up (this view's own write round-tripped) —
-  // a pinned override would otherwise mask a later external write (e.g. the Visibility pane) on the next persist.
+  // Drop an override once the canonical view catches it up — a pinned override would otherwise mask a later external write on the next persist.
   useEffect(() => {
     if (orderOverride && sameIds(orderOverride, view.property_order)) setOrderOverride(null)
     if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
@@ -128,8 +121,7 @@ export function useViewHost(
   const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), [liveView.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || liveView.group != null
   const structuralGrouping = groupsStructurally(liveView.group, schema)
-  // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch
-  // must not reassign against it.
+  // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch must not reassign against it.
   const subGrouped = structuralGrouping && liveView.sub_group !== undefined && !flattenStructural
   const groupPropId =
     liveView.group?.kind === 'property'
@@ -143,8 +135,7 @@ export function useViewHost(
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
   const canRelocate = structuralGrouping && !subGrouped
   const structuralOrder = groupPropId === undefined && sortKeys === 0
-  // A held viewOrder mask never feeds a structural paint — the rows draw in tree order, and the
-  // mask stays the sorted/grouped tiebreaker.
+  // A held viewOrder mask never feeds a structural paint — the rows draw in tree order, and the mask stays the sorted/grouped tiebreaker.
   const manualOrder = locationFsOrder
     ? undefined
     : resolveManualOrder(
@@ -184,10 +175,7 @@ export function useViewHost(
       rows,
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds, flattenStructural])
-  // Absent a property grouping, a single-sorted view lays its rows out in value RUNS — within each
-  // band, where there are bands — so a reorder that lands one strictly inside another run rewrites
-  // the sorted property. Armed only when the column is shown: an unrendered property leaves the run
-  // boundaries with nothing to read them by.
+  // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
   const sortReassign = useMemo(() => {
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
     for (const c of liveView.sort ?? []) {
@@ -235,9 +223,7 @@ export function useViewHost(
     return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
   }
 
-  // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's
-  // unsaved state. The renderer's fold ref adds its local layers at fire time; the explicit patch
-  // wins last.
+  // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's unsaved state; the explicit patch wins last.
   const saveFolded = (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => {
     const folded = upward.foldOverrides.current({ ...liveView, collapsed_groups: [...collapsed] })
     return saveView({ ...folded, ...patch }, opts)
@@ -276,7 +262,6 @@ export function useViewHost(
     persistView(patch)
   }
 
-  /** The row's live frontmatter: the override-folded batch entry, else what the row flattened with. */
   const liveFrontmatter = (row: ViewRow): PageFrontmatter =>
     effectiveValues[row.id]?.frontmatter ?? row.frontmatter
 
@@ -295,8 +280,6 @@ export function useViewHost(
       mutate({ op: 'setProperty', path: row.path, propertyId, value }),
     )
   }
-  /** Fold a sorted-run reassignment into a reorder that just placed `activeId` in `bandKey`, given
-   *  the view's whole new row order. */
   const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return
     const keyOf = (id: string): string => {

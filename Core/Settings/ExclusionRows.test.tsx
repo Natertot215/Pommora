@@ -99,7 +99,6 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => manageButton().click())
     await act(async () => addButton()?.click())
     expect(fieldButtons().length).toBe(2)
-    // A sibling commit lands as a fresh tree push; the draft is local state, not tree-derived.
     await act(async () => {
       useSession.setState({ tree: { excluded: ['Archive', 'Renamed'] } as never })
     })

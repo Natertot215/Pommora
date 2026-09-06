@@ -16,8 +16,7 @@ const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
 export async function runRepairSweep(root: string): Promise<void> {
   const files = rereadSinceSeed()
   if (!files.length || (await readLivePersonalization(root)).repairOnOpen !== true) return
-  // A nexus switch mid-open swaps the session's database; a sweep that kept writing would index
-  // this root's pages into the other nexus's rows — the seed bails the same way.
+  // A nexus switch mid-open swaps the session's database; a sweep that kept writing would index this root's pages into the other nexus's rows.
   const db0 = contentIndexStore()
   const live = (): boolean => contentIndexStore() === db0
   try {
@@ -36,9 +35,7 @@ export async function runRepairSweep(root: string): Promise<void> {
       worlds.set(abs, { ...base, defs })
     }
     if (!live()) return
-    // The sweep canonicalizes shape and never removes a value: a key the reconcile would delete
-    // stays as written, for the user to settle on the page. Adoptions ride whether or not the
-    // file moved — a canonical list can still name an option the definition lacks.
+    // The sweep canonicalizes shape and never removes a value: a key the reconcile would delete stays as written, for the user to settle on the page.
     const adoptions: Adoption[] = []
     const raw: Rewrite<never> = (fm, file) => {
       const world = worlds.get(file)

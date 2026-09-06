@@ -69,8 +69,7 @@ describe('resolveAssetValue', () => {
   })
 
   it('agrees with parseConnectionText about what a whole-string wikilink is', () => {
-    // An asset value and a Link property value are read by the same grammar; a spelling one
-    // accepts and the other rejects would be a silent divergence.
+    // An asset value and a Link property value are read by the same grammar; a spelling one accepts and the other rejects would be a silent divergence.
     for (const raw of ['[[Banner.png]]', '[[Banner.png|alias]]', '  [[Banner.png]]  '])
       expect(parseConnectionText(raw) !== null).toBe(resolveAssetValue(raw, map).kind === 'asset')
     for (const raw of ['[[Banner.png', 'Banner.png]]', 'https://x.test/a.png', ''])
@@ -80,8 +79,7 @@ describe('resolveAssetValue', () => {
 
 describe('assetUrl', () => {
   it('survives the round-trip the protocol handler makes, whatever the user named the file', () => {
-    // The handler reads `new URL(url).pathname` and decodes it; `#` and `?` would otherwise end
-    // the path early and 404 a file that is sitting right there.
+    // The handler reads `new URL(url).pathname` and decodes it; `#` and `?` would otherwise end the path early and 404 a file sitting right there.
     for (const rel of [
       '.nexus/assets/nx/banner-a.png',
       'file-assets/Draft #2.png',
@@ -119,9 +117,7 @@ describe('resolveFileValue', () => {
   })
 
   it('a bare filename is unresolved, never read as a path', () => {
-    // resolveAssetValue's third branch would call this a nexus-relative asset. A hand-edit or an
-    // agent writing `- Report.pdf` under the key is an ordinary producer here, and reading it as a
-    // path would render it as resolved while naming a file that is not there.
+    // A hand-edit writing `- Report.pdf` under the key would otherwise read as resolved while naming a file that is not there.
     expect(resolveFileValue('file-assets/Banner.png', map)).toEqual({ kind: 'unresolved' })
     expect(resolveAssetValue('file-assets/Banner.png', map)).toEqual({
       kind: 'asset',

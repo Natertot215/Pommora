@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// State-level gesture tests — geometry truth lives in the CDP pass.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -73,7 +72,6 @@ const ghost = (): boolean =>
     (el) => el.textContent === 'P1',
   )
 
-// Move/up listeners ride the row element (pointer capture in the real DOM).
 const startDrag = async (): Promise<void> => {
   await act(async () => {
     firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 })
@@ -127,9 +125,8 @@ describe('sidebar drag — Esc abort', () => {
   })
 
   it('a scroll with the pointer held still re-aims, so a release without moving resolves fresh', async () => {
-    await startDrag() // pointer at y=40 — after p2 against the original geometry
-    // The rows scroll down: p2's fresh span sits below the pointer, so the fresh slot is BEFORE
-    // p2 — a no-op for p1 — while the stale rects would still commit the after-p2 reorder.
+    await startDrag()
+    // The rows scroll down: p2's fresh span sits below the pointer, so the fresh slot is a no-op while the stale rects would still commit the after-p2 reorder.
     const p2 = host.querySelector('[data-row="p2"]')
     if (p2) stubRect(p2, { top: 72, bottom: 96 })
     await act(async () => {
@@ -142,8 +139,7 @@ describe('sidebar drag — Esc abort', () => {
     expect(commitSpy).not.toHaveBeenCalled()
   })
 
-  // Identity, not counts — a leak that removes a DIFFERENT function than it added still passes a
-  // count-based assertion.
+  // Identity, not counts — a leak that removes a DIFFERENT function than it added still passes a count-based assertion.
   it('an unmount mid-drag removes the exact window listeners it added', async () => {
     await startDrag()
     await act(async () => {
@@ -199,14 +195,13 @@ describe('sidebar drag — page↔Set seam', () => {
   }
 
   it('reorders a page to the end when dragged onto a sibling Set below it (never reparents)', async () => {
-    // Sets below the pages: p1, p2, then s1.
     await renderSeam('bottom', {
       p1: { top: 0, bottom: 24 },
       p2: { top: 24, bottom: 48 },
       s1: { top: 48, bottom: 72 },
     })
     await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
-    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 60 })) // onto s1
+    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 60 }))
     await act(async () => firePointer(row('p1'), 'pointerup'))
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
@@ -217,14 +212,13 @@ describe('sidebar drag — page↔Set seam', () => {
   })
 
   it('reorders a page to the start when dragged onto a sibling Set above it (never reparents)', async () => {
-    // Sets above the pages: s1, then p1, p2.
     await renderSeam('top', {
       s1: { top: 0, bottom: 24 },
       p1: { top: 24, bottom: 48 },
       p2: { top: 48, bottom: 72 },
     })
     await act(async () => firePointer(row('p2'), 'pointerdown', { x: 4, y: 60 }))
-    await act(async () => firePointer(row('p2'), 'pointermove', { x: 4, y: 12 })) // onto s1
+    await act(async () => firePointer(row('p2'), 'pointermove', { x: 4, y: 12 }))
     await act(async () => firePointer(row('p2'), 'pointerup'))
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
@@ -267,12 +261,12 @@ describe('sidebar drag — page↔Set seam', () => {
     stubRect(host.querySelector('[data-row="p1"]')!, { top: 0, bottom: 24 })
     stubRect(host.querySelector('[data-row="s2"]')!, { top: 24, bottom: 48 })
     await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
-    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 })) // onto s2
+    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 }))
     await act(async () => firePointer(row('p1'), 'pointerup'))
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
       path: 'C/P1.md',
-      newParentPath: 'D/S2', // genuine cross-container reparent — preserved
+      newParentPath: 'D/S2',
       order: ['p1'],
     })
   })
@@ -309,8 +303,7 @@ describe('sidebar drag — the line marks where the drop lands', () => {
     host.querySelector<HTMLElement>('.drop-line') ?? undefined
 
   it("draws at the target's first page, not under the header the pointer is over", async () => {
-    // Folders first, so D's first page sits BELOW its Set — the header's bottom edge and the
-    // slot the drop resolves to are three rows apart.
+    // Folders first, so D's first page sits BELOW its Set — the header's bottom edge and the slot the drop resolves to are three rows apart.
     await act(async () => {
       root.render(
         <SidebarDnd index={buildIndex(hostTree)} onCommit={commitSpy} setPlacement="top">
@@ -334,9 +327,9 @@ describe('sidebar drag — the line marks where the drop lands', () => {
       if (el) stubRect(el, rect)
     }
     await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
-    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 })) // over D's header
+    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 }))
 
-    expect(line()?.style.top).toBe('72px') // q1.top — where the page actually lands
+    expect(line()?.style.top).toBe('72px')
 
     await act(async () => firePointer(row('p1'), 'pointerup'))
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith({

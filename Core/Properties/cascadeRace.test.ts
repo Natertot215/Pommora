@@ -1,9 +1,4 @@
-// The schema-op page cascades and the cell-write path must serialize on the SAME per-file lock —
-// two independent locks would let a cascade racing a cell edit on one page silently clobber a
-// value. This drives the REAL keys: the cell-write locks on resolveUnderRoot's output
-// (realpath'd) and the cascade keys off sessionRoot(). They match ONLY because openSession
-// canonicalizes the root — on a symlinked-root ancestry (a tmpdir on macOS IS /var→/private/var)
-// a raw sessionRoot would split the two into different lock buckets and this test would go red.
+// The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked-root ancestry (a macOS tmpdir IS /var→/private/var) a raw sessionRoot would split them into different buckets.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -19,8 +14,6 @@ import { openSession, closeSession, sessionRoot } from '../Nexus/session'
 import { resolveUnderRoot } from '../Locations/pathSafety'
 import type { PropertyDefinition, PropertyType } from './properties'
 
-/** Must carry the name the registry holds — the cascade resolves its key from there, so a
- *  divergent name would leave it rewriting a page that holds nothing. */
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
   id,
   name: 'P',
@@ -36,7 +29,6 @@ afterEach(async () => {
   await rm(rawRoot, { recursive: true, force: true })
 })
 
-/** Built under `root`, the canonical session root. */
 async function setup(root: string, value: string): Promise<{ propertyId: string; rel: string }> {
   const c = await createProperty(root, {
     id: '',
@@ -68,8 +60,7 @@ describe('F1 — the cascade takes the cell-write lock', () => {
     const gate = new Promise<void>((r) => {
       release = r
     })
-    // Occupy the page's file lock with a gated cell-write. If the cascade keyed off a different
-    // path string (pre-fix: raw root vs realpath'd) it would land in another bucket and slip past.
+    // Occupy the page's file lock with a gated cell-write: keyed off a different path string, the cascade would land in another bucket and slip past.
     const held = machine().lock(key.value, async () => {
       await gate
       order.push('cell-write')

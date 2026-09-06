@@ -40,8 +40,6 @@ export interface CoverRect {
   height: number
 }
 
-// The pixel form of the background-size/-position pair `coverStyle` hands a seat, for surfaces that
-// draw the image as an element instead.
 export function coverRect(
   crop: Crop,
   imageAspect: number,
@@ -60,9 +58,7 @@ export function coverRect(
   }
 }
 
-// The room on an axis is signed, so one expression carries both regimes: an image wider than its
-// seat pans beneath it, a smaller one slides across it, each following the pointer. Anchored on the
-// gesture-start crop so a clamp never accumulates.
+// The room on an axis is signed, so one expression carries both regimes; anchored on the gesture-start crop so a clamp never accumulates.
 export function dragRect(
   anchor: Crop,
   imageAspect: number,

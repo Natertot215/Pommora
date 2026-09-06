@@ -1,7 +1,4 @@
-// The one spend-per-landed-write loop. An entry leaves the set only when its write actually
-// lands: refused, gone, or throwing entries stay kept for a later pass, and one failure never
-// stops the rest. The Remove cache's restore and the trash restore's membership re-apply both
-// spend through here — the storage differs, the loop does not.
+// An entry leaves the set only when its write actually lands: refused, gone, or throwing entries stay kept for a later pass, and one failure never stops the rest.
 
 export async function reconcile<T>(
   entries: Record<string, T>,

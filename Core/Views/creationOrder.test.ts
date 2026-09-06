@@ -12,7 +12,6 @@ describe('orderWithSlot', () => {
   })
 
   it('carries the FULL sibling list — a filtered subset would re-rank hidden rows', () => {
-    // The caller hands the container's own children; rows a filter hides are still here.
     const full = ['visible1', 'hidden1', 'visible2', 'hidden2']
     expect(orderWithSlot(full, 'visible2', 'below')).toEqual([
       'visible1',
@@ -46,7 +45,6 @@ describe('tieOrderWith', () => {
   })
 
   it('reproduces the current ranking and places the new id beside its anchor', () => {
-    // Existing manual order covers some rows; the rest rank last in source order today.
     const out = tieOrderWith(['b', 'a'], ['a', 'b', 'c', 'd'], 'new', 'c', 'below')
     expect(out).toEqual(['b', 'a', 'c', 'new', 'd'])
   })
@@ -71,15 +69,12 @@ describe('tieOrderWith', () => {
   })
 })
 
-// The create-act settle: a newborn absent from a live order array ranks last (MAX_SAFE_INTEGER),
-// so both live arrays are spliced in the same act the create writes — the first paint already
-// places the row at its slot, under a prior drag and under the stale-array fall-through alike.
+// A newborn absent from a live order array ranks last, so both live arrays are spliced in the same act the create writes — the first paint already places the row at its slot.
 describe('the created row settles into the live order', () => {
   const ALL = ['p1', 'p2', 'p3', 'pNew']
-  const STALE = ['p3', 'p1', 'p2'] // a live array from before the create — pNew absent
+  const STALE = ['p3', 'p1', 'p2']
   const rows = (ids: string[]): ViewRow[] =>
     ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
-  /** The order the pipeline actually paints for a resolved manual array. */
   const painted = (manual: string[] | undefined): string[] | undefined =>
     makeSorter(undefined, [], manual)?.(rows(ALL)).map((r) => r.id)
 

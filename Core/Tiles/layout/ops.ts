@@ -87,9 +87,7 @@ export function splitAtTile(
   return placed
 }
 
-/** Move an existing tile against a target edge. A row placement (e/w) adopts the
- *  target's height — dropping beside a tile lands flush with it instead of
- *  importing the mover's old height as a ragged end; stacking (n/s) keeps it. */
+/** A row placement (e/w) adopts the target's height, so a drop beside a tile lands flush instead of importing the mover's old height as a ragged end; stacking (n/s) keeps it. */
 export function moveTile(
   layout: TileLayout,
   tileId: string,
@@ -160,9 +158,7 @@ export function insertBand(
   return next
 }
 
-/** Move an existing tile out into its own band at `index` (an index against the
- *  layout as given — when the tile currently IS a band above the target, its
- *  removal shifts the band list, so the insertion compensates). */
+/** The index is against the layout as given — when the tile currently IS a band above the target, its removal shifts the band list, so the insertion compensates. */
 export function moveTileToBand(layout: TileLayout, tileId: string, index: number): TileLayout {
   const at = findTile(layout, tileId)
   const mover = getTile(layout, tileId)
@@ -234,8 +230,7 @@ export function resizeStackPair(
   if (node?.kind !== 'column') return layout
   const above = node.children[ref.index]
   const below = node.children[ref.index + 1]
-  // Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one
-  // height to give — those edges stretch instead (the caller falls back).
+  // Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one height to give, so those edges stretch instead.
   if (above?.kind !== 'tile' || below?.kind !== 'tile') return layout
   const delta = clamp(deltaPx, minPx - above.h, below.h - minPx)
   if (delta === 0) return layout
@@ -244,8 +239,6 @@ export function resizeStackPair(
   return next
 }
 
-/** Two adjacent full-width bands negotiate the seam — one grows what the other gives, so the
- *  tiles below stay put. */
 export function resizeBandPair(
   layout: TileLayout,
   aboveIndex: number,

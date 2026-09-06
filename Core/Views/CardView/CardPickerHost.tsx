@@ -67,8 +67,7 @@ export function CardPickerHost({
   const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   const tree = useSession((s) => s.tree)
-  // The last non-null requests render through the closing frames (exit presence keeps the pane
-  // mounted after dismiss); the anchor rides a plain ref object PickerMenu can track.
+  // The last non-null requests render through the closing frames (exit presence keeps the pane mounted after dismiss); the anchor rides a plain ref object PickerMenu can track.
   const lastValue = useRef(value)
   if (value) lastValue.current = value
   const lastAdd = useRef(add)
@@ -87,21 +86,17 @@ export function CardPickerHost({
     ? (ctx.schema.find((d) => d.id === vColumn.id) ?? syntheticContextDef(vColumn.id))
     : syntheticContextDef('_none')
   const vStyle = vColumn ? styleFor(vColumn.id, ctx.schema, view) : {}
-  // The resolved kind is the only reliable Context test here — declaredType can't tell without
-  // the registry ids, which this context doesn't carry.
+  // The resolved kind is the only reliable Context test here — declaredType can't tell without the registry ids, which this context doesn't carry.
   const vType =
     vColumn?.kind === 'context' ? 'context' : declaredType(vColumn?.id ?? '', ctx.schema)
   const vContextOptions = vColumn ? contextOptionsFor(vColumn) : null
 
-  // A row that vanished (deleted) or a value Compact just dropped (emptied multi/context — the
-  // signed-off close) dismisses the picker — ANIMATED, through the same exit as a click-out.
+  // A row that vanished, or a value Compact just dropped, dismisses the picker ANIMATED, through the same exit as a click-out.
   const compactLayout = isCompact(view)
   useEffect(() => {
     if (!value) return
     const row = rowById.get(value.rowId)
     if (!row) return onDismissValue()
-    // An add-originated open (revealOnCommit) is blank BY DEFINITION until its first commit — the
-    // compact blank-drop close applies only to a value that was visible and just emptied.
     if (value.revealOnCommit) return
     const cur = resolveFieldValue(row, value.column.id, ctx.schema)
     const isCheckbox = ctx.schema.find((d) => d.id === value.column.id)?.type === 'checkbox'
@@ -117,15 +112,12 @@ export function CardPickerHost({
     ? addEntriesFor(aRow, view, ctx, columns, tree, capitalize)
     : ([] as AddEntry[])
 
-  // One commit gate for every value-picker surface: an add-originated open reveals on the first
-  // real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).
+  // An add-originated open reveals on the first real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).
   const commitPicked = (nv: PropertyValue | null): void => {
     if (!vRow || !vColumn) return
     if (vReq?.revealOnCommit) onReveal(vColumn.id)
     commitValue(vRow, vColumn, nv)
   }
-  // A dependent kind picked in the ADD menu exits it and opens the value's own dropdown at the
-  // same anchor (the calendar's law, generalized).
   const pickDependent = (entry: AddEntry): void => {
     if (!aReq) return
     onDismissAdd()
@@ -167,8 +159,7 @@ export function CardPickerHost({
         value={vRaw ? linkEditText(vRaw) : ''}
         accent={solidColorCss(vDef.link_color)}
         onCommit={(raw) => {
-          // urlValueFromEdit rides an existing alias along; undefined = invalid (no write), null =
-          // cleared — a clear only applies to an EXISTING value (an untouched add stays never-mind).
+          // undefined = invalid (no write), null = cleared — and a clear only applies to an EXISTING value.
           const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
           if (nv !== undefined && (nv !== null || (!vReq?.revealOnCommit && vRaw))) commitPicked(nv)
           onDismissValue()

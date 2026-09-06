@@ -1,5 +1,4 @@
-// The frame owns the filter slot wholesale for the shapes it writes; anything it can't faithfully
-// represent decodes as `locked` rather than being silently flattened.
+// Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
@@ -15,8 +14,7 @@ import { STAMP_TARGETS, schemaTargets, TITLE_TARGET } from '../Properties/Cells/
 
 export type Connector = 'and' | 'or'
 
-/** One authored row — `connector` is null on row 0. Named FilterRow, not FrameRow: frameDndModel
- *  exports an unrelated FrameRow in this same directory. */
+/** Named FilterRow, not FrameRow: frameDndModel exports an unrelated FrameRow in this same directory. */
 export interface FilterRow {
   connector: Connector | null
   rule: FilterRule
@@ -30,12 +28,9 @@ const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules'
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
   !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
 
-/** The encoder's structure rule and the frame's row seeding both read the default connector from here. */
 export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
 
-/** Rows → tree. Connectors derive the structure: the list splits into AND-runs at each 'or'. A
- *  split under All becomes an `any` of `all`-runs — the OR-of-ANDs the connectors literally spell
- *  out; under Any the root already is `any`. */
+/** Connectors derive the structure: the list splits into AND-runs at each 'or'. A split under All becomes an `any` of `all`-runs; under Any the root already is `any`. */
 export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
   if (rows.length === 0) return undefined
   const runs: FilterRule[][] = [[]]
@@ -50,12 +45,10 @@ export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | 
   }
 }
 
-/** Tree → rows, or `locked` when the shape isn't one the frame writes (defined by shape, never
- *  depth). Mixed connectors display mode `all` ("Or" is a valid deviation under All). */
+/** `locked` when the shape isn't one the frame writes — defined by shape, never depth. Mixed connectors display mode `all` ("Or" is a valid deviation under All). */
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
 
-  // A flat all is one And-run of leaves — no split, so every connector reads And.
   if (filter.match !== 'any' && filter.rules.every(isLeaf)) {
     return {
       kind: 'rows',
@@ -64,7 +57,6 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
     }
   }
 
-  // `any` over runs: every child must be a leaf or an all-of-leaves run.
   if (!filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n))) return { kind: 'locked' }
   const rows: FilterRow[] = []
   for (const child of filter.rules) {
@@ -73,8 +65,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
       rows.push({ connector: rows.length === 0 ? null : i === 0 ? 'or' : 'and', rule })
     })
   }
-  // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run shows as All with the
-  // Or as a deviation.
+  // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run shows as All with the Or as a deviation.
   const mode: MatchMode = filter.rules.every(isLeaf) ? 'any' : 'all'
   return { kind: 'rows', mode, rows }
 }
@@ -85,9 +76,7 @@ export interface OperatorChoice {
   op: string
   label: string
   slot: ValueSlot
-  /** Chip ops: the picker toggles values[] and stays open. */
   multi?: boolean
-  /** Self-contained ops (checkbox) write this into `value` on pick. */
   impliedValue?: string
 }
 
@@ -104,8 +93,7 @@ const TEXT_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.doesNotContain, label: "Doesn't Contain", slot: 'text' },
 ]
 
-/** Before/After are the inclusive ops (on-or-before / on-or-after) — the strict variants stay
- *  registered for hand-authored files, but the frame doesn't offer a second near-identical pair. */
+/** Before/After are the inclusive ops — the strict variants stay registered for hand-authored files, but the frame doesn't offer a second near-identical pair. */
 const DATE_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'date' },
   { op: FILTER_OPS.onOrBefore, label: 'Before', slot: 'date' },
@@ -130,8 +118,7 @@ const NUMBER_OPS: OperatorChoice[] = [
   ...EMPTIES,
 ]
 
-/** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is
- *  unsatisfiable on a one-value property. */
+/** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
 const OPTION_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'chips', multi: true },
   { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips', multi: true },
@@ -143,8 +130,7 @@ const CHECKBOX_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
 ]
 
-/** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over
- *  "Is Inside". Is/Isn't test the immediate parent Set; Contains/Doesn't Contain are any-depth. */
+/** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
 const LOCATION_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'set', multi: true },
   { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set', multi: true },
@@ -192,8 +178,6 @@ export interface FilterTarget {
   icon: React.ComponentProps<typeof Icon>['name'] | undefined
 }
 
-/** Contexts resolve through the identity seam, so a user-defined one is offered on the same
- *  footing as the seeded three, with its own title and icon. */
 export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
@@ -204,8 +188,7 @@ export function filterTargets(
   const contextIds = [...contextsById.keys()]
   return [
     TITLE_TARGET,
-    // Every Location operator needs a Set to point at, so on a container with none it's a target
-    // that can never complete.
+    // Every Location operator needs a Set to point at, so on a container with none it's a target that can never complete.
     ...(hasSets
       ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
       : []),

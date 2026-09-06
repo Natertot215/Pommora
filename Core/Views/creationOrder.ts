@@ -1,15 +1,10 @@
-// Order arrays for the writes that place a row: in-view creation, and a cross-location drop.
-// Every array carries the full membership it governs — a partial write alphabetizes the
-// untouched siblings, and one built from a filtered view permanently re-ranks every row the
-// filter was hiding.
+// Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
 
 import { NEW_PAGE_SLOT } from '@pommora/core/Pages/mutateRequest'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
-/** `item` placed on the named side of `anchorId`, or appended when there's no anchor (null) or
- *  the anchor isn't present. */
 export function spliceBeside(
   ids: string[],
   anchorId: string | null,
@@ -22,8 +17,6 @@ export function spliceBeside(
   return [...ids.slice(0, insert), item, ...ids.slice(insert)]
 }
 
-/** The parent container's `page_order` with the new page's slot spliced beside its anchor
- *  (or appended when the anchor isn't among the siblings). */
 export function orderWithSlot(
   siblingIds: string[],
   anchorId: string | null,
@@ -34,8 +27,6 @@ export function orderWithSlot(
   return spliceBeside(ids, anchorId, NEW_PAGE_SLOT, where)
 }
 
-/** The current ranking reproduced exactly — the existing array first, then every id absent from
- *  it in source order (absent rows rank last, stable), the placed id excluded throughout. */
 function mergedRanking(
   existing: string[] | undefined,
   allIds: string[],
@@ -49,9 +40,6 @@ function mergedRanking(
   ]
 }
 
-/** The full `viewOrders` tiebreaker array with `newId` placed beside its anchor (appended when
- *  the anchor is null or absent), rebuilt over the container's full membership so no row moves
- *  but the one being placed. */
 export function tieOrderWith(
   existing: string[] | undefined,
   allIds: string[],

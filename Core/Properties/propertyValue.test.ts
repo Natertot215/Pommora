@@ -187,9 +187,7 @@ describe('decodeValue — a file value names files', () => {
   })
 
   it('an entry nothing can spell is DROPPED — it never takes the rest of the list with it', () => {
-    // A dangling `- ` under an attachment key is YAML null. Nulling the whole value would render
-    // the cell blank, and the next in-app add would write a one-entry list over references whose
-    // files are still on disk.
+    // A dangling `- ` under an attachment key is YAML null; nulling the whole value would blank the cell and let the next add write a one-entry list over references whose files are still on disk.
     expect(decodeValue(fileDef, ['[[a.pdf]]', null])).toEqual({
       kind: 'file',
       value: ['[[a.pdf]]'],
@@ -222,10 +220,8 @@ describe('decodeValue — a file value names files', () => {
   })
 
   it('nothing left to name is nothing', () => {
-    // An empty list and a list of only-unspellable entries are the same answer.
     expect(decodeValue(fileDef, [])).toEqual({ kind: 'null' })
     expect(decodeValue(fileDef, [null, 2026])).toEqual({ kind: 'null' })
-    // A file def has no options — every value it holds survives.
     expect(decodeValue(fileDef, ['[[a.pdf]]'])).toEqual({ kind: 'file', value: ['[[a.pdf]]'] })
     expect(isBlankValue(decodeValue(fileDef, []))).toBe(true)
   })

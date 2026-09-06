@@ -49,8 +49,8 @@ describe('the registry file is never replaced by a failed read', () => {
     const b = await createProperty(root, def({ name: 'Another', type: 'number' }))
     expect(b.ok).toBe(true)
     const after = JSON.parse(await readFile(registryFilePath(), 'utf8'))
-    expect(after.defs.prop_mystery).toEqual({ garbage: true }) // carried through, unmodeled
-    expect((await readRegistry(root)).defs.prop_mystery).toBeUndefined() // readers skip it
+    expect(after.defs.prop_mystery).toEqual({ garbage: true })
+    expect((await readRegistry(root)).defs.prop_mystery).toBeUndefined()
   })
 })
 
@@ -171,8 +171,7 @@ describe('editProperty', () => {
       pages.push(p.value.path)
       await updatePageProperty(root, p.value.path, live, { kind: 'number', value: 1 })
     }
-    // Hand-edited into unparseable YAML — an unterminated flow mapping. It sorts between the two
-    // healthy pages, so a sweep that throws on it leaves C behind on the old key.
+    // Hand-edited into unparseable YAML. It sorts between the two healthy pages, so a sweep that throws on it leaves C behind on the old key.
     await writeFile(pages[1], '---\ntitle: B\nOld: 1\nbroken: {oops\n---\nb\n', 'utf8')
 
     expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
@@ -181,7 +180,7 @@ describe('editProperty', () => {
       expect(content).toContain('New: 1')
       expect(content).not.toContain('Old:')
     }
-    expect(await readFile(pages[1], 'utf8')).toContain('broken: {oops') // left exactly as found
+    expect(await readFile(pages[1], 'utf8')).toContain('broken: {oops')
   })
 
   it('writes and then clears a checkbox property color in place', async () => {
@@ -201,7 +200,7 @@ describe('removeFromRegistry', () => {
     expect((await removeFromRegistry(root, c.value.id)).ok).toBe(true)
     expect(await readRegistry(root)).toEqual({ order: [], defs: {} })
     const raw = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
-    expect(raw.order).toEqual([]) // the write-side filter, not the lenient read, cleans it
+    expect(raw.order).toEqual([])
   })
 })
 

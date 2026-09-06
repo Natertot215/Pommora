@@ -84,8 +84,7 @@ describe('RegistryFile shape — { order, defs }', () => {
   })
 })
 
-// The file is read-modify-written whole, under its own per-path lock, so neither of two
-// overlapping mutations may drop the other's change.
+// The file is read-modify-written whole, under its own per-path lock, so neither of two overlapping mutations may drop the other's change.
 describe('serialization', () => {
   it('concurrent mutations both land', async () => {
     await mutateRegistry(root, () => ({ next: { order: [], defs: {} }, result: undefined }))

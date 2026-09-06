@@ -1,5 +1,4 @@
-// `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the
-// pinned refs against the tree and passed in separately wherever a decision must see them.
+// `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the pinned refs and passed in separately wherever a decision must see them.
 
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type {
@@ -15,24 +14,17 @@ import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { navKey } from './navRecents'
 import { reconcileWith, type ReconcileIndex } from '../Session/selection'
 
-/** The new-tab sentinel value (maps to NavView / the `'none'` detail branch). */
 export const NEWTAB: TabTarget = { kind: 'newtab' }
 
-/** Identity key for a tab target — reuses navKey; the newtab sentinel collapses to a single 'newtab'
- *  key so dedup keeps at most one NavView tab. */
+/** The newtab sentinel collapses to a single 'newtab' key so dedup keeps at most one NavView tab. */
 export function tabKey(target: TabTarget | NavRef | NewTabSentinel): string {
   return target.kind === 'newtab' ? 'newtab' : navKey(target)
 }
 
-/** A pinned tab's stable id — derived from its pin identity so it's consistent across renders and can
- *  never collide with a generated unpinned-tab id. */
 export function pinTabId(target: SelectTarget): string {
   return `pin:${navKey(target)}`
 }
 
-/** A stored ref made live against the tree: agenda kinds have no click destination, a ref that no
- *  longer resolves drops, and a resolving set/page gets its path minted — nothing stored carries
- *  one. */
 export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | null {
   if (ref.kind === 'task' || ref.kind === 'event') return null
   const probe: SelectTarget =
@@ -45,9 +37,7 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
   return r.kind === 'none' ? null : r
 }
 
-/** Stored tabs made live at restore — prune refs that no longer resolve, mint paths for those that
- *  do, and carry the history pointer through the pruning (re-pointed by key if it lands wrong,
- *  degraded to a single-entry stack if its target vanished). */
+/** The history pointer is carried through the pruning — re-pointed by key if it lands wrong, degraded to a single-entry stack if its target vanished. */
 export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): Tab[] {
   if (!index) return []
   const tabs: Tab[] = []
@@ -77,9 +67,7 @@ export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): 
   return tabs
 }
 
-/** The pinned tabs, hydrated in pin order — array position IS the order. Callers pass the push's
- *  own reconcile index and hold the result (the store keeps it as derived state), so no read or
- *  push ever walks the tree twice. */
+/** Callers pass the push's own reconcile index and hold the result, so no read or push ever walks the tree twice. */
 export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null): Tab[] {
   if (!index) return []
   return pinned
@@ -88,8 +76,7 @@ export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null)
     .map((target) => tabFor(pinTabId(target), target))
 }
 
-/** Element-wise tab equality (id + target identity + path) — lets a derive writer keep the
- *  previous array when nothing changed, so an echo push invalidates no memo. */
+/** Lets a derive writer keep the previous array when nothing changed, so an echo push invalidates no memo. */
 export function sameTabs(a: Tab[], b: Tab[]): boolean {
   return (
     a.length === b.length &&
@@ -104,7 +91,6 @@ export function sameTabs(a: Tab[], b: Tab[]): boolean {
   )
 }
 
-/** Drives the stateful "Open" vs "Open New Tab" menu labels. */
 export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
   const key = navKey(target)
   return (
@@ -113,7 +99,6 @@ export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget
   )
 }
 
-/** Map a context-menu target to its drivable selection (area/topic/project collapse to `context`). */
 export function contextTargetToSelect(t: {
   kind: MutableKind
   id: string
@@ -133,8 +118,6 @@ export function contextTargetToSelect(t: {
   }
 }
 
-/** A pinned or newtab active tab carries no history — consumers here read undefined and disable
- *  Back/Forward. */
 export function activeUnpinnedTab(tabs: Tab[], activeTabId: string): Tab | undefined {
   return tabs.find((t) => t.id === activeTabId)
 }
@@ -158,7 +141,6 @@ export interface OpenResult {
   activeTabId: string
 }
 
-/** `pinned` is the derived pinned set — read-only context; pinning/unpinning is a separate op. */
 export function openTab(
   tabs: Tab[],
   activeTabId: string,
@@ -174,8 +156,7 @@ export function openTab(
 
   const active = all.find((t) => t.id === activeTabId)
   const activeIsPinned = active ? pinned.some((p) => p.id === active.id) : false
-  // activeIsPinned tabs are protected from being overwritten; reuse also covers replacing a
-  // NavView scratch tab.
+  // activeIsPinned tabs are protected from being overwritten; reuse also covers replacing a NavView scratch tab.
   if (opts.newTab || activeIsPinned || !active) {
     return { tabs: [...tabs, tabFor(newId, target)], activeTabId: newId }
   }
@@ -192,7 +173,6 @@ export function openTab(
   return { tabs: nextTabs, activeTabId: active.id }
 }
 
-/** The `+` / ⌘N entry point — pressing ⌘N while already in a new tab is a no-op. */
 export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   const existing = tabs.find((t) => t.target.kind === 'newtab')
   if (existing) return { tabs, activeTabId: existing.id }
@@ -209,8 +189,7 @@ export interface CloseResult {
   mru: string[]
 }
 
-/** Falls back to the spatial neighbor when the MRU is empty (a cold relaunch). Closing the very
- *  last tab reseeds a lone NavView. A pinned id is a no-op — pinned tabs aren't closable here. */
+/** Falls back to the spatial neighbor when the MRU is empty (a cold relaunch); closing the very last tab reseeds a lone NavView. */
 export function closeTab(
   tabs: Tab[],
   activeTabId: string,
@@ -236,8 +215,6 @@ export function closeTab(
   return { tabs: nextTabs, activeTabId: mruTop ?? spatial, mru: nextMru }
 }
 
-/** Pinned reorder is the pins slice's reorderPin, handled at the store layer — this only covers
- *  the unpinned strip. */
 export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number): Tab[] {
   const from = tabs.findIndex((t) => t.id === fromId)
   if (from === -1) return tabs
@@ -246,8 +223,6 @@ export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number):
   return moveItem(tabs, from, to)
 }
 
-/** Enters at the front, or just behind the active tab when the active tab is itself the front
- *  one — so it keeps its spot. */
 export function insertUnpinned(tabs: Tab[], activeTabId: string, tab: Tab): Tab[] {
   const at = tabs[0] && tabs[0].id === activeTabId ? 1 : 0
   return [...tabs.slice(0, at), tab, ...tabs.slice(at)]
@@ -260,9 +235,7 @@ export interface ReconcileTabsResult {
   changed: boolean
 }
 
-/** Reference-preserving — untouched tabs keep their identity, and `changed: false` means the
- *  caller can skip the state write. `reconcile` returns the live target (possibly re-pathed) or
- *  null when the entity is gone. */
+/** Reference-preserving — untouched tabs keep their identity, and `changed: false` means the caller can skip the state write. */
 export function reconcileTabs(
   tabs: Tab[],
   activeTabId: string,

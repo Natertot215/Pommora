@@ -44,8 +44,6 @@ const mount = async (
   })
 }
 
-/** A trigger/option/swatch button whose accessible name or text reads exactly `name`, from anywhere
- *  (the PickerMenu portals to document.body). */
 const buttonFor = (name: string): HTMLButtonElement => {
   const el = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
     (b) => b.getAttribute('aria-label') === name || b.textContent === name,
@@ -54,7 +52,6 @@ const buttonFor = (name: string): HTMLButtonElement => {
   return el
 }
 
-/** The color control's swatch — nameless, so it is found by the control's own accessible name. */
 const swatchFill = (): string => {
   const el = buttonFor('Color').querySelector('span')
   return (el as HTMLElement).style.getPropertyValue('--sw')
@@ -67,8 +64,7 @@ describe('CheckboxEditor', () => {
     expect(host.textContent).toContain('Style')
   })
 
-  // The swatch must paint the SAME accent var the checked box itself tints with — the OS accent
-  // belongs to the link path, and borrowing it made three surfaces claim three colors for one value.
+  // The swatch must paint the SAME accent var the checked box tints with — borrowing the OS accent made three surfaces claim three colors for one value.
   it('shows the app accent in the swatch when unset', async () => {
     await mount({})
     expect(host.textContent).not.toContain('Accent')
@@ -90,7 +86,6 @@ describe('CheckboxEditor', () => {
   it('toggles the look from the Style row (dual-option control)', async () => {
     const onSetStyle = vi.fn()
     await mount({ look: 'checkbox', onSetStyle })
-    // Checkbox/Switch is two options → a toggle: one click flips 'checkbox' to 'switch'.
     await act(async () => buttonFor('Checkbox style').click())
     expect(onSetStyle).toHaveBeenCalledWith('switch')
   })

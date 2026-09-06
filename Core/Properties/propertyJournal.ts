@@ -1,7 +1,4 @@
-// The property side's sibling of contextJournal. A cascade writes its intent FIRST, sweeps,
-// then clears; a crash at any point leaves an id-keyed record the open-time replay either
-// forward-completes or discards. Intent only, never a snapshot — the replay re-derives its
-// targets from current disk.
+// A cascade writes its intent FIRST, sweeps, then clears. Intent only, never a snapshot — the open-time replay re-derives its targets from current disk.
 
 import { journalSlot } from './journalSlot'
 

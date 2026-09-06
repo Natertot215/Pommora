@@ -1,7 +1,3 @@
-// The two container-level resolvers every view surface reads before it renders anything — which
-// schema governs this container, and which of its saved views is showing. Pure, and deliberately
-// outside any renderer: both are read by Cards, by the Visibility pane, and by the view router.
-
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import { mintDefaultView, type SavedView } from '@pommora/core/Views/views'

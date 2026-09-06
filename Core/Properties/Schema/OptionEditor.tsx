@@ -57,8 +57,7 @@ export function OptionEditor({
     (value) => options.find((o) => o.value === value)?.label ?? value,
     (value, toIndex) => onSetOptions(reorderOption(options, value, toIndex)),
   )
-  // Each option is its own anchor, so the slot opens under whichever chip the pointer rests on; an
-  // empty list has no chip to anchor to, so the list itself stands in for the first one.
+  // Each option is its own anchor; an empty list has no chip to anchor to, so the list itself stands in for the first one.
   const ghostApi = useGhostOptionAnchor(
     adding !== null || renaming !== null || editing !== null || iconEditing !== null,
   )

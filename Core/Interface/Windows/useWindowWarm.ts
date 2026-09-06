@@ -5,8 +5,7 @@ import { readPageDetail } from '../../Session/pageDetailCache'
 import { fenceWarm } from '../../Navigation/warmTabs'
 import { captureWindowCache, readWindowCache, type WindowCacheEntry } from './windowCache'
 
-// Captures are liveness-gated — the editor's unmount capture trails the store's drop, and ungated
-// it would re-insert one ghost editorState per close.
+// Liveness-gated — the editor's unmount capture trails the store's drop, and ungated it would re-insert one ghost editorState per close.
 
 export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
@@ -34,8 +33,6 @@ export function useWindowWarm(
     [activeTabId, activePath, captureIfLive],
   )
 
-  // A passive listener records the active tab's body scroll as it happens — never a switch-time
-  // read of a maybe-clamped value.
   useEffect(() => {
     const el = scrollerRef.current
     if (!el || !activeTabId) return
@@ -44,8 +41,7 @@ export function useWindowWarm(
     return () => el.removeEventListener('scroll', onScroll)
   }, [activeTabId, captureIfLive, scrollerRef])
 
-  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0 (and the
-  // listener records the clamp as truth). Double-rAF lands after its first measure/layout pass.
+  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass.
   useEffect(() => {
     if (!activeTabId || activePath === undefined) return
     const saved = readWindowCache(activeTabId)?.bodyScrollTop ?? 0

@@ -5,10 +5,7 @@ import { navKey } from './navRecents'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { host } from '../Platform/dialer'
 
-// `.content-pane` fills the window; the sidebar and inspector are floating overlays carved off its
-// edges (skipped when parked off-screen). The toolbar is NOT carved — the banner is full-bleed under
-// it — so main overpaints just that chrome band (maskTop), back-filled from the banner when present
-// (maskFill 'banner') or left empty otherwise ('window').
+// The sidebar and inspector are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
 function contentRect(pane: Element): ThumbRect {
   const p = pane.getBoundingClientRect()
   let { left, right } = p
@@ -22,8 +19,7 @@ function contentRect(pane: Element): ThumbRect {
   return { x: left, y: p.top, width: right - left, height: p.bottom - p.top, maskTop, maskFill }
 }
 
-/** Await every image in the pane finishing load (the banner especially) so the shot isn't captured
- *  pre-render. Already-complete images resolve instantly; a failed load is ignored, not awaited forever. */
+/** Awaits every image in the pane so the shot isn't captured pre-render; a failed load is ignored, not awaited forever. */
 async function imagesReady(pane: Element): Promise<void> {
   await Promise.all(
     [...pane.querySelectorAll('img')].map((img) =>
@@ -32,11 +28,7 @@ async function imagesReady(pane: Element): Promise<void> {
   )
 }
 
-// Snapshot the detail view as a gallery thumbnail — captured only while the NavWindow is closed, so
-// the overlay never bakes into the shot. Runs on selection settle and on the pane closing (navOpen is
-// a dep), so a page opened while browsing with the pane open still gets its cover once it closes. The
-// delay clears the close animation and debounces rapid navigation; fonts/images are awaited first so
-// the banner has rendered.
+// Captured only while the NavWindow is closed, so the overlay never bakes into the shot; the delay clears the close animation and debounces rapid navigation.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)

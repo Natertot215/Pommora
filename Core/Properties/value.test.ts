@@ -33,8 +33,6 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_num', name: 'Num', type: 'number' },
 ]
 
-// Every assertion below resolves against `schema` (the declared-type coercion needs it) — one bound
-// helper keeps them terse. The coercion's own cases pass a purpose-built schema to resolveFieldValue.
 const rfv = (r: ViewRow, p: string) => resolveFieldValue(r, p, schema)
 
 const row: ViewRow = {
@@ -145,9 +143,7 @@ describe('resolveFieldValue memoization', () => {
       createdAt: null,
       modifiedAt: null,
     }
-    // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh
-    // one. No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on
-    // row.id), so this is contractual rather than incidental.
+    // No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on row.id), so the shared cached object is contractual rather than incidental.
     expect(rfv(row, 'prop_s')).toBe(rfv(row, 'prop_s'))
     expect(rfv(row, 'ctx_areas')).toBe(rfv(row, 'ctx_areas'))
   })

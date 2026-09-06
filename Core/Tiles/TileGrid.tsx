@@ -21,19 +21,13 @@ import { snapAxis, xCandidates, yCandidates } from './layout/snap'
 import './tile-base.css'
 import './tile-grid.css'
 
-// Every gesture is snapshot → preview → commit/abort against the frozen drag-origin layout;
-// releasing settles the tile and the layout commits on transitionend.
-
 export interface TileGridProps {
   layout: TileLayout
   onLayoutChange: (layout: TileLayout) => void
-  /** Must be identity-stable and must not close over mutable per-tile data — tiles memoize on it. */
   renderTile: (id: string, rect: Rect) => React.ReactNode
   tileClassName?: (id: string) => string | undefined
-  /** Inline style on the tile itself; identity-stable per value, the tile memoizes on it. */
   tileStyle?: (id: string) => CSSProperties | undefined
   onBusyChange?: (busy: boolean) => void
-  /** Freezes drag + resize; the handle still opens the menu. */
   isTileStatic?: (id: string) => boolean
   onHandleMenu?: (id: string, e: React.MouseEvent) => void
   onBackdrop?: (target: BackdropTarget, e: React.MouseEvent) => void
@@ -109,7 +103,6 @@ const TileShell = memo(
         : phase === 'reflow' || phase === 'settling'
           ? `transform ${SHELL_TRANSITION}, width ${SHELL_TRANSITION}, height ${SHELL_TRANSITION}`
           : undefined
-    // Rect cached on enter (no per-move layout reads); state flips only on threshold crossing.
     const [handleNear, setHandleNear] = useState(false)
     const cornerRef = useRef<{ x: number; y: number } | null>(null)
     return (
@@ -139,8 +132,7 @@ const TileShell = memo(
           transition,
         }}
         onTransitionEnd={(e) => {
-          // Target-guarded: tile CONTENT animating a transform bubbles its
-          // transitionend up here — only the shell's own settle may commit.
+          // Target-guarded: tile CONTENT animating a transform bubbles its transitionend up here — only the shell's own settle may commit.
           if (
             phase === 'settling' &&
             e.target === e.currentTarget &&
@@ -208,8 +200,7 @@ export function TileGrid({
   const [pressedId, setPressedId] = useState<string | null>(null)
   const begin = usePointerGesture()
 
-  // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition
-  // would lag the pane. `tracking` holds until the observer goes quiet.
+  // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition would lag the pane.
   const [tracking, setTracking] = useState(false)
   useEffect(() => {
     const el = gridRef.current
@@ -229,8 +220,7 @@ export function TileGrid({
     }
   }, [])
 
-  // Hit-testing and boundary extents run against the frozen origin's geometry —
-  // a preview shifting under the pointer must never retarget the gesture.
+  // Hit-testing and boundary extents run against the frozen origin's geometry — a preview shifting under the pointer must never retarget the gesture.
   const originGeometry = useMemo(
     () => computeGeometry(layout, Math.max(0, width), GAP),
     [layout, width],
@@ -249,8 +239,7 @@ export function TileGrid({
   const live = useRef(now)
   live.current = now
 
-  // The ref mirrors the state so the commit runs as a plain event side effect — never inside a
-  // state updater (React forbids cross-component updates there).
+  // The ref mirrors the state so the commit runs as a plain event side effect, never inside a state updater (React forbids cross-component updates there).
   const settleRef = useRef<Settle | null>(null)
   const finishSettle = useCallback((id: string) => {
     const s = settleRef.current
@@ -266,7 +255,6 @@ export function TileGrid({
     const t = setTimeout(() => finishSettle(settle.id), GLIDE_FEEL.duration + SETTLE_FALLBACK)
     return () => clearTimeout(t)
   }, [settle, finishSettle])
-  // A decided move outlives the grid: navigating away mid-settle still commits it.
   useEffect(
     () => () => {
       if (settleRef.current) finishSettle(settleRef.current.id)
@@ -274,8 +262,7 @@ export function TileGrid({
     [finishSettle],
   )
 
-  // Left in, the boundary's own edge magnetizes the drag back to its start, making
-  // sub-snapPx adjustment impossible — filter it per action.
+  // Left in, the boundary's own edge magnetizes the drag back to its start, making sub-snapPx adjustment impossible.
   const withoutOwn = (candidates: number[], start: number): number[] =>
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
@@ -283,9 +270,7 @@ export function TileGrid({
     if (e.button !== 0 || live.current.isTileStatic?.(id)) return null
     e.preventDefault()
     e.stopPropagation()
-    // A gesture starting during a live settle takes over: finalize the pending commit NOW — the
-    // parent hasn't re-rendered yet, so live.current still holds the pre-commit origin, and a
-    // gesture built on that stale origin would silently erase the just-dropped move.
+    // A gesture starting during a live settle finalizes the pending commit NOW: the parent hasn't re-rendered, so a gesture built on the stale origin would erase the just-dropped move.
     const settling = settleRef.current
     if (settling) finishSettle(settling.id)
     const pending = settling?.next ?? null
@@ -389,14 +374,12 @@ export function TileGrid({
       const { origin, g, grid, rect } = from
       if (!grid) return
       const downBox = grid.getBoundingClientRect()
-      // The grab offset is frozen at the down event — recomputing it per move would
-      // cancel the pointer delta and pin the lifted tile to its origin.
+      // The grab offset is frozen at the down event — recomputing it per move would cancel the pointer delta and pin the lifted tile to its origin.
       const grab = {
         x: e.clientX - downBox.left - rect.x,
         y: e.clientY - downBox.top - rect.y,
       }
-      // Reads the REAL scroll ancestor's delta (the grid never scrolls itself), folding
-      // our own autoscroll back into the pointer math.
+      // Reads the REAL scroll ancestor's delta (the grid never scrolls itself), folding our own autoscroll back into the pointer math.
       const scroller = findScroller(grid, 'xy')
       const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
       let latest: TileLayout = origin
@@ -438,8 +421,7 @@ export function TileGrid({
           moved = true
           lastPoint.x = ev.clientX
           lastPoint.y = ev.clientY
-          // The instance-scoped stopper (not the global) is what teardown calls, so no teardown can
-          // cross drags.
+          // The instance-scoped stopper (not the global) is what teardown calls, so no teardown can cross drags.
           if (!stopScroll && scroller) {
             stopScroll = startAutoScroll({
               getPoint: () => lastPoint,
@@ -510,9 +492,7 @@ export function TileGrid({
       style={{ height: geometry.totalHeight + BOTTOM_PAD_PX }}
       onContextMenu={onGridContextMenu}
     >
-      {/* Tiles render in STABLE id order, never tree order — a mid-drag preview reorders the
-          tree, and React moving the keyed DOM nodes to match would remount every reflowing tile
-          mid-transition. Position is absolute; DOM order is moot. */}
+      {/* Tiles render in STABLE id order, never tree order — React moving the keyed DOM nodes to match a mid-drag preview would remount every reflowing tile mid-transition. */}
       {[...geometry.tiles.entries()]
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([id, rect]) => {

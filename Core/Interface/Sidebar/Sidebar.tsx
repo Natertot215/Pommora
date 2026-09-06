@@ -270,7 +270,6 @@ function Disclosure({
     if (renamingChild && !open && !locked) setAndSave(true)
   }, [renamingChild, open, locked])
 
-  // Peek reveals a locked folder's newcomer without unlocking it; naming holds it open, a drop lingers.
   const [peekId, setPeekId] = useState<string | null>(null)
   const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const clearPeekTimer = (): void => {
@@ -875,8 +874,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     null,
   )
   const prevMode = useRef(mode)
-  // Must land BEFORE the switch's first paint (useLayoutEffect), or one frame of the new mode
-  // flashes un-animated at the old scroll position.
+  // useLayoutEffect: landing after the switch's first paint flashes one frame of the new mode at the old scroll position.
   useLayoutEffect(() => {
     if (prevMode.current === mode) return
     const from = prevMode.current

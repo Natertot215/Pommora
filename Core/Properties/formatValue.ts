@@ -1,6 +1,4 @@
-// Value formatters for the per-view column styles. Pure: no fs, no React. Pinned to en-US — the
-// ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across
-// machines.
+// Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across machines.
 
 import {
   type DateFormat,
@@ -12,8 +10,7 @@ import type { DateGranularity, DateSeparator } from '@pommora/core/Views/views'
 import type { NumberConfig } from '@pommora/core/Properties/properties'
 import { pad } from '@pommora/uix/Utilities/pad'
 
-// Intl formatter construction is pricey and the card grid formats per-cell — cache by options tuple
-// instead of rebuilding per format() call. en-US is pinned everywhere, so the key is the options alone.
+// Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.
 const numFmtCache = new Map<string, Intl.NumberFormat>()
 const dateFmtCache = new Map<string, Intl.DateTimeFormat>()
 function numFmt(opts: Intl.NumberFormatOptions): Intl.NumberFormat {
@@ -49,7 +46,6 @@ function ordinal(day: number): string {
   }
 }
 
-/** The date form a surface shows when its column has none of its own — the nexus's, else full. */
 export const nexusDateFormat = (setting: DateFormat | undefined): DateFormat =>
   defaultStyleFor('datetime', undefined, setting).date_format ?? 'full'
 
@@ -63,8 +59,6 @@ const WEEK_DAYS = 7 // |Δdays| ≤ this shows named/day-count form (with clock 
 
 const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
-/** Capitalized relative wording. Within a week: named day / "N Days Ago" / "N Days from now" (+ "at
- *  <clock>" when time is shown). Past a week: weeks → months → years, clock dropped. */
 function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, now: Date): string {
   const DAY = 86_400_000
   const diffDays = Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / DAY)
@@ -94,10 +88,7 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
   return ago ? `${count} ${plural} Ago` : `${count} ${plural} from now`
 }
 
-/** Render an ISO date(-time) per the saved formats. A date-only value (no `T`) never grows a
- *  time; date-only strings parse as LOCAL midnight (a bare `new Date('YYYY-MM-DD')` is UTC and
- *  shifts the day west of Greenwich). Unparseable input falls back to the raw string. Weekday is a
- *  decoupled dimension prepended for the worded formats only; `relative` composes its own wording. */
+/** Date-only strings parse as LOCAL midnight — a bare `new Date('YYYY-MM-DD')` is UTC and shifts the day west of Greenwich. Unparseable input falls back to the raw string. */
 export function formatDate(
   iso: string,
   dateFormat: DateFormat,
@@ -135,12 +126,8 @@ export function formatDate(
   return out
 }
 
-/** The date formats that render numerically (`07-2026`) rather than worded (`July 2026`) — gates
- *  both bucket-label rendering and the pane's Separation footing. */
 export const NUMERIC_FORMATS = new Set<DateFormat>(['dayMonthYear', 'monthDayYear'])
 
-/** A date group-heading label from its stable bucket key: worded formats read written
- *  ("July 2026"); numeric formats read numeric with the view's separator ("07-2026"). */
 export function formatBucketLabel(
   key: string,
   granularity: DateGranularity,
@@ -172,9 +159,6 @@ export function formatBucketLabel(
   }
 }
 
-/** The picker's condensed range-date form (a standing rule — picker-only, never in cells): worded
- *  formats collapse to the short "July 7th"; numeric formats drop to MM/DD (or DD/MM), expanding
- *  back to the full numeric form only when the range spans multiple years. */
 export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boolean): string {
   const date = new Date(iso.includes('T') ? iso : `${iso}T00:00:00`)
   if (Number.isNaN(date.getTime())) return iso
@@ -190,8 +174,6 @@ export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boo
   }
 }
 
-/** Fraction-option digit settings for `Intl` — 'hidden' shows no places, a fixed count pins min=max,
- *  absent shows the number's natural decimals (Intl default). */
 function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberFormatOptions {
   if (decimals === 'hidden') return { maximumFractionDigits: 0 }
   if (typeof decimals === 'number')
@@ -199,8 +181,7 @@ function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberF
   return {}
 }
 
-/** One scalar formatted by the family (no fraction wrapping). Percent is LITERAL — the number plus '%',
- *  never Intl's ×100 percent style. Currency uses the chosen ISO code (default USD). */
+/** Percent is LITERAL — the number plus '%', never Intl's ×100 percent style. */
 function formatScalar(n: number, cfg: NumberConfig | undefined): string {
   const useGrouping = cfg?.number_separators !== false
   const digits = fractionDigits(cfg?.number_decimals)
@@ -227,8 +208,7 @@ export function formatNumber(n: number, cfg: NumberConfig | undefined): string {
   return formatScalar(n, cfg)
 }
 
-/** The bar's divisor: 100 for percent, the fraction denominator for Number/Currency, else undefined
- *  (no bar). A zero / missing denominator returns undefined so the bar never divides by zero. */
+/** A zero or missing denominator returns undefined so the bar never divides by zero. */
 export function numberDivisor(cfg: NumberConfig | undefined): number | undefined {
   if (cfg?.number_family === 'percent') return 100
   if (cfg?.number_fraction && cfg.number_denominator) return cfg.number_denominator

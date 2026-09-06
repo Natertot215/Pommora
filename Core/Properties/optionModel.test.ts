@@ -140,7 +140,7 @@ describe('optionModel', () => {
       { value: 'Open', label: 'Open', group_id: 'upcoming' },
       { value: 'Backlog', label: 'Backlog', group_id: 'upcoming' },
     ])
-    expect(next[1]).toBe(groups[1]) // the other group is left untouched (same reference)
+    expect(next[1]).toBe(groups[1])
   })
 
   it('recolorStatusOption sets then clears a color on the matching option in any group', () => {

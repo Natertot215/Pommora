@@ -15,9 +15,7 @@ export const displayPropertyName = (name: string, capitalize: boolean): string =
 export const useCapitalizeMetadata = (): boolean =>
   useSession((s) => s.personalization.capitalizeMetadata ?? false)
 
-/** `contexts` is REQUIRED and deliberately un-defaulted. Context titles are registry data, so a
- *  caller that omits them silently falls through to the raw id — a header reading as a ULID,
- *  which looks like data corruption rather than a missing argument. */
+/** `contexts` is REQUIRED and deliberately un-defaulted: a caller that omits them falls through to the raw id, a header reading as a ULID. */
 export function columnLabel(
   columnId: string,
   schema: PropertyDefinition[],

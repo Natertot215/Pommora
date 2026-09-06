@@ -68,8 +68,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     { kind: 'number', value: 7 },
   )
 
-  // Interleave 20 rounds — under the serialized chain the end state is always coherent:
-  // pC unassigned WITH its cache block intact, pB assigned.
+  // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its cache block intact, pB assigned.
   for (let round = 0; round < 20; round++) {
     await Promise.all([removeProperty(root, notes, pC), assignProperty(root, notes, pB)])
     const sc = (await readSidecar(notes, 'collection', pageCollectionSidecar)) as Record<
@@ -88,7 +87,6 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
       unknown
     >
     expect(fm.Gone).toBeUndefined()
-    // reset for the next round: re-assign restores the value, unassign pB
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)
   }

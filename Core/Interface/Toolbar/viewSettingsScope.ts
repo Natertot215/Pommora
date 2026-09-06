@@ -1,7 +1,5 @@
 import type { SelectionState } from '@pommora/core/Navigation/navRef'
 
-/** Maps the current selection to a Settings-menu scope; SettingsMenu switches on this to
- *  pick its frame. Adding a future surface's frame is a new case here + a switch arm there. */
 export type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'none'
 
 export function viewSettingsScope(selection: SelectionState): ViewSettingsScope {

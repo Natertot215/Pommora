@@ -82,29 +82,23 @@ describe('bandSlot', () => {
   })
 
   it('nests into a set band via its middle zone', () => {
-    // B spans 72–96; its middle zone is the nest target.
     const slot = bandSlot(buildBandIndex(bands, rows), 84, 'A1', 120)
     expect(slot).toMatchObject({ beforeId: null, impliedParentId: 'B', nestInto: 'B' })
   })
 
-  // Cards render one flat level, so a nest has nowhere to land: the same middle zone splits into a
-  // before/after slot instead of promising a depth the view can't draw.
+  // Cards render one flat level, so a nest has nowhere to land: the middle zone splits into a before/after slot instead of promising a depth the view can't draw.
   it('a non-nestable surface turns every set band into a before/after slot', () => {
     const slot = bandSlot(buildBandIndex(bands, rows), 84, 'A1', 120, false)
     expect(slot).toMatchObject({ nestInto: null, beforeId: 'B1' })
   })
 
   it('never nests into the dragged band or its descendants — middle falls back to the half split', () => {
-    // Middle of A1 while dragging A: nest is illegal (descendant); bottom half → the next slot
-    // outside A's subtree (before B at root).
     const slot = bandSlot(buildBandIndex(bands, rows), 38, 'A', 120)
     expect(slot?.nestInto).toBeNull()
     expect(slot).toMatchObject({ beforeId: 'B', impliedParentId: null })
   })
 
   it('refuses a slot whose implied parent sits inside the dragged subtree', () => {
-    // Top zone of A2 while dragging A implies parent A — illegal, and the skip walks past the
-    // subtree to a root slot instead of returning it.
     const slot = bandSlot(buildBandIndex(bands, rows), 50, 'A', 120)
     expect(slot?.impliedParentId ?? null).not.toBe('A')
   })
@@ -233,10 +227,8 @@ describe('structuralOrderAfterDrop', () => {
     ])
   })
 
-  // A filter prunes emptied bands out of the resolved groups. Merging against THAT set would drop
-  // their stored position, so a filtered-out Set silently loses its place in the manual order.
+  // A filter prunes emptied bands out of the resolved groups; merging against THAT set would drop their stored position.
   it('a Set filtered out of view keeps its position when the universe is the tree', () => {
-    // S2 sits first by user order; a filter empties it, so only S3 and S1 render.
     expect(structuralOrderAfterDrop(['S2', 'S3', 'S1'], ['S1', 'S2', 'S3'], 'S1', 'S3')).toEqual([
       'S2',
       'S1',

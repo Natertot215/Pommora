@@ -45,9 +45,6 @@ export const titleRow = style({
   },
 })
 
-/** Two-phase title hide/reveal, both phases on the segments' titleReveal timing. Hiding slides the
- *  title left THEN collapses the row's space upward; revealing opens the space THEN slides the
- *  title back in. */
 export const titleSlide = style({
   display: 'flex',
   alignItems: 'center',
@@ -97,9 +94,7 @@ export const switcherRow = style([
   },
 ])
 
-// View-switch slide (the sidebar mode-switch's translate + the shell-move tokens): the incoming view
-// slides in from the clicked pill's side — `--slide-from` carries the signed offset (+ from the right,
-// − from the left), re-triggered by re-keying the wrapper on the active index.
+// The incoming view slides in from the clicked pill's side — `--slide-from` carries the signed offset, re-triggered by re-keying the wrapper on the active index.
 const viewSwitchSlide = keyframes({
   from: { transform: 'translateX(var(--slide-from, 0px))', opacity: 0.5 },
   to: { transform: 'translateX(0)', opacity: 1 },

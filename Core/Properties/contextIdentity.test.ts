@@ -99,8 +99,6 @@ describe('context accessors', () => {
   })
 })
 
-// A personalized glyph must reach every surface that resolves through the seam, not just the
-// sidebar — a nexus that sets its own default otherwise wears two different icons for one Space.
 // The override must name a CURATED glyph; `entityIcon` rejects anything else and keeps the seed.
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
   const personalized = {
@@ -108,7 +106,6 @@ it('an icon-less Space takes the USER default glyph, not the curated seed', () =
     personalization: { defaultIcons: { space: 'folder-open' } },
   } as NexusTree
   expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
-  // A Space carrying its OWN icon still wins over the default.
   expect(spaceIdentityOf(personalized, 'a2')?.icon).toBe('anchor')
 })
 
@@ -126,6 +123,5 @@ it('a Space default leaves a Context on its own glyph, and the Context default m
   } as NexusTree
   expect(contextIdentityOf(contextDefault, 'ctx_topics')?.icon).toBe('folder-open')
   expect(spaceIdentityOf(contextDefault, 'a1')?.icon).toBe('layout-dashboard')
-  // A Context carrying its OWN icon still wins over the default.
   expect(contextIdentityOf(contextDefault, 'ctx_areas')?.icon).toBe('briefcase')
 })

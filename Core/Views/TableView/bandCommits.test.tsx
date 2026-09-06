@@ -1,9 +1,4 @@
 // @vitest-environment jsdom
-// Band drop commits through the real TableView (state-level; geometry truth = the CDP pass):
-// structural reorder → view-level group_order (collapsed ids included, NO fs write) · property
-// reorder → group.order + manual · reparent → moveSet with APPENDED fs order + the slot in
-// group_order · the override rides liveView so a sibling persist can't clobber a fresh drag
-// and survives a source-identity swap.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -67,7 +62,6 @@ const page = (id: string, title: string, path: string): Record<string, unknown> 
   path,
 })
 
-/** A[A1], B + a loose root page. */
 const structuralSource = (view?: Partial<SavedView>): CollectionNode =>
   ({
     kind: 'collection',
@@ -178,11 +172,10 @@ const mountTable = async (source: CollectionNode): Promise<void> => {
   await act(async () => {
     root.render(<ViewHost source={source} />)
   })
-  await act(async () => {}) // flush loadValues/activeViews
+  await act(async () => {})
   stubBandRects()
 }
 
-/** Stack the visible band headers at 24px each and give the dnd box a rect. */
 function stubBandRects(): void {
   const box = host.querySelector('.drop-line-host')
   if (box) stubRect(box, { top: 0, bottom: 400 })
@@ -206,8 +199,7 @@ const drop = async (): Promise<void> => {
   await act(async () => {
     firePointer(window, 'pointerup')
   })
-  // A committed drop arms the one-tick post-drag click swallower — flush it so a test's
-  // follow-up click isn't eaten (real clicks land a tick later anyway).
+  // A committed drop arms the one-tick post-drag click swallower — flush it so a test's follow-up click isn't eaten.
   await act(async () => {
     await new Promise((r) => setTimeout(r, 1))
   })
@@ -217,8 +209,8 @@ const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedVi
 
 describe('structural band reorder', () => {
   it('persists the merged group_order (collapsed ids INCLUDED), renders optimistically, and never touches the fs', async () => {
-    await mountTable(structuralSource({ collapsed_groups: ['sA'] })) // bands: A (collapsed), B
-    await dragBand(1, 2) // B above A
+    await mountTable(structuralSource({ collapsed_groups: ['sA'] }))
+    await dragBand(1, 2)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
@@ -228,7 +220,7 @@ describe('structural band reorder', () => {
 
   it('a collapse toggle right after the drag persists WITH the fresh band order (the clobber regression)', async () => {
     await mountTable(structuralSource())
-    await dragBand(2, 2) // B above A
+    await dragBand(2, 2)
     await drop()
     const outline = host.querySelectorAll('.group-band-drop-outline')[0]
     await act(async () => {
@@ -270,7 +262,7 @@ describe('property band reorder', () => {
     await mountTable(propertySource())
     expect(headerTexts()[0]).toContain('Not started')
     expect(headerTexts()[1]).toContain('Active')
-    await dragBand(2, 26) // Complete above Active
+    await dragBand(2, 26)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().group).toEqual({
@@ -290,8 +282,8 @@ describe('location order mode (structural_order_mode: location)', () => {
   it('same-parent band reorder writes reorderChildren — group_order untouched', async () => {
     await mountTable(
       structuralSource({ collapsed_groups: ['sA'], structural_order_mode: 'location' }),
-    ) // bands: A (collapsed), B
-    await dragBand(1, 2) // B above A
+    )
+    await dragBand(1, 2)
     await drop()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'reorderChildren',
@@ -303,8 +295,8 @@ describe('location order mode (structural_order_mode: location)', () => {
   })
 
   it('cross-tree reparent still writes group_order after moveSet (slot preservation, mode-blind)', async () => {
-    await mountTable(structuralSource({ structural_order_mode: 'location' })) // bands: A, A1, B
-    await dragBand(2, 12) // nest B into A
+    await mountTable(structuralSource({ structural_order_mode: 'location' }))
+    await dragBand(2, 12)
     await drop()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'moveSet',
@@ -317,7 +309,6 @@ describe('location order mode (structural_order_mode: location)', () => {
   })
 })
 
-/** A[pA1 active, pA2 complete], B[pB active] — sub-grouped by status. */
 const subGroupSource = (view?: Partial<SavedView>): CollectionNode =>
   ({
     kind: 'collection',
@@ -372,7 +363,7 @@ describe('sub-group bucket band drag', () => {
   // bands: A(0), A/active(1), A/complete(2), B(3), B/active(4)
   it('manual mode: same-set bucket reorder writes the view-level global sub_group.order', async () => {
     await mountTable(subGroupSource())
-    await dragBand(2, 26) // A/complete above A/active (top zone of band 1)
+    await dragBand(2, 26)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().sub_group).toEqual({
@@ -385,7 +376,7 @@ describe('sub-group bucket band drag', () => {
 
   it('CROSS-SET bucket drag (arrives as reparent) still writes the global sub-order — no moveSet', async () => {
     await mountTable(subGroupSource())
-    await dragBand(2, 98) // A/complete before B/active (top zone of band 4)
+    await dragBand(2, 98)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().sub_group).toEqual({
@@ -420,7 +411,6 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
     channels['view:loadValues'] = async () => SUB_VALUES
   })
 
-  /** Rects: drop-line-host box + each data-row stacked at 24px from y=100 (pA1, pA2, pB in DOM order). */
   const stubRowRects = (): void => {
     const box = host.querySelector('.drop-line-host')
     if (box) stubRect(box, { top: 0, bottom: 400 })
@@ -442,7 +432,7 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
   it('different set + different bucket → setProperty THEN movePage', async () => {
     await mountTable(subGroupSource())
     stubRowRects()
-    await dragRow(1, 160) // pA2 (sA/complete) into pB's region (sB/active)
+    await dragRow(1, 160)
     expect(mutateSpy).toHaveBeenNthCalledWith(1, {
       op: 'setProperty',
       path: 'Col/A/A Two.md',
@@ -459,7 +449,7 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
   it('same set, different bucket → setProperty alone', async () => {
     await mountTable(subGroupSource())
     stubRowRects()
-    await dragRow(1, 105) // pA2 (sA/complete) into pA1's region (sA/active)
+    await dragRow(1, 105)
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'setProperty',
       path: 'Col/A/A Two.md',
@@ -471,7 +461,7 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
   it('different set, same bucket → movePage alone', async () => {
     await mountTable(subGroupSource())
     stubRowRects()
-    await dragRow(2, 105) // pB (sB/active) into pA1's region (sA/active)
+    await dragRow(2, 105)
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
       path: 'Col/B/B One.md',
@@ -482,8 +472,8 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
 
 describe('band reparent', () => {
   it('nest-into commits moveSet with the APPENDED fs order plus the group_order slot', async () => {
-    await mountTable(structuralSource()) // bands: A, A1, B
-    await dragBand(2, 12) // middle zone of A (0–24 → 7.2–16.8)
+    await mountTable(structuralSource())
+    await dragBand(2, 12)
     await drop()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'moveSet',
@@ -498,7 +488,7 @@ describe('band reparent', () => {
   it('a FAILED moveSet commits nothing — no phantom group_order, no optimistic reorder', async () => {
     mutateSpy.mockImplementation(async () => false)
     await mountTable(structuralSource())
-    await dragBand(2, 12) // nest B into A
+    await dragBand(2, 12)
     await drop()
     expect(mutateSpy).toHaveBeenCalledOnce()
     expect(saveSpy).not.toHaveBeenCalled()

@@ -22,13 +22,10 @@ import './tab-base.css'
 
 interface TabEntry {
   tab: Tab
-  /** null for the NavView tab. A pinned tab that no longer resolves render-hides upstream —
-   *  never reaches here. */
   res: ResolvedNav | null
 }
 
-// Gate/body split: every interaction hook (the Ctrl+Tab listener included) mounts only when the
-// bar actually shows.
+// Gate/body split: every interaction hook (the Ctrl+Tab listener included) mounts only when the bar actually shows.
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
   const pinnedTabs = useSession((s) => s.pinnedTabs)
@@ -54,8 +51,7 @@ export function TabBar(): React.JSX.Element | null {
     [index, tabs],
   )
 
-  // Blank ONLY for the pure empty state (a lone NavView, no pins); otherwise the bar shows so the +
-  // stays reachable — even at a single real tab (deliberate).
+  // Blank ONLY for the pure empty state (a lone NavView, no pins); otherwise the bar shows so the + stays reachable, even at a single real tab.
   if (pinnedEntries.length === 0 && unpinnedEntries.every((e) => e.tab.target.kind === 'newtab'))
     return null
   return <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} />
@@ -84,8 +80,7 @@ function TabBarBody({
     closeTab,
   )
 
-  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order (the one signed-off keybinding) —
-  // intercepted only while the bar shows.
+  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order — the one signed-off keybinding, intercepted only while the bar shows.
   const orderedIds = useMemo(
     () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
     [pinnedEntries, unpinnedEntries],
@@ -130,8 +125,7 @@ function TabBarBody({
       else if (action) runPageSendAction(action, target)
     }
 
-  // A native CSS app-region can't do this — it never delivers hover, killing the + button's
-  // hover-reveal on the same pixels — so the bar drags the window itself via pointer deltas.
+  // A native CSS app-region never delivers hover, killing the + button's hover-reveal on the same pixels, so the bar drags the window itself via pointer deltas.
   const onBarDown = (e: React.PointerEvent<HTMLElement>): void => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
     const el = e.currentTarget
@@ -204,16 +198,13 @@ function TabBarBody({
           <div className="tab-strip">
             {renderEntries.map(({ entry, ghost }, i) => (
               <Fragment key={entry.tab.id}>
-                {/* When the leftmost tab is itself the ghost (no left segment), the segment before
-                    the first LIVE tab closes in its place instead. */}
                 {i > 0 && (
                   <span
                     className={cx(segment, 'tab-seg', (ghost || i === firstLive) && 'is-closing')}
                     aria-hidden
                   />
                 )}
-                {/* Same component type as a live tab — a type swap would remount the DOM node,
-                    losing the exit slide. is-closing makes it pointer-inert. */}
+                {/* Same component type as a live tab — a type swap would remount the DOM node, losing the exit slide. */}
                 <DraggableUnpinnedTab
                   entry={entry}
                   active={!ghost && entry.tab.id === activeTabId}
@@ -227,7 +218,6 @@ function TabBarBody({
           </div>
         </SortableZone>
       </div>
-      {/* Outside the masked scroller — inside it, the edge fade would dim the parked + itself. */}
       <Button
         size="button-large"
         paddingX="6px"
@@ -243,8 +233,6 @@ function TabBarBody({
   )
 }
 
-/** The pin badge is pulled for now — position + compactness carry the pinned reading. Not
- *  closable — unpin first. */
 function PinnedTab({
   entry,
   active,
@@ -281,8 +269,6 @@ function PinnedTab({
   )
 }
 
-/** A ghost keeps this same wrapper — its id has left the zone's items, so the drag hook is
- *  naturally inert on it. */
 function DraggableUnpinnedTab(props: {
   entry: TabEntry
   active: boolean
@@ -314,8 +300,7 @@ function UnpinnedTab({
 }): React.JSX.Element {
   const isNewTab = entry.tab.target.kind === 'newtab'
   const title = isNewTab ? 'New Tab' : (entry.res?.title ?? '')
-  // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH
-  // (`source === 'tab'`) leaves it motionless.
+  // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH (`source === 'tab'`) leaves it motionless.
   const slide = useSession((s) =>
     s.navSlide && s.navSlide.source !== 'tab' && s.navSlide.tabId === entry.tab.id
       ? s.navSlide

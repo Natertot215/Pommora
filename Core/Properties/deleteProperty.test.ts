@@ -17,8 +17,7 @@ import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
 import { installMachine, machine } from '../Platform/machine'
 
-/** The writer takes a definition, and the registry's copy is the ONLY one that addresses the same
- *  key the strip path resolves — a def invented here would write somewhere no cascade ever looks. */
+/** The registry's copy is the ONLY def that addresses the same key the strip path resolves — one invented here would write somewhere no cascade ever looks. */
 const liveDef = async (id: string): Promise<PropertyDefinition> => {
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error(`no registry def for ${id}`)
@@ -28,16 +27,13 @@ const liveDef = async (id: string): Promise<PropertyDefinition> => {
 let root: string
 let notes: string
 let tasks: string
-/** Whether the snapshot was already on disk when the scrub first touched a page — the write-ahead
- *  pin, taken from inside the real strip path rather than asserted after the fact. */
 let recordedBeforeScrub: boolean | undefined
 
 const base = machine()
 installMachine({
   ...base,
   async lock(key, fn) {
-    // Page locks only. Sidecar writes take the same primitive, and an assignment during setup
-    // would otherwise pin this before the act under test has begun.
+    // Page locks only: an assignment during setup would otherwise pin this before the act under test has begun.
     if (key.endsWith('.md')) {
       recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
     }
@@ -127,7 +123,7 @@ describe('deleteProperty', () => {
     const p = await createPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
     await updatePageProperty(root, p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
-    await removeProperty(root, notes, id) // notes now holds a cache block and is NOT an assigner
+    await removeProperty(root, notes, id)
     const before = await readSidecar(notes, 'collection', pageCollectionSidecar)
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
 
@@ -135,7 +131,7 @@ describe('deleteProperty', () => {
 
     const sc = await readSidecar(notes, 'collection', pageCollectionSidecar)
     expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
-    expect(sc?.property_cache).toBeUndefined() // the last block goes, and so does the empty map
+    expect(sc?.property_cache).toBeUndefined()
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
   })
 })

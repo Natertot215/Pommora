@@ -29,8 +29,6 @@ export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } 
 
 export type RewriteText = (content: string, file: string) => string | null
 
-/** Pages are swept as raw frontmatter or as whole text, never both; only the text arm hands the
- *  sidecars a rewriter of their own, since a raw sweep already serves them. */
 export type SweepPlan<C> = { raw: Rewrite<C> } | { text: RewriteText; sidecars?: Rewrite<C> }
 
 const changedKeys = (raw: Raw, next: Raw): string[] =>

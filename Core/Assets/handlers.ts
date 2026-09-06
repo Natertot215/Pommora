@@ -17,12 +17,10 @@ import { liveAssetMap, refreshAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import { assetSubfolder, validPropertyDir } from './assetRoots'
 
-// A picked file sits outside the nexus, so the channel that adopts one is bounded by the pick,
-// not the root — the renderer never names a path the host did not choose.
+// Bounded by the pick, not the root — the renderer never names a path the host did not choose.
 const pickedPaths = new Set<string>()
 
 export const assetsHandlers = {
-  // Built on first ask and held; the watcher patches it in place.
   'assets:map': async () => {
     const root = sessionRoot()
     return root === null ? EMPTY_ASSET_MAP : liveAssetMap(root)
@@ -46,14 +44,11 @@ export const assetsHandlers = {
     })
     if (!chosen) return ok(null)
     if (!forProperty) return validateAssetDir(root, chosen)
-    // Containment BEFORE the subtraction: a folder outside the asset root would otherwise have its
-    // leading segments sliced off and be re-read as a plausible subfolder.
+    // Containment BEFORE the subtraction: a folder outside the asset root would otherwise have its leading segments sliced off and re-read as a plausible subfolder.
     const below = assetSubfolder(relPosix(root, chosen), assetDir)
     return below !== null && validPropertyDir(below, assetDir) ? ok(below) : NOT_A_PROPERTY_DIR
   },
 
-  // Crosses the same validator the dialog's pick does, so a hand-typed path and a chosen one are
-  // refused for identical reasons.
   'assets:setDir': async (ctx, dir: unknown) => {
     const root = sessionRoot()
     if (root === null) return NO_NEXUS
@@ -66,15 +61,13 @@ export const assetsHandlers = {
       next = valid.value
     }
     await writeAssetDirectory(root, next)
-    // Banners and profile images Pommora minted under `.nexus/assets` follow the directory; a
-    // failure leaves every reference where it was rather than failing the change.
+    // A failure leaves every reference where it was rather than failing the change.
     try {
       await migrateAssets(root)
     } catch (e) {
       console.error('assets: the migration failed; references are unchanged:', e)
     }
-    // The write's own echo is suppressed, so the structural re-arm an external edit would trigger
-    // never fires here.
+    // The write's own echo is suppressed, so the structural re-arm an external edit would trigger never fires here.
     await confirmSettingsWrite(ctx)
     const tree = await refreshAfterWrite(root)
     await seedContentIndex(root)
@@ -101,8 +94,7 @@ export const assetsHandlers = {
     return path
   },
 
-  // Bounded by the pick like every read-back of an outside path; the DESTINATION is refused
-  // inside `adoptFile`, at the write.
+  // Bounded by the pick; the DESTINATION is refused inside `adoptFile`, at the write.
   'assets:adopt': async (ctx, source: string, subfolder?: string) => {
     const root = sessionRoot()
     if (root === null) return NO_NEXUS

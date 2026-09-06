@@ -26,7 +26,7 @@ describe('tileZoom', () => {
   it('snaps an off-grid factor to the nearest step (hand-edit / import safety)', () => {
     expect(zoomStep(0.83).factor).toBe(0.9)
     expect(zoomStep(0.6).factor).toBe(0.65)
-    expect(zoomStep(2).factor).toBe(1.5) // above the max clamps down
-    expect(zoomStep(0.1).factor).toBe(0.5) // below the min clamps up
+    expect(zoomStep(2).factor).toBe(1.5)
+    expect(zoomStep(0.1).factor).toBe(0.5)
   })
 })

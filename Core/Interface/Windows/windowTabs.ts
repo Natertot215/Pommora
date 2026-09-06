@@ -9,9 +9,7 @@ export interface WindowTab {
 }
 
 export interface WindowState {
-  /** 'page' = summoned from a page open; 'nav' = the NavWindow flavor (map-tab sentinel first). */
   flavor: 'page' | 'nav'
-  /** The durable set's key; re-parents to the left-most survivor on origin close. */
   originId: string
   tabs: WindowTab[]
   activeTabId: string
@@ -32,7 +30,6 @@ export function openTabIn(
   return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
 }
 
-/** The map sentinel is immovable AND un-landable — it holds slot 1. */
 export function reorderTabIn(win: WindowState, activeId: string, overId: string): WindowState {
   const from = win.tabs.findIndex((t) => t.id === activeId)
   const to = win.tabs.findIndex((t) => t.id === overId)
@@ -45,7 +42,7 @@ export function reorderTabIn(win: WindowState, activeId: string, overId: string)
 export function closeTabIn(win: WindowState, id: string): WindowState | null {
   const idx = win.tabs.findIndex((t) => t.id === id)
   if (idx === -1) return win
-  if (win.tabs[idx].target.kind === 'navwindow') return win // the map tab is perma-pinned
+  if (win.tabs[idx].target.kind === 'navwindow') return win
   const tabs = win.tabs.filter((t) => t.id !== id)
   if (tabs.length === 0) return null
   const activeTabId = win.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : win.activeTabId
@@ -57,8 +54,6 @@ export function closeTabIn(win: WindowState, id: string): WindowState | null {
   return { ...win, tabs, activeTabId, originId }
 }
 
-/** The page the window is showing — the active tab's own target, so a subscriber sees one
- *  reference per state; the nav flavor's map tab is no page. */
 export function deriveTarget(
   p: WindowState | null,
 ): Extract<WindowTabTarget, { kind: 'page' }> | null {

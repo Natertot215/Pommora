@@ -1,9 +1,4 @@
-// The one writer for Pommora-governed frontmatter keys, whichever layer owns them.
-//
-// `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: `govern` is the
-// key set this write owns, `next` is what those keys become, and **a key in `govern` absent
-// from `next` is deleted**. `null` is not the delete sentinel — the merge sets on anything that
-// is not `undefined`, so a null would write the literal.
+// `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a key in `govern` absent from `next` is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
 import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './contextResolve'
 import type { Adoption } from './propertyValue'

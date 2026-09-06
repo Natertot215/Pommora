@@ -1,6 +1,3 @@
-// The record exists while pages are being swept, is gone once the op settles, and a refused
-// op never leaves one behind.
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
@@ -124,7 +121,6 @@ describe('the delete writer', () => {
   it('journals after the snapshot, holds across the strip, clears after the registry', async () => {
     const r = await deleteProperty(root, 'prop_s')
     expect(r.ok).toBe(true)
-    // The bundle's writes ran journal-free; every page strip ran journaled.
     const bundleWrites = observed.filter((o) => o.path.includes('.trash'))
     expect(bundleWrites.length).toBeGreaterThan(0)
     expect(bundleWrites.every((w) => !w.journaled)).toBe(true)

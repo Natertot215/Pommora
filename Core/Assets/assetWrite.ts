@@ -23,8 +23,7 @@ export async function writeAssetFile(
     if (resolveAssetName(map, file) !== null || (await pathExists(abs)))
       return fail('exists', `${file} already exists.`)
     await atomicWriteBinary(abs, bytes)
-    // The watcher never sees this: `atomicWriteBinary` records the write and the echo is
-    // dropped, so the map is the writer's to keep current or the banner renders blank.
+    // `atomicWriteBinary` records the write and the echo is dropped, so the map is the writer's to keep current or the banner renders blank.
     patchHeldAssetMap(root, relPosix(root, abs), 'add')
     return ok(connectionText(file))
   })

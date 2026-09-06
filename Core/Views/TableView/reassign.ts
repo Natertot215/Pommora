@@ -1,13 +1,9 @@
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 
-/** Property types whose group key maps cleanly back to a settable value. A date bucket isn't a
- *  single date, so date/datetime grouping can't be reassigned by drag; the rest here can. */
+/** A date bucket isn't a single date, so date/datetime grouping can't be reassigned by drag; the rest here can. */
 export const REASSIGNABLE_GROUP_TYPES = new Set<string>(['status', 'select', 'checkbox'])
 
-/** The PropertyValue a row takes when dropped into a destination group. The no-value band
- *  (UNGROUPED) clears the property; a property group's key IS the value — the option value for
- *  status/select, the bucket for checkbox. Caller restricts `type` to REASSIGNABLE_GROUP_TYPES. */
 export function groupKeyToValue(groupKey: string, type: string | undefined): PropertyValue | null {
   if (groupKey === UNGROUPED) return null
   switch (type) {
@@ -22,8 +18,7 @@ export function groupKeyToValue(groupKey: string, type: string | undefined): Pro
   }
 }
 
-/** The value a reorder hands a row, or undefined for a pure reorder — the neighbor rule that keeps a
- *  drop to a run's edge (a seam, or either end of the list) from rewriting anything. */
+/** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
 export function reassignTarget(
   order: string[],
   draggedId: string,

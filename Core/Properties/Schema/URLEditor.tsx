@@ -5,7 +5,6 @@ import { MenuIndex } from '@pommora/uix/Menus'
 import { LINK_FORMAT_OPTIONS } from './linkFormat'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-/** The chosen color themes the pane's own Switches via a scoped `--accent`. */
 export function URLEditor({
   underline,
   display,

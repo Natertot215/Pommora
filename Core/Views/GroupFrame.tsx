@@ -781,8 +781,7 @@ function DateBucketList({
     const key = bucketKey(row, group.property_id, schema, granularity)
     if (key) present.add(key)
   }
-  // Date bucket keys alone start with a year — the shared hidden list's other vocabularies
-  // (option values, set ULIDs, sub/<value>) never do.
+  // Date bucket keys alone start with a year — the shared hidden list's other vocabularies (option values, set ULIDs, sub/<value>) never do.
   for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) present.add(key)
   if (present.size === 0) return null
 

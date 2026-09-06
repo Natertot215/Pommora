@@ -79,8 +79,7 @@ const click = async (el: Element | null | undefined): Promise<void> => {
     ;(el as HTMLElement).click()
   })
 }
-/** Let a disclosure beat elapse — a removal animates before it writes, and a newly added row mounts
- *  collapsed for one frame, which jsdom does not flush inside act(). */
+/** Let a disclosure beat elapse — a removal animates before it writes, and a newly added row mounts collapsed for one frame, which jsdom does not flush inside act(). */
 const settle = async (): Promise<void> => {
   await act(async () => {
     await new Promise((r) => setTimeout(r, 260))
@@ -90,7 +89,6 @@ const settle = async (): Promise<void> => {
 const byLabel = (label: string): Element | undefined =>
   [...host.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === label)
 
-// PickerMenu portals to body — options are queried document-wide.
 const optionWithText = (t: string): Element | undefined =>
   [...document.querySelectorAll('[data-picker-portal] button, [data-picker-portal] [role]')]
     .concat([...document.body.querySelectorAll('button')])
@@ -214,7 +212,6 @@ describe('FilterFrame', () => {
     expect(connectors.length).toBe(1)
     await click(connectors.at(-1))
     expect(saveSpy).not.toHaveBeenCalled()
-    // The draft's picker is the last one — the existing row carries its own.
     await click(
       [...host.querySelectorAll('button')]
         .filter((b) => b.getAttribute('aria-label') === 'Filter property')
@@ -250,8 +247,7 @@ describe('FilterFrame', () => {
     expect(saved.filter?.rules).toEqual([{ property_id: '_title', op: 'is', value: 'urgent' }])
   })
 
-  // The second write re-serializes the whole rule list, so it must re-read the rows at call time
-  // rather than a snapshot predating the first write.
+  // The second write re-serializes the whole rule list, so it must re-read the rows at call time rather than a snapshot predating the first write.
   it('a blur-committed value survives a second write to the filter itself', async () => {
     await mount(
       view({
@@ -272,7 +268,6 @@ describe('FilterFrame', () => {
         input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
       }
     })
-    // Flipping a connector rewrites `filter` wholesale — the value must still be in it.
     await click(byLabel('Toggle connector'))
     expect(lastSaved().filter).toEqual({
       match: 'any',
@@ -316,7 +311,7 @@ describe('FilterFrame', () => {
     expect(lastSaved().filter?.rules).toEqual([
       { property_id: '_title', op: 'is', value: 'stranded' },
     ])
-    root = createRoot(host) // afterEach unmounts again
+    root = createRoot(host)
   })
 
   it('a value edited after an earlier commit still flushes on unmount', async () => {
@@ -358,7 +353,6 @@ describe('FilterFrame', () => {
       view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'a' }] } }),
     )
     await click(host.querySelector('[aria-label="Remove filter"]'))
-    // Zero rows serializes to no filter at all, not an empty group that would still be "a filter".
     expect(lastSaved().filter).toBeUndefined()
     await mount(view({ filter: lastSaved().filter }))
     expect(host.querySelector('[aria-label="Remove filter"]')).toBeNull()

@@ -24,8 +24,6 @@ const glanceStore = {
   save: vi.fn(async () => ({ ok: true as const, value: null })),
 }
 
-/** The bridge a mounted glance reads. The editor inside it takes the native-menu seam like every
- *  other surface, so every stub carries those two channels whatever else a test drives. */
 const stubNexus = (extra: Record<string, unknown>): void => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'editor:format-state': () => {},
@@ -64,7 +62,6 @@ const link = (): HTMLElement => {
 }
 const paneOpen = (): boolean => document.querySelector('[data-picker-portal]') !== null
 const flush = async (): Promise<void> => await act(async () => {})
-/** The dwell is the seam's; these tests drive the presenter the seam would fire. */
 const present = (el: Element, target = page): void => {
   vi.useFakeTimers()
   try {

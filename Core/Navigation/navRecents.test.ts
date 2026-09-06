@@ -32,7 +32,7 @@ describe('recordRecent', () => {
   it('rolls off the oldest beyond the cap', () => {
     const start = [page('a'), page('b'), page('c')]
     const r = recordRecent(start, { kind: 'page', id: 'd' }, 3)
-    expect(r.map((e) => ('id' in e ? e.id : e.kind))).toEqual(['d', 'a', 'b']) // 'c' (oldest) dropped
+    expect(r.map((e) => ('id' in e ? e.id : e.kind))).toEqual(['d', 'a', 'b'])
   })
 })
 

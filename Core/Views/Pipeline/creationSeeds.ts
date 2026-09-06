@@ -1,7 +1,4 @@
-// What a view's filter cleanly implies for a page created inside it. A rule stamps only when it
-// names one unambiguous value on a user property — a positive Is under All-mode. Any/None groups,
-// negatives, presence ops, and metadata rules (title, dates) derive nothing: metadata is never
-// changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
+// A rule stamps only when it names one unambiguous value on a user property. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
@@ -22,8 +19,7 @@ function ruleSeed(rule: FilterRule, schema: PropertyDefinition[]): PropertyValue
   }
 }
 
-/** The seed map an active filter implies. Callers spread gesture-context seeds AFTER these —
- *  where a filter implication and the gesture disagree, the gesture wins. */
+/** Callers spread gesture-context seeds AFTER these — where a filter implication and the gesture disagree, the gesture wins. */
 export function filterSeeds(
   filter: FilterGroup | undefined,
   enabled: boolean,

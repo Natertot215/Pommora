@@ -17,12 +17,9 @@ const NO_ENTRIES: SearchEntry[] = []
 
 export interface SearchResult {
   entry: SearchEntry
-  /** Resolved display, or null for a hit whose kind has no click destination. */
   resolved: ResolvedNav | null
 }
 
-/** Split search results into the NavList shape both surfaces render: resolved hits become selectable
- *  `items`; unresolvable ones become inert `extras`. */
 export function splitSearch(results: SearchResult[]): {
   items: ResolvedNav[]
   extras: { key: string; title: string; kind: string }[]
@@ -35,8 +32,7 @@ export function splitSearch(results: SearchResult[]): {
   }
 }
 
-/** The shared read side both NavWindow + NavMenu render from — one source, two presentations. The tree
- *  index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
+/** The tree index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {
   resolvedRecents: ResolvedNav[]
   resolvedFavorites: ResolvedNav[]
@@ -83,8 +79,7 @@ export function useNavData(): {
 
   const go = useCallback(
     (target: NavRef, onDone?: () => void, opts?: { newTab?: boolean }): void => {
-      // A stored ref carries no path — the click mints one against the live tree. A ref that
-      // fails to resolve does not navigate: there is nothing to fall back to.
+      // A stored ref carries no path — the click mints one against the live tree, and a ref that fails to resolve does not navigate.
       if (!tree) return
       const live = liveTarget(reconcileIndexOf(tree), target)
       if (!live) return

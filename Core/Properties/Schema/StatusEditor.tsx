@@ -58,8 +58,7 @@ export function StatusEditor({
     (value) => groups.flatMap((g) => g.options).find((o) => o.value === value)?.label ?? value,
     (value, toGroupId, toIndex) => onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
   )
-  // One anchor per group — the shared mechanism holds a single ghost, so crossing into another
-  // group's list moves the slot rather than standing two of them up.
+  // One anchor per group — the shared mechanism holds a single ghost, so crossing into another group's list moves the slot rather than standing two up.
   const ghostApi = useGhostOptionAnchor(
     adding !== null || renaming !== null || renamingGroup !== null || editing !== null,
   )

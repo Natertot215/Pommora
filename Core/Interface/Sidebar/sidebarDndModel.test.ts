@@ -118,22 +118,22 @@ describe('setContainerOf — the container a dragged Set resolves into', () => {
     return e
   }
   it('resolves a container header to itself, a hovered Set to its parent, a page to its parent container', () => {
-    expect(setContainerOf(get('c1'), idx)?.path).toBe('Col') // the Collection itself
-    expect(setContainerOf(get('s1'), idx)?.path).toBe('Col') // a depth-1 Set → its parent Collection
-    expect(setContainerOf(get('s2'), idx)?.path).toBe('Col/Set') // a Sub-Set → its parent Set
-    expect(setContainerOf(get('p3'), idx)?.path).toBe('Col') // a Collection-loose page → the Collection
-    expect(setContainerOf(get('p1'), idx)?.path).toBe('Col/Set') // a page in a Set → that Set
+    expect(setContainerOf(get('c1'), idx)?.path).toBe('Col')
+    expect(setContainerOf(get('s1'), idx)?.path).toBe('Col')
+    expect(setContainerOf(get('s2'), idx)?.path).toBe('Col/Set')
+    expect(setContainerOf(get('p3'), idx)?.path).toBe('Col')
+    expect(setContainerOf(get('p1'), idx)?.path).toBe('Col/Set')
   })
 })
 
 describe('isSelfOrDescendant — cycle guard for Set reparenting', () => {
   const idx = buildIndex(tree)
   it('flags a target that is the dragged Set itself or one of its descendants', () => {
-    expect(isSelfOrDescendant('s1', 's1', idx)).toBe(true) // self
-    expect(isSelfOrDescendant('s2', 's1', idx)).toBe(true) // s2 is a descendant of s1
+    expect(isSelfOrDescendant('s1', 's1', idx)).toBe(true)
+    expect(isSelfOrDescendant('s2', 's1', idx)).toBe(true)
   })
   it('allows an unrelated target', () => {
-    expect(isSelfOrDescendant('c1', 's1', idx)).toBe(false) // the Collection is an ancestor, not a descendant
-    expect(isSelfOrDescendant('s1', 's2', idx)).toBe(false) // s1 is not under s2
+    expect(isSelfOrDescendant('c1', 's1', idx)).toBe(false)
+    expect(isSelfOrDescendant('s1', 's2', idx)).toBe(false)
   })
 })

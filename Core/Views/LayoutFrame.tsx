@@ -54,8 +54,7 @@ const BANNERS: PickerOption<CardBanner>[] = [
   { value: 'none', label: 'None' },
 ]
 
-// Live scrub: while the Scale knob drags, push the factor straight onto the configured view's
-// mounted cards root(s), scoped by data-view-id so a sibling cards view isn't dragged along.
+// Live scrub: while the Scale knob drags, push the factor onto the configured view's mounted cards root(s), scoped by data-view-id so a sibling cards view isn't dragged along.
 const scrubCardScale = (v: number, viewId: string): void => {
   for (const el of document.querySelectorAll<HTMLElement>(`.cards-view[data-view-id="${viewId}"]`))
     el.style.setProperty('--card-scale', String(v))

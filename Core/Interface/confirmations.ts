@@ -11,17 +11,14 @@ export interface ConfirmRequest {
   defaultsToCancel?: boolean
 }
 
-/** Puts a question up from anywhere, inside a callback or not — the answer is what matters, never a subscription to it. */
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
-/** The nexus's Confirm Before Deletion switch, off. A Collection or a Set carries a schema and
- *  everything filed under it, so it asks regardless of the switch. */
+/** A Collection or a Set carries a schema and everything filed under it, so it asks regardless of the Confirm Before Deletion switch. */
 const waived = (kind?: MutableKind): boolean =>
   kind !== 'collection' &&
   kind !== 'set' &&
   useSession.getState().personalization.confirmDeletion === false
 
-/** Ask, then delete — the one route a delete gesture takes, wherever the gesture happened. */
 export const confirmDelete = async (target: {
   path: string
   kind: MutableKind

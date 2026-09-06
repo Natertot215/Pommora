@@ -73,7 +73,6 @@ const mountPane = async (schema: PropertyDefinition[] = defs): Promise<void> => 
   })
 }
 
-/** The row whose title span reads exactly `name` (clicks bubble to the MenuItem div). */
 const rowFor = (name: string): HTMLElement => {
   const span = [...host.querySelectorAll<HTMLElement>('span')].find(
     (el) => el.textContent === name && el.children.length === 0,
@@ -88,8 +87,7 @@ describe('the DRY nested slide (A-7)', () => {
     await act(async () => {
       rowFor('Status').click()
     })
-    // The slider owns the measure-then-flip: the editor mounts first, then a frame later `active` flips
-    // to it. Advance that frame so the editor is the live slot and the list is the inert one beneath.
+    // The slider owns the measure-then-flip: advance a frame so the editor is the live slot and the list is the inert one beneath.
     await act(async () => {
       await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
@@ -122,8 +120,8 @@ describe('the All Properties section (T5)', () => {
     const all = host.querySelector('[data-group="all"]')
     expect(all).not.toBeNull()
     expect(all?.textContent).toContain('Effort')
-    expect(all?.textContent).not.toContain('Status') // assigned — never in both groups
-    expect(all?.textContent).not.toContain('Title') // reserved
+    expect(all?.textContent).not.toContain('Status')
+    expect(all?.textContent).not.toContain('Title')
   })
 
   it('+ assigns through the IPC; the confirming push carries the promotion, not a reload', async () => {
@@ -159,7 +157,6 @@ describe('the All Properties section (T5)', () => {
 describe('the two-region drag (T6) — state-level; geometry truth lives in the live pass', () => {
   const deleteSpy = (): ReturnType<typeof vi.fn> => schemaDeleteSpy
 
-  /** Rects: assigned rows at 10-30 / 30-50 (region 10-50); all block at 70-110 with x1 at 70-90. */
   const stubGeometry = (): void => {
     stubRect(host.querySelector('[data-group="assigned"]')!, { top: 10, bottom: 50 })
     stubRect(host.querySelector('[data-group="all"]')!, { top: 70, bottom: 110 })
@@ -179,8 +176,8 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     const row = host.querySelector('[data-prop="prop_status"]')!
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 20 })
-      firePointer(window, 'pointermove', { x: 100, y: 40 }) // past activation
-      firePointer(window, 'pointermove', { x: 100, y: 80 }) // into the all region
+      firePointer(window, 'pointermove', { x: 100, y: 40 })
+      firePointer(window, 'pointermove', { x: 100, y: 80 })
     })
     expect(host.querySelector('[data-group="all"]')?.className).toContain('allHighlight')
     await act(async () => {
@@ -200,7 +197,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 80 })
       firePointer(window, 'pointermove', { x: 100, y: 60 })
-      firePointer(window, 'pointermove', { x: 100, y: 15 }) // top half of the first assigned row
+      firePointer(window, 'pointermove', { x: 100, y: 15 })
       firePointer(window, 'pointerup', { x: 100, y: 15 })
     })
     expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 0)
@@ -236,7 +233,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 20 })
       firePointer(window, 'pointermove', { x: 100, y: 40 })
-      firePointer(window, 'pointermove', { x: 100, y: 250 }) // well below the last rendered row
+      firePointer(window, 'pointermove', { x: 100, y: 250 })
       firePointer(window, 'pointerup', { x: 100, y: 250 })
     })
     expect(deleteSpy()).toHaveBeenCalledWith('Col', 'prop_status')
@@ -329,7 +326,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
       input!.blur()
     })
     expect(renameSpy).toHaveBeenCalledWith('Col', 'prop_status', 'Stage')
-    expect(host.querySelector('.row-title-input')).toBeNull() // eager exit
+    expect(host.querySelector('.row-title-input')).toBeNull()
   })
 
   it('a registry row offers Rename only (registry-row context)', async () => {
