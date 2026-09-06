@@ -3,8 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { StoredTabSet } from './Windows/windowRecord'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
-import { writeValue } from '../Store/localState'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { writeValue } from '../Platform/localState'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
 
 let root: string

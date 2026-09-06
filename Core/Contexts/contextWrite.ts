@@ -1,7 +1,4 @@
-// Ids arrive from the renderer; titles serialize here, through the live registry — never earlier.
-
-import { mkdir, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, parseContextKey, type ContextsRegistry } from '../Properties/contexts'
 import { NO_DEFS, reconcileGovernedRoot, type GovernedWorld } from '../Properties/contextResolve'
@@ -21,8 +18,8 @@ import { ok, fail, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { adoptedId, newId } from '../Locations/ids'
 import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../IO/atomicWrite'
-import { serializeOnFile } from '../IO/fileLock'
-import { isMarkdownFile } from '../IO/walk'
+import { isMarkdownFile, listEntries } from '../IO/walk'
+import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, SPACE_SIDECAR, tileFilePath } from '../Locations/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -35,11 +32,9 @@ interface SpaceRef {
   title: string
   contextId: string
   contextTitle: string
-  /** Absolute folder path. */
   dir: string
 }
 
-/** The live registry plus every Space's id/title/folder, scanned fresh per operation. */
 export interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
@@ -63,7 +58,6 @@ export async function assignedDefs(
   )
 }
 
-/** A strict registry read that failed leaves property repair alone. */
 export const NO_CONTEXT_WORLD: Omit<GovernedWorld, 'defs'> = {
   registry: null,
   spacesByContext: new Map(),
@@ -78,8 +72,8 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
     const dir = join(contextsDir(root), def.title)
     const spaces: SpaceNode[] = []
     if (await pathExists(dir)) {
-      for (const e of await readdir(dir, { withFileTypes: true })) {
-        if (!e.isDirectory()) continue
+      for (const e of await listEntries(dir)) {
+        if (e.kind !== 'dir') continue
         // STRICT per sidecar: a folder without one simply isn't a Space, but an
         // unreadable/corrupt sidecar fails the whole load — a world missing a real Space
         // would make the reconcile silently strip that Space's valid tags from every file it touches.
@@ -138,7 +132,7 @@ export async function setPageContext(
   const applied = applyTarget(world, contextId, titles.value)
   if (!applied.ok) return applied
   const { key, value } = applied.value
-  const adoptions = await serializeOnFile(absFile, async () => {
+  const adoptions = await machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
     return ok(
@@ -166,7 +160,6 @@ export function contextDriftPresent(raw: Raw, tree: NexusTree | null): boolean {
   return false
 }
 
-// A failed strict Contexts load skips the context arm, never the edit.
 export async function loadGovernedWorld(
   root: string,
   absFile: string,
@@ -180,7 +173,6 @@ export async function loadGovernedWorld(
   return world.ok ? { ...world.value, defs } : skipped
 }
 
-/** Strict RMW, never fallback-to-empty. */
 export async function setSpaceContext(
   world: ContextWorld,
   spaceId: string,
@@ -216,7 +208,6 @@ export async function setContextOnPath(
   return fail('invalid-path', 'Not a context-taggable entity.')
 }
 
-/** Title collisions disambiguate like every other create ("New Context 2"). */
 export async function createContextGroup(
   root: string,
   name: string,
@@ -240,12 +231,10 @@ export async function createContextGroup(
   if (!written.ok) return written
   if (!written.value.contexts.some((c) => c.id === id))
     return fail('exists', `"${title}" already exists.`)
-  await mkdir(join(contextsDir(root), title), { recursive: true })
+  await machine().mkdir(join(contextsDir(root), title))
   return ok({ id, path: contextDirRel(title) })
 }
 
-/** Seeded with the 2×2 tile document — four empty markdown tiles in two half/half bands.
- *  Files first, so a crash leaks at worst an orphan file, never an entry without one. */
 export async function createSpace(
   root: string,
   contextId: string,
@@ -256,7 +245,7 @@ export async function createSpace(
   const def = reg.value.contexts.find((c) => c.id === contextId)
   if (!def) return fail('not-found', 'Unknown Context.')
   const parent = join(contextsDir(root), def.title)
-  await mkdir(parent, { recursive: true })
+  await machine().mkdir(parent)
   const created = await createFolderEntity(parent, 'space', name)
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
@@ -276,7 +265,6 @@ export async function createSpace(
   })
 }
 
-/** Accepts ramp cells and the legacy anchor names. */
 export async function setSpaceColor(
   root: string,
   spaceId: string,

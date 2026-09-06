@@ -1,11 +1,4 @@
-// What a folder IS, decided in one place. Kind is declared by the well-known sidecar filename a
-// folder carries — never by its name — and classification is depth-aware, so a nested agenda
-// config reads as Unknown rather than as an ordinary Set.
-//
-// An agenda config only counts where the nexus RECORDS it: registration by sidecar id is what
-// makes a duplicated, hand-made, or relocated config inert bytes instead of a second singleton.
-
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../IO/atomicWrite'
 import { listEntries } from '../IO/walk'
@@ -14,10 +7,6 @@ import { readSidecar } from '../IO/sidecar'
 
 export type FolderKind = 'collection' | 'set' | 'tasks-singleton' | 'events-singleton' | 'unknown'
 
-/** Everything that separates one agenda slot from the other, stated once: the sidecar filename
- *  that declares it, the kind it resolves to, the key it registers under, and the name it is
- *  seeded with. Consumers derive from this table rather than restating the pairing — a mapping
- *  kept in more than one place is one edit away from disagreeing with itself. */
 export const AGENDA_SLOTS = [
   { slot: 'tasks', sidecar: 'taskConfig', kind: 'tasks-singleton', seedName: 'Tasks' },
   { slot: 'events', sidecar: 'eventConfig', kind: 'events-singleton', seedName: 'Events' },
@@ -30,27 +19,15 @@ export const AGENDA_SLOTS = [
 
 export type AgendaSlot = (typeof AGENDA_SLOTS)[number]['slot']
 
-/** The canonical agenda singletons a nexus records, by sidecar id. */
 export type AgendaRegistration = Partial<Record<AgendaSlot, string>>
 
 export interface FolderKindContext {
   agenda: AgendaRegistration
-  /** Registered slots whose folder already sits at the nexus root. Nothing needs carrying home
-   *  for one of these, and a nested folder claiming it is a copy rather than a displaced
-   *  original — re-homing it would take it out of wherever its owner filed it, and leave the two
-   *  of them contesting the slot on the next open. */
   homed: ReadonlySet<AgendaSlot>
-  /** The nexus root. It holds no content of its own, so it is never a container. Required, not
-   *  optional: an absent root once let the resolver classify the nexus root itself as a Set. */
   root: string
-  /** Adoption alone classifies a sidecar-less root folder as a Collection: the missing sidecar is
-   *  what the pass exists to write, so its absence must not be read as a reason to skip. */
   adopting?: boolean
 }
 
-/** The registration recorded on `nexus.json`, read leniently: a nexus that records nothing simply
- *  registers nothing, and every agenda config it holds is inert. Only a string id can register a
- *  folder, so garbage in the field registers nothing rather than matching something. */
 export function readAgendaRegistration(
   identity: Record<string, unknown> | null,
 ): AgendaRegistration {
@@ -65,11 +42,6 @@ export function readAgendaRegistration(
   return out
 }
 
-/**
- * Classify `absDir`. `depth` is positional: `'root'` for a direct child of the nexus, `'nested'`
- * for anything below. Unknown is the honest answer for anything this can't place — it is not an
- * error, and the callers render nothing for it.
- */
 export async function resolveFolderKind(
   absDir: string,
   depth: 'root' | 'nested',
@@ -82,12 +54,9 @@ export async function resolveFolderKind(
   const claimed = AGENDA_SLOTS.filter((_, i) => present[i])
 
   if (claimed.length > 0) {
-    // Two agenda configs, or an agenda config beside a container sidecar: the folder makes two
-    // claims at once and no arm may pick between them.
     if (claimed.length > 1) return 'unknown'
     const [slot] = claimed
     if (await hasContainerSidecar(absDir)) return 'unknown'
-    // Nested is disqualifying on its own — the singleton's recorded place is the nexus root.
     if (depth !== 'root') return 'unknown'
     const sidecar = await readSidecar(absDir, slot.sidecar, baseSidecar)
     const registered = ctx.agenda[slot.slot]
@@ -107,18 +76,6 @@ async function hasContainerSidecar(absDir: string): Promise<boolean> {
   return collection || set
 }
 
-/**
- * Build the context for a nexus, with contested slots dropped.
- *
- * Registration keys on the config sidecar's id, and any ordinary duplication (Finder duplicate,
- * `cp -R`, a restored backup, a sync conflict copy) reproduces that id — two folders then answer
- * to one record, the same ambiguity `resolveFolderKind` already refuses within a single folder.
- *
- * Dropping the slot here rather than adding an arm to the resolver makes it total: every consumer
- * reads Unknown for free, and re-homing short-circuits before it can relocate anyone's folder.
- * The real singleton goes inert alongside its copy deliberately — nothing is written, so deleting
- * the stray config restores the nexus completely, which stamping the copy's members would prevent.
- */
 export async function agendaContext(
   root: string,
   identity: Record<string, unknown> | null,
@@ -131,7 +88,7 @@ export async function agendaContext(
 
   // An unreadable root yields no entries, so no claims are counted and the recorded registration
   // stands — a root Pommora cannot list is no evidence that anything duplicated it.
-  const entries = (await listEntries(root)).filter((e) => e.isDirectory())
+  const entries = (await listEntries(root)).filter((e) => e.kind === 'dir')
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial
   // pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(

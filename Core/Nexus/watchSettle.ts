@@ -1,6 +1,4 @@
-// The watcher's host-neutral half: which paths a watch ignores, and what a settled batch changed.
-
-import { relative, sep } from 'node:path'
+import { relative } from '../Locations/posix'
 import { CONTEXTS_DIRNAME, NEXUS_DIR } from '../Locations/nexusPaths'
 import {
   assetMatcher,
@@ -17,10 +15,8 @@ import { getLiveTree } from './liveTree'
 import { classifyEvent, type WatchEvent } from './watchPatch'
 import { containerOf, pageIdIndex } from './valuesChanged'
 
-/** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
- *  in the tree). */
 export function isNavPath(root: string, path: string): boolean {
-  const segs = relative(root, path).split(sep)
+  const segs = relative(root, path).split('/')
   return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
@@ -28,17 +24,13 @@ export function isNavPath(root: string, path: string): boolean {
 // must auto-refresh. Checks only the path BELOW the root, so a dot-segment in the root's own
 // absolute path (e.g. a nexus under ~/.something) can't blank the whole watch.
 export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
-  // User-excluded folders never reach the tree, so their churn must not cost a reconcile.
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false
-    const segs = rel.split(sep)
-    // The asset root's OWN segments are exempt from the rules below — the dot-prefix one would
-    // blind a root named `.attachments`, and an exclusion entry would blind any of them. What
-    // sits below the root is ordinary cruft and still filtered.
+    const segs = rel.split('/')
     if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
       segs.some(neverWatched) ||
@@ -60,9 +52,6 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
   }
 }
 
-/** The containers whose page values a batch touched, with the ids the tree resolves; a batch that
- *  degraded to a walk names its containers with no ids, so the renderer retires only settled
- *  overrides. */
 export function valueChangesOf(
   events: WatchEvent[],
   root: string,
@@ -85,8 +74,6 @@ export function valueChangesOf(
   return [...byContainer].map(([rel, ids]) => ({ rel, pageIds: [...ids] }))
 }
 
-/** The hosts whose document a batch touched, each once — read off the raw batch, since a batch
- *  holding one unclassifiable event applies none of its arms. */
 export function tilesChangedIn(
   events: WatchEvent[],
   root: string,

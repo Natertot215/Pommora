@@ -42,7 +42,6 @@ export function applySchema(db: Db): void {
   db.exec(DDL)
 }
 
-/** The stored value, or null when the meta table or the row is absent. */
 export function readMeta(db: Db, key: string): string | null {
   const hasMeta = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").get()
   if (!hasMeta) return null

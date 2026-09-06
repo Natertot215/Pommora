@@ -28,9 +28,7 @@ export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 export interface AcRow {
   value: string
   label: string
-  /** The page this row names, when it names one — the key its remembered aliases are found by. */
   pageId?: string
-  /** Whether the row names an entity and should be drawn with its glyph. */
   isPage: boolean
   forget?: () => void
 }
@@ -190,8 +188,6 @@ export function commitEdit(
   if (ac.form === 'target') {
     const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
-    // The label is markdown, not plain text: an unescaped `]` ends it early and the whole link
-    // tokenizes as nothing at all. Same escape the URL-property form has always used.
     const label = fill ? escapeAlias(row.value) : ''
     return {
       changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],

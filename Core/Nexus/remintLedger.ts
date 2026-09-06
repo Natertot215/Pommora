@@ -1,14 +1,10 @@
-// The re-mint ledger: project the tree the open path already holds into one per-entity map,
-// latch it against the prior session's baseline, and persist it as a device-local row. Derived,
-// per-machine, rebuildable — it exists so a duplicated id can be adjudicated next open.
-
-import { stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
+import { machine } from '../Platform/machine'
 import type { EntityRecord } from './record'
 import { errText } from '../Contract/result'
 import { contextDirRel, CONTEXTS_REGISTRY_REL } from '../Locations/nexusPaths'
 import type { NexusTree, PageNode, SetNode } from './tree'
-import { readKey, writeKey } from '../Store/localState'
+import { readKey, writeKey } from '../Platform/localState'
 import { isAdoptedId } from '../Locations/ids'
 import { refreshTree, seedLiveTree } from './liveTree'
 import { readNexus } from './readNexus'
@@ -17,19 +13,12 @@ import { applyRemints, runRemintPass } from './remint'
 export type Baseline = Record<string, EntityRecord>
 
 export interface Projection {
-  /** The first claimant wins a duplicated id here; the latch resolves against the prior. */
   entries: Record<string, EntityRecord>
-  /** Every claimant of an id seen at 2+ paths, walk order. */
   duplicates: Record<string, EntityRecord[]>
 }
 
-/** One projection per tree, kept as long as the tree is. A read replaces the whole tree object, so
- *  identity is the whole cache key — and the trash's listing resolves every bundle against one
- *  tree, which without this is a full walk per row. */
 const byTree = new WeakMap<NexusTree, Projection>()
 
-/** Projects the walked tree — never a second walk. Adopted ids are addresses, not identities,
- *  so they never enter; Contexts join from the registry-backed groups. */
 export function projectBaseline(tree: NexusTree): Projection {
   const memo = byTree.get(tree)
   if (memo) return memo
@@ -76,10 +65,6 @@ function buildBaseline(tree: NexusTree): Projection {
   return { entries, duplicates }
 }
 
-/** The writer's merge, stated as one rule: the baseline remembers which path legitimately held
- *  each id. A duplicated id keeps the prior entry while its recorded path still answers or is
- *  merely unreadable, and drops when that path is gone; an id the walk lost whose recorded home
- *  is on the unreadable list carries through instead of reading as deleted. */
 export function latchBaseline(
   projection: Projection,
   unreadablePaths: readonly string[],
@@ -120,11 +105,10 @@ async function recordEldest(
     if (prior?.[id]) continue
     const births = await Promise.all(
       claims.map(async (c) => {
-        try {
-          return (await stat(join(root, c.path))).birthtimeMs
-        } catch {
-          return Number.POSITIVE_INFINITY
-        }
+        const st = await machine()
+          .stat(join(root, c.path))
+          .catch(() => null)
+        return st?.birthtimeMs ?? Number.POSITIVE_INFINITY
       }),
     )
     let eldest = 0
@@ -133,9 +117,6 @@ async function recordEldest(
   }
 }
 
-/** The open path's ledger pass: one explicit walk, latched against the prior session, the new
- *  baseline written last. Best-effort end to end — a failed walk or row write retains the prior
- *  record, and the open itself proceeds. */
 export async function runOpenLedger(root: string): Promise<void> {
   try {
     const tree = await readNexus(root)

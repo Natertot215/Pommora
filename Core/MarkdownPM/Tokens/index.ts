@@ -29,25 +29,19 @@ export type TokenKind =
 
 export interface Token {
   kind: TokenKind
-  /** Full span incl. markers, `[start, end)`. */
   range: [number, number]
   contentRange: [number, number]
-  /** Where the token resolves from, when that differs from what it displays. Absent means
-   *  `contentRange` is both. */
   resolveRange?: [number, number]
   markerRanges: [number, number][]
 }
 
-/** What a `link` token's `( )` holds, still encoded. Both producers close a link with `](target)`,
- *  read through this one resolver so a target read for coloring can't drift from the one read for
- *  the click. */
+/** What a `link` token's `( )` holds, still encoded.*/
 export function linkTarget(text: string, tk: Token): string {
   const [, close] = tk.markerRanges
   return text.slice(close[0] + 2, close[1] - 1)
 }
 
-/** Re-base a token onto absolute document offsets. Every span is listed rather than spread, so a
- *  field added to `Token` and forgotten here fails the parity test instead of rendering wrongly. */
+/** Re-base a token onto absolute document offsets.*/
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
   return {
@@ -198,9 +192,6 @@ export function tokenize(text: string): Token[] {
     open: 1,
     close: 1,
   }).filter(notOverlapping([...embeds, ...wikis, ...code]))
-  // A footnote marker tokenizes so the resting table cell — which has no EditorView and reads the
-  // tokenizer directly — draws the same construct the body does. The ordinal it draws is a
-  // whole-document fact no token carries; the editor takes it from the scan instead.
   const cites = scan({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...embeds, ...wikis, ...code]),
   )
@@ -258,9 +249,7 @@ export function activeTokenIndices(
       return
     }
     const caret = selStart
-    // A link just finished leaves the caret on its closer and stays rendered there. Nothing about
-    // the position earns that — it's the finishing gesture that says so, and the next thing the
-    // user does takes it back.
+    // A link just finished leaves the caret on its closer and stays rendered there.
     if (caret === e && caret === restingAt && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
     if (caret >= s && caret <= e) active.add(i)
   })

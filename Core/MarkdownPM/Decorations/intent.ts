@@ -176,9 +176,7 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
   return intents
 }
 
-/** One line's intents, pushed into `intents`; returns the line's list marker (for the rail pass).
- *  `selStart` is the caret (or NO_CARET) — every caret-sensitive output is line-local: the line's
- *  own marker/heading/hr reveal, and an open fence's syntax-vs-glyph trade. */
+/** One line's intents, pushed into `intents`; returns the line's list marker (for the rail pass).*/
 function lineIntentsInto(
   scan: DocScan,
   i: number,
@@ -345,10 +343,6 @@ function lineIntentsInto(
   // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
   const li = pushConstruct(intents, line, ls, base, selStart)
   if (li) {
-    // The item's content wears md-li-text: the line itself suppresses every wrap opportunity (the
-    // marker zone is full of them — spaces, a number's period, and the atomic cm-widget-buffer imgs
-    // CM plants beside every replace) and this span alone restores wrapping, so a long unbroken word
-    // fills beside the glyph and breaks mid-word instead of dropping below the marker.
     const contentFrom = ls + base + li.contentStart
     if (contentFrom < le)
       intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-li-text' })
@@ -356,10 +350,7 @@ function lineIntentsInto(
   return li
 }
 
-// Outliner rails: one vertical guide per ANCESTOR level of each nested list line, each drawn as a continuous
-// run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last). A
-// level-K rail breaks wherever a neighbor's level ≤ K (or the neighbor isn't a list line). railKind tracks
-// the current ancestor's marker type at each level so the rail lands on THAT glyph's center.
+// Outliner rails: one vertical guide per ANCESTOR level of each nested list line, each drawn as a continuous run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last).
 function railIntents(
   lineStarts: number[],
   listLevels: number[],

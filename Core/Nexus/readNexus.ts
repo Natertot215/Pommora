@@ -1,8 +1,4 @@
-// The whole read engine: one recursive, read-only walk of a nexus root.
-// No file is ever opened for writing.
-
-import { readFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, join } from '../Locations/posix'
 import { parseDocument } from 'yaml'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
@@ -21,6 +17,7 @@ import { adoptedId } from '../Locations/ids'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import { pathExists, readJsonObject, readJsonStrict } from '../IO/atomicWrite'
 import { isContentFile, listEntries } from '../IO/walk'
+import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from '../Locations/coerce'
 import { shouldSkipDir, type WatchScope } from '../Locations/exclusion'
@@ -38,8 +35,6 @@ import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '../Locations/nexusPaths'
 
 type Json = Record<string, unknown>
 
-/** The tree leaves `homepage.json` feeds — same decoding for the walk and the watcher's
- *  homepage patch, so they cannot disagree. */
 export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
   return {
     banner: asString(config.banner),
@@ -47,24 +42,17 @@ export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
   }
 }
 
-/** The `crops.json` leaf — same decoding for the walk and the watcher's crops patch. A malformed
- *  entry drops (the codec's `.catch`); the file is never taken down by one bad key. */
 export function readCropLeaves(config: Json): NexusTree['crops'] {
   const byImage = cropsFile.parse(config).byImage ?? {}
   return Object.fromEntries(Object.entries(byImage).filter((e): e is [string, Crop] => !!e[1]))
 }
 
-/** `state.json`'s per-Context Space-order blob — one decode for the walk and the order patch,
- *  so the two cannot derive different trees from the same bytes. */
 export function readSpaceOrders(state: Json): Json {
   return state.space_orders != null && typeof state.space_orders === 'object'
     ? (state.space_orders as Json)
     : {}
 }
 
-/** Resolve an entity root's parenthesized keys against the live Context groups — the walk's
- *  assembly pass shaped for one node, for callers patching outside a walk. Undefined = no
- *  registered links (the key stays absent; no empties). */
 export function resolveEntityContexts(
   raw: Json,
   groups: ContextGroup[],
@@ -76,9 +64,6 @@ export function resolveEntityContexts(
   return links.size ? Object.fromEntries(links) : undefined
 }
 
-/** Lenient frontmatter split — the same recovering parser the page writer reads with
- *  (`parseDocument`), so the walk and the write side can never disagree about which keys a
- *  page holds (a duplicate key recovers here exactly as it does there). */
 export function splitFrontmatter(content: string): Json {
   if (!content.startsWith('---')) return {}
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
@@ -93,14 +78,9 @@ export function splitFrontmatter(content: string): Json {
   }
 }
 
-/** Per-folder sidecar JSON, served through the walk cache — parsed once per (mtime, size). */
 const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
-/** The lenient sidecar read keeps the distinction its null destroys: absent stays silent (an
- *  un-adopted folder), present-but-unparseable records the owner's path. Recorded HERE at the
- *  call site — a side effect inside the parse closure would go silent on every warm walk, since
- *  the cache serves non-null results without re-running it. */
 async function readSidecarNaming(
   absSidecar: string,
   relOwner: string,
@@ -111,8 +91,6 @@ async function readSidecarNaming(
   return meta
 }
 
-/** A Collection's or Set's own sidecar as a record — raw mode has none to read, and an
- *  unparseable one reads empty so the container still walks, its folder named on the list. */
 const readContainerMeta = (
   absDir: string,
   relDir: string,
@@ -121,14 +99,10 @@ const readContainerMeta = (
 ): Promise<Json> =>
   readSidecarNaming(join(absDir, sidecar), relDir, unreadable).then((m) => m ?? {})
 
-/** A `.nexus` config file as a record — absent and unreadable both read as empty, because the
- *  walk has no field of its own to lose. The one exception (nexus.json) reads strict below. */
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readJsonObject(absPath).then((v) => v ?? {})
 
-/** Raw context keys retained off the parse each entity read already does, keyed by the cached
- *  node object. Registry-INDEPENDENT data, so the parse cache never needs busting for registry
- *  changes — resolution runs at tree assembly each walk. */
+// Registry-independent, so the parse cache never needs busting for registry changes.
 const rawContextByNode = new WeakMap<object, Json>()
 
 function retainContextKeys(node: object, raw: Json): void {
@@ -148,15 +122,11 @@ export interface PageRecord {
   mtimeMs: number | null
 }
 
-/** THE per-page read: one stat-gated parse serves the walk (the node) and the view pipeline's
- *  value batch (the frontmatter) — the same bytes are never read twice.
- *
- *  Null for a file the folder's kind won't admit — not an error, skipped like an unreadable file
- *  or a stray `.png`. A file with NO key is admitted and wears a synthetic id until adoption
- *  stamps it. */
 export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord | null> {
   return cachedParse(absFile, async (stat) => {
-    const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
+    const content = await machine().readText(absFile)
+    if (content === null) throw new Error(`Page not found: ${relFile}`)
+    const fm = splitFrontmatter(content)
     const admission = admitContentFile(fm, 'page')
     if (admission.state === 'unknown') return null
     const node = makePageNode({
@@ -183,8 +153,6 @@ async function readDirectPages(
   const out = await Promise.all(
     files.map(async (e) => {
       const rel = relDir ? `${relDir}/${e.name}` : e.name
-      // Null is Unknown admission or an unreadable file — either way the walk skips it,
-      // and the record must not read the skip as absence.
       const node = await readPage(join(absDir, e.name), rel).catch(() => null)
       if (node === null) unreadable.push(rel)
       return node
@@ -193,8 +161,6 @@ async function readDirectPages(
   return out.filter((n): n is PageNode => n !== null)
 }
 
-/** Lenient read of a sidecar `views[]` — drops any view that fails to decode rather than
- *  poisoning the whole container read; absent/empty ⇒ undefined. */
 export function parseViews(raw: unknown): SavedView[] | undefined {
   if (!Array.isArray(raw)) return undefined
   const out: SavedView[] = []
@@ -205,8 +171,6 @@ export function parseViews(raw: unknown): SavedView[] | undefined {
   return out.length > 0 ? out : undefined
 }
 
-/** Every non-excluded subfolder of a Collection or Set is itself a Set (position-driven,
- *  any depth). Shared by the Collection root and every Set level — the recursion. */
 async function readChildSets(
   absDir: string,
   relDir: string,
@@ -215,10 +179,8 @@ async function readChildSets(
   unreadable: string[],
 ): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
-    (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope),
+    (e) => e.kind === 'dir' && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope),
   )
-  // A nested folder is a Set only if the resolver says so — one carrying an agenda config
-  // renders as nothing rather than as an ordinary Set.
   const kinds = await Promise.all(
     dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)),
   )
@@ -258,8 +220,6 @@ async function readSet(
   })
 }
 
-/** effectiveSchema(C): assignment ids → their registry defs, in order; drops dangling refs
- *  (a def deleted but an assignment not yet reconciled must not become an undefined hole). */
 export function resolveAssignedSchema(
   ids: unknown,
   registry: PropertyRegistry,
@@ -310,8 +270,6 @@ async function readSpace(
   contextId: string,
   unreadable: string[],
 ): Promise<SpaceNode | null> {
-  // A Space IS its sidecar: no sidecar means no Space (a plain folder, silent), while an
-  // unparseable one names itself on the list rather than reading as deleted.
   const sc = await readSidecarNaming(join(absDir, SPACE_SIDECAR), relDir, unreadable)
   if (!sc) return null
   const node = makeSpaceNode({
@@ -328,8 +286,6 @@ async function readSpace(
   return node
 }
 
-/** The registry-backed Space tree: one group per registry entry (registry order), spaces
- *  from `.nexus/contexts/<Title>/` gated on `_space.json`, ordered by `space_orders`. */
 async function readContextGroups(
   root: string,
   registry: ContextsRegistry,
@@ -341,7 +297,7 @@ async function readContextGroups(
     registry.contexts.map(async (def) => {
       const dir = join(contextsDir(root), def.title)
       const entries = (await listEntries(dir))
-        .filter((e) => e.isDirectory())
+        .filter((e) => e.kind === 'dir')
         .map((e) => ({ name: e.name, rel: spaceDirRel(def.title, e.name) }))
         .filter(({ name, rel }) => !shouldSkipDir(name, rel, scope))
       const read = await Promise.all(
@@ -386,10 +342,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
 
   const leaves = readSettingsLeaves(settings)
   const scope = scopeOf(leaves)
-  // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
-  // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
-  // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
-  // reads the legacy area/topic/project dirs itself.
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
   const spaceOrders = readSpaceOrders(state)
@@ -403,11 +355,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
     ? await readContextGroups(root, ctxRegistry, spaceOrders, scope, unreadable)
     : undefined
 
-  // Top-level Collections (gated by `_pagecollection.json`). Agenda singletons are
-  // identified ONLY by their config sidecar
-  // (`_taskconfig`/`_eventconfig`) — never by folder name — and are not surfaced as Collections.
   const rootDirs = (await listEntries(root)).filter(
-    (e) => e.isDirectory() && !shouldSkipDir(e.name, e.name, scope),
+    (e) => e.kind === 'dir' && !shouldSkipDir(e.name, e.name, scope),
   )
   const maybeCollections = await Promise.all(
     rootDirs.map(async (e) => {
@@ -421,9 +370,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
 
   const collections = orderedCollections
 
-  // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
-  // pass over already-parsed data, so a pre-existing inert key lights up on the first walk
-  // after its Space registers.
   if (ctxRegistry && contexts) {
     const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
     const attach = (node: PageNode | SpaceNode): void => {

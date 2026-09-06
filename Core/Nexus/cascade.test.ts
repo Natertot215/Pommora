@@ -9,7 +9,7 @@ import { createProperty } from '../Properties/registryProperty'
 import { splitFrontmatter } from './readNexus'
 import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
 import { rewritePageSerialized } from '../IO/atomicWrite'
-import { openSessionDb, closeSessionDb } from '../Store/sessionDb'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { seedContentIndex } from '../Index/indexSeed'
 
 vi.mock('../IO/atomicWrite', async (importOriginal) => {

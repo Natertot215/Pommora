@@ -1,10 +1,3 @@
-// Record-first: an artifact-less bundle in `.trash` holds the def, the Collections that assigned
-// it, and every page value keyed by page id — that bundle is what restore spends to rebuild it.
-// Then strips the value from every collection's page, drops the id from every assignment, purges
-// every Remove-cache block, and removes the def from the registry. The daily non-destructive op
-// is Remove (crud/removeProperty); this is the rare one.
-
-import { readFile } from 'node:fs/promises'
 import { contentId } from '../Nexus/identityMark'
 import { writePropertyBundle } from '../Trash/record'
 import { withoutCacheBlock } from './assignment'
@@ -16,13 +9,12 @@ import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './pr
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
+import { readTextOrNull } from '../IO/atomicWrite'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { splitFrontmatter } from '../Nexus/readNexus'
 import { isPlainObject } from './propertyValue'
 import { fail, type Result } from '../Contract/result'
 
-/** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by
- *  page id — an id-less page's value is unrestorable and marks the record partial. */
 async function snapshot(
   root: string,
   propertyId: string,
@@ -43,15 +35,11 @@ async function snapshot(
     else if (holds) partial = true
   }
   for (const file of files) {
-    let fm: Record<string, unknown>
-    try {
-      fm = splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
-    } catch {
-      continue
-    }
+    const content = await readTextOrNull(file)
+    if (content === null) continue
+    const fm = splitFrontmatter(content) as Record<string, unknown>
     if (!(key in fm)) continue
     const id = contentId(fm)
-    // A duplicated id can hold only one entry — last wins, and the record is marked thin.
     if (id && id in values) partial = true
     if (id) values[id] = fm[key]
     else partial = true
@@ -88,13 +76,10 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
 
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const removed = await removeFromRegistry(root, propertyId)
-  // With the def now gone and the name free, the replay's freed-name arm re-strips stragglers
-  // a holder-unreadable sweep left behind, at the next open.
   if (!swept.skipped.length) await clearSchemaJournal(root, record)
   return removed
 }
 
-/** The delete's page rewrite, named so the crash replay runs the identical strip. */
 export function stripKeyRewrite(key: string): Rewrite<never> {
   return (raw) => {
     if (!(key in raw)) return null
@@ -104,8 +89,6 @@ export function stripKeyRewrite(key: string): Rewrite<never> {
   }
 }
 
-/** Under the sidecar's lock so a concurrent view/order/icon write can't be reverted by this
- *  read-merge-write. The `.trash` bundle is the recovery net, so this needn't be atomic. */
 export function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
   return withSidecarLock(folder, 'collection', async () => {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)

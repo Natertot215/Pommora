@@ -14,7 +14,7 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'
 import { resolveUnderRoot } from '../Locations/pathSafety'
 import type { PropertyDefinition, PropertyType } from './properties'
@@ -70,7 +70,7 @@ describe('F1 — the cascade takes the cell-write lock', () => {
     })
     // Occupy the page's file lock with a gated cell-write. If the cascade keyed off a different
     // path string (pre-fix: raw root vs realpath'd) it would land in another bucket and slip past.
-    const held = serializeOnFile(key.value, async () => {
+    const held = machine().lock(key.value, async () => {
       await gate
       order.push('cell-write')
     })

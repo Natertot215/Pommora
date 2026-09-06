@@ -1,8 +1,4 @@
-// A host's tile document is `_tiles.json` in its folder beside its markdown bodies; every entry
-// is a reference, so the document creates nothing a Nexus would miss.
-
-import { mkdir, readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { knownTile, mintSeed, TILE_KINDS, type TileHostRef } from './tiles'
 import { errText, fail, ok, type Result } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -11,9 +7,9 @@ import { normalizeTitle } from '../Connections/connections'
 import { mentionsTitle } from '../Connections/scan'
 import { rewriteConnections } from '../Connections/rewrite'
 import { newId } from '../Locations/ids'
-import { atomicWriteFile, pathExists } from '../IO/atomicWrite'
+import { atomicWriteFile, pathExists, readTextOrNull } from '../IO/atomicWrite'
 import { trashFileFlat } from '../Trash/bundle'
-import { serializeOnFile } from '../IO/fileLock'
+import { machine } from '../Platform/machine'
 import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { tileFilePath, tileHostDir } from '../Locations/paths'
@@ -38,13 +34,12 @@ const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise
 /** File first, so a crash leaks at worst an orphan file, never an entry without one. */
 export async function createMarkdownTile(dir: string): Promise<string> {
   const id = newId()
-  await mkdir(dir, { recursive: true })
+  await machine().mkdir(dir)
   await atomicWriteFile(tileFilePath(dir, id), '')
   await setTiles(dir, (tiles) => [...tiles, mintSeed('markdown', id)])
   return id
 }
 
-/** Rewrite one tile's raw entry — `null` drops it — and trash a file-backed tile's body. */
 async function reviseTile(
   root: string,
   dir: string,
@@ -67,7 +62,7 @@ async function reviseTile(
  *  editor flush, so a late body write can never land after the trash and resurrect it. */
 async function trashTileFile(root: string, dir: string, tileId: string): Promise<void> {
   const file = tileFilePath(dir, tileId)
-  await serializeOnFile(file, async () => {
+  await machine().lock(file, async () => {
     if (await pathExists(file)) await trashFileFlat(root, file)
   })
 }
@@ -96,7 +91,6 @@ function remintConfigIds(views: unknown[]): unknown[] {
   })
 }
 
-/** A copied raw entry — a view tile re-mints its config ids; every other shape passes through. */
 export function copyEntry(raw: unknown): unknown {
   if (!isPlainObject(raw) || raw.type !== 'view' || !Array.isArray(raw.views)) return raw
   return { ...raw, views: remintConfigIds(raw.views) }
@@ -111,7 +105,6 @@ export async function convertTileToView(
   await reviseTile(root, dir, tileId, { type: 'view', views: remintConfigIds(views), active: 0 })
 }
 
-/** The body file copies first, so a crash leaks an orphan file, never an entry without one. */
 export async function duplicateTile(dir: string, tileId: string): Promise<string | null> {
   const doc = await readTileDocAt(dir)
   const src = doc.tiles.find((b) => knownTile(b)?.id === tileId)
@@ -132,18 +125,17 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
  *  empty tile the next keystroke overwrites. */
 export async function readMarkdownTile(dir: string, tileId: string): Promise<Result<string>> {
   try {
-    return ok(await readFile(tileFilePath(dir, tileId), 'utf8'))
+    const body = await machine().readText(tileFilePath(dir, tileId))
+    return body === null ? fail('not-found', 'Tile file not found.') : ok(body)
   } catch (e) {
-    return (e as NodeJS.ErrnoException).code === 'ENOENT'
-      ? fail('not-found', 'Tile file not found.')
-      : fail('operation-failed', errText(e))
+    return fail('operation-failed', errText(e))
   }
 }
 
 /** Locked on the file so the rename-cascade rewrite can't clobber a live edit. */
 export async function writeMarkdownTile(dir: string, tileId: string, body: string): Promise<void> {
   const file = tileFilePath(dir, tileId)
-  await serializeOnFile(file, () => atomicWriteFile(file, body))
+  await machine().lock(file, () => atomicWriteFile(file, body))
 }
 
 async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
@@ -154,9 +146,7 @@ async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: st
     if (world.ok)
       for (const [id, ref] of world.value.spaceById)
         hosts.push({ host: { kind: 'space', id }, dir: ref.dir })
-  } catch {
-    // registry unreadable — homepage only this pass
-  }
+  } catch {}
   return hosts
 }
 
@@ -172,8 +162,6 @@ async function markdownTileFiles(root: string): Promise<{ id: string; file: stri
   return out
 }
 
-/** renameCascade can't reach these — they're id-less and .nexus-resident — so this runs beside
- *  it, best-effort and per-file. */
 export async function rewriteTileConnections(
   root: string,
   oldTitle: string,
@@ -181,13 +169,9 @@ export async function rewriteTileConnections(
 ): Promise<void> {
   const oldKey = normalizeTitle(oldTitle)
   for (const { file } of await markdownTileFiles(root)) {
-    await serializeOnFile(file, async () => {
-      let body: string
-      try {
-        body = await readFile(file, 'utf8')
-      } catch {
-        return
-      }
+    await machine().lock(file, async () => {
+      const body = await readTextOrNull(file)
+      if (body === null) return
       if (!mentionsTitle(body, oldKey)) return
       const next = rewriteConnections(body, oldTitle, newTitle)
       if (next !== body) await atomicWriteFile(file, next)

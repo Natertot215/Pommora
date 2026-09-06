@@ -5,10 +5,9 @@ import { join } from 'node:path'
 import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { closeSessionDb, openSessionDb, sessionVersionsDb } from '../Store/sessionDb'
-import { listSnapshots, readSnapshot } from '../Store/versionsDb'
+import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 import { splitEnvelope } from '../IO/pageFile'
-import type { Db } from '../Store/driver'
+import { type SnapshotStore, snapshotStore } from '../Platform/stores'
 import {
   SNAPSHOT_MAX_BYTES,
   captureIfDue,
@@ -34,11 +33,11 @@ let root: string
 let file: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const page = (id: string, body: string): string => `---\nID: ${id}\n---\n${body}`
-const db = (): Db => sessionVersionsDb() as Db
-const rows = (id = PAGE) => listSnapshots(db(), id)
+const db = (): SnapshotStore => snapshotStore() as SnapshotStore
+const rows = (id = PAGE) => db().listSnapshots(id)
 const sources = (id = PAGE): string[] => rows(id).map((r) => r.source)
 const bodyOf = (id: string, ts: number): string =>
-  splitEnvelope(readSnapshot(db(), id, ts) ?? '').body
+  splitEnvelope(db().readSnapshot(id, ts) ?? '').body
 const errorCode = (r: Result<unknown>): string | undefined => (r.ok ? undefined : r.error.code)
 
 const settle = async (personalization: Record<string, unknown> = {}): Promise<void> => {

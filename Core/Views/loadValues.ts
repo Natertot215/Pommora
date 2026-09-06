@@ -1,8 +1,4 @@
-// Batch value read for a container's view pipeline, keyed by the SAME id the read engine assigns
-// so it joins cleanly to the tree's PageNodes in flattenContainer. Read-only, lazy — called on
-// container open, not woven into the tree walk.
-
-import { join } from 'node:path'
+import { join } from '../Locations/posix'
 import { relPosix } from '../Locations/paths'
 import { ID_KEY } from '../Nexus/identityMark'
 import { pageFrontmatter } from '../Nexus/schemas'
@@ -23,8 +19,6 @@ function iso(ms: number | null): string | null {
   return `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-/** The files a read covers: the container's corpus, or only the named pages, resolved through the
- *  live tree — a push names the pages it wrote, and a refresh is scoped to them. */
 async function corpus(
   rootPath: string,
   containerRelPath: string,

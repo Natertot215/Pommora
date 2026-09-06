@@ -7,12 +7,11 @@ import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { corpusFiles, listMarkdownFiles } from './walk'
+import { installMachine, machine } from '../Platform/machine'
 
-vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>()
-  return { ...mod, readdir: vi.fn(mod.readdir) }
-})
-const readSpy = vi.mocked((await import('node:fs/promises')).readdir)
+const base = machine()
+const readSpy = vi.fn(base.readDir)
+installMachine({ ...base, readDir: readSpy })
 
 let root: string
 beforeEach(async () => {

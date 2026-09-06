@@ -1,8 +1,4 @@
-// A Collection's sidecar `properties` is a flat array of registry prop-ids. References, not
-// definitions: assign runs no name-clash check and restores any Remove-cache; the unassign
-// leg lives in crud/removeProperty.
-
-import { join, sep } from 'node:path'
+import { join } from '../Locations/posix'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -28,8 +24,6 @@ const write = async (
   ids: string[],
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
-/** The no-empties rule reaches the cache too: the whole `property_cache` key drops once its
- *  last block goes. */
 export function withoutCacheBlock(
   sidecar: Record<string, unknown>,
   propertyId: string,
@@ -91,8 +85,6 @@ export function assignProperty(
   return serializeSchemaOp(() => assignInner(root, collectionFolder, propertyId))
 }
 
-/** Append + restore + placement land in ONE chain slot, so no sibling op can interleave
- *  between the assign and its reorder. */
 export function assignPropertyAt(
   root: string,
   collectionFolder: string,
@@ -106,10 +98,7 @@ export function assignPropertyAt(
   })
 }
 
-/** Schema-owning folders only — Sets inherit. The shared list for global fan-outs that must
- *  reach non-assigners too: a Remove-cache lives on a sidecar that no longer assigns the id. */
 export async function collectionFolders(root: string): Promise<string[]> {
-  // Root-pinned: a held tree answers only for its own nexus.
   const held = getLiveTree()
   const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
   const out: string[] = []
@@ -122,7 +111,7 @@ export async function collectionFolders(root: string): Promise<string[]> {
 }
 
 export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {
-  return (await collectionFolders(root)).find((f) => absFile.startsWith(f + sep)) ?? null
+  return (await collectionFolders(root)).find((f) => absFile.startsWith(`${f}/`)) ?? null
 }
 
 export function reorderAssignment(

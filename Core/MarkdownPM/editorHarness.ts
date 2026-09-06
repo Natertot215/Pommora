@@ -23,8 +23,6 @@ function seed({ citationsShown, ...props }: HarnessProps): EditorProps {
   // suite would mount on whatever the last one left behind.
   useSession.setState({
     citationsShown: citationsShown === undefined ? {} : { [HARNESS_PAGE_ID]: citationsShown },
-    // The nexus-wide default is what an unset row falls back to, so it is reset alongside the row —
-    // otherwise a suite that flips the setting decides what the next one mounts on.
     personalization: { ...useSession.getState().personalization, citationsShown: undefined },
   })
   return { onChange: () => {}, pageId: HARNESS_PAGE_ID, ...props }

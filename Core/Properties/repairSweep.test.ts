@@ -12,7 +12,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Locations/paths'
-import { closeSessionDb, openSessionDb } from '../Store/sessionDb'
+import { closeSessionDb, openSessionDb } from '@pommora/desktop/Store/sessionDb'
 
 let root: string
 let page: string
