@@ -174,7 +174,16 @@
   min-width: 0;
 }
 
-/* Panels: material comes from the window-panel component — only positioning lives here. An overlay panel rides the inset ring, carried by its driver with no transition of its own; an in-flow panel takes a column in the body row. */
+/* Panels. An overlay panel rides the inset ring, carried by its driver with no transition of its own; an in-flow panel takes a column in the body row. */
+.window-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--surface-inset);
+  border-radius: var(--app-radius);
+}
+
 .window-row {
   display: flex;
   flex: 1;

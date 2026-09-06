@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  PINK,
-  RAMP_FAMILIES,
-  RAMP_STEPS,
-  SPECTRUM,
-  isColorKey,
-  type CellKey,
-} from '@pommora/uix/Theme/theme'
+import { PINK, RAMP_FAMILIES, RAMP_STEPS, SPECTRUM, isColorKey, type CellKey } from './theme'
 import { vars as colorVars } from './color.css'
 import { ANCHOR_CELLS, cellColor, cellPaint, cellRing } from './ramp'
 import { mixAt, tintAt } from './tint'

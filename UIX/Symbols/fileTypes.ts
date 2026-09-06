@@ -6,8 +6,6 @@ import type { LucideIcon } from 'lucide-react'
 import * as tabler from '@tabler/icons-react'
 import { asTablerGlyph } from './customGlyphs'
 
-/** The extensions Tabler draws. An extension outside this set takes the `file-chart-column`
- *  fallback — the File property's own glyph, unchanged. */
 export const FILE_TYPE_EXTS = [
   'bmp',
   'css',
@@ -50,8 +48,6 @@ export const FILE_TYPE_FALLBACK = 'file-chart-column'
 const tablerName = (ext: FileTypeExt): string =>
   `IconFileType${ext.charAt(0).toUpperCase()}${ext.slice(1)}`
 
-/** One factory over the whole set rather than 23 hand-written wrappers — the roster is the list
- *  above, so an added extension is one entry. */
 export const fileTypeGlyphs = Object.fromEntries(
   FILE_TYPE_EXTS.map((ext) => [
     `file-type-${ext}`,
@@ -59,11 +55,7 @@ export const fileTypeGlyphs = Object.fromEntries(
   ]),
 ) as Record<`file-type-${FileTypeExt}`, LucideIcon>
 
-/** The registry id a filename's glyph comes from. Case-insensitive, and always a glyph — anything
- *  the roster has no answer for takes the `file-chart-column` fallback. A caller that wants no
- *  glyph says so rather than being handed nothing here.
- *
- *  The leading-dot guard is load-bearing: without it a bare `ts` slices to its own name and glyphs
+/** The leading-dot guard is load-bearing: without it a bare `ts` slices to its own name and glyphs
  *  as TypeScript. */
 export function fileTypeIcon(name: string): string {
   const dot = name.lastIndexOf('.')

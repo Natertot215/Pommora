@@ -3,7 +3,6 @@ import { GlassPane } from '../Glass'
 import { paneSlide } from '../Animations'
 import { cx } from '../Utilities/cx'
 import { useResizeFrame } from '../Interactions/ResizeFrame'
-import './window-panel.css'
 
 // The panel owns its glass, resize strip, positioning class, and slide per side + mode; the host
 // owns only the width CSS var its layout math reads, mirrored back through onWidthChange.

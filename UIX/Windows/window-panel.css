@@ -1,9 +1,0 @@
-/* The window side panel every floating window mounts: a glass shell plus its resize strip.*/
-.window-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  padding: var(--surface-inset);
-  border-radius: var(--app-radius);
-}

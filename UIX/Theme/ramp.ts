@@ -7,7 +7,7 @@ import {
   type CellKey,
   type RampFamily,
   type RampStep,
-} from '@pommora/uix/Theme/theme'
+} from './theme'
 
 export { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type RampFamily, type RampStep }
 import { vars as colorVars } from './color.css'
@@ -17,14 +17,13 @@ const c = colorVars.color
 const WHITE = c.system.white
 const BLACK = c.system.black
 
-/** One family's ramp, dark → light. Fixed length, so a short recipe is a compile error. */
+/** Fixed length, so a short recipe is a compile error. */
 type Row = readonly [string, string, string, string, string, string, string, string]
 
 /** The shading knob — each step moves this far from the anchor. */
 const RAMP_STEP = 15
 const shade = (i: number): number => 100 - RAMP_STEP * i
 
-/** Single-anchor ramp: three darkened steps, the anchor, four lightened. */
 const single = (hex: string): Row => [
   mixAt(hex, shade(3), BLACK),
   mixAt(hex, shade(2), BLACK),
@@ -40,8 +39,6 @@ const single = (hex: string): Row => [
  *  instead of greying out through the middle. */
 const blend = (light: string, pct: number, dark: string): string => mixAt(light, pct, dark, 'oklch')
 
-/** Two-anchor ramp: darken past the dark anchor, cross in even quarters, lighten past the light one.
- *  Both anchors land on exact cells. */
 const pair = (dark: string, light: string): Row => [
   mixAt(dark, shade(1), BLACK),
   dark,
@@ -112,7 +109,6 @@ const parse = (key: CellKey): { family: RampFamily; step: RampStep } => {
   }
 }
 
-/** The raw color a cell paints — the picker swatch, and every consumer wanting the solid over a tint. */
 export const cellColor = (key: CellKey): string => {
   const { family, step } = parse(key)
   return RAMP[family][step]
@@ -125,8 +121,6 @@ const DARKNESS_STEP = 15
 /** Greyscale borders ride label-tertiary — the row has no chroma of its own to outline with. */
 const GREY_OUTLINES = [35, 45, 55, 65, 75, 85, 95, 100].map((pct) => tintAt(c.label.tertiary, pct))
 
-/** What a cell hands the tint recipe: the base color fill, outline and text all mix from, plus the
- *  outline the greyscale row brings of its own — that row has no chroma to draw one from. */
 export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   const { family, step } = parse(key)
   const color = RAMP[family][step]

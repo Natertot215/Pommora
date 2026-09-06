@@ -2,7 +2,7 @@
 // absorbs the legacy vocabulary — a bare `red` on disk normalizes to its anchor cell — so nothing
 // downstream needs to know two grammars ever existed, and nothing on disk is rewritten.
 
-import { isColorKey, type CellKey } from '@pommora/uix/Theme/theme'
+import { isColorKey, type CellKey } from './theme'
 import { ANCHOR_CELLS } from './ramp'
 
 const ANCHORS: Readonly<Record<string, CellKey>> = ANCHOR_CELLS

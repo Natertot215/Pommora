@@ -89,7 +89,6 @@ export function IconPicker({
   // mounts (else the grid stays empty until the first re-render — e.g. a keystroke).
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
-  const cols = COLS
 
   // Tells the virtualizer how far the list's top sits below the scroll container's top
   // (the favorites strip + separator height).
@@ -98,7 +97,7 @@ export function IconPicker({
     if (listEl) setScrollMargin(listEl.offsetTop)
   }, [listEl, favs.length, open])
 
-  const rowCount = Math.ceil(filtered.length / cols)
+  const rowCount = Math.ceil(filtered.length / COLS)
   const rowVirt = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollEl,
@@ -141,14 +140,14 @@ export function IconPicker({
 
         <div ref={setListEl} className={s.list} style={{ height: rowVirt.getTotalSize() }}>
           {rowVirt.getVirtualItems().map((vr) => {
-            const start = vr.index * cols
+            const start = vr.index * COLS
             return (
               <div
                 key={vr.key}
                 className={s.row}
                 style={{ height: CELL, transform: `translateY(${vr.start - scrollMargin}px)` }}
               >
-                {filtered.slice(start, start + cols).map((entry) => (
+                {filtered.slice(start, start + COLS).map((entry) => (
                   <GridCell
                     key={entry.id}
                     entry={entry}
