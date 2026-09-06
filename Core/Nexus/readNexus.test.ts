@@ -601,14 +601,14 @@ describe('readNexus — personalization', () => {
     )
     for (const k of keys) expect(t.personalization[k], k).toBe('grey-4')
   })
-  it('the linger survives the round-trip, clamped; zero and junk read as None', async () => {
-    const at = async (v: unknown): Promise<number | undefined> =>
-      (await readNexus(mk({ personalization: { hoverPreviewLinger: v } }))).personalization
-        .hoverPreviewLinger
-    expect(await at(5)).toBe(5)
-    expect(await at(900)).toBe(30)
-    expect(await at(0)).toBeUndefined()
-    expect(await at('abc')).toBeUndefined()
+  it('preview persistence survives the round-trip; junk reads as absent (the default)', async () => {
+    const at = async (v: unknown): Promise<string | undefined> =>
+      (await readNexus(mk({ personalization: { previewPersistence: v } }))).personalization
+        .previewPersistence
+    expect(await at('5s')).toBe('5s')
+    expect(await at('always')).toBe('always')
+    expect(await at('off')).toBe('off')
+    expect(await at('nonsense')).toBeUndefined()
   })
   it('the nexus date format survives the round-trip, and an unrecognized one reads as absent', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>

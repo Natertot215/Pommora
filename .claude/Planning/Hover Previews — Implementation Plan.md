@@ -251,10 +251,10 @@ const graceMs = persistence === 'off' ? LEAVE_GRACE_MS : previewLingerMs(persist
 **Assumed by:** Task 10 ('always'/Infinity distinct from a pin).
 
 **Verify — automated**
-- [ ] `rg -F 'hoverPreviewLinger' .` → 0. `rg -F 'coerceHoverLinger' .` → 0. `rg -F 'HOVER_LINGER_MAX' .` → 0. Control: `rg -F 'previewPersistence' Core` → ≥5.
-- [ ] Red-green: existing linger test inverted — '5s' → 5000ms grace; 'always' → no dismiss timer scheduled; 'off' → live pane dismissed (Off-mid-open). Old assertion fails first.
-- [ ] Degenerate: `previewPersistence` absent → default '1s'; a legacy `hoverPreviewLinger` on disk is ignored (codec builds fresh — no migration; note the dropped pref).
-- [ ] `npm run typecheck` · `npm run test` · `npm run lint` green.
+- [x] `rg -F 'hoverPreviewLinger' .` → 0. `rg -F 'coerceHoverLinger' .` → 0. `rg -F 'HOVER_LINGER_MAX' .` → 0. Control: `rg -F 'previewPersistence' Core` → 10.
+- [x] Red-green: existing linger test inverted — '5s' → 5000ms grace; 'always' → no dismiss timer scheduled; 'off' → live pane dismissed (Off-mid-open). Old assertion fails first.
+- [x] Degenerate: `previewPersistence` absent → default '1s' (picker fallback + coercer undefined); a legacy `hoverPreviewLinger` on disk is ignored (codec builds fresh — no migration; the readNexus round-trip test asserts junk → undefined without naming the dead symbol).
+- [x] `npm run typecheck` · `npm run test` · `npm run lint` green.
 
 **Verify — user**
 - [ ] Settings → Navigation shows "Hover Previews" as a 5-way picker; slider gone. *(Carries.)*
@@ -635,8 +635,8 @@ useEffect(() => {
 
 - [ ] **Phase 1** — One setting owns persistence · base `38a4d8e2c`
   - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `c80e39af1`
-  - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `PENDING2`
-  - [ ] Task 3 — Picker replaces slider (hazard window) · `<commit>`
+  - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `3a03a5ef6`
+  - [x] Task 3 — Picker replaces slider (hazard window) · `PENDING3`
 - [ ] **Phase 2** — Dwell slots
   - [ ] Task 4 — `detail`/`views` dwell values · `<commit>`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
@@ -662,6 +662,8 @@ useEffect(() => {
 ### Open Against Later Tasks
 
 ### Deviations
+- **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
+- **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
 
 ### Lessons
 
