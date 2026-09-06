@@ -1,11 +1,9 @@
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import { useSession } from '../Session/store'
-import './iteration-window.css'
 
-/** A blank floating surface for previewing a component in isolation, summoned by its chord
- *  (App.tsx). Drop JSX into the body below to see a scoped asset live without wiring it into a real
- *  surface first. */
+/** A blank floating surface summoned by its chord (App.tsx) for previewing a component in
+ *  isolation, without wiring it into a real surface first. */
 export function IterationWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.iterationOpen)
   const closeIteration = useSession((s) => s.closeIteration)
@@ -19,7 +17,20 @@ export function IterationWindow(): React.JSX.Element | null {
       ariaLabel="Iteration"
       title="Iteration"
     >
-      <div className="iteration-body">{/* drop JSX here to preview it */}</div>
+      <div
+        style={{
+          flex: '1',
+          minHeight: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--window-toolbar-h) var(--app-inset) var(--app-inset)',
+          overflow: 'auto',
+          scrollbarWidth: 'none',
+        }}
+      >
+        {/* drop JSX here to preview it */}
+      </div>
     </WindowBase>
   )
 }
