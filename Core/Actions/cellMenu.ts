@@ -11,12 +11,10 @@ import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
 import type { ActionItem } from './menuModel'
 
-/** The table-cell right-click menu (right-click always opens a menu, never acts). Title cells get
- *  the page meta menu; style-bearing cells get their COLUMN's Style radios; a `link` cell gets
- *  Edit · Rename · Clear (its look is per-property, not a per-view Style); picker-based cells add
- *  Clear. `hideable` (cards only) appends a trailing "Remove" that drops the property from the view
- *  — a `file` cell names it "Remove from View" so it isn't read as its own Remove File. A `file`
- *  cell carries its own Add · Replace · Remove triad instead of Style radios. */
+/** Right-click always opens a menu, never acts. Style-bearing cells get their COLUMN's radios; a
+ *  `link` cell's look is per-property, so it gets none. `hideable` (cards only) appends a Remove
+ *  that drops the property from the view — a `file` cell names it "Remove from View" so it isn't
+ *  read as its own Remove File, and carries its own Add · Replace · Remove triad. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -27,8 +25,7 @@ type CellMenuKind =
       barCapable?: boolean
     }
   | { kind: 'link'; filled: boolean }
-  /** `onChip` is a hit-test fact: a right-click on a LABEL can replace or remove the file it names;
-   *  one on the value's own area has no file for either to act on, so it offers Add alone. */
+  /** A hit-test fact: only a right-click on a LABEL names a file to replace or remove. */
   | { kind: 'file'; onChip: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
@@ -48,13 +45,11 @@ export type CellMenuAction =
 
 export interface CellMenuModel {
   items: ActionItem<CellMenuAction>[]
-  /** Rendered as a submenu ahead of `items` when present. Rows and the name they sit under travel
-   *  together so a type can't be given radios under the wrong word. */
+  /** Rows and the name they sit under travel together, so radios can't land under the wrong word. */
   style?: { label: string; rows: StyleMenuItem[] }
 }
 
-/** The surface's own facts about the cell, named rather than positional — four bare booleans in a
- *  row read as nothing at a call site. */
+/** Named rather than positional: four bare booleans in a row read as nothing at a call site. */
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
@@ -65,9 +60,8 @@ export function cellMenuContextFor(
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
-  // Cards let any non-title cell drop its property (hideable): an otherwise-menu-less cell (an
-  // empty picker) still gets a bare Remove. remove-only must CARRY the hideable flag — the model
-  // appends Remove only when it sees it.
+  // Cards let any non-title cell drop its property, so an otherwise-menu-less cell still gets a
+  // bare Remove; remove-only must CARRY the flag, since the model appends Remove only on it.
   if (base === null) return hideable ? { kind: 'remove-only', hideable: true } : null
   return hideable ? { ...base, hideable: true } : base
 }
@@ -105,17 +99,15 @@ function baseCellMenu(
   return null
 }
 
-/** The pure per-kind item model — main maps it to Electron MenuItems. A `hideable` (card) context
- *  appends a trailing "Remove" that drops the property from the view. */
+/** The pure per-kind item model; the host maps it to native menu items. */
 export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
   const model = baseCellMenuModel(ctx)
   if (ctx.hideable && ctx.kind !== 'title') {
     model.items = [
       ...model.items,
       {
-        // Only self-separate from SIBLING items — keying on `model.style` too would double the
-        // separator for a style-only cell with no base item. A file cell carries its OWN Remove;
-        // the two same-labeled items are told apart by position alone.
+        // Self-separate from SIBLING items only: keying on `model.style` too would double the
+        // separator for a style-only cell. A file cell's own Remove is told apart by position.
         label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
         action: 'cell:hide',
         separatorBefore: model.items.length > 0,
@@ -150,8 +142,7 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
         },
       }
     case 'link':
-      // A FILLED cell adds Rename + Clear, no-ops on an empty one, so only Edit shows there. No
-      // per-view Style — a link's look is per-property.
+      // Rename and Clear are no-ops on an empty cell, so only Edit shows there.
       return {
         items: ctx.filled
           ? [

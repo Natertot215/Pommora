@@ -1,3 +1,4 @@
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Locations/ids'
@@ -164,7 +165,7 @@ export function reorderRegistry(
   return mutateRegistry<Result<null>>(root, (registry) => {
     if (!(propertyId in registry.defs)) return { result: fail('not-found', 'Property not found.') }
     const order = registry.order.filter((id) => id !== propertyId)
-    order.splice(Math.max(0, Math.min(toIndex, order.length)), 0, propertyId)
+    order.splice(clamp(toIndex, 0, order.length), 0, propertyId)
     return { next: { ...registry, order }, result: ok(null) }
   })
 }

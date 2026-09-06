@@ -38,7 +38,7 @@ export function serializeLink(v: LinkValue): string {
 }
 
 // A title no page answers to names nothing, so the commit is refused as a malformed address is.
-export function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
+function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
   const named = (rawTitle: string, alias?: string): string | null => {
     const title = resolve?.(rawTitle)
     return title ? connectionText(title, alias) : null

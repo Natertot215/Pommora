@@ -1,12 +1,7 @@
-// The one owner of every navigation-layer lookup derived from the tree. One walk per tree builds
-// one record per entity; reconcile/resolve/search/connections/thumbnail-key tables are lazy,
-// cached projections of those records, keyed on the tree object — stabilize() preserves identity
-// across echo pushes, so a real push invalidates everything at once and every other access is a
-// WeakMap hit. A new lookup belongs here as another projection, never its own walk.
-//
-// The record LIST is the source — duplicate ids (a copied .md carries its id in frontmatter) stay
-// listed, so title resolution can still answer "ambiguous". The keyed projections collapse
-// duplicates last-wins.
+// One walk per tree; every table below is a lazy projection of its records, cached on the tree
+// object (stabilize keeps identity across echo pushes). A new lookup belongs here, never as its
+// own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still
+// answer "ambiguous"; the keyed projections collapse them last-wins.
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Pages/mutateRequest'
@@ -26,22 +21,18 @@ import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import type { ReconcileIndex } from './selection'
 
-/** The `{id, title, path}` tuple is `EntityRecord`'s; `id` and `path` are '' for the folderless,
- *  id-less homepage singleton. `kind` stays local — the unions are disjoint (`homepage` here,
- *  `context` there). */
+/** `id` and `path` are '' for the folderless homepage singleton. */
 export interface NodeRecord extends TrailNode {
   key: string
   kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
-  /** The node's own raw icon field — surfaces that render absence read this, not the resolved glyph. */
+  /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
-  /** The containers above the entity, outermost first. */
   parents: TrailNode[]
 }
 
-/** One node on an entity's ancestry — identity plus its resolved display core. */
 export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   kind: 'homepage' | 'context' | 'space' | 'collection' | 'set' | 'page'
-  /** Resolved display glyph — the user's own icon if renderable, else the nexus default. */
+  /** The user's own icon if renderable, else the nexus default. */
   icon: string
 }
 
@@ -52,7 +43,6 @@ export interface ContainerCore {
 }
 
 interface TreeIndex {
-  /** Every entity in walk order — homepage, spaces, then each collection's subtree. */
   nodes: NodeRecord[]
   reconcile?: ReconcileIndex
   resolve?: ResolveIndex
@@ -138,7 +128,7 @@ function walk(tree: NexusTree): NodeRecord[] {
       walkSets(s.sets, chain)
     }
   }
-  for (const col of tree.collections ?? []) {
+  for (const col of tree.collections) {
     const node: NodeRecord = {
       key: navKey({ kind: 'collection', id: col.id }),
       kind: 'collection',
@@ -156,11 +146,8 @@ function walk(tree: NexusTree): NodeRecord[] {
   return nodes
 }
 
-/** The walk's records in tree order — parents before children. Every lookup over the whole tree
- *  reads this instead of walking again. */
 export const nodesOf = (tree: NexusTree): readonly NodeRecord[] => indexFor(tree).nodes
 
-/** Existence + live-path lookup per entity kind — what reconcileWith answers from. */
 export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
   const ix = indexFor(tree)
   if (!ix.reconcile) {
@@ -190,7 +177,6 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
   return ix.reconcile
 }
 
-/** navKey → display core (title, resolved icon, breadcrumbs) — O(1) resolution per entry. */
 export function resolveIndexOf(tree: NexusTree): ResolveIndex {
   const ix = indexFor(tree)
   if (!ix.resolve) {
@@ -204,8 +190,7 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
 export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
   (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
 
-/** The entity's ancestry including itself, outermost first — what every location trail draws from.
- *  Null when the ref no longer resolves. */
+/** The ancestry including the entity itself, outermost first; null when the ref no longer resolves. */
 export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null {
   const ix = indexFor(tree)
   if (!ix.ancestry) {
@@ -216,9 +201,7 @@ export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNo
   return ix.ancestry.get(navKey(toNavRef(ref))) ?? null
 }
 
-/** Tree-derived search entries, grouped by kind (homepage, spaces, collections, sets, pages) so
- *  equal-scored ties keep a stable cross-kind order. The tree is the whole universe — a kind
- *  absent from the walk is absent from search. */
+/** Grouped by kind so equal-scored ties keep a stable cross-kind order. */
 export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
   const ix = indexFor(tree)
   if (!ix.search) {
@@ -245,7 +228,6 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
   return ix.search
 }
 
-/** Every page in the tree, in walk order — the connections layer's page universe. */
 export function pagesOf(tree: NexusTree): ConnPage[] {
   const ix = indexFor(tree)
   if (!ix.pages) {
@@ -257,7 +239,6 @@ export function pagesOf(tree: NexusTree): ConnPage[] {
   return ix.pages
 }
 
-/** Where a page lives now, by id — its remembered path when the tree cannot say. */
 export const livePagePath = (
   tree: NexusTree | null,
   target: { id: string; path: string },
@@ -269,18 +250,15 @@ export function pagesByIdOf(tree: NexusTree): ReadonlyMap<string, ConnPage> {
   return ix.pagesById
 }
 
-/** The [[Title]] resolution + autocomplete closure over the page universe. */
 export function pageIndexOf(tree: NexusTree): PageIndex {
   const ix = indexFor(tree)
   if (!ix.pageIndex) ix.pageIndex = buildPageIndex(pagesOf(tree))
   return ix.pageIndex
 }
 
-/** The page index with `open` inert — links style and resolve, and a click goes nowhere. */
 export const resolveOnlyConnections = (tree: NexusTree | null): ConnectionsApi | undefined =>
   tree ? { ...pageIndexOf(tree), open: () => {} } : undefined
 
-/** path → container display core — embed and menu surfaces resolving a container by its path. */
 export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, ContainerCore> {
   const ix = indexFor(tree)
   if (!ix.containers) {
@@ -293,26 +271,23 @@ export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, Contain
   return ix.containers
 }
 
-/** Every live navKey — the closed set thumbnail eviction prunes against. Capture fires on any
- *  selection, and nothing today selects a Context group, so the record keyspace is the complete
- *  universe of capturable keys. */
+/** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the
+ *  records are the complete universe of capturable keys. */
 export function navKeysOf(tree: NexusTree): string[] {
   const ix = indexFor(tree)
   if (!ix.navKeys) ix.navKeys = ix.nodes.map((r) => r.key)
   return ix.navKeys
 }
 
-/** The page a raw connection title names, or null when none does (or more than one does). The
- *  resolution behind a Link property's paste gate and behind the connection a Link cell draws, so a
- *  cell can never show a link the index wouldn't reach. */
+/** Null when no page answers the title, or more than one does. Behind both a Link property's paste
+ *  gate and the connection a Link cell draws, so a cell can't show a link the index wouldn't reach. */
 export function resolveConnection(tree: NexusTree | null, rawTitle: string): ConnPage | null {
   if (!tree) return null
   const res = pageIndexOf(tree).resolve(rawTitle)
   return res.status === 'resolved' && res.page ? res.page : null
 }
 
-/** `icon` is the entity's raw stored value, unvalidated — Banner falls back per kind at render.
- *  NavView has its own banner treatment, so it's excluded here. */
+/** `icon` is raw and unvalidated; NavView is excluded because its banner is treated separately. */
 export interface BannerOwner {
   path: string
   kind: Exclude<BannerOwnerKind, 'navview'>
@@ -323,33 +298,17 @@ export interface BannerOwner {
   headingIconHidden?: boolean
 }
 
-function allCollections(tree: NexusTree): CollectionNode[] {
-  return tree.collections ?? []
-}
-
 export function findCollection(tree: NexusTree | null, id: string): CollectionNode | undefined {
   if (!tree) return undefined
-  return allCollections(tree).find((c) => c.id === id)
+  return tree.collections.find((c) => c.id === id)
 }
 
 export function findSet(tree: NexusTree | null, id: string): SetNode | undefined {
-  if (!tree) return undefined
-  const search = (sets: SetNode[] | undefined): SetNode | undefined => {
-    for (const s of sets ?? []) {
-      if (s.id === id) return s
-      const deep = search(s.sets)
-      if (deep) return deep
-    }
-    return undefined
-  }
-  for (const c of allCollections(tree)) {
-    const hit = search(c.sets)
-    if (hit) return hit
-  }
-  return undefined
+  const hit = tree && findContainer(tree, (n) => n.kind === 'set' && n.id === id)
+  return hit && hit.kind === 'set' ? hit : undefined
 }
 
-/** The Collection that owns a Set's inherited schema — a Set has no properties schema of its own. */
+/** The Collection a Set inherits its schema from; a Set has none of its own. */
 export function findCollectionForSet(
   tree: NexusTree | null,
   setId: string,
@@ -362,18 +321,16 @@ export function findCollectionForSet(
     }
     return false
   }
-  return allCollections(tree).find((c) => has(c.sets))
+  return tree.collections.find((c) => has(c.sets))
 }
 
-/** Tile-based surface kinds (homepage + Spaces) run tight tile gutters instead of the page/table
- *  content inset — the tile handles supply their own grip/chevron actions. Drives `is-surface`. */
+/** Tile surfaces run tight tile gutters instead of the content inset. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
 }
 
-/** Whether a Set is a direct child of a Collection (so it carries + renders views) rather than a
- *  plain organizing folder — tested rather than trusted, since a reparent + Back-nav replay can
- *  surface either as a `set` selection. */
+/** A direct child of a Collection carries views. Tested, not trusted: a reparent plus a Back-nav
+ *  replay can surface either depth as a `set` selection. */
 export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
   const col = findCollectionForSet(tree, setId)
   return !!col && col.sets.some((s) => s.id === setId)
@@ -381,7 +338,7 @@ export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
 
 export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
   if (!tree) return null
-  for (const g of tree.contexts ?? []) {
+  for (const g of tree.contexts) {
     const sp = g.spaces.find((s) => s.id === id)
     if (sp)
       return {
@@ -407,11 +364,9 @@ export function containerOwner(node: CollectionNode | SetNode): BannerOwner {
   }
 }
 
-/** Page paths are POSIX, so a page's container is its path minus the last segment. */
 export const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
 
-/** Depth-first over collections and their nested sets — callers name the container they want by
- *  whichever key they hold (id from a selection, path from a page's parent). */
+/** Depth-first over collections and their nested sets; callers match on whichever key they hold. */
 export function findContainer(
   tree: NexusTree,
   match: (node: CollectionNode | SetNode) => boolean,
@@ -424,7 +379,7 @@ export function findContainer(
     }
     return null
   }
-  for (const c of allCollections(tree)) {
+  for (const c of tree.collections) {
     if (match(c)) return c
     const hit = inSets(c.sets)
     if (hit) return hit

@@ -9,7 +9,7 @@ import { listEntries } from '../IO/walk'
  *  real name, so the record wears a prefix no entity may. Every naming gate refuses a hidden
  *  prefix — the same convention the walk hides by — and the atomic writer's temp sibling inherits
  *  this name's prefix, so it is skipped alongside Finder's litter. */
-export const RECORD_FILENAME = '_record.json'
+const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('root') }),
@@ -29,7 +29,7 @@ const contentRecord = <E extends string>(entity: E) =>
     partial: z.literal(true).optional(),
   })
 
-export const recordFile = z.discriminatedUnion('entity', [
+const recordFile = z.discriminatedUnion('entity', [
   contentRecord('page'),
   contentRecord('collection'),
   contentRecord('set'),

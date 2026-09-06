@@ -1,7 +1,5 @@
-// The write channels' confirmation: after a successful write, main applies the matching change
-// to the live tree — a pure transform where the request carries the whole fact, or a one-file
-// disk re-read through the walk's own readers — and the caller pushes when the tree object
-// moved. A write with no patch degrades to one verification walk, never a silently stale tree.
+// After a successful write the matching change lands on the live tree, by pure transform or a
+// one-file re-read. A write with no patch degrades to a walk, never a silently stale tree.
 
 import type {
   BannerOwnerKind,
@@ -38,11 +36,8 @@ import {
 } from './watchPatch'
 import { CONTEXTS_DIR_REL } from '../Locations/nexusPaths'
 
-/** The pure-transform arms — the request (plus what actually landed) carries the whole fact.
- *  `'no-change'` means a value write or a trash-internal write cannot move the tree, so the
- *  hottest ops cost zero IPC. Null = no transform owns the op; the caller confirms another
- *  way or walks. */
-export function patchForMutation(
+/** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
+function patchForMutation(
   tree: NexusTree,
   req: MutateRequest,
   reply: MutateOutcome,
@@ -58,8 +53,7 @@ export function patchForMutation(
       return reply.created ? insertCreatedInTree(tree, req, reply.created) : null
     case 'movePage': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
-      // A null relocate means "already in that parent" only when it IS that parent — an
-      // unresolved node must walk rather than commit an order-only patch that lies about the move.
+      // A null relocate reads as "already there" only when it IS that parent; otherwise walk.
       if (!moved && parentOf(req.path) !== req.newParentPath) return null
       return req.order
         ? (reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved)
@@ -71,7 +65,7 @@ export function patchForMutation(
       return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
     }
     case 'rename':
-      // The landed name, never the ask — a from-create rename may have disambiguated.
+      // The landed name, never the ask: a from-create rename may have disambiguated.
       return renameNodeInTree(tree, req.path, reply.renamed?.name ?? req.newName)
     case 'delete':
       return removeNodeInTree(tree, req.path)
@@ -92,7 +86,6 @@ export function patchForMutation(
 
 const isSpacePath = (path: string): boolean => path.startsWith(`${CONTEXTS_DIR_REL}/`)
 
-/** Whether the entity at `path`, or anything beneath it, rides a path-derived adopted id. */
 function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
   const under = (p: string): boolean => p === path || p.startsWith(`${path}/`)
   const scan = (containers: readonly (CollectionNode | SetNode)[]): boolean =>
@@ -105,8 +98,6 @@ function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
   return scan(tree.collections)
 }
 
-/** Which disk-confirmer owns an entity kind — one statement, shared by every field write that
- *  names its target by kind. Null = the kind is not one of the walk's per-entity files. */
 function patchEntityFromDisk(
   root: string,
   kind: MutableKind | BannerOwnerKind,
@@ -125,27 +116,22 @@ function patchEntityFromDisk(
   }
 }
 
-/** Route one confirmed mutation to its patch. `'ok'` means the live tree already reflects the
- *  write; `'refresh'` means the caller owes one verification walk. */
+/** `'ok'` means the live tree already reflects the write; `'refresh'` owes one verification walk. */
 async function routeMutation(
   root: string,
   req: MutateRequest,
   reply: MutateOutcome,
 ): Promise<'ok' | 'refresh'> {
-  // Deleting a Space (or a Context group) unlinks its value from every member's frontmatter —
-  // a cascade across nodes the remove transform never touches; only the walk re-derives their
-  // contextValues.
+  // The unlink cascades into every member's frontmatter; only the walk re-derives contextValues.
   if (req.op === 'delete' && (req.kind === 'space' || req.kind === 'context')) return 'refresh'
   switch (req.op) {
-    // Field writes land through the writer's own normalization — confirm by re-reading the
-    // one file that changed, with the walk's readers.
+    // Field writes land through the writer's own normalization, so confirm by re-reading the one
+    // file that changed (a Context's icon lives in its registry, a structural walk input).
     case 'setIcon':
-      // A Context's icon lives in its registry — a structural walk input.
-      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     case 'setDisclosureLock':
-      return (await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh'
-    // A banner replace drops the old image's crop through dropReplacedAsset — a crops.json write
-    // the app's own watcher never sees — so the writer re-reads that leaf itself.
+      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
+    // A banner replace drops the old crop through dropReplacedAsset, a crops.json write the
+    // watcher never sees, so the writer re-reads that leaf itself.
     case 'setBanner':
     case 'setHeadingIconHidden': {
       let own: 'ok' | 'refresh'
@@ -175,9 +161,8 @@ async function routeMutation(
     default: {
       const tree = getLiveTree()
       if (!tree) return 'refresh'
-      // An adopted id is a hash of the very path a rename or move changes, and re-deriving it
-      // lives main-side — so an affected subtree degrades to the walk, which derives every id
-      // fresh, instead of holding an id the next walk can never produce.
+      // An adopted id hashes the very path a rename or move changes, so an affected subtree walks
+      // rather than hold an id the next walk could never produce.
       if (
         (req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
         subtreeHoldsAdoptedId(tree, req.path)
@@ -187,15 +172,13 @@ async function routeMutation(
       if (patched === 'no-change') return 'ok'
       if (patched === null) return 'refresh'
       if (applyPatch(root, () => patched) === 'refresh') return 'refresh'
-      // A create's or a reorder's landed position derives from an order file the transform
-      // didn't read — one more targeted read pins it to exactly what the walk would derive
-      // (the transforms rank unlisted entities by current order; the walk ranks them by title).
+      // The landed position derives from an order file the transform never read: it ranks unlisted
+      // entities by order where the walk ranks by title, so one targeted read pins it.
       switch (req.op) {
         case 'createPage':
           return req.order ? 'ok' : patchContainerFromDisk(root, req.parentPath)
         case 'createContainer': {
-          // The creation seeded the NEW sidecar (a default view) — read it in, then pin the
-          // parent's order.
+          // The creation seeded the new sidecar with a default view; read it, then pin the order.
           const own = reply.created ? await patchContainerFromDisk(root, reply.created.path) : 'ok'
           if (own === 'refresh') return 'refresh'
           return req.parentPath === ''
@@ -216,20 +199,14 @@ async function routeMutation(
   }
 }
 
-/** Confirm a successful mutation against the live tree; a failed patch degrades to one walk.
- *  Returns the tree to push, or null when nothing anyone renders moved. */
 export const confirmMutation = (
   root: string,
   req: MutateRequest,
   reply: MutateOutcome,
 ): Promise<NexusTree | null> => confirmBy(root, () => routeMutation(root, req, reply))
 
-/** The registry family's confirmation: re-read `properties.json` — never request values, which
- *  the writers normalize and stamp before writing — and patch the one fact into both of its homes
- *  (`tree.registry` and each `CollectionNode.properties`). The def edits are the whole family bar
- *  four, and they move no assignment list, so the re-point is a pure transform. `containerPath`
- *  names the one Collection whose sidecar the write also touched — assign, unassign, reorder, and
- *  the create that assigns — and only that sidecar is re-read. */
+/** Re-reads `properties.json` rather than trusting request values, which the writers normalize
+ *  before writing. `containerPath` names the one Collection sidecar the write also touched. */
 export const confirmRegistry = (root: string, containerPath?: string): Promise<NexusTree | null> =>
   confirmBy(root, () => routeRegistry(root, containerPath))
 
@@ -242,8 +219,7 @@ async function routeRegistry(root: string, containerPath?: string): Promise<'ok'
   return patchContainerFromDisk(root, containerPath)
 }
 
-/** One shared shape for the remaining write channels: run the targeted confirmer, degrade to
- *  a walk on refusal, and hand back the tree to push when it moved. */
+/** Run the targeted confirmer, degrade to a walk on refusal, hand back the tree when it moved. */
 export async function confirmBy(
   root: string,
   work: () => Promise<'ok' | 'refresh'>,
@@ -253,9 +229,7 @@ export async function confirmBy(
     try {
       await refreshAfterWrite(root)
     } catch {
-      // The write landed but the verification walk failed — the held tree predates the write
-      // and must not keep serving as canon. Dropped, every later read walks (and surfaces the
-      // failure honestly if the walk keeps failing).
+      // The walk failed after the write landed, so the held tree predates it; dropped, reads walk.
       dropLiveTree()
     }
   }

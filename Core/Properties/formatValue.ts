@@ -66,16 +66,10 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
   const n = Math.abs(diffDays)
 
   if (n <= WEEK_DAYS) {
-    const dayWord =
-      n === 0
-        ? 'Today'
-        : n === 1
-          ? ago
-            ? 'Yesterday'
-            : 'Tomorrow'
-          : ago
-            ? `${n} Days Ago`
-            : `${n} Days from now`
+    let dayWord: string
+    if (n === 0) dayWord = 'Today'
+    else if (n === 1) dayWord = ago ? 'Yesterday' : 'Tomorrow'
+    else dayWord = ago ? `${n} Days Ago` : `${n} Days from now`
     return hasTime && timeFormat !== 'none' ? `${dayWord} at ${clockOf(date, timeFormat)}` : dayWord
   }
   const [unit, count] =

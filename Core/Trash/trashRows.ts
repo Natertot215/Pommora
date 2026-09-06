@@ -31,7 +31,7 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | nul
   if (record.entity === 'space') {
     const parent = record.parent
     if (parent.kind !== 'context') return null
-    const group = tree.contexts?.find((g) => g.def.id === parent.id)
+    const group = tree.contexts.find((g) => g.def.id === parent.id)
     return group ? [{ kind: 'context', title: group.def.title }] : null
   }
   if (record.parent.kind === 'root') return record.entity === 'collection' ? [] : null

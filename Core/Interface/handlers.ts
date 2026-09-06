@@ -8,6 +8,7 @@ import {
   isStringArray,
 } from '../Contract/validators'
 import { adopting } from '../Nexus/handlers'
+import { isPlainObject } from '../Properties/propertyValue'
 import { sessionRoot } from '../Nexus/session'
 import { readScope, readValue, type Scope, writeKey, writeValue } from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs } from '../Settings/devicePrefs'
@@ -18,7 +19,7 @@ import { readWindowsState, sanitizeWindows, writeWindowsState } from './windowSt
 const isEmptyValue = (v: unknown): boolean =>
   v === '' ||
   (Array.isArray(v) && v.length === 0) ||
-  (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0)
+  (isPlainObject(v) && Object.keys(v).length === 0)
 
 export function scopeGet<T>(scope: Scope): () => Record<string, T> {
   return () => {

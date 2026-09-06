@@ -13,7 +13,6 @@ import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { ok, type Result } from '../Contract/result'
 import type { StateOrderKey, ChildOrderKey } from '../Pages/mutateRequest'
 
-export type { StateOrderKey }
 export type ContainerOrderKey = ChildOrderKey | 'page_order'
 
 // Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps

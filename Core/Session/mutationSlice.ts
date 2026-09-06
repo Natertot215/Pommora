@@ -23,13 +23,11 @@ interface RenameFence {
 
 export interface RenameSlice {
   renamingPath: string | null
-  /** A just-created entity's naming session — the field opens empty and its first commit rides
-   *  the create (disambiguating, cascade-free). */
+  /** A newborn's naming session: the field opens empty and its first commit rides the create. */
   renamingCreate: boolean
   /** The gesture-declared field host, when the caller knew its surface; null resolves by rank. */
   renamingHost: RenameHost | null
-  /** The owner fence: field hosts claim on mount; one claim wins (declared host, then rank, then
-   *  first-come) and only the winner mounts an input. */
+  /** The owner fence: hosts claim on mount, one wins (declared, then rank, then first-come). */
   renameClaims: RenameClaim[]
   renameWinner: number | null
   claimRename: (path: string, host: RenameHost) => number | null
@@ -37,21 +35,18 @@ export interface RenameSlice {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
-  /** The page whose icon picker is open, from a menu's Edit Icon. One consumer, so it needs no
-   *  owner fence. */
+  /** The page whose icon picker is open. One consumer, so it needs no owner fence. */
   iconPath: string | null
   beginIcon: (path: string) => void
   endIcon: () => void
-  /** A one-shot "an item just landed inside this container" pulse — a disclosure-locked folder
-   *  reads it to briefly reveal only that child. */
+  /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
   peekSignal: { parentPath: string; childId: string; nonce: number } | null
   signalPeek: (parentPath: string, childId: string) => void
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
-  /** Set when a property rename lands. A mounted view's values snapshot is fetched once per
-   *  container open and never re-reads, so without this the renamed column reads blank. Carries
-   *  the key pair because the effect must re-key the optimistic overrides too. */
+  /** A view's values snapshot is fetched once per container open, so without this the renamed
+   *  column reads blank; the key pair rides along to re-key the optimistic overrides. */
   valuesEpoch: ValuesEpoch | null
   bumpValuesEpoch: (oldKey: string, newKey: string) => void
   bumpContainerValues: (changes: ValueChange[]) => void
@@ -98,16 +93,14 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     const { renameClaims, renameWinner } = get()
     const released = renameClaims.find((c) => c.token === token)
     const wasWinner = renameWinner === token
-    // Claims minted before this release are standing twins; only one minted AFTER it can be
-    // the released field itself remounting.
+    // Claims minted before this release are standing twins; only a later one is a remount.
     const rebirthFence = nextRenameToken
     set((s) => {
       const claims = s.renameClaims.filter((c) => c.token !== token)
       return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
     })
-    // Waits a microtask: StrictMode's simulated remount releases and re-claims in one act, and
-    // an immediate cancel would kill every dev rename. A rename whose winning surface left is
-    // abandoned rather than handed to a standing claimant.
+    // A microtask, because StrictMode's simulated remount releases and re-claims in one act. A
+    // rename whose winning surface left is abandoned, never handed to a standing claimant.
     queueMicrotask(() => {
       const s = get()
       if (released === undefined || s.renamingPath !== released.path) return
@@ -124,8 +117,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
         renameWinner: resolveRenameWinner(s.renameClaims, fence),
       }
     })
-    // Self-heals when no surface ever claims — a newborn a filter hides, or a navigate-away
-    // mid-create, would otherwise strand the session with an empty field.
+    // Self-heals when nothing claims: a filtered-away newborn would strand an empty field.
     window.clearTimeout(renameOrphanTimer)
     renameOrphanTimer = window.setTimeout(() => {
       const s = get()
@@ -136,8 +128,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   submitRename: async (path, kind, newName) => {
     const fromCreate = get().renamingCreate && kind === 'page'
     set(RENAME_CLEARED)
-    // Registry entities rename by id through their journaled cascade ops — a bare folder
-    // rename would strand every member file's title key.
+    // Registry entities rename by id: a bare folder rename strands every member's title key.
     if (kind === 'space' || kind === 'context') {
       const groups = get().tree?.contexts ?? []
       if (kind === 'space') {
@@ -197,8 +188,7 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     const target = get().renamingProperty
     set({ renamingProperty: null })
     if (!target) return false
-    // Captured BEFORE the ask: main's confirming push can rename the registry in this
-    // store before the reply's continuation runs.
+    // Captured BEFORE the ask: the confirming push can rename the registry first.
     const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
     const res = await host().ask('schema:rename', target.collectionPath, target.propertyId, newName)
     if (!res.ok) {
