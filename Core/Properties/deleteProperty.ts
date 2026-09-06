@@ -1,6 +1,7 @@
 import { contentId } from '../Nexus/identityMark'
+import { splitFrontmatter } from '../IO/pageFile'
 import { writePropertyBundle } from '../Trash/record'
-import { withoutCacheBlock } from './assignment'
+import { patchCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { collectionFolders } from './assignment'
@@ -11,7 +12,7 @@ import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
 import { readTextOrNull } from '../IO/atomicWrite'
 import { pageCollectionSidecar } from '../Nexus/schemas'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { isPlainObject } from './propertyValue'
 import { fail, type Result } from '../Contract/result'
 
@@ -79,12 +80,12 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   return removed
 }
 
-export function stripKeyRewrite(key: string): Rewrite<never> {
+export function stripKeyRewrite(key: string): Rewrite {
   return (raw) => {
     if (!(key in raw)) return null
     const next = { ...raw }
     delete next[key]
-    return { next }
+    return next
   }
 }
 
@@ -101,6 +102,6 @@ export function unassignAndPurge(folder: string, propertyId: string): Promise<vo
       properties: assigned.filter((id) => id !== propertyId),
     }
     // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
-    await writeSidecar(folder, 'collection', hadCache ? withoutCacheBlock(next, propertyId) : next)
+    await writeSidecar(folder, 'collection', hadCache ? patchCacheBlock(next, propertyId) : next)
   })
 }

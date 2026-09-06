@@ -3,7 +3,7 @@
 import { machine } from '../Platform/machine'
 import { isReserved, resolveUnderRoot } from '../Locations/pathSafety'
 import { readJsonObject, readTextOrNull, rmwJsonStrict, setOrDrop } from '../IO/atomicWrite'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from '../Locations/paths'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
@@ -28,7 +28,7 @@ export async function setBannerOp(
     return machine().lock(abs, async () => {
       const existing = await readTextOrNull(abs)
       if (existing === null) return fault('That page could not be read.')
-      const prev = await assetFileToDelete(root, readFrontmatterFields(existing).banner)
+      const prev = await assetFileToDelete(root, splitFrontmatter(existing).banner)
       const adopted = await adopt()
       if (!adopted.ok) return adopted
       const rel = adopted.value

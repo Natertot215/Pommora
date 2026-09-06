@@ -3,7 +3,7 @@ import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
 
 export const DEFAULT_ZOOM = 1
 
-export interface ZoomStep {
+interface ZoomStep {
   factor: number
   inline: string
   label: string

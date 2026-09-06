@@ -8,7 +8,7 @@ import {
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
 
-export interface TabMenuContext extends PageMoveContext {
+interface TabMenuContext extends PageMoveContext {
   /** A pinned tab offers Unpin only (no Close; unpin reveals the ×). */
   pinned: boolean
   /** The NavView tab can't be pinned. */
@@ -17,7 +17,7 @@ export interface TabMenuContext extends PageMoveContext {
   isPage?: boolean
 }
 
-export type TabMenuAction = 'pin' | 'unpin' | 'close' | 'window' | PageSendAction | PageMoveAction
+type TabMenuAction = 'pin' | 'unpin' | 'close' | 'window' | PageSendAction | PageMoveAction
 
 /** Being open in a tab doesn't cost the Page Window gesture its row has in the sidebar. */
 export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {

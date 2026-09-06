@@ -30,15 +30,8 @@ async function filesUnder(dir: string): Promise<string[]> {
   return out
 }
 
-export async function listMarkdownFiles(
-  dir: string,
-  opts: { skipTopLevel?: string[] } = {},
-): Promise<string[]> {
-  const skip = new Set(opts.skipTopLevel ?? [])
-  return (await filesUnder(dir)).filter((abs) => {
-    const rel = relative(dir, abs)
-    return isMarkdownFile(rel) && !skip.has(rel.split('/')[0])
-  })
+export async function listMarkdownFiles(dir: string): Promise<string[]> {
+  return (await filesUnder(dir)).filter((abs) => isMarkdownFile(relative(dir, abs)))
 }
 
 export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {

@@ -1,4 +1,5 @@
-import { basename, dirname, isAbsolute, join, relative } from '../Locations/posix'
+import { basename, dirname, join, relative } from '../Locations/posix'
+import { escapes } from '../Locations/pathSafety'
 import { machine } from '../Platform/machine'
 import { TRASH_DIR } from '../Locations/nexusPaths'
 import { pathExists } from '../IO/atomicWrite'
@@ -12,7 +13,7 @@ export const BUNDLE_SUFFIX = '.deleted'
  *  it lands flat instead. */
 async function trashChainDir(nexusRoot: string, absPath: string): Promise<string> {
   const rel = relative(nexusRoot, absPath)
-  const chain = rel && !rel.startsWith('..') && !isAbsolute(rel) ? dirname(rel) : '.'
+  const chain = rel && !escapes(rel) ? dirname(rel) : '.'
   const dir = join(nexusRoot, TRASH_DIR, chain)
   await machine().mkdir(dir)
   return dir

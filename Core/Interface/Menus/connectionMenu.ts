@@ -86,7 +86,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   })
 }
 
-export type LinkCellAction = ConnEditAction | ConnCellAction
+type LinkCellAction = ConnEditAction | ConnCellAction
 
 export function linkValueMenuTarget(
   raw: string,

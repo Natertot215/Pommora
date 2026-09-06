@@ -26,7 +26,7 @@ import { travelTo } from '../travel'
 import { editorHost } from '../api'
 
 /** `reveal` writes the page's visibility rather than folding behind the host's back, so every surface showing that page agrees. */
-export interface CitationHost {
+interface CitationHost {
   shown: () => boolean
   reveal?: () => void
 }

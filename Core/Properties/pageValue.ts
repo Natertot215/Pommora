@@ -1,7 +1,6 @@
 // Option lists are edited IN PLACE, never decode-to-strings→re-encode: a page may carry foreign or non-string elements, and an op must touch only its target.
 
-import { splitFrontmatter } from '../Nexus/readNexus'
-import { splitEnvelope, mergeFrontmatter } from '../IO/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../IO/pageFile'
 
 type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 

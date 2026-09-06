@@ -14,7 +14,7 @@ import { Overlay, setShade } from './dragChrome'
 // started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
 
-export function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): boolean {
+function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): boolean {
   const handle = beginPointerGesture(spec)
   if (handle) live = { view, handle }
   return handle !== null
@@ -30,7 +30,7 @@ export const editorGestureCleanup = ViewPlugin.define((view) => ({
 
 const MIN_LINE_WIDTH = 40
 
-export interface RelocateDragSpec<C, S> {
+interface RelocateDragSpec<C, S> {
   measure: () => C[]
   pick: (cands: C[], clientY: number) => S | null
   lineFor: (slot: S) => { left: number; top: number; width: number } | null

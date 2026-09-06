@@ -1,30 +1,22 @@
 // A freshly-minted default view arrives with the `view_default` sentinel id; saveView swaps it
 // for a real `view_<ulid>` here (shared/ can't mint ids — see mintDefaultView).
 
-import { pageCollectionSidecar, pageSetSidecar } from '../Nexus/schemas'
+import { readContainerSidecar, type ContainerKind } from '../Nexus/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from './views'
 import { ok, fail, type Result } from '../Contract/result'
 import { newId } from '../Locations/ids'
-import { readSidecar, writeSidecar, withSidecarLock } from '../IO/sidecar'
-
-type ViewContainerKind = 'collection' | 'set'
-
-function readViewSidecar(folder: string, kind: ViewContainerKind) {
-  return kind === 'collection'
-    ? readSidecar(folder, 'collection', pageCollectionSidecar)
-    : readSidecar(folder, 'set', pageSetSidecar)
-}
+import { writeSidecar, withSidecarLock } from '../IO/sidecar'
 
 const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views ?? []
 
 /** A `view_default` sentinel id is swapped for a real `view_<ulid>` and the assigned id returned. */
 export function saveView(
   folder: string,
-  kind: ViewContainerKind,
+  kind: ContainerKind,
   view: SavedView,
 ): Promise<Result<{ id: string }>> {
   return withSidecarLock(folder, kind, async () => {
-    const sidecar = await readViewSidecar(folder, kind)
+    const sidecar = await readContainerSidecar(folder, kind)
     if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
     const id = view.id === DEFAULT_VIEW_ID ? `${VIEW_ID_PREFIX}${newId()}` : view.id
     const finalView: SavedView = { ...view, id }
@@ -40,11 +32,11 @@ export function saveView(
 /** Views not named in `orderedIds` ride along at the end (defensive). */
 export function reorderViews(
   folder: string,
-  kind: ViewContainerKind,
+  kind: ContainerKind,
   orderedIds: string[],
 ): Promise<Result<null>> {
   return withSidecarLock(folder, kind, async () => {
-    const sidecar = await readViewSidecar(folder, kind)
+    const sidecar = await readContainerSidecar(folder, kind)
     if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
     const views = viewsOf(sidecar)
     const byId = new Map(views.map((v) => [v.id, v]))
@@ -61,11 +53,11 @@ export function reorderViews(
 /** A container always keeps ≥1 view. */
 export function deleteView(
   folder: string,
-  kind: ViewContainerKind,
+  kind: ContainerKind,
   viewId: string,
 ): Promise<Result<null>> {
   return withSidecarLock(folder, kind, async () => {
-    const sidecar = await readViewSidecar(folder, kind)
+    const sidecar = await readContainerSidecar(folder, kind)
     if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
     const views = viewsOf(sidecar)
     if (views.length <= 1) return fail('operation-failed', 'Cannot delete the last view.')

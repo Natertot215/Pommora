@@ -2,8 +2,8 @@ import { useCallback, useRef, useState, type MouseEvent } from 'react'
 
 /** Tracked against the pointer rather than mounted as invisible buttons, so a generous reveal area
  *  never swallows clicks to the content beneath it. */
-export const REVEAL_NEAR_W = 260
-export const REVEAL_NEAR_H = 120
+const REVEAL_NEAR_W = 260
+const REVEAL_NEAR_H = 120
 
 /** A zone measured from the surface's raw left edge can sit under an overlaying pane, leaving the
  *  pointer no way to reach it; the control's content box is where it visibly starts. */

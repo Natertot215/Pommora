@@ -1,4 +1,5 @@
 import { basename, dirname, join } from '../Locations/posix'
+import { splitFrontmatter } from '../IO/pageFile'
 import type { ContextsRegistry } from '../Properties/contexts'
 import { contentId } from '../Nexus/identityMark'
 import type { Result } from '../Contract/result'
@@ -7,7 +8,7 @@ import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { pathExists, readJsonObject, readTextOrNull } from '../IO/atomicWrite'
 import { listEntries } from '../IO/walk'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Locations/paths'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import type { RecordFile, ParentRef } from './record'
 
 const sidecarId = async (absFolder: string, name: string): Promise<string | undefined> => {
@@ -70,7 +71,7 @@ export async function gatherSpaceRecord(
   }
 }
 
-export interface ContextEvidence {
+interface ContextEvidence {
   entry: { id: string; title: string; singular?: string; icon?: string }
   spaceIds: Map<string, string>
   unresolved: boolean

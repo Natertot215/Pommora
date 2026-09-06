@@ -8,7 +8,7 @@ export interface GlanceRequest {
 
 /** KNOB — one dwell per glance surface; further surfaces add their own rows. */
 export const GLANCE_DWELL = { link: 1000 } as const
-export type GlanceDwell = keyof typeof GLANCE_DWELL
+type GlanceDwell = keyof typeof GLANCE_DWELL
 
 export const GLANCE_BODY_ATTR = 'data-glance'
 
@@ -44,7 +44,7 @@ export function closeGlance(): void {
   present?.(null)
 }
 
-export interface AnchorWatch {
+interface AnchorWatch {
   onGone: () => void
   onEscape: () => void
   onMoved: () => void

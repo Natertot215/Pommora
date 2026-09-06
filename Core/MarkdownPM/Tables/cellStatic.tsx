@@ -11,7 +11,7 @@ import {
 import { titleOf } from '@pommora/core/Connections/connections'
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
-import { dwellTarget, followTarget } from '../Links/links'
+import { dwellTarget, followTarget } from '../Links/linkClicks'
 import { CITE_GLYPH } from '../Citations/citationPointer'
 import type { EditorHost } from '../api'
 
@@ -254,7 +254,7 @@ function StaticCellImpl({
   )
 }
 
-export function cellLinkTarget(
+function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,

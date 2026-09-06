@@ -17,7 +17,7 @@ export interface NavRowMenuContext extends PageMoveContext {
   isFavorite: boolean
 }
 
-export type NavRowMenuAction =
+type NavRowMenuAction =
   | 'open-new-tab'
   | 'open-window'
   | 'pin'

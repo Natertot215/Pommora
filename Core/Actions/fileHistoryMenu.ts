@@ -1,6 +1,6 @@
 import type { ActionItem } from './menuModel'
 
-export type FileHistoryMenuAction = 'restore' | 'delete'
+type FileHistoryMenuAction = 'restore' | 'delete'
 
 export function fileHistoryMenuItems(batch: boolean): ActionItem<FileHistoryMenuAction>[] {
   return batch

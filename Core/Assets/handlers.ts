@@ -1,5 +1,5 @@
-import type { Handlers } from '../Contract/handlers'
-import { fail, NO_NEXUS, ok } from '../Contract/result'
+import { type Handlers, withRoot } from '../Contract/handlers'
+import { fail, ok } from '../Contract/result'
 import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
 import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Locations/nexusPaths'
@@ -27,9 +27,7 @@ export const assetsHandlers = {
   },
 
   // A property's answer is relative to the ASSET root; the nexus's is relative to the nexus.
-  'assets:chooseDir': async (ctx, scope?: 'nexus' | 'property', at?: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'assets:chooseDir': withRoot(async (root, ctx, scope?: 'nexus' | 'property', at?: unknown) => {
     const forProperty = scope === 'property'
     const { assetDir } = await readWatchScope(root)
     const from =
@@ -47,11 +45,9 @@ export const assetsHandlers = {
     // Containment BEFORE the subtraction: a folder outside the asset root would otherwise have its leading segments sliced off and re-read as a plausible subfolder.
     const below = assetSubfolder(relPosix(root, chosen), assetDir)
     return below !== null && validPropertyDir(below, assetDir) ? ok(below) : NOT_A_PROPERTY_DIR
-  },
+  }),
 
-  'assets:setDir': async (ctx, dir: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'assets:setDir': withRoot(async (root, ctx, dir: unknown) => {
     if (typeof dir !== 'string') return fail('operation-failed', 'A folder path is required.')
     const trimmed = dir.trim()
     let next = ''
@@ -76,7 +72,7 @@ export const assetsHandlers = {
     ctx.push('assets:changed', assets)
     await ctx.watch(root)
     return ok(next)
-  },
+  }),
 
   'nexus:pickFile': async (ctx, opts) => {
     const root = sessionRoot()
@@ -95,9 +91,7 @@ export const assetsHandlers = {
   },
 
   // Bounded by the pick; the DESTINATION is refused inside `adoptFile`, at the write.
-  'assets:adopt': async (ctx, source: string, subfolder?: string) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'assets:adopt': withRoot(async (root, ctx, source: string, subfolder?: string) => {
     if (!pickedPaths.has(source)) return fail('invalid-path', 'That file was not picked here.')
     const adopted = await adoptFile(root, source, {
       allow: 'any',
@@ -105,5 +99,5 @@ export const assetsHandlers = {
     })
     if (adopted.ok) pushAssetWrites(ctx)
     return adopted
-  },
+  }),
 } satisfies Partial<Handlers>

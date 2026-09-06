@@ -36,7 +36,7 @@ const opening = (id: string, bounds: WindowBounds): Rect => {
   })
 }
 
-export interface WindowBasePanel {
+interface WindowBasePanel {
   windowId: string
   bounds: WindowPanelBounds
   mode: 'overlay' | 'inflow'
@@ -45,7 +45,7 @@ export interface WindowBasePanel {
   children: ReactNode
 }
 
-export interface WindowBaseProps {
+interface WindowBaseProps {
   id: string
   closing: boolean
   onClose: () => void

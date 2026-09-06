@@ -2,7 +2,7 @@
 
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 
-export type ValueClickAction =
+type ValueClickAction =
   | { kind: 'commit'; value: PropertyValue | null }
   | { kind: 'picker' }
   | { kind: 'datetime' }

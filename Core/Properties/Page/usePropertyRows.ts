@@ -21,7 +21,7 @@ import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/c
 
 export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 
-export interface PropertyRowsPage {
+interface PropertyRowsPage {
   id: string
   title: string
   path: string

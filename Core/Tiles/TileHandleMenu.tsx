@@ -35,7 +35,7 @@ import { ZOOM_STEPS, zoomStep } from './tileZoom'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import * as s from './handle-menu.css'
 
-export type TileMenuAction =
+type TileMenuAction =
   | 'tile:open'
   | 'tile:duplicate'
   | 'tile:delete'
@@ -45,7 +45,7 @@ export type TileMenuAction =
   | `tile:pick:${number}`
 
 /** Rows name an index into `picks` because a menu row can't carry a view pick's three fields. */
-export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
+type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 
 /** The pane below as native rows: the same link drills, style and scale sets, from the same inputs. */
 export function tileMenuItems({

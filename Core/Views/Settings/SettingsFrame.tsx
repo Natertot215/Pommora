@@ -11,7 +11,7 @@ import { findCollection, findSet, findCollectionForSet } from '../../Session/tre
 import { pickView } from '../Pipeline/pickView'
 import { saveViewAdopting } from '../Host/viewMint'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
-import { HiddenFrame } from './HiddenFrame'
+import { VisibilityList } from './HiddenFrame'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -253,7 +253,13 @@ export function SettingsFrame(): React.JSX.Element | null {
       )
     ) : detailId === 'visibility' ? (
       schemaCollection ? (
-        <HiddenFrame source={node} schema={schema} onBack={back} />
+        <VisibilityList
+          source={node}
+          schema={schema}
+          view={view}
+          onBack={back}
+          current="Visibility"
+        />
       ) : (
         schemaUnavailable
       )

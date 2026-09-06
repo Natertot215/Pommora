@@ -4,7 +4,7 @@
 
 /** One language's tag. The glyph is the body of a 24×24 viewBox; `label` overrides the name shown,
  *  and `null` shows none at all — for a mark that already draws the wordmark itself. */
-export interface CodeTag {
+interface CodeTag {
   glyph: string
   label?: string | null
 }

@@ -1,5 +1,4 @@
-import { isPlainObject } from '../Properties/propertyValue'
-import { toNavRef } from './navRef'
+import { isNavRef, toNavRef } from './navRef'
 import type { NavRef, NavigationState } from './navRef'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../Locations/paths'
 import { readValue, writeValue } from '../Platform/localState'
@@ -9,30 +8,14 @@ import { parseConnectionText } from '../Connections/connections'
 import { underAssetRoot } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
 
-const NAV_KINDS = new Set([
-  'homepage',
-  'context',
-  'space',
-  'collection',
-  'set',
-  'page',
-  'task',
-  'event',
-])
-
 const navigationPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.navigation)
-
-function isNavRef(v: unknown): v is NavRef {
-  if (!isPlainObject(v) || typeof v.kind !== 'string' || !NAV_KINDS.has(v.kind)) return false
-  return v.kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
-}
 
 export function isAssetPath(v: unknown, assetDir: string): v is string {
   if (typeof v !== 'string') return false
   return parseConnectionText(v) !== null || underAssetRoot(v, assetDir)
 }
 
-const cleanRefs = (v: unknown[]): NavRef[] => v.filter(isNavRef).map(toNavRef)
+const cleanRefs = (v: unknown[]): NavRef[] => v.filter((r) => isNavRef(r)).map(toNavRef)
 
 const refList = (v: unknown): NavRef[] | undefined => {
   if (!Array.isArray(v)) return undefined

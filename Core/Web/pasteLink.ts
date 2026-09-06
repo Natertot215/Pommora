@@ -27,7 +27,7 @@ export interface LinkPaste {
   wantsTitle: boolean
 }
 
-export type PasteDecision =
+type PasteDecision =
   /** Let the editor's own paste run. */
   { kind: 'literal' } | LinkPaste
 

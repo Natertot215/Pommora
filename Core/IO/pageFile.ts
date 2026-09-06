@@ -9,14 +9,13 @@ import {
 } from 'yaml'
 import { basename, join } from '../Locations/posix'
 import { contentId } from '../Nexus/identityMark'
-import { splitFrontmatter } from '../Nexus/readNexus'
 import { basenameNoMd } from '../Locations/coerce'
 import { adoptedId } from '../Locations/ids'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
 import { machine } from '../Platform/machine'
 
-export interface PageEnvelope {
+interface PageEnvelope {
   frontmatter: string
   body: string
 }
@@ -29,10 +28,14 @@ export function splitEnvelope(content: string): PageEnvelope {
   return { frontmatter: m[1], body }
 }
 
-export function readFrontmatterFields(content: string): Record<string, unknown> {
+/** The one frontmatter parse. Anything that isn't a YAML map — an array, a scalar, unrecoverable
+ *  YAML — reads as an empty map, and the file is still a valid page. */
+export function splitFrontmatter(content: string): Record<string, unknown> {
   try {
-    const obj = parseDocument(splitEnvelope(content).frontmatter).toJSON()
-    return obj && typeof obj === 'object' ? (obj as Record<string, unknown>) : {}
+    const parsed: unknown = parseDocument(splitEnvelope(content).frontmatter).toJSON()
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {}
   } catch {
     return {}
   }

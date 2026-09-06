@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
 import { savedView } from '../Views/views'
 import { ID_KEY } from './identityMark'
+import { readSidecar } from '../IO/sidecar'
 
 const ulidList = z.array(z.string()).optional()
 
@@ -62,3 +63,15 @@ export const pageFrontmatter = z.looseObject({
   banner: z.string().optional().catch(undefined),
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>
+
+/** The one kind → sidecar-schema table: a container's sidecar is read through this, never by
+ *  naming the schema at the call site. */
+export type ContainerKind = 'collection' | 'set'
+type ContainerSidecar = z.infer<typeof pageCollectionSidecar> | z.infer<typeof pageSetSidecar>
+export const readContainerSidecar = (
+  absFolder: string,
+  kind: ContainerKind,
+): Promise<ContainerSidecar | null> =>
+  kind === 'collection'
+    ? readSidecar(absFolder, 'collection', pageCollectionSidecar)
+    : readSidecar(absFolder, 'set', pageSetSidecar)

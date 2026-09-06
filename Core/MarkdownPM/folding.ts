@@ -38,7 +38,7 @@ const CITE_DIVIDER_LINE = 'md-cite-divider'
 
 const persisted = (kind: FoldKind): boolean => kind === 'heading'
 
-export interface FoldRegion {
+interface FoldRegion {
   kind: FoldKind
   anchor: number
   anchorLine: number

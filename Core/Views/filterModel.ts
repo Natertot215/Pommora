@@ -70,7 +70,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   return { kind: 'rows', mode, rows }
 }
 
-export type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
+type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
 
 export interface OperatorChoice {
   op: string
@@ -172,7 +172,7 @@ export function operatorsFor(
   }
 }
 
-export interface FilterTarget {
+interface FilterTarget {
   id: string
   label: string
   icon: React.ComponentProps<typeof Icon>['name'] | undefined

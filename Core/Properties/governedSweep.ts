@@ -8,28 +8,27 @@ import {
 import { machine } from '../Platform/machine'
 import { noteValueWrite } from '../Nexus/valuesChanged'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
-import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { listFilesRecursive } from '../IO/walk'
 import { contextsDir, SPACE_SIDECAR } from '../Locations/paths'
-import { splitFrontmatter } from '../Nexus/readNexus'
+
 import { sweepAdmits } from '../Nexus/util'
 
 export type Raw = Record<string, unknown>
 
-export type SweepScope = { kind: 'nexus' } | { kind: 'files'; files: string[] }
+type SweepScope = { kind: 'nexus' } | { kind: 'files'; files: string[] }
 
-export interface SweepResult<C> {
+export interface SweepResult {
   touched: string[]
   skipped: string[]
   refused: string[]
-  captured: C[]
 }
 
-export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } | null
+export type Rewrite = (raw: Raw, file: string) => Raw | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
-export type SweepPlan<C> = { raw: Rewrite<C> } | { text: RewriteText; sidecars?: Rewrite<C> }
+type SweepPlan = { raw: Rewrite } | { text: RewriteText; sidecars?: Rewrite }
 
 const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
@@ -55,12 +54,12 @@ const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
     ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
     : Promise.resolve([])
 
-export async function sweepGovernedRoots<C>(
+export async function sweepGovernedRoots(
   root: string,
   scope: SweepScope,
-  plan: SweepPlan<C>,
-): Promise<SweepResult<C>> {
-  const out: SweepResult<C> = { touched: [], skipped: [], refused: [], captured: [] }
+  plan: SweepPlan,
+): Promise<SweepResult> {
+  const out: SweepResult = { touched: [], skipped: [], refused: [] }
 
   for (const file of await pageRoots(root, scope)) {
     await machine().lock(file, async () => {
@@ -84,19 +83,18 @@ export async function sweepGovernedRoots<C>(
         return
       }
       const raw = splitFrontmatter(content)
-      const decided = plan.raw(raw, file)
-      if (decided === null) return
-      const keys = changedKeys(raw, decided.next)
+      const next = plan.raw(raw, file)
+      if (next === null) return
+      const keys = changedKeys(raw, next)
       if (!keys.length) return
       const modeled: Raw = {}
-      for (const k of keys) if (k in decided.next) modeled[k] = decided.next[k]
+      for (const k of keys) if (k in next) modeled[k] = next[k]
       await rewritePreservingTimes(
         file,
         mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body),
       )
       noteValueWrite(root, file)
       await indexWrittenPage(root, file)
-      if (decided.capture !== undefined) out.captured.push(decided.capture)
       out.touched.push(file)
     })
   }
@@ -110,10 +108,9 @@ export async function sweepGovernedRoots<C>(
           out.skipped.push(file)
           return
         }
-        const decided = sidecars(raw, file)
-        if (decided === null) return
-        await writeJson(file, decided.next)
-        if (decided.capture !== undefined) out.captured.push(decided.capture)
+        const next = sidecars(raw, file)
+        if (next === null) return
+        await writeJson(file, next)
         out.touched.push(file)
       })
     }

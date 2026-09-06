@@ -3,7 +3,7 @@
 // - persisted array           -> known-in-array-order (tombstones dropped),
 //                                then unreferenced appended by title (localeCompare)
 
-export interface Orderable {
+interface Orderable {
   id: string
   title: string
 }

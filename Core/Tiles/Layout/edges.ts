@@ -1,7 +1,7 @@
 import type { DividerRef, Edge, TileLayout } from './model'
 import { findTile } from './model'
 
-export type EdgeBoundary =
+type EdgeBoundary =
   | { kind: 'divider'; ref: DividerRef }
   | { kind: 'stack'; ref: DividerRef }
   | { kind: 'bandpair'; above: number }

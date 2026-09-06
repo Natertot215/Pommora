@@ -66,7 +66,7 @@ export function PropertyTypeIcon({
   return <Icon name={name ?? 'square-dashed'} size={size} />
 }
 
-export interface PaneTarget {
+interface PaneTarget {
   id: string
   label: string
   icon: string | undefined

@@ -14,7 +14,7 @@ import { columnLabel } from '../../Properties/Cells/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
 /** Checkbox is deliberately excluded from the pane split (its box on the card is the toggle); Context columns pane via contextOptions rather than this set. */
-export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
+const ADDABLE_TYPES: ReadonlySet<string> = new Set([
   'select',
   'status',
   'multi_select',

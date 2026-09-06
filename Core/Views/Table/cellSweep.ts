@@ -1,7 +1,7 @@
 import { type PointerEvent as ReactPointerEvent, useState } from 'react'
 import { beginPointerGesture } from '@pommora/uix/Interactions/gesture'
 
-export type CellSweep = { colId: string; rows: Set<string> }
+type CellSweep = { colId: string; rows: Set<string> }
 
 type MeasuredRow = { id: string; top: number; bottom: number }
 

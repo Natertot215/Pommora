@@ -203,7 +203,7 @@ export function stopAutoScroll(): void {
   live = null
 }
 
-export interface GlideParams {
+interface GlideParams {
   speed: number
   minMs: number
   maxMs: number
@@ -227,7 +227,7 @@ export function easeOutQuint(t: number): number {
 
 let glide: { raf: number; teardown: () => void } | null = null
 
-export function stopGlide(): void {
+function stopGlide(): void {
   if (!glide) return
   cancelAnimationFrame(glide.raf)
   glide.teardown()

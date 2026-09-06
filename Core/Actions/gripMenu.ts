@@ -9,7 +9,7 @@ export interface PickNode {
   children?: PickNode[]
 }
 
-export interface ZoomOption {
+interface ZoomOption {
   label: string
   factor: number
 }
@@ -41,7 +41,7 @@ export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
   { level: 5, label: 'Heading 5' },
 ]
 
-export const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
+const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
   { kind: 'ordered', label: 'Numbered' },
   { kind: 'bullet', label: 'Bulleted' },
   { kind: 'checkbox', label: 'Checklist' },

@@ -4,12 +4,12 @@ import type { PageValues } from '@pommora/core/Views/viewRow'
 import { useSession } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 
-export type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
+type OverrideEntry = { fm: PageFrontmatter; write: Promise<unknown> | null }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
 /** A failed batch read keeps the values already held — a blank container reads as data loss. */
-export const fetchValues = (
+const fetchValues = (
   path: string,
   pageIds?: string[],
 ): Promise<Record<string, PageValues> | null> =>

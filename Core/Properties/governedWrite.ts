@@ -4,8 +4,8 @@ import { reconcileGovernedRoot, survivingChanges, type GovernedWorld } from './c
 import type { Adoption } from './propertyValue'
 import { atomicWriteFile } from '../IO/atomicWrite'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope } from '../IO/pageFile'
-import { splitFrontmatter } from '../Nexus/readNexus'
+import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
+
 import { noteValueWrite } from '../Nexus/valuesChanged'
 
 export async function setGovernedRootKeys(

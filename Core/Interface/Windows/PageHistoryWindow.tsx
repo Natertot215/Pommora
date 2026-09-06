@@ -13,7 +13,7 @@ import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatValue'
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
-import { livePagePath, resolveOnlyConnections, trailOf } from '../../Session/treeIndex'
+import { livePagePath, connectionsFor, trailOf } from '../../Session/treeIndex'
 import { useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
@@ -102,7 +102,7 @@ function PageHistoryBody({
     }
   }, [shown, reload, target.id, livePath])
 
-  const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
+  const resolveOnly = useMemo(() => connectionsFor(tree, { open: () => {} }), [tree])
   const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 

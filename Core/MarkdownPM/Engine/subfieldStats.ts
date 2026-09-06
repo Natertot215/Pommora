@@ -14,7 +14,7 @@ import {
 } from './detect'
 
 /** `lines` counts source lines the document holds; `words`/`characters` count the prose the editor draws. */
-export interface PageStats {
+interface PageStats {
   lines: number
   words: number
   characters: number

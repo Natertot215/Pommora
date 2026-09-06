@@ -11,7 +11,7 @@ export interface TableModel {
   rows: string[][]
 }
 
-export const DEFAULT_DASHES = 6
+const DEFAULT_DASHES = 6
 
 export function emptyTable(cols: number, rows: number): TableModel {
   return {

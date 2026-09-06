@@ -10,7 +10,7 @@ const SAVE_DEBOUNCE_MS = 400
 type Ack = { ok: boolean }
 type Save = () => Promise<Ack>
 
-export interface BodyWriter {
+interface BodyWriter {
   schedule: (key: string, body: string, save: Save) => void
   flush: (key: string) => Promise<void>
   flushAll: () => Promise<void>

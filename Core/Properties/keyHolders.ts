@@ -3,7 +3,7 @@
 import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
 import { readTextOrNull } from '../IO/atomicWrite'
-import { readFrontmatterFields } from '../IO/pageFile'
+import { splitFrontmatter } from '../IO/pageFile'
 
 export async function keyHolderFiles(
   root: string,
@@ -22,7 +22,7 @@ export async function confirmedKeyHolders(
   const holders: string[] = []
   for (const file of corpusUnder(root, await nexusCorpus(root), folders)) {
     const content = await readTextOrNull(file)
-    if (content !== null && key in readFrontmatterFields(content)) holders.push(file)
+    if (content !== null && key in splitFrontmatter(content)) holders.push(file)
   }
   return holders
 }

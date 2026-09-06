@@ -2,11 +2,7 @@
 
 import type { ActionItem } from './menuModel'
 
-export type OptionMenuAction =
-  | 'option:rename'
-  | 'option:edit-icon'
-  | 'option:remove'
-  | 'option:clear'
+type OptionMenuAction = 'option:rename' | 'option:edit-icon' | 'option:remove' | 'option:clear'
 
 /** Status options wear their group's glyph, so they never carry one of their own. */
 export function optionMenuModel(canEditIcon = false): ActionItem<OptionMenuAction>[] {

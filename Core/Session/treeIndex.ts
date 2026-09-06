@@ -19,10 +19,10 @@ import {
 import { navKey } from '../Navigation/navRecents'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
-import type { ReconcileIndex } from './selection'
+import type { ReconcileIndex } from './reconcileSelection'
 
 /** `id` and `path` are '' for the folderless homepage singleton. */
-export interface NodeRecord extends TrailNode {
+interface NodeRecord extends TrailNode {
   key: string
   kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
   /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
@@ -256,8 +256,10 @@ export function pageIndexOf(tree: NexusTree): PageIndex {
   return ix.pageIndex
 }
 
-export const resolveOnlyConnections = (tree: NexusTree | null): ConnectionsApi | undefined =>
-  tree ? { ...pageIndexOf(tree), open: () => {} } : undefined
+export const connectionsFor = (
+  tree: NexusTree | null,
+  rest: Omit<ConnectionsApi, keyof PageIndex>,
+): ConnectionsApi | undefined => (tree ? { ...pageIndexOf(tree), ...rest } : undefined)
 
 export function containersByPathOf(tree: NexusTree): ReadonlyMap<string, ContainerCore> {
   const ix = indexFor(tree)

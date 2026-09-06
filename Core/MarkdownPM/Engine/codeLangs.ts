@@ -3,7 +3,7 @@
 // pulling an editor into itself; the wiring reads this list rather than restating it.
 
 /** One language: what it is called, and every word a fence may spell it with. */
-export interface CodeLang {
+interface CodeLang {
   name: string
   alias: readonly string[]
 }

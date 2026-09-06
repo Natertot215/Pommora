@@ -5,7 +5,7 @@ import { normalize } from './model'
 export interface CellSpan {
   text: string
 }
-export interface RowSplit {
+interface RowSplit {
   cells: CellSpan[]
   segments: [number, number][] // untrimmed pipe-to-pipe span per cell (one flex item each)
 }

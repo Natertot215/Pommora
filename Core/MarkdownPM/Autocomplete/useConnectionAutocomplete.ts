@@ -20,7 +20,7 @@ export interface AcState extends AutocompleteQuery {
   bounds: { left: number; right: number }
 }
 
-export interface AcCtl {
+interface AcCtl {
   open: boolean
   pick: () => void
   move: (d: number) => void
@@ -34,7 +34,7 @@ export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => 
   return true
 }
 
-export interface ConnectionAutocomplete {
+interface ConnectionAutocomplete {
   ac: AcState | null
   setAc: (s: AcState | null) => void
   candidates: AcRow[]

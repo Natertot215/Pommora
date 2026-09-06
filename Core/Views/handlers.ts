@@ -1,4 +1,4 @@
-import type { Handlers } from '../Contract/handlers'
+import { type Handlers, withRoot } from '../Contract/handlers'
 import { fail, NO_NEXUS, ok, type Result } from '../Contract/result'
 import { isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { resolveUnderRoot } from '../Locations/pathSafety'
@@ -64,13 +64,11 @@ export const viewsHandlers = {
     return r
   },
 
-  'view:loadValues': async (_ctx, containerPath: unknown, pageIds: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
+  'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {
     if (typeof containerPath !== 'string' || (pageIds !== undefined && !isStringArray(pageIds)))
       return fail('operation-failed', 'A container path, and optionally page ids, are required.')
     const resolved = await resolveUnderRoot(root, containerPath)
     if (!resolved.ok) return resolved
     return ok(await loadValues(root, containerPath, pageIds))
-  },
+  }),
 } satisfies Partial<Handlers>

@@ -3,7 +3,7 @@
 const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(`{3,}|~{3,})[ \t]*(.*)/
 const QUOTE_PREFIX_RE = /^[ \t]*(?:>[ \t]?)*/
 
-export interface Fence {
+interface Fence {
   depth: number
   marker: string
   length: number
@@ -51,7 +51,7 @@ export function quoteDepthOf(line: string): number {
   return QUOTE_PREFIX_RE.exec(line)?.[0].match(/>/g)?.length ?? 0
 }
 
-export interface FenceSpan {
+interface FenceSpan {
   open: number
   close: number
   closed: boolean
