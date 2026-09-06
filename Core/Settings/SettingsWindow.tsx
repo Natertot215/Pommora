@@ -32,7 +32,7 @@ import {
   TAB_MAX_WIDTH_STEPS,
   TAB_MIN_WIDTH,
   TAB_MIN_WIDTH_STEPS,
-  HOVER_LINGER_MAX,
+  PREVIEW_PERSISTENCE_DEFAULT,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
   EDITOR_SCALE_DEFAULT,
@@ -41,6 +41,7 @@ import {
   WEB_ZOOM_DEFAULT,
   type Personalization,
   type PickerSelection,
+  type PreviewPersistence,
   type TabOpenBehavior,
   type TimeFormatSetting,
   INTERFACE_SCALE_DEFAULT,
@@ -120,6 +121,7 @@ type Row =
   | PickerControlRow<DateFormat>
   | PickerControlRow<TimeFormatSetting>
   | PickerControlRow<PickerSelection>
+  | PickerControlRow<PreviewPersistence>
   | PickerControlRow<TabOpenBehavior>
   | (RowText & {
       kind: 'zoom'
@@ -321,12 +323,18 @@ const FRAMES = roster([
             hint: 'A [[Connection]] click opens the preview window instead of navigating.',
           },
           {
-            kind: 'slider',
-            key: 'hoverPreviewLinger',
-            label: 'Hover Preview Linger',
-            hint: "How long a connection's hover preview stays open after hovering off.",
-            max: HOVER_LINGER_MAX,
-            format: (v: number) => (v === 0 ? 'None' : `${v}s`),
+            kind: 'picker',
+            key: 'previewPersistence',
+            label: 'Hover Previews',
+            hint: 'Show a preview when resting on a page; how long it lingers after hovering off.',
+            fallback: PREVIEW_PERSISTENCE_DEFAULT,
+            options: [
+              { value: 'off', label: 'Off' },
+              { value: '1s', label: '1 Second' },
+              { value: '5s', label: '5 Seconds' },
+              { value: '10s', label: '10 Seconds' },
+              { value: 'always', label: 'Until Closed' },
+            ],
           },
         ],
       },

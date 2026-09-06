@@ -97,7 +97,6 @@ export interface Personalization {
   plainUnresolvedLinks?: boolean
   ribbonOrder?: string[]
   interfaceScale?: number
-  hoverPreviewLinger?: number
   previewPersistence?: PreviewPersistence
   fileHistory?: boolean
   historyDays?: number
@@ -142,13 +141,6 @@ const INTERFACE_SCALE_MAX = INTERFACE_SCALE_STEPS[INTERFACE_SCALE_STEPS.length -
 export function coerceInterfaceScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return INTERFACE_SCALE_DEFAULT
   return clamp(v, INTERFACE_SCALE_MIN, INTERFACE_SCALE_MAX)
-}
-
-export const HOVER_LINGER_MAX = 30
-export function coerceHoverLinger(v: unknown): number | undefined {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return undefined
-  const s = Math.round(v)
-  return s >= 1 ? Math.min(HOVER_LINGER_MAX, s) : undefined
 }
 
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
