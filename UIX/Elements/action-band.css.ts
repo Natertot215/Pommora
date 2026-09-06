@@ -1,5 +1,5 @@
-// The action band — shared home for toolbar-row affordances any surface can mount. A new band
-// affordance belongs here beside ViewSegments, not re-rolled at its own surface.
+// Shared home for toolbar-row affordances — a new band affordance belongs here, not re-rolled at
+// its own surface.
 
 import { keyframes, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
@@ -18,15 +18,13 @@ export const SEGMENT_ICON = 13
 // The row gap the delete-slide's negative margin swallows — the two move together.
 const SEGMENT_GAP = '6px'
 
-/** The segments' host row — surfaces compose their own padding/positioning on top. */
 export const segmentRow = style({
   display: 'flex',
   alignItems: 'center',
   gap: SEGMENT_GAP,
 })
 
-/** One segment: icon + title, hairline-bordered, active state lifts on the selected-state fill.
- *  Gap is zero — Button's collapsible `labelSlot` is the sole icon↔title spacing, so the hidden
+/** Gap is zero — Button's collapsible `labelSlot` is the sole icon↔title spacing, so the collapsed
  *  state sits pixel-identical to a bare icon segment. */
 export const segment = style([
   text.control.emphasized,
@@ -57,9 +55,8 @@ export const segmentActive = style({
   color: c.label.primary,
 })
 
-// Create/delete slide: a new segment grows in from the leading edge, a deleted one collapses
-// out — max-width + opacity on the dropdown token, the negative margin swallowing the row gap so
-// siblings close up. No house horizontal-list primitive exists; this is the family's own.
+// The negative margin swallows the row gap so siblings close up. No house horizontal-list
+// primitive exists; this is the family's own.
 const segmentIn = keyframes({
   '0%': {
     opacity: 0,
@@ -92,14 +89,11 @@ export const segmentExiting = style({
   animationTimingFunction: 'var(--ease-base)',
 })
 
-/** A trailing glyph after the label slot (the dropdown chevron) — carries its own lead-in since
- *  the segment's gap is zero. 6px is the house inline gap — the same glyph↔label spacing the cell
- *  icon gap, the label slot's lead, the segment row, and the disclosure rail's clearance all use. */
+/** Carries its own lead-in since the segment's gap is zero. 6px is the house inline gap. */
 export const segmentTrail = style({ marginLeft: '6px' })
 
-/** The band's settings affordance — hover chrome (top-right family), same glyph as the toolbar
- *  Settings. Hidden at rest; the HOST binds its own reveal scope (tile hover, row hover) with a
- *  globalStyle raising opacity — the scope is the surface's call, the chrome is shared. */
+/** Hidden at rest; the HOST binds its own reveal scope (tile hover, row hover) with a globalStyle
+ *  raising opacity — the scope is the surface's call, the chrome is shared. */
 export const settingsBtn = style({
   border: 'none',
   background: 'none',
@@ -113,8 +107,7 @@ export const settingsBtn = style({
   ':hover': { background: c.state.hover },
 })
 
-/** While its menu is open the button stays shown and pressed — the selected-state fill held as if
- *  hovered, so it reads as the anchor of the open menu even once the pointer leaves the host. */
+/** Held while its menu is open, so it reads as that menu's anchor once the pointer leaves. */
 export const settingsBtnActive = style({
   opacity: 1,
   color: c.label.secondary,

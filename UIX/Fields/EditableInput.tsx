@@ -2,13 +2,8 @@ import { useEffect, useRef } from 'react'
 import { cx } from '../Utilities/cx'
 import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './fields.css'
 
-/**
- * The `settled` guard stops Enter (which blurs) and the trailing blur from both committing;
- * it's mounted only while editing, so each edit session gets a fresh guard.
- *
- * `autoSize`'s hidden mirror span inherits font + padding from the caller's surface so it
- * measures in the same metrics as the real input.
- */
+/** The `settled` guard stops Enter (which blurs) and the trailing blur from both committing; it is
+ *  mounted only while editing, so each edit session gets a fresh one. */
 export function EditableInput({
   value,
   initialText,
@@ -39,9 +34,8 @@ export function EditableInput({
   const settled = useRef(false)
   const mirror = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  // Focus so an active caret blinks the moment the field appears. Mounted inside PickerMenu's
-  // rename pane it can't focus yet (visibility:hidden until measured, launched async from a native
-  // menu) — a short backstop re-asserts once shown. Re-focusing a focused field is a no-op.
+  // Inside PickerMenu's rename pane the field can't focus yet (visibility:hidden until measured,
+  // launched async from a native menu) — the backstop re-asserts once shown, a no-op if it took.
   useEffect(() => {
     if (!autoFocus) return
     const el = inputRef.current
@@ -53,8 +47,8 @@ export function EditableInput({
   const field = (
     <input
       ref={inputRef}
-      // The input is its own inline scroller, so the eclipse fade follows the caret to whichever
-      // edge is hiding text — an ellipsis can't; Chromium drops it while a field is focused.
+      // The eclipse fade follows the caret to whichever edge hides text; an ellipsis can't —
+      // Chromium drops it while a field is focused.
       className={cx(className, !boxed && 'over-scroll-x', autoSize && autoSizeInput)}
       defaultValue={initialText ?? value}
       size={autoSize ? 1 : undefined}
@@ -77,19 +71,16 @@ export function EditableInput({
       }
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
-          // Also cancels the keydown's default action: as the blur commits and a hosting picker
-          // closes, focus can restore to the trigger button before the action runs — which would
-          // activate that button and reopen the picker on the same press.
+          // As the blur commits and a hosting picker closes, focus can restore to the trigger
+          // button before the default action runs — reopening the picker on the same press.
           e.preventDefault()
           e.currentTarget.blur()
         } else if (e.key === 'Escape') {
-          // Escape abandons THIS edit and nothing above it. Marked handled on the house contract —
-          // window-level closers stand down on a prevented press — so cancelling a field never also
-          // takes down the surface holding it.
+          // Marked handled on the house contract — window-level closers stand down on a prevented
+          // press — so cancelling a field never also takes down the surface holding it.
           e.preventDefault()
           settled.current = true
-          // Hand focus back before the host tears the field down: a focused field removed from the
-          // DOM fires no blur, which would strand the drawn caret blinking where it stood.
+          // A focused field removed from the DOM fires no blur, stranding the drawn caret.
           e.currentTarget.blur()
           onCancel()
         }
