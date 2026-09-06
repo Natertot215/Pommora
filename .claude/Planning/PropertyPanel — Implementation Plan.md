@@ -1,588 +1,733 @@
 ## PropertyPanel — Implementation Plan
 
-> **Status:** written, pending review · Spec: this plan's Grounding block · Execute tasks in order.
+> **Status:** written, pending review · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
 
-One popup value-assignment surface for the whole app, and one property-panel component. Afterwards `PropertyPicker` is the only thing that opens over an anchor to set a property value — option rows, a date, a link, a number, or a file — and it optionally opens on a chooser pane first, so "add a property to this thing" and "set this property's value" are one component instead of three. `Core/Properties/Page/` is gone, replaced by `Core/Properties/PropertyPanel.tsx` and `property-panel.css.ts`, whose rows are `MenuItem`s rather than a hand-rolled parallel to them.
+One component renders every popup that assigns a property value, and one component renders a property panel. Afterwards `PropertyPicker` is the single popup surface — option rows, a date, a link address, a link alias, a number, a file — optionally opening on a chooser pane first, so "add a property" and "set a value" are one component. `Core/Properties/Page/` is gone, replaced by `Core/Properties/PropertyPanel.tsx` + `property-panel.css.ts`, whose rows are the design system's `MenuItem`.
 
-The shape is Nathan's, ratified over three exchanges: dissolve `Page/`; rows become menu rows; one `defaultRows` function decides which rows start visible; `usePropertyRows` and its `PropertyRows` interface disappear without being re-inlined as a hook; and `CardPickerHost` is deleted rather than lifted, with `PropertyPicker` gaining the optional multi-pane state instead. Two alternatives were weighed and rejected. Lifting `CardPickerHost` into `Core/Properties/Pickers/` as a shared host keeps a wrapper whose whole job is choosing between pickers that `PropertyPicker` could choose between itself — a fourth component where the third was already redundant. Having `PropertyPanel` import `CardPickerHost` from `Views/Cards/` was rejected outright: it would point `Core/Properties` at a view renderer and force the panel to fake `SavedView` and `rowById` state it does not have.
+**This folds hosts, not behavior.** A census of the whole codebase found nine distinct popup compositions for one job. Each surface's *behavior* is correct for that surface and is preserved exactly: Cards pops the link address and inlines the alias; Table and the panel inline the address and pop the alias; Table alone has bar-look numbers and mass select; Cards alone has the `PathField` file pane and centre-origin anchoring. Every one of those survives, chosen by the `kind` its caller passes. What dies is nine hand-rolled `PickerMenu` wrappers around the same content.
 
-Bounded by: no behavior change on any of the three surfaces except the two named in Forced By; `Core/Properties` must not import from `Core/Views`; the pure helpers `PropertyPicker` already exports stay exported unchanged, because four other files import them. Not solved here: the value right-click menu, still written three times (`PropertyPanel`, `CardValue`, `TableView`), and `TableView`'s `cellEditor` / `massPicker`, which have no counterpart on the other two surfaces.
+Rejected: lifting `CardPickerHost` into `Core/Properties/Pickers/` (keeps a wrapper whose only job is choosing between pickers `PropertyPicker` can choose between itself); importing it from `Views/Cards/` (points `Core/Properties` at a view renderer). Both settled by Nathan.
+
+Bounded by: no behavior change on any surface — **no exceptions**; `Core/Properties` must not import from `Core/Views`; `PropertyPicker`'s existing pure exports keep their signatures, since four files import them; no new helper, hook, or abstraction that a caller does not already need.
 
 **Requirements**
 
-1. `Core/Properties/Page/` is deleted — all four files.
-2. `Core/Properties/PropertyPanel.tsx` and `property-panel.css.ts` replace it; rows are `MenuItem`s with leading icon + property name and the value in the trailing slot.
-3. `PropertyPanel` takes `panelStyle: 'standard' | 'filled'` and `sections?: PanelSection[]`, where `sections` selects which of Properties / Contexts render and in what order.
-4. A `defaultRows` function decides which rows start visible, replacing the `revealed` / `setAside` pair.
-5. `usePropertyRows` and the `PropertyRows` interface no longer exist, and are not re-created as a hook anywhere.
-6. `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, and `DatetimeCellPicker` no longer exist; `PropertyPicker` is the single popup value surface and carries the optional chooser pane.
-7. Net source reduction of at least 150 lines, comments and tests excluded.
-8. Every behavior in the Behavior Ledger holds on all three surfaces.
+1. `Core/Properties/Page/` deleted — all four files.
+2. `Core/Properties/PropertyPanel.tsx` + `property-panel.css.ts` replace it; rows are `MenuItem`s, leading icon + name, value in the trailing slot.
+3. `PropertyPanel` takes `panelStyle: 'standard' | 'filled'`; both current callers pass `'filled'`, so nothing moves visually.
+4. `defaultRows` decides which rows start visible, replacing the `revealed` / `setAside` pair.
+5. `usePropertyRows` and the `PropertyRows` interface no longer exist, and are not re-created as a hook.
+6. `PropertyValueEditors`, `CardPickerHost`, `CardAddPicker`, and `DatetimeCellPicker` no longer exist; `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value.
+7. Net source reduction **over 250 lines**, comments and tests excluded.
+8. Every behavior in the Behavior Ledger holds, on its own surface, unchanged.
 
-**Acceptance — the whole thing working:** On a page window's inspector, a Cards view, and a Table view, a property value can be set from empty through the popup, changed, and cleared; the panel's Add affordance and the card's add-picker both open the same two-pane picker; and `rg -F "CardPickerHost" Core` returns 0 while the gates are green.
+**Acceptance — the whole thing working:** On the page window inspector, Page Settings ▸ Properties, a Cards view, and a Table view, every value type can be set, changed, and cleared exactly as it can today; the re-fold census in Phase 5 returns zero residue against its control; and the net delta is under −250.
 
 **Forced By**
 
-- `PropertyPicker`'s pure exports (`pickShape`, `pickSemantics`, `PropertyOptionRows`, `selectedValues`, `toggleValue`, `syntheticContextDef`) are imported by `MassPropertyPicker`, `FilterFrame`, `TableView`, `CardAddPicker` → the component may grow props, but no export changes signature or leaves the module. *(Task 1)*
-- `addEntriesFor` reads `SavedView`, `hiddenListIds`, and `isCompact` → `cardValueInput.ts` stays in `Views/Cards/`; the chooser takes caller-built entries so `Core/Properties` never sees a view type. *(Task 1, Task 3)*
-- The panel's `rename` mode is link-*alias* rename through `urlValueFromRename`, which is not the `link` kind's URL edit through `urlValueFromEdit` → alias rename does not enter `PropertyPicker`. It becomes an inline `PropertyEditor` in the row, matching `CardValue.tsx:174` and `TableView.tsx:552`. **User-visible change:** the panel's alias rename stops opening a `TextPicker` popup and edits in place. *(Task 5)*
-- `CardPickerHost`'s popup `TextPicker`s for number and link exist only for the add-flow, where no row exists to edit inline; all three surfaces already inline-edit an *existing* number or url with `PropertyEditor` → `PropertyPicker`'s `number` and `link` kinds serve the add-flow only, and no surface loses its inline editor. *(Task 1)*
-- The panel's add-flow currently reveals a row, waits a frame, and finds its value cell by `document.querySelector` on `ROW_ATTR` → routing the add-flow through the chooser pane deletes the `requestAnimationFrame` + `querySelector` + `ROW_ATTR` mechanism entirely. **User-visible change:** picking a property from Add commits its value in the picker rather than revealing an empty row and re-anchoring to it. *(Task 5)*
-- `CardPickerHost` holds `lastValue` / `lastAdd` refs so the anchor survives the close animation → `useHeld` (`UIX/Animations/useHeld.ts`) already does exactly this; the ref pattern is not re-grown. *(Task 1)*
-- `nexus.db` and the on-disk format are untouched by every task here → no migration, no backup, and `mutate` op names stay as they are.
+- `PropertyPicker`'s pure exports (`optionsOf`, `pickShape`, `pickSemantics`, `PropertyOptionRows`, `selectedValues`, `toggleValue`, `syntheticContextDef`) are imported by `MassPropertyPicker`, `FilterFrame`, `TableView`, `CardAddPicker` → the component grows props; no export changes signature or leaves the module. *(Task 1)*
+- `PickerMenu` latches `origin` and `direction` once per open (`picker-base.tsx:182-191`, `:207`) → a picker that swaps content kind while open cannot renegotiate placement. `FrameSlide` grows the pane in place instead, which is what `CardAddPicker` already does. The chooser pane is therefore the mechanism, not a convenience. *(Task 1)*
+- `PickerMenu` already holds its own `children` through exit via `useHeld` (`picker-base.tsx:128`), but not props derived from the same state → `PropertyPicker` holds its own `target` internally with `useHeld`, so no caller re-grows the `lastValue` ref pattern. *(Task 1)*
+- `EditableInput` is uncontrolled (`EditableInput.tsx:49`) → a `TextPicker` picks up a changed value only on remount. `TableView.tsx:672` forces this with a `nonce` key. `PropertyPicker` keys its text kinds the same way. *(Task 1)*
+- `PickerRow` is a real `<button>` (`picker-base.tsx:411`) → the chooser's entry rows use `MenuItem`, as `CardAddPicker.tsx:105` already does. *(Task 1)*
+- `addEntriesFor` reads `SavedView`, `hiddenListIds`, `isCompact` → `cardValueInput.ts` stays in `Views/Cards/`; the chooser takes caller-built entries so `Core/Properties` never sees a view type. *(Tasks 1, 2)*
+- The panel currently passes neither `look` nor `dateFormat` to its pickers (`PropertyValueEditors.tsx:51-58`, `:70-73`) → it keeps passing neither. A panel row has no per-view column style to read, and adding one would change what the panel renders. *(Task 4)*
 
 **Inherited Reasoning**
 
-- The layer below this one is already correct and single-writer: `sharedValueClickAction`, `pickFileInto`, `fileValueMenu`, `PropertyOptionRows`, `massAssign`. The duplication is exclusively in the layer that turns "a value was clicked" into "this popup is open, anchored here." Do not re-extract what is already extracted.
-- `MassPropertyPicker` is a correct reuse of `PropertyPicker`'s helpers and is not a target.
-- `DatetimeCellPicker` (`TableView.tsx:92`) is an 18-line wrapper that adds nothing over `PickerMenu`. It was presumably a seam that never grew one.
+- The **pure** layer below is correctly shared and single-writer: `sharedValueClickAction`, `pickFileInto`, `runFileMenuAction`, `fileValueWithout`, `PropertyOptionRows`, `pickSemantics`, `massAssign`. Do not re-extract it.
+- The **write** layer is not, and this plan does not fix it. Three value-write paths exist (`usePropertyRows.commitValue`, `useViewHost.setProperty`, `useViewHost.commitValue`), and `TableView` calls `setProperty` directly for checkbox, file, datetime, url-clear, rename, and both number paths while using `commitValue` for `cell:clear` and the picker. Number parsing has four writers. Recorded, deliberately out of scope, listed in Sequenced After.
+- Per-surface behavior differences are **intentional and correct**, ratified by Nathan. The link inversion between Cards and Table/panel is not a defect. Do not homogenize any behavior in the difference matrix.
 
 **Grounding** *(re-open these; don't cite them)*
 
-- `Core/Properties/Page/` — 4 files, 688 lines: `PagePropertyRows.tsx` 363, `usePropertyRows.ts` 192, `PropertyValueEditors.tsx` 78, `page-properties.css.ts` 55. The whole deletion target.
-- `Core/Views/Cards/CardPickerHost.tsx` 230, `CardAddPicker.tsx` 157 — the mechanism being folded in, including the `FrameSlide` root/detail pane state.
-- `Core/Properties/Pickers/PropertyPicker.tsx` 156 — what grows; note which exports are public.
-- `Core/Views/Table/TableView.tsx:88-105, 470-505, 547-645` — the third copy of both the dispatch and the picker host.
-- `Core/Views/Cards/CardValue.tsx:77-120, 160-197` — the third copy of the dispatch; the inline-editor precedent for alias rename.
-- `UIX/Menus/menu-row.tsx`, `menu-base.css.ts` — `MenuItem`, `item`, `titleText`, `side`, `value`, `detail`. What the panel borrows instead of re-declaring.
-- `UIX/Menus/frame-slide.tsx`, `UIX/Animations/useHeld.ts`, `Reveal.tsx`, `useEntrance.ts` — existing mechanisms the plan reuses.
-- `.claude/Features/InterfacePM.md:55`, `ViewTypesPM.md:119`, `PropertiesPM.md:105` — the docs describing these surfaces.
-- `.claude/Guidelines/Development-Environment.md` — gate behavior.
+- `Core/Properties/Page/` — 4 files, 688 lines: `PagePropertyRows.tsx` 363, `usePropertyRows.ts` 192, `PropertyValueEditors.tsx` 78, `page-properties.css.ts` 55.
+- `Core/Views/Cards/CardPickerHost.tsx` 230, `CardAddPicker.tsx` 157, `CardsView.tsx:181-195, 268-269, 590`, `cardValueInput.ts`.
+- `Core/Views/Table/TableView.tsx:88-108` (`DatetimeCellPicker`), `:173-189` (editing state + last refs), `:457-506` (dispatch), `:547-709` (hosts), `:843-875` (mass).
+- `Core/Properties/Pickers/PropertyPicker.tsx` 156 — what grows. Note which exports are public.
+- `UIX/Pickers/picker-base.tsx:60` (`PickerMenu`), `UIX/Pickers/TextPicker/TextPicker.tsx:7`, `UIX/Menus/frame-slide.tsx:10`, `UIX/Menus/menu-row.tsx:73`, `UIX/Animations/useHeld.ts:4`.
+- `.claude/Features/InterfacePM.md:55`, `ViewTypesPM.md:119`, `PropertiesPM.md:105`.
 
 **Environment**
 
-- **Plan directory:** `.claude/Planning/`. **Spec input:** none — this conversation settled the design; Phase A's discovery pass ran in it and its findings are the Grounding block.
-- **Explorer:** `Explore`. **Code reviewer:** `feature-dev:code-reviewer`. **Attack reviewer:** `build-breaking-agent`. **Neutral verifier:** `general-purpose`, handed the adjudication question alone. **Simplification:** `code-simplifier`, then `comment-killer-agent`.
-- **Gate commands:** `npm run typecheck` · `npm run test` · `npm run lint` — all from the repo root, exit codes read directly. `npm run lint` is `biome check .` plus the `no-wrapped-comments` scan.
+- **Plan directory:** `.claude/Planning/`. **Spec input:** none — the session's census is the spec; its findings are the Grounding block and the Behavior Ledger.
+- **Explorer:** `Explore` (Opus). **Code reviewer:** `feature-dev:code-reviewer`. **Attack reviewer:** `build-breaking-agent`. **Neutral verifier:** `general-purpose`. **Simplification:** `code-simplifier`, then `comment-killer-agent`.
+- **Gate commands:** `npm run typecheck` · `npm run test` · `npm run lint`, from the repo root, exit codes read directly.
 - **Rules directory:** `.claude/Guidelines/`.
 
-**Shapes:** refactor · removal · user-visible.
+**Shapes:** refactor · removal.
 
-**Baseline invariant (refactor):** `npm run test` passes with the same test count before and after every phase. No test is deleted, weakened, or narrowed; a test that must change because a signature moved has that change named in its task.
+**Baseline invariant:** `npm run test` passes with the same test count before and after every phase, plus only the tests these tasks add. No test deleted, weakened, or narrowed.
 
-**No Declared Stops.** Per standing preference, per-task visual confirmation is skipped during multi-phase work; every **Verify — user** box carries to Completion Criteria and is walked once at the end, with the two user-visible changes in Forced By called out.
+**No Declared Stops.** Per standing preference, every **Verify — user** box carries to Completion Criteria and is walked once at the end.
 
 **Global Constraints (every task inherits these)**
 
-- Gates from the repo root: `npm run typecheck`, `npm run test`, `npm run lint`. Exit codes read directly, never through a pipe.
+- Gates from the repo root, exit codes read directly, never through a pipe.
 - Formatting is Biome's. A shell-driven edit bypasses the format hook — run `npm run format` after one.
-- Comments only where the why can't be inferred from the code. No block comment spanning lines (the `no-wrapped-comments` scan fails on one).
+- Comments only where the why can't be inferred. No block comment spanning lines.
 - `Core/Properties/**` may not import from `Core/Views/**`. `UIX/**` may not import from `Core/**`.
-- Style files are `.css.ts` (vanilla-extract). Plain `.css` cannot compose `item` / `titleText` from `menu-base.css.ts`, which is the mechanism this plan borrows.
+- Style files are `.css.ts` (vanilla-extract) — plain `.css` cannot compose `item` / `titleText` from `menu-base.css.ts`.
+- **No new helper, hook, wrapper, or abstraction unless a caller already needs it.** A one-writer, one-reader extraction is a defect in this plan, not a feature.
 - One writer on the tree at a time. Commit per task, ticking that task's boxes in the same commit.
-- Out of scope everywhere: `Showcase/`, `nexus.db`, the on-disk frontmatter format, `Core/Properties/Schema/**`, `MassPropertyPicker`, `TableView`'s `cellEditor` and `massPicker`, the value right-click menu's three copies.
+- Out of scope everywhere: `Showcase/`, `nexus.db`, the on-disk format, `Core/Properties/Schema/**`, the three value-write paths, the four number parsers, the two file-menu builders, `MassPropertyPicker`, `TableView`'s `cellEditor` and `massPicker`, every inline `PropertyEditor`, and every native right-click menu.
 
-**Behavior Ledger** *(each must hold at closeout; Task 5 and Task 3 own them)*
+**Behavior Ledger** *(each holds unchanged, on its own surface)*
 
-| # | Behavior | Today | Lands |
+| # | Surface | Behavior | Cite |
 | --- | --- | --- | --- |
-| B1 | Row right-click → clear / remove | `PagePropertyRows:162` `popRowMenu` | Task 5 |
-| B2 | Value right-click → file menu or link menu | `usePropertyRows:161` `valueMenu` | Task 5 |
-| B3 | Checkbox toggled to null reveals its row | `usePropertyRows:151` | Task 5 |
-| B4 | File value opens the native dialog | `pickFileInto` via `editRow` | Task 5 |
-| B5 | Nexus change resets editing and shown state | `PagePropertyRows:85` | Task 5 |
-| B6 | Panel fetches detail through the warm slot | `PagePropertyRows:61` | Task 5 |
-| B7 | Page variant's row entrance animation | `Reveal` + `useEntrance` | Task 5 |
-| B8 | Page variant seeds Contexts shown; panel seeds them hidden | `setAside` vs `revealed` | Task 4 |
-| B9 | Multi-select and Context picks keep the popup open | `PropertyPicker:148` | Task 1 |
-| B10 | Card add-picker reveals a `revealOnly` entry without committing | `CardAddPicker:119` | Task 3 |
-| B11 | Compact cards dismiss a picker whose value went blank | `CardPickerHost:96` | Task 3 |
-| B12 | A vanished row dismisses its open picker | `CardPickerHost:99, 106` | Task 3 |
+| B1 | Panel | Un-checking a checkbox re-reveals its row | `usePropertyRows.ts:151` |
+| B2 | Panel | Row right-click → Clear (keeps row) vs Remove (hides row) | `PagePropertyRows.tsx:150-168` |
+| B3 | Panel | `setAside` — a context row hidden for this session, page frame only | `PagePropertyRows.tsx:157-160, 183-190` |
+| B4 | Panel | Panel variant fetches via the warm detail slot; resets editing on path change | `PagePropertyRows.tsx:56-81` |
+| B5 | Panel | Page frame's row entrance animation | `PagePropertyRows.tsx:129-133, 302-305` |
+| B6 | Panel | Picker receives neither `look` nor `dateFormat` | `PropertyValueEditors.tsx:51-58, 70-73` |
+| B7 | Panel | Add ▸ property runs the full click dispatch on the revealed row | `PagePropertyRows.tsx:171-182` |
+| B8 | Panel | Page frame seeds Contexts shown; inspector seeds them hidden | `PagePropertyRows.tsx:112-115` |
+| B9 | Cards | `clickX` → `anchorX` → centre-origin picker | `CardValue.tsx:83`, `CardPickerHost.tsx:204` |
+| B10 | Cards | Link **address** edits in a `TextPicker` popup | `CardPickerHost.tsx:151-163` |
+| B11 | Cards | Link **alias** edits inline via `PropertyEditor` | `CardValue.tsx:145, 155, 174` |
+| B12 | Cards | `PathField` file pane — Browse and paste-a-path | `CardPickerHost.tsx:176-198` |
+| B13 | Cards | `revealOnCommit` reveals a hidden column on first real commit | `CardPickerHost.tsx:116-120` |
+| B14 | Cards | Compact-layout blank-dismiss; row-vanished dismiss | `CardPickerHost.tsx:96-107` |
+| B15 | Cards | Two-pane add picker, actionable entries first, back button | `CardAddPicker.tsx:97-154` |
+| B16 | Cards | An emptied number in the add-flow does not commit | `CardPickerHost.tsx:172` |
+| B17 | Table | Bar-look number opens a `TextPicker` with a `/ divisor` suffix | `TableView.tsx:492-494, 672-692` |
+| B18 | Table | Link **alias** edits in a `TextPicker` popup, with nonce + re-anchor | `TableView.tsx:696-709` |
+| B19 | Table | Link **address** edits inline; a filled http url opens the browser | `TableView.tsx:498-504, 552` |
+| B20 | Table | Datetime has no distinct mode; re-derived in `cellPicker` | `TableView.tsx:589` |
+| B21 | Table | `dateFormat` and `look` come from the column style | `TableView.tsx:595, 611` |
+| B22 | All | Single-select pick dismisses; multi_select and context stay open | `PropertyPicker.tsx:147-154` |
 
-**Made False**
+**Made False** *(each rewrite rides the commit that falsifies it)*
 
-| Doc | The specific claim | What makes it false | Task |
+| Doc | The claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `ViewTypesPM.md:119` | "Pickers mount at one grid-level host so an open picker survives row churn." | The host is deleted; `PropertyPicker` mounts at grid level directly. | 8 |
-| `ViewTypesPM.md:119` | "A two-stage **add-picker**…" | Still two-stage, but it is now `PropertyPicker`'s chooser pane, not a Cards component. | 8 |
-| `InterfacePM.md:55` | "…an Add affordance alone on an empty page, and rows edited through the table cells' own primitives" | The Add affordance now opens the two-pane picker and commits in it rather than revealing an empty row. | 8 |
-| `PropertiesPM.md:105` | *(addition, not a falsification)* | The section documents the schema-assign surface but never the value-assign surface; the unified picker needs a paragraph. | 8 |
+| `ViewTypesPM.md:119` | "Pickers mount at one grid-level host…" | The host is deleted; `PropertyPicker` mounts at grid level. | 2 |
+| `ViewTypesPM.md:119` | "A two-stage **add-picker**…" | Still two-stage; now `PropertyPicker`'s chooser pane. | 2 |
+| `InterfacePM.md:55` | "…rows edited through the table cells' own primitives" | Rows are `MenuItem`s; editing routes to `PropertyPicker`. | 4 |
+| `PropertiesPM.md:105` | *(addition)* | The section documents the schema-assign surface, never the value-assign surface. | 6 |
 
-**Dead Vocabulary** *(the closing sweep — Task 9)*
+**Dead Vocabulary** *(swept in Phase 5; counts at `9cebfe766`)*
 
-- `PagePropertyRows` → expect 0. Today: 7.
-- `usePropertyRows` → expect 0. Today: 4.
-- `PropertyValueEditors` → expect 0. Today: 3.
-- `CardPickerHost` → expect 0. Today: 3.
-- `CardAddPicker` → expect 0. Today: 3.
-- `DatetimeCellPicker` → expect 0. Today: 3.
-- `Properties/Page` → expect 0. Today: 3.
-- Control: `PropertyPicker` → expect ≥ 19. Zero here means the sweep never ran.
+- `PagePropertyRows` → 0 (today 7) · `usePropertyRows` → 0 (4) · `PropertyValueEditors` → 0 (3)
+- `CardPickerHost` → 0 (3) · `CardAddPicker` → 0 (3) · `DatetimeCellPicker` → 0 (3) · `Properties/Page` → 0 (3)
+- Control: `PropertyPicker` → ≥ 19. Zero here means the sweep never ran.
 
-*All counts from `grep -rF "<token>" --include='*.ts' --include='*.tsx' Core UIX`, taken at `1e12d62ae`. Re-derive at execution.*
+*From `grep -rF "<token>" --include='*.ts' --include='*.tsx' Core UIX`. Re-derive at execution.*
 
-**Hazard Window:** Task 1 opens it — `PropertyPicker` carries both its old flat-value shape and the new `target`/`chooser` shape while callers migrate. No task may add a new `PropertyPicker` call site against the old shape while it is open. Task 6 closes it by removing the old props once `TableView` is the last converted caller.
+**Hazard Window:** Task 1 opens it — `PropertyPicker` carries both its old flat props and the new `target` while callers migrate. No new call site may use the old shape while it is open. Task 5 closes it by removing the old props.
 
 ---
 
-### Phase 1 — PropertyPicker becomes the one popup value surface
+### Phase 1 — PropertyPicker becomes the one popup surface
 
-#### Task 1: PropertyPicker takes a target, five kinds, and an optional chooser pane
+#### Task 1: PropertyPicker takes a target union and an optional chooser pane
 
 **Requirement:** 6
 
-**Why:** Every popup that sets a property value is currently chosen by a wrapper — `CardPickerHost` by `request.kind`, `TableView` by a type test, `PropertyValueEditors` by `editing.mode`. Moving that choice inside `PropertyPicker` is what lets all three wrappers be deleted. Tasks 3, 5, and 6 each consume this shape.
+**Why:** Every popup that assigns a value is chosen today by a wrapper — `CardPickerHost` by `request.kind`, `TableView` by a type test, `PropertyValueEditors` by `editing.mode`. Moving that choice inside `PropertyPicker` is what lets all three wrappers be deleted. Tasks 2, 4, and 5 each consume this shape.
 
-**Now** — `Core/Properties/Pickers/PropertyPicker.tsx`, 156 lines; the component renders one flat option list:
+**Now** — `Core/Properties/Pickers/PropertyPicker.tsx`, 156 lines, one flat option list:
 
 ```ts
 export function PropertyPicker({
   def, current, open, triggerRef, anchorX, look, contextOptions, onCommit, onDismiss,
-}: { def: PropertyDefinition; current: PropertyValue | null; open: boolean
-     triggerRef: RefObject<HTMLElement | null>; anchorX?: number; look?: ColumnLook
-     contextOptions?: PickOption[]
-     onCommit: (value: PropertyValue | null) => void; onDismiss: () => void }): React.JSX.Element | null
+}: {
+  def: PropertyDefinition
+  current: PropertyValue | null
+  open: boolean
+  triggerRef: RefObject<HTMLElement | null>
+  anchorX?: number
+  look?: ColumnLook
+  contextOptions?: PickOption[]
+  onCommit: (value: PropertyValue | null) => void
+  onDismiss: () => void
+}): React.JSX.Element | null
 
-// unchanged, all public — imported by MassPropertyPicker, FilterFrame, TableView, CardAddPicker
+// unchanged, all public
 export const optionsOf, selectedValues, pickShape, toggleValue, syntheticContextDef
 export function PropertyOptionRows(...), pickSemantics(...)
 ```
 
-**Becomes** — one target, five kinds, an optional chooser root pane:
+**Becomes** — a discriminated target, six kinds, an optional chooser root:
 
 ```ts
 // Core/Properties/Pickers/PropertyPicker.tsx
-export type PropertyPickKind = 'options' | 'datetime' | 'link' | 'number' | 'file'
 
-export type PickTarget = {
-  id: string
-  def: PropertyDefinition
-  current: PropertyValue | null
-  kind: PropertyPickKind
-  look?: ColumnLook
-  dateFormat?: string
-  contextOptions?: PickOption[]
-}
+export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
+  | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
+  | { kind: 'datetime'; dateFormat?: DateFormatName }
+  | { kind: 'link' }
+  | { kind: 'alias' }
+  | { kind: 'number'; leading?: ReactNode; trailing?: ReactNode; keepNull?: false }
+  | { kind: 'file' }
+)
 
-// target === null → the row only reveals; the caller shows it in place and nothing commits.
 export type PickEntry = { id: string; name: string; icon: IconName; target: PickTarget | null }
 
-export const pickKindFor = (type: PropertyType): PropertyPickKind
-
 export function PropertyPicker({
-  target, chooser, chooserLabel, open, triggerRef, anchorX, onCommit, onReveal, onDismiss,
+  target, chooser, open, triggerRef, anchorX, nonce, onCommit, onReveal, onDismiss,
 }: {
   target: PickTarget | null
   chooser?: PickEntry[]
-  chooserLabel?: string
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   anchorX?: number
-  onCommit: (target: PickTarget, value: PropertyValue | null) => void
+  nonce?: number
+  onCommit: (value: PropertyValue | null) => void
   onReveal?: (id: string) => void
   onDismiss: () => void
 }): React.JSX.Element | null
-// chooser absent → opens on target's value pane · present → opens on the entry list,
-//   sliding into the value pane on a pick, back on the header's Back
-// options: a select commits and dismisses; multi_select and context stay open (B9)
-// datetime/link/number/file: commit dismisses
-// target held through the exit via useHeld, so the closing pane keeps its content
+```
+
+```tsx
+// The body. `held` is why no caller re-grows a lastValue ref.
+const held = useHeld(target, open)
+const [picked, setPicked] = useState<PickEntry | null>(null)
+useEffect(() => {
+  if (!open) setPicked(null)
+}, [open])
+
+const shown = picked?.target ?? held
+const pane = shown === null ? null : valuePane(shown, onCommit, onDismiss, nonce)
+
+if (!chooser) {
+  return (
+    <PickerMenu
+      solid
+      open={open}
+      onDismiss={onDismiss}
+      triggerRef={triggerRef}
+      origin={anchorX !== undefined ? 'center' : 'right'}
+      anchorX={anchorX}
+    >
+      {pane}
+    </PickerMenu>
+  )
+}
+return (
+  <PickerMenu solid open={open} onDismiss={onDismiss} triggerRef={triggerRef} origin="center">
+    <FrameSlide
+      open={picked !== null}
+      minWidth={120}
+      minHeight={0}
+      root={
+        chooser.length === 0 ? (
+          <div style={{ minWidth: 96, height: 24 }} />
+        ) : (
+          <div>
+            {chooser.map((e) => (
+              <MenuItem
+                key={e.id}
+                leading={<Icon name={e.icon} size="body" />}
+                trailing={e.target ? <Icon name="chevron-right" /> : undefined}
+                onClick={() => {
+                  if (e.target) return setPicked(e)
+                  onReveal?.(e.id)
+                  onDismiss()
+                }}
+              >
+                {e.name}
+              </MenuItem>
+            ))}
+          </div>
+        )
+      }
+      detail={
+        picked && (
+          <div>
+            <MenuTopRow
+              label="Properties"
+              current={picked.name}
+              onBack={() => setPicked(null)}
+              className="card-add-top-flat"
+            />
+            {pane}
+          </div>
+        )
+      }
+    />
+  </PickerMenu>
+)
+```
+
+```tsx
+// The six kinds. Each is the body its wrapper renders today, moved verbatim.
+function valuePane(
+  t: PickTarget,
+  onCommit: (v: PropertyValue | null) => void,
+  onDismiss: () => void,
+  nonce?: number,
+): React.JSX.Element {
+  switch (t.kind) {
+    case 'options': {
+      const { options, selected, pick } = pickSemantics(
+        t.def, t.current, onCommit, onDismiss, t.contextOptions,
+      )
+      return (
+        <PropertyOptionRows
+          def={t.def}
+          look={t.look}
+          contextOptions={t.contextOptions}
+          options={options}
+          selected={selected}
+          onPick={pick}
+        />
+      )
+    }
+    case 'datetime':
+      return <DatetimeValuePicker value={t.current} dateFormat={t.dateFormat} onCommit={onCommit} />
+    case 'link': {
+      const raw = t.current?.kind === 'url' ? t.current.value : undefined
+      return (
+        <TextField
+          key={nonce}
+          value={raw ? linkEditText(raw) : ''}
+          accent={solidColorCss(t.def.link_color)}
+          onCommit={(v) => {
+            // undefined = invalid, no write; null = clear, and a clear needs an existing value.
+            const next = urlValueFromEdit(v, raw, resolveTitle)
+            if (next !== undefined && (next !== null || raw)) onCommit(next)
+            onDismiss()
+          }}
+        />
+      )
+    }
+    case 'alias': {
+      const raw = t.current?.kind === 'url' ? t.current.value : ''
+      return (
+        <TextField
+          key={nonce}
+          value={linkAlias(raw) ?? ''}
+          accent={solidColorCss(t.def.link_color)}
+          onCommit={(v) => {
+            onCommit(urlValueFromRename(v, raw))
+            onDismiss()
+          }}
+        />
+      )
+    }
+    case 'number':
+      return (
+        <TextField
+          key={nonce}
+          value={t.current?.kind === 'number' ? String(t.current.value) : ''}
+          leading={t.leading}
+          trailing={t.trailing}
+          onCommit={(v) => {
+            const next = parseEditorValue('number', v)
+            if (next !== undefined && (next !== null || t.keepNull !== false)) onCommit(next)
+            onDismiss()
+          }}
+        />
+      )
+    case 'file':
+      return (
+        <PathField
+          label={t.def.name}
+          value=""
+          empty="Choose a file"
+          browseLabel="Choose File"
+          onBrowse={() => pickFileInto(t.def, t.current, null, (v) => { onCommit(v); onDismiss() })}
+          onCommit={(raw) => {
+            if (raw.trim()) adoptPathInto(t.def, t.current, raw.trim(), onCommit)
+            onDismiss()
+          }}
+        />
+      )
+  }
+}
 ```
 
 **Ordered steps** *(the order is not derivable from the fences)*
 
-1. Add the types and `pickKindFor`; leave the existing props in place alongside — the hazard window is open and Cards/Table/Panel still call the old shape.
-2. Move `CardPickerHost`'s five render branches in as the value pane, one `switch` on `target.kind`. `PathField`, `TextPicker`, `DatetimeValuePicker`, `PropertyOptionRows` are all already imported or importable; `adoptPathInto` and `pickFileInto` come from `filePick.ts`.
-3. Move `CardAddPicker`'s `FrameSlide` root/detail as the chooser pane, with `ValuePane`'s `MenuTopRow` header. Its `card-add-top-flat` class moves from `cards-view.css` into `property-picker.css.ts` or is dropped if it only zeroes padding — check before assuming.
-4. Replace the `lastValue` ref with `useHeld(target, open)`.
+1. Add `PickTarget`, `PickEntry`, `valuePane`, and the new props; leave the existing props in place — the hazard window is open and all three callers still use the old shape.
+2. `TextField` above is the inner field `TextPicker` renders, extracted from `UIX/Pickers/TextPicker/TextPicker.tsx` so a text kind can sit inside `PropertyPicker`'s own `PickerMenu` instead of nesting a second one. **Check first**: if `TextPicker` can be rendered as a child without its `PickerMenu`, do that instead of extracting anything. Adding a component here is only justified if nesting is impossible.
+3. `card-add-top-flat` moves from `cards-view.css` beside the picker, or is dropped if it only zeroes padding — read it before assuming.
 
-**Assumed by:** Task 3 (Cards), Task 5 (PropertyPanel), Task 6 (Table).
+**Assumed by:** Task 2 (Cards), Task 3 (Table), Task 4 (PropertyPanel).
 
 **Verify — automated**
 
-- [ ] New test file `PropertyPicker.pane.test.tsx`: red first on five cases — chooser renders entries; picking a `target: null` entry calls `onReveal` and not `onCommit`; picking a targeted entry slides to the value pane; a `select` commit dismisses; a `multi_select` commit does not. Expect 5 failures naming the missing props, then green.
-- [ ] `npm run typecheck` green — the old props still compile for their existing callers.
-- [ ] `npm run test` green, test count = baseline + 5.
-- [ ] `npm run lint` green.
+- [ ] New `PropertyPicker.pane.test.tsx`, red first — expect 6 failures naming the missing props, then green: each of the six kinds renders its own body; a `target: null` chooser entry calls `onReveal` then `onDismiss` and never `onCommit`; a targeted entry slides to the value pane; `options` single-select dismisses and multi_select does not (B22).
+- [ ] `npm run typecheck` green — the old props still compile for their three existing callers.
+- [ ] `npm run test` green, count = baseline + 6. `npm run lint` green.
 
 **Verify — user**
 
 - [ ] *(none — no caller uses the new shape yet.)*
 
-#### Task 2: Baseline the three surfaces before anything moves
-
-**Requirement:** 8
-
-**Why:** This is a refactor, so behavior preservation has to be provable by unchanged numbers rather than asserted. Every later gate compares against what this task records.
-
-**Now** — no baseline exists.
-
-**Becomes** — a recorded baseline in the Log's Rulings, not a file:
-
-```
-npm run test  → test count N, all green
-rg counts for every Dead Vocabulary token and its control
-wc -l on the eight files this plan deletes or grows
-```
-
-**Verify — automated**
-
-- [ ] All three gates green at the phase base commit, exit codes read directly.
-- [ ] Counts recorded in the Log. Control: `PropertyPicker` → ≥ 19.
-
-**Verify — user**
-
-- [ ] *(none.)*
-
-#### Task 3: CardsView drives PropertyPicker; CardPickerHost and CardAddPicker are deleted
+#### Task 2: CardsView drives PropertyPicker; CardPickerHost and CardAddPicker are deleted
 
 **Requirement:** 6, 8
 
-**Why:** Cards is the surface the folded-in mechanism came from, so converting it first proves the new shape against the behavior that defined it. B10, B11, and B12 live here and nowhere else.
+**Why:** Cards is where the folded mechanism came from, so converting it first proves the shape against the behavior that defined it. B9–B16 live here and nowhere else.
 
-**Now** — `rg -F "CardPickerHost" Core` → 3, `rg -F "CardAddPicker" Core` → 3:
+**Now** — `rg -F "CardPickerHost" Core` → 3, `rg -F "CardAddPicker" Core` → 3. `CardsView.tsx:590` renders the host; the request state is `CardsView.tsx:268-269`.
 
 ```ts
-// Core/Views/Cards/CardPickerHost.tsx (230 lines) — deleted
-export type ValuePickerRequest = { rowId: string; column: ResolvedColumn
-  kind: 'picker' | 'datetime' | 'link' | 'number' | 'file'; anchor: HTMLElement
-  clickX?: number; revealOnCommit?: boolean }
-export type AddPickerRequest = { rowId: string; anchor: HTMLElement; initialEntry: AddEntry | null }
-export function CardPickerHost({ ... 12 props ... })
-
-// Core/Views/Cards/CardAddPicker.tsx (157 lines) — deleted
-// Core/Views/Cards/cardValueInput.ts — unchanged; addEntriesFor still reads SavedView
-// Core/Views/Cards/CardValue.tsx:85 — unchanged in this task; Task 7 owns its dispatch
+// Core/Views/Cards/CardPickerHost.tsx (230) and CardAddPicker.tsx (157) — both deleted.
+// Core/Views/Cards/cardValueInput.ts — unchanged.
+// Core/Views/Cards/CardValue.tsx — unchanged. Its inline alias rename (B11) is correct for Cards.
+// Core/Views/Cards/CardsView.tsx:181-195 openAddPicker — unchanged, including its datetime|url short-circuit.
 ```
 
-**Becomes** — `CardsView` builds the picker's inputs where it already builds the requests:
+**Becomes** — `CardsView` builds the target where it already holds the request:
 
-```ts
-// Core/Views/Cards/CardsView.tsx
-// The two request types stay — they are CardsView's own state, not the picker's contract.
-// Their `kind` field becomes PropertyPickKind; 'picker' → 'options'.
-const valueTarget = (req: ValuePickerRequest): PickTarget | null
-const addEntries = (req: AddPickerRequest): PickEntry[]   // maps AddEntry → PickEntry
-// AddEntry.revealOnly === true → PickEntry.target === null (B10)
+```tsx
+// Core/Views/Cards/CardsView.tsx — the two request types stay; they are CardsView's own state.
+const pickTargetFor = (req: ValuePickerRequest): PickTarget | null => {
+  const row = rowById.get(req.rowId)
+  if (!row) return null
+  const current = resolveFieldValue(row, req.column.id, ctx.schema)
+  const def = ctx.schema.find((d) => d.id === req.column.id) ?? syntheticContextDef(req.column.id)
+  const style = styleFor(req.column.id, ctx.schema, view)
+  switch (req.kind) {
+    case 'picker': {
+      const contextOptions = contextOptionsFor(req.column) ?? undefined
+      return { kind: 'options', def, current, look: style.look, contextOptions }
+    }
+    case 'datetime':
+      return { kind: 'datetime', def, current, dateFormat: style.date_format }
+    case 'link':
+      return { kind: 'link', def, current }
+    case 'number':
+      return { kind: 'number', def, current, leading: numberFormatGlyph(def), keepNull: false }
+    case 'file':
+      return { kind: 'file', def, current }
+  }
+}
+
+const addEntriesFor = (req: AddPickerRequest): PickEntry[] => {
+  const row = rowById.get(req.rowId)
+  if (!row) return []
+  return orderAddableEntries(addEntries(row, view, ctx, columns, tree, capitalize)).map((e) => ({
+    id: e.id,
+    name: e.name,
+    icon: e.def ? propertyIcon(e.def) : (propertyTypeIconName(e.type) ?? 'square-dashed'),
+    target: e.revealOnly ? null : pickTargetFor(entryRequest(req, e)),
+  }))
+}
+```
+
+```tsx
+// Replacing <CardPickerHost/> at CardsView.tsx:590.
 <PropertyPicker
-  target={valuePicker ? valueTarget(valuePicker) : addTargetFor(addPicker)}
-  chooser={addPicker ? addEntries(addPicker) : undefined}
-  chooserLabel="Properties"
+  target={valuePicker ? pickTargetFor(valuePicker) : null}
+  chooser={addPicker ? addEntriesFor(addPicker) : undefined}
   open={valuePicker !== null || addPicker !== null}
-  ... />
+  triggerRef={pickerAnchorRef}
+  anchorX={valuePicker?.clickX}
+  onCommit={(v) => {
+    const req = valuePicker ?? addPicker
+    if (!req) return
+    const row = rowById.get(req.rowId)
+    const column = valuePicker ? valuePicker.column : addColumn(pickedId, tree)
+    if (!row) return
+    if (valuePicker?.revealOnCommit) revealProperty(column.id)
+    commitValue(row, column, v)
+  }}
+  onReveal={(id) => revealProperty(id)}
+  onDismiss={() => { setValuePicker(null); setAddPicker(null) }}
+/>
 ```
 
 **Ordered steps**
 
-1. Write `valueTarget` and `addEntries` in `CardsView.tsx` beside the existing request state.
-2. Move `CardPickerHost`'s two dismiss effects (B11, B12) into `CardsView` — they read `rowById`, `view`, and `ctx`, which it already holds.
-3. Swap the `<CardPickerHost>` element for `<PropertyPicker>`; delete both files.
-
-**Assumed by:** Task 6 (Table follows the same conversion).
+1. Move `CardPickerHost`'s two force-dismiss effects (B14) into `CardsView` — they read `rowById`, `view`, `ctx`, which it already holds.
+2. `pickerAnchorRef` is one ref pointed at `(valuePicker ?? addPicker)?.anchor` each render, replacing the `lastValue`/`lastAdd`/`valueAnchorRef` trio — `PropertyPicker` holds the target itself now.
+3. Swap the element, delete both files, rewrite the two `ViewTypesPM.md:119` claims.
 
 **Verify — automated**
 
-- [ ] Existing Cards tests green, unchanged count.
-- [ ] `rg -F "CardPickerHost" Core` → 0 and `rg -F "CardAddPicker" Core` → 0. Control: `rg -F "CardsView" Core` → non-zero.
-- [ ] `npm run typecheck`, `npm run test`, `npm run lint` green.
+- [ ] `rg -F "CardPickerHost" Core` → 0; `rg -F "CardAddPicker" Core` → 0. Control: `rg -F "CardsView" Core` → non-zero.
+- [ ] `npm run typecheck`, `npm run test` (count unmoved), `npm run lint` green.
 
 **Verify — user**
 
-- [ ] On a Cards view: a value opens its picker; the card menu's **Add Property ▸** opens the entry list and slides into the value pane; a reveal-only entry appears on the card without committing.
+- [ ] Cards: a value opens its picker centred on the click (B9); a link address opens the `TextPicker` (B10); an alias still renames inline (B11); the file pane offers Browse and a typed path (B12); the card menu's Add ▸ opens the two-pane picker (B15).
 
-#### Gate 1 — one popup surface, Cards unmoved
+#### Task 3: TableView's datetime branch routes through PropertyPicker; DatetimeCellPicker is deleted
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Baseline invariant holds: test count = Task 2's N + 5, no test weakened.
-- [ ] Every Now count re-run against its control; counts matched, or the divergence rewrote the plan.
-- [ ] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `<base>..HEAD` scoped to `Core/Properties/Pickers/ Core/Views/Cards/`; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Hazard window still open by design; Task 6 closes it. Recorded, not resolved.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+**Requirement:** 6, 8
+
+**Why:** `DatetimeCellPicker` is an 18-line wrapper adding nothing over `PickerMenu`, and the third writer of "a datetime picker in a popup." Table's bar-look number and alias rename join the same component.
+
+**Now** — `rg -F "DatetimeCellPicker" Core` → 3, all in `TableView.tsx`:
+
+```tsx
+// Core/Views/Table/TableView.tsx:91 — adds nothing over PickerMenu
+function DatetimeCellPicker({ open, triggerRef, onDismiss, children }): React.JSX.Element {
+  return <PickerMenu solid open={open} onDismiss={onDismiss} triggerRef={triggerRef}>{children}</PickerMenu>
+}
+// :588-599  the datetime branch of cellPicker · :604-616  the option branch
+// :672-692  the bar-look number TextPicker · :696-709  the alias TextPicker
+// :547-561 cellEditor and :631-661 massPicker — unchanged, out of scope
+```
+
+**Becomes** — one `PropertyPicker` for all four popups:
+
+```tsx
+// Core/Views/Table/TableView.tsx — cellPicker builds a target; the datetime special case is gone.
+const cellTarget = (): PickTarget | null => {
+  const cell = editing?.mode === 'picker' ? editing : lastPicker.current
+  const row = cell && rowById.get(cell.rowId)
+  const col = cell && columns.find((c) => c.id === cell.colId)
+  if (!cell || !row || !col) return null
+  const current = resolveFieldValue(row, col.id, schema)
+  const contextOptions = contextOptionsFor(col)
+  const def = schema.find((d) => d.id === col.id) ?? (contextOptions ? syntheticContextDef(col.id) : null)
+  if (!def) return null
+  const style = colStyle(col.id)
+  if (col.kind === 'property' && declaredType(col.id, schema) === 'datetime')
+    return { kind: 'datetime', def, current, dateFormat: style.date_format }
+  return { kind: 'options', def, current, look: style.look, contextOptions: contextOptions ?? undefined }
+}
+```
+
+```tsx
+// The bar-look number and the alias rename, previously two hand-rolled TextPickers.
+const textTarget = (): PickTarget | null => {
+  const cell = editing?.mode === 'rename' ? editing : lastRename.current
+  const row = cell && rowById.get(cell.rowId)
+  const col = cell && columns.find((c) => c.id === cell.colId)
+  if (!cell || !row || !col) return null
+  const def = schema.find((d) => d.id === col.id)
+  if (!def) return null
+  const current = resolveFieldValue(row, col.id, schema)
+  return declaredType(col.id, schema) === 'number'
+    ? { kind: 'number', def, current, trailing: divisorSuffix(col.id) }
+    : { kind: 'alias', def, current }
+}
+```
+
+```ts
+// Core/Properties/Pickers/PropertyPicker.tsx — the old props come off; the hazard window closes here
+// only if Task 4 has already landed. Otherwise Task 5 closes it.
+```
+
+**Verify — automated**
+
+- [ ] `rg -F "DatetimeCellPicker" Core` → 0. Control: `rg -F "cellPicker" Core` → non-zero.
+- [ ] `npm run typecheck`, `npm run test` (count unmoved), `npm run lint` green.
+
+**Verify — user**
+
+- [ ] Table: a date cell opens the calendar in its column's format (B21); a bar-look number opens the `/ divisor` field (B17); a link alias renames in its popup and re-anchors correctly (B18); a filled http url still opens the browser and the address still edits inline (B19); mass-select still fans out.
 
 ---
 
 ### Phase 2 — PropertyPanel replaces Properties/Page/
 
-#### Task 4: property-panel.css.ts and the panel's row + section model
-
-**Requirement:** 2, 3, 4
-
-**Why:** The styles and the visibility rule are what the component is built out of, and both are small enough to land before the component that consumes them. `defaultRows` is Requirement 4 in one function.
-
-**Now** — `Core/Properties/Page/page-properties.css.ts`, 55 lines, seven styles, two of them re-declaring menu primitives:
-
-```ts
-export const row = style([item])              // menu-base.css's item, verbatim
-export const label = style([titleText, { flex: '0 1 auto' }])
-export const value = style({ marginLeft: 'auto', flex: '0 1 auto', minWidth: 0,
-  display: 'flex', alignItems: 'center', justifyContent: 'flex-end', textAlign: 'right' })
-export const frame, rows, panelRows, group, empty, add
-// The variant fork lives in the component, not here: panelRows vs rows is chosen at the call site.
-```
-
-**Becomes** — `Core/Properties/property-panel.css.ts`; `row`, `label`, and `value` are gone because `MenuItem` supplies them:
-
-```ts
-// Core/Properties/property-panel.css.ts
-export const rows = style({ display: 'flex', flexDirection: 'column', gap: '8px' })
-export const group = style({ display: 'flex', flexDirection: 'column', padding: '2px',
-  borderRadius: '8px' })
-export const groupFilled = style({ background: c.fill.tertiary })  // panelStyle: 'filled'
-export const empty = style([text.caption.standard])
-export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
-```
-
-```ts
-// Core/Properties/propertyPanel.ts — the visibility rule, testable without React
-export type PanelSection = 'properties' | 'contexts'
-
-// Which rows a surface starts with shown. A row is also shown once it holds a value on
-// disk, or once this session assigned one — that part is the component's, not this rule's.
-export function defaultRows(section: PanelSection, panelStyle: PanelStyle): boolean
-// contexts + 'standard' (the page frame) → true · everything else → false   (B8)
-```
-
-**Assumed by:** Task 5 (the component imports both).
-
-**Verify — automated**
-
-- [ ] New `propertyPanel.test.ts`: red first on four cases — contexts/standard true, contexts/filled false, properties/standard false, properties/filled false. Expect 4 failures, module not found. Then green.
-- [ ] `npm run typecheck`, `npm run test` (count = prior + 4), `npm run lint` green.
-
-**Verify — user**
-
-- [ ] *(none — nothing renders these yet.)*
-
-#### Task 5: PropertyPanel replaces PagePropertyRows; Properties/Page/ is deleted
+#### Task 4: PropertyPanel ships; Core/Properties/Page/ is deleted
 
 **Requirement:** 1, 2, 3, 4, 5, 8
 
-**Why:** This is the deliverable Nathan asked for. The panel becomes a component whose rows are menu rows, whose visibility is one function, and whose value editing is `PropertyPicker` — with no hook and no editors component behind it.
+**Why:** The deliverable. Rows become menu rows, visibility becomes one function, value editing becomes `PropertyPicker` — with no hook and no editors component behind it.
 
-**Now** — `rg -F "PagePropertyRows" Core` → 7 (1 definition, 3 imports, 3 call sites); `rg -F "Properties/Page" Core` → 3:
+**Now** — `rg -F "PagePropertyRows" Core` → 7 (1 definition, 3 imports, 3 call sites):
 
 ```tsx
 // Core/Properties/Page/PagePropertyRows.tsx (363) — deleted
 type Props = { variant: 'page'; page: PageDetail; onBack: () => void }
            | { variant: 'panel'; page: WindowTarget }
 const ROW_ATTR = { page: 'data-page-prop', panel: 'data-insp-id' } as const
-// forks on `variant` at 11 sites: frame, rows class, leading markup, Reveal, iconSize,
-// isShownContext, emptyRow, showContext, the React key, ROW_ATTR, the props union
+// forks on `variant` at 11 sites; ROW_ATTR is read by exactly one querySelector, :176
 
-// Core/Properties/Page/usePropertyRows.ts (192) — deleted, interface included
+// Core/Properties/Page/usePropertyRows.ts (192) — deleted, PropertyRows interface included
 // Core/Properties/Page/PropertyValueEditors.tsx (78) — deleted
+// Core/Properties/Page/page-properties.css.ts (55) — deleted; row/label/value re-declare MenuItem
 
-// Call sites, all three converted here:
+// Call sites:
 // Core/Interface/Windows/PageWindow.tsx:173  <PagePropertyRows variant="panel" page={target} />
 // Core/Interface/Windows/NavWindow.tsx:174   <PagePropertyRows variant="panel" page={pageTarget} />
 // Core/Pages/PageMenu.tsx:106                <PagePropertyRows variant="page" page={pageDetail} onBack={…} />
 ```
 
-**Becomes** — one component, no variant union, the frame owned by the caller:
+**Becomes** — one component; the caller owns only its header:
 
 ```tsx
 // Core/Properties/PropertyPanel.tsx
 export type PanelStyle = 'standard' | 'filled'
 
 export function PropertyPanel({
-  page, panelStyle, sections = ['contexts', 'properties'], animateRows = false,
+  page, panelStyle, onBack,
 }: {
   page: PageDetail | WindowTarget
   panelStyle: PanelStyle
-  sections?: PanelSection[]      // which groups render, and their order
-  animateRows?: boolean          // the page frame's Reveal entrance (B7)
+  /** The page frame's Back row. Its presence is what marks this the page frame: it seeds
+   *  Contexts shown, animates row entrance, and set-asides instead of un-revealing. */
+  onBack?: () => void
 }): React.JSX.Element
-// A PageDetail carries its own frontmatter; a WindowTarget is fetched through the warm
-// slot (B6). Rows are MenuItems: leading = Icon + name, trailing = Cell or EmptyValue.
-// Editing routes to one <PropertyPicker> — no local editors, no hook.
+```
+
+```ts
+// Core/Properties/PropertyPanel.tsx — B8, inline, one expression. Not a module, not a test file.
+const defaultShown = (isContext: boolean, pageFrame: boolean): boolean => isContext && pageFrame
 ```
 
 ```tsx
-// Core/Pages/PageMenu.tsx — the caller owns its frame, so onBack leaves the panel's props
-<MenuScrollFrame header={<MenuTopRow label="Settings" current="Properties" onBack={…} />}>
-  <PropertyPanel page={pageDetail} panelStyle="standard" animateRows />
-</MenuScrollFrame>
+// The row. B6 is the two props NOT passed.
+<MenuItem
+  key={id}
+  leading={<Icon name={icon} size="control" />}
+  value={
+    editing?.id === id && editing.mode === 'editor' && def ? (
+      <PropertyEditor … />
+    ) : (
+      (Cell({ row, column, ctx, hideIcon: false, style: { look: 'standard' }, remove }) ??
+        <EmptyValue className={s.empty} />)
+    )
+  }
+  onClick={(e) => …}
+  onContextMenu={(e) => …}
+>
+  {label}
+</MenuItem>
+```
 
-// PageWindow.tsx / NavWindow.tsx
-<div className="window-panel-column">
-  <PropertyPanel page={target} panelStyle="filled" />
-</div>
+```ts
+// Core/Properties/property-panel.css.ts — row, label and value are gone; MenuItem supplies them.
+export const rows = style({
+  display: 'flex', flexDirection: 'column', gap: '8px',
+  flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', padding: '0 4px 4px',
+})
+export const pageRows = style([rows, { flex: 'initial', overflowY: 'visible', padding: '4px 0 6px' }])
+export const frame = style({ ...growToContent('350px'), display: 'flex', flexDirection: 'column' })
+export const group = style({
+  display: 'flex', flexDirection: 'column', padding: '2px',
+  borderRadius: '8px', background: c.fill.tertiary,
+})
+export const empty = style([text.caption.standard])
+export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
+```
+
+```tsx
+// Core/Pages/PageMenu.tsx — only the Back row hoists; the frame and its width ceiling stay inside.
+<PropertyPanel page={pageDetail} panelStyle="filled" onBack={() => setPane('root')} />
+
+// PageWindow.tsx:173 / NavWindow.tsx:174 — unchanged wrappers, new component.
+<PropertyPanel page={target} panelStyle="filled" />
 ```
 
 **Ordered steps**
 
-1. Write `PropertyPanel.tsx`: the memos formerly in `usePropertyRows` (`schema`, `ctx`, `contextRows`, `contextValues`, `row`) and the two commit writers become locals — roughly 40 lines, not 192, because the interface, both handler bags, `editRow`, and `valueMenu`'s plumbing leave rather than move.
-2. Rows render through `MenuItem`. One `shown: Set<string>` seeded by `defaultRows`; `revealed`, `setAside`, and `ROW_ATTR` all go.
-3. The dispatch calls `sharedValueClickAction`, then `pickKindFor` for everything it doesn't commit inline — one branch, not four.
-4. Alias rename becomes an inline `PropertyEditor` seeded from `linkAlias`, committing through `urlValueFromRename` (Forced By).
-5. The Add affordance opens `PropertyPicker` with `chooser`; the `requestAnimationFrame` + `querySelector` reveal-then-anchor path is deleted, not ported.
-6. Convert all three call sites, then delete `Core/Properties/Page/`.
-
-**Assumed by:** Task 8 (docs cite the new paths).
+1. The memos formerly in `usePropertyRows` — `schema`, `ctx`, `contextRows`, `contextValues`, `row` — and the two commit writers become locals, roughly 40 lines. The interface, both handler bags, and the `editRow`/`valueMenu` plumbing leave rather than move.
+2. One `shown: Set<string>` seeded by `defaultShown`; `revealed`, `setAside`, and `ROW_ATTR` all go. B3's set-aside is `shown.delete` on the page frame, `reveal`-drop on the inspector — the same Set, one branch.
+3. B7's Add ▸ keeps running the full dispatch on the revealed row. The `requestAnimationFrame` + `querySelector` anchor path stays as it is: it is B7, and this plan preserves behavior.
+4. `panelStyle` is threaded to `group`'s background but both callers pass `'filled'`, so `groupStandard` is not written until a caller asks for it.
+5. Convert all three call sites, delete `Core/Properties/Page/`, rewrite `InterfacePM.md:55`.
 
 **Verify — automated**
 
-- [ ] Red-green on `defaultRows` wiring: a new `PropertyPanel.test.tsx` asserting a `filled` panel starts with no Context rows and a `standard` one starts with them (B8). Red first — expect 2 failures, module not found.
-- [ ] `rg -F "PagePropertyRows" Core` → 0, `rg -F "usePropertyRows" Core` → 0, `rg -F "PropertyValueEditors" Core` → 0, `rg -F "Properties/Page" Core` → 0. Control: `rg -F "PropertyPanel" Core` → ≥ 4.
-- [ ] `ls Core/Properties/Page` → exits non-zero.
-- [ ] `npm run typecheck`, `npm run test`, `npm run lint` green; test count = prior + 2.
+- [ ] New `PropertyPanel.test.tsx`, red first — expect 2 failures, module not found: an `onBack` panel seeds Context rows shown; one without seeds them hidden (B8).
+- [ ] `rg -F "PagePropertyRows" Core` → 0 · `usePropertyRows` → 0 · `PropertyValueEditors` → 0 · `Properties/Page` → 0. Control: `rg -F "PropertyPanel" Core` → ≥ 4.
+- [ ] `ls Core/Properties/Page` exits non-zero.
+- [ ] `npm run typecheck`, `npm run test` (count = prior + 2), `npm run lint` green.
 
 **Verify — user**
 
-- [ ] Page window inspector: rows read as menu rows, values set and clear, the Add affordance opens the two-pane picker and commits inside it.
-- [ ] Page Settings ▸ Properties: Contexts are pre-seeded, a set-aside Context returns from Add, the row entrance animation still plays.
-- [ ] A link value's **Rename** now edits in place rather than opening a popup.
+- [ ] Inspector: rows read as menu rows, values set and clear, un-checking a checkbox keeps its row (B1), right-click offers Clear vs Remove (B2), Add ▸ behaves as it does today (B7).
+- [ ] Page Settings ▸ Properties: Contexts pre-seeded, a set-aside Context returns from Add (B3), row entrance animation plays (B5), the pane keeps its 350px ceiling.
 
-#### Gate 2 — the panel ships, Page/ is gone
-
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Baseline invariant holds; no test weakened or deleted.
-- [ ] Every behavior B1–B8 confirmed present in `PropertyPanel.tsx` by reading, each with its line.
-- [ ] `code-simplifier` then `feature-dev:code-reviewer` against `<base>..HEAD` scoped to `Core/Properties/ Core/Pages/ Core/Interface/Windows/`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in.
-
----
-
-### Phase 3 — Table joins, and the old shape retires
-
-#### Task 6: TableView's datetime branch routes through PropertyPicker; DatetimeCellPicker is deleted
+#### Task 5: The old PropertyPicker props come off
 
 **Requirement:** 6
 
-**Why:** `DatetimeCellPicker` is the third writer of "a datetime picker in a popup," and the hard rule says a second writer found must be reported and removed. Closing this also closes the hazard window, because Table is the last caller of `PropertyPicker`'s old props.
+**Why:** Closes the hazard window. With Cards, Table, and the panel all on `target`, the flat props have no caller and the type gate proves it.
 
-**Now** — `rg -F "DatetimeCellPicker" Core` → 3, all in `TableView.tsx`:
-
-```tsx
-// Core/Views/Table/TableView.tsx:92 — adds nothing over PickerMenu
-function DatetimeCellPicker({ open, triggerRef, onDismiss, children }): React.JSX.Element {
-  return <PickerMenu solid open={open} onDismiss={onDismiss} triggerRef={triggerRef}>{children}</PickerMenu>
-}
-// :588  the datetime branch of cellPicker, then a separate <PropertyPicker> for everything else
-// cellEditor (:547) and massPicker (:613) — unchanged, out of scope
-```
-
-**Becomes** — one `PropertyPicker` for both branches:
-
-```tsx
-// Core/Views/Table/TableView.tsx — cellPicker builds a PickTarget and returns one element
-const cellPicker = (): React.ReactNode   // target.kind from pickKindFor; no datetime special case
-// DatetimeCellPicker deleted
-```
+**Now** — the six props Task 1 left in place beside the new ones:
 
 ```ts
-// Core/Properties/Pickers/PropertyPicker.tsx — the old props come off; hazard window closes
-// removed: def, current, look, contextOptions  (all now carried by PickTarget)
+// Core/Properties/Pickers/PropertyPicker.tsx
+def: PropertyDefinition
+current: PropertyValue | null
+look?: ColumnLook
+contextOptions?: PickOption[]
 ```
+
+**Becomes** — removed; `PickTarget` carries all four.
 
 **Verify — automated**
 
-- [ ] `rg -F "DatetimeCellPicker" Core` → 0. Control: `rg -F "cellPicker" Core` → non-zero.
-- [ ] `npm run typecheck` green — this is the proof the old props have no remaining caller.
-- [ ] `npm run test`, `npm run lint` green; test count unmoved.
+- [ ] `npm run typecheck` green — this is the proof no caller remains.
+- [ ] `npm run test`, `npm run lint` green; count unmoved.
 
 **Verify — user**
 
-- [ ] Table: a Date cell opens the calendar; an option cell opens the dropdown; mass-select over an option column still fans out.
-
-#### Task 7: CardValue and TableView dispatch through pickKindFor
-
-**Requirement:** 6
-
-**Why:** The remaining half of the duplication — three hand-rolled branches turning `sharedValueClickAction`'s result into a picker kind. One function already exists after Task 1; these two are its last non-users.
-
-**Now** — `rg -F "sharedValueClickAction" Core` → 17. The two dispatch tails:
-
-```ts
-// Core/Views/Cards/CardValue.tsx:85-95
-} else if (t === 'number') { setMode('editor') } else if (t === 'url') { openPicker('link') }
-// Core/Views/Table/TableView.tsx:482-505
-} else if (t === 'number') { … 'rename' on a bar look, else 'editor' } else if (t === 'url') { … }
-// Both keep their inline-editor paths — only the popup branch changes.
-```
-
-**Becomes** — the popup branch names its kind once:
-
-```ts
-// both files: the shared tail
-else openPicker(pickKindFor(t))
-// The inline-editor branches stay exactly as they are: a number or url with an existing
-// value edits in place on all three surfaces, and Table's bar-look rename is untouched.
-```
-
-**Verify — automated**
-
-- [ ] `npm run test` green, count unmoved — this task changes no behavior, only who names the kind.
-- [ ] `npm run typecheck`, `npm run lint` green.
-
-**Verify — user**
-
-- [ ] Cards and Table: clicking an empty date, link, number, and file value each opens the right popup; clicking a filled number or url still edits inline.
-
-#### Gate 3 — one dispatch, one popup, no old shape
-
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked.
-- [ ] Hazard window closed by Task 6; `PropertyPicker` has no old-shape caller.
-- [ ] `code-simplifier` then `feature-dev:code-reviewer` against `<base>..HEAD` scoped to `Core/Views/ Core/Properties/Pickers/`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in.
+- [ ] *(none — a type-level removal.)*
 
 ---
 
-### Phase 4 — Record
+### Phase 3 — The re-fold census
 
-#### Task 8: Rewrite what this made false
+#### Task 6: Dispatch the census, then fold whatever it finds
 
-**Requirement:** 8
+**Requirement:** 6, 7, 8
 
-**Why:** The Made False table's claims describe mechanisms that no longer exist. A doc still false at closeout is a defect in the commit that should have carried it.
+**Why:** The first census found nine mechanisms where three were expected. The fold is only finished when a fresh census, run against the folded tree, finds no popup assigning a property value outside `PropertyPicker`. This task is the mandate that the plan's own list was not assumed complete.
 
-**Now** — the four rows of Made False, each quoted there with its file and line.
+**Now** — the tree as Phase 2 leaves it; no census has run against it.
 
-**Becomes** — each rewritten in place, describing what exists rather than amending what did:
-
-```
-ViewTypesPM.md:119   the add-picker described as PropertyPicker's chooser pane
-InterfacePM.md:55    the panel's Add affordance described as committing in the picker
-PropertiesPM.md:105  a new paragraph under Shared Mechanisms for the one value-assign surface
-```
-
-**Verify — automated**
-
-- [ ] `rg -F "CardPickerHost" .claude` → 0 outside `Planning/`. Control: `rg -F "PropertyPicker" .claude` → non-zero.
-
-**Verify — user**
-
-- [ ] The three docs read as descriptions of what exists, with no amendment language.
-
-#### Task 9: The closing sweep and the line count
-
-**Requirement:** 7
-
-**Why:** Requirement 7 is a number, and a number is only true if measured. The sweep is what proves the deletions actually left.
-
-**Now** — the Dead Vocabulary block's seven tokens with their counts at `1e12d62ae`.
-
-**Becomes** — every token at 0 against a live control, and the delta recorded:
+**Becomes** — three `Explore` agents dispatched in parallel on Opus, each read-only, each returning a table. Their briefs:
 
 ```
-git diff --stat <plan base>..HEAD          # net, comments and tests excluded per loc.py
-.claude/scripts/loc.py                     # the project's own counter, not wc -l
+A. Every popup, menu, pane, or inline editor opened to SET a property value or a
+   Context/Space assignment. Sweep Core/Properties, Core/Views, Core/Contexts,
+   Core/Tiles, Core/Pages, Core/Interface, Core/Navigation, Core/MarkdownPM.
+   Anchors: PickerMenu · TextPicker · PathField · DatetimeValuePicker · PropertyEditor ·
+   sharedValueClickAction · pickFileInto · setProperty · setContext.
+   Report file:line, trigger, component, value kinds, commit path, inline-or-popup.
+   Flag any PickerMenu mounted to assign a value that is NOT PropertyPicker.
+
+B. Every remaining call site of the deleted symbols and of PropertyPicker's public
+   exports. Confirm no second wrapper regrew. Report each with file:line.
+
+C. Re-run the difference matrix across the panel, Cards, and Table against the folded
+   tree. Every row must read either "identical" or match the Behavior Ledger's recorded
+   per-surface difference. Any NEW divergence is a regression this fold introduced.
 ```
+
+```
+Residue rule: zero PickerMenu mounts for property assignment outside PropertyPicker.
+Legitimate exceptions, allowlisted: MassPropertyPicker (its own dismiss semantics,
+explicitly out of scope) and every inline PropertyEditor (a cell editor, not a popup).
+```
+
+**Ordered steps**
+
+1. Dispatch A, B, C in one message; let the tree settle before any writer runs.
+2. Verify every finding against the code before acting — an agent's claim is not evidence.
+3. Anything real that is a *popup outside `PropertyPicker`* gets folded here. Anything real that is a *behavior divergence* is a regression and gets fixed here.
+4. Anything real that is neither — a write-path fork, a parser fork, a menu-builder fork — is recorded in Sequenced After and **not** fixed. Scope is the fold.
 
 **Verify — automated**
 
 - [ ] Every Dead Vocabulary token → 0, each in its own command. Control: `PropertyPicker` → ≥ 19.
-- [ ] Net source reduction ≥ 150 lines, comments and tests excluded. Expected range −400 to −600.
+- [ ] Census A returns zero unallowlisted `PickerMenu` mounts for property assignment.
+- [ ] Census C returns zero new divergences against the Behavior Ledger.
+- [ ] Net source reduction **over 250 lines**, comments and tests excluded, measured with `.claude/scripts/loc.py` — not `wc -l`.
 - [ ] All three gates green.
 
 **Verify — user**
 
-- [ ] *(none.)*
+- [ ] `PropertiesPM.md` carries a paragraph describing the one value-assign surface.
 
-#### Gate 4 — the record closes
+#### Gate — the fold closes
 
-- [ ] Gate commands green.
-- [ ] Every Made False row rewritten in the commit that falsified it, or the miss recorded in Deviations.
-- [ ] Closing sweep at zero against its control.
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every task's **Verify — automated** ticked, each against a result just watched.
+- [ ] Baseline invariant holds: test count = baseline + 8, no test weakened.
+- [ ] Every Now count re-run against its control; matched, or the divergence rewrote the plan.
+- [ ] Every Behavior Ledger row confirmed on its surface by reading, each with its new line.
+- [ ] `code-simplifier` then `feature-dev:code-reviewer` against the full range; then `build-breaking-agent`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Hazard window closed by Task 5.
+- [ ] Every Made False row rewritten in the commit that falsified it.
 - [ ] Progress hashes filled in.
 
 ---
@@ -591,27 +736,24 @@ git diff --stat <plan base>..HEAD          # net, comments and tests excluded pe
 
 ### Progress
 
-- [ ] **Phase 1** — PropertyPicker becomes the one popup value surface · base `<commit>`
-  - [ ] Task 1 — PropertyPicker takes a target, five kinds, and a chooser pane · `<commit>`
-  - [ ] Task 2 — Baseline the three surfaces · `<commit>`
-  - [ ] Task 3 — CardsView drives PropertyPicker; two files deleted · `<commit>`
-  - [ ] Gate 1
+- [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
+  - [ ] Task 1 — target union + chooser pane · `<commit>`
+  - [ ] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
+  - [ ] Task 3 — Table converted; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
-  - [ ] Task 4 — property-panel.css.ts and defaultRows · `<commit>`
-  - [ ] Task 5 — PropertyPanel ships; Page/ deleted · `<commit>`
-  - [ ] Gate 2
-- [ ] **Phase 3** — Table joins, and the old shape retires
-  - [ ] Task 6 — Table's datetime branch; DatetimeCellPicker deleted · `<commit>`
-  - [ ] Task 7 — CardValue and TableView dispatch through pickKindFor · `<commit>`
-  - [ ] Gate 3
-- [ ] **Phase 4** — Record
-  - [ ] Task 8 — Rewrite what this made false · `<commit>`
-  - [ ] Task 9 — Closing sweep and line count · `<commit>`
-  - [ ] Gate 4
+  - [ ] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
+  - [ ] Task 5 — old PropertyPicker props removed · `<commit>`
+- [ ] **Phase 3** — The re-fold census
+  - [ ] Task 6 — census dispatched, findings folded · `<commit>`
+  - [ ] Gate
 
 ### Rulings
 
-- **Style files are `.css.ts`.** Nathan's message named `property-panel.css`. Plain CSS cannot compose vanilla-extract's `item` / `titleText`, which is the mechanism "borrowing from Menus/" refers to; plain CSS would force the panel to re-declare row padding, hover, focus ring, and type ramp by hand. Raised twice in conversation without objection. Recorded as the plan's reading, open to reversal at ratification.
+- **Style files are `.css.ts`.** Nathan's message named `property-panel.css`. Plain CSS cannot compose vanilla-extract's `item` / `titleText`, which is the mechanism behind borrowing from `Menus/`. Raised twice without objection.
+- **`sections` cut.** Specified, then withdrawn once the census showed all three callers would pass the default. Returns when a caller needs it.
+- **`panelStyle` ships with both callers on `'filled'`**, so nothing moves visually. `groupStandard` is not written until a surface asks for it.
+- **Per-surface behavior is correct and preserved.** The link inversion between Cards and Table/panel, Cards' inline alias rename, Table's bar-look number, and the panel's missing `look`/`dateFormat` are all intentional. This plan folds hosts, not behavior.
+- **Three defects reported and declined.** The Cards Add ▸ number/file empty pane, the panel's unmount-while-open, and the add-flow's discarded null were raised from the census. Nathan: the first is not real, the second resolves when the panel inherits the new picker, the third is fine. None is a task.
 
 ### Open Against Later Tasks
 
@@ -621,8 +763,12 @@ git diff --stat <plan base>..HEAD          # net, comments and tests excluded pe
 
 ### Sequenced After
 
-- **The value right-click menu, three times.** `PropertyPanel`, `CardValue.tsx:99`, and `TableView` each hand-roll the file-menu / link-menu branch. The shared halves (`fileValueMenu`, `linkValueMenuTarget`, `showConnectionMenu`) are already extracted; the branch above them is not. Deliberately out of scope here — it is a different seam from the popup surface.
-- **`TableView`'s `cellEditor` and `massPicker`.** Table-only behavior (bar-look rename, title-cell icon, mass fan-out) with no counterpart on the other two surfaces. Folding them in would grow `PropertyPicker` flags to absorb behavior only one caller has.
+- **The write layer.** Three value-write paths; `TableView` uses two of them internally, bypassing `commitValue`'s Context branch for checkbox, file, datetime, url-clear, rename, and both number paths.
+- **Number parsing, four writers.** `parseEditorValue` plus two hand-rolled parsers in `TableView` and one discarded-null in the Cards add-flow.
+- **The file-menu context, two builders.** `filePick.fileValueMenu` builds its own; `CardValue` and `TableView` build theirs through `cellMenuContextFor` with different flags.
+- **The value-click router's two bypasses.** `PagePropertyRows:257` and `TableView:473` send context clicks to the picker without asking `sharedValueClickAction`, which already handles `'context'`.
+- **The value right-click menu, three times.** Shared halves are extracted; the branch above them is not.
+- **Undo covers only the mass path.** Every single-cell commit on all three surfaces is un-undoable.
 
 ### Closeout
 
@@ -630,31 +776,31 @@ git diff --stat <plan base>..HEAD          # net, comments and tests excluded pe
 
 ## Completion Criteria
 
-*(Written at ratification, ticked at the end. It stands alone — handed to an executing agent with the plan, it is the whole brief.)*
-
 **The directive**
 
 ```
 Execute .claude/Planning/PropertyPanel — Implementation Plan.md. Unattended.
-Live-verify: the three surfaces' user boxes — page window inspector, Page Settings ▸
-  Properties, a Cards view, and a Table view. These are the only items allowed to stay pending.
+Live-verify: the four surfaces' user boxes — inspector, Page Settings ▸ Properties,
+  Cards, Table. The only items allowed to stay pending.
 Screenshots: none during the run.
 Pings: at each phase gate and at completion.
 Record: a History entry under the PropertyPanel arc.
-Also: the two user-visible changes in Forced By — the panel's inline alias rename, and the
-  Add affordance committing inside the picker — must be called out explicitly in the report.
+Also: Task 6's census is not optional and its findings are not advisory — fold what it
+  finds, or record why it is out of scope under Sequenced After.
 Everything else is the standard below.
 ```
 
 **The Standard**
 
-- **The bar.** Not doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. A future review of this arc finds nothing to correct.
-- **Only the live confirmation may be pending.** No concerns carried, no "for a later session," no deferrals when the fix is known and could be done now. Where an item genuinely can't get there, the Log names which and why, and everything else is still finished.
-- **Reusability first.** Search before writing. A second resolver, cache, or validator means the plan is wrong, or you are — log it before proceeding. Duplication is debt.
-- **Fix at the source**, never down-river; leave a unified thing rather than stitched pieces. Add code only where it repairs something flawed or makes things simpler.
-- **Ambiguity:** take the simplest reading, record it under Rulings or Deviations, continue. Execution does not stop for input.
-- **Per phase:** implement → simplify → comment pass → gates, exit codes read directly and never piped → code review → attack review → every finding fixed or carrying a defensible ruling → commit → ping. Simplification before review, never inverted. "Done with concerns" is unfinished work, and a result nobody watched happen is not a result.
-- **Comments** only where the why can't be inferred. **Docs** stay clean and non-bloated; what went false gets rewritten, not amended. Unattributed doc or style edits mid-run belong to the user — fold them into the commit at hand, never revert them.
+- **The bar.** Not doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong.
+- **Only the live confirmation may be pending.** No concerns carried, no deferrals when the fix is known and could be done now.
+- **Reusability first.** Search before writing. A second resolver, cache, or validator means the plan is wrong, or you are — log it before proceeding.
+- **No helper that one caller needs.** A one-writer, one-reader extraction is a defect. If a fence in this plan proposes one and the code does not need it, cut it and record the deviation.
+- **Fix at the source**, never down-river. Add code only where it repairs something flawed or makes things simpler.
+- **Do not fix what is not broken.** Per-surface behavior differences are ratified. A divergence in the Behavior Ledger is a requirement, not a defect.
+- **Ambiguity:** take the simplest reading, record it under Rulings, continue. Execution does not stop for input.
+- **Per phase:** implement → simplify → comment pass → gates, exit codes read directly and never piped → code review → attack review → every finding fixed or carrying a defensible ruling → commit → ping.
+- **Comments** only where the why can't be inferred. **Docs** get rewritten, not amended. Unattributed doc or style edits mid-run belong to the user — fold them in, never revert them.
 
 **Then tick these.**
 
@@ -663,26 +809,24 @@ Everything else is the standard below.
 - [ ] Every numbered requirement traces to a landed task.
 - [ ] The acceptance criterion observed running, clause by clause.
 - [ ] `Core/Properties/Page/` does not exist.
-- [ ] `PropertyPicker` is the only component opening a popup to set a property value.
-- [ ] Every behavior B1–B12 holds on its surface.
-- [ ] Net source reduction ≥ 150 lines, comments and tests excluded.
+- [ ] `PropertyPicker` is the only component mounting a `PickerMenu` to assign a property value, allowlist aside.
+- [ ] Every Behavior Ledger row holds, on its own surface, unchanged.
+- [ ] Net source reduction over 250 lines, comments and tests excluded.
 
 **The passes**
 
-- [ ] `code-simplifier` and `comment-killer-agent` over the whole range, not only per phase.
+- [ ] `code-simplifier` and `comment-killer-agent` over the whole range.
 - [ ] `code-simplifier` → `feature-dev:code-reviewer` over the full implementation, in that order.
 - [ ] Delivery Claim written, then checked by a neutral verifier against this plan's Requirements.
 - [ ] `build-breaking-agent` dispatched after the claim is verified, never in the same brief.
-- [ ] Every finding from every pass fixed, or carrying a defensible ruling.
+- [ ] Every finding fixed, or carrying a defensible ruling.
 
-**The user's own pass** *(the only thing allowed to be outstanding)*
+**The user's own pass**
 
-- [ ] Page window inspector (`filled`): rows, values, clear, Add.
-- [ ] NavWindow inspector (`filled`): same, against a nav-constrained page.
-- [ ] Page Settings ▸ Properties (`standard`): pre-seeded Contexts, set-aside and return, row entrance.
-- [ ] Cards view: value pickers, the two-stage add-picker, reveal-only entries.
-- [ ] Table view: date cell, option cell, mass-select fan-out, inline number and url edits.
-- [ ] The two in-flight decisions: the panel's alias rename now edits in place; Add commits inside the picker rather than revealing an empty row.
+- [ ] Page window inspector and NavWindow inspector: rows, values, clear, Add, checkbox reveal, right-click Clear vs Remove.
+- [ ] Page Settings ▸ Properties: pre-seeded Contexts, set-aside and return, row entrance, 350px ceiling.
+- [ ] Cards: centred pickers, link address popup, inline alias rename, the file pane's Browse and typed path, the two-stage add picker.
+- [ ] Table: date cell in column format, bar-look number suffix field, alias rename popup, inline address editing, browser-opening urls, mass-select fan-out.
 
 **The record**
 
@@ -691,4 +835,4 @@ Everything else is the standard below.
 - [ ] `ContextPM.md` and `HandoffPM.md` current; the History entry written to its format.
 - [ ] Lessons routed to `.claude/Guidelines/`; successor work named in Sequenced After.
 
-**The report**, in plain English — what shipped and why it matters · what happened along the way worth knowing · every gate's real output · in-flight decisions, a sentence or two each · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
+**The report**, in plain English — what shipped and why it matters · what the census found and what was folded because of it · every gate's real output · in-flight decisions · what's left for the live pass · final +/- line count, comments and tests excluded. Honest about what didn't work.
