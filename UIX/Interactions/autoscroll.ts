@@ -1,4 +1,5 @@
 import { duration, ms } from '../Animations/motion'
+import { clamp } from '../Utilities/clamp'
 
 export type Axis = 'x' | 'y' | 'xy'
 
@@ -215,7 +216,7 @@ export const SEEK_GLIDE: GlideParams = {
 }
 
 export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams): number {
-  return Math.min(maxMs, Math.max(minMs, Math.abs(distance) / speed))
+  return clamp(Math.abs(distance) / speed, minMs, maxMs)
 }
 
 /** The JS form of `easing.baseSnap`, which is ease-out quint — a CSS cubic-bezier can't drive a
@@ -243,8 +244,7 @@ export function scrollGlide(
   stopAutoScroll()
   stopGlide()
   const seek = typeof to === 'function' ? to : (): number => to
-  const target = (): number =>
-    Math.max(0, Math.min(seek(), scroller.scrollHeight - scroller.clientHeight))
+  const target = (): number => clamp(seek(), 0, scroller.scrollHeight - scroller.clientHeight)
   const from = scroller.scrollTop
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   if (reduced || target() === from) {
