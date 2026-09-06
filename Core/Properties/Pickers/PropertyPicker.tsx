@@ -7,7 +7,7 @@ import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { MenuItem, MenuTopRow } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
+import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useHeld'
 import type { PickKind } from './massAssign'
 import { DatetimeValuePicker } from './DatetimeValuePicker'
@@ -27,7 +27,7 @@ export type PickTarget = { def: PropertyDefinition; current: PropertyValue | nul
 export type PickEntry = {
   id: string
   name: string
-  icon: IconName
+  icon: string
   // `target` null with `revealOnly` false is a dependent kind: the caller takes it back through `onReveal` and opens its own popup (a TextPicker, or the file dialog), which is why the chevron keys off `revealOnly` rather than off `target`.
   revealOnly: boolean
   target: PickTarget | null

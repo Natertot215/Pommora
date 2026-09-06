@@ -11,7 +11,7 @@ import {
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type { SetNode } from '@pommora/core/Nexus/tree'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView } from '@pommora/core/Views/views'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
@@ -68,7 +68,23 @@ import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 
-import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
+import { TextPicker } from '@pommora/uix/Pickers/TextPicker/TextPicker'
+import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import {
+  type PickEntry,
+  type PickTarget,
+  PropertyPicker,
+  syntheticContextDef,
+} from '../../Properties/Pickers/PropertyPicker'
+import { resolveFieldValue } from '../../Properties/value'
+import {
+  numberFormatGlyph,
+  propertyIcon,
+  propertyTypeIconName,
+} from '../../Properties/Cells/PropertyTypes'
+import { parseEditorValue } from '../../Properties/parseEditorValue'
+import { linkEditText, urlValueFromEdit } from '@pommora/core/Connections/linkValue'
+import { resolveTitle } from '../../Properties/Cells/linkResolve'
 import { CardValue } from './CardValue'
 import { reorderIds } from './cardsOrder'
 import {
@@ -87,6 +103,27 @@ import { popRowMenu } from '../../Actions/nativeMenus'
 import { cardMenuModel } from '@pommora/core/Actions/cardMenu'
 import './cards-view.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+
+export type ValuePickerRequest = {
+  rowId: string
+  column: ResolvedColumn
+  kind: 'picker' | 'datetime' | 'link' | 'number' | 'file'
+  anchor: HTMLElement
+  clickX?: number
+  revealOnCommit?: boolean
+}
+
+export type AddPickerRequest = {
+  rowId: string
+  anchor: HTMLElement
+  initialEntry: AddEntry | null
+}
+
+// datetime | number | file open their own popup unchanged; every other dependent kind edits as a link (B26).
+const dependentKind = (entry: AddEntry): ValuePickerRequest['kind'] =>
+  entry.type === 'datetime' || entry.type === 'number' || entry.type === 'file'
+    ? entry.type
+    : 'link'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
@@ -268,6 +305,75 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   pickersOpenRef.current = valuePicker !== null || addPicker !== null
+
+  const styleFor = useStyleFor()
+  const capitalize = useCapitalizeMetadata()
+  const pickerAnchorRef = useRef<HTMLElement | null>(null)
+  pickerAnchorRef.current = (valuePicker ?? addPicker)?.anchor ?? null
+
+  // A row that vanished, or a value Compact just dropped, dismisses the picker through the same animated exit as a click-out (B14).
+  useEffect(() => {
+    if (!valuePicker || !ctx) return
+    const row = rowById.get(valuePicker.rowId)
+    if (!row) return setValuePicker(null)
+    if (valuePicker.revealOnCommit) return
+    const cur = resolveFieldValue(row, valuePicker.column.id, ctx.schema)
+    const isCheckbox = ctx.schema.find((d) => d.id === valuePicker.column.id)?.type === 'checkbox'
+    if (isCompact(liveView) && isBlankValue(cur) && !isCheckbox) setValuePicker(null)
+  }, [valuePicker, rowById, ctx, liveView])
+  useEffect(() => {
+    if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
+  }, [addPicker, rowById])
+
+  const pickTargetFor = (
+    rowId: string,
+    column: ResolvedColumn,
+    kind: PickTarget['kind'],
+  ): PickTarget | null => {
+    const row = rowById.get(rowId)
+    if (!row || !ctx) return null
+    const current = resolveFieldValue(row, column.id, ctx.schema)
+    const def = ctx.schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
+    const style = styleFor(column.id, ctx.schema, liveView)
+    if (kind === 'datetime') return { kind, def, current, dateFormat: style.date_format }
+    if (kind === 'file') return { kind, def, current }
+    return {
+      kind: 'options',
+      def,
+      current,
+      look: style.look,
+      contextOptions: contextOptionsFor(column) ?? undefined,
+    }
+  }
+
+  // One resolve feeds every value popup; the link and number kinds read its def/current for their own TextPicker (B10, and Table's bar-look number sibling), PropertyPicker takes the target itself.
+  const valuePopup =
+    valuePicker && valuePicker.kind !== 'link' && valuePicker.kind !== 'number' ? valuePicker : null
+  const vTarget = valuePicker
+    ? pickTargetFor(
+        valuePicker.rowId,
+        valuePicker.column,
+        valuePicker.kind === 'datetime'
+          ? 'datetime'
+          : valuePicker.kind === 'file'
+            ? 'file'
+            : 'options',
+      )
+    : null
+  const vRaw = vTarget?.current?.kind === 'url' ? vTarget.current.value : undefined
+  const commitValuePicker = (nv: PropertyValue | null): void => {
+    const row = valuePicker && rowById.get(valuePicker.rowId)
+    if (!valuePicker || !row) return
+    if (valuePicker.revealOnCommit) revealProperty(valuePicker.column.id)
+    commitValue(row, valuePicker.column, nv)
+  }
+
+  const addRow = addPicker && ctx ? rowById.get(addPicker.rowId) : undefined
+  // Kept as AddEntry[] rather than mapped away, so onReveal can read a dependent entry's type for dependentKind.
+  const addEntries =
+    addRow && ctx
+      ? orderAddableEntries(addEntriesFor(addRow, liveView, ctx, columns, tree, capitalize))
+      : []
 
   const feel = DEFAULT_FEEL
   const anyNaming = useSession((s) => s.renamingPath !== null)
@@ -587,20 +693,90 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           </BandDnd>
         </DragGroup>
         {ctx && (
-          <CardPickerHost
-            value={valuePicker}
-            add={addPicker}
-            rowById={rowById}
-            view={liveView}
-            ctx={ctx}
-            columns={columns}
-            commitValue={commitValue}
-            contextOptionsFor={contextOptionsFor}
-            onReveal={revealProperty}
-            onOpenValue={setValuePicker}
-            onDismissValue={() => setValuePicker(null)}
-            onDismissAdd={() => setAddPicker(null)}
-          />
+          <>
+            <TextPicker
+              open={valuePicker?.kind === 'link'}
+              onDismiss={() => setValuePicker(null)}
+              triggerRef={pickerAnchorRef}
+              value={vRaw ? linkEditText(vRaw) : ''}
+              accent={solidColorCss(vTarget?.def.link_color)}
+              onCommit={(raw) => {
+                // undefined = invalid (no write), null = cleared — and a clear only applies to an EXISTING value.
+                const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
+                if (nv !== undefined && (nv !== null || (!valuePicker?.revealOnCommit && vRaw)))
+                  commitValuePicker(nv)
+                setValuePicker(null)
+              }}
+            />
+            <TextPicker
+              open={valuePicker?.kind === 'number'}
+              onDismiss={() => setValuePicker(null)}
+              triggerRef={pickerAnchorRef}
+              value={vTarget?.current?.kind === 'number' ? String(vTarget.current.value) : ''}
+              leading={vTarget ? numberFormatGlyph(vTarget.def) : undefined}
+              onCommit={(raw) => {
+                const nv = parseEditorValue('number', raw)
+                if (nv != null) commitValuePicker(nv)
+                setValuePicker(null)
+              }}
+            />
+            <PropertyPicker
+              target={valuePopup ? vTarget : null}
+              chooser={
+                addPicker
+                  ? addEntries.map(
+                      (e): PickEntry => ({
+                        id: e.id,
+                        name: e.name,
+                        icon: e.def
+                          ? propertyIcon(e.def)
+                          : (propertyTypeIconName(e.type) ?? 'square-dashed'),
+                        revealOnly: e.revealOnly,
+                        // Only the in-pane kinds get a target; the other four hand back through onReveal (B26).
+                        target:
+                          e.revealOnly ||
+                          (e.type !== 'select' &&
+                            e.type !== 'status' &&
+                            e.type !== 'multi_select' &&
+                            e.type !== 'context')
+                            ? null
+                            : pickTargetFor(addPicker.rowId, addColumn(e.id, tree), 'options'),
+                      }),
+                    )
+                  : undefined
+              }
+              chooserInitial={addPicker?.initialEntry?.id}
+              open={valuePopup !== null || addPicker !== null}
+              triggerRef={pickerAnchorRef}
+              anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}
+              onCommit={(v, entry) => {
+                const req = valuePicker ?? addPicker
+                const row = req && rowById.get(req.rowId)
+                if (!row) return
+                const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
+                if (entry || valuePicker?.revealOnCommit) revealProperty(column.id)
+                commitValue(row, column, v)
+              }}
+              onReveal={(entry) => {
+                if (!addPicker) return
+                if (entry.revealOnly) return revealProperty(entry.id)
+                // B26 — a dependent kind leaves the chooser for its own anchored popup.
+                const src = addEntries.find((e) => e.id === entry.id)
+                setAddPicker(null)
+                setValuePicker({
+                  rowId: addPicker.rowId,
+                  column: addColumn(entry.id, tree),
+                  kind: src ? dependentKind(src) : 'link',
+                  anchor: addPicker.anchor,
+                  revealOnCommit: true,
+                })
+              }}
+              onDismiss={() => {
+                setValuePicker(null)
+                setAddPicker(null)
+              }}
+            />
+          </>
         )}
       </div>
     </GhostSuppress.Provider>
