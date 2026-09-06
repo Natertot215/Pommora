@@ -218,7 +218,7 @@ describe('a page is excluded from embedding itself', () => {
   const self = (doc: string, title?: string): EditorState =>
     EditorState.create({
       doc,
-      extensions: [embedTiles({ getConn: () => conn, ancestors: [], self: () => title })],
+      extensions: [embedTiles({ getConn: () => conn, ancestors: title ? [`${title}.md`] : [] })],
     })
 
   it('the host title is excluded with no chain above it', () => {

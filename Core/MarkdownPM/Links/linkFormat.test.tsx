@@ -8,8 +8,13 @@ import { linkMarkdown } from '@pommora/core/Web/pasteLink'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { applyEditorAction, claimEditorMenu } from '../Menus/menu'
-import { useSession } from '../../Session/store'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  mountEditor,
+  seedHost,
+  settleTitle,
+  stubEditorBridge,
+} from '../editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -20,12 +25,7 @@ class ResizeObserverStub {
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
-const linkTitlesFetch = async () => ({ ok: false, error: { code: 'offline' } })
-stubEditorBridge({
-  'row-menu': connMenu,
-  'clipboard:write': writeClipboard,
-  'linkTitles:fetch': linkTitlesFetch,
-})
+stubEditorBridge({ 'row-menu': connMenu, 'clipboard:write': writeClipboard })
 
 const URL = 'https://www.example.com/a/b'
 const BODY = `a [Home](${URL}) b`
@@ -40,7 +40,7 @@ beforeEach(() => {
   connMenu.mockReset()
   connMenu.mockResolvedValue(null)
   writeClipboard.mockReset()
-  useSession.setState({ linkTitles: {} })
+  seedHost({})
 })
 afterEach(async () => {
   await cleanupEditor()
@@ -110,7 +110,7 @@ describe('Format rewrites the label and nothing else', () => {
   })
 
   it('takes a title already cached', async () => {
-    useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
+    seedHost({ linkTitles: { [URL]: 'Example Domain' } })
     const view = await choose('format:link-title')
     expect(view.state.doc.toString()).toBe(`a [Example Domain](${URL}) b`)
   })
@@ -118,9 +118,7 @@ describe('Format rewrites the label and nothing else', () => {
   it('stands the domain in until the title lands', async () => {
     const view = await choose('format:link-title')
     expect(view.state.doc.toString()).toBe(`a [example.com](${URL}) b`)
-    await act(async () => {
-      useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
-    })
+    await settleTitle(URL, 'Example Domain')
     expect(view.state.doc.toString()).toBe(`a [Example Domain](${URL}) b`)
   })
 

@@ -3,8 +3,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
-import { useSession } from '../../Session/store'
-import { stubEditorBridge, mountEditor, cleanupEditor } from '../editorHarness'
+import {
+  stubEditorBridge,
+  mountEditor,
+  cleanupEditor,
+  seedHost,
+  settleTitle,
+} from '../editorHarness'
 import { pendingTitles } from './pendingTitle'
 import { pasteAs } from './pasteLink'
 
@@ -34,17 +39,13 @@ function chord(view: EditorView): void {
 }
 
 const settings = (p: Partial<Personalization>): void => {
-  useSession.setState({ personalization: p })
+  seedHost({ settings: p, clipboard: { read: async () => clipboard } })
 }
 
 beforeEach(() => {
   clipboard = URL
-  stubEditorBridge({
-    'clipboard:read': async () => clipboard,
-    'linkTitles:fetch': async () => ({ ok: false, error: { code: 'offline' } }),
-  })
-  // The title cache outlives a test — one left populated shifts every offset a later test depends on.
-  useSession.setState({ personalization: {}, linkTitles: {} })
+  stubEditorBridge()
+  settings({})
 })
 afterEach(async () => {
   await cleanupEditor()
@@ -96,9 +97,7 @@ describe('pasting an address into the editor', () => {
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
 
-    await act(async () => {
-      useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
-    })
+    await settleTitle(URL, 'Example Domain')
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
@@ -109,9 +108,7 @@ describe('pasting an address into the editor', () => {
     await act(async () => {
       view.dispatch({ changes: { from: 1, to: 12, insert: 'My Words' } })
     })
-    await act(async () => {
-      useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
-    })
+    await settleTitle(URL, 'Example Domain')
     expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
   })
 
@@ -121,17 +118,17 @@ describe('pasting an address into the editor', () => {
     await act(async () => paste(view, URL))
     expect(view.state.field(pendingTitles)).toHaveLength(1)
 
-    await act(async () => {
-      useSession.setState({ linkTitles: { [URL]: 'example.com' } })
-    })
+    await settleTitle(URL, 'example.com')
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
     expect(view.state.field(pendingTitles)).toHaveLength(0)
   })
 
   it('asks for no title when the cache already holds one', async () => {
     settings({ defaultLinkFormat: 'link-title' })
-    useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
-    const view = await mountEditor({ initialBody: '' })
+    const view = await mountEditor({
+      initialBody: '',
+      host: { linkTitles: { [URL]: 'Example Domain' } },
+    })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })

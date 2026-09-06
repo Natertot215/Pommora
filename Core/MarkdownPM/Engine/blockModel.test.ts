@@ -1,6 +1,31 @@
 import { describe, it, expect } from 'vitest'
-import { scanDoc } from './docScan'
+import { scanDoc, type DocScan } from './docScan'
 import { blockAt as blockAtIn, blockStarts as blockStartsIn, type Block } from './blockModel'
+
+describe('the block context is derived once per scan', () => {
+  it('a second blockAt on the same scan reads the first derivation', () => {
+    let reads = 0
+    const scan = new Proxy(scanDoc('# A\nbody\n\n- one\n- two'), {
+      get(target, key) {
+        if (key === 'callouts') reads++
+        return target[key as keyof DocScan]
+      },
+    })
+    blockAtIn(scan, 0)
+    blockAtIn(scan, 12)
+    blockStartsIn(scan)
+    expect(reads).toBe(1)
+  })
+})
+
+describe('a callout head inside a closed quoted fence is quoted code, never a callout', () => {
+  it('for the block model and the scan alike', () => {
+    const doc = '> ```\n> [!note] hi\n> ```'
+    const scan = scanDoc(doc)
+    expect(scan.callouts.some(Boolean)).toBe(false)
+    expect(blockAtIn(scan, doc.indexOf('note'))?.kind).toBe('blockquote')
+  })
+})
 
 const blockAt = (doc: string, pos: number): Block | null => blockAtIn(scanDoc(doc), pos)
 const blockStarts = (doc: string): ReturnType<typeof blockStartsIn> => blockStartsIn(scanDoc(doc))

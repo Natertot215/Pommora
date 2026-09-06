@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DEFAULT_TIME_FORMAT, embedZoom } from '@pommora/core/Settings/personalization'
+import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
@@ -9,6 +9,7 @@ import { gutter } from '@pommora/uix/Menus/menu-base.css'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { retained, toggled } from '../../Utilities/checkSet'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
+import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatValue'
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
@@ -102,6 +103,7 @@ function PageHistoryBody({
   }, [shown, reload, target.id, livePath])
 
   const resolveOnly = useMemo(() => resolveOnlyConnections(tree), [tree])
+  const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 
   const toggle = (ts: number): void => setChecked((prev) => toggled(prev, ts))
@@ -236,10 +238,11 @@ function PageHistoryBody({
             <MarkdownEditor
               initialBody={body}
               onChange={() => {}}
+              host={editorHost}
               readOnly
               connections={resolveOnly}
               embedAncestors={[HISTORY_ANCESTOR, livePath]}
-              zoom={embedZoom(embedScale)}
+              scale={embedScale}
               edgeFade
             />
           </div>

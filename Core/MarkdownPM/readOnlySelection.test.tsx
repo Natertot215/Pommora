@@ -4,6 +4,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownEditor } from './MarkdownEditor'
+import { testHost } from './editorHarness'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,7 +22,12 @@ async function mount(readOnly: boolean): Promise<void> {
   root = createRoot(container)
   await act(async () => {
     root.render(
-      createElement(MarkdownEditor, { initialBody: 'hello world', onChange: () => {}, readOnly }),
+      createElement(MarkdownEditor, {
+        initialBody: 'hello world',
+        onChange: () => {},
+        readOnly,
+        host: testHost(),
+      }),
     )
   })
 }

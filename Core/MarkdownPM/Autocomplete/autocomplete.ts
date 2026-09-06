@@ -1,9 +1,9 @@
 import { linkAt, normalizeTitle, pageEmbedText } from '@pommora/core/Connections/connections'
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
-import { codeMask } from '@pommora/core/Connections/markdownCode'
-import { lineStartAt, lineEndAt } from '../Input/edits'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { type DocScan, inCodeAt, lineIndexAt } from '../Engine/docScan'
 import type { ConnPage, PageIndex } from '../Links/connectionsApi'
-import { useSession } from '../../Session/store'
+import type { EditorHost } from '../api'
 
 export type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
 
@@ -24,6 +24,7 @@ export interface AcRow {
   label: string
   pageId?: string
   isPage: boolean
+  location: TrailSegment[]
   forget?: () => void
 }
 
@@ -42,14 +43,15 @@ function markdownTargetAt(
 }
 
 export function autocompleteQuery(
-  doc: string,
+  scan: DocScan,
   caret: number,
   allowEmbeds = false,
 ): AutocompleteQuery | null {
-  const lineStart = lineStartAt(doc, caret)
-  const line = doc.slice(lineStart, lineEndAt(doc, caret))
+  if (inCodeAt(scan, caret)) return null
+  const i = lineIndexAt(scan, caret)
+  const line = scan.lines[i]
+  const lineStart = scan.lineStarts[i]
   const rel = caret - lineStart
-  if (codeMask(line)(rel)) return null
   const s = linkAt(line, rel)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
@@ -94,25 +96,41 @@ export function autocompleteQuery(
   return null
 }
 
+/** A page's containers are its path's folders, so the trail needs no tree. */
 export const pageRow = (p: ConnPage): AcRow => ({
   value: p.title,
   label: p.title,
   isPage: true,
   pageId: p.id,
+  location: p.path
+    .split('/')
+    .slice(0, -1)
+    .map((title) => ({ title })),
 })
 
 /** An unresolved or ambiguous title offers nothing: there is no one page to have remembered a name. */
-export function aliasRows(conn: PageIndex, title: string | undefined, query: string): AcRow[] {
+export function aliasRows(
+  conn: PageIndex,
+  aliases: EditorHost['aliases'],
+  title: string | undefined,
+  query: string,
+): AcRow[] {
   if (!title) return []
   const res = conn.resolve(title)
   const page = res.status === 'resolved' ? res.page : null
   if (!page) return []
   const q = normalizeTitle(query)
-  const { pageAliases, forgetAlias } = useSession.getState()
-  return (pageAliases[page.id] ?? [])
+  return aliases
+    .list(page.id)
     .filter((a) => normalizeTitle(a).startsWith(q))
     .slice(0, AC_MAX)
-    .map((a) => ({ value: a, label: a, isPage: false, forget: () => forgetAlias(page.id, a) }))
+    .map((a) => ({
+      value: a,
+      label: a,
+      isPage: false,
+      location: [],
+      forget: () => aliases.forget(page.id, a),
+    }))
 }
 
 /** A carried `alias` rides only the link form — `![[ ]]` has no alias syntax, and the alias form writes into a link that already exists. */

@@ -95,7 +95,7 @@ function fencedLineMask(lines: string[]): Uint8Array {
 
 // Marker positions are boundaries, not interior, so the closing backtick still type-overs. An
 // unclosed opener claims the rest of the line, which is exactly when transforms must stay out.
-function inlineSpans(line: string): [number, number][] {
+export function inlineSpans(line: string): [number, number][] {
   const spans: [number, number][] = []
   let i = 0
   while (i < line.length) {

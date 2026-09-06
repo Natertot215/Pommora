@@ -1,6 +1,7 @@
 // CM's Text.toString() re-joins the rope on every call, and extensions re-scanning the result per keystroke was the lag source.
 import type { Text } from '@codemirror/state'
-import { docLineIntents, scanOf } from './Engine/docScan'
+import { docLineIntents } from './Engine/intents'
+import { scanOf } from './Engine/docScan'
 import type { Token } from './Engine/tokens'
 
 /** Keyed on the immutable `Text`, so an old version's entry collects with the history rather than being invalidated. */

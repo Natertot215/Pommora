@@ -9,7 +9,6 @@ import { Subfield } from '../Subfield/Subfield'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import type { SubfieldPage } from '../Subfield/subfieldItems'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { glanceLink } from '../Glance/glanceLink'
 import { showConnectionMenu } from '../Menus/connectionMenu'
 import { getContentViewRect } from '../ContentView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
@@ -90,7 +89,6 @@ function PageWindowBody({
       open: (page) => openWindowTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, openWindowTab, select])

@@ -1,7 +1,7 @@
 import { Fragment, memo, useRef } from 'react'
 import { linkTarget, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
-import { CONTENT_CLASS } from '../Engine/docScan'
+import { CONTENT_CLASS } from '../Engine/intents'
 import {
   resolveMdTarget,
   type ConnectionsApi,
@@ -11,10 +11,9 @@ import {
 import { titleOf } from '@pommora/core/Connections/connections'
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
-import { cancelGlance, closeGlance, insideGlance } from '../../Interface/Glance/glanceAction'
 import { dwellTarget, followTarget } from '../Links/links'
-import { useSession } from '../../Session/store'
 import { CITE_GLYPH } from '../Citations/citationPointer'
+import type { EditorHost } from '../api'
 
 // A cell's resting render WITHOUT a CodeMirror instance — only the focused cell mounts a real editor.
 export function renderCellContent(
@@ -127,6 +126,7 @@ function linkSpanAt(target: EventTarget | null): [number, number] | null {
 }
 
 function StaticCellImpl({
+  host,
   text,
   ordinalOf,
   connections,
@@ -136,6 +136,7 @@ function StaticCellImpl({
   onSelect,
   onCite,
 }: {
+  host: EditorHost
   text: string
   /** A word label never changes its text when the numbering moves, so comparing the cell's text alone keeps a stale number. */
   cites?: string
@@ -156,7 +157,9 @@ function StaticCellImpl({
     cellLinkTarget(text, e.target, connections?.())
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey, found.el)
+    const go =
+      found &&
+      followTarget(found.target, found.url, connections?.(), e.metaKey, found.el, host.glance)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -189,6 +192,7 @@ function StaticCellImpl({
       found,
       text,
       api,
+      host,
       onCommit,
       onSelect,
     )
@@ -205,17 +209,18 @@ function StaticCellImpl({
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
-        if (!insideGlance(e.currentTarget)) closeGlance()
+        if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
         openMenu(e)
       }}
       onMouseOver={(e) => {
-        const found = linkAt(e)
-        if (found) dwellTarget(found.target, found.url, connections?.(), found.el)?.()
+        const glance = host.glance
+        const found = glance && linkAt(e)
+        if (found) dwellTarget(found.target, found.url, glance, found.el)?.()
       }}
-      onMouseOut={cancelGlance}
+      onMouseOut={() => host.glance?.cancel()}
       onClick={(e) => {
         if (e.button !== 0) return
-        if (!insideGlance(e.currentTarget)) closeGlance()
+        if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
         const go = claimCite(e) ?? claimLink(e)
         if (go) return go()
         if (readOnly?.()) return
@@ -285,6 +290,7 @@ function menuTarget(
   tk: Token,
   text: string,
   api: ConnectionsApi,
+  host: EditorHost,
   onCommit: (text: string) => void,
   onSelect: (range: [number, number]) => void,
 ): ConnMenuTarget | null {
@@ -319,10 +325,10 @@ function menuTarget(
       if (!now) return
       if (action === 'rename' || action === 'editLink')
         return onSelect(linkHalves(now.tk)[action === 'rename' ? 'label' : 'address'])
-      const edit = linkActionText(now.text, now.tk, action)
+      const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
       if (!edit) return
       onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
-      if (edit.wantsTitle) useSession.getState().resolveLinkTitle(edit.url)
+      if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
     },
   }
 }

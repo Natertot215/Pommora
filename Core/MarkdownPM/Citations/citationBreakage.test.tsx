@@ -3,8 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { undo } from '@codemirror/commands'
-import { useSession } from '../../Session/store'
-import { stubEditorBridge, mountEditor, cleanupEditor } from '../editorHarness'
+import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../editorHarness'
 import { citationScan, splitWithOffsets } from '../Engine/detect'
 import { citationSeatAt } from './citationActions'
 
@@ -16,8 +15,8 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 beforeEach(() => {
-  stubEditorBridge({ 'clipboard:read': async () => '' })
-  useSession.setState({ personalization: { jumpToCitation: false } })
+  stubEditorBridge()
+  seedHost({ settings: { jumpToCitation: false } })
 })
 afterEach(async () => {
   await cleanupEditor()

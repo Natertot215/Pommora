@@ -1,4 +1,4 @@
-import { forwardRef, useRef } from 'react'
+import { useRef } from 'react'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { AssetImage } from '../Assets/AssetImage'
@@ -25,10 +25,7 @@ interface Props {
   onEditIcon: () => void
 }
 
-export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
-  { page, onToggleIcon, onRename, onEditIcon },
-  ref,
-) {
+export function PageHeader({ page, onToggleIcon, onRename, onEditIcon }: Props): React.JSX.Element {
   const { path, title, cover, icon, iconHidden } = page
   const coverSrc = useAssetUrl(cover)
   const reloadPage = useSession((s) => s.reloadPage)
@@ -60,7 +57,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   )
 
   return (
-    <div className={`mdpm-header${coverSrc ? ' has-banner' : ''}`} ref={ref}>
+    <div className={`mdpm-header${coverSrc ? ' has-banner' : ''}`}>
       {coverSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
@@ -92,4 +89,4 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
       )}
     </div>
   )
-})
+}

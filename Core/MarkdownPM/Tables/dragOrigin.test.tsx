@@ -4,6 +4,7 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { MarkdownTable } from './MarkdownTable'
+import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -51,6 +52,7 @@ async function mount(
   await act(async () => {
     root.render(
       createElement(MarkdownTable, {
+        host: testHost(),
         model,
         onCellCommit: () => {},
         onExit: () => {},

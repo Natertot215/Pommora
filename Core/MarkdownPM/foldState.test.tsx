@@ -3,13 +3,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import {
-  HARNESS_PAGE_ID,
   cleanupEditor,
   mountEditor,
   rerenderEditor,
   stubEditorBridge,
+  harnessState,
 } from './editorHarness'
-import { citationsVisible, useSession } from '../Session/store'
 import {
   applySavedFolds,
   foldedRegions,
@@ -337,7 +336,7 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(true)
   })
 
-  const shownFor = (): boolean => citationsVisible(useSession.getState(), HARNESS_PAGE_ID)
+  const shownFor = (): boolean => harnessState().citationsShown
 
   it('a press writes the page’s visibility, and the section follows it', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
@@ -355,11 +354,11 @@ describe('the citations divider draws where it can and folds nothing itself', ()
   it('a write from anywhere else moves the section too', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     await act(async () => {
-      useSession.getState().setCitationsVisible(HARNESS_PAGE_ID, false)
+      harnessState().host.citations.set(false)
     })
     expect(kinds(view)).toEqual(['citations'])
     await act(async () => {
-      useSession.getState().setCitationsVisible(HARNESS_PAGE_ID, true)
+      harnessState().host.citations.set(true)
     })
     expect(kinds(view)).toEqual([])
   })

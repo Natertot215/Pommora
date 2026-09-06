@@ -6,7 +6,6 @@ import { type ConnMenuAction, connMenuModel } from '@pommora/core/Actions/connMe
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
-import { useSession } from '../../Session/store'
 import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {
@@ -185,29 +184,6 @@ describe('Enter finishes an alias without writing anything', () => {
       view.dispatch({ selection: { anchor: 6 } })
     })
     expect(commitAliasOnEnter(view)).toBe(false)
-  })
-})
-
-describe('a connection opens its page the two ways every page menu offers', () => {
-  it('Open New Tab selects the page a link names into a tab of its own', async () => {
-    const select = vi.fn(async () => {})
-    useSession.setState({ select })
-    connMenu.mockResolvedValue('title:newtab')
-    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
-    await rightClick(view, 6)
-    expect(select).toHaveBeenCalledWith(
-      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
-      { newTab: true },
-    )
-  })
-
-  it('Open Preview floats it instead', async () => {
-    const openWindow = vi.fn()
-    useSession.setState({ openWindow })
-    connMenu.mockResolvedValue('title:window')
-    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
-    await rightClick(view, 6)
-    expect(openWindow).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
   })
 })
 

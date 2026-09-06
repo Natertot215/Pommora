@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { blockDeleteSpan, embedPickTree } from './gripMenu'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { PickNode } from '@pommora/core/Actions/gripMenu'
 
 describe('blockDeleteSpan', () => {
   const del = (doc: string, from: number, to: number): string => {
@@ -30,30 +30,18 @@ describe('blockDeleteSpan', () => {
 })
 
 describe('embedPickTree', () => {
-  const tree = {
-    collections: [
-      {
-        id: 'c1',
-        title: 'Notes',
-        path: 'Notes',
-        sets: [
-          {
-            id: 's1',
-            title: 'Drafts',
-            path: 'Notes/Drafts',
-            sets: [],
-            pages: [{ id: 'p2', title: 'Beta', path: 'Notes/Drafts/Beta.md' }],
-            views: [],
-          },
-        ],
-        pages: [{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }],
-        views: [],
-      },
-      { id: 'c2', title: 'Empty', path: 'Empty', sets: [], pages: [], views: [] },
-    ],
-  } as unknown as NexusTree
+  const tree: PickNode[] = [
+    {
+      label: 'Notes',
+      children: [
+        { label: 'Drafts', children: [{ label: 'Beta', title: 'Beta' }] },
+        { label: 'Alpha', title: 'Alpha' },
+      ],
+    },
+    { label: 'Empty', children: [] },
+  ]
 
-  it('walks collections → sets → pages and prunes empties', () => {
+  it('walks containers to pages and prunes empties', () => {
     const t = embedPickTree(tree, new Set())
     expect(t).toHaveLength(1)
     expect(t[0].label).toBe('Notes')

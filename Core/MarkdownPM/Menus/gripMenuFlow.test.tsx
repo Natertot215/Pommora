@@ -3,21 +3,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '../Links/connectionsApi'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
-import { useSession } from '../../Session/store'
-import { type GripMenuAction, gripMenuItems } from '@pommora/core/Actions/gripMenu'
-import type { ActionItem, RowMenuRequest } from '@pommora/core/Actions/menuModel'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
+import { type GripMenuAction, type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
 
 const calls: (readonly ActionItem<string>[])[] = []
 let nextPick: GripMenuAction | null = null
-stubEditorBridge({
-  'row-menu': async (req: RowMenuRequest) => {
-    calls.push(req.items)
-    return nextPick
-  },
-  'editor:grip-hot': () => {},
-})
+stubEditorBridge()
 
 const pages = [
   { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
@@ -25,21 +17,26 @@ const pages = [
   { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
 ]
 
-// nexus + personalization are non-optional on a real tree: treeIndex's walk dereferences both, and the tiles' lazy chunk resolves against this store tree after the mounting test has ended.
-const treeOf = (collectionPages: { id: string; title: string; path: string }[]): NexusTree =>
-  ({
-    nexus: { name: 'Test' },
-    personalization: {},
-    collections: [
-      { id: 'c1', title: 'Notes', path: 'Notes', sets: [], pages: collectionPages, views: [] },
-    ],
-  }) as unknown as NexusTree
+const treeOf = (collectionPages: { title: string }[]): PickNode[] => [
+  { label: 'Notes', children: collectionPages.map((p) => ({ label: p.title, title: p.title })) },
+]
 
 const conn: ConnectionsApi = { ...buildPageIndex(pages), open: () => {} }
 
+const seed = (collectionPages: { title: string }[]): void =>
+  seedHost({
+    pickTree: treeOf(collectionPages),
+    menus: {
+      grip: async (ctx) => {
+        calls.push(gripMenuItems(ctx))
+        return nextPick
+      },
+    },
+  })
+
 beforeEach(() => {
   calls.length = 0
-  useSession.setState({ tree: treeOf(pages) })
+  seed(pages)
 })
 afterEach(cleanupEditor)
 
@@ -166,12 +163,7 @@ describe('the embed tile grip', () => {
   })
 
   it('a bracket-bearing title is never offered — the syntax cannot express it', async () => {
-    useSession.setState({
-      tree: treeOf([
-        { id: 'p9', title: 'Notes [Draft]', path: 'Notes/Notes [Draft].md' },
-        { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
-      ]),
-    })
+    seed([{ title: 'Notes [Draft]' }, { title: 'Soup' }])
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = null
     await gripMenu(view, 'tile')

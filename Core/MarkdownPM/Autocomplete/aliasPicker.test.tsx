@@ -6,8 +6,7 @@ import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections
 import { aliasRows } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
 import { buildPageIndex } from '../Links/connectionsApi'
-import { useSession } from '../../Session/store'
-import { stubDialer } from '../../vitest.setup'
+import type { EditorHost } from '../api'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -26,41 +25,50 @@ const duplicated = buildPageIndex([
   { id: 'b2', title: 'Beta', path: 'Two/Beta.md' },
 ])
 
+let remembered: Record<string, string[]> = {}
+const aliases: EditorHost['aliases'] = {
+  list: (id) => remembered[id] ?? [],
+  remember: () => {},
+  forget: (id, alias) => {
+    remembered[id] = (remembered[id] ?? []).filter((a) => a !== alias)
+  },
+}
+
 beforeEach(() => {
-  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'aliases:set': vi.fn(async () => ({ ok: true, value: null })),
-  })
-  useSession.setState({ pageAliases: { p1: ['the plan', 'Q3 doc'] } })
+  remembered = { p1: ['the plan', 'Q3 doc'] }
 })
 
 describe('the picker offers what a page has been called before', () => {
   it('offers every remembered alias on an empty query, most recent first', () => {
-    expect(aliasRows(index, 'Q3 Plan', '').map((r) => r.label)).toEqual(['the plan', 'Q3 doc'])
+    expect(aliasRows(index, aliases, 'Q3 Plan', '').map((r) => r.label)).toEqual([
+      'the plan',
+      'Q3 doc',
+    ])
   })
 
   it('filters by what has been typed', () => {
-    expect(aliasRows(index, 'Q3 Plan', 'the').map((r) => r.label)).toEqual(['the plan'])
-    expect(aliasRows(index, 'Q3 Plan', 'zzz')).toEqual([])
+    expect(aliasRows(index, aliases, 'Q3 Plan', 'the').map((r) => r.label)).toEqual(['the plan'])
+    expect(aliasRows(index, aliases, 'Q3 Plan', 'zzz')).toEqual([])
   })
 
   it('a row inserts its own words rather than a link', () => {
-    const [row] = aliasRows(index, 'Q3 Plan', '')
+    const [row] = aliasRows(index, aliases, 'Q3 Plan', '')
     expect(row.value).toBe('the plan')
     expect(row.isPage).toBe(false)
   })
 
   it('a page with nothing remembered offers nothing', () => {
-    expect(aliasRows(index, 'Other', '')).toEqual([])
+    expect(aliasRows(index, aliases, 'Other', '')).toEqual([])
   })
 
   it('a phantom or ambiguous title offers nothing', () => {
-    expect(aliasRows(index, 'No Such Page', '')).toEqual([])
-    expect(aliasRows(duplicated, 'Beta', '')).toEqual([])
+    expect(aliasRows(index, aliases, 'No Such Page', '')).toEqual([])
+    expect(aliasRows(duplicated, aliases, 'Beta', '')).toEqual([])
   })
 
   it('a row forgets itself, and the rest survive', () => {
-    aliasRows(index, 'Q3 Plan', '')[0].forget?.()
-    expect(useSession.getState().pageAliases.p1).toEqual(['Q3 doc'])
+    aliasRows(index, aliases, 'Q3 Plan', '')[0].forget?.()
+    expect(remembered.p1).toEqual(['Q3 doc'])
   })
 })
 
@@ -85,15 +93,20 @@ describe('the forget × is inert until it is revealed', () => {
     await act(async () => {
       root?.render(
         <AutocompletePane
-          open
-          candidates={[{ value: 'the plan', label: 'the plan', isPage: false, forget }]}
+          ac={{
+            query: '',
+            from: 0,
+            to: 0,
+            form: 'alias',
+            caretX: 0,
+            caretTop: 0,
+            caretBottom: 16,
+            bounds: { left: 0, right: 1024 },
+          }}
+          candidates={[
+            { value: 'the plan', label: 'the plan', isPage: false, location: [], forget },
+          ]}
           index={0}
-          form="alias"
-          caretX={0}
-          caretTop={0}
-          caretBottom={16}
-          bounds={{ left: 0, right: 1024 }}
-          query=""
           onPick={onPick}
         />,
       )

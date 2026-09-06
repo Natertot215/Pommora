@@ -4,8 +4,7 @@ import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
-import { useSession } from '../../Session/store'
-import { stubEditorBridge, mountEditor, cleanupEditor } from '../editorHarness'
+import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../editorHarness'
 import {
   applyCitationAction,
   citationSeatAt,
@@ -26,13 +25,13 @@ class ResizeObserverStub {
 
 let clipboard = ''
 const settings = (p: Partial<Personalization>): void => {
-  useSession.setState({ personalization: p })
+  seedHost({ settings: p, clipboard: { read: async () => clipboard } })
 }
 
 beforeEach(() => {
   clipboard = ''
-  stubEditorBridge({ 'clipboard:read': async () => clipboard })
-  useSession.setState({ personalization: {} })
+  stubEditorBridge()
+  settings({})
 })
 afterEach(async () => {
   await cleanupEditor()
@@ -402,8 +401,10 @@ describe('the cycle closes inside a callout, a blockquote and a table', () => {
 describe('copying an unbound citation', () => {
   it('puts its raw reference on the clipboard', async () => {
     const written: string[] = []
-    stubEditorBridge({ 'clipboard:write': async (t: string) => void written.push(t) })
-    const view = await mountEditor({ initialBody: 'body\n\n[^lost]: nothing points here' })
+    const view = await mountEditor({
+      initialBody: 'body\n\n[^lost]: nothing points here',
+      host: { clipboard: { write: async (t) => void written.push(t) } },
+    })
     await act(async () => {
       applyCitationAction(view, 'cite:copy', { kind: 'citation', label: 'lost' })
     })

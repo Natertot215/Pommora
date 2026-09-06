@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
+import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connMenu'
@@ -37,6 +38,7 @@ const model: TableModel = {
 
 const noop = (): void => {}
 const props = {
+  host: testHost(),
   model,
   connections: () => conn,
   onCellCommit: noop,

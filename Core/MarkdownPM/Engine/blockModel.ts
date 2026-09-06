@@ -88,17 +88,10 @@ function blockContext(scan: DocScan): BlockContext {
     i = j + 1
   }
 
-  // A closed top-level fence owns its bytes outright, so a `>` inside one is code text — a grip can never drag
-  // two lines out of a code block. A quoted fence keeps its box: the `>` is real there.
-  const literalCode = (i: number): boolean => {
-    const f = fenceAt[i]
-    return f?.closed === true && f.depth === 0
-  }
-
-  const callout = scan.callouts.map((c, i) => (literalCode(i) ? undefined : c))
+  const callout = scan.callouts.map((c, i) => (scan.literal[i] ? undefined : c))
   const heading = scan.headings
   const hr = scan.breaks
-  const bq = scan.quotes.map((q, i) => q && !literalCode(i))
+  const bq = scan.quotes.map((q, i) => q && !scan.literal[i])
   // The citations section owns no block — reusing the unowned-line state costs two lines, where a BlockKind of
   // its own would span five sites the compiler wouldn't all check.
   const cited = (i: number): boolean => scan.citations.mask[i] === 1
@@ -139,8 +132,19 @@ function blockContext(scan: DocScan): BlockContext {
   return { lines, n, starts, ends, callout, listMember, fences, tables, maths, claimed, kindAt }
 }
 
+// One per scan, so a hover, drag, or menu never re-walks the document the scan already walked.
+const contexts = new WeakMap<DocScan, BlockContext>()
+function blockContextOf(scan: DocScan): BlockContext {
+  let ctx = contexts.get(scan)
+  if (!ctx) {
+    ctx = blockContext(scan)
+    contexts.set(scan, ctx)
+  }
+  return ctx
+}
+
 export function blockAt(scan: DocScan, pos: number): Block | null {
-  const ctx = blockContext(scan)
+  const ctx = blockContextOf(scan)
   const { n, starts, ends, callout, listMember } = ctx
 
   let li = n - 1
@@ -220,7 +224,7 @@ export interface BlockStart {
 
 /** Single pass over the shared block context; a per-line `blockAt` call would be O(n²). */
 export function blockStarts(scan: DocScan): BlockStart[] {
-  const ctx = blockContext(scan)
+  const ctx = blockContextOf(scan)
   const { n, starts, callout, listMember } = ctx
   const out: BlockStart[] = []
   for (let i = 0; i < n; i++) {

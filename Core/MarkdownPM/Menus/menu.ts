@@ -1,9 +1,5 @@
 import type { EditorView } from '@codemirror/view'
-import {
-  EDITOR_ACTION_PREFIX,
-  INSERT_LINK_ACTION,
-  type FormatState,
-} from '@pommora/core/Actions/editorMenu'
+import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@pommora/core/Connections/links'
 import { serializeLink } from '@pommora/core/Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
@@ -21,18 +17,6 @@ import {
   type HeadingLevel,
   type BlockFormat,
 } from '../Input/format'
-import { host } from '../../Platform/dialer'
-
-export interface EditorMenuApi {
-  pushState: (s: FormatState) => void
-  onAction: (cb: (action: string) => void) => () => void
-}
-
-/** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
-export const nativeEditorMenu: EditorMenuApi = {
-  pushState: (s) => host().tell('editor:format-state', s),
-  onAction: (cb) => host().on('menu:action', cb),
-}
 
 /** Latched when focus lands rather than read live: a native menu holds the document's focus, so `hasFocus` reads false at exactly the moment the chosen action comes back. */
 let subject: EditorView | null = null
