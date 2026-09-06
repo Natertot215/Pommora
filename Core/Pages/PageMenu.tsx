@@ -18,6 +18,7 @@ import { PageProperties } from '../Properties/Page/PageProperties'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText } from '@pommora/core/Actions/pageMenu'
+import { host } from '../Platform/dialer'
 
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
@@ -35,11 +36,11 @@ export function PageMenu(): React.JSX.Element | null {
   if (!pageDetail) return null
 
   const runFooterAction = async (): Promise<void> => {
-    const action = await window.nexus.pageActionsMenu({ actions: [...FOOTER_ACTIONS] })
+    const action = await host().ask('page-actions-menu', { actions: [...FOOTER_ACTIONS] })
     if (action === 'title:rename') setRenaming(true)
     else if (action === 'title:copylink')
-      await window.nexus.writeClipboard(pageLinkText(pageDetail.title))
-    else if (action === 'title:reveal') await window.nexus.revealPath(pageDetail.path)
+      await host().ask('clipboard:write', pageLinkText(pageDetail.title))
+    else if (action === 'title:reveal') await host().ask('path:reveal', pageDetail.path)
     else if (action === 'title:delete')
       await confirmDelete({ path: pageDetail.path, kind: 'page', title: pageDetail.title })
   }

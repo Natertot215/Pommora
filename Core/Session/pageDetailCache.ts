@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react'
 import { capSet } from '../Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
+import { host } from '../Platform/dialer'
 
 /** Beyond this many pages, the stalest embed detail goes cold. */
 const DETAIL_CAP = 50
@@ -26,13 +27,15 @@ const inFlight = new Map<string, Promise<PageDetail | null>>()
 export function fetchPageDetail(path: string): Promise<PageDetail | null> {
   const pending = inFlight.get(path)
   if (pending) return pending
-  const p: Promise<PageDetail | null> = window.nexus.openPage(path).then((r) => {
-    const owned = inFlight.get(path) === p
-    if (owned) inFlight.delete(path)
-    if (!r.ok) return null
-    if (owned) cachePageDetail(r.value)
-    return r.value
-  })
+  const p: Promise<PageDetail | null> = host()
+    .ask('page:open', path)
+    .then((r) => {
+      const owned = inFlight.get(path) === p
+      if (owned) inFlight.delete(path)
+      if (!r.ok) return null
+      if (owned) cachePageDetail(r.value)
+      return r.value
+    })
   inFlight.set(path, p)
   return p
 }

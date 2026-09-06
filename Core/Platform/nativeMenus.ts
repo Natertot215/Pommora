@@ -3,6 +3,7 @@
 
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { useSession } from '../Session/store'
+import { host } from './dialer'
 
 /** Whether this machine draws its list menus as the operating system's. */
 export function useNativeMenus(): boolean {
@@ -17,7 +18,7 @@ export function popRowMenu(
   trigger: HTMLElement | null | undefined,
 ): Promise<string | null> {
   const box = trigger?.getBoundingClientRect()
-  return window.nexus.rowMenu({
+  return host().ask('row-menu', {
     items,
     anchor: box && { left: box.left, top: box.top, width: box.width, height: box.height },
   })

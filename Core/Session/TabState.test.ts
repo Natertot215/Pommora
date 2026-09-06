@@ -10,6 +10,7 @@ import {
   subscribeBodyEpoch,
 } from './pageDetailCache'
 import { captureCache, dropCacheTab, fenceWarm, readCache } from '../Navigation/warmTabs'
+import { stubDialer } from '../vitest.setup'
 
 beforeEach(() => clearCache()) // module state — never leaks across tests
 
@@ -65,7 +66,7 @@ describe('fetchPageDetail', () => {
       (path: string): Promise<{ ok: true; value: PageDetail }> =>
         Promise.resolve({ ok: true, value: detail(path) }),
     )
-    vi.stubGlobal('window', { nexus: { openPage } })
+    vi.stubGlobal('window', { nexus: stubDialer({ 'page:open': openPage }) })
     return openPage
   }
 

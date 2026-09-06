@@ -12,6 +12,7 @@ import {
   type ConnMenuTarget,
   type ConnPage,
 } from '../Connections'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -130,7 +131,9 @@ describe('an external link in a resting cell behaves like one in the body', () =
   }
 
   async function mountWeb(): Promise<void> {
-    ;(window as unknown as { nexus: unknown }).nexus = { openExternal: opener }
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'link:open': opener,
+    })
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)

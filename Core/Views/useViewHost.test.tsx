@@ -11,6 +11,7 @@ import { ViewHost } from './ViewHost'
 import { propsAtRoot } from './propsAtRoot'
 import { pageValues } from './pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -89,6 +90,7 @@ const VALUES = pageValues({
 let host: HTMLDivElement
 let root: Root
 let saveSpy: ReturnType<typeof vi.fn>
+let channels: Record<string, unknown>
 let api: ViewHostApi | null = null
 
 let upward: ViewHostApi['seam']
@@ -117,12 +119,14 @@ beforeEach(() => {
     onCreated: { current: () => {} },
   }
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    loadValues: async () => ({ ok: true, value: VALUES }),
-    activeViews: { get: async () => ({}), set: async () => undefined },
-    viewOrders: { get: async () => ({}) },
-    views: { save: saveSpy },
+  channels = {
+    'view:loadValues': async () => ({ ok: true, value: VALUES }),
+    'activeViews:get': async () => ({}),
+    'activeViews:set': async () => undefined,
+    'viewOrders:get': async () => ({}),
+    'views:save': saveSpy,
   }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: { collections: [], contexts: [], personalization: {} } as never,
     mutate: vi.fn(async () => true) as never,
@@ -214,8 +218,8 @@ describe('the reset keys', () => {
 })
 
 describe('the values epoch', () => {
-  const nexus = (): { loadValues: ReturnType<typeof vi.fn> } =>
-    (window as unknown as { nexus: { loadValues: ReturnType<typeof vi.fn> } }).nexus
+  const loadValues = (): ReturnType<typeof vi.fn> =>
+    channels['view:loadValues'] as ReturnType<typeof vi.fn>
   const bump = (changes: { rel: string; pageIds: string[] }[]): void =>
     act(() => useSession.getState().bumpContainerValues(changes))
 
@@ -224,13 +228,13 @@ describe('the values epoch', () => {
   })
 
   beforeEach(() => {
-    nexus().loadValues = vi.fn(async () => ({ ok: true, value: VALUES }))
+    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: VALUES }))
     useSession.setState({ valuesEpoch: null })
   })
 
   it('a container push re-reads only the named pages, merging them, and retires their overrides', async () => {
     await mount(collection())
-    nexus().loadValues = vi.fn(async () => ({ ok: true, value: P2 }))
+    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
     act(() =>
       api?.setValueOverride({
         p1: { fm: { id: 'p1' } as never, write: null },
@@ -239,7 +243,7 @@ describe('the values epoch', () => {
     )
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
-    expect(nexus().loadValues).toHaveBeenCalledWith('Col', ['p2'])
+    expect(loadValues()).toHaveBeenCalledWith('Col', ['p2'])
     expect(api?.effectiveValues.p2).toEqual(P2.p2)
     expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
     expect(api?.values.p1).toEqual(VALUES.p1)
@@ -248,7 +252,7 @@ describe('the values epoch', () => {
   it('a scoped read that lands after a container swap never merges into the new container', async () => {
     await mount(collection())
     let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
-    nexus().loadValues = vi.fn((_path: string, ids?: string[]) =>
+    channels['view:loadValues'] = vi.fn((_path: string, ids?: string[]) =>
       ids
         ? new Promise((r) => {
             land = r
@@ -266,7 +270,7 @@ describe('the values epoch', () => {
 
   it('a scoped read that resolves no page retires no override', async () => {
     await mount(collection())
-    nexus().loadValues = vi.fn(async () => ({ ok: true, value: {} }))
+    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: {} }))
     act(() => api?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
@@ -275,7 +279,10 @@ describe('the values epoch', () => {
 
   it('a failed read keeps the values already held', async () => {
     await mount(collection())
-    nexus().loadValues = vi.fn(async () => ({ ok: false, error: { code: 'operation-failed' } }))
+    channels['view:loadValues'] = vi.fn(async () => ({
+      ok: false,
+      error: { code: 'operation-failed' },
+    }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
     expect(api?.effectiveValues.p1).toEqual(VALUES.p1)
@@ -284,7 +291,9 @@ describe('the values epoch', () => {
   it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
     await mount(collection())
     let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
-    nexus().loadValues = vi.fn(() => new Promise<{ ok: true; value: typeof P2 }>((r) => (land = r)))
+    channels['view:loadValues'] = vi.fn(
+      () => new Promise<{ ok: true; value: typeof P2 }>((r) => (land = r)),
+    )
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
@@ -309,24 +318,24 @@ describe('the values epoch', () => {
 
   it('one push over several containers reaches the mounted one', async () => {
     await mount(collection())
-    nexus().loadValues = vi.fn(async () => ({ ok: true, value: P2 }))
+    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([
       { rel: 'Other', pageIds: ['p9'] },
       { rel: 'Col', pageIds: ['p2'] },
     ])
     await act(async () => {})
-    expect(nexus().loadValues).toHaveBeenCalledTimes(1)
+    expect(loadValues()).toHaveBeenCalledTimes(1)
     expect(api?.effectiveValues.p2).toEqual(P2.p2)
   })
 
   it('a sibling container push neither refetches nor retires', async () => {
     await mount(collection())
-    nexus().loadValues.mockClear()
+    loadValues().mockClear()
     act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Other', pageIds: ['p2'] }])
     await act(async () => {})
-    expect(nexus().loadValues).not.toHaveBeenCalled()
+    expect(loadValues()).not.toHaveBeenCalled()
     expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 

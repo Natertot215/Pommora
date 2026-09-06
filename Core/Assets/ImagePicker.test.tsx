@@ -7,6 +7,7 @@ import type { Crop } from '@pommora/core/Nexus/schemas'
 import { DEFAULT_CROP } from '@pommora/core/Assets/cropGeometry'
 import { useSession } from '../Session/store'
 import { ImagePicker } from './ImagePicker'
+import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -234,7 +235,9 @@ describe('ImagePicker', () => {
       version: ver++,
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
-    ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:pickFile': () => Promise.resolve('/abs/New.png'),
+    })
     let settle: (landed: string | undefined) => void = () => {}
     const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))
     const base = {
@@ -265,7 +268,9 @@ describe('ImagePicker', () => {
       version: ver++,
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
-    ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
+    ;(window as { nexus?: unknown }).nexus = stubDialer({
+      'nexus:pickFile': () => Promise.resolve('/abs/New.png'),
+    })
     let settle: (landed: string | undefined) => void = () => {}
     const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))
     const base = {

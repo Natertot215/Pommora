@@ -43,6 +43,7 @@ import {
 } from './tileKinds'
 import { TileHandleMenu } from './TileHandleMenu'
 import { useTileDoc } from './useTileDoc'
+import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
 
 function pagePickerItems(
@@ -186,7 +187,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
       setEditingId((cur) => (cur === id ? null : cur))
-      void window.nexus.tiles.convertToPage(host, id, pageId).then(refreshEntries)
+      void dialer().ask('tiles:convertToPage', host, id, pageId).then(refreshEntries)
     },
     [refreshEntries, host],
   )
@@ -204,8 +205,8 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         : (container.views ?? []).find((v) => v.id === pick.view_id)
       if (!config) return
       setEditingId((cur) => (cur === id ? null : cur))
-      void window.nexus.tiles
-        .convertToView(host, id, [{ source_id: pick.source_id, config }])
+      void dialer()
+        .ask('tiles:convertToView', host, id, [{ source_id: pick.source_id, config }])
         .then(refreshEntries)
     },
     [tree, refreshEntries, host],
@@ -248,11 +249,13 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   )
   const duplicateTile = useCallback(
     (id: string) => {
-      void window.nexus.tiles.duplicateTile(host, id).then((r) => {
-        if (!r.ok) return
-        refreshEntries()
-        commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
-      })
+      void dialer()
+        .ask('tiles:duplicateTile', host, id)
+        .then((r) => {
+          if (!r.ok) return
+          refreshEntries()
+          commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
+        })
     },
     [refreshEntries, commitLayout, host],
   )
@@ -265,7 +268,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
         removing.current.add(id)
         setEditingId((cur) => (cur === id ? null : cur))
         commitLayout((cur) => removeLeaf(cur, id))
-        void window.nexus.tiles.removeTile(host, id).then(refreshEntries)
+        void dialer().ask('tiles:removeTile', host, id).then(refreshEntries)
         notifyRemovedTile()
       })
     },
@@ -315,15 +318,17 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
 
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
-      void window.nexus.tiles.createMarkdown(host).then((r) => {
-        if (!r.ok) return
-        refreshEntries()
-        commitLayout((cur) =>
-          target.kind === 'wedge'
-            ? attachBelow(cur, target.above, r.value.id, target.fillPx)
-            : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
-        )
-      })
+      void dialer()
+        .ask('tiles:createMarkdown', host)
+        .then((r) => {
+          if (!r.ok) return
+          refreshEntries()
+          commitLayout((cur) =>
+            target.kind === 'wedge'
+              ? attachBelow(cur, target.above, r.value.id, target.fillPx)
+              : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
+          )
+        })
     },
     [commitLayout, refreshEntries, host],
   )

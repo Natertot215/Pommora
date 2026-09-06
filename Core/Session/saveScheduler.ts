@@ -3,6 +3,7 @@
 // debounces to last-writer-wins. Built on the shared body-writer machinery.
 
 import { writeThroughBody } from './pageDetailCache'
+import { host } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
 
@@ -66,7 +67,7 @@ export function schedulePageSave(path: string, body: string): void {
   writeThroughBody(path, body)
   pageWriter.schedule(path, body, () => {
     writeThroughBody(path, body)
-    return window.nexus.updatePageBody(path, body)
+    return host().ask('page:updateBody', path, body)
   })
 }
 

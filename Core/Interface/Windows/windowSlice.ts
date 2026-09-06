@@ -18,6 +18,7 @@ import {
 import { clearWindowCache, dropWindowCache } from './windowCache'
 import { stashWindowMorph } from './windowMorph'
 import type { SessionState, Slice } from '../../Session/sessionState'
+import { host } from '../../Platform/dialer'
 
 export type WindowTarget = { id: string; path: string }
 
@@ -87,8 +88,8 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const saveWindowsFile = (file: WindowsFile): void => {
     set({ windowsFile: file })
-    void (window as { nexus?: typeof window.nexus }).nexus?.windows
-      ?.save(file)
+    void host()
+      .ask('windows:save', file)
       .catch(() => undefined)
   }
 

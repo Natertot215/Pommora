@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { windowTargetOf, useSession } from '../../Session/store'
 import { captureWindowCache, clearWindowCache, readWindowCache } from './windowCache'
+import { stubDialer } from '../../vitest.setup'
 
 const page = (id: string) => ({ id, path: `Notes/${id}.md` })
 
@@ -29,6 +30,7 @@ const tree = {
 } as unknown as NexusTree
 
 beforeEach(() => {
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
   clearWindowCache()
   useSession.setState({
     pageWindow: null,

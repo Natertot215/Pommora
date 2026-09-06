@@ -34,6 +34,7 @@ import {
 } from '../Decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../Connections'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
+import { host } from '../../Platform/dialer'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
  *  decorator and the arming selector cannot drift. */
@@ -223,7 +224,7 @@ class CodeTagWidget extends WidgetType {
       // range baked in at build time would name whichever of them mounted first.
       const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
       if (!text) return
-      void window.nexus.writeClipboard(text)
+      void host().ask('clipboard:write', text)
       el.classList.add('is-copied')
       if (resting) name.textContent = 'Copied'
       window.clearTimeout(timer)

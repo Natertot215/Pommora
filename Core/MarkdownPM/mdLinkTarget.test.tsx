@@ -19,7 +19,7 @@ class ResizeObserverStub {
 
 const opened = vi.fn()
 const openExternal = vi.fn()
-stubEditorBridge({ openExternal })
+stubEditorBridge({ 'link:open': openExternal })
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([

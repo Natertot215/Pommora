@@ -46,8 +46,8 @@ beforeEach(() => {
   // The title never arrives over the bridge: every test that needs one writes it into the shared
   // cache, which is the only thing the swap watches.
   stubEditorBridge({
-    readClipboard: async () => clipboard,
-    linkTitles: { fetch: async () => ({ ok: false, error: { code: 'offline' } }) },
+    'clipboard:read': async () => clipboard,
+    'linkTitles:fetch': async () => ({ ok: false, error: { code: 'offline' } }),
   })
   // The title cache outlives a test — one left populated shifts every offset a later test depends on.
   useSession.setState({ personalization: {}, linkTitles: {} })

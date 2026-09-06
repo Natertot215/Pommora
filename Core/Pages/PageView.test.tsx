@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../Session/store'
 import { EditorView } from '@codemirror/view'
 import { PageView } from './PageView'
+import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -19,16 +20,21 @@ beforeEach(() => {
   }
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= RO
   const empty = { get: vi.fn(async () => ({})), set: vi.fn(async () => undefined) }
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    headingIcon: empty,
-    folds: empty,
-    embedHeights: empty,
-    embedZooms: empty,
-    tableHeadingColumns: empty,
-    setEditorFormatState: vi.fn(),
-    onMenuAction: vi.fn(() => () => undefined),
-    titleMenu: vi.fn(),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'headingIcon:get': empty.get,
+    'headingIcon:set': empty.set,
+    'folds:get': empty.get,
+    'folds:set': empty.set,
+    'embedHeights:get': empty.get,
+    'embedHeights:set': empty.set,
+    'embedZooms:get': empty.get,
+    'embedZooms:set': empty.set,
+    'tableHeadingCols:get': empty.get,
+    'tableHeadingCols:set': empty.set,
+    'editor:format-state': vi.fn(),
+    'menu:action': vi.fn(() => () => undefined),
+    'nexus:titleMenu': vi.fn(),
+  })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)

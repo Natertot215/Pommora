@@ -7,6 +7,7 @@ import { aliasRows } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
 import { buildPageIndex } from './Connections'
 import { useSession } from '../Session/store'
+import { stubDialer } from '../vitest.setup'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -26,9 +27,9 @@ const duplicated = buildPageIndex([
 ])
 
 beforeEach(() => {
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    aliases: { set: vi.fn(async () => ({ ok: true, value: null })) },
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'aliases:set': vi.fn(async () => ({ ok: true, value: null })),
+  })
   useSession.setState({ pageAliases: { p1: ['the plan', 'Q3 doc'] } })
 })
 

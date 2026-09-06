@@ -3,6 +3,7 @@
 // `page_order` answers the unsorted structural case and never comes through here.
 
 import { useEffect, useState } from 'react'
+import { host } from '../Platform/dialer'
 
 interface ViewOrders {
   /** viewId → the manual order it was last dropped into. */
@@ -16,9 +17,11 @@ export function useViewOrders(containerPath: string, viewId: string): ViewOrders
   const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
   useEffect(() => {
     let canceled = false
-    void window.nexus.viewOrders.get().then((m) => {
-      if (!canceled) setViewOrders(m)
-    })
+    void host()
+      .ask('viewOrders:get')
+      .then((m) => {
+        if (!canceled) setViewOrders(m)
+      })
     return () => {
       canceled = true
     }
@@ -27,7 +30,7 @@ export function useViewOrders(containerPath: string, viewId: string): ViewOrders
     viewOrders,
     persistViewOrder: (ids) => {
       setViewOrders((m) => ({ ...m, [viewId]: ids }))
-      void window.nexus.viewOrders.set(viewId, ids)
+      void host().ask('viewOrders:set', viewId, ids)
     },
   }
 }

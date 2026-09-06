@@ -21,6 +21,7 @@ import { IconPicker } from '../Assets/IconPicker'
 import { useSession } from '../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../Interface/Toolbar/toolbar-menu.css'
+import { host } from '../Platform/dialer'
 
 const PANE_SQUARE = 225
 
@@ -77,7 +78,7 @@ export function ViewFrame({
 
   const switchTo = (id: string): void => void setActiveView(node.id, id)
   const createView = async (): Promise<void> => {
-    await window.nexus.views.save(node.path, node.kind, mintNewView('Untitled', schema))
+    await host().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema))
   }
 
   const paneRows: FrameRow[] = rows.map((v) => ({ id: v.id, group: 'assigned' as const }))
@@ -87,8 +88,8 @@ export function ViewFrame({
     const order = rows.map((v) => v.id).filter((id) => id !== drop.propId)
     order.splice(drop.toIndex, 0, drop.propId)
     void (async () => {
-      const res = await window.nexus.views.reorder(node.path, node.kind, order)
-      if (!res.ok) return void window.nexus.showError(res.error.message)
+      const res = await host().ask('views:reorder', node.path, node.kind, order)
+      if (!res.ok) return void host().ask('error:show', res.error.message)
     })()
   }
 
@@ -99,7 +100,7 @@ export function ViewFrame({
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await window.nexus.viewRowMenu({ deletable: views.length > 1 })
+    const action = await host().ask('view-row-menu', { deletable: views.length > 1 })
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)
@@ -115,7 +116,7 @@ export function ViewFrame({
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
     if (!(await askDeleteView())) return
-    const res = await window.nexus.views.delete(node.path, node.kind, v.id)
+    const res = await host().ask('views:delete', node.path, node.kind, v.id)
     if (!res.ok) return void notifyError(res.error.message)
     notifyDeleted(v.name, () => restoreView(node.path, node.kind, v, views))
   }

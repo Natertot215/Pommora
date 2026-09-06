@@ -31,13 +31,11 @@ let root: Root
 
 beforeEach(() => {
   stubEditorBridge({
-    onTilesChanged: () => () => {},
-    tiles: {
-      get: async () => ({ ok: true, value: doc }),
-      save: async () => ({ ok: true, value: null }),
-      readMarkdown: async () => ({ ok: true, value: { body: 'hello' } }),
-      writeMarkdown: async () => ({ ok: true, value: null }),
-    },
+    'tiles:changed': () => () => {},
+    'tiles:get': async () => ({ ok: true, value: doc }),
+    'tiles:save': async () => ({ ok: true, value: null }),
+    'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+    'tiles:writeMarkdown': async () => ({ ok: true, value: null }),
   })
   host = document.createElement('div')
   document.body.appendChild(host)

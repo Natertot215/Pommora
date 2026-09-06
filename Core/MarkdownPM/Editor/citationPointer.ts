@@ -11,6 +11,7 @@ import { followTarget } from './links'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from './travel'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
+import { host } from '../../Platform/dialer'
 
 /** The hover gate, the click's hit-test and the resting table cell's own handler all ask for the
  *  same element. */
@@ -118,8 +119,8 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     },
     dwell: () => null,
     menu: (hit, view) => () =>
-      void window.nexus
-        ?.citationMenu?.({ subject: 'marker', editable: !view.state.readOnly })
+      void host()
+        .ask('citation-menu', { subject: 'marker', editable: !view.state.readOnly })
         .then((action) => {
           if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
         }),
@@ -180,9 +181,11 @@ export function citationRowMenu(): Extension {
       )
       if (!entry) return false
       event.preventDefault()
-      void window.nexus?.citationMenu?.({ subject: 'citation', editable: true }).then((action) => {
-        if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
-      })
+      void host()
+        .ask('citation-menu', { subject: 'citation', editable: true })
+        .then((action) => {
+          if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
+        })
       return true
     },
   })

@@ -15,6 +15,7 @@ import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
 import { pinLabel } from '@pommora/core/Actions/toggleLabels'
+import { host } from '../Platform/dialer'
 
 export function NavRowMenu({
   item,
@@ -41,8 +42,8 @@ export function NavRowMenu({
     const livePage =
       target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
     const livePath = livePage?.kind === 'page' ? livePage.path : undefined
-    void window.nexus
-      .navRowMenu({
+    void host()
+      .ask('nav-row-menu', {
         canOpenNewTab: onOpenNewTab !== undefined,
         alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
         isPage: target.kind === 'page',

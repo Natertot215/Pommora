@@ -83,6 +83,7 @@ import { IconPicker } from '../../Assets/IconPicker'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { host } from '../../Platform/dialer'
 import './cards-view.css'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
@@ -1060,7 +1061,7 @@ const PageCard = memo(function PageCard({
     const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const action = await holdGhost(() =>
-      window.nexus.cardMenu({
+      host().ask('card-menu', {
         addable: menuAddable,
         alreadyOpen,
         editableImage: banner === 'image' && !!cover,

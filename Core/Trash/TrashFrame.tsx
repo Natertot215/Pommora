@@ -20,6 +20,7 @@ import { formatDate, nexusDateFormat } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Session/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
+import { host } from '../Platform/dialer'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -77,7 +78,7 @@ export function TrashFrame(): React.JSX.Element {
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
   const refresh = useCallback(async (): Promise<void> => {
-    const res = await window.nexus.listTrash()
+    const res = await host().ask('trash:list')
     if (!res.ok) {
       setFailed(true)
       return
@@ -107,7 +108,7 @@ export function TrashFrame(): React.JSX.Element {
     const done: TrashRow[] = []
     const refused: Refusal[] = []
     for (const row of targets) {
-      const res = await window.nexus.mutate(req(row))
+      const res = await host().ask('mutate', req(row))
       if (res.ok) done.push(row)
       else refused.push({ row, why: res.error.message })
     }
@@ -124,7 +125,8 @@ export function TrashFrame(): React.JSX.Element {
       true,
     )
     const homeless = targets.filter((r) => !r.homeResolves)
-    void window.nexus.reportTrash(
+    void host().ask(
+      'trash:report',
       `Restored ${countPhrase(done)}.`,
       [
         homeless.length > 0 &&
@@ -143,7 +145,8 @@ export function TrashFrame(): React.JSX.Element {
       (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
       false,
     )
-    void window.nexus.reportTrash(
+    void host().ask(
+      'trash:report',
       `Deleted ${countPhrase(done)}.`,
       refused.length === 0
         ? 'They have left the trash for good.'
@@ -152,7 +155,7 @@ export function TrashFrame(): React.JSX.Element {
   }
 
   const openColumnMenu = async (): Promise<void> => {
-    const action = await window.nexus.trashColumnMenu({ format: dateFormat, timeShown })
+    const action = await host().ask('trash:columnMenu', { format: dateFormat, timeShown })
     if (!action) return
     if (action.kind === 'toggleTime')
       setPersonalization('trashHideTime', timeShown ? true : undefined)
@@ -175,7 +178,7 @@ export function TrashFrame(): React.JSX.Element {
     const targets = batch ? inSet : [row]
     const homeless = !batch && !row.homeResolves
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
-    const action = await window.nexus.trashMenu({
+    const action = await host().ask('trash:menu', {
       batch,
       ...(homeless
         ? {

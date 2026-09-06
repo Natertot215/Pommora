@@ -10,6 +10,7 @@ import { ViewHost } from '../ViewHost'
 import { propsAtRoot } from '../propsAtRoot'
 import { valuesReply } from '../pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { stubDialer } from '../../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -127,6 +128,7 @@ let root: Root
 let mutateSpy: ReturnType<typeof vi.fn>
 let selectSpy: ReturnType<typeof vi.fn>
 let openExternalSpy: ReturnType<typeof vi.fn>
+let channels: Record<string, unknown>
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -135,16 +137,17 @@ beforeEach(() => {
   mutateSpy = vi.fn(async () => {})
   selectSpy = vi.fn(async () => {})
   openExternalSpy = vi.fn(async () => {})
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    loadValues: async () => VALUES,
-    activeViews: { get: async () => ({}) },
-    viewOrders: { get: async () => ({}) },
-    views: { save: vi.fn(async () => ({ ok: true, value: { id: 'v1' } })) },
-    cellMenu: vi.fn(async () => null),
-    connMenu: vi.fn(async () => null),
-    columnMenu: vi.fn(async () => null),
-    openExternal: openExternalSpy,
+  channels = {
+    'view:loadValues': async () => VALUES,
+    'activeViews:get': async () => ({}),
+    'viewOrders:get': async () => ({}),
+    'views:save': vi.fn(async () => ({ ok: true, value: { id: 'v1' } })),
+    'cell-menu': vi.fn(async () => null),
+    'conn-menu': vi.fn(async () => null),
+    'column-menu': vi.fn(async () => null),
+    'link:open': openExternalSpy,
   }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: {
       personalization: {},
@@ -265,12 +268,11 @@ describe('checkbox cell gestures', () => {
   })
 
   it('unchecking a checked box strips the property — no stored false', async () => {
-    ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
-      async () =>
-        valuesReply({
-          p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
-          p2: { [ID_KEY]: 'p2' },
-        })
+    channels['view:loadValues'] = async () =>
+      valuesReply({
+        p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
+        p2: { [ID_KEY]: 'p2' },
+      })
     await mountTable(sourceWith())
     await act(async () => {
       host.querySelectorAll<HTMLElement>('.data-cell')[2].click()
@@ -403,7 +405,7 @@ describe('number cell inline editing', () => {
 describe('menu-entered editing', () => {
   it('url Edit normalizes a schemeless link on commit', async () => {
     await mountTable(sourceWith())
-    ;(window.nexus as { connMenu: unknown }).connMenu = vi.fn(async () => 'editLink')
+    channels['conn-menu'] = vi.fn(async () => 'editLink')
     const urlCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
     await act(async () => {
       urlCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -424,7 +426,7 @@ describe('menu-entered editing', () => {
 
   it('title Rename commits a rename op', async () => {
     await mountTable(sourceWith())
-    ;(window.nexus as { cellMenu: unknown }).cellMenu = vi.fn(async () => 'title:rename')
+    channels['cell-menu'] = vi.fn(async () => 'title:rename')
     const titleCell = host.querySelectorAll<HTMLElement>('.data-cell')[0]
     await act(async () => {
       titleCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -559,7 +561,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     }) as unknown as CollectionNode
 
   const mountChips = async (): Promise<void> => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+    channels['view:loadValues'] = async () =>
       valuesReply({
         p1: {
           [ID_KEY]: 'p1',
@@ -607,7 +609,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   })
 
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+    channels['view:loadValues'] = async () =>
       valuesReply({
         p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
       })
@@ -640,7 +642,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
   })
 
   it('a Compact status look carries NO × — Clear lives in its menu', async () => {
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+    channels['view:loadValues'] = async () =>
       valuesReply({
         p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
       })
@@ -659,7 +661,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const twoFiles = (): CollectionNode => {
     const s = sourceWith()
-    ;(window.nexus as { loadValues: unknown }).loadValues = async () =>
+    channels['view:loadValues'] = async () =>
       valuesReply({
         p1: {
           [ID_KEY]: 'p1',
@@ -671,8 +673,8 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
   const fileCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[5]
 
   beforeEach(() => {
-    ;(window.nexus as { pickFile: unknown }).pickFile = vi.fn(async () => '/outside/New.pdf')
-    ;(window.nexus as { adoptFile: unknown }).adoptFile = vi.fn(async () => ({
+    channels['nexus:pickFile'] = vi.fn(async () => '/outside/New.pdf')
+    channels['assets:adopt'] = vi.fn(async () => ({
       ok: true,
       value: '[[New.pdf]]',
     }))

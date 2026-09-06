@@ -4,6 +4,7 @@ import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from './personalization'
 import type { Slice } from './sessionState'
+import { host } from '../Platform/dialer'
 
 export interface ConfigSlice {
   personalization: Personalization
@@ -52,7 +53,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
           : s.tree,
     }))
     applyPersonalizationKey(key, value)
-    void window.nexus.personalization.set(key, value)
+    void host().ask('personalization:set', key, value)
   },
 
   commands: DEFAULT_COMMANDS,
@@ -60,7 +61,7 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   devicePrefs: {},
   setDevicePref: (key, value) => {
     set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
-    void window.nexus.devicePrefs.save(get().devicePrefs)
+    void host().ask('devicePrefs:save', get().devicePrefs)
   },
 
   citationsShown: {},
@@ -79,13 +80,13 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
       else next[pageId] = shown
       return { citationsShown: next }
     })
-    void window.nexus.citations.set(pageId, shown)
+    void host().ask('citations:set', pageId, shown)
   },
 
   // The tree leaf is what the field reads, patched on the write's own confirm — a refusal
   // needs no local rollback.
   setAssetDirectory: async (dir) => {
-    await window.nexus.setAssetDir(dir)
+    await host().ask('assets:setDir', dir)
   },
-  setExclusions: (folders) => window.nexus.setExclusions(folders),
+  setExclusions: (folders) => host().ask('exclusions:set', folders),
 })

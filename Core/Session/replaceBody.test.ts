@@ -4,14 +4,16 @@ import { useSession } from './store'
 import { clearCache, readBodyEpoch, readPageDetail } from './pageDetailCache'
 import { captureCache, readCache } from '../Navigation/warmTabs'
 import { schedulePageSave } from './saveScheduler'
+import { stubDialer } from '../vitest.setup'
 
 const detail = { id: 'a', title: 'A', path: 'Notes/a.md', frontmatter: {}, body: 'restored' }
 
+let channels: Record<string, unknown>
+
 beforeEach(() => {
   clearCache()
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    openPage: vi.fn(async () => ({ ok: true, value: detail })),
-  }
+  channels = { 'page:open': vi.fn(async () => ({ ok: true, value: detail })) }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
 afterEach(() => {
   vi.useRealTimers()
@@ -22,9 +24,8 @@ afterEach(() => {
 const armSave = (openPage: () => Promise<unknown>) => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))
-  const nexus = window.nexus as unknown as { updatePageBody: unknown; openPage: unknown }
-  nexus.updatePageBody = updatePageBody
-  nexus.openPage = openPage
+  channels['page:updateBody'] = updatePageBody
+  channels['page:open'] = openPage
   schedulePageSave('Notes/a.md', 'stale plus a keystroke')
   return updatePageBody
 }

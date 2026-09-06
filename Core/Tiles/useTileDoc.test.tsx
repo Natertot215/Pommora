@@ -6,6 +6,7 @@ import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { insertBand } from './layout/ops'
 import { tileIds } from './layout/model'
 import { type TileDocSession, useTileDoc } from './useTileDoc'
+import { stubDialer } from '../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const HOST: TileHostRef = { kind: 'space', id: 'sp1' }
@@ -42,13 +43,14 @@ beforeEach(async () => {
   releaseSave = null
   save.mockClear()
   get.mockClear()
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    tiles: { get, save },
-    onTilesChanged: (fn: (host: TileHostRef) => void) => {
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'tiles:get': get,
+    'tiles:save': save,
+    'tiles:changed': (fn: (host: TileHostRef) => void) => {
       push = fn
       return () => {}
     },
-  }
+  })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)

@@ -4,6 +4,7 @@ import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { NavRowMenu } from './NavList'
 import type { ResolvedNav } from './navResolve'
+import { stubDialer } from '../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const item = {
@@ -26,7 +27,9 @@ beforeEach(() => {
         answers.push(resolve)
       }),
   )
-  ;(window as unknown as { nexus: unknown }).nexus = { navRowMenu: popup }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'nav-row-menu': popup,
+  })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)

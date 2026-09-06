@@ -17,7 +17,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const connMenu = vi.fn<(ctx: { editable: boolean }) => Promise<ConnMenuAction | null>>()
-stubEditorBridge({ connMenu })
+stubEditorBridge({ 'conn-menu': connMenu })
 
 beforeEach(() => {
   connMenu.mockReset()

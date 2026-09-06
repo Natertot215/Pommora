@@ -1,6 +1,7 @@
 import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
 import { useSession } from '../Session/store'
 import { notifyDeleted } from './notifications'
+import { host } from '../Platform/dialer'
 
 export interface ConfirmRequest {
   message: string
@@ -27,7 +28,7 @@ export const confirmDelete = async (target: {
   title: string
 }): Promise<void> => {
   if (!waived(target.kind)) {
-    const { trashMode } = await window.nexus.deleteFacts()
+    const { trashMode } = await host().ask('delete:facts')
     const yes = await ask({
       message: `Delete “${target.title}”?`,
       detail:
@@ -100,7 +101,7 @@ export const askClearOption = (name: string): Promise<boolean> =>
   })
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
-  const { permanentDelete } = await window.nexus.deleteFacts()
+  const { permanentDelete } = await host().ask('delete:facts')
   return ask({
     message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
     detail: permanentDelete

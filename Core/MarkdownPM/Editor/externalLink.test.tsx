@@ -17,7 +17,11 @@ class ResizeObserverStub {
 const openExternal = vi.fn()
 const connMenu = vi.fn<(ctx: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
-stubEditorBridge({ openExternal, connMenu, writeClipboard })
+stubEditorBridge({
+  'link:open': openExternal,
+  'conn-menu': connMenu,
+  'clipboard:write': writeClipboard,
+})
 
 beforeEach(() => {
   openExternal.mockReset()

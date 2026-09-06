@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownEditor } from '.'
 import { useSession } from '../Session/store'
+import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
 
@@ -35,18 +36,19 @@ let root: Root | null = null
  *  no write channel exists here, so nothing a test types can reach a real file. */
 export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-  ;(window as unknown as { nexus: unknown }).nexus = {
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     // Every editor surface takes the native-menu seam, and it is read at mount.
-    setEditorFormatState: () => {},
+    'editor:format-state': () => {},
     // The footnotes section's disclosure is a per-page row the editor writes through the store.
-    citations: { get: async () => ({}), set: () => {} },
-    onMenuAction: () => () => {},
-    openPage: async () => ({
+    'citations:get': async () => ({}),
+    'citations:set': () => {},
+    'menu:action': () => () => {},
+    'page:open': async () => ({
       ok: true,
       value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner' },
     }),
     ...extra,
-  }
+  })
 }
 
 export async function mountEditor(props: HarnessProps): Promise<EditorView> {

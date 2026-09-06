@@ -7,6 +7,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../Session/store'
 import { GroupFrame } from './GroupFrame'
+import { stubDialer } from '../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -90,11 +91,11 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
-  ;(window as unknown as { nexus: unknown }).nexus = {
-    views: { save: saveSpy },
-    activeViews: { set: vi.fn(async () => {}) },
-    loadValues: vi.fn(async () => ({ ok: true, value: {} })),
-  }
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    'views:save': saveSpy,
+    'activeViews:set': vi.fn(async () => {}),
+    'view:loadValues': vi.fn(async () => ({ ok: true, value: {} })),
+  })
   useSession.setState({ load: vi.fn(async () => {}) as never })
 })
 afterEach(() => {
