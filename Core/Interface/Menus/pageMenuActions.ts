@@ -10,7 +10,7 @@ import { host } from '../../Platform/dialer'
 
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
   return {
-    moveTargets: tree ? containerTargets(tree.collections) : [],
+    moveTargets: containerTargets(tree),
     currentParentPath: parentOf(path),
   }
 }

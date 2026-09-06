@@ -14,7 +14,7 @@ import {
   spaceIdentityOf,
 } from '../contextIdentity'
 import { resolveFieldValue } from '../value'
-import { buildResolveContext, type ResolveContext } from '../resolveContext'
+import { buildValueContext, type ValueContext } from '../valueContext'
 import { sharedValueClickAction } from '../Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from '../Pickers/filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '../../Interface/Menus/connectionMenu'
@@ -29,7 +29,7 @@ export interface PropertyRowsPage {
 
 export interface PropertyRows {
   schema: PropertyDefinition[]
-  ctx: ResolveContext | null
+  ctx: ValueContext | null
   contextRows: { id: string; label: string; icon: string }[]
   contextValues: Record<string, string[]> | undefined
   row: ViewRow | null
@@ -68,8 +68,8 @@ export function usePropertyRows(
   const path = page?.path ?? ''
 
   const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
-  const ctx = useMemo<ResolveContext | null>(
-    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
+  const ctx = useMemo<ValueContext | null>(
+    () => (tree ? buildValueContext(tree, schema, assetMap) : null),
     [tree, schema, assetMap],
   )
   const contextRows = useMemo(

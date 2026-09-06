@@ -16,12 +16,12 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME } from '@pommora/core/Pages/mutateRequest'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
-import { useSession } from '../Session/store'
-import { declaredType, resolveFieldValue } from '../Properties/value'
-import { filterSeeds } from './Pipeline/creationSeeds'
-import { flattenContainer, frontmatterOf } from './Pipeline/group'
-import { orderWithSlot, tieOrderWith } from './creationOrder'
-import { groupKeyToValue } from './TableView/reassign'
+import { useSession } from '../../Session/store'
+import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { filterSeeds } from '../Pipeline/creationSeeds'
+import { flattenContainer, frontmatterOf } from '../Pipeline/group'
+import { orderWithSlot, tieOrderWith } from '../creationOrder'
+import { groupKeyToValue } from '../reassign'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
 const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])

@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { fail, ok, type Result } from '@pommora/core/Contract/result'
 import { pickViewState, type SavedView, type ViewState } from '@pommora/core/Views/views'
-import { saveViewAdopting } from './viewMint'
+import { saveViewAdopting } from './Host/viewMint'
 
 export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
 

@@ -17,7 +17,6 @@ import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
-import './nav-gallery.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { thumbKey, thumbRel } from '@pommora/core/Locations/nexusPaths'
 import { assetUrl } from '../Platform/assetUrl'
@@ -49,7 +48,15 @@ export function NavGallery({
     <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
   )
   return (
-    <div className="nav-gallery">
+    <div
+      className="nav-gallery"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--card-gap-v)',
+        padding: '0 var(--surface-inset)',
+      }}
+    >
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} layout="grid" onReorder={reorderPin}>

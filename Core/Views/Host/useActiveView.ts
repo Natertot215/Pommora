@@ -1,9 +1,9 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import { useSession } from '../Session/store'
-import { useViewTileScope } from './ViewTileScope'
-import { pickView } from './Pipeline/pickView'
+import { useSession } from '../../Session/store'
+import { useViewTileScope } from '../ViewTileScope'
+import { pickView } from '../Pipeline/pickView'
 
 export function useActiveView(
   source: CollectionNode | SetNode,

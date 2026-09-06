@@ -4,7 +4,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'
 import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
-import { host } from '../Platform/dialer'
+import { host } from '../../Platform/dialer'
 
 const inFlight = new Map<string, Promise<string>>()
 

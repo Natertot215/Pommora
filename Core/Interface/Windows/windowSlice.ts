@@ -99,12 +99,12 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     if (win) {
       const rec = toWindowRecord(win)
       file =
-        win.flavor === 'nav'
-          ? { ...file, navSet: rec, open: { flavor: 'nav', originId: win.originId } }
+        win.kind === 'nav'
+          ? { ...file, navSet: rec, open: { kind: 'nav', originId: win.originId } }
           : {
               ...file,
               origins: { ...file.origins, [win.originId]: rec },
-              open: { flavor: 'page', originId: win.originId },
+              open: { kind: 'page', originId: win.originId },
             }
     } else {
       file = { ...file, open: null }
@@ -141,7 +141,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     const prev = get().pageWindow
     set({ pageWindow: next, ...extra })
     const retire =
-      prev && prev.flavor === 'page' && prev.originId !== next?.originId ? prev.originId : undefined
+      prev && prev.kind === 'page' && prev.originId !== next?.originId ? prev.originId : undefined
     mirrorWindows(retire)
   }
 
@@ -152,14 +152,14 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     closeHistory: () => set({ historyTarget: null }),
     openWindow: (target) => {
       const cur = get().pageWindow
-      if (cur?.flavor === 'page' && cur.originId === target.id) return
+      if (cur?.kind === 'page' && cur.originId === target.id) return
       const { tabs: restored, activeTab } = reconcileRecord(get().windowsFile.origins[target.id])
       const tabs =
         restored.length > 0
           ? restored
           : [{ id: makeTabId(), target: { kind: 'page' as const, ...target } }]
       const next: WindowState = {
-        flavor: 'page',
+        kind: 'page',
         originId: target.id,
         tabs,
         activeTabId: (activeTab ?? tabs[0]).id,
@@ -171,14 +171,14 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
     openNavWindow: () => {
       const cur = get().pageWindow
-      if (cur?.flavor === 'nav') return
+      if (cur?.kind === 'nav') return
       // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
-      const morphing = cur?.flavor === 'page'
+      const morphing = cur?.kind === 'page'
       if (morphing) stashWindowMorph()
       const { tabs: pages } = reconcileRecord(get().windowsFile.navSet)
       const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }
       const next: WindowState = {
-        flavor: 'nav',
+        kind: 'nav',
         originId: 'navwindow',
         tabs: [sentinel, ...pages],
         activeTabId: sentinel.id,

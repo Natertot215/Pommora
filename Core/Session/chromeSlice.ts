@@ -1,5 +1,5 @@
-import type { ConfirmRequest } from '../Interface/confirmations'
-import type { Notification } from '../Interface/notifications'
+import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
+import type { Notification } from '../Interface/Notifications/notifications'
 import type { Slice } from './sessionState'
 
 export interface ChromeSlice {

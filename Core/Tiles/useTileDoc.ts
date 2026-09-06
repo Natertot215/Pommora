@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type TileHostRef, tileHostKey } from '@pommora/core/Tiles/tiles'
 import { useSession } from '../Session/store'
-import { decodeLayout, encodeLayout } from './layout/codec'
-import { emptyLayout, type TileLayout } from './layout/model'
+import { decodeLayout, encodeLayout } from './Layout/codec'
+import { emptyLayout, type TileLayout } from './Layout/model'
 import { host as dialer } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 300

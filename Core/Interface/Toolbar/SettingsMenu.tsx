@@ -1,7 +1,7 @@
 import { useSession } from '../../Session/store'
 import { viewSettingsScope } from './viewSettingsScope'
 import { MenuSurface } from '@pommora/uix/Menus'
-import { SettingsFrame } from '../../Views/SettingsFrame'
+import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { PageMenu } from '../../Pages/PageMenu'
 import { SettingsScaffold } from '../../Tiles/HomepageSettings'
 import * as s from '@pommora/uix/Menus/frames.css'

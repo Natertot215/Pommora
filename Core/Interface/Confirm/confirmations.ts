@@ -1,7 +1,7 @@
 import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
-import { useSession } from '../Session/store'
-import { notifyDeleted } from './notifications'
-import { host } from '../Platform/dialer'
+import { useSession } from '../../Session/store'
+import { notifyDeleted } from '../Notifications/notifications'
+import { host } from '../../Platform/dialer'
 
 export interface ConfirmRequest {
   message: string

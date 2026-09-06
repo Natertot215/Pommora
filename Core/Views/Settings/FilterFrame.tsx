@@ -6,7 +6,7 @@ import type { FilterRule, SavedView } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import { SegmentRun } from '@pommora/uix/Fields/SegmentRun'
 import * as sr from '@pommora/uix/Fields/segment-run.css'
-import { EntityIcon } from '../Assets/EntityIcon'
+import { EntityIcon } from '../../Assets/EntityIcon'
 import { labelColorFor } from '@pommora/uix/Theme/colorMap'
 import {
   DisclosureRow,
@@ -24,17 +24,17 @@ import { OverScroll } from '@pommora/uix/Elements/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker/CalendarPicker'
-import { contextIdsOf, isContextColumnId } from '../Properties/contextIdentity'
-import { useStyleFor } from './columnStyles'
-import { useSession } from '../Session/store'
-import { condensedDate, formatDate } from '../Properties/formatValue'
-import { contextOptionsFor, type ContextOption } from '../Properties/contextOptions'
-import { declaredType } from '../Properties/value'
-import { toggleValue } from '../Properties/Pickers/PropertyPicker'
-import { CheckboxGlyph } from '../Properties/Cells/checkboxLook'
+import { contextIdsOf, isContextColumnId } from '../../Properties/contextIdentity'
+import { useStyleFor } from '../Host/columnStyles'
+import { useSession } from '../../Session/store'
+import { condensedDate, formatDate } from '../../Properties/formatValue'
+import { contextOptionsFor, type ContextOption } from '../../Properties/contextOptions'
+import { declaredType } from '../../Properties/value'
+import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
+import { CheckboxGlyph } from '../../Properties/Cells/checkboxLook'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useSaveView } from './ViewTileScope'
+import { useSaveView } from '../ViewTileScope'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { optionsOf } from './GroupFrame'
 import {
@@ -48,11 +48,11 @@ import {
   encodeFilter,
   filterTargets,
   operatorsFor,
-} from './filterModel'
+} from '../filterModel'
 import * as fp from './filter-frame.css'
 import { SpaceChip } from '@pommora/uix/Labels'
-import { OptionChip } from '../Properties/Cells/OptionChip'
-import { useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
+import { OptionChip } from '../../Properties/Cells/OptionChip'
+import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },

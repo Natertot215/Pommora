@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSession } from '../Session/store'
+import { useSession } from '../../Session/store'
 import { duration, ms, paneSlide } from '@pommora/uix/Animations'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useHeld'

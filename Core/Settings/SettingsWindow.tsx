@@ -58,7 +58,7 @@ import { TrashFrame } from '../Trash/TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
-import { askClearExclusions, askClearHistory } from '../Interface/confirmations'
+import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { host } from '../Platform/dialer'
 import './settings-window.css'
 

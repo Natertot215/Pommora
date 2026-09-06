@@ -2,12 +2,12 @@ import { type CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useS
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import { SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
+import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Theme/size.css'
-import { findTile } from './layout/model'
-import type { DividerRef, Edge, TileLayout } from './layout/model'
-import { resolveEdge } from './layout/edges'
-import { hitTest, type DropTarget } from './layout/hitTest'
+import { findTile } from './Layout/model'
+import type { DividerRef, Edge, TileLayout } from './Layout/model'
+import { resolveEdge } from './Layout/edges'
+import { hitTest, type DropTarget } from './Layout/hitTest'
 import {
   moveTile,
   moveTileToBand,
@@ -15,9 +15,9 @@ import {
   resizeDivider,
   resizeStackPair,
   stretchTileHeight,
-} from './layout/ops'
-import { computeGeometry, type Rect } from './layout/rects'
-import { snapAxis, xCandidates, yCandidates } from './layout/snap'
+} from './Layout/ops'
+import { computeGeometry, type Rect } from './Layout/rects'
+import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import './tile-base.css'
 import './tile-grid.css'
 
@@ -394,7 +394,7 @@ export function TileGrid({
         const px = clientX - downBox.left + dsx
         const py = clientY - downBox.top + dsy
         setTileDrag({ id, lift: { x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h } })
-        target = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target)
+        target = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target, HYSTERESIS)
         latest = applyTarget(origin, id, target)
         setDraft(latest === origin ? null : latest)
       }
