@@ -1,5 +1,4 @@
-// A native menu stays open as long as the reader likes and an undo can move the document under it, so every
-// action re-finds its target in the live document and matches it against what the menu was built from.
+// A native menu stays open as long as the reader likes and an undo can move the document under it, so every action re-finds its target in the live document and matches it against what the menu was built from.
 import {
   type ChangeSet,
   type ChangeSpec,
@@ -45,8 +44,7 @@ export function travelToCitation(view: EditorView, label: string): void {
   travelTo(view, entry.contentStart)
 }
 
-/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker —
- *  outside the section and outside code. Both halves come off the cached scan; a whole-document form would re-pair every fence. */
+/** A footnote annotates the words it follows, so the selection's end is where every creation puts the marker — outside the section and outside code. Both halves come off the cached scan. */
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
   const at = state.selection.main.to
@@ -69,8 +67,7 @@ export function commitCitation(
   return set
 }
 
-/** The pair is found again in the finished document rather than assumed: a minted label is free, not final, and
- *  the normalization riding the same transaction may have renumbered it. */
+/** The pair is found again in the finished document rather than assumed: a minted label is free, not final, and the normalization riding the same transaction may have renumbered it. */
 function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec[]): boolean {
   const set = commitCitation(view, changes, 'input')
   if (!set) return false
@@ -98,9 +95,7 @@ export function insertCitation(view: EditorView, text = ''): boolean {
   ])
 }
 
-/** Typing a label that already has a citation adopts it and rewrites nothing, which is how a footnote comes to be
- *  shared by hand. It cannot be a link in the typing chain: every transform there returns one range, and this
- *  writes at two disjoint sites. */
+/** It cannot be a link in the typing chain: every transform there returns one range, and adopting an existing label writes at two disjoint sites. */
 export function seedTypedCitation(view: EditorView, at: number): boolean {
   if (view.state.readOnly || !citationSeatAt(view.state)) return false
   const scan = docScan(view.state.doc)
@@ -121,8 +116,7 @@ function bindingMoved(before: CitationScan, after: CitationScan): boolean {
   })
 }
 
-/** Pasting a reference binds a row that held no position a moment ago, and the section a reader sees is first-use
- *  order or it is nothing. The rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. */
+/** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. */
 export const citationOrder: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
   const after = docScan(tr.newDoc)

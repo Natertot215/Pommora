@@ -1,13 +1,10 @@
-// Typing a page embed into the document — the Embed ▸ Internal Page path. The token lands fenced on its own
-// line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
+// The token lands fenced on its own line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
 import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 
-/** The fenced insert below a block: blank-separated above and below wherever content adjoins,
- *  reusing the blank lines already standing. `token` is the placed text — a full `![[Title]]`, or
- *  the bare opener when the autocomplete finishes the title. */
+/** Blank-separated above and below wherever content adjoins, reusing the blank lines already standing. */
 export function embedInsertAfter(
   doc: string,
   blockTo: number,
@@ -32,9 +29,7 @@ export function embedInsertAfter(
   }
 }
 
-/** Whether the caret already sits where a lone-line embed may be written: a blank line, outside the
- *  regions that would make the token content rather than a construct. This is the placement Paste
- *  As offers its embed forms on. Read off the per-version scan, since it answers on every caret move. */
+/** Whether the caret already sits where a lone-line embed may be written. Read off the per-version scan, since it answers on every caret move. */
 export function embedSeatAt(state: EditorState): boolean {
   const line = state.doc.lineAt(state.selection.main.from)
   if (line.text.trim() !== '') return false
@@ -65,8 +60,7 @@ export function embedInsertAtCaret(view: EditorView): boolean {
   return insertEmbedToken(view, '![[]]', ']]'.length)
 }
 
-/** Embed ▸ Webpage: the empty pair with the caret seated inside `()` — the destination guard
- *  keeps a pasted address literal there, and leaving the line forms the tile. */
+/** The empty pair with the caret seated inside the target: the destination guard keeps a pasted address literal there, and leaving the line forms the tile. */
 export function webpageInsertAtCaret(view: EditorView): boolean {
   return insertEmbedToken(view, '![]()', ')'.length)
 }

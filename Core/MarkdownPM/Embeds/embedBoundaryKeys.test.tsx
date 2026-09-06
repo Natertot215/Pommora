@@ -22,8 +22,6 @@ const key = (view: EditorView, k: string): void => {
   )
 }
 
-// The boundary-delete refusals, driven through the real keymap: without the input-guard branches,
-// CM's default delete expands over the atomic range and removes the whole tile from one keystroke.
 describe('embed boundary keys', () => {
   it('Backspace at the line below a tile is refused', async () => {
     const doc = 'alpha\n![[Alpha]]\nbeta'
@@ -42,8 +40,6 @@ describe('embed boundary keys', () => {
   })
 
   it('a spanning selection delete removes the tile as its absorbed unit', async () => {
-    // The atomic absorb makes tile + boundary newlines one delete unit, so the neighbors join —
-    // with the fencing blanks a real tile carries, the surviving blank keeps the lines apart.
     const view = await mount('alpha\n![[Alpha]]\nbeta')
     view.dispatch({ selection: EditorSelection.range(6, 17) })
     key(view, 'Backspace')

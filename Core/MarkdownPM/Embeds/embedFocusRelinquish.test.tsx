@@ -13,8 +13,6 @@ const conn: ConnectionsApi = {
 
 const frame = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()))
 
-// A tile is an object, not text. The press never reaches CM's own handlers (ignoreEvent takes the
-// whole event out of the pipeline), so the relinquish rides the document-level listener.
 describe('a press inside a tile', () => {
   it('costs the host its caret', async () => {
     const view = await mountEditor({

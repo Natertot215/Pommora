@@ -24,12 +24,10 @@ type Disclosure = ReturnType<typeof useDisclosureSet>
 // KNOB — the gap the pane keeps from the window's right edge at full width.
 const EDGE_INSET = 10
 
-/** The page outline. Shares the Views button's slot rather than adding one: a selection is either a
- *  container or a Page, so this and `ViewMenu` are never on screen together. */
+/** Shares the Views button's slot rather than adding one: a selection is either a container or a Page, so this and `ViewMenu` are never on screen together. */
 export function OutlineMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
-  // Gate ABOVE the menu, so leaving the Page unmounts it. Rendering null below the shell's hooks
-  // would keep `open` alive with no wrapper to dismiss against — the pane would reappear, unasked.
+  // Gate ABOVE the menu, so leaving the Page unmounts it: rendering null below the shell's hooks would keep `open` alive with no wrapper to dismiss against.
   if (viewSettingsScope(selection) !== 'page') return null
   return (
     <MenuDropdown
@@ -44,8 +42,7 @@ export function OutlineMenu(): React.JSX.Element | null {
   )
 }
 
-/** Mounted only while the menu is open, so a closed outline costs a page nothing — the derivation
- *  is a whole-document scan and the body changes as fast as the editor's live buffer publishes. */
+/** Mounted only while the menu is open, so a closed outline costs a page nothing — the derivation is a whole-document scan. */
 function OutlinePane(): React.JSX.Element {
   const body = useSession((st) => pageBody(shownPage(st)))
   const flat = useMemo(() => headingOutline(body), [body])
@@ -77,8 +74,7 @@ function OutlinePane(): React.JSX.Element {
   )
 }
 
-/** One outline row: a jump-on-click / rename-on-right-click disclosure row that a press drags to
- *  reorder its section. Its own component so the drag hook runs once per row, order-stable. */
+/** Its own component so the drag hook runs once per row, order-stable. */
 function OutlineRow({
   node,
   disclosure,

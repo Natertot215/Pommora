@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// A highlight dragged from the prose into a cell crosses a document boundary — these pin which half
-// of it survives, and which direction it anchors from.
 import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -68,12 +66,10 @@ const bodyCell = (): HTMLElement =>
 
 const editing = (): boolean => container.querySelector('.mdpm-tbl-cell-editor') !== null
 
-/** Anchor a selection at `from` and sweep it into the cell, releasing there. */
 async function sweepInto(from: Node, cell: HTMLElement): Promise<void> {
   const sel = window.getSelection()!
   sel.removeAllRanges()
-  // setBaseAndExtent, not a Range: a sweep upward is anchored after its focus, and a Range collapses
-  // when its start is set past its end.
+  // setBaseAndExtent, not a Range: a sweep upward is anchored after its focus, and a Range collapses when its start is set past its end.
   sel.setBaseAndExtent(from, 0, cell.firstChild ?? cell, 0)
   await act(async () => {
     cell.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0 }))

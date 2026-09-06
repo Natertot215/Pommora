@@ -12,7 +12,6 @@ function mount(doc: string): EditorView {
   return view
 }
 
-/** What every mounted editor's bridge subscription does with a broadcast action. */
 const deliver = (view: EditorView, action: string): boolean =>
   ownsEditorMenu(view) && applyEditorAction(view, action)
 
@@ -23,9 +22,6 @@ afterEach(() => {
   }
 })
 
-/** Every mounted editor subscribes to the same bridge listener, so a chosen action reaches all of
- *  them. Parked tabs and resting embeds stay mounted — only the editor the menu was raised over may
- *  answer it. */
 describe('the native menu has one subject', () => {
   it('an unclaimed editor refuses the action outright', () => {
     const a = mount('one')
@@ -85,8 +81,6 @@ describe('the native menu has one subject', () => {
     expect(a.state.doc.toString()).toBe('one')
   })
 
-  /** A keymap only ever runs on the view the keystroke landed in, so the chord applies without a
-   *  claim — the gate is the broadcast's, not the transform's. */
   it('a keystroke applies to its own editor with no claim in play', () => {
     const a = mount('one')
     expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(true)

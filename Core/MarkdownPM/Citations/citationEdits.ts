@@ -1,5 +1,4 @@
-// What a footnote gesture writes. Cascades are keyed to the RANGE, never to the gesture (B-11): one fires only
-// where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
+// Cascades are keyed to the RANGE, never to the gesture (B-11): one fires only where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
 import { ChangeSet, type ChangeSpec, Text } from '@codemirror/state'
 import {
   type CitationEntry,
@@ -60,8 +59,7 @@ export function deleteCitationChanges(scan: CitationSlice, entry: CitationEntry)
   return cutFootnotes(scan, [entry])
 }
 
-/** Null where the range is not exactly one construct, and the deletion goes through as a plain removal. A caret
- *  counts: a marker is atomic and has no interior to land in. */
+/** Null where the range is not exactly one construct, and the deletion goes through as a plain removal. A caret counts: a marker is atomic and has no interior to land in. */
 export function citationDeleteIntent(
   scan: CitationSlice,
   from: number,
@@ -76,7 +74,6 @@ export function citationDeleteIntent(
   }
   const marker = c.markers.find((m) => m.from === from && m.to === to)
   if (marker) return deleteMarkerChanges(scan, marker)
-  // Every line the range covers must be one this section owns, and the range must start and end on those lines' own edges.
   const covered = c.entries.filter(
     (e) => scan.lineStarts[e.line] >= from && lineEndOf(scan, e.lastLine) <= to,
   )
@@ -90,8 +87,7 @@ export function citationDeleteIntent(
 
 const numericLabel = (label: string): boolean => /^\d+$/.test(label)
 
-/** Numeric labels are the gesture's to rewrite; a word label is the user's and only ever moves. The result is
- *  diffed back rather than derived edit by edit, since a reorder's edits do not commute. */
+/** Numeric labels are the gesture's to rewrite; a word label is the user's and only ever moves. The result is diffed back rather than derived edit by edit, since a reorder's edits do not commute. */
 export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
   const { text, lines, lineStarts, citations: c } = scan
   if (c.entries.length === 0) return []
@@ -179,6 +175,4 @@ export function citationRowChanges(
   return { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
 }
 
-/** A citation is one paragraph — a following line continues it only while nothing on it starts a block, and a list
- *  marker parses at any indent, so a multi-line paste could end the run it was written into. */
 export const citationText = (clipboard: string): string => clipboard.trim().replace(/\s+/g, ' ')

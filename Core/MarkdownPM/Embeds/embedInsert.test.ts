@@ -50,7 +50,6 @@ describe('embedInsertAfter', () => {
     const c = embedInsertAfter(doc, 4, '![]()')
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
     expect(next).toBe('para\n\n![]()\n\nnext')
-    // The caret seat is one back from the helper's end-of-token — inside the `()`.
     expect(next[c.caret - 1]).toBe(')')
     expect(next[c.caret - 2]).toBe('(')
   })

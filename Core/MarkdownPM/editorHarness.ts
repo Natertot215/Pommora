@@ -1,5 +1,4 @@
-// jsdom mounting for MarkdownPM's component suites. A claimed embed line mounts a real tile whose PageTile fetches
-// through the bridge, so the read channel is stubbed here. Geometry truth stays with the CDP passes (every rect measures zero).
+// jsdom mounting for MarkdownPM's component suites: a claimed embed line mounts a real tile whose PageTile fetches through the bridge, so the read channel is stubbed here. Every rect measures zero — geometry truth stays with the CDP passes.
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'

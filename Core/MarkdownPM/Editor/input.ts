@@ -54,10 +54,8 @@ const onEnter = (view: EditorView): boolean => {
   )
 }
 
-// Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors
-// the backspace atomic behavior instead.
-/** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and
- *  the edit that chain carries is a single range. Both delete keys ask here. */
+// Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
+/** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and the edit that chain carries is a single range. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
   const changes = citationDeleteIntent(docScan(view.state.doc), from, to)
   if (!changes) return false
@@ -98,7 +96,6 @@ const onTab = (view: EditorView): boolean => {
   return true
 }
 
-// Same containment for Shift-Tab: outdent when there's a level to remove, and never blur the editor.
 const onShiftTab = (view: EditorView): boolean => {
   const s = view.state.selection.main
   apply(view, outdentListOnShiftTab(docString(view.state.doc), s.from, s.to))
@@ -135,7 +132,6 @@ export const markdownInput = [
     if (text.length !== 1 || from !== to) return false
     const scan = docScan(view.state.doc)
     if (refusedInAlias(scan.text, from, text)) return true
-    // Dispatched on its own: a seed writes at two disjoint sites, and every transform in that chain carries one range.
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,

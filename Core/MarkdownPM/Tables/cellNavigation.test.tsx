@@ -66,8 +66,6 @@ function cellEl(row: number, col: number): HTMLElement {
   return tr.children[col] as HTMLElement
 }
 
-// Imitate a real click on a resting cell: a pointerdown (the clear-listener watches this), the
-// mousedown the browser's own selection would begin on, and the click StaticCell activates on.
 async function clickCell(row: number, col: number): Promise<void> {
   const div = cellEl(row, col).querySelector('.mdpm-tbl-cell-static') as HTMLElement
   const at = { bubbles: true, cancelable: true, button: 0, clientX: 4, clientY: 4 }
@@ -112,8 +110,6 @@ describe('table single-live-cell navigation', () => {
     expect(activeText()).toBe('c2')
   })
 
-  // The press belongs to the browser: a drag that begins in one cell has to be able to highlight
-  // across the ones it reaches, which it cannot do if the cell swaps to an editor under it.
   it('leaves the press alone, so a selection can be dragged out of the cell', async () => {
     await mount()
     const div = cellEl(1, 0).querySelector('.mdpm-tbl-cell-static') as HTMLElement

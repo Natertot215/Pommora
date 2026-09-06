@@ -5,7 +5,6 @@ import { awaitTitle, pendingTitles, type PendingTitle } from './pendingTitle'
 const URL = 'https://www.example.com/a/b'
 const LINK = `[example.com](${URL})`
 
-/** A document holding `LINK` at `at`, with that link already announced as awaiting its title. */
 function armed(doc: string, at: number): EditorState {
   const state = EditorState.create({ doc, extensions: [pendingTitles] })
   return state.update({
@@ -13,8 +12,6 @@ function armed(doc: string, at: number): EditorState {
   }).state
 }
 
-/** Both copies of `LINK` in a two-line document, each announced against its own range in one
- *  transaction — the shape the same address pasted twice leaves behind. */
 function armedTwice(): EditorState {
   const state = EditorState.create({ doc: `${LINK}\n${LINK}`, extensions: [pendingTitles] })
   return state.update({
@@ -58,8 +55,6 @@ describe('the pending-title anchor', () => {
     expect(anchors(after)).toHaveLength(0)
   })
 
-  // The gate C-4 turns on: the label is only replaced if it is still exactly what was written, so a
-  // user who retitles the link first keeps their words when the fetch lands.
   it('is pruned once the label no longer reads as written', () => {
     const s = armed(LINK, 0)
     const after = s.update({ changes: { from: 1, to: 12, insert: 'My Words' } }).state
@@ -72,8 +67,6 @@ describe('the pending-title anchor', () => {
     expect(anchors(after)).toHaveLength(1)
   })
 
-  // Text alone cannot anchor this: the same address pasted twice reads identically in both places,
-  // so a match-by-text rewrite would fire on whichever it found first, twice.
   it('keeps two anchors for the same address distinct', () => {
     const s = armedTwice()
     const [first, second] = anchors(s)

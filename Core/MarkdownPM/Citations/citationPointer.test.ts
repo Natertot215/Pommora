@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loneTarget } from './citationPointer'
 
-// B-6, the click-through condition, defined once: the citation's ENTIRE content is exactly one link
-// or exactly one Connection. Anything trailing means it is not that, and the click jumps instead.
 describe('what a citation leads to, when it leads anywhere', () => {
   it('a lone Connection is followed', () => {
     expect(loneTarget('[[Some Page]]')).toEqual({ kind: 'connection', title: 'Some Page' })

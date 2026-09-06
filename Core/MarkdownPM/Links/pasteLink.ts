@@ -13,11 +13,9 @@ import { embedSeatAt } from '../Embeds/embedInsert'
 import { awaitTitle } from './pendingTitle'
 import { host } from '../../Platform/dialer'
 
-// Turns a pasted address into a markdown link per the nexus's format setting. Settings are read at paste time
-// rather than closed over, since the extension array is built once at mount.
+// Settings are read at paste time rather than closed over, since the extension array is built once at mount.
 
-/** Deciding and writing are separate so a paste can be claimed on the decision alone — claiming after the write
- *  would leave the original text pasted alongside the link. */
+/** Deciding and writing are separate so a paste can be claimed on the decision alone — claiming after the write would leave the original text pasted alongside the link. */
 function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | null {
   // The read-only change filter drops a doc-changing transaction without a trace, so decline before dispatching.
   if (view.state.readOnly) return null
@@ -46,8 +44,7 @@ function destinationGuard(view: EditorView, pos: number): boolean {
   return linkDestinationAt(line.text, pos - line.from)
 }
 
-/** An insertion at a span's exclusive end still lands inside, so the position behind the caret answers too —
- *  except across a newline, or the first column after a fence would read as the fence's. */
+/** An insertion at a span's exclusive end still lands inside, so the position behind the caret answers too — except across a newline, or the first column after a fence would read as the fence's. */
 function insideCodeAtCaret(view: EditorView, pos: number): boolean {
   const scan = docScan(view.state.doc)
   if (inCodeAt(scan, pos)) return true

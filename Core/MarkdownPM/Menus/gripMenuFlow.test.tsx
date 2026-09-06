@@ -25,8 +25,7 @@ const pages = [
   { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
 ]
 
-// nexus + personalization are non-optional on a real tree — treeIndex's walk dereferences both,
-// and the tiles' lazy chunk resolves against this store tree after the mounting test has ended.
+// nexus + personalization are non-optional on a real tree: treeIndex's walk dereferences both, and the tiles' lazy chunk resolves against this store tree after the mounting test has ended.
 const treeOf = (collectionPages: { id: string; title: string; path: string }[]): NexusTree =>
   ({
     nexus: { name: 'Test' },
@@ -47,7 +46,6 @@ afterEach(cleanupEditor)
 const mount = (initialBody: string): Promise<EditorView> =>
   mountEditor({ initialBody, connections: conn, embedAncestors: ['Notes/EmbedHost.md'] })
 
-/** Every page title the menu offered, at any depth of the Source drill. */
 const offeredTitles = (): string[] => {
   const out: string[] = []
   const walk = (rows: readonly ActionItem<string>[]): void => {
@@ -60,8 +58,7 @@ const offeredTitles = (): string[] => {
   return out
 }
 
-/** Right-click a line's gutter strip — jsdom rects are all zero, so clientX −1 clears the hit-test.
- *  A claimed line's raw text is replaced by its widget, so 'tile' finds the line hosting one. */
+/** Right-click a line's gutter strip — jsdom rects are all zero, so clientX −1 clears the hit-test. */
 async function gripMenu(view: EditorView, lineText: string): Promise<void> {
   const line = [...view.dom.querySelectorAll('.cm-line')].find((l) =>
     lineText === 'tile'
@@ -125,9 +122,6 @@ describe("a list grip's Type switch", () => {
   })
 })
 
-// A native menu is held open for as long as the user likes, and an undo or an outside write can move
-// the document underneath it. Spending a span captured before it reaches past the end of a shortened
-// document — inside a promise, where the throw is unhandled.
 describe('a document that moves while the menu is open', () => {
   it('declines rather than acting on whatever now sits at the span', async () => {
     const view = await mount('- alpha\n- beta\n\ntail paragraph')
@@ -139,7 +133,6 @@ describe('a document that moves while the menu is open', () => {
       line.dispatchEvent(
         new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: -1 }),
       )
-      // The document shrinks past the captured span before the menu's promise settles.
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '- a' } })
       await Promise.resolve()
     })
@@ -153,7 +146,7 @@ describe('the embed tile grip', () => {
     nextPick = 'source:Beta'
     await gripMenu(view, 'tile')
     expect(calls[0]?.[0].label).toBe('Source')
-    expect(offeredTitles()).toEqual(['Beta', 'Soup']) // Alpha embedded, EmbedHost is the host
+    expect(offeredTitles()).toEqual(['Beta', 'Soup'])
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
@@ -251,21 +244,17 @@ describe("a webpage tile's Edit Link", () => {
 
   it('seats the selection on the address in the line, un-forming the tile until it leaves', async () => {
     const view = await mount(`intro\n${LINE}`)
-    // The tile forms while the selection sits on the first line.
     expect(view.dom.querySelector('.mdpm-embed-tile')).not.toBeNull()
 
     nextPick = 'editLink'
     await gripMenu(view, 'tile')
 
-    // The address is selected, exactly — Edit Link replaces it by typing, as every other does.
     const at = view.state.doc.line(2).from
     expect(view.state.selection.main.from).toBe(at + LINE.indexOf(URL))
     expect(view.state.selection.main.to).toBe(at + LINE.indexOf(URL) + URL.length)
-    // Seated in the line, the tile is back to raw text — nothing reloads to show a caret.
     expect(view.dom.querySelector('.mdpm-embed-tile')).toBeNull()
     expect(view.state.doc.toString()).toBe(`intro\n${LINE}`)
 
-    // Re-aim, then leave: the tile re-forms once, around the new address.
     await act(async () => {
       view.dispatch({
         changes: {

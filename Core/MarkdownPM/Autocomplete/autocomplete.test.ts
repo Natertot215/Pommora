@@ -17,9 +17,6 @@ describe('autocompleteQuery', () => {
   it('suppresses image embeds ![[…]]', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
   })
-  // Accepting a PAGE replaces the whole token, so the title is the only span that may open the page
-  // picker. The alias half opens its own form instead, and that one replaces the alias alone —
-  // renaming a link and repointing it are different edits.
   it('opens the alias form from inside an alias, spanning only the alias', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
     const r = autocompleteQuery(doc, doc.indexOf('the plan') + 3)!
@@ -62,8 +59,6 @@ describe('connectionInsert', () => {
     expect(caret).toBe(4 + '[[Page A]]'.length)
   })
 })
-// The embed branch is opt-in (allowEmbeds) and local — table cells never pass the flag, so `![[`
-// can never complete there; the connections pattern itself is untouched.
 describe('embed autocomplete detection', () => {
   it('an unclosed ![[ query resolves with the span to line end', () => {
     expect(autocompleteQuery('x ![[Fo', 7, true)).toEqual({
@@ -98,7 +93,6 @@ describe('embed autocomplete detection', () => {
 })
 
 describe('connectionInsert forms', () => {
-  // Accepting an alias writes into a link that already exists, so it brings no syntax with it.
   it('the alias form commits its words alone', () => {
     expect(connectionInsert('the plan', 5, 'alias')).toEqual({ insert: 'the plan', caret: 13 })
   })
@@ -112,8 +106,6 @@ describe('connectionInsert forms', () => {
   })
 })
 
-// ⌘K writes `[label]()`, whose target is empty — the grammar requires at least one character there,
-// so this form has to be found by its own scan or the picker never opens where it's needed most.
 describe('the ( ) form', () => {
   it('opens inside an empty target and reports the label slot', () => {
     const doc = 'see []() end'
@@ -151,8 +143,6 @@ describe('the ( ) form', () => {
 })
 
 describe('the picker declines a code sample', () => {
-  // It binds Return at the editor's highest precedence, so arming over a sample eats the newline
-  // and writes a page title into the sample instead of leaving it alone.
   it('a target inside a code span arms nothing', () => {
     const doc = 'Use `[Notes](Notes)` for links.'
     expect(autocompleteQuery(doc, doc.indexOf('](') + 2)).toBeNull()
@@ -170,7 +160,6 @@ describe('the picker declines a code sample', () => {
 })
 
 describe('a label the picker writes is markdown, not plain text', () => {
-  // Unescaped, a `]` in the title ends the label early and the whole link tokenizes as nothing.
   it('escapes a bracket-bearing title into the label slot', () => {
     const doc = 'see []() end'
     const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
@@ -181,13 +170,10 @@ describe('a label the picker writes is markdown, not plain text', () => {
     )
     expect(written).toBe('see [Notes [WIP\\]](Notes%20%5BWIP%5D) end')
     expect(tokenizeHasLink(written)).toBe(true)
-    // The escape lengthens the label, and the caret still lands past the whole link.
     expect(written.slice(edit.anchor)).toBe(' end')
   })
 })
 
-// Two shapes the commit takes beyond writing the link: accepting an alias finishes the link it
-// belongs to, and accepting a page can leave one open at its alias slot instead.
 describe('what accepting a suggestion finishes', () => {
   const page = { value: 'Alpha', label: 'Alpha', isPage: true, pageId: 'p1' }
   const alias = { value: 'the plan', label: 'the plan', isPage: false }
@@ -225,9 +211,6 @@ describe('what accepting a suggestion finishes', () => {
   })
 })
 
-// The rule is the shape on the line: a pipe with nothing between it and the closer is an alias
-// waiting to be written, and the picker offers what that page has been called. No gesture tracking
-// behind it — every way of arriving at an empty alias arrives at the same offer.
 describe('an empty alias asks for the picker by its shape alone', () => {
   it('opens on the bare pipe however the pipe got there', () => {
     const doc = 'a [[Alpha|]] b'

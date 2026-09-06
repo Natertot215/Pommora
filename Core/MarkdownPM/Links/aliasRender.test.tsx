@@ -39,8 +39,6 @@ describe('an aliased connection reads as its alias', () => {
     expect(revealed).toEqual(['[[Alpha|', ']]'])
   })
 
-  // The direction that proves resolution follows the title: the alias here names a real page and
-  // the title names nothing. Resolving by what's displayed would light this up as a live link.
   it('resolves by title, not by the alias it displays', async () => {
     const view = await mountEditor({ initialBody: '[[Nowhere|Alpha]]', connections: conn })
     expect(view.dom.querySelector('.md-connection-resolved')).toBeNull()
