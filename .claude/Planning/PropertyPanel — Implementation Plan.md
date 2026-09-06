@@ -484,8 +484,8 @@ const cellTarget = (): PickTarget | null => {
 
 **Verify — automated**
 
-- [ ] `rg -F "DatetimeCellPicker" Core` → 0. Control: `rg -F "pickerDefOf" Core` → non-zero (`massPicker` still uses it).
-- [ ] `npm run typecheck`, `npm run test` (count unmoved), `npm run lint` green.
+- [x] `DatetimeCellPicker` → 0. Control: `pickerDefOf` → 3 (`massPicker` + `cellTarget` still use it).
+- [x] `npm run typecheck`, `npm run test`, `npm run lint` green. Datetime commit re-derived: `commitValue` on a non-context column is identical to `setProperty`, so the write path is unchanged.
 
 **Verify — user**
 
@@ -739,7 +739,7 @@ without deleting more than it grows is out of scope — report it under Sequence
 - [ ] **Phase 1** — PropertyPicker becomes the one popup surface · base `<commit>`
   - [x] Task 1 — target union + chooser pane · `<commit>`
   - [x] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
-  - [ ] Task 3 — Table's two mounts; DatetimeCellPicker deleted · `<commit>`
+  - [x] Task 3 — Table's one mount; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
   - [ ] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
   - [ ] Task 5 — old PropertyPicker props removed · `<commit>`

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import { patchOverride } from '../Host/useValuesEpoch'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
@@ -25,8 +25,11 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
 import { pushValueUndo } from '../valueUndo'
-import { PropertyPicker, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
-import { DatetimeValuePicker } from '../../Properties/Pickers/DatetimeValuePicker'
+import {
+  type PickTarget,
+  PropertyPicker,
+  syntheticContextDef,
+} from '../../Properties/Pickers/PropertyPicker'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
@@ -55,7 +58,6 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { IconChoice } from '../../Assets/IconChoice'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker/TextPicker'
 import { numberDivisor } from '../../Properties/formatValue'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
@@ -88,24 +90,6 @@ const COL_SHIFT_HYSTERESIS = 25
 
 // KNOB — how long a left ghost survives before its collapse starts; 0 closes on leave immediately.
 const GHOST_GRACE_MS = 0
-
-function DatetimeCellPicker({
-  open,
-  triggerRef,
-  onDismiss,
-  children,
-}: {
-  open: boolean
-  triggerRef: RefObject<HTMLElement | null>
-  onDismiss: () => void
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <PickerMenu solid open={open} onDismiss={onDismiss} triggerRef={triggerRef}>
-      {children}
-    </PickerMenu>
-  )
-}
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
@@ -578,43 +562,41 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       (contextOptions ? syntheticContextDef(col.id) : undefined)
     return def ? { def, contextOptions } : null
   }
-  const cellPicker = (): React.ReactNode => {
+  const pickerCell = (): { row: ViewRow; col: ResolvedColumn } | null => {
     const cell = editing?.mode === 'picker' ? editing : lastPicker.current
     const row = cell && rowById.get(cell.rowId)
     const col = cell && columns.find((c) => c.id === cell.colId)
-    if (!cell || !row || !col) return null
-    const open = editing?.mode === 'picker'
-    const key = `${cell.rowId}:${cell.colId}`
-    const dismiss = (): void => setEditing(null)
-    if (col.kind === 'property' && declaredType(col.id, schema) === 'datetime') {
-      const v = resolveFieldValue(row, col.id, schema)
-      return (
-        <DatetimeCellPicker key={key} open={open} triggerRef={triggerElRef} onDismiss={dismiss}>
-          <DatetimeValuePicker
-            value={v}
-            dateFormat={colStyle(col.id).date_format}
-            onCommit={(nv) => setProperty(row, col.id, nv)}
-          />
-        </DatetimeCellPicker>
-      )
-    }
-    const picked = pickerDefOf(col)
-    if (!picked) return null
-    const { def, contextOptions } = picked
-    return (
-      <PropertyPicker
-        key={key}
-        def={def}
-        current={resolveFieldValue(row, col.id, schema)}
-        open={open}
-        triggerRef={triggerElRef}
-        look={colStyle(col.id).look}
-        {...(contextOptions ? { contextOptions } : {})}
-        onCommit={(v) => commitValue(row, col, v)}
-        onDismiss={dismiss}
-      />
-    )
+    return row && col ? { row, col } : null
   }
+  const cellTarget = (): PickTarget | null => {
+    const c = pickerCell()
+    if (!c) return null
+    const picked = pickerDefOf(c.col)
+    if (!picked) return null
+    const current = resolveFieldValue(c.row, c.col.id, schema)
+    const style = colStyle(c.col.id)
+    return c.col.kind === 'property' && declaredType(c.col.id, schema) === 'datetime'
+      ? { kind: 'datetime', def: picked.def, current, dateFormat: style.date_format }
+      : {
+          kind: 'options',
+          def: picked.def,
+          current,
+          look: style.look,
+          contextOptions: picked.contextOptions ?? undefined,
+        }
+  }
+  const cellPicker = (): React.ReactNode => (
+    <PropertyPicker
+      target={cellTarget()}
+      open={editing?.mode === 'picker'}
+      triggerRef={triggerElRef}
+      onCommit={(v) => {
+        const c = pickerCell()
+        if (c) commitValue(c.row, c.col, v)
+      }}
+      onDismiss={() => setEditing(null)}
+    />
+  )
   const massPicker = (): React.ReactNode => {
     if (!mass) return null
     const col = columns.find((c) => c.id === mass.colId)
