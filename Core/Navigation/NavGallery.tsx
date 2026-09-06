@@ -38,8 +38,6 @@ export function NavGallery({
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
-  const reorderRecentStore = useSession((s) => s.reorderRecent)
-  const reorderRecent = onReorderRecent ?? reorderRecentStore
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
@@ -70,7 +68,7 @@ export function NavGallery({
             />
           ))
         ) : (
-          <SortableZone items={items.map((r) => r.key)} layout="grid" onReorder={reorderRecent}>
+          <SortableZone items={items.map((r) => r.key)} layout="grid" onReorder={onReorderRecent}>
             <CardDropSlot />
             {items.map(card)}
           </SortableZone>

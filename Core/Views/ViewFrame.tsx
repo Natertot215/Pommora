@@ -17,7 +17,7 @@ import { useSaveView, useViewTileScope } from './ViewTileScope'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { labelColorFor } from '@pommora/uix/Theme/colorMap'
 import { RenamableLabel } from '@pommora/uix/Fields'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { useSession } from '../Session/store'
 import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../Interface/Toolbar/toolbar-menu.css'
@@ -136,6 +136,7 @@ export function ViewFrame({
             />
           }
           trailing={
+            // PLACEHOLDER
             <AccessoryButton
               icon="dots"
               size="control"
@@ -209,7 +210,7 @@ export function ViewFrame({
         minWidth={PANE_SQUARE}
         minHeight={PANE_SQUARE}
       />
-      <IconPicker
+      <IconChoice
         open={!!iconFor}
         onClose={() => setIconFor(null)}
         value={iconFor?.icon}

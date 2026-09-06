@@ -88,7 +88,6 @@ export type GroupConfig =
       order_mode: GroupOrderMode
       order?: string[]
       date_granularity?: DateGranularity
-      empty_placement: EmptyPlacement
       hide_empty_groups: boolean
     }
 
@@ -177,7 +176,6 @@ const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
 
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
-const EMPTY_PLACEMENT_SET = new Set<string>(EMPTY_PLACEMENTS)
 
 /** How you are LOOKING at a view, as opposed to how it's configured — a config lock never
  *  freezes it: collapsing a band is a way of reading the view, not an edit to it. */
@@ -229,7 +227,6 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
       order_mode: asEnum<GroupOrderMode>(obj.order_mode, GROUP_ORDER_MODE_SET) ?? 'configured',
       ...(order !== undefined ? { order } : {}),
       ...(granularity !== undefined ? { date_granularity: granularity } : {}),
-      empty_placement: asEnum<EmptyPlacement>(obj.empty_placement, EMPTY_PLACEMENT_SET) ?? 'bottom',
       hide_empty_groups: typeof obj.hide_empty_groups === 'boolean' ? obj.hide_empty_groups : false,
     }
   }

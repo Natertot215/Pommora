@@ -1,6 +1,7 @@
 // `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the
 // pinned refs against the tree and passed in separately wherever a decision must see them.
 
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import type {
   NavRef,
   NewTabSentinel,
@@ -240,7 +241,7 @@ export function closeTab(
 export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number): Tab[] {
   const from = tabs.findIndex((t) => t.id === fromId)
   if (from === -1) return tabs
-  const to = Math.max(0, Math.min(toIndex, tabs.length - 1))
+  const to = clamp(toIndex, 0, tabs.length - 1)
   if (from === to) return tabs
   return moveItem(tabs, from, to)
 }

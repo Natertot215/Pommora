@@ -99,7 +99,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
               host()
                 .ask('subfield:get')
                 .then((cfg) => {
-                  if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
+                  if (cfg) set({ subfieldExpanded: cfg.expanded })
                 }),
               host()
                 .ask('navViewModes:get')

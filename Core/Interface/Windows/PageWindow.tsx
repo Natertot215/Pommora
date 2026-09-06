@@ -322,7 +322,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
     })
   }
 
-  if (!ctx || !row || !fm) return <div className="page-window-insp" />
+  if (!ctx || !row || !fm) return <div className="window-panel-column" />
 
   // The same native menu the page's own properties pane pops: Clear empties the value and leaves
   // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
@@ -342,7 +342,7 @@ export function PagePanel({ target }: { target: WindowTarget }): React.JSX.Eleme
       emptyRow(id, action === 'value:clear')
   }
   return (
-    <div className="page-window-insp">
+    <div className="window-panel-column">
       <div className="page-window-insp-rows over-scroll">
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),

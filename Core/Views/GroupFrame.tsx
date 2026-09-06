@@ -146,7 +146,6 @@ export function GroupFrame({
       kind: 'property',
       property_id: target.id,
       order_mode: 'configured',
-      empty_placement: view.ungrouped_placement ?? 'bottom',
       hide_empty_groups: false,
     })
   }

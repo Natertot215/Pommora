@@ -14,6 +14,7 @@ import { EMPTY_ASSET_MAP } from '../Nexus/tree'
 import { validateAssetDir } from '../Settings/assetDirValidate'
 import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap, refreshAssetMap } from './assetMap'
+import { migrateAssets } from './assetMigrate'
 import { assetSubfolder, validPropertyDir } from './assetRoots'
 
 // A picked file sits outside the nexus, so the channel that adopts one is bounded by the pick,
@@ -65,6 +66,13 @@ export const assetsHandlers = {
       next = valid.value
     }
     await writeAssetDirectory(root, next)
+    // Banners and profile images Pommora minted under `.nexus/assets` follow the directory; a
+    // failure leaves every reference where it was rather than failing the change.
+    try {
+      await migrateAssets(root)
+    } catch (e) {
+      console.error('assets: the migration failed; references are unchanged:', e)
+    }
     // The write's own echo is suppressed, so the structural re-arm an external edit would trigger
     // never fires here.
     await confirmSettingsWrite(ctx)

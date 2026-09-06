@@ -62,28 +62,23 @@ import { host as dialer } from '../Platform/dialer'
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
-/** An open page's current state, keyed by page id. `body` is the live editing buffer; `detail.body`
- *  is the load snapshot autosave never updates. */
+/** `body` is the live editing buffer; `detail.body` is the load snapshot autosave never updates. */
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
   | { status: 'error'; target: PageTarget; error: PommoraError }
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 
-/** One slice because `select`, the pin gestures, and the restore each write across all of it in
- *  one act. */
+/** One slice because `select`, the pin gestures, and the restore each write across all of it at once. */
 export interface NavigationSlice {
-  /** What the pane is showing. A cold page open lags the active tab's target until the fetch
-   *  lands or the deadline passes — the pause-on-change. */
+  /** The pause-on-change: a cold open lags the active tab until the fetch lands or the deadline passes. */
   selection: SelectionState
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
-  /** A body replaced from outside the editor: the path's pending save is dropped, every warm copy
-   *  drops, the slot refetches, and the path's epoch remounts its editors. False when the refetch
-   *  failed and the editors still hold the old body. */
+  /** A body replaced from outside the editor; false when the refetch failed and the editors still
+   *  hold the old one. */
   replaceBody: (path: string) => Promise<boolean>
-  /** `{ record: false }` refreshes the shown detail without touching the tab set or recents.
-   *  `{ newTab: true }` forces a new tab. */
+  /** `{ record: false }` refreshes the shown detail without touching the tab set or recents. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
@@ -99,11 +94,9 @@ export interface NavigationSlice {
   unpinTab: (pinId: string) => void
   goBack: () => void
   goForward: () => void
-  /** The deepest node visited on the active breadcrumb path — what the footer dims its tail to.
-   *  Held while walking up the same spine, reset on a branch. */
+  /** The deepest node visited on the active spine — what the footer dims its tail to. */
   crumbDepth: SelectTarget | null
-  /** Navigate a breadcrumb segment (switches to a tab already showing the target, or replaces the
-   *  current one) — the dimmed tail survives because `crumbDepth` holds across it. */
+  /** The dimmed tail survives a segment move because `crumbDepth` holds across it. */
   navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
   navSlide: {
     tabId: string
@@ -114,7 +107,7 @@ export interface NavigationSlice {
   recents: NavRef[]
   favorites: NavRef[]
   pinned: NavRef[]
-  /** The pinned refs hydrated against the live tree, stored so hot readers never rebuild the index. */
+  /** Hydrated against the live tree so hot readers never rebuild the index. */
   pinnedTabs: Tab[]
   navBanner: string | undefined
   pinTarget: (target: NavRef | SelectTarget) => void
@@ -127,7 +120,6 @@ export interface NavigationSlice {
   addFavorite: (target: NavRef | SelectTarget) => void
   removeFavorite: (key: string) => void
   removeRecent: (key: string) => void
-  reorderRecent: (activeKey: string, overKey: string) => void
   setRecentsOrder: (keys: string[]) => void
   reconcileNavigation: (index: ReconcileIndex) => void
   /** The first load's restore from the nexus's sidecars — the one hydration pass. */
@@ -163,8 +155,8 @@ export const shownDetail = (s: SessionState): PageDetail | null => {
 export const pageBody = (slot: PageSlot | undefined): string =>
   slot?.status === 'ready' ? slot.body : ''
 
-/** Which pages are loaded, as a primitive. A subscriber that only asks THAT must never hold
- *  `pages` itself: a slot re-identifies at every keystroke, and the record with it. */
+/** A subscriber asking only WHICH pages are loaded must never hold `pages`: a slot re-identifies
+ *  at every keystroke, and the record with it. */
 export const readyPageIds = (s: SessionState): string =>
   Object.entries(s.pages)
     .filter(([, slot]) => slot.status === 'ready')
@@ -182,8 +174,7 @@ export const frozenOf = (s: SessionState): boolean => {
 
 let pageFetchSeq = 0
 const COLD_SWAP_DEADLINE = 200
-// Clearing this must target exactly the stamp the superseded fetch was carrying (never a newer one) —
-// otherwise a later stampless selection change replays the abandoned slide.
+// Cleared against the exact stamp the superseded fetch carried; a newer one replays the abandoned slide.
 let coldStampSeq = -1
 
 const PER_NEXUS = {
@@ -201,8 +192,7 @@ const PER_NEXUS = {
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
   const syncActiveDetail = (): void => {
-    // A tab-focus change isn't navigation — the breadcrumb tail belongs to the tab you were
-    // walking, so it resets here rather than leaking onto the new one.
+    // The breadcrumb tail belongs to the tab you were walking; a focus change isn't navigation.
     set({ crumbDepth: null })
     const active = activeTabOf(get())
     if (!active || active.target.kind === 'newtab') {
@@ -224,13 +214,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       navStack: t.navStack.map(toNavRef),
       navIndex: t.navIndex,
     }))
-    void dialer()
-      .ask('tabs:save', { tabs, activeTabId: s.activeTabId })
-      .catch(() => undefined)
+    void dialer().ask('tabs:save', { tabs, activeTabId: s.activeTabId })
   }
 
-  // Silent when nothing goes: a fresh record for an unchanged set would re-identify every page
-  // surface's host.
+  // Silent when nothing goes: a fresh record would re-identify every page surface's host.
   const keepSlots = (keep: (id: string, slot: PageSlot) => boolean): void => {
     const pages = get().pages
     const kept = Object.entries(pages).filter(([id, slot]) => keep(id, slot))
@@ -331,8 +318,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     persistTabs()
   }
 
-  // Move the active tab's history pointer to an absolute stack index without re-recording — the
-  // one mover behind Back/Forward and breadcrumb re-navigation alike.
+  // The one mover behind Back/Forward and breadcrumb re-navigation alike.
   const jumpActiveHistory = (i: number): void => {
     const s = get()
     const active = activeUnpinnedTab(s.tabs, s.activeTabId)
@@ -340,8 +326,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     if (i < 0 || i >= active.navStack.length || i === active.navIndex) return
     const resolved = s.tree ? reconcileSelection(s.tree, active.navStack[i]) : active.navStack[i]
     if (resolved.kind === 'none') return
-    // target must move in lockstep with navIndex — openTab's dedup keys off target, so a stale
-    // one would mis-dedup the very next click on the shown entity, destroying the Forward stack.
+    // target moves in lockstep with navIndex: openTab dedups on target, and a stale one would
+    // mis-dedup the very next click and destroy the Forward stack.
     set({
       tabs: get().tabs.map((t) =>
         t.id === active.id ? { ...t, navIndex: i, target: resolved } : t,
@@ -480,8 +466,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     pinTarget: (target) => {
-      // A pin must resolve for as long as it's stored: agenda kinds resolve against nothing, and
-      // an adopted id is re-minted on the next walk.
+      // A pin must resolve for as long as it is stored; agenda kinds resolve against nothing.
       if (target.kind === 'task' || target.kind === 'event') return
       if ('id' in target && target.id.startsWith('adopted-')) return
       const ref = toNavRef(target)
@@ -514,15 +499,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     evictThumbs: () => {
       const tree = get().tree
       if (!tree) return
-      // recents/pins backstop the tree's fs walk, which can read a subtree as empty on a
-      // transient error — this keeps a just-visited entity from a false-empty eviction.
+      // Recents and pins backstop a walk that read a subtree as empty on a transient error.
       const live = [...navKeysOf(tree), ...get().recents.map(navKey), ...get().pinned.map(navKey)]
       dropCapturedOutside(new Set(live))
       void dialer().ask('nav:evictThumbs', live)
     },
     addFavorite: (target) => {
-      // Favorites are tree kinds only — an agenda favorite resolves to null, which renders as an
-      // invisible row the user then has no way to remove.
+      // An agenda favorite resolves to null — an invisible row with no way to remove it.
       if (target.kind === 'task' || target.kind === 'event') return
       const ref = toNavRef(target)
       const key = navKey(ref)
@@ -540,10 +523,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const next = removeRecentByKey(get().recents, key)
       if (next === get().recents) return
       commitRecents(next)
-    },
-    reorderRecent: (activeKey, overKey) => {
-      const next = moveByKey(get().recents, navKey, activeKey, overKey)
-      if (next) commitRecents(next)
     },
     setRecentsOrder: (keys) => {
       const s = get()
@@ -640,8 +619,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             land(readySlot(pageSel, cached))
             break
           }
-          // Pause-on-change: holds the outgoing view until the fetch lands or the deadline passes;
-          // the seq fence drops a stale response.
+          // Pause-on-change; the seq fence drops a stale response.
           const seq = pageFetchSeq
           coldStampSeq = get().navSlide?.seq ?? -1
           const fallback = setTimeout(() => {
@@ -669,10 +647,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     reloadPage: async () => {
       const shown = shownPage(get())
       if (!shown) return
-      const res = await dialer()
-        .ask('page:open', shown.target.path)
-        .catch(() => null)
-      if (!res?.ok) return
+      const res = await dialer().ask('page:open', shown.target.path)
+      if (!res.ok) return
       const body = shown.status === 'ready' ? shown.body : res.value.body
       set((s) => ({
         pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, res.value), body } },
@@ -714,8 +690,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           void get().select(next, { record: false })
         }
       }
-      // The shown slot is spared — its re-select above lands a fresh one over it. Every other
-      // slot whose page is gone or re-pathed refetches on return.
+      // The shown slot is spared: its re-select above lands a fresh one over it.
       const shownSlotId = prev.kind === 'page' ? prev.id : null
       keepSlots((id, slot) => {
         if (id === shownSlotId) return true
@@ -757,8 +732,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         seen.add(k)
         return true
       })
-      // One hydration pass owns the restore: dead refs prune, paths mint, the history pointer
-      // recomputes.
+      // One hydration pass owns the restore: dead refs prune, paths mint, the pointer recomputes.
       const tabs = hydrateTabs(storedTabs, index)
       const livePinnedTabs = get().pinnedTabs
       const storedActive = stored?.activeTabId ?? ''
@@ -778,8 +752,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     patchPagesFor: (req) => {
       switch (req.op) {
         case 'rename': {
-          // The cascade rewrites bodies nexus-wide; every warm copy is suspect (editorState's
-          // key survives the rename, so a warm restore would revive the pre-cascade body).
+          // The cascade rewrites bodies nexus-wide and editorState's key survives the rename, so a
+          // warm restore would revive the pre-cascade body.
           clearCache()
           keepSlots(() => false)
           // A remount is the only way a healed body reaches the shown page's editor.

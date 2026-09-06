@@ -4,7 +4,6 @@ import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { MenuItem, MenuTopRow } from '@pommora/uix/Menus'
-import { topRowFlat } from './card-add-picker.css'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import {
@@ -15,6 +14,7 @@ import {
 import type { ContextOption } from '../../Properties/contextOptions'
 import { type AddEntry, orderAddableEntries } from '../cardValueInput'
 import { displayPropertyName, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import './cards-view.css'
 
 function ValuePane({
   def,
@@ -37,7 +37,7 @@ function ValuePane({
       label="Properties"
       current={displayPropertyName(def.name, capitalize)}
       onBack={onBack}
-      className={topRowFlat}
+      className="card-add-top-flat"
     />
   )
   const { options, selected, pick } = pickSemantics(

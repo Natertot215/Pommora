@@ -12,7 +12,7 @@ import {
 import { tintAt } from '@pommora/uix/Theme/tint'
 import { cellColor } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/colorMap'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { findSpace } from '../Session/treeIndex'
@@ -120,7 +120,7 @@ export function SpaceMenu(): React.JSX.Element | null {
               />
             </div>
           </MenuScrollFrame>
-          <IconPicker
+          <IconChoice
             open={pickerOpen}
             onClose={() => setPickerOpen(false)}
             triggerRef={iconRef}

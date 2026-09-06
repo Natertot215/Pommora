@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON } from '../../Assets/entityIconPolicy'
 import { ICON_PX, type IconSize } from '@pommora/uix/Theme/size.css'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
@@ -47,7 +47,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
           <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
         )}
       </span>
-      <IconPicker
+      <IconChoice
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         triggerRef={ref}

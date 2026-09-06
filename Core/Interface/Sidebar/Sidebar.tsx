@@ -45,7 +45,7 @@ import { useSession } from '../../Session/store'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { RenamableTitle } from '../RenamableTitle'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import {
   dropOutline,
   dropOutlineOpen,
@@ -450,7 +450,7 @@ function PageRow({
           />
         </div>
       </DragRow>
-      <IconPicker
+      <IconChoice
         open={iconPath === page.path}
         onClose={endIcon}
         triggerRef={rowRef}

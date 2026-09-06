@@ -12,7 +12,8 @@ import { contextsDir, SPACE_SIDECAR } from '../Locations/paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
   type Raw,
-  type SweepOptions,
+  type Rewrite,
+  type RewriteText,
   type SweepResult as GovernedSweepResult,
   sweepGovernedRoots,
 } from '../Properties/governedSweep'
@@ -66,16 +67,16 @@ export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
-  opts: SweepOptions = {},
+  pageText?: RewriteText,
 ): Promise<SweepResult> {
+  const raw: Rewrite<never> = (r, file) => {
+    const next = rewrite(r, file)
+    return next === null ? null : { next }
+  }
   const { touched, skipped, refused } = await sweepGovernedRoots<never>(
     root,
     { kind: 'nexus' },
-    (raw, file) => {
-      const next = rewrite(raw, file)
-      return next === null ? null : { next }
-    },
-    opts,
+    pageText ? { text: pageText, sidecars: raw } : { raw },
   )
   return { touched, skipped, refused }
 }
@@ -86,13 +87,11 @@ function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
 }
 
-function pageLeg(j: RenameJournal): SweepOptions {
-  if (j.spaceId !== undefined) return {}
+function pageLeg(j: RenameJournal): RewriteText | undefined {
+  if (j.spaceId !== undefined) return undefined
   const oldKey = contextKey(j.oldTitle)
   const newKey = contextKey(j.newTitle)
-  return {
-    rewriteText: (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER),
-  }
+  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
 }
 
 export async function cascadeTitle(

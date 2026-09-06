@@ -1,3 +1,4 @@
+// Absent from TILE_SURFACES on purpose: a tile kind that lacks a tile-detail-surface creation method.
 // A guest clips correctly only at full visibility, so it stays live while fully visible and
 // hidden (not unmounted) under the retention cap otherwise.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'

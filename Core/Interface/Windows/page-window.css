@@ -22,8 +22,8 @@
   padding-right: calc(14px * var(--page-detail-scale));
 }
 
-/* The window's right-slot column — the inspector, and the history window's list over its foot. */
-.page-window-insp {
+/* The window panel's column — the page inspector, and the history window's snapshot list. */
+.window-panel-column {
   display: flex;
   flex-direction: column;
   height: 100%;

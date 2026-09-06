@@ -264,8 +264,7 @@ function property(
     })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level
-  // knob — it holds rows, so hide_empty_groups never touches it. The property config's own
-  // `empty_placement` stays decode parity, never read.
+  // knob — it holds rows, so hide_empty_groups never touches it.
   if (isCheckbox || noValue.length === 0) return groups
   return placeTail(
     groups,

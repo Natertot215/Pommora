@@ -7,7 +7,7 @@ import { glanceLink } from '../Interface/Glance/glanceLink'
 import { nativeEditorMenu } from '../MarkdownPM/Editor/menu'
 import { pageIndexOf } from '../Session/treeIndex'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { navKey } from '../Navigation/navRecents'
 import { useBodyEpoch } from '../Session/pageDetailCache'
@@ -209,7 +209,7 @@ export function PageView({
         }}
         active={!parked}
       />
-      <IconPicker
+      <IconChoice
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
         value={

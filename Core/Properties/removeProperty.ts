@@ -58,9 +58,8 @@ async function removeInner(
     ),
   )
   if (!written.ok) return written
-  await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-    rewriteText: (content) => stripPageMember(content, key),
-  })
+  const text = (content: string): string | null => stripPageMember(content, key)
+  await sweepGovernedRoots(root, { kind: 'files', files }, { text })
   return ok(null)
 }
 

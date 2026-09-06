@@ -1,23 +1,20 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Labels/HoverRemove'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
-import { duration, ms } from '@pommora/uix/Animations'
 import { text } from '@pommora/uix/Theme'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
+import { useTabClose } from '../../Navigation/tabClose'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useHeld'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import '../../Navigation/tab-base.css'
 
-const BASE_MS = ms(duration.base)
-/** The toolbar strip's EXIT_MS twin. */
-const EXIT_MS = BASE_MS + ms(duration.fast)
 const TAB_ICON = 'control'
 
 interface Entry {
@@ -51,36 +48,12 @@ export function WindowTabStrip({
     [tabs, index],
   )
 
-  // Store-first close with a rendered ghost for the width-collapse exit (the toolbar's pattern).
-  const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: Entry; index: number }>>(
-    new Map(),
+  const { renderEntries, firstLive, ghostCount, requestClose } = useTabClose(
+    entries,
+    closeWindowTab,
   )
-  const requestClose = (id: string): void => {
-    const i = entries.findIndex((e) => e.tab.id === id)
-    const entry = entries[i]
-    if (!entry) return
-    setGhosts((m) => new Map(m).set(id, { entry, index: i }))
-    closeWindowTab(id)
-    setTimeout(() => {
-      setGhosts((m) => {
-        const next = new Map(m)
-        next.delete(id)
-        return next
-      })
-    }, EXIT_MS)
-  }
-  const renderEntries = useMemo<{ entry: Entry; ghost: boolean }[]>(() => {
-    const live = entries
-      .filter((e) => !ghosts.has(e.tab.id))
-      .map((entry) => ({ entry, ghost: false }))
-    for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index)) {
-      live.splice(Math.min(g.index, live.length), 0, { entry: g.entry, ghost: true })
-    }
-    return live
-  }, [entries, ghosts])
-  const firstLive = renderEntries.findIndex((e) => !e.ghost)
 
-  const showStrip = (tabs?.length ?? 0) > 1 || ghosts.size > 0
+  const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0
   const titlePresence = useExitPresence(!showStrip)
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the
   // live node would swap text mid-collapse without this hold.

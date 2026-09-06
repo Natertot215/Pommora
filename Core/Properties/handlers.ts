@@ -25,6 +25,7 @@ import {
   setOptions,
   setStatusGroups,
 } from './optionOps'
+import type { Option } from './optionModel'
 import { type FileConfig, propertyDefinition, type StatusGroup } from './properties'
 import {
   createProperty,
@@ -36,6 +37,16 @@ import { removeProperty } from './removeProperty'
 
 const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
+const NEEDS_ID_AND_INDEX = fail(
+  'operation-failed',
+  'propertyId (string) and toIndex (number) are required.',
+)
+const NEEDS_RENAME_ARGS = fail(
+  'operation-failed',
+  'propertyId, oldValue, and newTitle are required.',
+)
+const NEEDS_OPTION_ARRAY = fail('operation-failed', 'Options must be an array of { value, label }.')
+const NEEDS_STATUS_GROUPS = fail('operation-failed', 'Status groups must be an array.')
 
 // containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the
 // renderer passes the ancestor's path.
@@ -50,39 +61,50 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ root, folder: resolved.value, rel: containerPath }) : resolved
 }
 
-const optionValueOp =
-  (write: (root: string, propertyId: string, value: string) => Promise<Result<null>>) =>
-  async (ctx: HostContext, propertyId: unknown, value: unknown) => {
+/** Every registry write is the same shape: the session root, narrowed arguments, the write, and
+ *  a confirmation push when it lands. A narrower returns the argument tuple or its own refusal. */
+const registryOp =
+  <A extends unknown[]>(
+    narrow: (args: unknown[]) => A | Result<never>,
+    write: (root: string, ...args: A) => Promise<Result<null>>,
+  ) =>
+  async (ctx: HostContext, ...args: unknown[]): Promise<Result<null>> => {
     const root = sessionRoot()
     if (root === null) return NO_NEXUS
-    if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
-    const r = await write(root, propertyId, value)
+    const narrowed = narrow(args)
+    if (!Array.isArray(narrowed)) return narrowed
+    const r = await write(root, ...narrowed)
     if (r.ok) await confirmRegistryWrite(ctx)
     return r
   }
 
-const optionRenameOp =
-  (
-    write: (
-      root: string,
-      propertyId: string,
-      oldValue: string,
-      newTitle: string,
-    ) => Promise<Result<null>>,
-  ) =>
-  async (ctx: HostContext, propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
-    if (
-      typeof propertyId !== 'string' ||
-      typeof oldValue !== 'string' ||
-      typeof newTitle !== 'string'
-    )
-      return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
-    const r = await write(root, propertyId, oldValue, newTitle)
-    if (r.ok) await confirmRegistryWrite(ctx)
-    return r
-  }
+const idOnly = ([id]: unknown[]): [string] | Result<never> =>
+  typeof id === 'string' ? [id] : NEEDS_PROPERTY_ID
+
+const idAndIndex = ([id, at]: unknown[]): [string, number] | Result<never> =>
+  typeof id === 'string' && typeof at === 'number' ? [id, at] : NEEDS_ID_AND_INDEX
+
+const idAndOptions = ([id, options]: unknown[]): [string, Option[]] | Result<never> =>
+  typeof id !== 'string'
+    ? NEEDS_PROPERTY_ID
+    : isOptionArray(options)
+      ? [id, options]
+      : NEEDS_OPTION_ARRAY
+
+const idAndGroups = ([id, groups]: unknown[]): [string, StatusGroup[]] | Result<never> =>
+  typeof id !== 'string'
+    ? NEEDS_PROPERTY_ID
+    : Array.isArray(groups)
+      ? [id, groups as StatusGroup[]]
+      : NEEDS_STATUS_GROUPS
+
+const idAndValue = ([id, value]: unknown[]): [string, string] | Result<never> =>
+  typeof id === 'string' && typeof value === 'string' ? [id, value] : NEEDS_ID_AND_VALUE
+
+const idOldNew = ([id, oldValue, newTitle]: unknown[]): [string, string, string] | Result<never> =>
+  typeof id === 'string' && typeof oldValue === 'string' && typeof newTitle === 'string'
+    ? [id, oldValue, newTitle]
+    : NEEDS_RENAME_ARGS
 
 type DefChanges = Parameters<typeof editProperty>[2]
 
@@ -168,45 +190,10 @@ export const propertiesHandlers = {
     return r
   },
 
-  'registry:reorder': async (ctx, propertyId: unknown, toIndex: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
-    if (typeof propertyId !== 'string' || typeof toIndex !== 'number')
-      return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
-    const r = await reorderRegistry(root, propertyId, toIndex)
-    if (r.ok) await confirmRegistryWrite(ctx)
-    return r
-  },
-
-  'property:delete': async (ctx, propertyId: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
-    if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-    const r = await deleteProperty(root, propertyId)
-    if (r.ok) await confirmRegistryWrite(ctx)
-    return r
-  },
-
-  'property:setOptions': async (ctx, propertyId: unknown, options: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
-    if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-    if (!isOptionArray(options))
-      return fail('operation-failed', 'Options must be an array of { value, label }.')
-    const r = await setOptions(root, propertyId, options)
-    if (r.ok) await confirmRegistryWrite(ctx)
-    return r
-  },
-
-  'property:setStatusGroups': async (ctx, propertyId: unknown, groups: unknown) => {
-    const root = sessionRoot()
-    if (root === null) return NO_NEXUS
-    if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-    if (!Array.isArray(groups)) return fail('operation-failed', 'Status groups must be an array.')
-    const r = await setStatusGroups(root, propertyId, groups as StatusGroup[])
-    if (r.ok) await confirmRegistryWrite(ctx)
-    return r
-  },
+  'registry:reorder': registryOp(idAndIndex, reorderRegistry),
+  'property:delete': registryOp(idOnly, deleteProperty),
+  'property:setOptions': registryOp(idAndOptions, setOptions),
+  'property:setStatusGroups': registryOp(idAndGroups, setStatusGroups),
 
   'property:setLinkConfig': defEditOp(narrowLinkConfig),
   'property:setCheckboxColor': defEditOp((color) => ({
@@ -220,10 +207,10 @@ export const propertiesHandlers = {
     const { assetDir } = await readWatchScope(root)
     return validPropertyDir(dir, assetDir) ? ok(null) : NOT_A_PROPERTY_DIR
   }),
-  'property:renameOption': optionRenameOp(renameOption),
-  'property:removeOption': optionValueOp(removeOption),
-  'property:clearOption': optionValueOp(clearOption),
-  'property:renameStatusOption': optionRenameOp(renameStatusOption),
-  'property:removeStatusOption': optionValueOp(removeStatusOption),
-  'property:clearStatusOption': optionValueOp(clearStatusOption),
+  'property:renameOption': registryOp(idOldNew, renameOption),
+  'property:removeOption': registryOp(idAndValue, removeOption),
+  'property:clearOption': registryOp(idAndValue, clearOption),
+  'property:renameStatusOption': registryOp(idOldNew, renameStatusOption),
+  'property:removeStatusOption': registryOp(idAndValue, removeStatusOption),
+  'property:clearStatusOption': registryOp(idAndValue, clearStatusOption),
 } satisfies Partial<Handlers>

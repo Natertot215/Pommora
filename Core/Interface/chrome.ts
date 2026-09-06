@@ -1,5 +1,3 @@
-import type { SelectionState } from '../Navigation/navRef'
-
 /** A content-view rectangle (DIP, viewport-relative) the renderer measures for a thumbnail
  *  capture. */
 export interface ThumbRect {
@@ -14,11 +12,8 @@ export interface ThumbRect {
   maskFill?: 'banner' | 'window'
 }
 
-/** Persisted as a foreign `subfield` key in settings.json. */
+/** Persisted as a foreign `subfield` key in settings.json. All views share one. */
 export interface SubfieldConfig {
-  /** Absent kinds fall back to the built-in defaults. */
-  order: Partial<Record<SelectionState['kind'], string[]>>
-  /** All views share one. */
   expanded: boolean
 }
 
