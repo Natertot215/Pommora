@@ -12,7 +12,8 @@ import { newContentId, newId } from '../Locations/ids'
 import { readJsonStrict, rewritePageSerialized, writeJson } from '../IO/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../IO/pageFile'
 import { readWindowsState, writeWindowsState } from '../Interface/windowState'
-import { SIDECAR_FILENAME } from '../Locations/paths'
+import { sidecarPath } from '../Locations/paths'
+import { withSidecarLock } from '../IO/sidecar'
 import type { Baseline, Projection } from './remintLedger'
 
 interface RemintTarget {
@@ -97,19 +98,25 @@ async function remintSidecar(
   oldId: string,
   fresh: string,
 ): Promise<Map<string, string> | null> {
-  const file = join(absFolder, SIDECAR_FILENAME[kind])
-  const current = await readJsonStrict(file)
-  if (!current.ok || current.value.id !== oldId) return null
+  const file = sidecarPath(absFolder, kind)
   const viewIds = new Map<string, string>()
-  const next: Record<string, unknown> = { ...current.value, id: fresh }
-  if (Array.isArray(next.views))
-    next.views = next.views.map((v) => {
-      if (!isPlainObject(v)) return v
-      const minted = newId()
-      if (typeof v.id === 'string') viewIds.set(v.id, minted)
-      return { ...v, id: minted }
-    })
-  await writeJson(file, next)
+  // Read fresh inside the lock: a container write that landed since the walk holds facts the
+  // stamp must carry forward, and a blind write would drop them.
+  const landed = await withSidecarLock(absFolder, kind, async () => {
+    const current = await readJsonStrict(file)
+    if (!current.ok || current.value.id !== oldId) return false
+    const next: Record<string, unknown> = { ...current.value, id: fresh }
+    if (Array.isArray(next.views))
+      next.views = next.views.map((v) => {
+        if (!isPlainObject(v)) return v
+        const minted = newId()
+        if (typeof v.id === 'string') viewIds.set(v.id, minted)
+        return { ...v, id: minted }
+      })
+    await writeJson(file, next)
+    return true
+  })
+  if (!landed) return null
   if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
     const doc = await writeTileDocAt(absFolder, (cur) => ({
       ...cur,

@@ -112,6 +112,10 @@ export function encodeValue(value: PropertyValue): unknown {
       return value.value
     case 'null':
       return null
+    // A value carrying a kind outside the union came from outside the app; undefined is the
+    // refusal every writer checks, never a silent clear.
+    default:
+      return undefined
   }
 }
 
