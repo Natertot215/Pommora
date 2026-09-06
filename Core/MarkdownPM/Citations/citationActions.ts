@@ -8,7 +8,7 @@ import {
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@pommora/core/Actions/citationMenu'
-import { isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
+import { isInsideInlineCode } from '../Engine/markdownCode'
 import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'
 import type { CitationScan } from '../Engine/detect'

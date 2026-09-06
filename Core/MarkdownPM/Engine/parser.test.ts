@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parse, isInsideWikilink } from './parser'
-import { isInsideCode } from '@pommora/core/Connections/markdownCode'
+import { isInsideCode } from './markdownCode'
 
 describe('parse (mdast seam)', () => {
   it('parses GFM into an mdast tree', () => {

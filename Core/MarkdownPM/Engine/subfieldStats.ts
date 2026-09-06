@@ -1,5 +1,5 @@
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
-import { inlineSpans } from '@pommora/core/Connections/markdownCode'
+import { inlineSpans } from './markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
 import { lineIndexAt, perText, scanOf, type DocScan } from './docScan'
 import {

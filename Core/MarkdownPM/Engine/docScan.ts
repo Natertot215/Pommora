@@ -1,5 +1,5 @@
 import { capSet } from '../../Utilities/capMap'
-import { codeMaskOf, isInsideInlineCode } from '@pommora/core/Connections/markdownCode'
+import { codeMaskOf, isInsideInlineCode } from './markdownCode'
 import {
   isThematicBreakLine,
   isHeadingLine,

@@ -3,7 +3,7 @@
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { markdownLinkRegex, targetTitle } from './links'
 import { readLink } from './linkValue'
-import { codeMask } from './markdownCode'
+import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. */
 export function extractMentions(body: string): Set<string> {
