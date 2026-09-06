@@ -12,6 +12,7 @@ import {
 import { createPortal } from 'react-dom'
 import { stack } from '../Theme/stack'
 import { DEFAULT_FEEL } from '../Animations/feel'
+import { clamp } from '../Utilities/clamp'
 import { announce } from './a11y'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { usePointerGesture } from './gesture'
@@ -432,7 +433,7 @@ export function DragGroup({
       const c = zones.current.get(zoneId)?.container?.getBoundingClientRect()
       return { x: c ? c.left + 10 : 0, y: c ? c.top + 10 : 0 }
     }
-    const slot = Math.max(0, Math.min(idx, rects.length))
+    const slot = clamp(idx, 0, rects.length)
     return cellAt(rects, slot, drag.current.pitch, zoneWidth(zoneId))
   }
 
@@ -540,8 +541,7 @@ export function DragGroup({
     if (!z || !rects || oi === -1 || !rects[oi])
       return { transform: 'translate3d(0,0,0)', hidden: false, animate: dropState !== 'idle' }
     const order = z.ids.filter((x) => x !== active.id)
-    if (zoneId === overZone)
-      order.splice(Math.max(0, Math.min(overIndex, order.length)), 0, active.id)
+    if (zoneId === overZone) order.splice(clamp(overIndex, 0, order.length), 0, active.id)
     const slot = order.indexOf(id)
     const base = rects[oi]
     const tgt = cellAt(rects, slot, active.pitch, zoneWidth(zoneId))

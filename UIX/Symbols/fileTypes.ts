@@ -30,46 +30,7 @@ import {
 } from '@tabler/icons-react'
 import { asTablerGlyph } from './customGlyphs'
 
-export const FILE_TYPE_EXTS = [
-  'bmp',
-  'css',
-  'csv',
-  'doc',
-  'docx',
-  'html',
-  'jpg',
-  'js',
-  'jsx',
-  'pdf',
-  'php',
-  'png',
-  'ppt',
-  'rs',
-  'sql',
-  'svg',
-  'ts',
-  'tsx',
-  'txt',
-  'vue',
-  'xls',
-  'xml',
-  'zip',
-] as const
-
-export type FileTypeExt = (typeof FILE_TYPE_EXTS)[number]
-
-const ALIASES: Record<string, FileTypeExt> = {
-  jpeg: 'jpg',
-  htm: 'html',
-  xlsx: 'xls',
-  pptx: 'ppt',
-  mjs: 'js',
-  cjs: 'js',
-}
-
-export const FILE_TYPE_FALLBACK = 'file-chart-column'
-
-const TABLER_FILE_TYPES: Record<FileTypeExt, LucideIcon> = {
+const TABLER_FILE_TYPES = {
   bmp: IconFileTypeBmp,
   css: IconFileTypeCss,
   csv: IconFileTypeCsv,
@@ -93,7 +54,21 @@ const TABLER_FILE_TYPES: Record<FileTypeExt, LucideIcon> = {
   xls: IconFileTypeXls,
   xml: IconFileTypeXml,
   zip: IconFileTypeZip,
+} satisfies Record<string, LucideIcon>
+
+export type FileTypeExt = keyof typeof TABLER_FILE_TYPES
+export const FILE_TYPE_EXTS = Object.keys(TABLER_FILE_TYPES) as FileTypeExt[]
+
+const ALIASES: Record<string, FileTypeExt> = {
+  jpeg: 'jpg',
+  htm: 'html',
+  xlsx: 'xls',
+  pptx: 'ppt',
+  mjs: 'js',
+  cjs: 'js',
 }
+
+export const FILE_TYPE_FALLBACK = 'file-chart-column'
 
 export const fileTypeGlyphs = Object.fromEntries(
   FILE_TYPE_EXTS.map((ext) => [`file-type-${ext}`, asTablerGlyph(TABLER_FILE_TYPES[ext])]),

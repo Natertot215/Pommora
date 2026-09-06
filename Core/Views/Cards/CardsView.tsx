@@ -85,6 +85,7 @@ import { titleInput } from '@pommora/uix/Menus'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { host } from '../../Platform/dialer'
 import './cards-view.css'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
@@ -376,7 +377,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         continue
       }
       const without = ids.filter((id) => id !== activeId)
-      const at = Math.max(0, Math.min(toIndex, without.length))
+      const at = clamp(toIndex, 0, without.length)
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
     }
     if (structuralOrder) {
