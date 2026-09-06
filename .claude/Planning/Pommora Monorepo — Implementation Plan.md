@@ -891,6 +891,7 @@ FINALIZATION: `git status` clean; all four gates green once more; `git log --one
 
 ### Rulings
 
+- 09-06-2026 (Nathan): the implementation as it stands gets a whole-tree Opus simplification pass now, in parallel with Task 11, as the Phase 4 stop taken early; the plan does not pause for it. Exclusive folder lists per agent; Core/MarkdownPM excluded while Task 11's review holds it; architecture-free, behavior identical, the delta must fall.
 - 09-06-2026 (Nathan): `caretSeat` → `caretPlacement` (identifier and file, wherever it lives). MarkdownPM's `Tables/widget.css` → `markdown-tables.css` at the domain root. Every color declaration and value lives in `UIX/Theme`, in one file; a color declared anywhere else (a stranded pink included) moves there at Task 12. Tasks 19 and 20 (both parts of the docs work) run on Opus.
 - 09-06-2026 (Nathan): a small stylesheet collapses only when it has a sibling `.css.ts` or domain sheet to bind to, or an element style that describes it fully. `autoscroll`, `progress-bar`, and the like stay as files because nothing of theirs exists to fold into. `nav-gallery.css` folds into `NavGallery.tsx` where the TSX can describe it.
 **Findings Q&A rulings (09-06-2026, Nathan; `// Planning // Pommora Monorepo — Findings Q&A.md`).** Binding on every remaining task. Two standing rules ride every item: a file's contents must match its name, and only fixes that stay true regardless of future direction are made here.
