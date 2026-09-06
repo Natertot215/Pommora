@@ -15,7 +15,7 @@ import {
   type FormatState,
   INSERT_LINK_ACTION,
 } from '@pommora/core/Actions/editorMenu'
-import { acceleratorFor } from '@pommora/desktop/Actions/accelerators'
+import { acceleratorFor } from './accelerators'
 import { HEADING_LEVELS } from '@pommora/core/Actions/gripMenu'
 import { isValidLink } from '@pommora/core/Connections/links'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'

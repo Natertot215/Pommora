@@ -7,7 +7,7 @@
 import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
-import { push } from './ipc'
+import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { resolveUnderRoot } from '@pommora/core/Locations/pathSafety'
 import { handleMutate, type MutateDeps } from '@pommora/core/Nexus/mutate'
