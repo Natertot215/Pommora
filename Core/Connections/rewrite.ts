@@ -12,7 +12,7 @@ import { codeMask } from './markdownCode'
 
 /** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a
  *  sample. An alias and a markdown link's label ride through: a rename changes which page a link
- *  points at, never the words the author chose to show for it. */
+ *  points at. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
   const oldKey = normalizeTitle(oldTitle)
   const inCode = codeMask(body)

@@ -6,7 +6,6 @@ import {
 } from '@pommora/core/Actions/tableMenu'
 import { popModelMenu } from './rowMenu'
 
-/** The markdown table grip's right-click menu — the model's rows, nothing else. */
 export function popTableMenu(
   win: BrowserWindow,
   ctx: TableMenuContext,

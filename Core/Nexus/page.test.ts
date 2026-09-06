@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from './identityMark'
-import { chmod, mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, rm, mkdir, realpath, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
 import { splitEnvelope, assembleEnvelope } from '../IO/pageFile'
 import { splitFrontmatter } from './readNexus'
 import { isUlid } from '../Locations/ids'
+import { closeSession, openSession } from './session'
+import { flushValueWrites } from './valuesChanged'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
 
 /** The writer takes a definition, not an id — tests name the property and this supplies the rest.
@@ -187,8 +189,8 @@ describe('updatePageProperty', () => {
     const at = async (name: string): Promise<unknown> =>
       (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
 
-    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
-    await updatePageProperty(f, defOf('prop_tags', 'multi_select'), {
+    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+    await updatePageProperty(root, f, defOf('prop_tags', 'multi_select'), {
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
@@ -196,19 +198,42 @@ describe('updatePageProperty', () => {
     expect(await at('tags')).toEqual(['a', 'b'])
     expect(splitFrontmatter(await readFile(f, 'utf8'))[ID_KEY]).toBe(c.value.id)
 
-    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
+    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'done' })
     expect(await at('status')).toEqual(['done'])
 
-    await updatePageProperty(f, defOf('prop_status'), null)
+    await updatePageProperty(root, f, defOf('prop_status'), null)
     expect(await at('status')).toBeUndefined()
     expect(await at('tags')).toEqual(['a', 'b'])
   })
 
   it('errors when the page is missing', async () => {
-    const r = await updatePageProperty(join(typeDir, 'nope.md'), defOf('p'), {
+    const r = await updatePageProperty(root, join(typeDir, 'nope.md'), defOf('p'), {
       kind: 'select',
       value: 'x',
     })
     expect(r.ok).toBe(false)
+  })
+
+  it('notes the value write against the root it was handed, not the open session', async () => {
+    const open = await realpath(await mkdtemp(join(tmpdir(), 'pom-page-open-')))
+    await mkdir(join(open, '.nexus'), { recursive: true })
+    await writeFile(
+      join(open, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: 'x' }),
+    )
+    await openSession(open)
+    try {
+      const other = await realpath(root)
+      const c = await createPage(join(other, 'Notes'), 'Elsewhere', { body: 'x' })
+      if (!c.ok) throw new Error('setup failed')
+      await updatePageProperty(other, c.value.path, defOf('prop_status'), {
+        kind: 'select',
+        value: 'todo',
+      })
+      expect(flushValueWrites(other).map((v) => v.rel)).toEqual(['Notes'])
+    } finally {
+      closeSession()
+      await rm(open, { recursive: true, force: true })
+    }
   })
 })

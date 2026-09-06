@@ -50,7 +50,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
   await assignProperty(root, col.value.path, c.value.id)
   const p = await createPage(col.value.path, 'Target', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, defOf(c.value.id), { kind: 'select', value })
+  await updatePageProperty(root, p.value.path, defOf(c.value.id), { kind: 'select', value })
   return { propertyId: c.value.id, rel: relative(root, p.value.path) }
 }
 

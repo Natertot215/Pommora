@@ -1,5 +1,3 @@
-// The view embed's two right-click menus: the title row's chrome menu (icon / title-row visibility)
-// and the switcher area's presentation menu (pill titles · New View · Style).
 import type { BrowserWindow } from 'electron'
 import type { ViewStyle } from '@pommora/core/Views/viewRow'
 import {

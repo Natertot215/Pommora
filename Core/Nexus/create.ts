@@ -2,7 +2,7 @@ import { basename, relJoin } from '../Locations/posix'
 import { resolveUnderRoot } from '../Locations/pathSafety'
 import { createDisambiguated } from '../Locations/disambiguate'
 import { newId } from '../Locations/ids'
-import { ok, type Result } from '../Contract/result'
+import { ok } from '../Contract/result'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { mintDefaultView, VIEW_ID_PREFIX } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
@@ -56,7 +56,7 @@ export async function createContainerOp(
   const extra: Record<string, unknown> = {
     views: [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }],
   }
-  const r: Result<{ id: string; path: string }> = await createDisambiguated(req.name, (name) =>
+  const r = await createDisambiguated(req.name, (name) =>
     createFolderEntity(parent.value, req.kind, name, extra),
   )
   return r.ok ? created(req.parentPath, r.value) : r

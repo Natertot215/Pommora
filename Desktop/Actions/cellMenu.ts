@@ -8,8 +8,6 @@ import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 import { styleSubmenu } from './styleMenu'
 
-// The table-cell right-click menu — the type's own submenu (per-type radios, named by the model)
-// ahead of the plain items (title meta / Edit).
 export function popCellMenu(
   win: BrowserWindow,
   ctx: CellMenuContext,

@@ -140,7 +140,7 @@ describe('the markdown-link sweep', () => {
     expect(rewriteConnections(body, 'Old', 'New')).toBe(body)
   })
 
-  // rewritePageSerialized calls this unwrapped and mutate.ts turns any throw into a REVERTED rename,
+  // rewritePageSerialized calls this unwrapped and rename.ts turns any throw into a REVERTED rename,
   // so one `%`-bearing body would make every rename in the nexus fail permanently.
   it('a %-bearing body does not throw the rename into a revert', () => {
     const body = 'see [x](Revenue 50% plan) and [[Old]] end'

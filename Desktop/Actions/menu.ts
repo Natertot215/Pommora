@@ -1,11 +1,10 @@
 import { Menu, app, shell, BrowserWindow } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
-import { readAppConfig, updateAppConfig } from '../Config/appConfig'
+import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfig'
 import { push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { pruneRecents } from '../Config/appConfig'
 import { readInterfaceScale } from '@pommora/core/Settings/settings'
 import { setHostZoom, stepHostZoom } from '../Web/webGuests'
 import { INTERFACE_SCALE_DEFAULT } from '@pommora/core/Settings/personalization'
@@ -84,10 +83,10 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           label: 'Reload',
           accelerator: 'CmdOrCtrl+R',
           click: () => {
-            const w = BrowserWindow.getFocusedWindow() ?? win
-            if (!w.isDestroyed()) {
-              // Reload is the deliberate verification point: forget the held tree so the
-              // booting renderer's read walks disk fresh instead of serving from memory.
+            const w = menuTarget(win)
+            // Reload is the deliberate verification point: forget the held tree so the booting
+            // renderer's read walks disk fresh instead of serving from memory.
+            if (w) {
               dropLiveTree()
               w.webContents.reload()
             }

@@ -169,7 +169,7 @@ describe('editProperty', () => {
       const p = await createPage(col.value.path, title, { body: 'b' })
       if (!p.ok) return
       pages.push(p.value.path)
-      await updatePageProperty(p.value.path, live, { kind: 'number', value: 1 })
+      await updatePageProperty(root, p.value.path, live, { kind: 'number', value: 1 })
     }
     // Hand-edited into unparseable YAML — an unterminated flow mapping. It sorts between the two
     // healthy pages, so a sweep that throws on it leaves C behind on the old key.

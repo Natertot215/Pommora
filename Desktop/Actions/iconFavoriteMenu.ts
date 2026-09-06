@@ -2,8 +2,7 @@ import type { BrowserWindow } from 'electron'
 import type { IconFavoriteMenuAction } from '@pommora/core/Actions/identityMenus'
 import { popReturningMenu } from './returningMenu'
 
-/** The icon picker's right-click menu — a single Favorite/Remove toggle. Resolves 'toggle' on click,
- *  null on dismiss; the renderer owns the favorites write (personalization). */
+/** The renderer owns the favorites write (personalization). */
 export function popIconFavoriteMenu(
   win: BrowserWindow,
   favorited: boolean,

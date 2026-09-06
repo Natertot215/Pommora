@@ -62,6 +62,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   const page = await createPage(notes, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
   await updatePageProperty(
+    root,
     page.value.path,
     { id: pC, name: 'Gone', type: 'number' } as PropertyDefinition,
     { kind: 'number', value: 7 },

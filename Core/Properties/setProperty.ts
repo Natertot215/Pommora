@@ -25,7 +25,7 @@ export async function setPropertyOp(
     const content = await readTextOrNull(resolved.value)
     if (content === null) return fail('not-found', 'That page could not be read.')
     const world = await loadGovernedWorld(root, resolved.value, splitFrontmatter(content))
-    const r = await updatePageProperty(resolved.value, def, req.value, world)
+    const r = await updatePageProperty(root, resolved.value, def, req.value, world)
     if (!r.ok) return r
     await indexWrittenPage(root, resolved.value)
     return r
