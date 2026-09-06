@@ -201,7 +201,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Theme
 
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `solidColor.ts` (`solidColorCss`, `resolveColor`), `accent.ts` (`applyAccent`), `personalization.ts` (`applyPersonalization`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `solidColor.ts` (`solidColorCss`, `resolveColor`), `accent.ts` (`applyAccent`), `personalization.ts` (`applyPersonalization`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -317,9 +317,9 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Blue              | `SPECTRUM.blue`                             | `#0A84FF`                                  |
 | Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
 | Lavender          | `SPECTRUM.lavender`    | `#A78BCC`                                  |
+| Pink              | `SPECTRUM.pink`                             | `#EF7697`                                  |
 | Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
 | Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
-| Pink              | `PINK`                                      | `#EF7697`                                  |
 | Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
 | Accent            | `--accent`                                  | `applyAccent`                              |
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |

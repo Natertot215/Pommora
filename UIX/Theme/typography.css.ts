@@ -1,10 +1,8 @@
 import { createGlobalTheme, style } from '@vanilla-extract/css'
 
-/** The raw type scale and the single source of truth: edit a value here and it propagates to every composed text style. */
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-  /** Code and anything else that has to hold a column — the editor's fences, its inline code, and the showcase's specimens all read this one stack. */
   mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
 
   weight: {
@@ -14,8 +12,8 @@ export const font = createGlobalTheme(':root', {
     bold: '700',
   },
 
+  // The three title sizes are the container-title family: Large over an editor banner, Medium on the bare page header, Small over a Banner cover.
   scale: {
-    // Container-title family — the heading a Collection, Set, or page wears at the top of its own surface. Large over an editor banner, Medium on the bare page header, Small over a Banner cover.
     titleLarge: { size: '28px', line: '32px' },
     titleMedium: { size: '24px', line: '28px' },
     titleSmall: { size: '20px', line: '24px' },
@@ -32,7 +30,6 @@ export const font = createGlobalTheme(':root', {
 type ScaleKey = keyof typeof font.scale
 type WeightKey = keyof typeof font.weight
 
-// Each text style exposes all four weights by name. The variant IS its weight, uniformly across every style: standard / emphasized / semibold / bold map straight to the font.weight ladder above.
 const ramp = (key: ScaleKey): Record<WeightKey, string> => {
   const base = {
     fontFamily: font.family,
@@ -48,7 +45,7 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
   }
 }
 
-// The container-title sizes are published as raw tokens (--text-title-*-size) and worn per style; no weight class is minted for them.
+// The title sizes publish as raw `--text-title-*-size` tokens and take no weight class.
 export const text = {
   headline: ramp('headline'),
   body: ramp('body'),
