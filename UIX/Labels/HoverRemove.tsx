@@ -1,0 +1,72 @@
+import { Icon } from '../Symbols'
+import { cx } from '../Utilities/cx'
+import { overScrollHost, overScrollUnmasked } from '../Elements/OverScroll'
+import * as s from './hover-remove.css'
+
+export const hoverRemoveHost = cx(s.host, overScrollHost)
+
+const revealed = (el: Element): boolean => Number.parseFloat(getComputedStyle(el).opacity) > 0.5
+
+/**
+ * INERT until revealed: a click only removes once the × is actually visible, so a fast click on an
+ * invisible control can't silently delete a value.
+ */
+export function HoverRemove({
+  onRemove,
+  children,
+  blur,
+  reveal = 'self',
+  label = 'Remove',
+  size = 'caption',
+  className,
+  labelClassName,
+}: {
+  onRemove: () => void
+  children?: string
+  /** Needs a ground to melt into (`--melt-ground`), which is why glass takes the plain fade. */
+  blur?: boolean
+  reveal?: 'self' | 'host'
+  label?: string
+  size?: React.ComponentProps<typeof Icon>['size']
+  className?: string
+  labelClassName?: string
+}): React.JSX.Element {
+  return (
+    <>
+      <button
+        type="button"
+        className={cx(
+          s.removeButton,
+          reveal === 'self' ? s.removeZone : s.revealFromHost,
+          className,
+        )}
+        aria-label={label}
+        onPointerDown={(e) => {
+          if (revealed(e.currentTarget)) e.stopPropagation()
+        }}
+        onClick={(e) => {
+          if (!revealed(e.currentTarget)) return
+          e.stopPropagation()
+          onRemove()
+        }}
+      >
+        <Icon name="x" size={size} strokeWidth={3} />
+      </button>
+      {children != null && (
+        <span className={cx(s.labelBox, overScrollUnmasked, labelClassName)}>
+          <span className={s.labelText}>{children}</span>
+          {blur && (
+            <>
+              <span className={s.labelMelt} aria-hidden>
+                {children}
+              </span>
+              <span className={s.labelBlur} aria-hidden>
+                {children}
+              </span>
+            </>
+          )}
+        </span>
+      )}
+    </>
+  )
+}

@@ -86,8 +86,6 @@ export type MutateRequest =
   // Adopted into the asset directory, or referenced where it already sits; the owner's config
   // names it by wikilink.
   | { op: 'setBanner'; path: string; kind: BannerOwnerKind; source: string | null }
-  // `image` is the value verbatim, keyed by the resolved image in `.nexus/crops.json`;
-  // `crop: null` deletes the framing.
   | { op: 'setCrop'; image: string; crop: Crop | null }
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
   // A page carries it in frontmatter `icon`; a container/context in its JSON sidecar. Property
