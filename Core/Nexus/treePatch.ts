@@ -1,4 +1,4 @@
-// The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
+// Tree transforms both processes apply; null → full walk.
 
 import { NEW_PAGE_SLOT, type MutateRequest } from '../Pages/mutateRequest'
 import { titleFromPath } from '../Connections/connections'

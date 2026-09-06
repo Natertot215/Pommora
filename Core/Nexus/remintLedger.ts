@@ -83,7 +83,7 @@ export function latchBaseline(
   for (const [id, p] of Object.entries(recorded)) {
     if (!(id in out) && !(id in projection.duplicates) && unreadable.has(p.path)) out[id] = p
   }
-  // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
+  // Unusable registry: carry groups and Spaces as unreadable, not mass deletion.
   if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
     for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out)) out[id] = p
@@ -119,13 +119,13 @@ export async function runOpenLedger(root: string): Promise<void> {
     const tree = await readNexus(root)
     const prior = readBaseline()
     const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
-    // The re-mint runs between the walk and the latch — the baseline must record the re-minted state, or the next open reports every fresh id as a creation.
+    // Re-mint runs between walk and latch: baseline must record re-minted state to avoid reporting fresh ids as creations.
     const walked = projectBaseline(tree)
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
     writeBaseline(latchBaseline(projection, unreadablePaths, prior))
-    // This walk observed pre-remint disk, so it may seed the session only when the remint wrote nothing — otherwise two entities would share an id, colliding every id-keyed store.
+    // Pre-remint walk: seed only if remint wrote nothing; else id collision.
     seedLiveTree(tree)
     if (reminted.length > 0) {
       try {

@@ -54,7 +54,7 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const { body } = splitEnvelope(content)
   const st = await machine().stat(absFile)
   if (!st) return false
-  // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
+  // No birthtime: mtime is the honest floor.
   const { birthtimeMs, mtimeMs } = st
   const id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
   await rewritePreservingTimes(absFile, mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], body))
@@ -88,7 +88,7 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   const read = await readJsonStrict(from)
   if (!read.ok || !asString(read.value.id)) return false
   const to = join(absDir, SIDECAR_FILENAME[kind])
-  // Both endpoints — else the rename reads as an external edit and triggers a full re-walk.
+  // Both endpoints: else rename reads as external edit and walks.
   recordWrite(from)
   recordWrite(to)
   await machine().rename(from, to)
