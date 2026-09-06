@@ -32,7 +32,96 @@ import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './tileZoom'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import * as s from './handle-menu.css'
+
+export type TileMenuAction =
+  | 'tile:open'
+  | 'tile:duplicate'
+  | 'tile:delete'
+  | 'tile:lock'
+  | `tile:style:${TileStyle}`
+  | `tile:zoom:${number}`
+  | `tile:pick:${number}`
+
+/** Rows name an index into `picks` because a menu row can't carry a view pick's three fields. */
+export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
+
+/** The pane below as native rows: the same link drills, style and scale sets, from the same inputs. */
+export function tileMenuItems({
+  entry,
+  pageItems,
+  viewItems,
+  pageInfo,
+  containerLocked,
+}: {
+  entry: TileEntry
+  pageItems: PagePickerItem[]
+  viewItems: ViewPickerItem[]
+  pageInfo?: { title: string }
+  containerLocked: boolean
+}): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
+  const picks: TilePick[] = []
+  const locked = (entry.locked ?? false) || containerLocked
+  const drill = <T,>(
+    nodes: readonly DrillPickItem<T>[],
+    wrap: (value: T) => TilePick,
+  ): ActionItem<TileMenuAction>[] =>
+    nodes.map((n) => {
+      if (n.submenu) {
+        const rows = drill(n.submenu, wrap)
+        // An empty submenu opens onto blank space instead of saying there is nothing to pick.
+        return rows.length > 0
+          ? { label: n.label, action: 'tile:open' as const, submenu: rows }
+          : { label: n.label, action: 'tile:open' as const, disabled: true }
+      }
+      if (n.pick === undefined) return { label: n.label, action: 'tile:open', disabled: true }
+      picks.push(wrap(n.pick))
+      return { label: n.label, action: `tile:pick:${picks.length - 1}` as const }
+    })
+  const borderless = entry.style === 'borderless'
+  const currentFactor = zoomStep(entry.zoom).factor
+  const items: ActionItem<TileMenuAction>[] = [
+    ...(pageInfo ? [{ label: pageInfo.title, action: 'tile:open' as const, disabled: true }] : []),
+    // A row with no source is shown and refused rather than dropped.
+    ...TILE_KINDS[entry.type].menuRows.map(({ label, source }): ActionItem<TileMenuAction> => {
+      const rows =
+        source === 'pages'
+          ? drill(pageItems, (value) => ({ kind: 'page', value }))
+          : drill(viewItems, (value) => ({ kind: 'view', value }))
+      const off = locked || rows.length === 0
+      return { label, action: 'tile:open', disabled: off, ...(off ? {} : { submenu: rows }) }
+    }),
+    {
+      label: 'Style',
+      action: 'tile:open',
+      disabled: locked,
+      submenu: [
+        { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless },
+        { label: 'Borderless', action: 'tile:style:borderless', checked: borderless },
+      ],
+    },
+    {
+      label: 'Scale',
+      action: 'tile:open',
+      disabled: locked,
+      submenu: ZOOM_STEPS.map((st) => ({
+        label: st.label,
+        action: `tile:zoom:${st.factor}` as const,
+        checked: st.factor === currentFactor,
+      })),
+    },
+    { label: 'Duplicate', action: 'tile:duplicate', separatorBefore: true, disabled: locked },
+    { label: 'Delete', action: 'tile:delete', disabled: locked },
+    {
+      label: containerLocked ? 'Locked' : lockLabel(locked),
+      action: 'tile:lock',
+      separatorBefore: true,
+      disabled: containerLocked,
+    },
+  ]
+  return { items, picks }
+}
 
 const GLYPH = 12
 const LOC_GLYPH = 11

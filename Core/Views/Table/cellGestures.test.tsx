@@ -142,9 +142,7 @@ beforeEach(() => {
     'activeViews:get': async () => ({}),
     'viewOrders:get': async () => ({}),
     'views:save': vi.fn(async () => ({ ok: true, value: { id: 'v1' } })),
-    'cell-menu': vi.fn(async () => null),
-    'conn-menu': vi.fn(async () => null),
-    'column-menu': vi.fn(async () => null),
+    'row-menu': vi.fn(async () => null),
     'link:open': openExternalSpy,
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
@@ -401,7 +399,7 @@ describe('number cell inline editing', () => {
 describe('menu-entered editing', () => {
   it('url Edit normalizes a schemeless link on commit', async () => {
     await mountTable(sourceWith())
-    channels['conn-menu'] = vi.fn(async () => 'editLink')
+    channels['row-menu'] = vi.fn(async () => 'editLink')
     const urlCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
     await act(async () => {
       urlCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -422,7 +420,7 @@ describe('menu-entered editing', () => {
 
   it('title Rename commits a rename op', async () => {
     await mountTable(sourceWith())
-    channels['cell-menu'] = vi.fn(async () => 'title:rename')
+    channels['row-menu'] = vi.fn(async () => 'title:rename')
     const titleCell = host.querySelectorAll<HTMLElement>('.data-cell')[0]
     await act(async () => {
       titleCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))

@@ -26,7 +26,6 @@ import { iconNameOr } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
-import { tileMenuModel } from '@pommora/core/Actions/tileMenu'
 import { popRowMenu, useNativeMenus } from '../Platform/nativeMenus'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyRemovedTile } from '../Interface/Notifications/notifications'
@@ -34,14 +33,14 @@ import { useHeld } from '@pommora/uix/Animations/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '../Session/treeIndex'
 import { mintDefaultView } from '@pommora/core/Views/views'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import { ZOOM_STEPS, zoomStep, zoomStyle } from './tileZoom'
+import { zoomStyle } from './tileZoom'
 import {
   inertTile,
   type MutateEntry,
   renderTile as renderSurface,
   tileSourceInfo,
 } from './tileKinds'
-import { TileHandleMenu } from './TileHandleMenu'
+import { TileHandleMenu, tileMenuItems } from './TileHandleMenu'
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import './tile-base.css'
@@ -342,13 +341,10 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
     const entry = entries.get(id)
     if (!entry || !pickers) return
     const page = tileSourceInfo(entry, pagesById)
-    const { items, picks } = tileMenuModel({
+    const { items, picks } = tileMenuItems({
       entry,
-      pageInfo: page && { title: page.title },
       ...pickers,
-      zoomSteps: ZOOM_STEPS,
-      currentFactor: zoomStep(entry.zoom).factor,
-      locked: (entry.locked ?? false) || hostLocked,
+      pageInfo: page && { title: page.title },
       containerLocked: hostLocked,
     })
     void popRowMenu(items, el).then((action) => {

@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@pommora/core/Actions/connMenu'
+import { type ConnMenuAction, connMenuModel } from '@pommora/core/Actions/connMenu'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
@@ -16,8 +16,8 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
-const connMenu = vi.fn<(ctx: { editable: boolean }) => Promise<ConnMenuAction | null>>()
-stubEditorBridge({ 'conn-menu': connMenu })
+const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
+stubEditorBridge({ 'row-menu': connMenu })
 
 beforeEach(() => {
   connMenu.mockReset()
@@ -48,11 +48,14 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      open: 'closed',
-      windowed: false,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: true,
+        hasAlias: false,
+        open: 'closed',
+        windowed: false,
+      }),
+      anchor: undefined,
     })
   })
 
@@ -61,11 +64,14 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await rightClick(view, 12)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: true,
-      hasAlias: true,
-      open: 'closed',
-      windowed: false,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: true,
+        hasAlias: true,
+        open: 'closed',
+        windowed: false,
+      }),
+      anchor: undefined,
     })
   })
 
@@ -73,11 +79,14 @@ describe('the connection menu knows its span and its surface', () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      open: 'closed',
-      windowed: false,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: true,
+        hasAlias: false,
+        open: 'closed',
+        windowed: false,
+      }),
+      anchor: undefined,
     })
   })
 
@@ -103,11 +112,14 @@ describe('the connection menu knows its span and its surface', () => {
     })
     await rightClick(view, 6)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: false,
-      hasAlias: false,
-      open: 'closed',
-      windowed: false,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: false,
+        hasAlias: false,
+        open: 'closed',
+        windowed: false,
+      }),
+      anchor: undefined,
     })
   })
 })

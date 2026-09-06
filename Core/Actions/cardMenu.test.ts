@@ -4,7 +4,7 @@ import { cardMenuModel } from './cardMenu'
 describe('cardMenuModel', () => {
   it('lists the page-meta actions with one New Page — the grid has no above', () => {
     const m = cardMenuModel({ addable: [] })
-    expect(m.items.map((i) => [i.label, i.action])).toEqual([
+    expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Edit Icon', 'title:icon'],
@@ -14,13 +14,13 @@ describe('cardMenuModel', () => {
       ['View History', 'title:history'],
       ['Delete', 'title:delete'],
     ])
-    expect(m.items.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
-    expect(m.items.find((i) => i.action === 'title:newbelow')?.separatorBefore).toBe(true)
-    expect(m.items.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:newbelow')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
   })
 
   it('an open page reads "Open"', () => {
-    expect(cardMenuModel({ addable: [], alreadyOpen: true }).items[0].label).toBe('Open')
+    expect(cardMenuModel({ addable: [], alreadyOpen: true })[0].label).toBe('Open')
   })
 
   it('builds the Add Property submenu from the addable list, preserving order', () => {
@@ -30,20 +30,22 @@ describe('cardMenuModel', () => {
         { id: 'p2', name: 'Due' },
       ],
     })
-    expect(m.addProperty?.map((a) => [a.label, a.action])).toEqual([
+    expect(m[0]).toMatchObject({ label: 'Add Property', action: 'add:p1' })
+    expect(m[0].submenu?.map((a) => [a.label, a.action])).toEqual([
       ['Tags', 'add:p1'],
       ['Due', 'add:p2'],
     ])
+    expect(m[1].separatorBefore).toBe(true)
   })
 
-  it('omits the Add Property submenu when nothing is addable', () => {
-    expect(cardMenuModel({ addable: [] }).addProperty).toBeUndefined()
+  it('omits the Add Property row when nothing is addable', () => {
+    expect(cardMenuModel({ addable: [] }).some((i) => i.label === 'Add Property')).toBe(false)
   })
 
   it('leads with Edit Image only when the image is editable', () => {
-    expect(cardMenuModel({ addable: [] }).items.some((i) => i.action === 'image:edit')).toBe(false)
+    expect(cardMenuModel({ addable: [] }).some((i) => i.action === 'image:edit')).toBe(false)
     const m = cardMenuModel({ addable: [], editableImage: true })
-    expect(m.items[0]).toMatchObject({ label: 'Edit Image', action: 'image:edit' })
+    expect(m[0]).toMatchObject({ label: 'Edit Image', action: 'image:edit' })
   })
 
   it('opens the send block with Move To once the card is given destinations', () => {
@@ -51,7 +53,7 @@ describe('cardMenuModel', () => {
       addable: [],
       moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
     })
-    const actions = m.items.map((i) => i.action)
+    const actions = m.map((i) => i.action)
     const at = actions.indexOf('title:moveto')
     expect(actions.slice(at, at + 4)).toEqual([
       'title:moveto',

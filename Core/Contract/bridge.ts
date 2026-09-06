@@ -1,12 +1,5 @@
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
-import type { FileHistoryMenuAction } from '../Actions/fileHistoryMenu'
-import type {
-  ContextTarget,
-  Creator,
-  MutateReply,
-  MutateRequest,
-  RenameHost,
-} from '../Pages/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Pages/mutateRequest'
 import type { Result } from './result'
 import type { FormatState } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'
@@ -15,7 +8,7 @@ import type { ClearReport, TrashMode, TrashRow } from '../Trash/trashRow'
 import type { NavigationState } from '../Navigation/navRef'
 import type { GlanceSize, StoredTabSet, WindowsFile } from '../Interface/Windows/windowRecord'
 import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
-import type { OpenIn, PageValues, ViewButton, ViewStyle } from '../Views/viewRow'
+import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
 import type { Personalization } from '../Settings/personalization'
 import type { TileDoc, TileDocPatch, TileHostRef, EmbeddedView } from '../Tiles/tiles'
 import type {
@@ -25,38 +18,8 @@ import type {
   PropertyDefinition,
   StatusGroup,
 } from '../Properties/properties'
-import type { TableMenuAction, TableMenuContext } from '../Actions/tableMenu'
-import type { GripMenuAction, GripMenuContext } from '../Actions/gripMenu'
-import type { CellMenuAction, CellMenuContext } from '../Actions/cellMenu'
-import type { PageMetaAction } from '../Actions/pageMenu'
-import type { CardMenuAction, CardMenuContext } from '../Actions/cardMenu'
-import type { CitationMenuAction, CitationMenuContext } from '../Actions/citationMenu'
-import type { ConnMenuAction, ConnMenuContext } from '../Actions/connMenu'
-import type { TabMenuAction, TabMenuContext } from '../Actions/tabMenu'
-import type {
-  TrashColumnAction,
-  TrashColumnContext,
-  TrashMenuAction,
-  TrashMenuContext,
-} from '../Actions/trashMenu'
-import type { NavRowMenuAction, NavRowMenuContext } from '../Actions/navRowMenu'
-import type { PropertyMenuAction, PropertyMenuContext } from '../Actions/propertyMenu'
-import type { OptionMenuAction, OptionMenuContext } from '../Actions/optionMenu'
 import type { RowMenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
-import type { ColumnMenuAction, ColumnMenuContext } from '../Actions/columnMenu'
-import type {
-  EmbedAreaMenuAction,
-  EmbedTitleMenuAction,
-  ViewButtonMenuAction,
-} from '../Actions/viewMenus'
-import type { ViewRowAction, ViewRowMenuContext } from '../Actions/viewRowMenu'
-import type {
-  BannerMenuAction,
-  IconFavoriteMenuAction,
-  NexusIconAction,
-  TitleMenuAction,
-} from '../Actions/identityMenus'
 
 /** `dir` is nexus-relative; a folder gone missing opens at the root rather than refusing. */
 export interface PickFileOptions {
@@ -94,7 +57,6 @@ export interface Asks {
   'history:restore': { args: [pageId: string, ts: number]; reply: Result<{ path: string }> }
   'history:delete': { args: [pageId: string, ts: number[]]; reply: Result<number> }
   'history:clear': { args: []; reply: Result<number> }
-  'history:menu': { args: [ctx: { batch: boolean }]; reply: FileHistoryMenuAction | null }
 
   // Per-machine scopes (nexus.db rows)
   'folds:get': { args: []; reply: Record<string, string[]> }
@@ -258,8 +220,6 @@ export interface Asks {
 
   // `.trash` is outside the watcher, so the browser asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
-  'trash:menu': { args: [ctx: TrashMenuContext]; reply: TrashMenuAction | null }
-  'trash:columnMenu': { args: [ctx: TrashColumnContext]; reply: TrashColumnAction | null }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't
   // promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: { trashMode: TrashMode; permanentDelete: boolean } }
@@ -267,12 +227,6 @@ export interface Asks {
   'trash:report': { args: [message: string, detail: string]; reply: void }
 
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
-  // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
-  'context-menu': { args: [target: ContextTarget]; reply: void }
-  'create-menu': {
-    args: [items: Creator[]]
-    reply: MutateRequest | null
-  }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'error:show': { args: [message: string]; reply: void }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
@@ -282,57 +236,10 @@ export interface Asks {
   'linkTitles:get': { args: []; reply: Record<string, string> }
   'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 
-  'view-button-menu': {
-    args: [current: { viewButton: ViewButton }]
-    reply: ViewButtonMenuAction | null
-  }
-  'view-row-menu': { args: [ctx: ViewRowMenuContext]; reply: ViewRowAction | null }
-  'view-embed-title-menu': {
-    args: [arg: { iconShown: boolean; level: number }]
-    reply: EmbedTitleMenuAction | null
-  }
-  'view-embed-area-menu': {
-    args: [current: { viewStyle: ViewStyle; titleShown: boolean }]
-    reply: EmbedAreaMenuAction | null
-  }
-  'icon-favorite-menu': { args: [favorited: boolean]; reply: IconFavoriteMenuAction | null }
-  'nexus:iconMenu': {
-    args: [opts: { hasPhoto: boolean; hasGlyph: boolean }]
-    reply: NexusIconAction | null
-  }
   'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
   /** Its own channel: fused into a write, one IPC would perform two with partial-failure semantics. */
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: string | null }
-  'nexus:bannerMenu': {
-    args: [opts?: { noRemove?: boolean; noun?: string; add?: boolean }]
-    reply: BannerMenuAction | null
-  }
-  'nexus:titleMenu': {
-    args: [
-      opts?: {
-        toggleIcon?: boolean
-        iconHidden?: boolean
-        noEditIcon?: boolean
-      },
-    ]
-    reply: TitleMenuAction | null
-  }
-  'table-menu': { args: [ctx: TableMenuContext]; reply: TableMenuAction | null }
-  'grip-menu': { args: [ctx: GripMenuContext]; reply: GripMenuAction | null }
-  'column-menu': { args: [ctx: ColumnMenuContext]; reply: ColumnMenuAction | null }
-  'cell-menu': { args: [ctx: CellMenuContext]; reply: CellMenuAction | null }
-  'page-actions-menu': {
-    args: [ctx: { actions: PageMetaAction[]; alreadyOpen?: boolean }]
-    reply: PageMetaAction | null
-  }
-  'card-menu': { args: [ctx: CardMenuContext]; reply: CardMenuAction | null }
-  'tab-menu': { args: [ctx: TabMenuContext]; reply: TabMenuAction | null }
-  'nav-row-menu': { args: [ctx: NavRowMenuContext]; reply: NavRowMenuAction | null }
-  'conn-menu': { args: [ctx: ConnMenuContext]; reply: ConnMenuAction | null }
-  'citation-menu': { args: [ctx: CitationMenuContext]; reply: CitationMenuAction | null }
-  'property-menu': { args: [ctx: PropertyMenuContext]; reply: PropertyMenuAction | null }
-  'option-menu': { args: [ctx: OptionMenuContext]; reply: OptionMenuAction | null }
   'row-menu': { args: [req: RowMenuRequest]; reply: string | null }
 }
 
@@ -347,16 +254,6 @@ export interface Tells {
 
 export interface Pushes {
   'menu:action': string
-  // `create` marks a newborn's session: the field opens empty and its first commit rides the create.
-  'begin-rename': { path: string; create?: boolean; host?: RenameHost }
-  'new-page-adjacent': { path: string; where: 'above' | 'below'; host?: RenameHost }
-  // The icon picker anchors to the row the gesture happened on, which only the renderer can find.
-  'begin-icon': { path: string; host?: RenameHost }
-  'open-in-new-tab': ContextTarget
-  // Delete asks in the renderer, so the native menu hands the target back rather than acting.
-  'confirm-delete': ContextTarget
-  'open-in-window': ContextTarget
-  'open-history': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
   'assets:changed': AssetMap
   'nexus:changed': NexusTree

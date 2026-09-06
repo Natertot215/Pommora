@@ -1,5 +1,3 @@
-// Sidebar rows are the exception — their menu runs main-side.
-
 import { titleFromPath } from '@pommora/core/Connections/connections'
 import { pageLinkText, pagePathText, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
 import type { NexusTree } from '@pommora/core/Nexus/tree'

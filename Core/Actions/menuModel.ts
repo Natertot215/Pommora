@@ -13,6 +13,11 @@ export interface ActionItem<A> {
   submenu?: ActionItem<A>[]
 }
 
+/** The rows as a section: the first opens under a divider, so a block reads apart from the rows above it. */
+export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>[] {
+  return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
+}
+
 /** Viewport-relative CSS pixels, as `getBoundingClientRect` gives; absent opens at the cursor. */
 export interface MenuAnchor {
   left: number
@@ -22,6 +27,6 @@ export interface MenuAnchor {
 }
 
 export interface RowMenuRequest {
-  items: ActionItem<string>[]
+  items: readonly ActionItem<string>[]
   anchor?: MenuAnchor
 }

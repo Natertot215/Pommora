@@ -1,9 +1,8 @@
-import { useRef, useState } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
 import { EditableInput } from '../../Fields/EditableInput'
 import { cx } from '../../Utilities/cx'
 import { Icon } from '../../Symbols'
 import { PickerMenu, PickerRow } from '../picker-base'
-import { popRowMenu, useNativeMenus } from '@pommora/core/Platform/nativeMenus'
 import * as s from './picker-control.css'
 
 export type PickerOption<T extends string> = {
@@ -11,6 +10,14 @@ export type PickerOption<T extends string> = {
   label: string
   icon?: React.ComponentProps<typeof Icon>['name']
 }
+
+export type NativePicker = (
+  rows: { label: string; action: string; checked: boolean }[],
+  trigger: HTMLElement | null,
+) => Promise<string | null>
+
+/** The host's own list, where it has one and the device prefers it; absent, the picker draws its own. */
+export const NativePickerContext = createContext<NativePicker | null>(null)
 
 export const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
@@ -45,17 +52,17 @@ export function PickerControl<T extends string>({
   const [open, setOpen] = useState(false)
   const [typing, setTyping] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
-  const native = useNativeMenus()
+  const native = useContext(NativePickerContext)
   const isToggle = options.length === 2
 
   // No leading glyph: a system menu draws its own marks, and the chosen row reads as a checkmark.
-  const popNative = (): void => {
+  const popNative = (pop: NativePicker): void => {
     const items = options.map((o) => ({
       label: o.label,
       action: o.value,
       checked: o.value === value,
     }))
-    void popRowMenu(items, ref.current).then((picked) => {
+    void pop(items, ref.current).then((picked) => {
       // Resolved through the options rather than cast: the reply is a bare string by the time it crosses.
       const chosen = options.find((o) => o.value === picked)
       if (chosen) onPick(chosen.value)
@@ -64,7 +71,7 @@ export function PickerControl<T extends string>({
 
   const onTrigger = (): void => {
     if (isToggle) onPick((options.find((o) => o.value !== value) ?? options[0]).value)
-    else if (native) popNative()
+    else if (native) popNative(native)
     else setOpen(true)
   }
 

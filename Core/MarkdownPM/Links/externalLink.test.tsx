@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@pommora/core/Actions/connMenu'
+import { type ConnMenuAction, connMenuModel } from '@pommora/core/Actions/connMenu'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
@@ -15,11 +15,11 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const openExternal = vi.fn()
-const connMenu = vi.fn<(ctx: unknown) => Promise<ConnMenuAction | null>>()
+const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
 stubEditorBridge({
   'link:open': openExternal,
-  'conn-menu': connMenu,
+  'row-menu': connMenu,
   'clipboard:write': writeClipboard,
 })
 
@@ -129,10 +129,13 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view, 5, '.md-link')
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      external: true,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: true,
+        hasAlias: false,
+        external: true,
+      }),
+      anchor: undefined,
     })
     expect(writeClipboard).toHaveBeenCalledWith('https://x.test')
   })
@@ -142,11 +145,14 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
     await rightClick(view, 5, '.md-connection-resolved')
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: false,
-      hasAlias: false,
-      open: 'closed',
-      windowed: false,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: false,
+        hasAlias: false,
+        open: 'closed',
+        windowed: false,
+      }),
+      anchor: undefined,
     })
     expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
   })

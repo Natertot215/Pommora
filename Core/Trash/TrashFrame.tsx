@@ -20,6 +20,9 @@ import { containerTargets, contextTargets } from '../Session/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
 import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { trashColumnMenuItems, trashMenuItems } from '@pommora/core/Actions/trashMenu'
+import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -151,15 +154,13 @@ export function TrashFrame(): React.JSX.Element {
   }
 
   const openColumnMenu = async (): Promise<void> => {
-    const action = await host().ask('trash:columnMenu', { format: dateFormat, timeShown })
+    const action = await popRowMenu(trashColumnMenuItems({ format: dateFormat, timeShown }))
     if (!action) return
-    if (action.kind === 'toggleTime')
-      setPersonalization('trashHideTime', timeShown ? true : undefined)
-    else
-      setPersonalization(
-        'trashDateFormat',
-        action.format === columnDefault ? undefined : action.format,
-      )
+    if (action === 'toggleTime') setPersonalization('trashHideTime', timeShown ? true : undefined)
+    else {
+      const format = action.slice('format:'.length) as DateFormat
+      setPersonalization('trashDateFormat', format === columnDefault ? undefined : format)
+    }
   }
 
   const openMenu = async (row: TrashRow): Promise<void> => {
@@ -174,23 +175,26 @@ export function TrashFrame(): React.JSX.Element {
     const targets = batch ? inSet : [row]
     const homeless = !batch && !row.homeResolves
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
-    const action = await host().ask('trash:menu', {
-      batch,
-      ...(homeless
-        ? {
-            destinationKind,
-            destinations:
-              destinationKind === 'context' ? contextTargets(tree) : containerTargets(tree),
-          }
-        : {}),
-    })
+    const action = await popRowMenu(
+      trashMenuItems({
+        batch,
+        ...(homeless
+          ? {
+              destinations:
+                destinationKind === 'context' ? contextTargets(tree) : containerTargets(tree),
+            }
+          : {}),
+      }),
+    )
     if (!action) return
-    switch (action.kind) {
+    if (action.startsWith('restoreTo:')) {
+      const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
+      await one({ op: 'restore', bundlePath: row.bundlePath, destination })
+      return
+    }
+    switch (action) {
       case 'restore':
         await one({ op: 'restore', bundlePath: row.bundlePath })
-        break
-      case 'restoreTo':
-        await one({ op: 'restore', bundlePath: row.bundlePath, destination: action.destination })
         break
       case 'delete':
         if (await askEmptyTrash(1)) await one({ op: 'emptyBundle', bundlePath: row.bundlePath })

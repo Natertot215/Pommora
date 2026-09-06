@@ -25,9 +25,9 @@ describe('the anchor a row menu opens at', () => {
   })
 })
 
-describe('a row model as a native template', () => {
-  const pick = (a: string) => () => void a
+const pick = (a: string) => () => void a
 
+describe('a row model as a native template', () => {
   it('expands separatorBefore into a real separator row', () => {
     const t = rowTemplate(
       [
@@ -77,6 +77,29 @@ describe('a row model as a native template', () => {
   it('shows a disabled row rather than dropping it', () => {
     const t = rowTemplate([{ label: 'Delete', action: 'b', disabled: true }], pick)
     expect(t[0]).toMatchObject({ label: 'Delete', enabled: false })
+  })
+})
+
+describe('one model with every shape', () => {
+  it('lays out a branch, a divider, a checked row, and a refused row as one template', () => {
+    const t = menuTemplate(
+      [
+        {
+          label: 'Style',
+          action: 'open',
+          submenu: [{ label: 'Bordered', action: 'b', checked: true }],
+        },
+        { label: 'Duplicate', action: 'dup', separatorBefore: true },
+        { label: 'Delete', action: 'del', disabled: true },
+      ],
+      pick,
+    )
+    expect(t.map((i) => i.type ?? i.label)).toEqual(['Style', 'separator', 'Duplicate', 'Delete'])
+    expect((t[0].submenu as { type?: string; checked?: boolean }[])[0]).toMatchObject({
+      type: 'checkbox',
+      checked: true,
+    })
+    expect(t[3].enabled).toBe(false)
   })
 })
 

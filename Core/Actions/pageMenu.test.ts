@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  destinationRows,
   pageLinkText,
   pageMetaMenuItems,
   pageMetaMenuSubset,
@@ -50,6 +51,35 @@ describe('the page menu', () => {
     const items = pageMetaMenuSubset(['title:delete', 'title:rename', 'title:copylink'])
     expect(items.map((i) => i.action)).toEqual(['title:rename', 'title:copylink', 'title:delete'])
     expect(items[0].separatorBefore).toBeUndefined()
+  })
+
+  it('Move To drills the destinations, a parent repeated as its own first row and the current home refused', () => {
+    const items = pageMetaMenuItems(false, {
+      move: {
+        moveTargets: [
+          {
+            id: 'c',
+            label: 'Notes',
+            path: 'Notes',
+            children: [{ id: 's', label: 'Sub', path: 'Notes/Sub' }],
+          },
+        ],
+        currentParentPath: 'Notes/Sub',
+      },
+    })
+    const move = items.find((i) => i.action === 'title:moveto')
+    expect(move?.submenu?.[0].submenu).toEqual([
+      { label: 'Notes', action: 'move:Notes' },
+      { label: 'Sub', action: 'move:Notes/Sub', disabled: true, separatorBefore: true },
+    ])
+    expect(
+      pageMetaMenuItems(false, { move: { moveTargets: [] } }).some(
+        (i) => i.action === 'title:moveto',
+      ),
+    ).toBe(false)
+    expect(destinationRows([{ id: 'a', label: 'A', path: 'A' }], (t) => t.id)).toEqual([
+      { label: 'A', action: 'a' },
+    ])
   })
 
   it('copies a page as a connection, and as its location without the extension', () => {

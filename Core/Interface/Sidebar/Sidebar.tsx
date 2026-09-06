@@ -51,7 +51,7 @@ import {
   dropOutlineOpen,
   dropOutlineSpacer,
 } from '@pommora/uix/Menus/listed-outline.css'
-import { host } from '../../Platform/dialer'
+import { showEntityMenu } from './entityMenuActions'
 
 function showContextFor(node: {
   kind: MutableKind
@@ -62,7 +62,7 @@ function showContextFor(node: {
 }): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
-  return host().ask('context-menu', {
+  return showEntityMenu({
     kind: node.kind,
     id: node.id,
     path: node.path,
@@ -708,12 +708,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       persistKey={`context:${group.def.id}`}
       dragId={group.def.id}
       onContextMenu={() =>
-        void host().ask('context-menu', {
-          kind: 'context',
-          path,
-          title: group.def.title,
-          host: 'sidebar',
-        })
+        void showEntityMenu({ kind: 'context', path, title: group.def.title, host: 'sidebar' })
       }
       rename={{ path, kind: 'context' }}
       onBodyContextMenu={() => {

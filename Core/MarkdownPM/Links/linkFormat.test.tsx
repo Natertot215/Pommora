@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@pommora/core/Actions/connMenu'
+import { type ConnMenuAction, connMenuModel } from '@pommora/core/Actions/connMenu'
 import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
 import { linkMarkdown } from '@pommora/core/Web/pasteLink'
 import { buildPageIndex, type ConnectionsApi } from './connectionsApi'
@@ -18,13 +18,13 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
-const connMenu = vi.fn<(ctx: unknown) => Promise<ConnMenuAction | null>>()
+const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
 // The title never arrives over the bridge here — every test that needs one writes it into the shared
 // cache directly, which is the same thing the fetch's own resolution does.
 const linkTitlesFetch = async () => ({ ok: false, error: { code: 'offline' } })
 stubEditorBridge({
-  'conn-menu': connMenu,
+  'row-menu': connMenu,
   'clipboard:write': writeClipboard,
   'linkTitles:fetch': linkTitlesFetch,
 })
@@ -72,10 +72,13 @@ describe('the menu a link pointing at an address carries', () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      external: true,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: true,
+        hasAlias: false,
+        external: true,
+      }),
+      anchor: undefined,
     })
   })
 
@@ -83,10 +86,13 @@ describe('the menu a link pointing at an address carries', () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn, readOnly: true })
     await rightClick(view)
     expect(connMenu).toHaveBeenCalledWith({
-      surface: 'editor',
-      editable: false,
-      hasAlias: false,
-      external: true,
+      items: connMenuModel({
+        surface: 'editor',
+        editable: false,
+        hasAlias: false,
+        external: true,
+      }),
+      anchor: undefined,
     })
   })
 

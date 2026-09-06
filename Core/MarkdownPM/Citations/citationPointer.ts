@@ -10,7 +10,8 @@ import { followTarget } from '../Links/links'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../Editor/travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
-import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { citationMenuModel } from '@pommora/core/Actions/citationMenu'
 
 export const CITE_GLYPH = '.md-cite-ref'
 
@@ -104,11 +105,11 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     },
     dwell: () => null,
     menu: (hit, view) => () =>
-      void host()
-        .ask('citation-menu', { subject: 'marker', editable: !view.state.readOnly })
-        .then((action) => {
-          if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
-        }),
+      void popRowMenu(
+        citationMenuModel({ subject: 'marker', editable: !view.state.readOnly }),
+      ).then((action) => {
+        if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
+      }),
   })
 }
 
@@ -159,11 +160,9 @@ export function citationRowMenu(): Extension {
       )
       if (!entry) return false
       event.preventDefault()
-      void host()
-        .ask('citation-menu', { subject: 'citation', editable: true })
-        .then((action) => {
-          if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
-        })
+      void popRowMenu(citationMenuModel({ subject: 'citation', editable: true })).then((action) => {
+        if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
+      })
       return true
     },
   })

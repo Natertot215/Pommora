@@ -6,7 +6,8 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { useBannerMenu } from '../Interface/Header/useBannerMenu'
 import { AddBannerButton } from '../Interface/Header/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
-import { host } from '../Platform/dialer'
+import { popRowMenu } from '../Platform/nativeMenus'
+import { titleMenuItems } from '@pommora/core/Actions/identityMenus'
 
 export interface HeaderPage {
   path: string
@@ -52,9 +53,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
       icon={icon}
       iconHidden={iconHidden}
       onRename={onRename}
-      requestMenu={() =>
-        host().ask('nexus:titleMenu', { toggleIcon: icon !== undefined, iconHidden })
-      }
+      requestMenu={() => popRowMenu(titleMenuItems({ toggleIcon: icon !== undefined, iconHidden }))}
       onEditIcon={onEditIcon}
       onToggleIcon={onToggleIcon}
     />

@@ -65,6 +65,8 @@ import { normalizePropertyName } from '@pommora/core/Properties/properties'
 import { askDestroyProperty } from '../../Interface/Confirm/confirmations'
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
 import { host } from '../../Platform/dialer'
+import { popRowMenu } from '../../Platform/nativeMenus'
+import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
@@ -356,7 +358,7 @@ export function PropertyFrame({
     )
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
-    const action = await host().ask('property-menu', { kind: 'editor', name: def.name })
+    const action = await popRowMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
     if (action === 'property:remove') await remove(def.id)
     else if (
       action === 'property:destroy' &&
@@ -366,10 +368,12 @@ export function PropertyFrame({
       backToList()
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
-    const action = await host().ask('property-menu', {
-      kind: group === 'assigned' ? 'assigned-row' : 'registry-row',
-      name: d.name,
-    })
+    const action = await popRowMenu(
+      propertyMenuModel({
+        kind: group === 'assigned' ? 'assigned-row' : 'registry-row',
+        name: d.name,
+      }),
+    )
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
       await commit(await host().ask('schema:delete', collectionPath, d.id))
