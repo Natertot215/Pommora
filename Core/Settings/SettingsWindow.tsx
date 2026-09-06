@@ -838,36 +838,29 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   )
 }
 
+const switchRow = (
+  row: RowText,
+  checked: boolean,
+  onChange: (next: boolean) => void,
+): React.JSX.Element => (
+  <MenuRowView
+    row={settingsRow(row, { kind: 'switch', checked, ariaLabel: row.label, onChange })}
+  />
+)
+
 function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   const on = value ?? row.defaultOn ?? false
-
-  return (
-    <MenuRowView
-      row={settingsRow(row, {
-        kind: 'switch',
-        checked: on,
-        ariaLabel: row.label,
-        onChange: (next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next),
-      })}
-    />
+  return switchRow(row, on, (next) =>
+    setPersonalization(row.key, row.defaultOn && next ? undefined : next),
   )
 }
 
 function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   const on = useSession((s) => s.devicePrefs[row.key] ?? false)
   const setDevicePref = useSession((s) => s.setDevicePref)
-  return (
-    <MenuRowView
-      row={settingsRow(row, {
-        kind: 'switch',
-        checked: on,
-        ariaLabel: row.label,
-        onChange: (next) => setDevicePref(row.key, next || undefined),
-      })}
-    />
-  )
+  return switchRow(row, on, (next) => setDevicePref(row.key, next || undefined))
 }
 
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {

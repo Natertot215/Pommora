@@ -11,13 +11,8 @@ import {
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage } from '../MarkdownPM/Links/connectionsApi'
-import {
-  containersByPathOf,
-  connectionsFor,
-  pagesByIdOf,
-  type ContainerCore,
-} from '../Session/treeIndex'
-import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
+import { containersByPathOf, pagesByIdOf, type ContainerCore } from '../Session/treeIndex'
+import { usePreviewConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { getTile } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
@@ -139,22 +134,7 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
   const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
-  const openWindow = useSession((s) => s.openWindow)
-  // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
-  const openInWindow = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
-  const connections = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: (page) =>
-          openInWindow
-            ? openWindow({ id: page.id, path: page.path })
-            : void select({ kind: 'page', id: page.id, path: page.path }),
-        bypass: (page) =>
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-        menu: showConnectionMenu,
-      }),
-    [tree, select, openWindow, openInWindow],
-  )
+  const connections = usePreviewConnections(tree)
 
   useEffect(() => {
     if (!editingId) return
