@@ -1,15 +1,12 @@
-// The generic row menu: a model of plain rows, popped as an OS menu, resolving the chosen action.
-// Every menu that is a list rather than a surface comes through here, which is what lets the same
-// model reach the OS or an in-app pane without either renderer knowing about the other.
+// Every menu that is a list rather than a surface comes through here, which lets the same model
+// reach the OS or an in-app pane without either renderer knowing about the other.
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { ActionItem, MenuAnchor, RowMenuRequest } from '@pommora/core/Actions/menuModel'
 import { PAGE_MOVE_ROW, type PageMoveContext } from '@pommora/core/Actions/pageMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
-/** The renderer measures in CSS pixels; `popup` places in window DIPs, and the two differ by
- *  exactly the zoom the window is running at. Converted in one place: an anchor that skips this
- *  lands further from its trigger the further the user is zoomed from 1. A dropdown hangs from
- *  its trigger's bottom-left, so that corner is the popup's origin. */
+/** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by exactly the
+ *  window's zoom. A dropdown hangs from its trigger's bottom-left, so that corner is the origin. */
 export function anchorPoint(
   win: BrowserWindow,
   anchor: MenuAnchor | undefined,
@@ -22,9 +19,8 @@ export function anchorPoint(
   }
 }
 
-/** One model row as a native item — the single statement of what a row becomes, whichever menu
- *  carries it. A row carrying `checked` becomes a checkbox so the choice in force reads at a
- *  glance. Icons are left behind on purpose: an OS menu draws its own. */
+/** The single statement of what a row becomes, whichever menu carries it. Icons are left behind
+ *  on purpose: an OS menu draws its own. */
 export function nativeRow<A extends string>(
   item: ActionItem<A>,
   pick: (action: A) => () => void,
@@ -33,18 +29,14 @@ export function nativeRow<A extends string>(
     label: item.label,
     enabled: !item.disabled,
     ...(item.checked !== undefined && { type: 'checkbox' as const, checked: item.checked }),
-    // A row that leads somewhere takes no click of its own — giving it both would resolve the
-    // parent the moment the pointer rested on it.
+    // Giving a submenu row a click too would resolve the parent the moment the pointer rested.
     ...(item.submenu ? { submenu: rowTemplate(item.submenu, pick) } : { click: pick(item.action) }),
   }
 }
 
-/** A model's rows as a native template — a FRAGMENT, which is why `separatorBefore` expands
- *  verbatim here: a run spliced beneath rows a menu already holds needs the divider that separates
- *  it from them. Dropping one that leads the whole menu is `menuTemplate`'s job, since only a
- *  builder holding the finished menu can tell the two cases apart. The one row that isn't an act —
- *  Move To ▸ — opens the destination tree, where the leaf a person lands on is what resolves back
- *  as the move. */
+/** A FRAGMENT, which is why `separatorBefore` expands verbatim: a run spliced beneath rows a menu
+ *  already holds needs that divider. Dropping one that leads the whole menu is `menuTemplate`'s
+ *  job, since only a builder holding the finished menu can tell the two cases apart. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
@@ -67,8 +59,7 @@ export function rowTemplate<A extends string>(
   return template
 }
 
-/** A whole menu's rows — the fragment above, minus a divider that would lead the menu, since one
- *  there separates nothing. */
+/** The fragment above, minus a leading divider, which would separate nothing. */
 export function menuTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
@@ -77,7 +68,6 @@ export function menuTemplate<A extends string>(
   return template[0]?.type === 'separator' ? template.slice(1) : template
 }
 
-/** A menu that is nothing but its model's rows: pop them, resolve the pick. */
 export function popModelMenu<A extends string>(
   win: BrowserWindow,
   items: readonly ActionItem<A>[],

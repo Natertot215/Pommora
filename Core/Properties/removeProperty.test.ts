@@ -56,8 +56,8 @@ beforeEach(async () => {
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
-  await updatePageProperty(pageB, liveDef, { kind: 'select', value: 'done' })
+  await updatePageProperty(root, pageA, liveDef, { kind: 'select', value: 'active' })
+  await updatePageProperty(root, pageB, liveDef, { kind: 'select', value: 'done' })
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -189,7 +189,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     const c = await createPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const selDef = (await readRegistry(root)).defs[id]
-    await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
+    await updatePageProperty(root, c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = readFrontmatterFields(await readFile(c.value.path, 'utf8')) as Record<
@@ -210,7 +210,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, tags.value.id)
     const p = await createPage(folder, 'T', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
-    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
+    await updatePageProperty(root, p.value.path, (await readRegistry(root)).defs[tags.value.id], {
       kind: 'multiSelect',
       value: ['alpha', 'zeta'],
     })

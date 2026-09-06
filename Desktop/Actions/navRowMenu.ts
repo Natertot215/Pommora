@@ -5,8 +5,6 @@ import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 import { favoriteLabel, openLabel, pinLabel } from '@pommora/core/Actions/toggleLabels'
 
-// The NavWindow row/card menu: Open · Open Preview · the send block a page carries · Pin/Unpin ·
-// Favorite/Unfavorite · Remove, gated by the row's live state.
 export function popNavRowMenu(
   win: BrowserWindow,
   ctx: NavRowMenuContext,
@@ -20,8 +18,7 @@ export function popNavRowMenu(
       })
     if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-window') })
     if (items.length > 0) items.push({ type: 'separator' })
-    // A recent is a stored ref, addressable only once the renderer has minted a live path
-    // against the tree.
+    // A recent is a stored ref, addressable only once the renderer has minted a live path.
     if (ctx.isPage && ctx.currentParentPath !== undefined) {
       items.push(...rowTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx))
       items.push({ type: 'separator' })

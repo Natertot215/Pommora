@@ -6,8 +6,6 @@ import {
 } from '@pommora/core/Actions/connMenu'
 import { popModelMenu } from './rowMenu'
 
-// The link right-click menu: main pops the shared model at the cursor and resolves the chosen
-// action; resolve(null) covers a dismissed menu so the renderer no-ops.
 export function popConnMenu(
   win: BrowserWindow,
   ctx: ConnMenuContext,

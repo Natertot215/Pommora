@@ -79,8 +79,14 @@ describe('restoring a deleted property', () => {
     const p1 = await createPage(notes, 'A', { body: 'b' })
     const p2 = await createPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) throw new Error('pages failed')
-    await updatePageProperty(p1.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
-    await updatePageProperty(p2.value.path, await liveDef(id), { kind: 'select', value: 'lo' })
+    await updatePageProperty(root, p1.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    await updatePageProperty(root, p2.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'lo',
+    })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
@@ -140,9 +146,9 @@ describe('restoring a deleted property', () => {
     const good = await createPage(notes, 'B', { body: 'b' })
     if (!page.ok || !good.ok) throw new Error('pages failed')
     const def = await liveDef(id)
-    await updatePageProperty(good.value.path, def, { kind: 'select', value: 'hi' })
+    await updatePageProperty(root, good.value.path, def, { kind: 'select', value: 'hi' })
     // A hand-written value naming an option the definition never had.
-    await updatePageProperty(page.value.path, { ...def, type: 'url' } as PropertyDefinition, {
+    await updatePageProperty(root, page.value.path, { ...def, type: 'url' } as PropertyDefinition, {
       kind: 'url',
       value: 'nonsense',
     })
@@ -162,8 +168,8 @@ describe('restoring a deleted property', () => {
     const doomed = await createPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !doomed.ok) throw new Error('pages failed')
     const def = await liveDef(id)
-    await updatePageProperty(p1.value.path, def, { kind: 'select', value: 'hi' })
-    await updatePageProperty(doomed.value.path, def, { kind: 'select', value: 'lo' })
+    await updatePageProperty(root, p1.value.path, def, { kind: 'select', value: 'hi' })
+    await updatePageProperty(root, doomed.value.path, def, { kind: 'select', value: 'lo' })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
     await rm(tasks, { recursive: true, force: true })
@@ -186,7 +192,7 @@ describe('restoring a deleted property', () => {
     await assignProperty(root, notes, c.value.id)
     const page = await createPage(notes, 'T', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
-    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+    await updatePageProperty(root, page.value.path, await liveDef(c.value.id), {
       kind: 'multiSelect',
       value: ['alpha', 'zeta'],
     })

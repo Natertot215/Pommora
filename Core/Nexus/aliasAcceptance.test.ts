@@ -102,7 +102,7 @@ describe('a rename reaches every form a connection takes', () => {
     expect(after).toContain('[[Plain|the roadmap]]')
   })
 
-  // rewritePageSerialized calls the rewriter unwrapped, and mutate.ts turns a throw into a REVERTED
+  // rewritePageSerialized calls the rewriter unwrapped, and rename.ts turns a throw into a REVERTED
   // rename — so one such body would make every rename in the nexus fail with a message naming nothing.
   it('a %-bearing target does not throw the whole rename into a revert', async () => {
     await writeFile(host, `---\nid: p2\n---\nsee [x](Revenue 50% plan) and [[Q3 Plan]] end\n`)

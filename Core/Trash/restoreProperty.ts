@@ -64,7 +64,7 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
     }
     const file = join(root, entry.path)
     const written = await machine().lock(file, () =>
-      updatePageProperty(file, def, reconciled.value),
+      updatePageProperty(root, file, def, reconciled.value),
     )
     if (!written.ok) dropped++
   }

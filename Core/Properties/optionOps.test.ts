@@ -52,7 +52,7 @@ async function pageHolding(id: string, value: string): Promise<string> {
   if (!p.ok) throw new Error('page failed')
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error('definition missing')
-  await updatePageProperty(p.value.path, def, { kind: 'select', value })
+  await updatePageProperty(root, p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 
@@ -74,7 +74,7 @@ async function statusPageHolding(id: string, value: string): Promise<string> {
   if (!p.ok) throw new Error('page failed')
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error('definition missing')
-  await updatePageProperty(p.value.path, def, { kind: 'select', value })
+  await updatePageProperty(root, p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 
@@ -196,7 +196,7 @@ describe('renameOption', () => {
       for (const title of titles) {
         const p = await createPage(col.value.path, title, { body: 'b' })
         if (!p.ok) throw new Error('page failed')
-        await updatePageProperty(p.value.path, def, { kind: 'select', value: 'A' })
+        await updatePageProperty(root, p.value.path, def, { kind: 'select', value: 'A' })
       }
     }
     flushValueWrites(root)

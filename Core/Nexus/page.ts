@@ -13,9 +13,9 @@ import {
 import type { GovernedWorld } from '../Properties/contextResolve'
 import { PAGE_MODELED_KEYS } from './identityMark'
 import { errText, ok, fail, type Result } from '../Contract/result'
-import { pathExists, invalidName } from './util'
+import { pathExists } from '../IO/atomicWrite'
+import { invalidName } from './util'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
-import { sessionRoot } from './session'
 import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
@@ -93,6 +93,7 @@ export async function movePage(
 
 // Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
 export async function updatePageProperty(
+  root: string,
   absFile: string,
   def: PropertyDefinition,
   value: PropertyValue | null,
@@ -103,7 +104,7 @@ export async function updatePageProperty(
   const clear = value === null || isBlankValue(value)
   return ok(
     await setGovernedRootKeys(
-      sessionRoot(),
+      root,
       absFile,
       clear ? {} : { [key]: encodeValue(value) },
       [key],

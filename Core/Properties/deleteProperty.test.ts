@@ -74,8 +74,14 @@ describe('deleteProperty', () => {
     const p1 = await createPage(notes, 'A', { body: 'b' })
     const p2 = await createPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
-    await updatePageProperty(p1.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
-    await updatePageProperty(p2.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(root, p1.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    await updatePageProperty(root, p2.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'hi',
+    })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
@@ -120,7 +126,7 @@ describe('deleteProperty', () => {
     await assignProperty(root, notes, id)
     const p = await createPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
-    await updatePageProperty(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(root, p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
     await removeProperty(root, notes, id) // notes now holds a cache block and is NOT an assigner
     const before = await readSidecar(notes, 'collection', pageCollectionSidecar)
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
