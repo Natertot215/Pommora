@@ -1,7 +1,7 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { linkMarkdown } from '@pommora/core/Web/pasteLink'
-import { useSession } from '../../Session/store'
+import { editorHost } from '../api'
 
 // Page Title writes the Short Link first and swaps the label in when the fetch lands, since a title takes a round trip and may never arrive.
 // To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.
@@ -47,16 +47,16 @@ const sweepOnTitles = ViewPlugin.fromClass(
     private readonly unsubscribe: () => void
 
     constructor(view: EditorView) {
+      const titles = view.state.facet(editorHost).linkTitles
       // Fires on any store write, so the empty case must stay cheap: one array-length read.
-      this.unsubscribe = useSession.subscribe(() => {
+      this.unsubscribe = titles.subscribe(() => {
         const pending = view.state.field(pendingTitles, false)
         if (!pending || pending.length === 0) return
-        const { linkTitles } = useSession.getState()
         const changes: { from: number; to: number; insert: string }[] = []
         const settled: PendingTitle[] = []
         for (const p of pending) {
-          const title = linkTitles[p.url]
-          if (title === undefined) continue
+          const title = titles.get(p.url)
+          if (title === null) continue
           settled.push(p)
           const text = linkMarkdown(p.url, 'link-title', title)
           if (text !== p.text) changes.push({ from: p.from, to: p.to, insert: text })

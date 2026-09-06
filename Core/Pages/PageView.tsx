@@ -3,8 +3,6 @@ import type { EditorView } from '@codemirror/view'
 import { useSession } from '../Session/store'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { glanceLink } from '../Interface/Glance/glanceLink'
-import { nativeEditorMenu } from '../MarkdownPM/Menus/menu'
 import { pageIndexOf } from '../Session/treeIndex'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenu'
 import { IconChoice } from '../Assets/IconChoice'
@@ -13,6 +11,8 @@ import { navKey } from '../Navigation/navRecents'
 import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, fenceWarm, readCache } from '../Navigation/warmTabs'
 import { registerPageEditor } from './pageEditor'
+import { PageHeader } from './PageHeader'
+import { useEditorHost } from './editorHost'
 import { schedulePageSave } from '../Session/saveScheduler'
 import { host } from '../Platform/dialer'
 
@@ -100,10 +100,10 @@ export function PageView({
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, select, openWindow, openInWindow])
+  const editorHost = useEditorHost({ pageId, connections })
 
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
   const pushLiveBody = (path: string, body: string): void => {
@@ -130,22 +130,30 @@ export function PageView({
       <MarkdownEditor
         key={`${pageDetail.path}:${bodyEpoch}`}
         initialBody={slot.body}
-        title={pageDetail.title}
-        path={pageDetail.path}
-        cover={
-          typeof pageDetail.frontmatter.banner === 'string'
-            ? pageDetail.frontmatter.banner
-            : undefined
+        host={editorHost}
+        header={
+          <PageHeader
+            page={{
+              path: pageDetail.path,
+              title: pageDetail.title,
+              cover:
+                typeof pageDetail.frontmatter.banner === 'string'
+                  ? pageDetail.frontmatter.banner
+                  : undefined,
+              icon: entityIcon(
+                'page',
+                typeof pageDetail.frontmatter.icon === 'string'
+                  ? pageDetail.frontmatter.icon
+                  : undefined,
+                defaultIcons,
+              ),
+              iconHidden,
+            }}
+            onToggleIcon={toggleHeadingIcon}
+            onEditIcon={() => setIconPickerOpen(true)}
+            onRename={(newName) => submitRename(pageDetail.path, 'page', newName)}
+          />
         }
-        icon={entityIcon(
-          'page',
-          typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined,
-          defaultIcons,
-        )}
-        iconHidden={iconHidden}
-        onToggleIcon={toggleHeadingIcon}
-        onEditIcon={() => setIconPickerOpen(true)}
-        onRename={(newName) => submitRename(pageDetail.path, 'page', newName)}
         onChange={(body) => {
           pushLiveBody(pageDetail.path, body)
           schedulePageSave(pageDetail.path, body)
@@ -156,7 +164,6 @@ export function PageView({
           load: async () => (await host().ask('folds:get'))[pageDetail.id] ?? [],
           save: (keys) => void host().ask('folds:set', pageDetail.id, keys),
         }}
-        pageId={pageId}
         embedHeights={{
           load: async () => (await host().ask('embedHeights:get'))[pageDetail.id] ?? {},
           save: (heights) => void host().ask('embedHeights:set', pageDetail.id, heights),
@@ -169,7 +176,6 @@ export function PageView({
           load: async () => (await host().ask('tableHeadingCols:get'))[pageDetail.id] ?? [],
           save: (indices) => void host().ask('tableHeadingCols:set', pageDetail.id, indices),
         }}
-        menu={nativeEditorMenu}
         register={(view) => {
           editorRef.current = view
           if (!parked) registerPageEditor(view)

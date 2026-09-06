@@ -2,14 +2,15 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
 import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
-import { customCaret } from '../Editor/caret'
-import { customSelection } from '../Editor/selection'
+import { customCaret } from '../caret'
+import { customSelection } from '../selection'
 import { markdownDecorations } from '../decorations'
-import { formatKeymap } from '../Editor/formatKeymap'
+import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations, citesChanged } from './cellCitations'
 import { autoPair, autoDelete, type Edit } from '../Input/edits'
 import { docScan } from '../docCache'
 import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
+import { refusedInAlias } from '../Guards/aliasGuard'
 import { aliasOnLeave } from '../Links/linkEdit'
 import { linkRest, linkTyping } from '../Gestures/linkGestures'
 import { connectionClicks } from '../Links/connections'
@@ -24,6 +25,7 @@ import {
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
+import { type EditorHost, editorHost } from '../api'
 
 const noConn = (): undefined => undefined
 
@@ -49,6 +51,7 @@ function applyEdit(view: EditorView, e: Edit | null, userEvent: string): boolean
 }
 
 export function CellEditor({
+  host,
   initial,
   onCommit,
   onNavigate,
@@ -61,6 +64,7 @@ export function CellEditor({
   connections,
   ordinalOf,
 }: {
+  host: EditorHost
   initial: string
   onCommit: (text: string) => void
   onNavigate: (dir: NavDir) => void
@@ -73,7 +77,7 @@ export function CellEditor({
   connections?: () => ConnectionsApi | undefined
   ordinalOf?: (label: string) => number | null
 }): React.JSX.Element {
-  const host = useRef<HTMLDivElement>(null)
+  const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onCommitRef = useRef(onCommit)
   onCommitRef.current = onCommit
@@ -91,21 +95,23 @@ export function CellEditor({
 
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
+    host,
     (q) => {
       const conn = connections?.()
       if (!conn) return []
       return q.form === 'alias'
-        ? aliasRows(conn, q.title, q.query)
+        ? aliasRows(conn, host.aliases, q.title, q.query)
         : conn.candidates(q.query, AC_MAX).map(pageRow)
     },
   )
 
   useEffect(() => {
     const view = new EditorView({
-      parent: host.current!,
+      parent: mountRef.current!,
       state: EditorState.create({
         doc: initial,
         extensions: [
+          editorHost.of(host),
           markdownDecorations(connections ?? noConn),
           cellCitations(() => ordinalOfRef.current),
           // A cell authors aliases like the body does — without this an abandoned pipe reaches disk.
@@ -177,7 +183,9 @@ export function CellEditor({
           // Character-pair auto-pairing only, so the `[[…]]` query closes and autocomplete can fire.
           EditorView.inputHandler.of((view, from, to, text) => {
             if (text.length !== 1 || from !== to) return false
-            return applyEdit(view, autoPair(docScan(view.state.doc), from, from, text), 'input')
+            const scan = docScan(view.state.doc)
+            if (refusedInAlias(scan.text, from, text)) return true
+            return applyEdit(view, autoPair(scan, from, from, text), 'input')
           }),
           EditorView.domEventHandlers({
             blur: () => {
@@ -237,19 +245,8 @@ export function CellEditor({
 
   return (
     <>
-      <div ref={host} className="mdpm-tbl-cell-editor" />
-      <AutocompletePane
-        open={ac !== null}
-        candidates={candidates}
-        index={acIndex}
-        form={ac?.form ?? 'link'}
-        caretX={ac?.caretX ?? 0}
-        caretTop={ac?.caretTop ?? 0}
-        caretBottom={ac?.caretBottom ?? 0}
-        bounds={ac?.bounds}
-        query={ac?.query ?? ''}
-        onPick={commit}
-      />
+      <div ref={mountRef} className="mdpm-tbl-cell-editor" />
+      <AutocompletePane ac={ac} candidates={candidates} index={acIndex} onPick={commit} />
     </>
   )
 }

@@ -15,7 +15,7 @@ import {
   indentListOnTab,
   outdentListOnShiftTab,
   type Edit,
-} from '../Input/edits'
+} from './edits'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'

@@ -11,7 +11,6 @@ import {
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage, ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { glanceLink } from '../Interface/Glance/glanceLink'
 import {
   containersByPathOf,
   pageIndexOf,
@@ -154,7 +153,6 @@ export function TileHost({ host }: { host: TileHostRef }): React.JSX.Element | n
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      glance: glanceLink,
       menu: showConnectionMenu,
     }
   }, [tree, select, openWindow, openInWindow])

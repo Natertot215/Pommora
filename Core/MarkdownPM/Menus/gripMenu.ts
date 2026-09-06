@@ -1,15 +1,12 @@
 // The generic editor menu stands down over a grip because the rail hover flags it hot to main; the flag is cleared by hand after a delete, since no mousemove fires under a modal menu.
 import { EditorView } from '@codemirror/view'
 import { pageEmbedText } from '@pommora/core/Connections/connections'
-import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
-import {
-  type GripMenuContext,
-  type ListKind,
-  type PickNode,
-  type ZoomOption,
-  gripMenuItems,
+import type {
+  GripMenuContext,
+  ListKind,
+  PickNode,
+  ZoomOption,
 } from '@pommora/core/Actions/gripMenu'
-import { useSession } from '../../Session/store'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Engine/detect'
 import { ZOOM_STEPS } from '../../Tiles/tileZoom'
@@ -18,10 +15,9 @@ import { docScan, docString } from '../docCache'
 import { embeddable } from '../Engine/embedRanges'
 import { HEADING_FOLD_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
-import { focusRange } from '../Editor/caretPlacement'
+import { focusRange } from '../caretPlacement'
 import { webpageEmbedUrlSpan } from '@pommora/core/Web/webpageEmbed'
-import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import { type EditorHost, editorHost } from '../api'
 
 export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
@@ -38,15 +34,19 @@ const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_S
 const headingLineAt = (e: MouseEvent): HTMLElement | null =>
   gutterLineAt(e, `.cm-line.${HEADING_FOLD_LINE}`)
 
-export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): PickNode[] {
-  const kept = (n: PickNode | null): n is PickNode => n !== null
-  const page = (p: { title: string }): PickNode | null =>
-    embeddable(p.title, exclude) ? { label: p.title, title: p.title } : null
-  const container = (c: CollectionNode | SetNode): PickNode | null => {
-    const children = [...(c.sets ?? []).map(container), ...c.pages.map(page)].filter(kept)
-    return children.length > 0 ? { label: c.title, children } : null
+/** A container emptied by the exclusions drops with them. */
+export function embedPickTree(
+  nodes: readonly PickNode[],
+  exclude: ReadonlySet<string>,
+): PickNode[] {
+  const kept: PickNode[] = []
+  for (const n of nodes) {
+    if (n.children) {
+      const children = embedPickTree(n.children, exclude)
+      if (children.length > 0) kept.push({ label: n.label, children })
+    } else if (n.title !== undefined && embeddable(n.title, exclude)) kept.push(n)
   }
-  return tree.collections.map(container).filter(kept)
+  return kept
 }
 
 /** Plus one fencing blank when the block sat between two (a single separator survives); at EOF the preceding newline goes. */
@@ -74,10 +74,10 @@ const ZOOM_MENU_STEPS: readonly ZoomOption[] = ZOOM_STEPS.map(({ label, factor }
 function contextFor(view: EditorView, doc: string, block: Block): GripMenuContext {
   switch (block.kind) {
     case 'embed': {
-      const tree = useSession.getState().tree
+      const host = view.state.facet(editorHost)
       return {
         kind: 'embed',
-        tree: tree ? embedPickTree(tree, embedExclusions(view.state)) : [],
+        tree: embedPickTree(host.pickTree(), embedExclusions(view.state)),
         zoomSteps: ZOOM_MENU_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
@@ -100,7 +100,8 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const opened = view.state.doc.lineAt(view.posAtDOM(headingEl))
   const level = headingParts(opened.text)?.hashes.length
   if (level === undefined) return
-  void popRowMenu(gripMenuItems({ kind: 'heading', level })).then((action) => {
+  const host = view.state.facet(editorHost)
+  void host.menus.grip({ kind: 'heading', level }).then((action) => {
     if (!action) return
     // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
     const doc = docString(view.state.doc)
@@ -115,7 +116,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
         changes: { from: span.from, to: span.to, insert: '' },
         userEvent: 'delete',
       })
-      host().tell('editor:grip-hot', false)
+      host.menus.gripHot(false)
     } else {
       // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
       const level = Number(action.slice('size:'.length)) as HeadingLevel
@@ -152,7 +153,8 @@ export const gripMenu = EditorView.domEventHandlers({
     const doc = docString(view.state.doc)
     const opened = doc.slice(block.from, block.to)
     e.preventDefault()
-    void popRowMenu(gripMenuItems(contextFor(view, doc, block))).then((action) => {
+    const host: EditorHost = view.state.facet(editorHost)
+    void host.menus.grip(contextFor(view, doc, block)).then((action) => {
       if (!action) return
       const doc = docString(view.state.doc)
       const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
@@ -187,7 +189,7 @@ export const gripMenu = EditorView.domEventHandlers({
           userEvent: 'delete',
         })
         // The grip is gone with its block, and no mousemove fired under the modal — clear by hand.
-        host().tell('editor:grip-hot', false)
+        host.menus.gripHot(false)
       }
     })
     return true

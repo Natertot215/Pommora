@@ -4,14 +4,13 @@ import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@pommora/core/Act
 import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'
 import { linkDestinationAt } from '@pommora/core/Web/webpageEmbed'
 import { matchesCommand } from '@pommora/uix/Interactions/commands'
-import { useSession } from '../../Session/store'
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { awaitTitle } from './pendingTitle'
-import { host } from '../../Platform/dialer'
+import { editorHost } from '../api'
 
 // Settings are read at paste time rather than closed over, since the extension array is built once at mount.
 
@@ -27,14 +26,15 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   if (destinationGuard(view, sel.from)) return null
   if (insideCodeAtCaret(view, sel.from)) return null
 
-  const { personalization, linkTitles } = useSession.getState()
+  const host = view.state.facet(editorHost)
+  const settings = host.settings()
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(sel.from, sel.to),
-    pasteIntoText: personalization.pasteLinkIntoText === true,
+    pasteIntoText: settings.pasteLinkIntoText === true,
     inverse,
-    format: personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
-    title: linkTitles[url],
+    format: settings.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
+    title: host.linkTitles.get(url) ?? undefined,
   })
   return decision.kind === 'literal' ? null : decision
 }
@@ -63,7 +63,7 @@ function writeLink(view: EditorView, link: LinkPaste): void {
       : undefined,
   })
   // Fire-and-forget: the anchor effect above picks the answer back up.
-  if (link.wantsTitle) useSession.getState().resolveLinkTitle(link.target)
+  if (link.wantsTitle) view.state.facet(editorHost).linkTitles.resolve(link.target)
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */
@@ -78,7 +78,8 @@ function writeLine(view: EditorView, text: string): void {
 }
 
 export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void> {
-  const text = await host().ask('clipboard:read')
+  const host = view.state.facet(editorHost)
+  const text = await host.clipboard.read()
   // The menu can be held open indefinitely — a table cell's editor is destroyed the moment its cell deactivates.
   if (!text || !view.dom.isConnected || view.state.readOnly) return
   // The explicit pick overrides the settings, never the syntax, or the picked form would nest a link inside the one being authored.
@@ -92,7 +93,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
     return
   }
   const target = pasteAsTarget(text)
-  const cached = target?.kind === 'url' ? useSession.getState().linkTitles[target.url] : undefined
+  const cached = target?.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
   const write = pasteAsWrite(target, form, cached)
   if (!write) return
   if (write.kind === 'link') writeLink(view, write)
@@ -114,18 +115,17 @@ export const pasteLink = EditorView.domEventHandlers({
   },
 
   keydown(event, view) {
-    if (!matchesCommand(useSession.getState().commands['paste-inverse'], event)) return false
+    const host = view.state.facet(editorHost)
+    if (!matchesCommand(host.settings().pasteInverse, event)) return false
     if (view.state.readOnly) return false
     event.preventDefault()
-    void host()
-      .ask('clipboard:read')
-      .then((text) => {
-        // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
-        if (!text || !view.dom.isConnected) return
-        const link = linkFor(view, text, true)
-        if (link) writeLink(view, link)
-        else view.dispatch(view.state.replaceSelection(text))
-      })
+    void host.clipboard.read().then((text) => {
+      // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
+      if (!text || !view.dom.isConnected) return
+      const link = linkFor(view, text, true)
+      if (link) writeLink(view, link)
+      else view.dispatch(view.state.replaceSelection(text))
+    })
     return true
   },
 })

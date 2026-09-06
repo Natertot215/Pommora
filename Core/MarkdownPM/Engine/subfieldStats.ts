@@ -1,4 +1,5 @@
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
+import { inlineSpans } from '@pommora/core/Connections/markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
 import { lineIndexAt, perText, scanOf, type DocScan } from './docScan'
 import {
@@ -6,7 +7,6 @@ import {
   calloutHeadPrefixLen,
   headingParts,
   isBlockquoteLine,
-  inlineCodeRegex,
   isThematicBreakLine,
   loneEmbedTitle,
   markerRegex,
@@ -44,9 +44,24 @@ function stripLineChrome(line: string): string {
 }
 
 /** An inline `![label](url)` keeps its bang: the editor has no image renderer and draws it as prose beside an ordinary link. */
+function stripCodeSpans(line: string): string {
+  let prose = ''
+  let at = 0
+  for (const [a, b] of inlineSpans(line)) {
+    if (b > line.length) break
+    let run = 0
+    while (line[a - 1 - run] === '`') run++
+    prose += line.slice(at, a - run) + GONE
+    at = b + run
+  }
+  return prose + line.slice(at)
+}
+
 function stripInline(text: string): string {
   return text
-    .replace(inlineCodeRegex(), GONE)
+    .split('\n')
+    .map(stripCodeSpans)
+    .join('\n')
     .replace(/!?\[\[([^\]|\r\n]*)(?:\|([^\]\r\n]*))?\]\]/g, (_m, title, alias) => alias || title)
     .replace(markdownLinkRegex(), (_m, label) => label)
     .replace(/[*_~]/g, '')

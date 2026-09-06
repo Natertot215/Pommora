@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { cancelGlance, closeGlance } from '../../Interface/Glance/glanceAction'
-import { seatAtNearerEdge } from '../Editor/caretPlacement'
+import { seatAtNearerEdge } from '../caretPlacement'
+import { type EditorHost, editorHost } from '../api'
 
 /** Read at mousedown for a click, since CM seats the caret before `click` fires and it would always read true. */
 function caretInside(view: EditorView, range: [number, number]): boolean {
@@ -16,13 +16,14 @@ export interface PointerTarget {
   pos: number
 }
 
+type Glance = NonNullable<EditorHost['glance']>
+
 interface PointerSpec<H extends PointerTarget> {
   hoverGate: string
-  /** Asked before the class gate, so a host that offers no glance pays neither the layout read nor the tokenize. */
-  armable: () => boolean
   hitAt: (view: EditorView, event: MouseEvent) => H | null
   follow: (hit: H, view: EditorView, event: MouseEvent) => (() => void) | null
-  dwell: (hit: H, el: Element) => (() => void) | null
+  /** Never asked on a host without a glance, which then pays neither the layout read nor the tokenize. */
+  dwell: (hit: H, el: Element, glance: Glance) => (() => void) | null
   menu: (hit: H, view: EditorView) => (() => void) | null
 }
 
@@ -31,8 +32,9 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
   let editingOnPress = false
   // A native menu takes the pointer away and hands it back over the same link, and that re-entry would bloom a glance behind the menu.
   let actedOnLink = false
-  const consume = (): void => {
-    cancelGlance()
+  const glanceOf = (view: EditorView): EditorHost['glance'] => view.state.facet(editorHost).glance
+  const consume = (view: EditorView): void => {
+    glanceOf(view)?.cancel()
     actedOnLink = true
   }
   return EditorView.domEventHandlers({
@@ -55,24 +57,25 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       return true
     },
     mouseover(event, view) {
-      if (!spec.armable()) return false
+      const glance = glanceOf(view)
+      if (!glance) return false
       const el = (event.target as HTMLElement).closest?.(spec.hoverGate)
       if (!el || actedOnLink) return false
       const hit = spec.hitAt(view, event)
       // A link the caret is already inside is open for editing, and no dwell should carry you away from it.
       if (!hit || caretInside(view, hit.range)) return false
-      spec.dwell(hit, el)?.()
+      spec.dwell(hit, el, glance)?.()
       return false
     },
-    mouseout() {
-      cancelGlance()
+    mouseout(_event, view) {
+      glanceOf(view)?.cancel()
       actedOnLink = false
       return false
     },
     // On `click`, not `mousedown`, and skipped on a non-empty selection, so dragging across a link highlights it.
     click(event, view) {
       // A click consumes the link — an intent armed during the dwell must not bloom over what the click opened.
-      consume()
+      consume(view)
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       if (editingOnPress) return false
       const hit = spec.hitAt(view, event)
@@ -83,7 +86,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       return true
     },
     contextmenu(event, view) {
-      consume()
+      consume(view)
       const hit = spec.hitAt(view, event)
       if (!hit) return false
       // Inside its syntax you're editing prose, which has its own menu — claiming the event would replace it with two link actions.
@@ -91,7 +94,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       const pop = spec.menu(hit, view)
       if (!pop) return false
       event.preventDefault()
-      closeGlance()
+      glanceOf(view)?.close()
       pop()
       return true
     },

@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 import { headingOutline, sectionEnd } from '../MarkdownPM/Engine/headingScan'
-import { travelTo } from '../MarkdownPM/Editor/travel'
+import { travelTo } from '../MarkdownPM/travel'
 import { blockMoveChanges } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 

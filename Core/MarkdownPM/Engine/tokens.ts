@@ -1,16 +1,9 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from './parser'
-import { codeMask } from '@pommora/core/Connections/markdownCode'
+import { codeMask, inlineSpans } from '@pommora/core/Connections/markdownCode'
 import { markdownLinkRegex } from '@pommora/core/Connections/links'
-import {
-  isInlineMathContent,
-  inlineCodeRegex,
-  highlightRegex,
-  blockLatexRegex,
-  inlineLatexRegex,
-  markerRegex,
-} from './detect'
+import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
 
 export type TokenKind =
@@ -133,6 +126,49 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
   return tokens
 }
 
+/** The run-length pairing the code mask reads, so a ``code`` span is styled exactly where it is masked. */
+function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): Token[] {
+  const tokens: Token[] = []
+  let lineStart = 0
+  for (const line of text.split('\n')) {
+    for (const [a, b] of inlineSpans(line)) {
+      if (b > line.length) break
+      let run = 0
+      while (line[a - 1 - run] === '`') run++
+      const open = a - run
+      if (inCode(lineStart + open)) continue
+      tokens.push({
+        kind: 'inlineCode',
+        range: [lineStart + open, lineStart + b + run],
+        contentRange: [lineStart + a, lineStart + b],
+        markerRanges: [
+          [lineStart + open, lineStart + a],
+          [lineStart + b, lineStart + b + run],
+        ],
+      })
+    }
+    lineStart += line.length + 1
+  }
+  return tokens
+}
+
+/** Display math is the block model's pairing projected onto tokens: the `$$` lines bound it, nothing else does. */
+function blockLatexTokens(text: string, maths: readonly [number, number][]): Token[] {
+  return maths.map(([f, t]) => {
+    const open = text.indexOf('$$', f) + 2
+    const close = text.lastIndexOf('$$', t)
+    return {
+      kind: 'blockLatex',
+      range: [f, t],
+      contentRange: [open, close],
+      markerRanges: [
+        [f, open],
+        [close, t],
+      ],
+    }
+  })
+}
+
 // No `d` flag, so offsets are derived from the known `[[` prefix.
 function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Token[] {
   const tokens: Token[] = []
@@ -158,7 +194,7 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
-export function tokenize(text: string): Token[] {
+export function tokenize(text: string, maths: readonly [number, number][] = []): Token[] {
   const ast = parse(text)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
@@ -166,7 +202,7 @@ export function tokenize(text: string): Token[] {
   const scan = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
   // Code tokenizes FIRST so a [[link]] in code renders and clicks as literal code, not a live connection.
-  const code = scan({ kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
+  const code = inlineCodeTokens(text, inCode)
   const embeds = scan({
     kind: 'embed',
     re: pageEmbedPattern(),
@@ -191,12 +227,7 @@ export function tokenize(text: string): Token[] {
     open: 2,
     close: 2,
   }).filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
-  const blockTex = scan({
-    kind: 'blockLatex',
-    re: blockLatexRegex(),
-    open: 2,
-    close: 2,
-  }).filter(notOverlapping(code))
+  const blockTex = blockLatexTokens(text, maths).filter(notOverlapping(code))
   const inlineTex = scan({
     kind: 'inlineLatex',
     re: inlineLatexRegex(),

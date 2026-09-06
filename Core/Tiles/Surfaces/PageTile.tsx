@@ -4,7 +4,7 @@ import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { nativeEditorMenu } from '../../MarkdownPM/Menus/menu'
+import { useEditorHost } from '../../Pages/editorHost'
 import { flushPageSave, schedulePageSave } from '../../Session/saveScheduler'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
 import { useEmbedScale, useSession } from '../../Session/store'
@@ -17,7 +17,6 @@ import { ancestryOf } from '../../Session/treeIndex'
 
 import '../tile-base.css'
 import '../tile-title.css'
-import { embedZoom } from '@pommora/core/Settings/personalization'
 
 interface EmbedEntry {
   path: string
@@ -79,6 +78,7 @@ export function PageTile({
   const failed = entry !== null && entry.body === null
 
   const embedScale = useEmbedScale()
+  const host = useEditorHost({ pageId: entry?.id, connections })
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {
@@ -143,14 +143,13 @@ export function PageTile({
           onBodyRef.current?.(next)
           schedulePageSave(path, next)
         }}
+        host={host}
         connections={connections}
-        menu={nativeEditorMenu}
         readOnly={!editing}
         autoFocus
-        zoom={embedZoom(embedScale)}
+        scale={embedScale}
         edgeFade
         warm={warm}
-        pageId={entry?.id}
         embedAncestors={[...(ancestors ?? []), path]}
       />
     </div>

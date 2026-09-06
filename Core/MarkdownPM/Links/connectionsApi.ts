@@ -6,7 +6,6 @@ import type {
   ConnUrlAction,
 } from '@pommora/core/Actions/connMenu'
 import { isValidLink, targetTitle } from '@pommora/core/Connections/links'
-import type { GlanceTarget } from '../../Interface/Glance/glanceAction'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
 export type ConnMenuTarget = {
@@ -52,8 +51,6 @@ export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
   menu?: (target: ConnMenuTarget) => void
   bypass?: (page: ConnPage) => void
-  /** Its presence is what makes a surface armable, so a read-only body that must never glance simply omits it. */
-  glance?: (target: GlanceTarget, el: Element) => void
 }
 
 /** One resolver behind the click path and both renderers, so a link can never be colored as one thing and act as another. */

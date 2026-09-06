@@ -3,7 +3,7 @@ import { ReactWidget, type ReactDom } from '../Widgets/reactWidget'
 import { docScan } from '../docCache'
 import { foldLabel } from '../Engine/detect'
 import type { DocScan } from '../Engine/docScan'
-import { focusAt } from '../Editor/caretPlacement'
+import { focusAt } from '../caretPlacement'
 import { travelToCitation } from '../Citations/citationActions'
 import {
   Facet,
@@ -45,13 +45,8 @@ import {
 import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import {
-  type TableMenuAction,
-  type TableMenuContext,
-  tableMenuItems,
-} from '@pommora/core/Actions/tableMenu'
-import { host } from '../../Platform/dialer'
-import { popRowMenu } from '../../Platform/nativeMenus'
+import type { TableMenuAction, TableMenuContext } from '@pommora/core/Actions/tableMenu'
+import { editorHost } from '../api'
 
 type ConnGetter = () => ConnectionsApi | undefined
 const tableConnections = Facet.define<ConnGetter, ConnGetter>({
@@ -98,7 +93,7 @@ interface HeightBox {
   px: number
 }
 
-// `table:delete` is a doc-level region removal handled by the caller, so it maps to null.
+// `index` is the menu's visual row (0 = header), so a body operation takes `index - 1`; `table:delete` is a doc-level region removal handled by the caller, so it maps to null.
 function transformFor(
   action: TableMenuAction,
   index: number,
@@ -195,6 +190,7 @@ class TableWidget extends ReactWidget {
   private renderInto(dom: TableDom, view: EditorView): void {
     const TV = MarkdownTableComp
     if (!TV) return
+    const host = view.state.facet(editorHost)
     const commit = (row: number, col: number, text: string): void => {
       const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
@@ -232,13 +228,13 @@ class TableWidget extends ReactWidget {
             : m,
       )
     }
-    const toClipboard = (text: string): void => void host().ask('clipboard:write', text)
+    const toClipboard = (text: string): void => void host.clipboard.write(text)
     const tableDrag = (e: PointerEvent): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
-      void popRowMenu(tableMenuItems(ctx)).then((action) => {
+      void host.menus.table(ctx).then((action) => {
         if (!action) return
         // A `.nexus/`-persisted visual, not a source edit — toggling the field rebuilds this table's widget.
         if (action === 'col:toggle-heading') {
@@ -282,6 +278,7 @@ class TableWidget extends ReactWidget {
     this.render(
       dom,
       <TV
+        host={host}
         model={this.model}
         cites={this.cites}
         headingColumn={this.headingColumn}
@@ -294,7 +291,7 @@ class TableWidget extends ReactWidget {
         onClearCells={clearCells}
         onFill={fill}
         onCopyText={toClipboard}
-        readClipboard={() => host().ask('clipboard:read')}
+        readClipboard={() => host.clipboard.read()}
         onMenu={onMenu}
         onTableDrag={tableDrag}
         onCite={(label) => travelToCitation(view, label)}

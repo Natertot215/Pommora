@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { TileHostRef } from '@pommora/core/Tiles/tiles'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { nativeEditorMenu } from '../../MarkdownPM/Menus/menu'
+import { useEditorHost } from '../../Pages/editorHost'
 import { createBodyWriter } from '../../Session/saveScheduler'
 import { host as dialer } from '../../Platform/dialer'
 
@@ -27,6 +27,7 @@ export function MarkdownTile({
   locked?: boolean
 }): React.JSX.Element {
   const [body, setBody] = useState<string | null>(null)
+  const editorHost = useEditorHost({ connections })
 
   useEffect(() => {
     let live = true
@@ -73,8 +74,8 @@ export function MarkdownTile({
       <MarkdownEditor
         initialBody={body}
         onChange={scheduleSave}
+        host={editorHost}
         connections={connections}
-        menu={nativeEditorMenu}
         readOnly={!editing}
         autoFocus
         edgeFade

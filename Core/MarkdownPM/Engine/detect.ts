@@ -9,9 +9,7 @@ import {
 } from '@pommora/core/Connections/markdownCode'
 import { loneWebpageEmbed } from '@pommora/core/Web/webpageEmbed'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
-export const inlineCodeRegex = (): RegExp => /`([^`\n]+)`/dg
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
-export const blockLatexRegex = (): RegExp => /(?<!\$)\$\$([\s\S]+?)\$\$/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
 
 export const blockquotePrefixRe = /^[ \t]*(?:>[ \t]?)+/

@@ -7,10 +7,9 @@ import { linkTarget, tokenize } from '../Engine/tokens'
 import { docScan, docString, perDoc } from '../docCache'
 import { followTarget } from '../Links/links'
 import { applyCitationAction, travelToCitation } from './citationActions'
-import { travelTo } from '../Editor/travel'
+import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
-import { popRowMenu } from '../../Platform/nativeMenus'
-import { citationMenuModel } from '@pommora/core/Actions/citationMenu'
+import { editorHost } from '../api'
 
 export const CITE_GLYPH = '.md-cite-ref'
 
@@ -77,7 +76,6 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
 export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
-    armable: () => false,
     hitAt: citeHitAt,
     follow: (hit, view, event) => () => {
       const api = getApi()
@@ -86,7 +84,14 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
         const res = api.resolve(hit.lone.title)
         const go =
           res.status === 'resolved' && res.page
-            ? followTarget({ kind: 'page', page: res.page }, '', api, event.metaKey, el)
+            ? followTarget(
+                { kind: 'page', page: res.page },
+                '',
+                api,
+                event.metaKey,
+                el,
+                view.state.facet(editorHost).glance,
+              )
             : null
         if (go) return go()
       }
@@ -97,6 +102,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
           api,
           event.metaKey,
           el,
+          view.state.facet(editorHost).glance,
         )
         if (go) return go()
       }
@@ -104,11 +110,12 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     },
     dwell: () => null,
     menu: (hit, view) => () =>
-      void popRowMenu(
-        citationMenuModel({ subject: 'marker', editable: !view.state.readOnly }),
-      ).then((action) => {
-        if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
-      }),
+      void view.state
+        .facet(editorHost)
+        .menus.citation({ subject: 'marker', editable: !view.state.readOnly })
+        .then((action) => {
+          if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
+        }),
   })
 }
 
@@ -133,7 +140,6 @@ function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
 export function citationRowPointer(): Extension {
   return pointerHandlers<RowHit>({
     hoverGate: CITE_ROW_GLYPH,
-    armable: () => false,
     hitAt: rowHitAt,
     follow: (hit, view) => () => {
       const marker = markersFor(docScan(view.state.doc).citations, hit.label)[0]
@@ -159,9 +165,12 @@ export function citationRowMenu(): Extension {
       )
       if (!entry) return false
       event.preventDefault()
-      void popRowMenu(citationMenuModel({ subject: 'citation', editable: true })).then((action) => {
-        if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
-      })
+      void view.state
+        .facet(editorHost)
+        .menus.citation({ subject: 'citation', editable: true })
+        .then((action) => {
+          if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
+        })
       return true
     },
   })

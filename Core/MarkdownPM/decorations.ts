@@ -17,17 +17,15 @@ import { resolutionNudge } from './Embeds/embedWidget'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
 import {
   assembleLineIntents,
-  type DocScan,
   GLYPH_CLASS,
-  codeBlockTextAt,
-  lineIndexAt,
   NO_CARET,
   tokenIntents,
   type WidgetSpec,
-} from './Engine/docScan'
+} from './Engine/intents'
+import { type DocScan, codeBlockTextAt, lineIndexAt } from './Engine/docScan'
 import { resolveMdTarget, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
-import { host } from '../Platform/dialer'
+import { editorHost } from './api'
 
 export const MD_LINK_CLASS = 'md-link'
 
@@ -182,7 +180,7 @@ class CodeTagWidget extends WidgetType {
       e.preventDefault()
       const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
       if (!text) return
-      void host().ask('clipboard:write', text)
+      void view.state.facet(editorHost).clipboard.write(text)
       el.classList.add('is-copied')
       if (resting) name.textContent = 'Copied'
       window.clearTimeout(timer)
@@ -266,12 +264,13 @@ const NO_ACTIVE = new Set<number>()
 
 const INDENTED = /^[ \t]/
 
-/** A slice opens on a line whose block context is self-evident: resuming inside a fence would invert every parity below. */
+/** A slice opens on a line whose block context is self-evident: resuming inside a fence or a math block would invert every parity below. */
 export function sliceStartLine(scan: DocScan, line: number): number {
   let i = line
   while (i < scan.lines.length && scan.fences[i] && scan.fences[i]?.role !== 'open') i++
   while (i > 0 && INDENTED.test(scan.lines[i]) && !scan.fences[i - 1]) i--
-  return i
+  const math = scan.maths.find(([f, t]) => scan.lineStarts[i] > f && scan.lineStarts[i] <= t)
+  return math ? lineIndexAt(scan, math[0]) : i
 }
 
 // On-screen lines only — the whole-document parse is what made long docs lag. Rebuilt on `viewportChanged`.
@@ -280,7 +279,8 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   const spans: [number, number][] = []
   for (const { from, to } of view.visibleRanges) {
     const a = scan.lineStarts[sliceStartLine(scan, doc.lineAt(from).number - 1)]
-    const b = doc.lineAt(to).to
+    const end = doc.lineAt(to).to
+    const b = scan.maths.find(([f, t]) => end >= f && end < t)?.[1] ?? end
     if (a >= b) continue
     const prev = spans[spans.length - 1]
     if (prev && a <= prev[1] + 1) prev[1] = Math.max(prev[1], b)
@@ -290,7 +290,10 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   return docSpanTokens(doc, key, () => {
     const out: Token[] = []
     for (const [a, b] of spans) {
-      for (const tk of tokenize(text.slice(a, b))) out.push(shiftToken(tk, a))
+      const maths = scan.maths
+        .filter(([f, t]) => f >= a && t <= b)
+        .map(([f, t]): [number, number] => [f - a, t - a])
+      for (const tk of tokenize(text.slice(a, b), maths)) out.push(shiftToken(tk, a))
     }
     return out
   })
