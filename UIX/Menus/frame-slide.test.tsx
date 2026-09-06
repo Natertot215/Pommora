@@ -42,7 +42,6 @@ describe('FrameSlide', () => {
       root.render(<FrameSlide open={false} root={<div>alpha</div>} detail={null} />)
     })
     expect(host.textContent).toContain('beta')
-    // After the slide window elapses it's dropped.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 320))
     })

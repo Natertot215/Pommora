@@ -78,8 +78,6 @@ describe('cellMenuModel', () => {
   it('a file value: Add alone off the value’s area, the full set off a label', () => {
     const area = cellMenuModel({ kind: 'file', onChip: false })
     expect(area.items.map((i) => [i.label, i.action])).toEqual([['Add File', 'file:add']])
-    // Replace and Remove address the label that was clicked; the value's own area has no file for
-    // either to act on.
     const onChip = cellMenuModel({ kind: 'file', onChip: true })
     expect(onChip.items.map((i) => [i.label, i.action])).toEqual([
       ['Add File', 'file:add'],
@@ -90,14 +88,11 @@ describe('cellMenuModel', () => {
   })
 
   it('a card’s two Removes are told apart by their words, not their position', () => {
-    // `hideable` appends a Remove that drops the property from the VIEW. A file cell carries its
-    // own Remove for the reference, and two items spelled the same — one destructive to a value,
-    // one to the view's configuration — would differ only by where they sit.
+    // Two Removes spelled the same — one destructive to a value, one to the view — would differ only by position.
     const card = cellMenuModel({ kind: 'file', onChip: true, hideable: true })
     const labels = card.items.map((i) => i.label)
     expect(labels).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove from View'])
     expect(new Set(labels).size).toBe(labels.length)
-    // Every other type keeps the plain word.
     expect(cellMenuModel({ kind: 'clear-only', hideable: true }).items.at(-1)?.label).toBe('Remove')
   })
 
@@ -132,8 +127,7 @@ describe('cellMenuModel', () => {
   })
 
   it('hideable style-only with no base item (checkbox): Remove does NOT self-separate', () => {
-    // main/cellMenu inserts the Style▸↔items divider once Remove lands in items, so Remove keying on
-    // its own separator too would double it. Style present + Remove, single divider.
+    // The host inserts the Style▸ divider once Remove lands, so Remove keying on its own would double it.
     const m = cellMenuModel({ kind: 'style-only', type: 'checkbox', current: {}, hideable: true })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Remove', 'cell:hide']])
     expect(m.items[0].separatorBefore).toBe(false)
@@ -226,8 +220,7 @@ describe('cellMenuContextFor', () => {
       kind: 'clear-only',
       hideable: true,
     })
-    // Empty select would be null (no menu) — but hideable still needs a Remove: remove-only MUST carry
-    // the hideable flag, or the model appends nothing and the menu never pops (the composition seam).
+    // remove-only MUST carry the hideable flag, or the model appends nothing and the menu never pops.
     const ctx = cellMenuContextFor(prop(), 'select', {}, false, { hideable: true })
     expect(ctx).toEqual({ kind: 'remove-only', hideable: true })
     expect(cellMenuModel(ctx as CellMenuContext).items.map((i) => i.action)).toEqual(['cell:hide'])

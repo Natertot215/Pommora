@@ -1,16 +1,12 @@
 import type { ActionItem } from './menuModel'
 
-/** The Properties pane's native menus. The editor's ⋮ carries Remove AND Delete —
- *  Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm
- *  dialog. An assigned row right-clicks to Rename · Remove; a registry row to Rename only
- *  (Remove is meaningless unassigned). Pure model — main maps it to Electron MenuItems. */
+// Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm dialog.
 
 export type PropertyMenuContext =
   | { kind: 'editor'; name: string }
   | { kind: 'assigned-row'; name: string }
   | { kind: 'registry-row'; name: string }
-  /** A value row on an entity: Clear empties what this one holds, Remove also takes the row away.
-   *  Neither touches the schema — the property stays assigned to its Collection either way. */
+  /** Neither Clear nor Remove touches the schema: the property stays assigned to its Collection. */
   | { kind: 'page-value'; name: string; filled: boolean }
 
 export type PropertyMenuAction =

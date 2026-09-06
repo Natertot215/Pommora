@@ -1,7 +1,3 @@
-// The tab right-click menu — a NATIVE Electron menu (like the sidebar/cell menus), not an
-// in-renderer surface. The renderer sends the tab's context; main pops the menu and returns the chosen
-// action (or null on dismiss); the renderer runs it against the tab id it held.
-
 import type { PageMoveAction, PageSendAction, PageMoveContext } from './pageMenu'
 
 export interface TabMenuContext extends PageMoveContext {

@@ -81,8 +81,7 @@ describe('a row model as a native template', () => {
 })
 
 describe('a fragment spliced beneath rows a menu already holds', () => {
-  // The unlink pair sits under Format ▸ in the link menu, and the divider above it is the one
-  // separating two destructive rows from the benign group. A fragment can't tell it leads a menu.
+  // A fragment can't tell whether its leading divider leads the whole menu.
   it('keeps the divider that separates it from the rows above', () => {
     const rows = rowTemplate(
       [

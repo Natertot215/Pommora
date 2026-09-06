@@ -9,7 +9,6 @@ describe('a saved view row’s menu', () => {
     expect(labels({ deletable: true })).toEqual(['Rename', 'Edit Icon', 'Edit Color', 'Delete'])
   })
 
-  // The titles toggle belongs to the embed's own chrome, and its label reads the state it will leave.
   it('names the titles toggle after what it does', () => {
     expect(labels({ titlesShown: true, deletable: true })).toContain('Hide Titles')
     expect(labels({ titlesShown: false, deletable: true })).toContain('Show Titles')
@@ -20,7 +19,6 @@ describe('a saved view row’s menu', () => {
     expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['delete'])
   })
 
-  // Refused rather than absent: a container always has a view, and the row says why it can't go.
   it('keeps Delete on a container’s last view, refused rather than absent', () => {
     const last = viewRowMenuItems({ deletable: false }).find((r) => r.action === 'delete')
     expect(last?.disabled).toBe(true)

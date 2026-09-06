@@ -1,14 +1,9 @@
-// Cross-process contract for the table grip's right-click menu. The renderer sends where the click
-// landed; main pops the native menu and resolves the chosen action (null if dismissed); the renderer
-// applies it. No fs, no React — both sides import this.
-
 import type { ActionItem } from './menuModel'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 
 export type TableMenuKind = 'column' | 'row' | 'header'
 
-// `index` is the column index (kind 'column') or the visual row index (kind 'row'; 0 = header → kind
-// 'header'). `align`/`headingColumn` carry current state so their menu rows render checked.
+// `index` is the column index (kind 'column') or the visual row index (kind 'row'; 0 = header → kind 'header').
 export interface TableMenuContext {
   kind: TableMenuKind
   index: number
@@ -37,8 +32,7 @@ export type TableMenuAction =
   | 'table:clear'
   | 'table:delete'
 
-/** The rows a table grip's menu offers, by where the click landed. The heading-column toggle is
- *  offered on the first column alone, since only it can read as the header. */
+/** The heading-column toggle is offered on the first column alone, since only it can read as the header. */
 export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuAction>[] {
   if (ctx.kind === 'header')
     return [
@@ -68,8 +62,7 @@ export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuActio
         checked: ctx.align === a,
       })),
     },
-    // The first column can read like the header row — a Pommora-only visual; the .md stays a plain
-    // table. The label states the state it is in rather than only what pressing it does.
+    // A Pommora-only visual: the .md stays a plain table.
     ...(ctx.index === 0
       ? [
           {

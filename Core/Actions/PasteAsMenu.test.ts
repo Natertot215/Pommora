@@ -4,14 +4,11 @@ import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './pa
 
 const URL = 'https://www.example.com/a/b'
 
-// Off both seats unless a test says otherwise: the rows every other case offers are the ones that
-// don't depend on where the caret is, and holding the seats off keeps them readable on their own.
 const labels = (clipboard: string, seat = false, cite = false): string[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.label)
 const forms = (clipboard: string, seat = false, cite = false): PasteAsForm[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.form)
 
-/** What `form` writes for whatever `clipboard` holds. */
 const written = (clipboard: string, form: PasteAsForm, title?: string): string | undefined =>
   pasteAsWrite(pasteAsTarget(clipboard), form, title)?.text
 
@@ -51,8 +48,6 @@ describe('what the clipboard offers to become', () => {
     expect(labels('[[Alpha]]')).toEqual(['Connection', 'Markdown Link'])
   })
 
-  // A markdown link is offered what its target names, not what its syntax is — the same rule the
-  // editor's own menu follows.
   it('reads a markdown link through its target', () => {
     expect(forms(`[Home](${URL})`)).toEqual(['link-full', 'link-short', 'link-title', 'plain'])
     expect(labels('[Alpha](Alpha)')).toEqual(['Connection', 'Markdown Link'])
@@ -64,14 +59,10 @@ describe('what the clipboard offers to become', () => {
     expect(pasteAsRows('   ', true, false)).toEqual([])
   })
 
-  // Every form writes one line; a clipboard carrying more than one is prose, whatever the first
-  // line looks like.
   it('offers nothing for more than one line', () => {
     expect(pasteAsRows(`${URL}\nand more`, true, false)).toEqual([])
   })
 
-  // Both embeds take a line to themselves, so the offer follows the placement: on a blank line each
-  // list gains its embed, and everywhere else the lists read as they always have.
   it('offers each embed only where one can be written', () => {
     expect(labels(URL, true)).toEqual([
       'Full Link',
@@ -83,8 +74,7 @@ describe('what the clipboard offers to become', () => {
     expect(labels('[[Alpha]]', true)).toEqual(['Connection', 'Markdown Link', 'Embedded Page'])
   })
 
-  // A tile only forms over an explicit http(s) address, and `![[…]]` has no way to carry a `]` —
-  // an offer either grammar would refuse is never made in the first place.
+  // A tile forms only over an explicit http(s) address, and `![[…]]` cannot carry a `]`.
   it('withholds an embed the syntax could not spell', () => {
     expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
     expect(labels('[[Notes [WIP] final]]', true)).not.toContain('Embedded Page')
@@ -118,26 +108,20 @@ describe('what each form writes', () => {
     expect(written('[[Alpha]]', 'markdown')).toBe('[Alpha](Alpha)')
   })
 
-  // A title's spaces and parentheses answer to nobody's grammar, so the markdown form encodes them
-  // the same way every other writer of that syntax does.
   it('encodes a page title the markdown form cannot carry raw', () => {
     expect(written('[[Notes (draft)]]', 'markdown')).toBe('[Notes (draft)](Notes%20%28draft%29)')
   })
 
-  // The label has its own grammar to survive, and an unescaped `]` ends it early — the whole link
-  // then tokenizes as nothing rather than as a link with a truncated name. An opening `[` is
-  // ordinary label text and is left as the title wrote it.
+  // An unescaped `]` ends the label early and the whole link tokenizes as nothing; `[` is ordinary text.
   it('escapes the bracket that would end the label early', () => {
     const text = written('[[Notes [WIP] final]]', 'markdown')
     expect(text).toBe('[Notes [WIP\\] final](Notes%20%5BWIP%5D%20final)')
-    // The claim under the escape: what it wrote is a link the grammar reads back whole.
     expect(markdownLinkRegex().exec(text ?? '')?.[0]).toBe(text)
   })
 
   it('writes each embed as the line its grammar reads', () => {
     expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
-    // No label: a pasted address brings no words of its own, and an empty one leaves the tile's
-    // title to the nexus's link format at render.
+    // A pasted address brings no words, so an empty label leaves the title to the link format at render.
     expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
     expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
   })

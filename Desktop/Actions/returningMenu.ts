@@ -1,5 +1,4 @@
-// Pop a native menu and resolve the chosen action BACK to the renderer, which performs the write
-// and asks first where one needs confirming. The single home for the `let acted` dance.
+// The action resolves BACK to the renderer, which performs the write and asks where one needs confirming.
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 
@@ -7,8 +6,7 @@ import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 export function popReturningMenu<A>(
   win: BrowserWindow,
   buildItems: (pick: (action: A) => () => void) => MenuItemConstructorOptions[],
-  /** Where the menu opens, in window DIPs. Omitted pops at the cursor — wrong for a menu that
-   *  should hang from a clicked control rather than the pointer. */
+  /** Window DIPs; omitted pops at the cursor, wrong for a menu hanging from a clicked control. */
   at?: { x: number; y: number },
 ): Promise<A | null> {
   return new Promise((resolve) => {
@@ -33,8 +31,7 @@ export function popReturningMenu<A>(
   })
 }
 
-/** A parent item cannot itself be clicked, so a container repeats its own name as its submenu's
- *  first row. `disabled` grays a no-op destination rather than hiding it. */
+/** A parent item cannot itself be clicked, so a container repeats its name as its submenu's first row. */
 export function destinationNodes<T extends { label: string; children?: T[] }>(
   targets: readonly T[],
   pick: (target: T) => () => void,

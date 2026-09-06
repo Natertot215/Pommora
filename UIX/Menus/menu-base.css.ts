@@ -7,8 +7,7 @@ import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 
-// KNOB — a row's height is never declared: it is the ramp's line plus one of two paddings, and a
-// surface picks Standard or Compact (`menuCompact`) once for every row it draws.
+// KNOB — a row's height is never declared: it is the ramp's line plus the padding its surface picks.
 globalStyle(':root', {
   vars: {
     '--row-pad-standard': '6px',

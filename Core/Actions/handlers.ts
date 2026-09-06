@@ -70,8 +70,7 @@ export const actionsHandlers = {
 
   'context-menu': async (ctx, target: ContextTarget) =>
     ctx.contextMenu(target, await mutateDeps(ctx), async (req, reply) => {
-      // The menu outlives its IPC handler, so this confirm fires after the mutation finished —
-      // the same patch-and-push every renderer-driven mutation gets.
+      // The menu outlives its IPC handler, so this confirm fires after the mutation finished.
       await confirmWrite(ctx, (root) => confirmMutation(root, req, reply))
       pushAssetWrites(ctx)
       ctx.push('menu:action', 'reload-state')

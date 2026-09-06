@@ -9,9 +9,7 @@ import {
 } from '@pommora/core/Actions/trashMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
-/** A trashed row's menu. Uses the nesting primitive, since the flat model helper can't express
- *  a submenu — needed because a row whose recorded home is gone turns Restore into a question
- *  of where, not a verdict. */
+/** The nesting primitive, not the flat helper: a row whose home is gone turns Restore into a question of where. */
 export function popTrashMenu(
   win: BrowserWindow,
   ctx: TrashMenuContext,
@@ -23,8 +21,7 @@ export function popTrashMenu(
       const kind = ctx.destinationKind
       items.push({
         label: label.restore,
-        // Nowhere to put it is not the same as nothing to do — the row stays and reads disabled,
-        // which says the action exists and this nexus has no home to offer.
+        // Nowhere to put it is not nothing to do — the row stays and reads disabled.
         enabled: ctx.destinations.length > 0,
         submenu: destinationNodes(ctx.destinations, (t) =>
           pick({ kind: 'restoreTo', destination: { kind, id: t.id } }),
@@ -42,9 +39,7 @@ export function popTrashMenu(
   })
 }
 
-/** The date column's menu — how its dates are written, and whether they carry a clock. The format
- *  rows are a radio set: one is in force, and picking it again is a no-op the menu shows rather
- *  than hides. */
+/** The format rows are a radio set: picking the one in force is a no-op the menu shows rather than hides. */
 export function popTrashColumnMenu(
   win: BrowserWindow,
   ctx: TrashColumnContext,

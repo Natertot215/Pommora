@@ -9,15 +9,12 @@ import {
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
 import type { ColumnAlign } from '../Views/views'
 
-/** The table-view column-header right-click menu: hide the column, set its text alignment,
- *  or set a per-view display style. */
 export type ColumnMenuAction =
   | 'column:hide'
   | 'column:toggle-icons'
   | `align:${ColumnAlign}`
   | `style:${string}:${string}`
 
-/** Menu context — the current alignment (for the checked radio) + which items apply. */
 export interface ColumnMenuContext {
   align: ColumnAlign
   alignable: boolean
@@ -26,24 +23,19 @@ export interface ColumnMenuContext {
   style?: StyleMenuContext
 }
 
-/** The Style submenu's inputs: the column's declared type picks the item set; `current` is the
- *  RESOLVED style (defaults applied) so the checked radio reflects what actually renders. */
+/** `current` is the RESOLVED style (defaults applied), so the checked radio reflects what renders. */
 export interface StyleMenuContext {
   type: PropertyType
   current: ColumnStyle
   barCapable?: boolean
 }
 
-/** What a type's own submenu is called. The two whose rows name a *format* say so — a url's three
- *  link forms and a number's, which its own editor pane has always called Format — while the rest
- *  offer looks, which is a different word for a different thing. */
+/** A url's three link forms and a number's are formats; the rest offer looks, a different word. */
 export function styleMenuLabel(type: PropertyType): string {
   return type === 'url' || type === 'number' ? 'Format' : 'Style'
 }
 
-/** One Style submenu row — a radio keyed by the ColumnStyle field it sets. `separatorBefore`
- *  splits the datetime menu's date radios from its time radios (Electron groups radios per
- *  separator-bounded run, so the two groups check independently). */
+/** `separatorBefore` splits the datetime date radios from its time radios: Electron groups radios per separator-bounded run. */
 export interface StyleMenuItem {
   label: string
   key: keyof ColumnStyle & string
@@ -52,9 +44,7 @@ export interface StyleMenuItem {
   separatorBefore?: boolean
 }
 
-/** The per-type Style items — the ONE place that knows which types are style-addressable
- *  (context isn't: it renders one fixed chip shape, never a user-picked look).
- *  Datetime labels are format-type NAMES, never rendered samples. */
+/** The ONE place that knows which types are style-addressable; datetime labels are format NAMES, never samples. */
 export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
   const { type, current } = ctx
   const row =
@@ -108,7 +98,6 @@ const STYLE_VALUES: Record<string, readonly string[]> = {
   weekday: WEEKDAY_FORMATS,
 }
 
-/** Decode a `style:<key>:<value>` action; null for anything else or an unknown key/value. */
 export function parseStyleAction(
   action: string,
 ): { key: keyof ColumnStyle & string; value: string } | null {

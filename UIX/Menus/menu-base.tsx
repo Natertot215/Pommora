@@ -4,8 +4,7 @@ import { useDismissal } from '../Interactions/dismissalStack'
 import { useExitPresence } from '../Animations/useExitPresence'
 import { MenuSurface } from './menu-surface'
 
-/** The open state lives here and not in `MenuSurface`, which stays state-free so the toolbar trio
- *  can share one dismiss region across two panes. Every class comes from the caller. */
+/** The open state lives here, not in `MenuSurface`, which stays state-free so the toolbar trio shares one dismiss region. */
 export function MenuDropdown({
   icon,
   title,
@@ -43,12 +42,10 @@ export function MenuDropdown({
   })
   const pane = useExitPresence(open)
 
-  // The pane is centered on the button, so the room to its right counts twice; a live rect rather
-  // than offsetWidth because a cluster riding a translate must measure where it actually sits.
+  // The pane is centered on the button, so the room to its right counts twice; a live rect, since a cluster riding a translate must measure where it sits.
   useLayoutEffect(() => {
     if (!pane.mounted || edgeInset === undefined) return
-    // Written to the node, never state: a drag fires this per frame. Refs read inside, never
-    // captured: a detached node measures zeros, which reads as success and uncaps the pane.
+    // Written to the node, never state (a drag fires this per frame); refs read inside, since a detached node measures zeros.
     const measure = (): void => {
       const wrap = wrapRef.current
       const anchor = anchorRef.current

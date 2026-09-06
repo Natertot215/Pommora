@@ -48,7 +48,6 @@ describe('a markdown table grip’s menu', () => {
     ])
   })
 
-  // The first column alone can read as the header row, and the label states the state it is in.
   it('offers the heading toggle on the first column only', () => {
     expect(labels({ kind: 'column', index: 1 })).not.toContain('Make Heading Column')
     expect(labels({ kind: 'column', index: 0 })).toContain('Make Heading Column')

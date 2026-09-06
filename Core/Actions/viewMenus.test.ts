@@ -24,7 +24,6 @@ describe('the view embed’s title menu', () => {
 })
 
 describe('the view embed’s area menu', () => {
-  // With the title row hidden, its own right-click target is gone — so this menu carries Show Title.
   it('offers Show Title only while the title row is hidden', () => {
     expect(labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: false }))).toContain(
       'Show Title',

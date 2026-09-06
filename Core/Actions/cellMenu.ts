@@ -11,10 +11,7 @@ import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
 import type { ActionItem } from './menuModel'
 
-/** Right-click always opens a menu, never acts. Style-bearing cells get their COLUMN's radios; a
- *  `link` cell's look is per-property, so it gets none. `hideable` (cards only) appends a Remove
- *  that drops the property from the view — a `file` cell names it "Remove from View" so it isn't
- *  read as its own Remove File, and carries its own Add · Replace · Remove triad. */
+/** Right-click always opens a menu, never acts; style radios come from the COLUMN, and a `link` cell's look is per-property. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -49,7 +46,6 @@ export interface CellMenuModel {
   style?: { label: string; rows: StyleMenuItem[] }
 }
 
-/** Named rather than positional: four bare booleans in a row read as nothing at a call site. */
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
@@ -60,8 +56,7 @@ export function cellMenuContextFor(
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
-  // Cards let any non-title cell drop its property, so an otherwise-menu-less cell still gets a
-  // bare Remove; remove-only must CARRY the flag, since the model appends Remove only on it.
+  // remove-only must CARRY the flag, since the model appends Remove only on it.
   if (base === null) return hideable ? { kind: 'remove-only', hideable: true } : null
   return hideable ? { ...base, hideable: true } : base
 }
@@ -99,15 +94,13 @@ function baseCellMenu(
   return null
 }
 
-/** The pure per-kind item model; the host maps it to native menu items. */
 export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
   const model = baseCellMenuModel(ctx)
   if (ctx.hideable && ctx.kind !== 'title') {
     model.items = [
       ...model.items,
       {
-        // Self-separate from SIBLING items only: keying on `model.style` too would double the
-        // separator for a style-only cell. A file cell's own Remove is told apart by position.
+        // Self-separate from SIBLING items only: keying on `model.style` too would double the separator.
         label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
         action: 'cell:hide',
         separatorBefore: model.items.length > 0,
