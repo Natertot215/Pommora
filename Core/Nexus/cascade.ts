@@ -19,22 +19,21 @@ export async function renameCascade(
   const rels = queryMentions(oldKey) ?? (await nexusCorpus(nexusRoot))
   const names = propertyNames(Object.values((await readRegistry(nexusRoot)).defs))
   const files = rels.map((rel) => join(nexusRoot, rel))
-  const swept = await sweepGovernedRoots(nexusRoot, { kind: 'files', files }, () => null, {
-    rewriteText: (content) => {
-      const { body } = splitEnvelope(content)
-      const values = Object.fromEntries(
-        Object.entries(frontmatterValues(content)).filter(([k]) =>
-          isRegisteredPropertyName(k, names),
-        ),
-      )
-      const patch = rewriteFrontmatterConnections(values, oldKey, newTitle)
-      const keys = Object.keys(patch)
-      const newBody = mentionsTitle(body, oldKey)
-        ? rewriteConnections(body, oldTitle, newTitle)
-        : body
-      if (newBody === body && keys.length === 0) return null
-      return mergeFrontmatter(content, patch, keys, newBody)
-    },
-  })
+  const text = (content: string): string | null => {
+    const { body } = splitEnvelope(content)
+    const values = Object.fromEntries(
+      Object.entries(frontmatterValues(content)).filter(([k]) =>
+        isRegisteredPropertyName(k, names),
+      ),
+    )
+    const patch = rewriteFrontmatterConnections(values, oldKey, newTitle)
+    const keys = Object.keys(patch)
+    const newBody = mentionsTitle(body, oldKey)
+      ? rewriteConnections(body, oldTitle, newTitle)
+      : body
+    if (newBody === body && keys.length === 0) return null
+    return mergeFrontmatter(content, patch, keys, newBody)
+  }
+  const swept = await sweepGovernedRoots(nexusRoot, { kind: 'files', files }, { text })
   return ok({ touched: swept.touched })
 }

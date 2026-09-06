@@ -1,3 +1,4 @@
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
@@ -899,7 +900,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
           onCommit: (written) => {
             const typed = Number.parseFloat(written.replace(unit.suffix, '').trim())
             if (Number.isFinite(typed))
-              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], typed / unit.scale)))
+              commit(clamp(typed / unit.scale, steps[0], steps[steps.length - 1]))
           },
         },
       })}

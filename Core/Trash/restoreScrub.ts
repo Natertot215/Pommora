@@ -52,13 +52,12 @@ export async function scrubReturning(
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
-  await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {
-    rewriteText: (content) => {
-      const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
-      if (!r.changed.length) return null
-      return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
-    },
-  })
+  const text = (content: string): string | null => {
+    const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
+    if (!r.changed.length) return null
+    return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
+  }
+  await sweepGovernedRoots(root, { kind: 'files', files: pages }, { text })
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
     await machine().lock(file, async () => {
       const raw = await readJsonObject(file)

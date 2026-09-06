@@ -12,7 +12,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@pommora/uix/Menus'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PageProperties } from '../Properties/Page/PageProperties'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
@@ -82,6 +82,7 @@ export function PageMenu(): React.JSX.Element | null {
         footer={
           <MenuFooting
             leading={
+              // PLACEHOLDER
               <Button size="button-inline" aria-label="Lock" className={footerLockAction} disabled>
                 <Icon name="lock-open" size="control" className={lockIcon} />
                 Lock
@@ -105,7 +106,7 @@ export function PageMenu(): React.JSX.Element | null {
           minHeight={245}
         />
       </MenuScrollFrame>
-      <IconPicker
+      <IconChoice
         open={iconOpen}
         onClose={() => setIconOpen(false)}
         triggerRef={iconRef}

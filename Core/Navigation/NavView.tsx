@@ -104,6 +104,7 @@ export function NavView(): React.JSX.Element {
           <NavGallery
             pins={resolvedPins}
             items={resolvedRecents}
+            onReorderRecent={reorderRecent}
             onSelect={open}
             onOpenNewTab={openNew}
           />

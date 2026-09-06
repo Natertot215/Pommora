@@ -85,9 +85,9 @@ export async function renameSweep(root: string, oldName: string, newName: string
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
   // both holds the old one too.
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
-  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-    rewriteText: (content) => renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER),
-  })
+  const text = (content: string): string | null =>
+    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER)
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
   return swept.skipped.length
 }
 

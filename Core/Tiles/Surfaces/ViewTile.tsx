@@ -20,7 +20,7 @@ import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-bas
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { optionRing, PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { findCollection, findSet } from '../../Session/treeIndex'
 import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
 import { ViewHost } from '../../Views/ViewHost'
@@ -564,7 +564,7 @@ export function ViewTile({
             </MenuScrollFrame>
           </div>
         </PickerMenu>
-        <IconPicker
+        <IconChoice
           open={iconFor !== null}
           onClose={() => setIconFor(null)}
           triggerRef={menuAnchorRef}

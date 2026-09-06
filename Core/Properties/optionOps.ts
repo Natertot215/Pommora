@@ -171,9 +171,8 @@ async function resolveForCascade(
  *  differ only in the type check that resolved `key`. */
 async function stripCascade(root: string, key: string, value: string): Promise<number> {
   const files = await keyHolderFiles(root, key, await collectionFolders(root))
-  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-    rewriteText: (content) => stripPageValue(content, key, value),
-  })
+  const text = (content: string): string | null => stripPageValue(content, key, value)
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
   return swept.skipped.length
 }
 
@@ -242,9 +241,8 @@ function renameOp(requireType: RequireType, editDef: OptionEdit) {
       }
       const key = edit.value
       const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-        rewriteText: (content) => replacePageValue(content, key, oldValue, newTitle),
-      })
+      const text = (c: string): string | null => replacePageValue(c, key, oldValue, newTitle)
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
       if (!swept.skipped.length) await clearSchemaJournal(root, record)
       return ok(null)
     })

@@ -49,7 +49,7 @@ import { reorderColumns } from '../columnReorder'
 import { groupKeyToValue } from './reassign'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
@@ -1472,7 +1472,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }}
       className={cx('table table-view', overflowing && 'overflowing')}
     >
-      <IconPicker
+      <IconChoice
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
         triggerRef={iconCellRef}

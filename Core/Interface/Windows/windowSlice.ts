@@ -88,9 +88,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const saveWindowsFile = (file: WindowsFile): void => {
     set({ windowsFile: file })
-    void host()
-      .ask('windows:save', file)
-      .catch(() => undefined)
+    void host().ask('windows:save', file)
   }
 
   const mirrorWindows = (retire?: string): void => {

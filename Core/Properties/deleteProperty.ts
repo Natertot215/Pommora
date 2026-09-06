@@ -72,7 +72,8 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
-  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key))
+  const raw = stripKeyRewrite(key)
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { raw })
 
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const removed = await removeFromRegistry(root, propertyId)

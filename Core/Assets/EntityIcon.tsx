@@ -7,7 +7,7 @@ import { useSession } from '../Session/store'
 import { useAssetUrl } from './useAssetUrl'
 import type { ResolvedNav } from '../Navigation/navResolve'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
-import './entity-icon.css'
+import * as assetImage from './asset-image.css'
 
 type EntityIconProps =
   | { item: ResolvedNav; kind?: undefined; icon?: undefined; size?: IconSize; className?: string }
@@ -59,7 +59,7 @@ function NavGlyph({
     return (
       <AssetImage
         value={profileImage}
-        className={cx('entity-icon-photo', className)}
+        className={cx(assetImage.photo, className)}
         style={{ width: px, height: px }}
       />
     )

@@ -138,7 +138,7 @@ function PageHistoryBody({
   }
 
   const list = (
-    <div className="page-window-insp">
+    <div className="window-panel-column">
       <div className="window-pane-scroll nav-list page-history-list">
         <MenuItem
           className="page-history-row"

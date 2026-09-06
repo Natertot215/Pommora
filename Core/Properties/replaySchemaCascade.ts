@@ -59,7 +59,8 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const key = journal.name
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, key, folders)
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key))
+      const raw = stripKeyRewrite(key)
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { raw })
       for (const folder of folders) await unassignAndPurge(folder, journal.id)
       await removeFromRegistry(root, journal.id)
       return swept.skipped.length > 0
@@ -73,9 +74,8 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
       const key = def.name
       const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-        rewriteText: (content) => replacePageValue(content, key, journal.from, journal.to),
-      })
+      const text = (c: string): string | null => replacePageValue(c, key, journal.from, journal.to)
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
       return swept.skipped.length > 0
     }
     case 'option-remove': {
@@ -85,9 +85,8 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       if (!def || !optionValues(def).includes(journal.value)) return false
       const key = def.name
       const files = await keyHolderFiles(root, key, await collectionFolders(root))
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-        rewriteText: (content) => stripPageValue(content, key, journal.value),
-      })
+      const text = (c: string): string | null => stripPageValue(c, key, journal.value)
+      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
       if (swept.skipped.length > 0) return true
       await dropOptionFromDef(root, journal.id, journal.value)
       return false

@@ -180,8 +180,6 @@ export function NavList({
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)
-  const reorderRecentStore = useSession((s) => s.reorderRecent)
-  const reorderRecent = onReorderRecent ?? reorderRecentStore
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
   const pinRows = reorderable ? (pins ?? []) : []
@@ -205,7 +203,8 @@ export function NavList({
     const nextOrder = orderIds.filter((id) => keys.has(id))
     const over = group[nextOrder.indexOf(activeId)]?.key
     if (!over || over === activeId) return
-    ;(groupKey === 'pins' ? reorderPin : reorderRecent)(activeId, over)
+    if (groupKey === 'pins') reorderPin(activeId, over)
+    else onReorderRecent?.(activeId, over)
   }
 
   const list = (

@@ -62,6 +62,7 @@ function VisibilityGroups({
             trailing:
               id === RESERVED_PROPERTY_ID.title
                 ? {
+                    // PLACEHOLDER
                     kind: 'button',
                     icon: 'eye',
                     ariaLabel: 'Always Shown',

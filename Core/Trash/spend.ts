@@ -75,15 +75,14 @@ async function addContextValues(
   }
   if (entry.kind === 'page') {
     const files = [join(root, entry.path)]
-    const swept = await sweepGovernedRoots(root, { kind: 'files', files }, () => null, {
-      rewriteText: (content) =>
-        mergeFrontmatter(
-          content,
-          { [key]: merge(splitFrontmatter(content)) },
-          [key],
-          splitEnvelope(content).body,
-        ),
-    })
+    const text = (content: string): string =>
+      mergeFrontmatter(
+        content,
+        { [key]: merge(splitFrontmatter(content)) },
+        [key],
+        splitEnvelope(content).body,
+      )
+    const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
     return swept.touched.length > 0
   }
   const file = join(root, entry.path, SPACE_SIDECAR)

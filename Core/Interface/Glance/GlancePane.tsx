@@ -33,7 +33,7 @@ const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200
 const RECT_SLOP = 6
 // KNOB — how many glanced pages keep their editor state and scroll between opens.
-const GLANCE_WARM_CAP = 8
+const GLANCE_WARM_CAP = 10
 // A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
 // render inert, while no real page path can ever collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const

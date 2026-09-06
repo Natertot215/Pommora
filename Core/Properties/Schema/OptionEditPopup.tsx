@@ -9,7 +9,7 @@ import { MenuSeparator } from '@pommora/uix/Menus'
 import { footingLabel } from '@pommora/uix/Menus/menu-base.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { labelColorFor } from '@pommora/uix/Theme/colorMap'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { optionGlyph, type OptionChipData } from '../Cells/OptionChip'
 import * as s from './option-edit-popup.css'
 
@@ -95,7 +95,7 @@ export function OptionEditPopup({
           </div>
         </div>
       </PickerMenu>
-      <IconPicker
+      <IconChoice
         open={iconOpen}
         value={option.icon}
         onSelect={(id) => {

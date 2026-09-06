@@ -10,7 +10,7 @@ import { ImagePicker } from '../Assets/ImagePicker'
 import { InputField } from '@pommora/uix/Fields'
 import { MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
 import { FooterLockButton } from '@pommora/uix/Menus'
-import { IconPicker } from '../Assets/IconPicker'
+import { IconChoice } from '../Assets/IconChoice'
 import { useNexusIcon } from '../Assets/useNexusIcon'
 import { tileHostKey, type TileHostRef } from '@pommora/core/Tiles/tiles'
 
@@ -75,7 +75,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
           <InputField className={s.titleField}>{tree.nexus.name}</InputField>
         </div>
       </MenuScrollFrame>
-      <IconPicker
+      <IconChoice
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         triggerRef={iconRef}

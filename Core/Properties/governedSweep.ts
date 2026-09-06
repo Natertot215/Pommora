@@ -29,9 +29,9 @@ export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } 
 
 export type RewriteText = (content: string, file: string) => string | null
 
-export interface SweepOptions {
-  rewriteText?: RewriteText
-}
+/** Pages are swept as raw frontmatter or as whole text, never both; only the text arm hands the
+ *  sidecars a rewriter of their own, since a raw sweep already serves them. */
+export type SweepPlan<C> = { raw: Rewrite<C> } | { text: RewriteText; sidecars?: Rewrite<C> }
 
 const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
@@ -60,8 +60,7 @@ const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
 export async function sweepGovernedRoots<C>(
   root: string,
   scope: SweepScope,
-  rewrite: Rewrite<C>,
-  opts: SweepOptions = {},
+  plan: SweepPlan<C>,
 ): Promise<SweepResult<C>> {
   const out: SweepResult<C> = { touched: [], skipped: [], refused: [], captured: [] }
 
@@ -77,8 +76,8 @@ export async function sweepGovernedRoots<C>(
         out.refused.push(file)
         return
       }
-      if (opts.rewriteText) {
-        const next = opts.rewriteText(content, file)
+      if ('text' in plan) {
+        const next = plan.text(content, file)
         if (next === null) return
         await rewritePreservingTimes(file, next)
         noteValueWrite(root, file)
@@ -87,7 +86,7 @@ export async function sweepGovernedRoots<C>(
         return
       }
       const raw = splitFrontmatter(content)
-      const decided = rewrite(raw, file)
+      const decided = plan.raw(raw, file)
       if (decided === null) return
       const keys = changedKeys(raw, decided.next)
       if (!keys.length) return
@@ -104,19 +103,21 @@ export async function sweepGovernedRoots<C>(
     })
   }
 
-  for (const file of await sidecarRoots(root, scope)) {
-    await machine().lock(file, async () => {
-      const raw = await readJsonObject(file)
-      if (!raw) {
-        out.skipped.push(file)
-        return
-      }
-      const decided = rewrite(raw, file)
-      if (decided === null) return
-      await writeJson(file, decided.next)
-      if (decided.capture !== undefined) out.captured.push(decided.capture)
-      out.touched.push(file)
-    })
-  }
+  const sidecars = 'raw' in plan ? plan.raw : plan.sidecars
+  if (sidecars)
+    for (const file of await sidecarRoots(root, scope)) {
+      await machine().lock(file, async () => {
+        const raw = await readJsonObject(file)
+        if (!raw) {
+          out.skipped.push(file)
+          return
+        }
+        const decided = sidecars(raw, file)
+        if (decided === null) return
+        await writeJson(file, decided.next)
+        if (decided.capture !== undefined) out.captured.push(decided.capture)
+        out.touched.push(file)
+      })
+    }
   return out
 }

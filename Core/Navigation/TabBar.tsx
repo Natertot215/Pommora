@@ -1,10 +1,9 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@pommora/uix/Buttons'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Labels/HoverRemove'
-import { duration, ms } from '@pommora/uix/Animations'
 import { text } from '@pommora/uix/Theme'
 import { segment } from '@pommora/uix/Elements/Segment/segment.css'
 import { SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
@@ -17,13 +16,9 @@ import { resolveWith, type ResolvedNav } from './navResolve'
 import { resolveIndexOf } from '../Session/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
+import { useTabClose } from './tabClose'
 import { host } from '../Platform/dialer'
 import './tab-base.css'
-
-const BASE_MS = ms(duration.base)
-/** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole
- *  sequence lands. */
-const EXIT_MS = BASE_MS + ms(duration.fast)
 
 interface TabEntry {
   tab: Tab
@@ -84,36 +79,10 @@ function TabBarBody({
   const reorderTabs = useSession((s) => s.reorderTabs)
   const reorderPin = useSession((s) => s.reorderPin)
 
-  // Closing is store-first — the tab leaves the store immediately (a re-click spawns fresh instead of resurrecting a zombie) while a GHOST stays rendered for the width-collapse exit.
-  const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: TabEntry; index: number }>>(
-    new Map(),
+  const { liveEntries, renderEntries, firstLive, requestClose } = useTabClose(
+    unpinnedEntries,
+    closeTab,
   )
-  const requestClose = (id: string): void => {
-    const index = unpinnedEntries.findIndex((e) => e.tab.id === id)
-    const entry = unpinnedEntries[index]
-    if (!entry) return
-    setGhosts((m) => new Map(m).set(id, { entry, index }))
-    closeTab(id)
-    setTimeout(() => {
-      setGhosts((m) => {
-        const next = new Map(m)
-        next.delete(id)
-        return next
-      })
-    }, EXIT_MS)
-  }
-  const liveEntries = useMemo(
-    () => unpinnedEntries.filter((e) => !ghosts.has(e.tab.id)),
-    [unpinnedEntries, ghosts],
-  )
-  const renderEntries = useMemo<{ entry: TabEntry; ghost: boolean }[]>(() => {
-    const live = liveEntries.map((entry) => ({ entry, ghost: false }))
-    for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index)) {
-      live.splice(Math.min(g.index, live.length), 0, { entry: g.entry, ghost: true })
-    }
-    return live
-  }, [liveEntries, ghosts])
-  const firstLive = renderEntries.findIndex((e) => !e.ghost)
 
   // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order (the one signed-off keybinding) —
   // intercepted only while the bar shows.

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { MutableKind } from '@pommora/core/Pages/mutateRequest'
 import { Icon } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
-import { IconPicker } from '../../Assets/IconPicker'
+import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
@@ -96,7 +96,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     />
   )
   const iconPicker = owner.kind !== 'homepage' && (
-    <IconPicker
+    <IconChoice
       open={iconPickerOpen}
       onClose={() => setIconPickerOpen(false)}
       triggerRef={iconRef}

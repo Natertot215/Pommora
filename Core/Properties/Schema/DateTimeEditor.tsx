@@ -6,7 +6,6 @@ import type {
 } from '@pommora/core/Properties/columnStyles'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { MenuRowView, type MenuRow } from '@pommora/uix/Menus'
-import * as s from './date-time-editor.css'
 
 const DATE_OPTIONS: { value: DateFormat; label: string }[] = [
   { value: 'monthDayYear', label: 'MM/DD/YYYY' },
@@ -54,7 +53,7 @@ export function DateTimeEditor({
   const dateFmt: DateFormat = style.date_format ?? 'full'
   const showDay = dateFmt === 'short' || dateFmt === 'full'
   return (
-    <div className={s.section}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <MenuRowView row={{ kind: 'heading', label: 'Format' }} />
       <MenuRowView
         row={pickerRow('calendar-days', 'Date', 'Date format', dateFmt, DATE_OPTIONS, (v) =>

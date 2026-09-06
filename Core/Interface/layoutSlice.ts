@@ -1,6 +1,6 @@
 import type { NavViewMode } from '@pommora/core/Interface/chrome'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
 import type { Slice } from '../Session/sessionState'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { host } from '../Platform/dialer'
 
 export interface LayoutSlice {
@@ -15,8 +15,6 @@ export interface LayoutSlice {
   setInspectorWidth: (w: number) => void
   subfieldExpanded: boolean
   setSubfieldExpanded: (expanded: boolean) => void
-  subfieldOrder: Partial<Record<SelectionState['kind'], string[]>>
-  setSubfieldOrder: (kind: SelectionState['kind'], ids: string[]) => void
   navWindowMode: NavViewMode
   setNavWindowMode: (mode: NavViewMode) => void
   navViewMode: NavViewMode
@@ -31,37 +29,25 @@ export interface LayoutSlice {
   resetLayout: () => void
 }
 
-export const SIDEBAR_WIDTH = { min: 180, max: 380 }
-const SIDEBAR_DEFAULT = 240
-const SIDEBAR_WIDTH_KEY = 'pommora.sidebarWidth'
-const clampSidebar = (w: number): number =>
-  Math.max(SIDEBAR_WIDTH.min, Math.min(SIDEBAR_WIDTH.max, Math.round(w)))
-function readStoredSidebarWidth(): number {
-  try {
-    const n = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY))
-    return Number.isFinite(n) && n > 0 ? clampSidebar(n) : SIDEBAR_DEFAULT
-  } catch {
-    return SIDEBAR_DEFAULT
-  }
-}
+// Pane widths live in localStorage rather than nexus.db: an IPC round trip per drag frame is what
+// storing them main-side would cost (Nathan's call).
+export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240, key: 'pommora.sidebarWidth' }
+export const INSPECTOR_WIDTH = { min: 240, max: 420, def: 300, key: 'pommora.inspectorWidth' }
+type PaneWidth = typeof SIDEBAR_WIDTH
 
-export const INSPECTOR_WIDTH = { min: 240, max: 420 }
-const INSPECTOR_DEFAULT = 300
-const INSPECTOR_WIDTH_KEY = 'pommora.inspectorWidth'
-const clampInspector = (w: number): number =>
-  Math.max(INSPECTOR_WIDTH.min, Math.min(INSPECTOR_WIDTH.max, Math.round(w)))
-function readStoredInspectorWidth(): number {
+const clampWidth = (pane: PaneWidth, w: number): number => clamp(Math.round(w), pane.min, pane.max)
+
+function storedWidth(pane: PaneWidth): number {
   try {
-    const n = Number(localStorage.getItem(INSPECTOR_WIDTH_KEY))
-    return Number.isFinite(n) && n > 0 ? clampInspector(n) : INSPECTOR_DEFAULT
+    const n = Number(localStorage.getItem(pane.key))
+    return Number.isFinite(n) && n > 0 ? clampWidth(pane, n) : pane.def
   } catch {
-    return INSPECTOR_DEFAULT
+    return pane.def
   }
 }
 
 const PER_NEXUS = {
   subfieldExpanded: true,
-  subfieldOrder: {},
   navWindowMode: 'list',
   navViewMode: 'list',
 } satisfies Partial<LayoutSlice>
@@ -69,16 +55,12 @@ const PER_NEXUS = {
 export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
   const persistSubfield = (): void => {
     const s = get()
-    void host()
-      .ask('subfield:set', { order: s.subfieldOrder, expanded: s.subfieldExpanded })
-      .catch(() => undefined)
+    void host().ask('subfield:set', { expanded: s.subfieldExpanded })
   }
 
   const persistNavModes = (): void => {
     const s = get()
-    void host()
-      .ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode })
-      .catch(() => undefined)
+    void host().ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode })
   }
 
   return {
@@ -87,14 +69,14 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     ribbonVisible: true,
     toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
 
-    sidebarWidth: readStoredSidebarWidth(),
-    setSidebarWidth: (w) => set({ sidebarWidth: clampSidebar(w) }),
-    inspectorWidth: readStoredInspectorWidth(),
-    setInspectorWidth: (w) => set({ inspectorWidth: clampInspector(w) }),
+    sidebarWidth: storedWidth(SIDEBAR_WIDTH),
+    setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
+    inspectorWidth: storedWidth(INSPECTOR_WIDTH),
+    setInspectorWidth: (w) => set({ inspectorWidth: clampWidth(INSPECTOR_WIDTH, w) }),
     persistPaneWidths: () => {
       try {
-        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(get().sidebarWidth))
-        localStorage.setItem(INSPECTOR_WIDTH_KEY, String(get().inspectorWidth))
+        localStorage.setItem(SIDEBAR_WIDTH.key, String(get().sidebarWidth))
+        localStorage.setItem(INSPECTOR_WIDTH.key, String(get().inspectorWidth))
       } catch {
         // widths just won't persist
       }
@@ -103,10 +85,6 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     ...PER_NEXUS,
     setSubfieldExpanded: (expanded) => {
       set({ subfieldExpanded: expanded })
-      persistSubfield()
-    },
-    setSubfieldOrder: (kind, ids) => {
-      set((s) => ({ subfieldOrder: { ...s.subfieldOrder, [kind]: ids } }))
       persistSubfield()
     },
     setNavWindowMode: (mode) => {

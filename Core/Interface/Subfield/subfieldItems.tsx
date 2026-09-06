@@ -8,11 +8,6 @@ import { pageStats } from '../../MarkdownPM/subfieldStats'
 /** New item ids slot in here, and in the per-view default order below. */
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
-const ALL_ITEM_IDS: SubfieldItemId[] = ['pageStats', 'addMenu', 'viewType']
-export function isSubfieldItemId(id: string): id is SubfieldItemId {
-  return (ALL_ITEM_IDS as string[]).includes(id)
-}
-
 /** The page a host's footer describes and the body it counts — hands down so the main pane and a
  *  floating window drive the same footer from their own page. */
 export interface SubfieldPage {
