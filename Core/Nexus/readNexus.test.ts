@@ -13,7 +13,6 @@ import {
 } from '../Settings/codec'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { corpusFiles } from '../Files/walk'
-import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colors'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { HISTORY_DAYS } from '../Settings/personalization'
 
@@ -523,14 +522,12 @@ describe('readNexus — personalization', () => {
     )
     expect((await readNexus(mk({ personalization: { accent: 'grey-0' } }))).accent).toBe('grey-0')
   })
-  it('an unknown accent name or a foreign top-level key resolves the default', async () => {
+  it('an unknown accent name or a foreign top-level key follows the system accent', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
-      DEFAULT_ACCENT,
+      'system',
     )
-    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe(DEFAULT_ACCENT)
-    expect((await readNexus(mk({ personalization: { accent: 'purple-8' } }))).accent).toBe(
-      DEFAULT_ACCENT,
-    )
+    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe('system')
+    expect((await readNexus(mk({ personalization: { accent: 'purple-8' } }))).accent).toBe('system')
   })
 
   // Each link color defers differently when unset, so each keeps its own sentinel on disk.

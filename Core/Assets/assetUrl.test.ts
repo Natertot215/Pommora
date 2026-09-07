@@ -31,11 +31,8 @@ describe('resolveAssetValue', () => {
     })
   })
 
-  it('takes the first by sorted path where several answer to one name', () => {
-    expect(resolveAssetValue('[[IMG.png]]', map)).toEqual({
-      kind: 'asset',
-      rel: 'file-assets/a/IMG.png',
-    })
+  it('a name several files answer to is unresolved, never the first of them', () => {
+    expect(resolveAssetValue('[[IMG.png]]', map)).toEqual({ kind: 'unresolved' })
   })
 
   it('a wikilink naming nothing is unresolved, never a broken image', () => {
@@ -107,11 +104,8 @@ describe('resolveFileValue', () => {
     )
   })
 
-  it('takes the first by sorted path where several answer to one name', () => {
-    expect(resolveFileValue('[[IMG.png]]', map)).toEqual({
-      kind: 'asset',
-      rel: 'file-assets/a/IMG.png',
-    })
+  it('a name several files answer to is unresolved, never the first of them', () => {
+    expect(resolveFileValue('[[IMG.png]]', map)).toEqual({ kind: 'unresolved' })
   })
 
   it('a bare filename is unresolved, never read as a path', () => {

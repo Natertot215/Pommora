@@ -1,5 +1,4 @@
 import type { AccentSetting, ColorSetting } from '@pommora/uix/Theme/colors'
-import { DEFAULT_ACCENT } from '@pommora/uix/Theme/colors'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { DATE_FORMATS } from '../Properties/columnStyles'
@@ -30,13 +29,7 @@ import {
 
 type Json = Record<string, unknown>
 
-function resolveAccent(raw: string | undefined): AccentSetting {
-  if (raw === 'system') return 'system'
-  if (raw != null && isColorKey(raw)) return raw as AccentSetting
-  return DEFAULT_ACCENT
-}
-
-// Per-field: absent/invalid → undefined = the built-in default. Accent is the exception — it resolves to a concrete setting so the row that shows it can never disagree with what paints.
+// Per-field: absent/invalid → undefined = the built-in default.
 export function readPersonalization(raw: unknown): Personalization {
   const p = isPlainObject(raw) ? raw : {}
   const bool = (v: unknown): boolean | undefined => (typeof v === 'boolean' ? v : undefined)
@@ -64,7 +57,7 @@ export function readPersonalization(raw: unknown): Personalization {
     ? p.favoriteIcons.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
   return {
-    accent: resolveAccent(asString(p.accent)),
+    accent: colorSetting(p.accent, 'system'),
     connectionColor: colorSetting(p.connectionColor, 'accent'),
     externalLinkColor: colorSetting(p.externalLinkColor, 'system'),
     checkboxColor: colorSetting(p.checkboxColor, 'accent'),
@@ -96,7 +89,8 @@ export function readPersonalization(raw: unknown): Personalization {
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
-    interfaceScale: coerceInterfaceScale(p.interfaceScale),
+    interfaceScale:
+      typeof p.interfaceScale === 'number' ? coerceInterfaceScale(p.interfaceScale) : undefined,
     previewPersistence: coercePreviewPersistence(p.previewPersistence),
     fileHistory: p.fileHistory === false ? false : undefined,
     historyDays: clampInt(p.historyDays, HISTORY_DAYS.min, HISTORY_DAYS.max),
@@ -183,7 +177,7 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   return {
     excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
-    accent: personalization.accent ?? DEFAULT_ACCENT,
+    accent: personalization.accent ?? 'system',
     personalization,
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,
