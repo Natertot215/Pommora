@@ -362,8 +362,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!row) return
     const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
     const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
-    if (creating && isBlankValue(v)) return
-    if (creating) revealProperty(column.id)
+    if (creating && !isBlankValue(v)) revealProperty(column.id)
     commitValue(row, column, v)
   }
 
@@ -711,7 +710,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               value={vTarget?.current?.kind === 'number' ? String(vTarget.current.value) : ''}
               leading={vTarget ? numberFormatGlyph(vTarget.def) : undefined}
               onCommit={(raw) => {
-                commitPicked(parseEditorValue('number', raw) ?? null)
+                const nv = parseEditorValue('number', raw)
+                if (nv != null) commitPicked(nv)
                 setValuePicker(null)
               }}
             />
