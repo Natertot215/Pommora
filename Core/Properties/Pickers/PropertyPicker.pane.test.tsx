@@ -50,7 +50,7 @@ function Host(props: {
       <PropertyPicker
         open
         triggerRef={ref}
-        target={props.target}
+        target={props.target ?? null}
         chooser={props.chooser}
         chooserInitial={props.chooserInitial}
         anchorX={props.anchorX}

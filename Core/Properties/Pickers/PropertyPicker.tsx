@@ -72,12 +72,8 @@ export function PropertyPicker({
   onReveal,
   onDismiss,
   resolveTarget,
-  def,
-  current,
-  look,
-  contextOptions,
 }: {
-  target?: PickTarget | null
+  target: PickTarget | null
   chooser?: PickEntry[]
   chooserInitial?: string
   open: boolean
@@ -87,24 +83,14 @@ export function PropertyPicker({
   onReveal?: (entry: PickEntry) => void
   onDismiss: () => void
   resolveTarget?: (entry: PickEntry) => PickTarget | null
-  def?: PropertyDefinition
-  current?: PropertyValue | null
-  look?: ColumnLook
-  contextOptions?: PickOption[]
 }): React.JSX.Element | null {
-  const held = useHeld(target ?? null, open)
+  const held = useHeld(target, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
   useEffect(() => {
     setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
   }, [open, chooserInitial])
 
-  // A drilled entry resolves its target LIVE through resolveTarget, so toggling a multi-value option keeps reading the row after the first commit reveals (and so filters) the entry.
-  const t = picked
-    ? (resolveTarget?.(picked) ?? null)
-    : (held ??
-      (def
-        ? ({ kind: 'options', def, current: current ?? null, look, contextOptions } as const)
-        : null))
+  const t = picked ? (resolveTarget?.(picked) ?? null) : held
   const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
 
   const origin = t?.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
