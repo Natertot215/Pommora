@@ -92,13 +92,13 @@ const renderPanel = async (node: React.JSX.Element): Promise<void> => {
 
 describe('PropertyPanel', () => {
   it('the page frame (onBack) seeds Context rows shown (B8)', async () => {
-    await renderPanel(<PropertyPanel page={detailWith({})} panelStyle="filled" onBack={() => {}} />)
+    await renderPanel(<PropertyPanel page={detailWith({})} onBack={() => {}} />)
     expect(text()).toContain('Areas')
   })
 
   it('the inspector (no onBack) seeds Context rows hidden (B8)', async () => {
     cachePageDetail(detailWith({}))
-    await renderPanel(<PropertyPanel page={PAGE} panelStyle="filled" />)
+    await renderPanel(<PropertyPanel page={PAGE} />)
     // The Add affordance is present, but the un-valued Areas row is not seeded shown.
     expect(text()).toContain('Add Property')
     expect(text()).not.toContain('Areas')
@@ -106,7 +106,7 @@ describe('PropertyPanel', () => {
 
   it('a property with a value shows its row with no reveal write (the live predicate)', async () => {
     cachePageDetail(detailWith({ Stage: 'a' }))
-    await renderPanel(<PropertyPanel page={PAGE} panelStyle="filled" />)
+    await renderPanel(<PropertyPanel page={PAGE} />)
     expect(text()).toContain('Stage')
     // Note, with no value, stays hidden behind Add.
     expect(text()).not.toContain('Note')

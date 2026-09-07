@@ -32,8 +32,8 @@ export type PickEntry = {
   drillable: boolean
 }
 
-/** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values. Groups are containers, never pickable chips. */
-export const optionsOf = (def: PropertyDefinition): PickOption[] => {
+/** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values.*/
+const optionsOf = (def: PropertyDefinition): PickOption[] => {
   return def.type === 'status' ? statusOptions(def) : (def.select_options ?? [])
 }
 
@@ -235,7 +235,7 @@ export function PropertyOptionRows({
   )
 }
 
-export function pickSemantics(
+function pickSemantics(
   def: PropertyDefinition,
   current: PropertyValue | null,
   onCommit: (value: PropertyValue | null) => void,
