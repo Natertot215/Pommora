@@ -56,4 +56,7 @@ globalStyle(`${row} > .${side}:last-child`, { flex: '0 1 auto', minWidth: 0 })
 
 export const empty = style([text.caption.standard])
 
+// The window panel's rows zero their trailing pad, so an empty value's glyph would sit flush to the group's edge.
+globalStyle(`${panelRows} .${empty}`, { paddingRight: '6px' })
+
 export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
