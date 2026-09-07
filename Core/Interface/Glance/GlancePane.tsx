@@ -447,12 +447,12 @@ export function GlancePane(): React.JSX.Element {
     </button>
   )
 
-  // Esc blooms out the newest still-open active-tab unlocked pin; bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
+  // Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch); bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape' || e.defaultPrevented || shown) return
       const newest = pinnedGlances
-        .filter((p) => p.tabId === activeTabId && !p.locked && !exiting.has(p.pinId))
+        .filter((p) => p.tabId === activeTabId && !exiting.has(p.pinId))
         .at(-1)
       if (newest) {
         e.preventDefault()
