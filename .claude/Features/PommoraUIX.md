@@ -9,21 +9,206 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 - **Vocabulary:** Five words name the surfaces. A **Window** is a floating window; a **Pane** is a surface floating over another — the sidebar, the inspector, the side slots, the glance pane, the autocomplete; a **Menu** is a surface hung off a trigger; a **Frame** is one page inside a Menu's or Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, the Settings categories; a **Picker** chooses a value.
 
+### Theme
+
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `labelColorFor`, `resolveColor`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`, the `RAMP_*` re-exports). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` and `text-selection.css` hold the caret and selection colors, and `nativeCaret.ts` reads the platform's own blink rate so a drawn caret matches the system one. `index.ts` is the barrel.
+
+#### Primitives
+
+**SOURCE:** `UIX/Theme/color.css.ts` · `UIX/Theme/colors.ts`
+
+| Title             | Token                               | Value     |
+| ----------------- | ----------------------------------- | --------- |
+| System White      | `system.white`                       | `#E8E8E8` |
+| System Grey       | `system.grey`                        | `#71717A` |
+| System Black      | `system.black`                       | `#010101` |
+| Window Background | `background.window` · `--bg-window` | `#1A1A1C` |
+
+#### Surfaces
+
+| Title             | Token                                       | Value     |
+| ----------------- | ------------------------------------------- | --------- |
+| Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022` |
+| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E` |
+| Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E` |
+
+#### Labels
+
+| Title            | Token                                     | Value               |
+| ---------------- | ----------------------------------------- | ------------------- |
+| Label Primary    | `label.primary` · `--label-primary`       | `system-white` @ 100% |
+| Label Control    | `label.control` · `--label-control`       | `system-white` @ 80% |
+| Label Secondary  | `label.secondary` · `--label-secondary`   | `system-white` @ 65% |
+| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | `system-white` @ 35% |
+
+#### States
+
+| Title    | Token                                 | Value              |
+| -------- | ------------------------------------- | ------------------ |
+| Hover    | `state.hover` · `--state-hover`       | `system-grey` @ 2.5% |
+| Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
+| Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
+| Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
+| Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
+
+#### Fills
+
+| Title           | Token                                   | Value               |
+| --------------- | --------------------------------------- | ------------------- |
+| Fill Primary    | `fill.primary` · `--fill-primary`       | `system-grey` @ 20% |
+| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | `system-grey` @ 15% |
+| Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | `system-grey` @ 10% |
+| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6%  |
+| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4%  |
+
+#### Tints
+
+**SOURCE:** `UIX/Theme/colors.ts`
+
+`tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. 
+
+| Title           | Token                                         | Value |
+| --------------- | --------------------------------------------- | ----- |
+| Tint Solid      | `TINT_STEPS.solid` · `--tint-solid`           | 100%  |
+| Tint Primary    | `TINT_STEPS.primary` · `--tint-primary`       | 60%   |
+| Tint Secondary  | `TINT_STEPS.secondary` · `--tint-secondary`   | 40%   |
+| Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
+| Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
+
+#### Borders
+
+
+| Title        | Token                             | Value               |
+| ------------ | --------------------------------- | ------------------- |
+| Border Base  | `border.base` · `--border-base`   | `system-grey` @ 25% |
+| Border Light | `border.light` · `--border-light` | `system-grey` @ 20% |
+| Border Faint | `border.faint` · `--border-faint` | `system-grey` @ 15  |
+| Width 100    | `--width-100`                     | `1px`               |
+| Width 125    | `--width-125`                     | `1.25px`            |
+| Width 150    | `--width-150`                     | `1.5px`             |
+| Width 175    | `--width-175`                     | `1.75px`            |
+| Width 200    | `--width-200`                     | `2px`               |
+
+#### Shadows
+
+| Title  | Token                                 | Value                   |
+| ------ | ------------------------------------- | ----------------------- |
+| Base   | `shadowStandardVar` · `--shadow-base` | `0 8px 25px #00000040`  |
+| Strong | `shadowLiftVar` · `--shadow-strong`   | `0 12px 30px #00000065` |
+
+#### Fades
+
+The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window sets its own dynamically, to its toolbar's height, so content dissolves exactly under the toolbar.
+
+| Title       | Token           | Value  | Role                                          |
+| ----------- | --------------- | ------ | --------------------------------------------- |
+| Fade Light  | `--fade-light`  | `12px` | a small control (the text picker)             |
+| Fade Base   | `--fade-base`   | `16px` | the common case — lists, tabs, pickers, cards |
+| Fade Strong | `--fade-strong` | `20px` | cell overflow (the chip run)                  |
+| Fade Heavy  | `--fade-heavy`  | `24px` | a detail surface (the sidebar)                |
+
+#### Spectrum
+
+**SOURCE:** `UIX/Theme/colors.ts`
+
+Authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime. `DEFAULT_ACCENT` sits in `UIX/Theme/colors.ts`.
+
+| Title             | Token                                       | Value                                      |
+| ----------------- | ------------------------------------------- | ------------------------------------------ |
+| Red               | `SPECTRUM.red`                              | `#FF453A`                                  |
+| Orange            | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                  |
+| Yellow            | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                  |
+| Green             | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                  |
+| Light Blue        | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
+| Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
+| Blue              | `SPECTRUM.blue`                             | `#0A84FF`                                  |
+| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
+| Lavender          | `SPECTRUM.lavender`    | `#A78BCC`                                  |
+| Pink              | `SPECTRUM.pink`                             | `#EF7697`                                  |
+| Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
+| Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
+| Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
+| Accent            | `--accent`                                  | `applyAccent`                              |
+| Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
+| Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
+| Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
+| Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
+| Error             | `--error`                                   | `SPECTRUM.red`                             |
+| Code              | `--code`                                    | `--solid-red` @ 85%                        |
+
+#### Ramp
+
+**SOURCE:** `UIX/Theme/ramp.ts`
+
+Eight families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
+
+| Title         | Token           | Value                                                  |
+| ------------- | --------------- | ------------------------------------------------------ |
+| Shading Step  | `RAMP_STEP`     | `15`                                                   |
+| Darkness Step | `DARKNESS_STEP` | `15`                                                   |
+| Grey Outlines | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
+
+#### Geometry
+
+**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-base.css.ts`
+
+| Title             | Token                                                                                              | Value                                                                                                                                                                                                                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Icon Ladder       | `size.icon.*` · `ICON_PX` · `--icon-body`                                                          | Ten steps named as the type ramp is — `titleLarge` `26px` · `titleMedium` `22px` · `titleSmall` `17px` · `headline` `15px` · `body` `13px` · `callout` `12px` · `control` `12px` · `caption` `11px` · `footnote` `10px` · `subline` `10px`; only the body step is also a CSS var, for the editor's glyphs |
+| Pill Radius       | `--radius-full`                                                                                    | `999px`                                                                                                                                                                                                                                                                                                   |
+| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`                                                        | `14px`                                                                                                                                                                                                                                                                                                    |
+| Content Inset     | `--content-inset`                                                                                  | `24px` — the gutter page text keeps off a pane (`styles.css`)                                                                                                                                                                                                                                             |
+| Content Edge      | `--content-edge`                                                                                   | `12px` — the band a banner title and the Subfield sit in, off the pane (`styles.css`)                                                                                                                                                                                                                     |
+| Surface Lane      | `--surface-lane`                                                                                   | `8px` — the tighter lane a dashboard's tiles run in (`styles.css`)                                                                                                                                                                                                                                        |
+| Pane Clearance    | `--sidebar-clearance` · `--inspector-clearance`                                                    | `--app-inset` + the pane's width, `0px` when the pane is away; a consumer pads `calc(clearance + gap)` with one of the three gaps above (`styles.css`)                                                                                                                                                    |
+| Shell Bands       | `--toolbar-h` · `--subfield-h`                                                                     | `38px` · `24px` — the toolbar strip and the Subfield bar; the window footer reads the latter (`styles.css`)                                                                                                                                                                                               |
+| App Inset         | `--app-inset` · `--app-radius`                                                                     | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`)                                                                                                                                                                                                          |
+| Surface Inset     | `--surface-inset`                                                                                  | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`)                                                                                                                                                                                                |
+| Row Tokens        | `--row-pad-standard` · `--row-pad-compact`                                                         | `6px` · `4px` — a row's padding in its two densities, taken on both axes; a row's height is never declared, it is the ramp's line plus the pair (`UIX/Menus/menu-base.css.ts`)                                                                                                                            |
+| Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | What a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0`                                                               |
+| Content Start     | `--content-start` · `--content-start-right`                                                        | `calc(clearance + --content-edge)` on each side — where a page's chrome starts: the banner title, the Subfield, NavView's head and rows (`styles.css`)                                                                                                                                                    |
+| Rail Inset        | `--rail-inset-base` · `--rail-inset`                                                               | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share                                                                                                                                                                                                                                 |
+| Drop Line         | `--drop-line-thickness` · `--drop-dot-size` · `DROP_LINE_INSET`                                    | `2px` · `7px` · `2px`                                                                                                                                                                                                                                                                                     |
+| List Outline      | `--list-outline-width` · `--list-outline-gap` · `--list-outline-radius`                            | `2px` · `3px` · segment tone · pill radius                                                                                                                                                                                                                                                                |
+| Park              | `--park-clearance`                                                                                 | `14px`                                                                                                                                                                                                                                                                                                    |
+| Tile              | `TILE_MIN_PX` · `TILE_DEFAULT_PX` · `TILE_GAP_PX`                                                  | `64px` · `320px` · `4px`                                                                                                                                                                                                                                                                                  |
+
+#### Typography
+
+**SOURCE:** `UIX/Theme/typography.css.ts`
+
+Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own.
+
+| Style        | Token              | Size / Line     | Character                                            |
+| ------------ | ------------------ | --------------- | ---------------------------------------------------- |
+| Title Large  | `text.titleLarge`  | `28px` / `32px` | Container title — over an editor banner              |
+| Title Medium | `text.titleMedium` | `24px` / `28px` | Container title — the bare page header               |
+| Title Small  | `text.titleSmall`  | `20px` / `24px` | Container title — over a Banner cover                |
+| Headline     | `text.headline`    | `15px` / `20px` | The smallest heading step; the one 15px style        |
+| Body         | `text.body`        | `13px` / `16px` | The standard content size; carries the row primitive |
+| Callout      | `text.callout`     | `12px` / `15px` | A step under body — headers and ancillary labels     |
+| Control      | `text.control`     | `12px` / `15px` | Labels and control chrome                            |
+| Caption      | `text.caption`     | `11px` / `14px` | The secondary line under a title                     |
+| Footnote     | `text.footnote`    | `10px` / `13px` | Small details or accessories                         |
+| Subline      | `text.subline`     | `10px` / `12px` | Footnote’ssize on a tighter line box                 |
+
+Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
+
 ### Animations
 
 `UIX/Animations/` — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, the enter/exit primitives, and the pane slide. [[InteractionPM]] describes the named motions.
 
-| Title     | Export                                    | What it is                                                              |
-| --------- | ----------------------------------------- | ----------------------------------------------------------------------- |
-| Durations | `duration.fast/menu/base/slow` · `--duration-*` · `ms()` | `180ms` · `225ms` · `280ms` · `350ms`; `ms` reads one as a number. |
-| Ease      | `easing.baseEase` · `--ease-base`         | `ease` — the everyday curve.                                            |
-| Snap      | `easing.baseSnap` · `--ease-snap`         | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride. |
-| Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs. |
-| Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs. |
-| Window    | `windowIn` · `windowOut`                  | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too. |
-| Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
-| PaneSlide | `paneSlide`                               | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode. |
-| Exit      | `useExitPresence` · `useHeld` · `useHeldPresence` | Keeps a surface mounted through its close; the held forms also keep the value it was showing. |
+| Title     | Export                                                                        | What it is                                                                                                   |
+| --------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Durations | `duration.fast/menu/base/slow` · `--duration-*` · `ms()`                      | `180ms` · `225ms` · `280ms` · `350ms`; `ms` reads one as a number.                                           |
+| Ease      | `easing.baseEase` · `--ease-base`                                             | `ease` — the everyday curve.                                                                                 |
+| Snap      | `easing.baseSnap` · `--ease-snap`                                             | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride.                                       |
+| Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`                                                 | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs.                                |
+| Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs.                                                |
+| Window    | `windowIn` · `windowOut`                                                      | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too. |
+| Reveal    | `Reveal`                                                                      | The `0fr ↔ 1fr` body open/close on the `fast` rung.                                                          |
+| PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode.             |
+| Exit      | `useExitPresence`                                                             | Keeps a surface mounted through its close; the held forms also keep the value it was showing.                |
 
 ### Buttons
 
@@ -56,42 +241,43 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 `UIX/Controls/` — the single-purpose interactive pieces: the two switches, the Slider, and `checkbox.css` the Checkbox's chrome.
 
-| Title | Export | What it is |
-| --------- | ------------ | ------------------------------------------------------------------------------- |
-| Segmented | `Segmented` | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
-| Checkbox | `Checkbox` | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the accent or a chosen cell. |
-| DualSwitch | `DualSwitch` | A boolean toggle with a sliding glass segment. |
-| ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker. |
-| Slider | `Slider` | Sliding number selection. |
+| Title       | Export        | What it is                                                                                                                                            |
+| ----------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar.                                                                                  |
+| Checkbox    | `Checkbox`    | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the accent or a chosen cell. |
+| DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass segment.                                                                                                        |
+| ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                            |
+| Slider      | `Slider`      | Sliding number selection.                                                                                                                             |
 
 ### Elements
 
 `UIX/Elements/` — the atomic bits every surface composes; each is a style sheet and, where needed, a component beside it.
 
-| Title | Export | What it is |
-| --------------- | -------------------------------- | ----------------------------------------------------- |
-| NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
-| Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
-| ProgressBar | `ProgressBar` | A determinate bar on the accent. |
-| EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
-| EmptyValue | `EmptyValue` | The one "nothing here yet" mark for value slots. |
+| Title       | Export                                                         | What it is                                                                                                                                                                                                                               |
+| ----------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NavTrail    | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
+| Segment     | `segment`                                                      | The between-values pill — `--segment-width` / `--segment-color` override it.                                                                                                                                                             |
+| ProgressBar | `ProgressBar`                                                  | A determinate bar on the accent.                                                                                                                                                                                                         |
+| EyeToggle   | `EyeToggle` · `EYE_ICON`                                       | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
+| EmptyValue  | `EmptyValue`                                                   | The one "nothing here yet" mark for value slots.                                                                                                                                                                                         |
 
 The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`, and the `imageAspect.ts` aspect cache — are `Core/Assets/`, since each reaches the store for what it draws.
 
 ### Fields
+
 `UIX/Fields/` — the input surfaces and the runs that sit inside them; `SegmentRun.tsx` lives here because a run of values is a field's content, not a label's.
 
-| Title | Export | What it is |
-| ------------------ | ----------------------------------- | ----------------------------------------------- |
-| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome. |
-| PathField | `PathField` · `BrowseButton` | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
-| SegmentRun | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR` | Values standing side by side inside a field; segment-divided. |
-| Chrome | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio. |
-| Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set its color. |
-| Placeholder | `placeholder` | The ghost-text tone. |
-| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |
-| EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
-| RenamableLabel | `RenamableLabel` | The inline-rename swap. |
+| Title          | Export                                                                                                                                                                            | What it is                                                                                                                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| InputField     | `InputField` · `FieldEdit`                                                                                                                                                        | The field box — `boxed` or `bordered` chrome.                                                                                                                                                                 |
+| PathField      | `PathField` · `BrowseButton`                                                                                                                                                      | A folder path in a bordered field — the path as a trail, typed in place or chosen through the trailing browse; `BrowseButton` is that trailing action alone, for a field showing a file rather than a folder. |
+| SegmentRun     | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR`                                                                                                                              | Values standing side by side inside a field; segment-divided.                                                                                                                                                 |
+| Chrome         | `field` · `input` · `borderedField` · `base` · `search` · `draftInput` · `editable` · `contentRow` · `leading` · `trailing` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, the draft and editable states, the content row with its leading and trailing slots, and the auto-sizing input trio.                                  |
+| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                                                                                        | One inset-shadow channel; presets set its color.                                                                                                                                                              |
+| Placeholder    | `placeholder`                                                                                                                                                                     | The ghost-text tone.                                                                                                                                                                                          |
+| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                                                                                              | The controlled filter input the list surfaces share.                                                                                                                                                          |
+| EditableInput  | `EditableInput`                                                                                                                                                                   | Enter commits, Escape abandons, blur settles.                                                                                                                                                                 |
+| RenamableLabel | `RenamableLabel`                                                                                                                                                                  | The inline-rename swap.                                                                                                                                                                                       |
 
 ### Glass
 
@@ -193,194 +379,6 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 ### Table
 
 `UIX/Table/` — `Table.css` · `table-tokens.css`. The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
-
-### Theme
-
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `labelColorFor`, `resolveColor`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`, the `RAMP_*` re-exports). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` and `text-selection.css` hold the caret and selection colors, and `nativeCaret.ts` reads the platform's own blink rate so a drawn caret matches the system one. `index.ts` is the barrel.
-
-#### Primitives
-
-**SOURCE:** `UIX/Theme/color.css.ts` · `UIX/Theme/colors.ts`
-
-| Title             | Token                               | Value     |
-| ----------------- | ----------------------------------- | --------- |
-| System White      | `system.white`                       | `#E8E8E8` |
-| System Grey       | `system.grey`                        | `#71717A` |
-| System Black      | `system.black`                       | `#010101` |
-| Window Background | `background.window` · `--bg-window` | `#1A1A1C` |
-
-#### Surfaces
-
-| Title             | Token                                       | Value     |
-| ----------------- | ------------------------------------------- | --------- |
-| Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022` |
-| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E` |
-| Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E` |
-
-#### Labels
-
-| Title            | Token                                     | Value               |
-| ---------------- | ----------------------------------------- | ------------------- |
-| Label Primary    | `label.primary` · `--label-primary`       | `system-white` @ 100% |
-| Label Control    | `label.control` · `--label-control`       | `system-white` @ 80% |
-| Label Secondary  | `label.secondary` · `--label-secondary`   | `system-white` @ 65% |
-| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | `system-white` @ 35% |
-
-#### States
-
-| Title    | Token                                 | Value              |
-| -------- | ------------------------------------- | ------------------ |
-| Hover    | `state.hover` · `--state-hover`       | `system-grey` @ 2.5% |
-| Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
-| Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
-| Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
-| Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
-
-Hover and selected paint behind content, muted over it; the three opacities are worn as `opacity:` by the element itself.
-
-#### Fills
-
-| Title           | Token                                   | Value               |
-| --------------- | --------------------------------------- | ------------------- |
-| Fill Primary    | `fill.primary` · `--fill-primary`       | `system-grey` @ 20% |
-| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | `system-grey` @ 15% |
-| Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | `system-grey` @ 10% |
-| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6%  |
-| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4%  |
-
-#### Tints
-
-**SOURCE:** `UIX/Theme/colors.ts`
-
-`tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. 
-
-| Title           | Token                                         | Value |
-| --------------- | --------------------------------------------- | ----- |
-| Tint Solid      | `TINT_STEPS.solid` · `--tint-solid`           | 100%  |
-| Tint Primary    | `TINT_STEPS.primary` · `--tint-primary`       | 60%   |
-| Tint Secondary  | `TINT_STEPS.secondary` · `--tint-secondary`   | 40%   |
-| Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
-| Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
-
-#### Borders
-
-An edge composes a width and a color — `var(--width-XXX) solid var(--border-YYY)`. Colors by intensity, then the literal width ladder.
-
-| Title        | Token                               | Value               |
-| ------------ | ----------------------------------- | ------------------- |
-| Border Base  | `border.base` · `--border-base`     | `system-grey` @ 25% |
-| Border Light | `border.light` · `--border-light`   | `system-grey` @ 20% |
-| Border Faint | `border.faint` · `--border-faint`   | `system-grey` @ 15  |
-| Width 100    | `--width-100`                       | `1px`               |
-| Width 125    | `--width-125`                       | `1.25px`            |
-| Width 150    | `--width-150`                       | `1.5px`             |
-| Width 175    | `--width-175`                       | `1.75px`            |
-| Width 200    | `--width-200`                       | `2px`               |
-
-#### Shadows
-
-| Title    | Token                                     | Value                   |
-| -------- | ----------------------------------------- | ----------------------- |
-| Base | `shadowStandardVar` · `--shadow-base` | `0 8px 25px #00000040` |
-| Strong | `shadowLiftVar` · `--shadow-strong` | `0 12px 30px #00000065` |
-
-#### Fades
-
-The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window sets its own dynamically, to its toolbar's height, so content dissolves exactly under the toolbar.
-
-| Title       | Token           | Value  | Role                              |
-| ----------- | --------------- | ------ | --------------------------------- |
-| Fade Light  | `--fade-light`  | `12px` | a small control (the text picker) |
-| Fade Base   | `--fade-base`   | `16px` | the common case — lists, tabs, pickers, cards |
-| Fade Strong | `--fade-strong` | `20px` | cell overflow (the chip run)      |
-| Fade Heavy  | `--fade-heavy`  | `24px` | a detail surface (the sidebar)    |
-
-#### Spectrum
-
-**SOURCE:** `UIX/Theme/colors.ts`
-
-Authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime. `DEFAULT_ACCENT` sits in `UIX/Theme/colors.ts`.
-
-| Title             | Token                                       | Value                                      |
-| ----------------- | ------------------------------------------- | ------------------------------------------ |
-| Red               | `SPECTRUM.red`                              | `#FF453A`                                  |
-| Orange            | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                  |
-| Yellow            | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                  |
-| Green             | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                  |
-| Light Blue        | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
-| Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
-| Blue              | `SPECTRUM.blue`                             | `#0A84FF`                                  |
-| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
-| Lavender          | `SPECTRUM.lavender`    | `#A78BCC`                                  |
-| Pink              | `SPECTRUM.pink`                             | `#EF7697`                                  |
-| Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
-| Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
-| Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
-| Accent            | `--accent`                                  | `applyAccent`                              |
-| Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
-| Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
-| Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
-| Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
-| Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--code`                                    | `--solid-red` @ 85%                        |
-
-#### Ramp
-
-**SOURCE:** `UIX/Theme/ramp.ts`
-
-Eight families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
-
-| Title         | Token           | Value                                                  |
-| ------------- | --------------- | ------------------------------------------------------ |
-| Shading Step  | `RAMP_STEP`     | `15`                                                   |
-| Darkness Step | `DARKNESS_STEP` | `15`                                                   |
-| Grey Outlines | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
-
-#### Geometry
-
-**SOURCE:** `UIX/Theme/theme-vars.css.ts` · `Core/Interface/styles.css` · `UIX/Menus/menu-base.css.ts`
-
-| Title             | Token                                                                                              | Value                                                                                                                                                                                                                                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Icon Ladder       | `size.icon.*` · `ICON_PX` · `--icon-body`                                                          | Ten steps named as the type ramp is — `titleLarge` `26px` · `titleMedium` `22px` · `titleSmall` `17px` · `headline` `15px` · `body` `13px` · `callout` `12px` · `control` `12px` · `caption` `11px` · `footnote` `10px` · `subline` `10px`; only the body step is also a CSS var, for the editor's glyphs |
-| Pill Radius       | `--radius-full`                                                                    | `999px`                                                                                                                                                                                                                                                                                                   |
-| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`                                                        | `14px`                                                                                                                                                                                                                                                                                                    |
-| Content Inset     | `--content-inset`                                                                                  | `24px` — the gutter page text keeps off a pane (`styles.css`)                                                                                                                                                                                                                                             |
-| Content Edge      | `--content-edge`                                                                                   | `12px` — the band a banner title and the Subfield sit in, off the pane (`styles.css`)                                                                                                                                                                                                                     |
-| Surface Lane      | `--surface-lane`                                                                                   | `8px` — the tighter lane a dashboard's tiles run in (`styles.css`)                                                                                                                                                                                                                                        |
-| Pane Clearance    | `--sidebar-clearance` · `--inspector-clearance`                                                    | `--app-inset` + the pane's width, `0px` when the pane is away; a consumer pads `calc(clearance + gap)` with one of the three gaps above (`styles.css`)                                                                                                                                                    |
-| Shell Bands       | `--toolbar-h` · `--subfield-h`                                                                     | `38px` · `24px` — the toolbar strip and the Subfield bar; the window footer reads the latter (`styles.css`)                                                                                                                                                                                               |
-| App Inset         | `--app-inset` · `--app-radius`                                                                     | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`)                                                                                                                                                                                                          |
-| Surface Inset     | `--surface-inset`                                                                                  | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`)                                                                                                                                                                                                |
-| Row Tokens        | `--row-pad-standard` · `--row-pad-compact`  | `6px` · `4px` — a row's padding in its two densities, taken on both axes; a row's height is never declared, it is the ramp's line plus the pair (`UIX/Menus/menu-base.css.ts`)                                                                                                                |
-| Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | What a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0`                                                               |
-| Content Start     | `--content-start` · `--content-start-right`                                                        | `calc(clearance + --content-edge)` on each side — where a page's chrome starts: the banner title, the Subfield, NavView's head and rows (`styles.css`)                                                                                                                                                    |
-| Rail Inset        | `--rail-inset-base` · `--rail-inset`                                                                      | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share                                                                                                                                                                                                                                 |
-| Drop Line         | `--drop-line-thickness` · `--drop-dot-size` · `DROP_LINE_INSET`                                        | `2px` · `7px` · `2px`                                                                                                                                                                                                                                                                                     |
-| List Outline      | `--list-outline-width` · `--list-outline-gap` · `--list-outline-radius`                                     | `2px` · `3px` · segment tone · pill radius                                                                                                                                                                                                                                                                |
-| Park              | `--park-clearance`                                                                                   | `14px`                                                                                                                                                                                                                                                                                                    |
-| Tile              | `TILE_MIN_PX` · `TILE_DEFAULT_PX` · `TILE_GAP_PX`                                                  | `64px` · `320px` · `4px`                                                                                                                                                                                                                                                                                  |
-
-#### Typography
-
-**SOURCE:** `UIX/Theme/typography.css.ts`
-
-Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own. **Control** and **Subline** are renamed for what they drive here.
-
-| Style        | Token              | Size / Line     | Character                                            |
-| ------------ | ------------------ | --------------- | ---------------------------------------------------- |
-| Title Large  | `text.titleLarge`  | `28px` / `32px` | Container title — over an editor banner              |
-| Title Medium | `text.titleMedium` | `24px` / `28px` | Container title — the bare page header               |
-| Title Small  | `text.titleSmall`  | `20px` / `24px` | Container title — over a Banner cover                |
-| Headline     | `text.headline`    | `15px` / `20px` | The smallest heading step; the one 15px style        |
-| Body         | `text.body`        | `13px` / `16px` | The standard content size; carries the row primitive |
-| Callout      | `text.callout`     | `12px` / `15px` | A step under body — headers and ancillary labels     |
-| Control      | `text.control`     | `12px` / `15px` | Labels and control chrome                            |
-| Caption      | `text.caption`     | `11px` / `14px` | The secondary line under a title                     |
-| Footnote     | `text.footnote`    | `10px` / `13px` | Small details or accessories                         |
-| Subline      | `text.subline`     | `10px` / `12px` | Footnote’ssize on a tighter line box                 |
-
-Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 
 ### Utilities
 
