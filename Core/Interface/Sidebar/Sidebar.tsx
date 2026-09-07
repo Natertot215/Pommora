@@ -42,6 +42,8 @@ import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../../Session/store'
+import { armPreview } from '../Glance/glanceLink'
+import { cancelGlance, glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { RenamableTitle } from '../RenamableTitle'
@@ -162,7 +164,7 @@ function DragRow({
 }: {
   id: string
   springOpen?: { collapsed: boolean; onExpand: () => void }
-  onPointerEnter?: () => void
+  onPointerEnter?: (e: React.PointerEvent<HTMLDivElement>) => void
   onPointerLeave?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
@@ -434,8 +436,15 @@ function PageRow({
     <>
       <DragRow
         id={page.id}
-        onPointerEnter={api ? () => api.onHover(page.id, true) : undefined}
-        onPointerLeave={api ? () => api.onHover(page.id, false) : undefined}
+        onPointerEnter={(e) => {
+          api?.onHover(page.id, true)
+          if (e.shiftKey)
+            armPreview({ kind: 'page', id: page.id, path: page.path }, e.currentTarget, 'detail')
+        }}
+        onPointerLeave={() => {
+          api?.onHover(page.id, false)
+          cancelGlance()
+        }}
       >
         <div ref={rowRef}>
           <Leaf
@@ -785,7 +794,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const ghostApi = useGhostAnchor({
     dwellMs: SIDEBAR_GHOST_DWELL_MS,
     graceMs: SIDEBAR_GHOST_GRACE_MS,
-    suppressed: () => useSession.getState().renamingPath !== null,
+    suppressed: () => useSession.getState().renamingPath !== null || glanceShown(),
   })
   const dndIndexRef = useRef(dndIndex)
   dndIndexRef.current = dndIndex
