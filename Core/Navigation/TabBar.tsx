@@ -233,6 +233,16 @@ function TabBarBody({
   )
 }
 
+// Plain hover on a page tab arms a detail preview; non-page tabs carry no id/path, so they raise nothing.
+const tabHoverProps = (entry: TabEntry) => ({
+  onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
+    const t = entry.tab.target
+    if (t.kind === 'page')
+      armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
+  },
+  onPointerLeave: () => cancelGlance(),
+})
+
 function PinnedTab({
   entry,
   active,
@@ -253,12 +263,7 @@ function PinnedTab({
       style={drag.style}
       {...drag.handle}
       data-tab-id={entry.tab.id}
-      onPointerEnter={(e) => {
-        const t = entry.tab.target
-        if (t.kind === 'page')
-          armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
-      }}
-      onPointerLeave={() => cancelGlance()}
+      {...tabHoverProps(entry)}
       className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
       title={entry.res.title}
       role="tab"
@@ -320,12 +325,7 @@ function UnpinnedTab({
       style={drag?.style}
       {...drag?.handle}
       data-tab-id={entry.tab.id}
-      onPointerEnter={(e) => {
-        const t = entry.tab.target
-        if (t.kind === 'page')
-          armPreview({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'detail')
-      }}
-      onPointerLeave={() => cancelGlance()}
+      {...tabHoverProps(entry)}
       className={cx(
         'tab',
         hoverRemoveHost,
