@@ -646,8 +646,8 @@ useEffect(() => {
   - [x] Task 7 — Nav views (pagesByIdOf resolve) · `c924dd6e4`
   - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` (Table+GlancePane) · `8496e2e16` (CardsView, landed once the parallel session's CardsView refactor was done) · current-view guard `ffffd3d17` · TabBar dedup `ab8a70e66`
 - [ ] **Phase 4** — Lock + pinned multi-pane
-  - [x] Task 9 — `glanceSlice.ts` pin store · `<commit9>`
-  - [x] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `<commit10>`
+  - [x] Task 9 — `glanceSlice.ts` pin store · `09d854d68`
+  - [x] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `50810690a`
 
 ### Rulings
 - Pinned panes are non-resizable, frozen at lock-time rect (v1) — surfaced for the eyeball; revisit for resizable pins.
