@@ -13,7 +13,6 @@ const onKey = (e: KeyboardEvent): void => {
     e.target.closest('input,textarea,[contenteditable],.cm-editor')
   )
     return
-  // A stale entry drains rather than eating the keypress — nothing was reverted, so the event stays available.
   while (stack.length) {
     const revert = stack.pop() as Revert
     if (revert()) {
@@ -35,7 +34,6 @@ export function pushValueUndo(revert: Revert): void {
   stack.push(revert)
 }
 
-/** A fan-out's reverts collapse into one entry, so the whole sweep walks back on a single ⌘Z. */
 export function groupValueUndo(run: () => void): void {
   const collected: Revert[] = []
   group = collected
