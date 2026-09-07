@@ -170,7 +170,7 @@ function PageWindowBody({
         className: 'page-window-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && <PropertyPanel page={target} panelStyle="filled" />}
+            {inspectorOpen && <PropertyPanel page={target} />}
           </div>
         ),
       }}
