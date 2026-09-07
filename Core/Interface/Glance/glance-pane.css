@@ -3,12 +3,33 @@
   position: relative;
 }
 
-/* The lock/unlock control rides the top-right corner, above the tile; reveal-on-hover keeps it out of the way at rest. */
+/* The lock/unlock control rides the top-right corner, above the tile, mirroring the sidebar's .row-lock: hidden at rest, revealed on card hover, and held visible (via .glance-lock-persist) once locked. */
 .glance-lock {
   position: absolute;
   top: 6px;
   right: 6px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--label-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
+}
+.glance-body:hover .glance-lock,
+.glance-lock.glance-lock-persist {
+  opacity: 1;
+  pointer-events: auto;
+}
+.glance-lock:hover {
+  background: var(--state-hover);
 }
 
 /* The shield sits above the web guest in stacking order, so pointer events land on the host pane until `.is-lifted` fades it away to reveal the site. */
