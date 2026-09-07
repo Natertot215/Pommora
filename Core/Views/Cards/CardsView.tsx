@@ -727,19 +727,20 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           ? propertyIcon(e.def)
                           : (propertyTypeIconName(e.type) ?? 'square-dashed'),
                         revealOnly: e.revealOnly,
-                        target:
-                          e.revealOnly ||
-                          (e.type !== 'select' &&
-                            e.type !== 'status' &&
-                            e.type !== 'multi_select' &&
-                            e.type !== 'context')
-                            ? null
-                            : pickTargetFor(addPicker.rowId, addColumn(e.id, tree), 'options'),
+                        drillable:
+                          !e.revealOnly &&
+                          (e.type === 'select' ||
+                            e.type === 'status' ||
+                            e.type === 'multi_select' ||
+                            e.type === 'context'),
                       }),
                     )
                   : undefined
               }
               chooserInitial={addPicker?.initialEntry?.id}
+              resolveTarget={(e) =>
+                addPicker ? pickTargetFor(addPicker.rowId, addColumn(e.id, tree), 'options') : null
+              }
               open={valuePopup !== null || addPicker !== null}
               triggerRef={pickerAnchorRef}
               anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}

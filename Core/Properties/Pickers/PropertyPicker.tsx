@@ -29,7 +29,7 @@ export type PickEntry = {
   name: string
   icon: string
   revealOnly: boolean
-  target: PickTarget | null
+  drillable: boolean
 }
 
 /** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values. Groups are containers, never pickable chips. */
@@ -71,6 +71,7 @@ export function PropertyPicker({
   onCommit,
   onReveal,
   onDismiss,
+  resolveTarget,
   def,
   current,
   look,
@@ -85,6 +86,7 @@ export function PropertyPicker({
   onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
   onDismiss: () => void
+  resolveTarget?: (entry: PickEntry) => PickTarget | null
   def?: PropertyDefinition
   current?: PropertyValue | null
   look?: ColumnLook
@@ -92,16 +94,18 @@ export function PropertyPicker({
 }): React.JSX.Element | null {
   const held = useHeld(target ?? null, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset only on open / pre-drill change; a fresh `chooser` array each render must not re-fire this and eject an in-flight drill.
   useEffect(() => {
     setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
-  }, [open, chooser, chooserInitial])
+  }, [open, chooserInitial])
 
-  const t =
-    picked?.target ??
-    held ??
-    (def
-      ? ({ kind: 'options', def, current: current ?? null, look, contextOptions } as const)
-      : null)
+  // A drilled entry resolves its target LIVE through resolveTarget, so toggling a multi-value option keeps reading the row after the first commit reveals (and so filters) the entry.
+  const t = picked
+    ? (resolveTarget?.(picked) ?? null)
+    : (held ??
+      (def
+        ? ({ kind: 'options', def, current: current ?? null, look, contextOptions } as const)
+        : null))
   const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
 
   const origin = t?.kind !== 'options' ? 'auto' : anchorX !== undefined ? 'center' : 'right'
@@ -172,7 +176,7 @@ export function PropertyPicker({
                     leading={<Icon name={e.icon} size="body" />}
                     trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
                     onClick={() => {
-                      if (e.target) return setPicked(e)
+                      if (e.drillable) return setPicked(e)
                       onReveal?.(e)
                       if (e.revealOnly) onDismiss()
                     }}
