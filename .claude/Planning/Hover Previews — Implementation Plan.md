@@ -362,8 +362,8 @@ onPointerLeave={() => cancelGlance()}
 ```
 
 **Verify — automated**
-- [ ] `npm run typecheck` green. `rg -F 'armPreview' Core/Navigation/TabBar.tsx` → ≥1.
-- [ ] Degenerate: a non-page tab target arms nothing.
+- [x] `npm run typecheck` green. `rg -F 'armPreview' Core/Navigation/TabBar.tsx` → 3 (≥1).
+- [x] Degenerate guaranteed by the `t.kind === 'page'` narrow on both tab components (diff-visible; a homepage/context/space/collection/set target never calls `armPreview`). No TabBar hover unit harness exists.
 
 **Verify — user**
 - [ ] Page tab → preview; non-page tab → nothing. *(Carries.)*
@@ -642,7 +642,7 @@ useEffect(() => {
   - [x] Task 4 — `detail`/`views` dwell values · `d7a88b66a`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
   - [x] Task 5 — Sidebar (Shift) · `<glance-t5-commit>`
-  - [ ] Task 6 — Tabs · `<commit>`
+  - [x] Task 6 — Tabs · `<glance-t6-commit>`
   - [ ] Task 7 — Nav views (pagesByIdOf resolve) · `<commit>`
   - [ ] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `<commit>`
 - [ ] **Phase 4** — Lock + pinned multi-pane
