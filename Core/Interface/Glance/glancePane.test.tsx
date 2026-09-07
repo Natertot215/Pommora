@@ -2,8 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { MENU_GAP } from '@pommora/uix/Menus/menu-anchor'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
 import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
+import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
@@ -49,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => closeGlance())
+  act(() => useSession.getState().resetGlance())
   act(() => root.unmount())
   host.remove()
   dropPageDetail(page.path)
@@ -66,7 +70,7 @@ const link = (): HTMLElement => {
 }
 const paneOpen = (): boolean => document.querySelector('[data-picker-portal]') !== null
 const flush = async (): Promise<void> => await act(async () => {})
-const present = (el: Element, target = page): void => {
+const present = (el: Element, target: GlanceTarget = page): void => {
   vi.useFakeTimers()
   try {
     act(() => {
@@ -299,6 +303,139 @@ describe('focus on close', () => {
     pressInside()
     closeByEscape()
     expect(document.activeElement).toBe(document.body)
+  })
+})
+
+describe('pinned panes (Task 10)', () => {
+  const pinTarget = { kind: 'page', id: page.id, path: page.path } as const
+  const addPin = (over: Record<string, unknown> = {}): string => {
+    act(() =>
+      useSession.getState().pinGlance({
+        tabId: 'tab-1',
+        target: pinTarget,
+        anchorX: 200,
+        anchorY: 100,
+        anchorHeight: 16,
+        size: { w: 260, h: 120 },
+        ...over,
+      }),
+    )
+    const pins = useSession.getState().pinnedGlances
+    return pins[pins.length - 1].pinId
+  }
+  const bodies = (): number => document.querySelectorAll('[data-glance]').length
+  const pinCount = (): number => useSession.getState().pinnedGlances.length
+  const pressEscape = (): void =>
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+    })
+
+  it('renders at its frozen anchor under the portal, not the inline branch', () => {
+    addPin({ anchorX: 200, anchorY: 100, anchorHeight: 16 })
+    const layer = document.querySelector('[data-picker-portal]') as HTMLElement
+    expect(layer).not.toBeNull()
+    expect(layer.style.left).toBe('200px')
+    expect(layer.style.top).toBe(`${100 + 16 + MENU_GAP}px`)
+    expect(layer.style.transform).toContain('translateX(-50%)')
+  })
+
+  it('survives a navigation that dismisses the live pane (control)', () => {
+    present(link())
+    addPin()
+    expect(bodies()).toBe(2)
+    vi.useFakeTimers()
+    try {
+      act(() =>
+        useSession.setState({ selection: { kind: 'page', id: 'other', path: 'Notes/Other.md' } }),
+      )
+      act(() => vi.advanceTimersByTime(500))
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(bodies()).toBe(1)
+    expect(pinCount()).toBe(1)
+  })
+
+  it('a tab switch unmounts its pins, and returning remounts them', () => {
+    addPin()
+    expect(bodies()).toBe(1)
+    act(() => useSession.setState({ activeTabId: 'tab-2' }))
+    expect(bodies()).toBe(0)
+    act(() => useSession.setState({ activeTabId: 'tab-1' }))
+    expect(bodies()).toBe(1)
+  })
+
+  it('shows the lock on a page live card', () => {
+    present(link())
+    expect(document.querySelector('.glance-lock')).not.toBeNull()
+  })
+
+  it('shows no lock on a website live card', () => {
+    present(link(), { kind: 'site', url: 'https://example.com' })
+    expect(paneOpen()).toBe(true)
+    expect(document.querySelector('.glance-lock')).toBeNull()
+  })
+
+  it('locking a live page appends a pin, holds focus, and dismisses the live pane', () => {
+    present(link())
+    const lock = document.querySelector('.glance-lock') as HTMLElement
+    expect(lock).not.toBeNull()
+    const md = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    act(() => {
+      lock.dispatchEvent(md)
+    })
+    expect(md.defaultPrevented).toBe(true)
+    vi.useFakeTimers()
+    try {
+      act(() => lock.click())
+      act(() => vi.advanceTimersByTime(500))
+    } finally {
+      vi.useRealTimers()
+    }
+    const pins = useSession.getState().pinnedGlances
+    expect(pins).toHaveLength(1)
+    expect(pins[0].tabId).toBe('tab-1')
+    expect(pins[0].target).toEqual({ kind: 'page', id: page.id, path: page.path })
+    expect(bodies()).toBe(1)
+  })
+
+  it('Esc closes the newest active-tab pin when no live pane shows', () => {
+    addPin()
+    addPin({ anchorX: 300 })
+    expect(pinCount()).toBe(2)
+    pressEscape()
+    expect(pinCount()).toBe(1)
+  })
+
+  it('Esc bails while a live pane is shown, leaving pins untouched', () => {
+    present(link())
+    addPin()
+    pressEscape()
+    expect(pinCount()).toBe(1)
+  })
+
+  it('unpins instantly with no unmount-while-open warning; a plain menu still warns', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const warned = (): boolean =>
+      spy.mock.calls.flat().some((a) => typeof a === 'string' && a.includes('unmounted while open'))
+    const pinId = addPin()
+    act(() => useSession.getState().unpinGlance(pinId))
+    expect(warned()).toBe(false)
+
+    const ctlHost = document.createElement('div')
+    document.body.appendChild(ctlHost)
+    const ctlRoot = createRoot(ctlHost)
+    act(() =>
+      ctlRoot.render(
+        <PickerMenu open modal={false}>
+          x
+        </PickerMenu>,
+      ),
+    )
+    act(() => ctlRoot.unmount())
+    expect(warned()).toBe(true)
+    ctlHost.remove()
+    spy.mockRestore()
   })
 })
 

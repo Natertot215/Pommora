@@ -3,6 +3,14 @@
   position: relative;
 }
 
+/* The lock/unlock control rides the top-right corner, above the tile; reveal-on-hover keeps it out of the way at rest. */
+.glance-lock {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+}
+
 /* The shield sits above the web guest in stacking order, so pointer events land on the host pane until `.is-lifted` fades it away to reveal the site. */
 .glance-web,
 .glance-web-shield {

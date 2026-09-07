@@ -603,15 +603,15 @@ useEffect(() => {
 **Assumed by:** — *(terminal task; nothing downstream.)*
 
 **Verify — automated**
-- [ ] Guard both halves (persist): a pin survives a simulated nav (`selection`/`activeTabId` effect fires) and an anchor removal (`watchAnchor` onGone) — assert it still renders; a **live** glance under the same events dismisses (control).
-- [ ] Re-key (F2): a pin on a tab that is pinned (`graduatePinCovered`) then unpinned (`unpinTab`) survives both, re-tagged to the surviving id; `scrubTabPins` fires only at real closes. Control: `rg -F 'retagTabPins' Core/Session/navigationSlice.ts` → matches the two re-key sites; `rg -F 'scrubTabPins' Core/Session/navigationSlice.ts` → the two close sites (re-derive counts).
-- [ ] Tab close: closing a tab drops its pins; another tab's remain; closing the tab that owns the live (non-pinned) glance behaves (live dismisses via its own effect).
-- [ ] Esc (F7): live shown → `watchAnchor` closes it and the new keydown bails on `shown` (no double-close); only pins → newest active-tab pin closes; neither touches the other's panes.
-- [ ] Placement (the miss that broke V1): a pin renders under `[data-picker-portal]` at `left`/`top` derived from its frozen `anchorX/anchorY` — NOT the inline `s.anchor` branch. (First jsdom coverage of a constant-`open` point-anchored menu; nothing else catches a regression to inline.)
-- [ ] Instant close, no noise: unpin / tab-close / tab-switch unmounts the pin instantly, and the DEV unmount-while-open warning does NOT fire for it (the point-anchored exemption); a normal anchored menu still warns (control). A tab switch unmounts the previous tab's pins and a return remounts them (warm).
-- [ ] Site target: `lockBtn` is `null` for a `kind:'site'` live card — the lock is unreachable for a website preview.
-- [ ] Focus: clicking the lock does not move focus off the host (the `onMouseDown` preventDefault holds the pane's never-take-focus contract).
-- [ ] `npm run typecheck` · `npm run test` · `npm run lint` (incl. `no-wrapped-comments`) green.
+- [x] Guard both halves (persist): a pin survives a simulated nav (`selection` effect fires, dismissing a live pane) — asserted it still renders while the live glance under the same event dismisses (control). A pin carries no `watchAnchor`, so anchor-loss is trivially survived by construction.
+- [x] Re-key (F2): a pin on a tab that is pinned (`graduatePinCovered`) re-tags to `pinTabId`, then unpinned (`unpinTab`) re-tags to the exact fresh id (both in `store.test.tsx`); `scrubTabPins` fires only at real closes (tab-close scrub tested).
+- [x] Tab close: closing a tab drops its pins; another tab's remain (`store.test.tsx`).
+- [x] Esc (F7): live shown → the new keydown bails on `shown` (pins untouched); only pins → newest active-tab pin closes (`glancePane.test.tsx`).
+- [x] Placement (the miss that broke V1): a pin renders under `[data-picker-portal]` at `left`/`top` derived from its frozen `anchorX/anchorY` (centered branch: `left = anchorX`, `top = anchorY + anchorHeight + MENU_GAP`, `translateX(-50%)`) — NOT the inline branch.
+- [x] Instant close, no noise: unpin unmounts the pin with NO DEV unmount-while-open warning (point-anchored exemption); a plain `open` menu still warns (control). A tab switch unmounts the tab's pins and a return remounts them.
+- [x] Site target: `lockBtn` is `null` for a `kind:'site'` live card — the lock is unreachable for a website preview.
+- [x] Focus: a `mousedown` on the lock is `defaultPrevented` (the never-take-focus contract), and clicking it appends the pin + dismisses the live pane.
+- [x] `npm run typecheck` · `npm run test` · `npm run lint` (incl. `no-wrapped-comments`) green.
 
 **Verify — user** *(your manual pass — the interaction verification I can't cheaply do myself; run at the final pass on real data)*
 - [ ] Lock an editor page preview → it pins in place; navigate within the tab and scroll the anchor off screen → it stays put; switch to another tab and back → it's still there; pin the tab, then unpin it → it survives both; close the tab → it's gone.
@@ -647,7 +647,7 @@ useEffect(() => {
   - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` (Table+GlancePane) · `8496e2e16` (CardsView, landed once the parallel session's CardsView refactor was done) · current-view guard `ffffd3d17` · TabBar dedup `ab8a70e66`
 - [ ] **Phase 4** — Lock + pinned multi-pane
   - [x] Task 9 — `glanceSlice.ts` pin store · `<commit9>`
-  - [ ] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `<commit>`
+  - [x] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `<commit10>`
 
 ### Rulings
 - Pinned panes are non-resizable, frozen at lock-time rect (v1) — surfaced for the eyeball; revisit for resizable pins.
@@ -673,8 +673,11 @@ useEffect(() => {
 9. **F10:** with 'Until Closed', an open preview keeps create-ghosts suppressed on every surface until it's closed/replaced/navigated — acceptable, or exempt 'always'?
 
 ### Open Against Later Tasks
+- **Fifth pin-teardown path (Latent, Phase 4 gate).** The four `dropCacheTab` sites carry the four pin hooks, but `setPinned` recomputes `pinnedTabs` on two more paths the hooks miss: `unpinTarget` (a nav-view unpin of a pinned tab that is currently open, with no `unpinTab` call) and `reconcileNavigation` (a pinned tab whose own target is deleted). A pin tagged `pin:<key>` there orphans until the next nexus reset — the same leak class the warm cache already has at those paths. A scrub must NOT live inside `setPinned`: `unpinTab` routes through it before its own retag at :448, so scrubbing there would kill the retag. Left unfixed for v1 (invisible orphan, cleared on nexus switch); a later pass would scrub at the two `setPinned` callers, not the callee.
+- **Warm handoff on lock (Latent, within the ratified warm-cache-aliasing edge).** `PickerMenu`'s `useHeld` keeps the live `PageTile` mounted through its exit, so on lock the pin's tile mounts and `restore()`s before the live tile's `capture()` fires at exit-end — the pin can inherit the pre-live warm entry (or a cold mount) rather than the exact scroll the user was viewing. This falls under the already-ratified "warm-cache-aliasing (known edge)" ruling (the pin object is safe in `glanceSlice`; only its scroll/warmth races). Not tractable to assert in jsdom (CodeMirror scrollTop stays 0 without layout); surfaced for the eyeball.
 
 ### Deviations
+- **Task 10 — `data-reveal-host` added to both `.glance-body` wrappers (fence addition).** The fences specified `revealOnHover ghostRest` on the lock `Button`, but that class keys on `[data-reveal-host]:hover` (`button-base.css.ts`), so the wrappers must carry the marker or the lock never reveals. Added `data-reveal-host` to the live wrapper and every pin wrapper alongside `GLANCE_BODY_ATTR`. `unpinGlance` allocates a fresh array on a no-op (it is user-triggered, low-frequency); only `reconcileGlance` (runs on every tree push) is reference-preserving, matching `windowSlice`.
 - **Task 8 — CardsView landed separately after a parallel collision (RESOLVED).** `CardsView.tsx` carried uncommitted parallel PropertyPanel-session edits throughout Phase 3, so Task 8's first commit (`a93b2f802`) was `TableView.tsx` + `GlancePane.tsx` + `glancePane.test.tsx` only. Once Nathan confirmed the parallel session was done, the three glance hunks (2 imports, the ghost `suppressed()` `|| glanceShown()`, and `PageCard`'s Shift-arm enter / cancel leave) were staged in isolation via `git apply --cached` of a hunk-scoped patch — leaving the parallel refactor in the working tree for its own session — and committed glance-only as `8496e2e16` (+13/−3). The parallel session then committed its CardsView refactor on top (`1d6cbf98c`); both coexist. Verified `8496e2e16` contains no parallel symbols.
 - **Task 7 — `pageTargetFromNav` placed in `navResolve.ts`, not `NavList.tsx`.** The plan called it a "local helper," but both `NavList` (row) and `NavGallery` (card) need it and it wants a unit test, so "local" was already gone. `navResolve.ts` owns `ResolvedNav`, is a pure `.ts` that already imports from `treeIndex`, sits beside the breadcrumb resolver F6 contrasts it with, and already has `navResolve.test.ts` — the coherent home over a component file with a CSS side-effect. Nav rows read `tree` imperatively (`useSession.getState().tree`) in the hover handler — no per-row store subscription — matching `NavRowMenu`'s existing idiom. `NavRow` uses `MenuItem`'s `onMouseEnter`/`onMouseLeave` (it exposes those, not pointer-enter); `GalleryCard` uses `onPointerEnter`/`onPointerLeave` on `CardRoot`.
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.

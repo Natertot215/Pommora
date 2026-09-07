@@ -118,7 +118,8 @@ export function PickerMenu({
   liveRef.current = open === true || closing
   useEffect(
     () => () => {
-      if (import.meta.env.DEV && liveRef.current)
+      // Point-anchored menus (a pinned glance) close by design through an instant unmount — no Bloom-out to skip, so the guard would be a false positive.
+      if (import.meta.env.DEV && liveRef.current && anchorX === undefined)
         console.error(
           '[PickerMenu] unmounted while open/exiting — Bloom-out skipped. Mount persistently and ride `open`.',
         )

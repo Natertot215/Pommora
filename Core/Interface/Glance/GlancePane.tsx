@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
 import { PickerMenu, type PickerDirection } from '@pommora/uix/Pickers/picker-base'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
@@ -36,6 +37,7 @@ const GLANCE_WARM_CAP = 10
 const GLANCE_ANCESTORS = ['glance'] as const
 const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
 const EDGES_UP: readonly ResizeEdge[] = ['e', 'w', 'n', 'ne', 'nw']
+const NOOP = (): void => {}
 
 const clampSize = (s: GlanceSize): GlanceSize => ({
   w: Math.max(GLANCE_MIN.w, Math.round(s.w)),
@@ -326,72 +328,173 @@ export function GlancePane(): React.JSX.Element {
     [page?.id, page?.path],
   )
 
+  const pinnedGlances = useSession((s) => s.pinnedGlances)
+  const pinGlance = useSession((s) => s.pinGlance)
+  const unpinGlance = useSession((s) => s.unpinGlance)
+
+  // The tile render and the fold toggle are pure, so the live pane and every pin share them; the live path keeps its own warmSeam memo (no fresh seam per render).
+  const renderPageTile = (
+    t: { id: string; path: string },
+    seam: WarmSeam | undefined,
+  ): React.JSX.Element => (
+    <PageTile
+      key={t.path}
+      path={t.path}
+      editing={false}
+      onBeginEdit={NOOP}
+      locked
+      connections={resolveOnly}
+      warm={seam}
+      ancestors={GLANCE_ANCESTORS}
+    />
+  )
+  const onFoldClick = (e: React.MouseEvent): void => {
+    if (window.getSelection()?.isCollapsed === false) return
+    const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
+    const editor = line?.closest('.cm-editor')
+    const view = editor && EditorView.findFromDOM(editor as HTMLElement)
+    if (line && view) toggleFoldAt(view, view.posAtDOM(line))
+  }
+
+  // Freeze the ANCHOR POINT (not the pane corner — PickerMenu re-adds gap/origin and re-derives direction) plus the live box size, then dismiss the live pane; the pin renders itself from pinnedGlances.
+  const onLock = (): void => {
+    if (!page || !shown) return
+    const a = shown.el.getBoundingClientRect()
+    pinGlance({
+      tabId: activeTabId,
+      target: page,
+      anchorX: a.left + a.width / 2,
+      anchorY: a.top,
+      anchorHeight: a.height,
+      size: box,
+    })
+    dismiss()
+  }
+  // The preventDefault holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
+  const lockBtn = page && (
+    <Button
+      icon="lock-open"
+      revealOnHover
+      ghostRest
+      aria-label="Lock preview"
+      className="glance-lock"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onLock}
+    />
+  )
+  const unlockBtn = (pinId: string): React.JSX.Element => (
+    <Button
+      icon="locked"
+      revealOnHover
+      ghostRest
+      aria-label="Unlock preview"
+      className="glance-lock"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => unpinGlance(pinId)}
+    />
+  )
+
+  // Esc closes the newest active-tab pin; bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || e.defaultPrevented || shown) return
+      const newest = pinnedGlances.filter((p) => p.tabId === activeTabId).at(-1)
+      if (newest) {
+        e.preventDefault()
+        unpinGlance(newest.pinId)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [shown, pinnedGlances, activeTabId, unpinGlance])
+
   return (
-    <PickerMenu
-      glass="window"
-      open={shown !== null}
-      triggerRef={anchorRef}
-      manageFocus={false}
-      modal={false}
-      origin="center"
-      onDirection={setDir}
-    >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
-      <div
-        ref={cardRef}
-        {...{ [GLANCE_BODY_ATTR]: '' }}
-        className="glance-body"
-        style={{ width: box.w, height: box.h }}
-        onMouseDownCapture={(e) => {
-          if (e.button !== 0) return
-          selectingRef.current = true
-          if (!cardRef.current?.contains(document.activeElement))
-            focusBefore.current = document.activeElement
-        }}
-        // A press on an existing highlight would otherwise start a native drag whose drop lands the text in the live host page.
-        onDragStartCapture={(e) => e.preventDefault()}
-        onClick={(e) => {
-          if (window.getSelection()?.isCollapsed === false) return
-          const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
-          const editor = line?.closest('.cm-editor')
-          const view = editor && EditorView.findFromDOM(editor as HTMLElement)
-          if (line && view) toggleFoldAt(view, view.posAtDOM(line))
-        }}
+    <>
+      <PickerMenu
+        glass="window"
+        open={shown !== null}
+        triggerRef={anchorRef}
+        manageFocus={false}
+        modal={false}
+        origin="center"
+        onDirection={setDir}
       >
-        {page && (
-          <PageTile
-            key={page.path}
-            path={page.path}
-            editing={false}
-            onBeginEdit={() => {}}
-            locked
-            connections={resolveOnly}
-            warm={warmSeam}
-            ancestors={GLANCE_ANCESTORS}
-          />
-        )}
-        {held?.target.kind === 'site' && (
-          <>
-            <webview
-              key={held.target.url}
-              ref={attachSiteEl}
-              src={held.target.url}
-              partition={WEB_PARTITION}
-              className="glance-web"
-            />
-            {/* The shield is the loading face and the pointer owner: always above the guest so the leave lifecycle keeps running over it, and passing only the wheel down. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
+        <div
+          ref={cardRef}
+          {...{ [GLANCE_BODY_ATTR]: '' }}
+          data-reveal-host
+          className="glance-body"
+          style={{ width: box.w, height: box.h }}
+          onMouseDownCapture={(e) => {
+            if (e.button !== 0) return
+            selectingRef.current = true
+            if (!cardRef.current?.contains(document.activeElement))
+              focusBefore.current = document.activeElement
+          }}
+          // A press on an existing highlight would otherwise start a native drag whose drop lands the text in the live host page.
+          onDragStartCapture={(e) => e.preventDefault()}
+          onClick={onFoldClick}
+        >
+          {page && renderPageTile(page, warmSeam)}
+          {held?.target.kind === 'site' && (
+            <>
+              <webview
+                key={held.target.url}
+                ref={attachSiteEl}
+                src={held.target.url}
+                partition={WEB_PARTITION}
+                className="glance-web"
+              />
+              {/* The shield is the loading face and the pointer owner: always above the guest so the leave lifecycle keeps running over it, and passing only the wheel down. */}
+              <div
+                className={`glance-web-shield${siteReady ? ' is-lifted' : ''}`}
+                onWheel={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  scrollGuest(
+                    siteEl,
+                    e.clientX - rect.left,
+                    e.clientY - rect.top,
+                    e.deltaX,
+                    e.deltaY,
+                  )
+                }}
+              />
+            </>
+          )}
+          {lockBtn}
+        </div>
+        {frame.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
+      </PickerMenu>
+      {pinnedGlances
+        .filter((p) => p.tabId === activeTabId)
+        .map((p) => (
+          <PickerMenu
+            key={p.pinId}
+            glass="window"
+            open
+            anchorX={p.anchorX}
+            anchorY={p.anchorY}
+            anchorHeight={p.anchorHeight}
+            manageFocus={false}
+            modal={false}
+            origin="center"
+          >
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
             <div
-              className={`glance-web-shield${siteReady ? ' is-lifted' : ''}`}
-              onWheel={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                scrollGuest(siteEl, e.clientX - rect.left, e.clientY - rect.top, e.deltaX, e.deltaY)
-              }}
-            />
-          </>
-        )}
-      </div>
-      {frame.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
-    </PickerMenu>
+              {...{ [GLANCE_BODY_ATTR]: '' }}
+              data-reveal-host
+              className="glance-body"
+              style={{ width: p.size.w, height: p.size.h }}
+              onClick={onFoldClick}
+            >
+              {renderPageTile(p.target, glanceWarmSeam(p.target.id, p.target.path))}
+              {unlockBtn(p.pinId)}
+            </div>
+          </PickerMenu>
+        ))}
+    </>
   )
 }
