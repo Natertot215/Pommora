@@ -457,20 +457,20 @@ describe('pinned panes (Task 10)', () => {
     }
   })
 
-  it('Esc closes the newest unlocked active-tab pin, leaving locked ones', () => {
-    const locked = addPin()
-    const open = addPin({ anchorX: 300 })
-    act(() => useSession.getState().setPinLocked(open, false))
+  it('Esc closes the newest active-tab pin, older ones survive', () => {
+    const older = addPin()
+    const newer = addPin({ anchorX: 300 })
+    act(() => useSession.getState().setPinLocked(newer, false))
     expect(pinCount()).toBe(2)
     escapeAndSettle()
     expect(pinCount()).toBe(1)
-    expect(useSession.getState().pinnedGlances[0].pinId).toBe(locked)
+    expect(useSession.getState().pinnedGlances[0].pinId).toBe(older)
   })
 
-  it('Esc leaves a locked pin standing', () => {
+  it('Esc closes a lone locked pin too — R9, Esc is the universal escape hatch', () => {
     addPin()
     escapeAndSettle()
-    expect(pinCount()).toBe(1)
+    expect(pinCount()).toBe(0)
   })
 
   it('Esc bails while a live pane is shown, leaving pins untouched', () => {
