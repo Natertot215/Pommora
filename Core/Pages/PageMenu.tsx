@@ -14,7 +14,7 @@ import {
 } from '@pommora/uix/Menus'
 import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { PagePropertyRows } from '../Properties/Page/PagePropertyRows'
+import { PropertyPanel } from '../Properties/PropertyPanel'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { pageLinkText, pageMetaMenuSubset } from '@pommora/core/Actions/pageMenu'
@@ -103,7 +103,7 @@ export function PageMenu(): React.JSX.Element | null {
           open={pane !== 'root'}
           root={root}
           detail={
-            <PagePropertyRows variant="page" page={pageDetail} onBack={() => setPane('root')} />
+            <PropertyPanel page={pageDetail} panelStyle="filled" onBack={() => setPane('root')} />
           }
           minWidth={225}
           minHeight={245}
