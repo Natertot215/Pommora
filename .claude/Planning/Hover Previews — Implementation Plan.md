@@ -622,11 +622,11 @@ useEffect(() => {
 
 #### Gate 4 — lock and persistence
 
-- [ ] Gates green. Every Phase 4 automated box ticked against watched results.
-- [ ] Only `glanceSlice.ts` is new; no new components — confirm with `git status`. (InterfacePM untouched — Nathan's.)
-- [ ] Simplification → review over `<base>..HEAD` (glanceSlice, Glance, navigationSlice); concerns fixed or ruled.
-- [ ] Refactor baseline (Task 10 step 1) held: no live-glance behavior moved.
-- [ ] Not a declared stop; carries to Completion Criteria (Phase 3 was the stop).
+- [x] Gates green (typecheck 0 · test 0, 4104+ passed · lint 0).
+- [x] Only `glanceSlice.ts` is new; no new components (confirmed `git status`). InterfacePM untouched. One sanctioned UIX line: the picker-base point-anchored guard exemption.
+- [x] Simplify (supervisor inline read: glanceSlice + pin machinery clean, no cuts) → attack (build-breaking-agent): 0 High · 0 Medium · **1 Low** + 2 ratified edges + 11 kills. Fable advisor gate: the Low (pin orphans when a nav-pinned tab's derived id vanishes) FOLDED — R8-required and one producer crosses the sync/`nav.json` boundary; the scary "revive on wrong page" variant killed (navKey is id-based). Fixed at the `setPinned` choke point + `unpinTab` retag-first reorder (`fdb57567d`), with three regression tests.
+- [x] Refactor baseline (Task 10 step 1) held: no live-glance behavior moved (attack confirmed the live path keeps its `warmSeam` memo; `renderPageTile`/`onFoldClick` are pure).
+- [x] Not a declared stop; carries to Completion Criteria (Phase 3 was the stop).
 
 ---
 
@@ -645,9 +645,9 @@ useEffect(() => {
   - [x] Task 6 — Tabs · `530899fb5`
   - [x] Task 7 — Nav views (pagesByIdOf resolve) · `c924dd6e4`
   - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` (Table+GlancePane) · `8496e2e16` (CardsView, landed once the parallel session's CardsView refactor was done) · current-view guard `ffffd3d17` · TabBar dedup `ab8a70e66`
-- [ ] **Phase 4** — Lock + pinned multi-pane
+- [x] **Phase 4** — Lock + pinned multi-pane · attack 0H/0M/1L, the Low folded (`fdb57567d`)
   - [x] Task 9 — `glanceSlice.ts` pin store · `09d854d68`
-  - [x] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `50810690a`
+  - [x] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `50810690a` · hashes backfilled `ec2cea4d2` · orphan-scrub fold `fdb57567d`
 
 ### Rulings
 - Pinned panes are non-resizable, frozen at lock-time rect (v1) — surfaced for the eyeball; revisit for resizable pins.
@@ -657,8 +657,8 @@ useEffect(() => {
 - **Pin key (F3):** pins are a list keyed by minted `pinId`, tagged with `tabId` — multiple per tab and the same page across tabs both work.
 - **Exit = removal (ratified):** unlock, Esc, and tab-close all just remove the pin from `pinnedGlances`; its `PickerMenu` (constant `open`, for correct anchor placement) unmounts instantly. No `.closing`, no `onExited`, no ghost/two-phase — the close is not animated, by choice, and the point-anchored guard-exemption keeps that silent.
 - **Frozen anchor on window resize (known edge):** a pin freezes a viewport-space `anchorY` and PickerMenu applies no vertical clamp, so a pin locked in the lower band can fall partly off-screen if the window is later shrunk. Recoverable (Esc/tab-close still remove it). Named here against the v1 frozen-rect ruling; no machinery.
-- **Warm-cache aliasing (known edge):** the pin's editor *state* rides the id-keyed warm cache (`glanceWarmSeam`), so the same page pinned in two tabs shares one warm entry — scroll can race on tab-switch, and a pin's editor state (not the pin) can be evicted past `GLANCE_WARM_CAP=10` warm glances. The pin *object* is safe in `glanceSlice`; only its scroll/warmth is affected. Accepted; revisit only if it reads wrong at the eyeball.
-- **retag ≠ drop (divergence flag):** the warm cache is *dropped* on tab re-key at all four sites; pins must *survive* re-key (R8), so `retagTabPins` is deliberately NOT `dropCacheTab`. A later "reuse" pass must not collapse them.
+- **Warm-cache aliasing (known edge):** the pin's editor *state* rides the id-keyed warm cache (`glanceWarmSeam`), so the same page pinned in two tabs shares one warm entry — scroll can race on tab-switch, and a pin's editor state (not the pin) can be evicted past `GLANCE_WARM_CAP=10` warm glances. The pin *object* is safe in `glanceSlice`; only its scroll/warmth is affected. Refined by the Phase 4 attack: the pin's `restore()` runs during render while the live pane's `capture()` runs in a commit-phase effect cleanup, so **the first lock of a page always opens the pin at scroll top** (never blank/wrong content — `PageTile` seeds body synchronously from `readPageDetail`, fenced against stale warm docs). Tab-away-and-back then preserves scroll. Accepted; on the eyeball list.
+- **retag ≠ drop (divergence flag):** the warm cache is *dropped* on tab re-key at all four sites; pins must *survive* re-key (R8), so `retagTabPins` is deliberately NOT `dropCacheTab`. A later "reuse" pass must not collapse them. Extended (Phase 4 attack fold): `setPinned` is the derived-tab close — when a `pin:` id vanishes there (nav-unpin, deleted target, external nav change) its glance pins ARE scrubbed, the pinned-tab analog of `closeTab`. `unpinTab` is the one path a `pin:` id must survive, so it retags **before** it reaches `setPinned`; a reorder there is load-bearing and must not be undone.
 - **Current-view guard (Nathan, mid-Phase-3):** a preview never resolves for the location already in the active view. Placed at the presenter (fire time) reading the live `selection`, so it does double duty — hovering the current page's tab/row raises nothing, AND a dwell that fires after a click navigates onto that page voids itself ("2 solves 1"). `selection` is the **main content pane's** target; a page shown only in a split/secondary pane is not covered (flagged for the eyeball). One guard, `ffffd3d17`.
 
 **Phase 3 eyeball list (the declared stop):**
@@ -673,7 +673,7 @@ useEffect(() => {
 9. **F10:** with 'Until Closed', an open preview keeps create-ghosts suppressed on every surface until it's closed/replaced/navigated — acceptable, or exempt 'always'?
 
 ### Open Against Later Tasks
-- **Fifth pin-teardown path (Latent, Phase 4 gate).** The four `dropCacheTab` sites carry the four pin hooks, but `setPinned` recomputes `pinnedTabs` on two more paths the hooks miss: `unpinTarget` (a nav-view unpin of a pinned tab that is currently open, with no `unpinTab` call) and `reconcileNavigation` (a pinned tab whose own target is deleted). A pin tagged `pin:<key>` there orphans until the next nexus reset — the same leak class the warm cache already has at those paths. A scrub must NOT live inside `setPinned`: `unpinTab` routes through it before its own retag at :448, so scrubbing there would kill the retag. Left unfixed for v1 (invisible orphan, cleared on nexus switch); a later pass would scrub at the two `setPinned` callers, not the callee.
+- **Fifth pin-teardown path (Latent, Phase 4 gate) — RESOLVED (`fdb57567d`).** `setPinned` recomputed `pinnedTabs` on three paths the four `dropCacheTab` hooks missed: `unpinTarget` (nav-list unpin), `reconcileNavigation` (a pinned tab whose target is deleted, via `setPinned` at :661), and `applyNavChanged` (an external `nav.json`/sync change). A pin tagged `pin:<key>` orphaned there until the next nexus reset. The Phase 4 attack confirmed it Low (navKey is id-based, so revival is same-page-only, never wrong-page) and the Fable gate folded it: since all three route through `setPinned`, one scrub of any vanishing `pin:` id lives there — the pinned-tab analog of `closeTab`. The one path a `pin:` id must survive (`unpinTab`) retags *before* it reaches `setPinned`. Three regression tests: nav-list unpin scrubs, `pinTarget` scrubs nothing, `unpinTab` still migrates.
 - **Warm handoff on lock (Latent, within the ratified warm-cache-aliasing edge).** `PickerMenu`'s `useHeld` keeps the live `PageTile` mounted through its exit, so on lock the pin's tile mounts and `restore()`s before the live tile's `capture()` fires at exit-end — the pin can inherit the pre-live warm entry (or a cold mount) rather than the exact scroll the user was viewing. This falls under the already-ratified "warm-cache-aliasing (known edge)" ruling (the pin object is safe in `glanceSlice`; only its scroll/warmth races). Not tractable to assert in jsdom (CodeMirror scrollTop stays 0 without layout); surfaced for the eyeball.
 
 ### Deviations
