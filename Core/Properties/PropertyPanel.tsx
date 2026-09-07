@@ -9,22 +9,13 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  applyValueAtRoot,
-  isBlankValue,
-  type PropertyValue,
-} from '@pommora/core/Properties/propertyValue'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { contextKey, type ContextsRegistry } from '@pommora/core/Contexts/contexts'
+import type { ContextsRegistry } from '@pommora/core/Contexts/contexts'
 import { resolveContextKeys } from '@pommora/core/Contexts/contextResolve'
-import {
-  linkAlias,
-  linkEditText,
-  urlValueFromEdit,
-  urlValueFromRename,
-} from '@pommora/core/Connections/linkValue'
+import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { Cell } from './Cells/Cell'
@@ -35,21 +26,17 @@ import {
   type PickTarget,
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
+import { assignValue, type ValueWriter } from './assignValue'
 import { parseEditorValue } from './parseEditorValue'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
 import { sharedValueClickAction } from './Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
-import { resolveTitle, validateLink } from './Cells/linkResolve'
+import { validateLink } from './Cells/linkResolve'
 import { displayPropertyName, useCapitalizeMetadata } from './Cells/columnLabel'
 import { propertyIcon } from './Cells/PropertyTypes'
 import { contextOptionsFor } from '../Contexts/contextOptions'
-import {
-  contextIdentityOf,
-  contextIdsOf,
-  isContextColumnId,
-  spaceIdentityOf,
-} from '../Contexts/contextIdentity'
+import { contextIdentityOf, contextIdsOf, isContextColumnId } from '../Contexts/contextIdentity'
 import { useSession, type WindowTarget } from '../Session/store'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popRowMenu } from '../Actions/nativeMenus'
@@ -136,7 +123,10 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
     const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
     const links = resolveContextKeys(fm as Record<string, unknown>, registry, spacesByContext)
-    return links.size ? Object.fromEntries(links) : undefined
+    const rider = (fm as Record<string, unknown>).contextValues as
+      | Record<string, string[]>
+      | undefined
+    return links.size || rider ? { ...Object.fromEntries(links), ...rider } : undefined
   }, [fm, tree])
   const row = useMemo<ViewRow | null>(
     () =>
@@ -157,31 +147,21 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
 
   const isContextRow = (id: string): boolean => isContextColumnId(tree, id)
 
-  const commitValue = (propertyId: string, next: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    setFm((prev) =>
-      prev ? (applyValueAtRoot(prev as Record<string, unknown>, def, next) as typeof prev) : prev,
-    )
-    void mutate({ op: 'setProperty', path, propertyId, value: next })
+  const writer = useRef<ValueWriter | null>(null)
+  useEffect(() => {
+    writer.current = {
+      schema,
+      mutate,
+      rowOf: (id) => (row?.id === id ? row : undefined),
+      apply: (_, next) => setFm(next),
+    }
+    return () => {
+      writer.current = null
+    }
+  })
+  const commit = (id: string, next: PropertyValue | null): void => {
+    if (row) assignValue(writer, row, { id, kind: isContextRow(id) ? 'context' : 'property' }, next)
   }
-  const commitContext = (contextId: string, ids: string[]): void => {
-    const title = contextIdentityOf(tree, contextId)?.title
-    if (title === undefined) return
-    const titles = ids
-      .map((sid) => spaceIdentityOf(tree, sid)?.title)
-      .filter((t): t is string => t !== undefined)
-    setFm((prev) => {
-      if (!prev) return prev
-      const next = { ...prev } as Record<string, unknown>
-      if (titles.length) next[contextKey(title)] = titles
-      else delete next[contextKey(title)]
-      return next as PageFrontmatter
-    })
-    void mutate({ op: 'setContext', path, contextId, spaceIds: ids })
-  }
-  const commitFor = (id: string, v: PropertyValue | null): void =>
-    isContextRow(id) ? commitContext(id, v?.kind === 'context' ? v.value : []) : commitValue(id, v)
 
   const allFields: Field[] = [
     ...contextRows.map((t) => ({ ...t, def: null })),
@@ -216,10 +196,10 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     const shared = sharedValueClickAction(def.type, current)
     if (shared) {
       if (shared.kind === 'commit') {
-        commitValue(def.id, shared.value)
+        commit(def.id, shared.value)
         if (def.type === 'checkbox' && shared.value === null) reveal(def.id)
       } else if (shared.kind === 'file') {
-        pickFileInto(def, current, fileChipIndex(from), (next) => commitValue(def.id, next))
+        pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next))
       } else setEditing({ id: def.id, mode: 'picker' })
       return
     }
@@ -227,8 +207,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   }
   const emptyRow = (id: string, keep: boolean): void => {
     const context = isContextRow(id)
-    if (context) commitContext(id, [])
-    else commitValue(id, null)
+    commit(id, null)
     const setAsideRow = context && pageFrame
     if (keep) {
       if (!setAsideRow) reveal(id)
@@ -247,7 +226,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const valueMenu = (id: string, value: PropertyValue, target: EventTarget | null): boolean => {
     const def = schema.find((d) => d.id === id)
     if (def?.type === 'file') {
-      void fileValueMenu(def, value, target, (next) => commitValue(id, next))
+      void fileValueMenu(def, value, target, (next) => commit(id, next))
       return true
     }
     const link =
@@ -343,16 +322,12 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
                               numeric={def.type === 'number'}
                               validate={def.type === 'url' ? validateLink : undefined}
                               onCommit={(raw) => {
-                                const cur = resolveFieldValue(row, id, schema)
-                                const next =
-                                  def.type === 'url'
-                                    ? urlValueFromEdit(
-                                        raw.trim(),
-                                        cur.kind === 'url' ? cur.value : undefined,
-                                        resolveTitle,
-                                      )
-                                    : parseEditorValue(def.type, raw)
-                                if (next !== undefined) commitValue(id, next)
+                                const next = parseEditorValue(
+                                  def.type,
+                                  raw,
+                                  resolveFieldValue(row, id, schema),
+                                )
+                                if (next !== undefined) commit(id, next)
                                 setEditing(null)
                               }}
                               onCancel={() => setEditing(null)}
@@ -364,7 +339,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
                               ctx,
                               hideIcon: false,
                               style: { look: 'standard' },
-                              remove: (next) => commitFor(id, next),
+                              remove: (next) => commit(id, next),
                             }) ?? <EmptyValue className={s.empty} />)
                           )}
                         </span>
@@ -403,7 +378,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
             value={linkAlias(rawLinkOf(editing.id)) ?? ''}
             accent={solidColorCss(editingDef?.link_color)}
             onCommit={(alias) => {
-              commitValue(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
+              commit(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
               setEditing(null)
             }}
             onDismiss={() => setEditing(null)}
@@ -415,7 +390,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
           open={panelTarget !== null || addOpen}
           triggerRef={addOpen ? addRef : triggerRef}
           onCommit={(v) => {
-            if (editing) commitFor(editing.id, v)
+            if (editing) commit(editing.id, v)
           }}
           onReveal={(entry) => {
             if (pageFrame && isContextRow(entry.id)) {
