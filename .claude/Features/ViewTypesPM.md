@@ -68,7 +68,7 @@ Every renderer mounts through one seat, `ViewHost` (`Core/Views/Host/ViewHost.ts
 
 ### Table
 
-The Table renderer (`Core/Views/Table/`) draws a container's Pages as rows on a single CSS grid, wearing the shared Tables chrome ([[DesignSystemPM]]) — the column-header band, its segment bars, the hairlines, the borderless regime, and the cell renderers live in `UIX/Table/`. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the view owns the shell, the grid density, the grip gutter, and the band rhythm. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
+The Table renderer (`Core/Views/Table/`) draws a container's Pages as rows on a single CSS grid, wearing the shared Tables chrome ([[PommoraUIX]]) — the column-header band, its segment bars, the hairlines, the borderless regime, and the cell renderers live in `UIX/Table/`. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the view owns the shell, the grid density, the grip gutter, and the band rhythm. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
 
 #### II. The Grid
 
@@ -84,7 +84,7 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 #### II. The Table Sheet
 
-The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[DesignSystemPM]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[DesignSystemPM]].
+The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[PommoraUIX]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[PommoraUIX]].
 
 **SOURCE:** `UIX/Table/table-tokens.css` · `UIX/Table/Table.css` · `Core/Views/Table/table-view.css`
 
@@ -112,7 +112,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 
 ### Cards
 
-The Cards renderer (`Core/Views/Cards/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is the shared card grid in its fill regime, and every card is the `UIX/Cards` chassis ([[DesignSystemPM]]): page cards reflow below a fixed image band, Set Cards are locked to the card aspect. **Size** is a slider in LayoutFrame's footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Image** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
+The Cards renderer (`Core/Views/Cards/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is the shared card grid in its fill regime, and every card is the `UIX/Cards` chassis ([[PommoraUIX]]): page cards reflow below a fixed image band, Set Cards are locked to the card aspect. **Size** is a slider in LayoutFrame's footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Image** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
 
 #### II. Properties on Cards
 
@@ -128,7 +128,7 @@ Cards reorder within their band by displacement, writing the per-machine manual 
 
 #### II. Card Tokens
 
-The chassis tokens — the floor, gaps, thumb height and share, and preview zoom — live with the chassis in `UIX/Cards/cards.css` ([[DesignSystemPM]]); the renderer's own scope rescales the floors by the Size factor and adds what only the collection layer needs. Atlas convention per [[DesignSystemPM]].
+The chassis tokens — the floor, gaps, thumb height and share, and preview zoom — live with the chassis in `UIX/Cards/cards.css` ([[PommoraUIX]]); the renderer's own scope rescales the floors by the Size factor and adds what only the collection layer needs. Atlas convention per [[PommoraUIX]].
 
 **SOURCE:** `UIX/Cards/cards.css` · `Core/Views/Cards/cards-view.css`
 

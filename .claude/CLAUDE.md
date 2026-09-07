@@ -96,7 +96,6 @@ organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop`
 ├── // Animations    | • Motion primitives and the shared slides
 ├── // Buttons
 ├── // Cards
-├── // Caret         | • Native caret and text selection
 ├── // Controls      | • Checkbox, slider, and switches
 ├── // Elements      | • Small composed display parts
 ├── // Fields        | • Text input, search, and renamable labels
@@ -107,8 +106,7 @@ organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop`
 ├── // Pickers       | • The picker control and its typed variants
 ├── // Symbols       | • The curated icon registry
 ├── // Table         | • Shared table tokens and styles
-├── // Testing       | • The pointer harness
-├── // Theme         | • Color ramps, tokens, and theme variables
+├── // Theme         | • Color ramps, tokens, the caret, and theme variables
 ├── // Utilities     | • Small pure helpers
 └── // Windows       | • Window chrome and bounds
 

@@ -1,4 +1,4 @@
-## Design System
+## Pommora UIX
 
 
 The Pommora design system — the code counterpart of the Figma library, which leads on design values; synchronization is intended, not guaranteed. This document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. The composite shells built from it — the tile frame, the sidebar, the toolbar, the tab strip — are recorded in [[SurfacePM]], [[InterfacePM]], and [[NavigationPM]]. Values live in §Theme and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
@@ -23,7 +23,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 | Window    | `windowIn` · `windowOut`                  | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too. |
 | Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
 | PaneSlide | `paneSlide`                               | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode. |
-| Exit      | `useExitPresence` · `useHeldPresence`     | Keeps a surface mounted through its close; the held form also keeps the value it was showing. |
+| Exit      | `useExitPresence` · `useHeld` · `useHeldPresence` | Keeps a surface mounted through its close; the held forms also keep the value it was showing. |
 
 ### Buttons
 
@@ -52,13 +52,9 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 `UIX/Cards/` — `Card.tsx` · `cards.css`. The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` gives the cover `--thumb-share` of the height and the title the rest, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--card-preview-zoom`; `CardPlaceholder` when there is none) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks.
 
-### Caret
-
-`UIX/Caret/` — the text-insertion vocabulary every editable surface shares: `Carets.css` and `text-selection.css` hold the caret and selection colors, and `nativeCaret.ts` reads the platform's own blink rate so a drawn caret matches the system one.
-
 ### Controls
 
-`UIX/Controls/` — the single-purpose interactive pieces: the two switches under `UIX/Controls/Switches/`, `Slider/`, and `checkbox.css` the Checkbox's chrome.
+`UIX/Controls/` — the single-purpose interactive pieces: the two switches, the Slider, and `checkbox.css` the Checkbox's chrome.
 
 | Title | Export | What it is |
 | --------- | ------------ | ------------------------------------------------------------------------------- |
@@ -70,14 +66,13 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 ### Elements
 
-`UIX/Elements/` — the atomic bits every surface composes; each is one folder with a style sheet and, where needed, a component.
+`UIX/Elements/` — the atomic bits every surface composes; each is a style sheet and, where needed, a component beside it.
 
 | Title | Export | What it is |
 | --------------- | -------------------------------- | ----------------------------------------------------- |
 | NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
-| PickerControl | `PickerControl` · `labelOf` · `PickerOption` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
 | EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
 | EmptyValue | `EmptyValue` | The one "nothing here yet" mark for value slots. |
 
@@ -130,7 +125,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Interactions
 
-`UIX/Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. `UIX/Interactions/dismissalStack.ts` is the one seat for outside-press and Escape dismissal: every modal popup — a PickerMenu pane, a toolbar dropdown, a confirmation, the image editor — registers in opening order; a press outside every layer collapses the whole stack, a press on a lower layer closes only what stands above it and still reaches its target, and Escape peels the topmost. The base PickerMenu alone draws the shield over the app beneath. [[InteractionPM]] and [[PommoraDND]] hold the depth.
+`UIX/Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. `UIX/Interactions/dismissalStack.ts` is the one seat for outside-press and Escape dismissal: every modal popup — a PickerMenu pane, a toolbar dropdown, a confirmation, the image editor — registers in opening order; a press outside every layer collapses the whole stack, a press on a lower layer closes only what stands above it and still reaches its target, and Escape peels the topmost. The base PickerMenu alone draws the shield over the app beneath. `pointerHarness.ts` sits here too, giving every pointer-driven test the PointerEvent, rect, and pointer-capture stubs jsdom lacks. [[InteractionPM]] and [[PommoraDND]] hold the depth.
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
@@ -146,7 +141,6 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
 | Resize frame | `useResizeFrame` · `onScreen` · `resize-frame.css`     | Drag-to-size and drag-to-move for any box: the handles, the strips, and the outline tint. |
 | Reveal bar   | `useRevealNear` · `reveal-bar.css`                      | A control shown as the pointer nears an edge.          |
-| Held         | `useHeld`                                               | A value that lingers through an exit.                  |
 
 ### Labels
 
@@ -190,6 +184,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `UIX/Pickers/IconPicker`. |
 | TextPicker | `TextPicker` | A typed-value picker in the shared pane. |
+| PickerControl | `PickerControl` · `labelOf` · `PickerOption` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
 
 ### Symbols
 
@@ -201,7 +196,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Theme
 
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `solidColor.ts` (`solidColorCss`, `resolveColor`), `accent.ts` (`applyAccent`), `personalization.ts` (`applyPersonalization`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `labelColorFor`, `resolveColor`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`, the `RAMP_*` re-exports). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` and `text-selection.css` hold the caret and selection colors, and `nativeCaret.ts` reads the platform's own blink rate so a drawn caret matches the system one. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -393,7 +388,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Windows
 
-`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `window-panel.tsx` the side-panel slot, and `bounds.ts` the geometry.
+`UIX/Windows/` — the floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune. `WindowActions.tsx` is the trailing control cluster, `window-panel.tsx` the side-panel slot, and `window-bounds.ts` the geometry.
 
 #### Known Issues
 
