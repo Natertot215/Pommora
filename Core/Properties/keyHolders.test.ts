@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/p
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
-import { seedContentIndex } from '../Index/indexSeed'
+import { nexusCorpus, seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createProperty, editProperty } from './registryProperty'
 import { renameOption } from './optionOps'
@@ -20,6 +20,7 @@ const sweepSpy = vi.mocked(sweepGovernedRoots)
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
+const corpus = async (): Promise<string[]> => (await nexusCorpus(root)).map((rel) => abs(rel))
 const page = (n: string, fm: string): Promise<void> =>
   writeFile(
     abs('Notes', `${n}.md`),
@@ -86,29 +87,24 @@ describe('the property cascades open only the holders', () => {
   it('an option rename opens exactly the 2 holders, and the un-governed note keeps its value', async () => {
     const r = await renameOption(root, 'prop_s', 'Draft', 'Sketch')
     expect(r.ok).toBe(true)
-    const scope = sweepSpy.mock.calls[0]?.[1]
-    expect(scope?.kind === 'files' && scope.files).toHaveLength(2)
+    expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(2)
     expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
   })
 
-  it('a nexus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
+  it('a corpus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
     await mkdir(abs('Vault'), { recursive: true })
     const excludedPage = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
     await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
-    const swept = await sweepGovernedRoots(
-      root,
-      { kind: 'nexus' },
-      {
-        raw: (raw) => {
-          if (!('<Areas>' in raw)) return null
-          const next = { ...raw }
-          delete next['<Areas>']
-          return { next }
-        },
+    const swept = await sweepGovernedRoots(root, await corpus(), {
+      raw: (raw) => {
+        if (!('<Areas>' in raw)) return null
+        const next = { ...raw }
+        delete next['<Areas>']
+        return next
       },
-    )
+    })
     expect(swept.touched).toEqual([])
     expect(await readFile(abs('Vault', 'Tagged.md'), 'utf8')).toBe(excludedPage)
   })
@@ -116,18 +112,14 @@ describe('the property cascades open only the holders', () => {
   it("a sweep keeps every holder's modification time", async () => {
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(abs('Notes', 'HolderA.md'), past, past)
-    const swept = await sweepGovernedRoots(
-      root,
-      { kind: 'nexus' },
-      {
-        raw: (raw) => {
-          if (!('Stage' in raw)) return null
-          const next = { ...raw }
-          delete next.Stage
-          return { next }
-        },
+    const swept = await sweepGovernedRoots(root, await corpus(), {
+      raw: (raw) => {
+        if (!('Stage' in raw)) return null
+        const next = { ...raw }
+        delete next.Stage
+        return next
       },
-    )
+    })
     expect(swept.touched).toContain(abs('Notes', 'HolderA.md'))
     expect(Math.floor((await stat(abs('Notes', 'HolderA.md'))).mtimeMs / 1000)).toBe(
       Math.floor(past.getTime() / 1000),

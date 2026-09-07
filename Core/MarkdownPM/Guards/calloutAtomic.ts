@@ -1,10 +1,11 @@
 // The walk is whole-document on purpose — the decoration pass is viewport-scoped, so a marker taking its atomicity from there would delete one way on screen and another above the fold. The custom Backspace handler still runs first (Prec.high) for its join behavior — atomic ranges don't block a programmatic dispatch, only CM's own default cursor-motion/deletion.
 import { EditorView, Decoration } from '@codemirror/view'
-import { RangeSetBuilder, type RangeSet } from '@codemirror/state'
-import { docScan } from '../docCache'
+import { RangeSetBuilder } from '@codemirror/state'
+import type { Text } from '@codemirror/state'
+import { docScan, perDoc } from '../docCache'
 
-function hiddenRanges(view: EditorView): RangeSet<Decoration> {
-  const { lines, callouts: info, citations } = docScan(view.state.doc)
+const hiddenRanges = perDoc((doc: Text) => {
+  const { lines, callouts: info, citations } = docScan(doc)
   const builder = new RangeSetBuilder<Decoration>()
   const { markers } = citations
   let m = 0
@@ -19,6 +20,6 @@ function hiddenRanges(view: EditorView): RangeSet<Decoration> {
     off += lines[i].length + 1
   }
   return builder.finish()
-}
+})
 
-export const calloutAtomic = EditorView.atomicRanges.of(hiddenRanges)
+export const calloutAtomic = EditorView.atomicRanges.of((view) => hiddenRanges(view.state.doc))

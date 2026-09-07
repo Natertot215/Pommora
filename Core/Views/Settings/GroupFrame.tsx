@@ -772,13 +772,16 @@ function DateBucketList({
   const values = useContainerValues(source.path)
 
   const granularity = group.date_granularity ?? 'month'
-  const present = new Set<string>()
-  for (const row of flattenContainer(source, values).rows) {
-    const key = bucketKey(row, group.property_id, schema, granularity)
-    if (key) present.add(key)
-  }
-  // Date bucket keys alone start with a year — the shared hidden list's other vocabularies (option values, set ULIDs, sub/<value>) never do.
-  for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) present.add(key)
+  const present = useMemo(() => {
+    const set = new Set<string>()
+    for (const row of flattenContainer(source, values).rows) {
+      const key = bucketKey(row, group.property_id, schema, granularity)
+      if (key) set.add(key)
+    }
+    // Date bucket keys alone start with a year — the shared hidden list's other vocabularies (option values, set ULIDs, sub/<value>) never do.
+    for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) set.add(key)
+    return set
+  }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
   const dateFormat = view.column_styles?.[group.property_id]?.date_format ?? 'full'
