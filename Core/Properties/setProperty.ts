@@ -2,7 +2,6 @@ import { machine } from '../Platform/machine'
 import { splitFrontmatter } from '../Files/pageFile'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { readTextOrNull } from '../Files/atomicWrite'
-import { indexWrittenPage } from '../Index/indexSeed'
 
 import { loadGovernedWorld } from '../Contexts/contextWrite'
 import { updatePageProperty } from '../Nexus/page'
@@ -26,8 +25,6 @@ export async function setPropertyOp(
     if (content === null) return fail('not-found', 'That page could not be read.')
     const world = await loadGovernedWorld(root, resolved.value, splitFrontmatter(content))
     const r = await updatePageProperty(root, resolved.value, def, req.value, world)
-    if (!r.ok) return r
-    await indexWrittenPage(root, resolved.value)
     return r
   })
   if (!adoptions.ok) return adoptions

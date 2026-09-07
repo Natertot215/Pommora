@@ -19,10 +19,7 @@ vi.mock('../Properties/governedSweep', async (importOriginal) => {
 })
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
-const sweptFiles = (): string[] => {
-  const scope = sweepSpy.mock.calls[0]?.[1]
-  return scope?.kind === 'files' ? scope.files : []
-}
+const sweptFiles = (): string[] => sweepSpy.mock.calls[0]?.[1] ?? []
 
 let root: string
 let dir: string

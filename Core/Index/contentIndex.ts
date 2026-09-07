@@ -68,6 +68,13 @@ export function queryKeyHolders(key: string): string[] | null {
   return queryPaths((db) => db.queryKeyHolders(key))
 }
 
+/** The pages holding a Context key, or — given a normalized Space title — those whose key names that Space. */
+export function queryMembers(key: string, title?: string): string[] | null {
+  return title === undefined
+    ? queryKeyHolders(key)
+    : queryPaths((db) => db.queryMembers(key, title))
+}
+
 export function readIndexedStat(path: string): IndexedStat | null {
   return queried((db) => db.readIndexedStat(path))
 }

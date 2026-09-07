@@ -45,7 +45,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, key, folders)
       const raw = stripKeyRewrite(key)
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { raw })
+      const swept = await sweepGovernedRoots(root, files, { raw })
       for (const folder of folders) await unassignAndPurge(folder, journal.id)
       await removeFromRegistry(root, journal.id)
       return swept.skipped.length > 0
@@ -59,7 +59,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const key = def.name
       const files = await keyHolderFiles(root, key, await collectionFolders(root))
       const text = (c: string): string | null => replacePageValue(c, key, journal.from, journal.to)
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
+      const swept = await sweepGovernedRoots(root, files, { text })
       return swept.skipped.length > 0
     }
     case 'option-remove': {
@@ -69,7 +69,7 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       const key = def.name
       const files = await keyHolderFiles(root, key, await collectionFolders(root))
       const text = (c: string): string | null => stripPageValue(c, key, journal.value)
-      const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
+      const swept = await sweepGovernedRoots(root, files, { text })
       if (swept.skipped.length > 0) return true
       await dropOptionFromDef(root, journal.id, journal.value)
       return false

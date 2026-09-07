@@ -3,7 +3,7 @@
 import type { Db } from './driver'
 
 export const SCHEMA_VERSION = 1
-export const INDEX_GENERATION = 2
+export const INDEX_GENERATION = 3
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -29,6 +29,13 @@ const DDL = `
     PRIMARY KEY (path, key)
   );
   CREATE INDEX IF NOT EXISTS page_values_by_key ON page_values (key);
+  CREATE TABLE IF NOT EXISTS memberships (
+    path TEXT NOT NULL,
+    key TEXT NOT NULL,
+    title TEXT NOT NULL,
+    PRIMARY KEY (path, key, title)
+  );
+  CREATE INDEX IF NOT EXISTS memberships_by_title ON memberships (key, title);
   CREATE TABLE IF NOT EXISTS indexed_files (
     path TEXT PRIMARY KEY,
     mtime_ms REAL NOT NULL,
@@ -52,6 +59,8 @@ export function writeMeta(db: Db, key: string, value: string): void {
   db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
 }
 
+export const INDEX_TABLES = ['mentions', 'page_values', 'memberships', 'indexed_files'] as const
+
 export function truncateIndex(db: Db): void {
-  db.exec('DELETE FROM page_values; DELETE FROM indexed_files;')
+  db.exec(INDEX_TABLES.map((table) => `DELETE FROM ${table};`).join(' '))
 }

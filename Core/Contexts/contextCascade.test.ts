@@ -1,14 +1,30 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { mkdtemp, realpath, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { renameContextOp, renameSpaceOp, replayPendingRename } from './contextCascade'
+import {
+  renameContextOp,
+  renameSpaceOp,
+  replayPendingRename,
+  unlinkContextKey,
+  unlinkSpaceValue,
+} from './contextCascade'
+import { sweepGovernedRoots } from '../Properties/governedSweep'
+import { openSessionDb, closeSessionDb } from '@pommora/desktop/Store/sessionDb'
+import { seedContentIndex } from '../Index/indexSeed'
 import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 import { pathExists } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
+
+vi.mock('../Properties/governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
+  return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
+})
+
+const sweepSpy = vi.mocked(sweepGovernedRoots)
 
 let root: string
 const page = () => join(root, 'Notes', 'A.md')
@@ -39,8 +55,48 @@ beforeEach(async () => {
   await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
 })
 afterEach(async () => {
+  closeSessionDb()
   await rm(root, { recursive: true, force: true })
   closeSession()
+})
+
+describe('the cascades open only the members the index names', () => {
+  const classes = () => join(root, 'Notes', 'C.md')
+  beforeEach(async () => {
+    await writeFile(other(), '---\nid: p2\n---\nuntagged')
+    await writeFile(classes(), '---\nid: p3\n<Classes>:\n  - CS 161\n---\nbody')
+    openSessionDb(root)
+    await seedContentIndex(root)
+    sweepSpy.mockClear()
+  })
+
+  it('a Space rename opens the one holder and still reaches every sidecar', async () => {
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
+    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pom', 'pommora'])
+    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pom'])
+  })
+
+  it('a Context rename opens the holders of the key alone', async () => {
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    expect((await fmOf(classes()))['<Classes>']).toEqual(['CS 161'])
+  })
+
+  it('the unlinks open the holders and capture them', async () => {
+    const space = await unlinkSpaceValue(root, 'Projects', 'Pommora')
+    expect(space.ok && space.value.captured.map((c) => c.kind).sort()).toEqual(['page', 'space'])
+    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    const key = await unlinkContextKey(root, 'Classes')
+    expect(key.ok && key.value.touched).toEqual([classes()])
+    expect(sweepSpy.mock.calls[1]?.[1]).toEqual([classes()])
+  })
+
+  it('without an index every page is a candidate', async () => {
+    closeSessionDb()
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
+    expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(3)
+  })
 })
 
 const regTitle = async (id: string): Promise<string | undefined> => {

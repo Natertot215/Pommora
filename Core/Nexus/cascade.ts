@@ -34,6 +34,6 @@ export async function renameCascade(
     if (newBody === body && keys.length === 0) return null
     return mergeFrontmatter(content, patch, keys, newBody)
   }
-  const swept = await sweepGovernedRoots(nexusRoot, { kind: 'files', files }, { text })
+  const swept = await sweepGovernedRoots(nexusRoot, files, { text })
   return ok({ touched: swept.touched })
 }

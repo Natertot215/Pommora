@@ -18,6 +18,8 @@ import {
   sweepGovernedRoots,
 } from '../Properties/governedSweep'
 import { loadContextWorld } from './contextWrite'
+import { queryMembers } from '../Index/contentIndex'
+import { nexusCorpus } from '../Index/indexSeed'
 import { invalidName, invalidContextTitle } from '../Nexus/util'
 
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
@@ -60,16 +62,26 @@ export interface SweepCapture {
 
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-const sweepContextRoots = (
+interface Member {
+  key: string
+  spaceTitle?: string
+}
+
+// Without an index every page is a candidate; the rewrite itself decides what changes.
+async function sweepMembers(
   root: string,
+  member: Member,
   raw: Rewrite,
   pageText?: RewriteText,
-): Promise<SweepResult> =>
-  sweepGovernedRoots(
+): Promise<SweepResult> {
+  const title = member.spaceTitle === undefined ? undefined : normalizeTitle(member.spaceTitle)
+  const rels = queryMembers(member.key, title) ?? (await nexusCorpus(root))
+  return sweepGovernedRoots(
     root,
-    { kind: 'nexus' },
-    pageText ? { text: pageText, sidecars: raw } : { raw },
+    rels.map((rel) => join(root, rel)),
+    pageText ? { text: pageText, sidecars: raw } : { raw, sidecars: raw },
   )
+}
 
 function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR
@@ -92,7 +104,11 @@ async function cascadeTitle(
   const def = registry.contexts.find((c) => c.id === j.contextId)
   if (!def) return { touched: [], skipped: [], refused: [] }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
-  return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
+  const member: Member =
+    j.spaceId === undefined
+      ? { key: contextKey(j.oldTitle) }
+      : { key: contextKey(def.title), spaceTitle: j.oldTitle }
+  return sweepMembers(root, member, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
 }
 
 export async function unlinkContextKey(
@@ -103,7 +119,7 @@ export async function unlinkContextKey(
   const key = contextKey(contextTitle)
   const skipPrefix = skipUnder ? `${skipUnder}/` : null
   const captured: SweepCapture[] = []
-  const swept = await sweepContextRoots(root, (raw, file) => {
+  const swept = await sweepMembers(root, { key }, (raw, file) => {
     if (skipPrefix && file.startsWith(skipPrefix)) return null
     if (!(key in raw)) return null
     const values = Array.isArray(raw[key])
@@ -124,7 +140,7 @@ export async function unlinkSpaceValue(
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
-  const swept = await sweepContextRoots(root, (raw, file) => {
+  const swept = await sweepMembers(root, { key, spaceTitle }, (raw, file) => {
     const arr = raw[key]
     if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
     captured.push(captureRoot(raw, file, [spaceTitle]))
