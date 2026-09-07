@@ -192,7 +192,7 @@ Inter, variable. `text.<style>.<variant>` composes size and line height from the
 | Footnote     | `text.footnote`    | `10px` / `13px` | Small details or accessories                         |
 | Subline      | `text.subline`     | `10px` / `12px` | Footnote’ssize on a tighter line box                 |
 
-Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
+Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register.
 
 ### Animations
 
@@ -216,13 +216,13 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
-| Type        | Fill                          | Text                          |
-| ----------- | ----------------------------- | ----------------------------- |
-| Base        | none                          | inherits                      |
-| Tinted      | accent @ `--tint-tertiary`    | accent                        |
-| Solid       | accent @ `--tint-primary`     | `--label-primary`             |
-| Filled      | `--fill-tertiary`             | `--label-primary`             |
-| Destructive | `--error` @ `--tint-tertiary` | `--error` @ `--tint-primary`  |
+| Type        | Fill                          | Text                         |
+| ----------- | ----------------------------- | ---------------------------- |
+| Base        | none                          | inherits                     |
+| Tinted      | accent @ `--tint-tertiary`    | accent                       |
+| Solid       | accent @ `--tint-primary`     | `--label-primary`            |
+| Filled      | `--fill-tertiary`             | `--label-primary`            |
+| Destructive | `--error` @ `--tint-tertiary` | `--error` @ `--tint-primary` |
 
 **Button Sizes** — the `SIZE` scale in `UIX/Buttons/button-base.css.ts`, worn as the `size` class's `--btn-*` bundle; icon-only buttons take the ladder, labeled buttons take the bundle's label inset.
 
@@ -311,7 +311,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Interactions
 
-`UIX/Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. `UIX/Interactions/dismissalStack.ts` is the one seat for outside-press and Escape dismissal: every modal popup — a PickerMenu pane, a toolbar dropdown, a confirmation, the image editor — registers in opening order; a press outside every layer collapses the whole stack, a press on a lower layer closes only what stands above it and still reaches its target, and Escape peels the topmost. The base PickerMenu alone draws the shield over the app beneath. `pointerHarness.ts` sits here too, giving every pointer-driven test the PointerEvent, rect, and pointer-capture stubs jsdom lacks. [[InteractionPM]] and [[PommoraDND]] hold the depth.
+`UIX/Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up.
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
@@ -347,19 +347,19 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 `UIX/Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
 
-| Title | Export | What it is |
-| ------------ | ----------------------------------------------- | ----------------------------------------- |
-| Menu | `Menu` · `MenuItem` · `MenuSeparator` · `MenuCaption` · `MenuTopRow` · `MenuFooting` | The row kinds, in the order a menu stacks: TopRow, heading, item, action row, separator, caption, footing. `MenuItem` carries `leading` · title · `subLabel` · `value` · `detail` · `trailing` · `overlay`, and `inert` for a box that is not clickable. |
-| Row classes | `rowBox` · `rowShell` · `item` · `menuCompact` · `heading` · `headingCaps` · `actionRow` · `topRow` · `footing` · `overlay` · `value` · `detail` · `rowDragging` · `AccessoryButton` · `FooterLockButton` · `FooterIconButton` | The box every row wears (first in the stylesheet, so a variant's own properties win), the hover/focus shell, and the kinds as classes; `menuCompact` on a pane switches every row inside it; `overlay` seats a pin or checkbox in the lead inset. |
-| Index | `MenuIndex` · `MenuRowView` · `MenuRow` · `MenuSection` · `Trailing` | A menu as data — sections of rows, each row's trailing control named once (chevron · value · switch · button · slider · picker · color · field); the Settings window and every frame render through it. |
-| Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
-| Listed outline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x` (`listed-outline.css.ts`). |
-| DisclosureRow | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind` | A folding row on the listed outline. |
-| MenuSurface | `MenuSurface` | The beaked surface the large toolbar menu hangs off a button. |
-| MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
-| Anchor | `menuAnchor` · `MenuPlacement` · `MENU_GAP` | Where a menu sits against its trigger. |
-| Growth | `growToContent` | The measured height a menu grows to. |
-| FrameSlide | `FrameSlide` | The two-slot push and back between a menu's frames. |
+| Title          | Export                                                                                                                                                                                                                         | What it is                                                                                                                                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Menu           | `Menu` · `MenuItem` · `MenuSeparator` · `MenuCaption` · `MenuTopRow` · `MenuFooting`                                                                                                                                           | The row kinds, in the order a menu stacks: TopRow, heading, item, action row, separator, caption, footing. `MenuItem` carries `leading` · title · `subLabel` · `value` · `detail` · `trailing` · `overlay`, and `inert` for a box that is not clickable. |
+| Row classes    | `rowBox` · `rowShell` · `item` · `menuCompact` · `heading` · `headingCaps` · `actionRow` · `topRow` · `footing` · `overlay` · `value` · `detail` · `rowDragging` · `AccessoryButton` · `FooterLockButton` · `FooterIconButton` | The box every row wears (first in the stylesheet, so a variant's own properties win), the hover/focus shell, and the kinds as classes; `menuCompact` on a pane switches every row inside it; `overlay` seats a pin or checkbox in the lead inset.        |
+| Index          | `MenuIndex` · `MenuRowView` · `MenuRow` · `MenuSection` · `Trailing`                                                                                                                                                           | A menu as data — sections of rows, each row's trailing control named once (chevron · value · switch · button · slider · picker · color · field)                                                                                                          |
+| Scroll frame   | `MenuScrollFrame` · `MENU_MAX_HEIGHT`                                                                                                                                                                                          | The one capped overflow region with its fade.                                                                                                                                                                                                            |
+| Listed outline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow`                                                                                                                                                            | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x` (`listed-outline.css.ts`).                                                                                                                                         |
+| DisclosureRow  | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind`                                                                                                                                                                       | A folding row on the listed outline.                                                                                                                                                                                                                     |
+| MenuSurface    | `MenuSurface`                                                                                                                                                                                                                  | The beaked surface the large toolbar menu hangs off a button.                                                                                                                                                                                            |
+| MenuDropdown   | `MenuDropdown`                                                                                                                                                                                                                 | The shell around a trigger — open state, dismiss, growth bound.                                                                                                                                                                                          |
+| Anchor         | `menuAnchor` · `MenuPlacement` · `MENU_GAP`                                                                                                                                                                                    | Where a menu sits against its trigger.                                                                                                                                                                                                                   |
+| Growth         | `growToContent`                                                                                                                                                                                                                | The measured height a menu grows to.                                                                                                                                                                                                                     |
+| FrameSlide     | `FrameSlide`                                                                                                                                                                                                                   | The two-slot push and back between a menu's frames.                                                                                                                                                                                                      |
 
 ### Pickers
 
