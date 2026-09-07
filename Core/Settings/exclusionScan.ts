@@ -80,7 +80,6 @@ export async function clearExclusionData(
       )
     if (gone) removed++
   }
-  const scope = { kind: 'files', files: pages } as const
-  const swept = await sweepGovernedRoots(root, scope, { text: clearRewrite })
+  const swept = await sweepGovernedRoots(root, pages, { text: clearRewrite })
   return ok({ pages: swept.touched.length, sidecars: removed, refused: swept.refused.length })
 }

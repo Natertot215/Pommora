@@ -82,7 +82,7 @@ async function addContextValues(
         [key],
         splitEnvelope(content).body,
       )
-    const swept = await sweepGovernedRoots(root, { kind: 'files', files }, { text })
+    const swept = await sweepGovernedRoots(root, files, { text })
     return swept.touched.length > 0
   }
   const file = join(root, entry.path, SPACE_SIDECAR)

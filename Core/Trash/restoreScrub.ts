@@ -56,7 +56,7 @@ export async function scrubReturning(
     if (!r.changed.length) return null
     return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
   }
-  await sweepGovernedRoots(root, { kind: 'files', files: pages }, { text })
+  await sweepGovernedRoots(root, pages, { text })
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
     await machine().lock(file, async () => {
       const raw = await readJsonObject(file)

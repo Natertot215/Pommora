@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store/sessionDb'
-import { queryKeyHolders, queryMentions, readIndexedStats } from './contentIndex'
+import { queryKeyHolders, queryMembers, queryMentions, readIndexedStats } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { sweepAdmitsBody } from '../Nexus/util'
 import { seedContentIndex } from './indexSeed'
@@ -86,6 +86,20 @@ describe('seedContentIndex', () => {
     expect(queryKeyHolders('foo')).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('ID')).toEqual(['Notes/A.md'])
+  })
+
+  it('records every `<Title>` key as memberships, one normalized row per value, scalar or list', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n---\n\nbody\n`,
+    )
+    await writeFile(abs('Loose', 'Note.md'), '---\n<Projects>: Sapphire\n---\n\nun-adopted\n')
+    await seedContentIndex(root)
+    expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/A.md'])
+    expect(queryMembers('<Projects>', 'sapphire')).toEqual(['Loose/Note.md'])
+    expect(queryMembers('<Projects>')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    expect(queryMembers('<Areas>', '2024')).toEqual(['Notes/A.md'])
+    expect(queryMembers('<Areas>', 'pommora')).toEqual([])
   })
 
   it('with no database the seed stands down and queries stay null', async () => {

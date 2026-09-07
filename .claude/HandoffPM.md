@@ -27,6 +27,8 @@
 - The inspector arc on `.claude/Planning/TilesV2-Spec.md` — the tab strip mounting `TileHost` per tab, and the properties/backlinks/list panel kinds.
 - The picker fold's Sequenced-After successors: the options-kind predicate written three times, the `openAddPicker` partition asymmetry (number/file initial entries), the three value-write paths and four number parsers, the two `optionsOf`, and `FilterFrame`'s `ChipsField` re-implementing `PropertyOptionRows`.
 - `property-panel.css.ts` carries Nathan's in-flight `label`/`titleText` styling edit (the malformed padding was repaired); the label export awaits its wiring.
+- The 09-07-2026 codebase audit (`.claude/Planning/Codebase Audit — Report.md`, with its rulings log) is the standing work list; the open decisions are D-1, D-2, D-6, D-7, D-8, and the D-9 rulings.
+- Deferred from the audit's topic 8, each a design call rather than a narrowing: R-38 (d), the folder classifier's existence check is true for a malformed sidecar where the parse returns nothing, so carrying the parsed sidecar map alone would misclassify a broken config; R-38 (e), the three watch-batch consumers classify different tree states, so one shared classification changes the refresh outcome; 8.3 (watcher id resolution through the index's by-id map); 8.6 (carrying the tree index forward across patches); 8.8 (per-version connection resolution on the scroll path). 8.2 waits on D-1.
 
 #### Feedback
 

@@ -5,7 +5,7 @@ import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { sidecarPath } from '../Paths/paths'
 import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
-import { folderCorpus, indexWrittenPage } from '../Index/indexSeed'
+import { folderCorpus } from '../Index/indexSeed'
 import { sweepGovernedRoots } from './governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
@@ -59,7 +59,7 @@ async function removeInner(
   )
   if (!written.ok) return written
   const text = (content: string): string | null => stripPageMember(content, key)
-  await sweepGovernedRoots(root, { kind: 'files', files }, { text })
+  await sweepGovernedRoots(root, files, { text })
   return ok(null)
 }
 
@@ -89,13 +89,11 @@ export async function restoreCachedValues(
     if (!file) return false
     const reconciled = reconcilePropertyValue(def, raw, false)
     if (isBlankValue(reconciled.value)) return false
-    const wrote = await machine().lock(file, async () => {
+    return machine().lock(file, async () => {
       const content = await readTextOrNull(file)
       if (content === null || !sweepAdmits(content)) return false
       return (await updatePageProperty(root, file, def, reconciled.value)).ok
     })
-    if (wrote) await indexWrittenPage(root, file)
-    return wrote
   })
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(

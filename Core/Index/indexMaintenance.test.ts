@@ -11,7 +11,7 @@ import { openSessionDb, closeSessionDb, sessionDb } from '@pommora/desktop/Store
 import { createProperty } from '../Properties/registryProperty'
 import { listBundles } from '../Trash/spend'
 import { seedContentIndex } from './indexSeed'
-import { queryKeyHolders, queryMentions } from './contentIndex'
+import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyWatchEvents } from '../Nexus/watchPatch'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 
@@ -27,6 +27,9 @@ const dump = (): unknown => {
   return {
     mentions: db.prepare('SELECT path, title FROM mentions ORDER BY path, title').all(),
     values: db.prepare('SELECT path, key, value FROM page_values ORDER BY path, key').all(),
+    memberships: db
+      .prepare('SELECT path, key, title FROM memberships ORDER BY path, key, title')
+      .all(),
   }
 }
 
@@ -34,7 +37,9 @@ async function expectMaintained(): Promise<void> {
   const maintained = dump()
   const db = sessionDb()
   if (!db) throw new Error('no session db')
-  db.exec('DELETE FROM mentions; DELETE FROM page_values; DELETE FROM indexed_files')
+  db.exec(
+    'DELETE FROM mentions; DELETE FROM page_values; DELETE FROM memberships; DELETE FROM indexed_files',
+  )
   await seedContentIndex(root)
   expect(maintained).toEqual(dump())
 }
@@ -45,6 +50,15 @@ beforeEach(async () => {
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(join(root, '.nexus', 'settings.json'), '{}')
+  await writeFile(
+    join(root, '.nexus', 'contexts.json'),
+    JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
+  )
+  await mkdir(join(root, '.nexus', 'contexts', 'Projects', 'Pommora'), { recursive: true })
+  await writeFile(
+    join(root, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
+    JSON.stringify({ id: 'sp-pom' }),
+  )
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's1' }))
   await writeFile(
@@ -103,6 +117,46 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(created.ok).toBe(true)
+    await expectMaintained()
+  })
+
+  it('a context write lands in memberships; a Space rename and delete each keep them current', async () => {
+    const tagged = await handleMutate(
+      {
+        op: 'setContext',
+        path: 'Notes/Daily/Alpha.md',
+        contextId: 'ctx_projects',
+        spaceIds: ['sp-pom'],
+      },
+      deps,
+    )
+    expect(tagged.ok).toBe(true)
+    expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Daily/Alpha.md'])
+    await expectMaintained()
+    const renamed = await handleMutate(
+      { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' },
+      deps,
+    )
+    expect(renamed.ok).toBe(true)
+    expect(queryMembers('<Projects>', 'pommora')).toEqual([])
+    expect(queryMembers('<Projects>', 'pom')).toEqual(['Notes/Daily/Alpha.md'])
+    await expectMaintained()
+    const deleted = await handleMutate(
+      { op: 'delete', path: '.nexus/contexts/Projects/Pom', kind: 'space' },
+      deps,
+    )
+    expect(deleted.ok).toBe(true)
+    expect(queryMembers('<Projects>')).toEqual([])
+    await expectMaintained()
+  })
+
+  it('an icon write re-indexes the page it touched', async () => {
+    const r = await handleMutate(
+      { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' },
+      deps,
+    )
+    expect(r.ok).toBe(true)
+    expect(queryKeyHolders('icon')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
   })
 

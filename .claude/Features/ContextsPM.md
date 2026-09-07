@@ -23,6 +23,7 @@ Every Context write runs through `Core/Contexts/contextWrite.ts` and `contextCas
 
 - **Membership** — one write per entity kind (a content file, or a Space's sidecar), reconciling the whole root it rewrites. Space-to-Space links take the same shape: a Space tags other Spaces through its own sidecar keys, in its own Context or another.
 - **Renames** are journaled and cascade the title across every context-bearing root — each page's frontmatter and each Space's sidecar — with the registry committed last, so a crash replays forward on the next open and a failed commit reverses the cascade. The key is renamed where it sits, keeping its position and any comment attached to it.
+- **Cascades open only members.** The content index records every `<Title>` key a page carries and each Space title under it, normalized the way resolution matches, so a rename or unlink sweeps the pages the index names — the holders of a Context's key, or the pages naming one Space — and every Space sidecar, which no index covers. Without an index every page is a candidate and the rewrite decides. `queryMembers` in `Core/Index/contentIndex.ts` is the same question asked read-only: the pages holding a Context key, or those tagging a given Space.
 - **Deletes unlink first.** A Space's title, or a Context's whole key and registry entry, is stripped from every member file before the folder moves to the trash, and the stripped membership is captured in the deletion record so a restore re-applies it. A page that loses a tag is re-dated; a rename never re-dates.
 - **Creates** — a new Context appends to the registry and opens straight into an inline rename; a new Space is written with its 2×2 tile board seeded.
 
@@ -39,6 +40,6 @@ Contexts appear in three places, each reading the registry through the walk-reso
 
 #### Pending
 
-- **Space-to-Space relation rows** — the settings pane's rows for a Space's own memberships. The write path is live; the UI isn't, and Context keys are outside the content index.
+- **Space-to-Space relation rows** — the settings pane's rows for a Space's own memberships. The write path is live; the UI isn't.
 - **Space-create labels** — the entries read a stored singular, so a renamed seeded Context keeps its old label.
-- **ContextView and Linked-From** — a Context's own aggregate surface, and the inbound list of every entity tagging a Space. Both need a reverse query the index doesn't yet answer.
+- **ContextView and Linked-From** — a Context's own aggregate surface, and the inbound list of every entity tagging a Space. The index answers the page side through `queryMembers`; neither surface exists, and Space sidecars stay outside the index.

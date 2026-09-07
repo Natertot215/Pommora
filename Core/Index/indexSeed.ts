@@ -2,6 +2,8 @@ import { join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { extractMentions, frontmatterMentions } from '../Connections/scan'
+import { normalizeTitle } from '../Connections/connections'
+import { parseContextKey } from '../Contexts/contexts'
 import { sweepAdmitsBody } from '../Nexus/util'
 import {
   markIndexReady,
@@ -17,6 +19,7 @@ import {
   type ContentIndexStore,
   contentIndexStore,
   type IndexedStat,
+  type Membership,
   type PageIndexEntry,
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
@@ -27,12 +30,29 @@ import { NON_CORPUS_TOP } from '../Paths/nexusPaths'
 
 import { readWatchScope } from '../Settings/settings'
 
-function extractPageIndex(content: string): PageIndexEntry | null {
-  if (!sweepAdmitsBody(content)) return null
+const NO_ROWS: PageIndexEntry = { mentions: [], values: {}, memberships: [] }
+
+function extractPageIndex(content: string): PageIndexEntry {
+  if (!sweepAdmitsBody(content)) return NO_ROWS
   const values = frontmatterValues(content)
   const mentions = extractMentions(splitEnvelope(content).body)
   for (const title of frontmatterMentions(values)) mentions.add(title)
-  return { mentions: [...mentions], values }
+  return { mentions: [...mentions], values, memberships: extractMemberships(values) }
+}
+
+// Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
+function extractMemberships(values: Record<string, unknown>): Membership[] {
+  const out: Membership[] = []
+  for (const [key, raw] of Object.entries(values)) {
+    if (parseContextKey(key) === null || raw == null) continue
+    const titles = new Set<string>()
+    for (const value of Array.isArray(raw) ? raw : [raw]) {
+      const title = normalizeTitle(value)
+      if (title) titles.add(title)
+    }
+    for (const title of titles) out.push({ key, title })
+  }
+  return out
 }
 
 export function frontmatterValues(content: string): Record<string, unknown> {
@@ -72,7 +92,7 @@ export const rereadSinceSeed = (): readonly string[] =>
   contentIndexStore() === reread.db && !reread.cold ? reread.rels : []
 
 function recordPage(rel: string, content: string, stat: IndexedStat): void {
-  upsertPageIndex(rel, extractPageIndex(content) ?? { mentions: [], values: {} }, stat)
+  upsertPageIndex(rel, extractPageIndex(content), stat)
 }
 
 export async function indexWrittenPage(root: string, abs: string): Promise<void> {
