@@ -13,14 +13,18 @@ export async function keyHolderFiles(
   return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
 }
 
-// Read from the corpus, not the index: a row the echo window kept out would hide a holder.
+// The disk confirm stays: a row inside the write-echo window can be missing from the index.
 export async function confirmedKeyHolders(
   root: string,
   key: string,
   folders: string[],
 ): Promise<string[]> {
   const holders: string[] = []
-  for (const file of corpusUnder(root, await nexusCorpus(root), folders)) {
+  for (const file of corpusUnder(
+    root,
+    queryKeyHolders(key) ?? (await nexusCorpus(root)),
+    folders,
+  )) {
     const content = await readTextOrNull(file)
     if (content !== null && key in splitFrontmatter(content)) holders.push(file)
   }

@@ -1,5 +1,6 @@
 // One debounced writer PER PATH, shared by every host that edits a page, so the newest edit from ANY host owns the file's single pending write rather than hosts racing private debounces to last-writer-wins.
 
+import type { StoredTabSet, WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
 import { writeThroughBody } from './pageDetailCache'
 import { host } from '../Platform/dialer'
 
@@ -80,4 +81,19 @@ export function cancelPageSave(path: string): void {
 /** The nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new nexus and overwrite a same-relative-path file (data loss). */
 export function flushAllPageSaves(): Promise<void> {
   return pageWriter.flushAll()
+}
+
+// Tab and window sets serialize the whole set on every activation; one debounced write per key coalesces a burst into the last state.
+const sessionWriter = createBodyWriter()
+
+export function scheduleTabsSave(set: StoredTabSet): void {
+  sessionWriter.schedule('tabs', '', () => host().ask('tabs:save', set))
+}
+
+export function scheduleWindowsSave(file: WindowsFile): void {
+  sessionWriter.schedule('windows', '', () => host().ask('windows:save', file))
+}
+
+export function flushAllSessionSaves(): Promise<void> {
+  return sessionWriter.flushAll()
 }
