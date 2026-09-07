@@ -13,7 +13,8 @@ import {
   shownPage,
   useSession,
 } from './store'
-import { newTabTab } from '../Navigation/tabsModel'
+import { newTabTab, pinTabId } from '../Navigation/tabsModel'
+import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
 import { clearCache } from './pageDetailCache'
 import { stubDialer } from '../vitest.setup'
@@ -586,5 +587,55 @@ describe('store — the aliases a page has been given', () => {
     useSession.getState().forgetAlias('p1', 'never given')
     expect(useSession.getState().pageAliases).toEqual({})
     expect(aliasWrites()).not.toHaveBeenCalled()
+  })
+})
+
+describe('glance pin lifecycle wiring (Task 10)', () => {
+  const P: SelectTarget = { kind: 'page', id: 'p1', path: 'Notes/A.md' }
+  const Q: SelectTarget = { kind: 'page', id: 'p2', path: 'Notes/B.md' }
+  const glancePin = (tabId: string, target = P): Parameters<State['pinGlance']>[0] => ({
+    tabId,
+    target: target as { kind: 'page'; id: string; path: string },
+    anchorX: 0,
+    anchorY: 0,
+    anchorHeight: 0,
+    size: { w: 260, h: 120 },
+  })
+  const tags = (): string[] => useSession.getState().pinnedGlances.map((p) => p.tabId)
+
+  beforeEach(() => useSession.getState().resetGlance())
+
+  it('closing a tab scrubs its pins and leaves other tabs untouched', () => {
+    seed({
+      tabs: [uTab('t1', P, [P], 0), uTab('t2', Q, [Q], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+    })
+    useSession.getState().pinGlance(glancePin('t1'))
+    useSession.getState().pinGlance(glancePin('t2', Q))
+    useSession.getState().closeTab('t1')
+    expect(tags()).toEqual(['t2'])
+  })
+
+  it('pinning a tab re-tags its pins to the pinned id, not scrubbing them', () => {
+    seed({ tabs: [uTab('t1', P, [P], 0)], activeTabId: 't1', tabMru: ['t1'] })
+    useSession.getState().pinGlance(glancePin('t1'))
+    useSession.getState().pinTab('t1')
+    expect(tags()).toEqual([pinTabId(P)])
+  })
+
+  it('unpinning a tab re-tags its pins to the exact fresh id it mints', () => {
+    const pinId = pinTabId(P)
+    seed({
+      tabs: [],
+      activeTabId: pinId,
+      pinned: [toNavRef(P)],
+      pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
+    })
+    useSession.getState().pinGlance(glancePin(pinId))
+    useSession.getState().unpinTab(pinId)
+    const freshId = useSession.getState().tabs[0].id
+    expect(freshId).not.toBe(pinId)
+    expect(tags()).toEqual([freshId])
   })
 })
