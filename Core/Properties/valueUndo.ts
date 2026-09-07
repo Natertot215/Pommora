@@ -2,6 +2,7 @@ import { matchesCommand } from '@pommora/uix/Interactions/chords'
 
 type Revert = () => boolean
 
+const DEPTH = 100
 const stack: Revert[] = []
 let group: Revert[] | null = null
 let installed = false
@@ -13,8 +14,7 @@ const onKey = (e: KeyboardEvent): void => {
     e.target.closest('input,textarea,[contenteditable],.cm-editor')
   )
     return
-  while (stack.length) {
-    const revert = stack.pop() as Revert
+  for (let revert = stack.pop(); revert; revert = stack.pop()) {
     if (revert()) {
       e.preventDefault()
       return
@@ -31,7 +31,7 @@ export function pushValueUndo(revert: Revert): void {
     installed = true
     window.addEventListener('keydown', onKey)
   }
-  stack.push(revert)
+  if (stack.push(revert) > DEPTH) stack.shift()
 }
 
 export function groupValueUndo(run: () => void): void {

@@ -23,39 +23,32 @@ function write(
   row: ViewRow,
   column: ResolvedColumn,
   value: PropertyValue | null,
-): boolean {
+): Promise<boolean> | undefined {
   if (column.kind === 'context') {
     const ids = value?.kind === 'context' ? value.value : []
     const current =
-      ((row.frontmatter as Record<string, unknown>).contextValues as
-        | Record<string, string[]>
-        | undefined) ??
+      (row.frontmatter.contextValues as Record<string, string[]> | undefined) ??
       row.contextValues ??
       {}
     const patched = {
       ...row.frontmatter,
       contextValues: { ...current, [column.id]: ids },
     } as PageFrontmatter
-    w.apply(
-      row.id,
-      patched,
-      w.mutate({ op: 'setContext', path: row.path, contextId: column.id, spaceIds: ids }),
-    )
-    return true
+    const pending = w.mutate({
+      op: 'setContext',
+      path: row.path,
+      contextId: column.id,
+      spaceIds: ids,
+    })
+    w.apply(row.id, patched, pending)
+    return pending
   }
   const def = w.schema.find((d) => d.id === column.id)
-  if (!def) return false
-  const patched = applyValueAtRoot(
-    row.frontmatter as Record<string, unknown>,
-    def,
-    value,
-  ) as PageFrontmatter
-  w.apply(
-    row.id,
-    patched,
-    w.mutate({ op: 'setProperty', path: row.path, propertyId: column.id, value }),
-  )
-  return true
+  if (!def) return undefined
+  const patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
+  const pending = w.mutate({ op: 'setProperty', path: row.path, propertyId: column.id, value })
+  w.apply(row.id, patched, pending)
+  return pending
 }
 
 export function assignValue(
@@ -63,15 +56,18 @@ export function assignValue(
   row: ViewRow,
   column: ResolvedColumn,
   value: PropertyValue | null,
-): void {
+): Promise<boolean> | undefined {
   const w = writer.current
-  if (!w) return
-  const resolved = resolveFieldValue(row, column.id, w.schema)
+  if (!w) return undefined
+  const target = w.rowOf(row.id) ?? row
+  const resolved = resolveFieldValue(target, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
-  if (!write(w, row, column, value)) return
-  pushValueUndo(() => {
-    const live = writer.current
-    const target = live?.rowOf(row.id)
-    return !!live && !!target && write(live, target, column, prior)
-  })
+  const pending = write(w, target, column, value)
+  if (pending)
+    pushValueUndo(() => {
+      const live = writer.current
+      const current = live?.rowOf(row.id)
+      return !!live && !!current && write(live, current, column, prior) !== undefined
+    })
+  return pending
 }

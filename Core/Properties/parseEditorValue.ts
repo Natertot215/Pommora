@@ -6,7 +6,7 @@ import { resolveTitle } from './Cells/linkResolve'
 export function parseEditorValue(
   type: string | undefined,
   raw: string,
-  current?: PropertyValue,
+  current?: PropertyValue | null,
 ): PropertyValue | null | undefined {
   if (type === 'number') {
     const trimmed = raw.trim()

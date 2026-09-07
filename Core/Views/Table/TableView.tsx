@@ -1,8 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import { patchOverride } from '../Host/useValuesEpoch'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import {
@@ -12,15 +10,11 @@ import {
 } from '@pommora/core/Actions/cellMenu'
 import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import type { ColumnAlign, SavedView } from '@pommora/core/Views/views'
-import {
-  applyValueAtRoot,
-  isBlankValue,
-  type PropertyValue,
-} from '@pommora/core/Properties/propertyValue'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
 import { type PropertyDefinition, isOptionsKind } from '@pommora/core/Properties/properties'
 import type { ContextOption } from '../../Contexts/contextOptions'
-import { frontmatterOf, subtreeIds } from '../Pipeline/group'
+import { subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
@@ -56,7 +50,6 @@ import { clampWidth, widthFor } from './columnWidths'
 import { alignFor } from '../columnAlign'
 import { useStyleFor } from '../Host/useColumnStyles'
 import { reorderColumns } from './columnReorder'
-import { groupKeyToValue } from '../reassign'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -100,8 +93,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     schema,
     view,
     liveView,
-    values,
-    setValueOverride,
     columns,
     groups,
     setTree,
@@ -134,6 +125,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitBand,
     setStylePatch,
     commitValue,
+    commitGroupValue,
     contextOptionsFor,
     creation,
     mutate,
@@ -1023,46 +1015,23 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const colTransform = (ci: number): string | undefined => gapShift(dragShift, ci)
 
   const reassignRow = (pageId: string, destGroupKey: string): void => {
-    const path = rowPath.get(pageId)
-    if (!groupPropId || !path) return
-    if (subGrouped) {
-      const dest = subTargets.get(destGroupKey)
-      const cur = subTargets.get(rowBand.get(pageId) ?? '')
-      if (!dest) return
-      const destPath = dest.setId === null ? source.path : setPaths.get(dest.setId)
-      if (!destPath) return
-      const bucketChanged = dest.bucket !== (cur?.bucket ?? null)
-      const setChanged = dest.setId !== (cur?.setId ?? null)
-      const value = groupKeyToValue(dest.bucket ?? UNGROUPED, groupPropType)
-      const write = (async () => {
-        if (
-          bucketChanged &&
-          !(await mutate({ op: 'setProperty', path, propertyId: groupPropId, value }))
-        )
-          return
-        if (setChanged) await mutate({ op: 'movePage', path, newParentPath: destPath })
-      })()
-      const def = bucketChanged ? schema.find((d) => d.id === groupPropId) : undefined
-      if (def)
-        patchOverride(
-          setValueOverride,
-          pageId,
-          applyValueAtRoot(
-            frontmatterOf(values, pageId) as Record<string, unknown>,
-            def,
-            value,
-          ) as PageFrontmatter,
-          write,
-        )
+    if (!groupPropId) return
+    if (!subGrouped) {
+      commitGroupValue(pageId, groupPropId, groupPropType, destGroupKey)
       return
     }
-    const row = rowById.get(pageId)
-    if (row)
-      commitValue(
-        row,
-        { id: groupPropId, kind: 'property' },
-        groupKeyToValue(destGroupKey, groupPropType),
-      )
+    const path = rowPath.get(pageId)
+    const dest = subTargets.get(destGroupKey)
+    if (!path || !dest) return
+    const destPath = dest.setId === null ? source.path : setPaths.get(dest.setId)
+    if (!destPath) return
+    const cur = subTargets.get(rowBand.get(pageId) ?? '')
+    const write =
+      dest.bucket === (cur?.bucket ?? null)
+        ? Promise.resolve(true)
+        : commitGroupValue(pageId, groupPropId, groupPropType, dest.bucket ?? UNGROUPED)
+    if (dest.setId !== (cur?.setId ?? null))
+      void write?.then((ok) => ok && mutate({ op: 'movePage', path, newParentPath: destPath }))
   }
   const relocateRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
