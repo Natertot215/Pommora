@@ -198,6 +198,9 @@ export function GlancePane(): React.JSX.Element {
         dismiss()
         return
       }
+      // Never preview the location already in view — resolved at fire time, so a dwell that lands after a click onto that page voids itself.
+      const sel = useSession.getState().selection
+      if (sel.kind === 'page' && next.target.kind === 'page' && sel.id === next.target.id) return
       if (!next.el.isConnected) return
       const token = ++pendingFetch.current
       if (next.target.kind === 'site' || readPageDetail(next.target.path)) {
