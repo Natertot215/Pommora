@@ -8,6 +8,7 @@ import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/ResizeFrame'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
+import type { PinnedGlance } from '../../Session/glanceSlice'
 import { connectionsFor } from '../../Nexus/treeIndex'
 import { previewLingerMs } from '../../Settings/personalization'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
@@ -223,7 +224,58 @@ export function GlancePane(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
   const pageWindow = useSession((s) => s.pageWindow)
-  useEffect(dismiss, [dismiss, selection, activeTabId, pageWindow])
+  const unpinGlance = useSession((s) => s.unpinGlance)
+
+  // A closing pin stays in the store, its `open` false, so its pane blooms out; it leaves the store only once that exit has played through.
+  const [exiting, setExiting] = useState<ReadonlySet<string>>(() => new Set())
+  const removePin = useCallback(
+    (pinId: string): void => {
+      unpinGlance(pinId)
+      setExiting((prev) => {
+        if (!prev.has(pinId)) return prev
+        const next = new Set(prev)
+        next.delete(pinId)
+        return next
+      })
+    },
+    [unpinGlance],
+  )
+  const beginExit = useCallback((ids: string[]): void => {
+    setExiting((prev) => {
+      if (ids.every((id) => prev.has(id))) return prev
+      const next = new Set(prev)
+      for (const id of ids) next.add(id)
+      return next
+    })
+  }, [])
+
+  // Navigation dismisses the live pane and closes unlocked pins; locked pins survive. Active-tab pins bloom out; any an earlier tab switch left behind aren't rendered, so they leave at once.
+  useEffect(() => {
+    dismiss()
+    const onTab: string[] = []
+    for (const p of useSession.getState().pinnedGlances) {
+      if (p.locked) continue
+      if (p.tabId === activeTabId) onTab.push(p.pinId)
+      else removePin(p.pinId)
+    }
+    beginExit(onTab)
+  }, [dismiss, removePin, beginExit, selection, activeTabId, pageWindow])
+
+  // A press outside every glance portal blooms out unlocked active-tab pins. Containment is the portal layer, not the glance body, so the live pane's resize edges and rim don't read as click-away.
+  useEffect(() => {
+    const onDown = (e: PointerEvent): void => {
+      const t = e.target
+      if (t instanceof Element && t.closest('[data-picker-portal]')) return
+      beginExit(
+        useSession
+          .getState()
+          .pinnedGlances.filter((p) => !p.locked && p.tabId === activeTabId)
+          .map((p) => p.pinId),
+      )
+    }
+    window.addEventListener('pointerdown', onDown, true)
+    return () => window.removeEventListener('pointerdown', onDown, true)
+  }, [beginExit, activeTabId])
 
   // Publish live-pane visibility for ghost suppression; `shown` is the single source, so this flips false on every hide path (dismiss and retarget-through-null both flow through it).
   useEffect(() => {
@@ -330,7 +382,7 @@ export function GlancePane(): React.JSX.Element {
 
   const pinnedGlances = useSession((s) => s.pinnedGlances)
   const pinGlance = useSession((s) => s.pinGlance)
-  const unpinGlance = useSession((s) => s.unpinGlance)
+  const setPinLocked = useSession((s) => s.setPinLocked)
 
   // The tile render and the fold toggle are pure, so the live pane and every pin share them; the live path keeps its own warmSeam memo (no fresh seam per render).
   const renderPageTile = (
@@ -382,31 +434,34 @@ export function GlancePane(): React.JSX.Element {
       <Icon name="lock-open" size="control" />
     </button>
   )
-  const unlockBtn = (pinId: string): React.JSX.Element => (
+  // A locked pin holds its control always visible; unlocking flips it to the reveal-on-hover open lock and leaves the pane standing.
+  const pinBtn = (p: PinnedGlance): React.JSX.Element => (
     <button
       type="button"
-      className="glance-lock glance-lock-persist"
-      aria-label="Unlock preview"
+      className={p.locked ? 'glance-lock glance-lock-persist' : 'glance-lock'}
+      aria-label={p.locked ? 'Unlock preview' : 'Lock preview'}
       onMouseDown={(e) => e.preventDefault()}
-      onClick={() => unpinGlance(pinId)}
+      onClick={() => setPinLocked(p.pinId, !p.locked)}
     >
-      <Icon name="locked" size="control" />
+      <Icon name={p.locked ? 'locked' : 'lock-open'} size="control" />
     </button>
   )
 
-  // Esc closes the newest active-tab pin; bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
+  // Esc blooms out the newest still-open active-tab unlocked pin; bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape' || e.defaultPrevented || shown) return
-      const newest = pinnedGlances.filter((p) => p.tabId === activeTabId).at(-1)
+      const newest = pinnedGlances
+        .filter((p) => p.tabId === activeTabId && !p.locked && !exiting.has(p.pinId))
+        .at(-1)
       if (newest) {
         e.preventDefault()
-        unpinGlance(newest.pinId)
+        beginExit([newest.pinId])
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [shown, pinnedGlances, activeTabId, unpinGlance])
+  }, [shown, pinnedGlances, activeTabId, exiting, beginExit])
 
   return (
     <>
@@ -473,7 +528,9 @@ export function GlancePane(): React.JSX.Element {
           <PickerMenu
             key={p.pinId}
             glass="window"
-            open
+            open={!exiting.has(p.pinId)}
+            enter={false}
+            onExited={() => removePin(p.pinId)}
             anchorX={p.anchorX}
             anchorY={p.anchorY}
             anchorHeight={p.anchorHeight}
@@ -491,7 +548,7 @@ export function GlancePane(): React.JSX.Element {
               onClick={onFoldClick}
             >
               {renderPageTile(p.target, glanceWarmSeam(p.target.id, p.target.path))}
-              {unlockBtn(p.pinId)}
+              {pinBtn(p)}
             </div>
           </PickerMenu>
         ))}
