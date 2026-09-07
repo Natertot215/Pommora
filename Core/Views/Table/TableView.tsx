@@ -138,7 +138,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
   const [collapsing, setCollapsing] = useState<string | null>(null)
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
-  const prevLooks = useRef<Record<string, string | undefined>>({})
   const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
   const beginGesture = usePointerGesture()
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
@@ -761,23 +760,26 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }),
     [columns, alignById, styleById],
   )
-  const widened: string[] = []
-  columns.forEach((c, i) => {
-    const look = styleByCol[i].look
-    const prev = prevLooks.current[c.id]
-    prevLooks.current[c.id] = look
-    if (prev === undefined || prev === look) return
-    const basis =
-      widthOverride[c.id] ??
-      liveView.column_widths?.[c.id] ??
-      widthFor(c.id, schema, contextIds).default
-    if (
-      clampWidth(basis, c.id, schema, look, contextIds, iconsShown) >
-      clampWidth(basis, c.id, schema, prev, contextIds, iconsShown)
-    )
-      widened.push(c.id)
-  })
-  if (widened.some((id) => !sliding.has(id))) setSliding((s) => new Set([...s, ...widened]))
+  const [prevStyles, setPrevStyles] = useState(styleByCol)
+  if (prevStyles !== styleByCol) {
+    setPrevStyles(styleByCol)
+    const widened: string[] = []
+    columns.forEach((c, i) => {
+      const look = styleByCol[i].look
+      const prev = prevStyles[i]?.look
+      if (prev === look) return
+      const basis =
+        widthOverride[c.id] ??
+        liveView.column_widths?.[c.id] ??
+        widthFor(c.id, schema, contextIds).default
+      if (
+        clampWidth(basis, c.id, schema, look, contextIds, iconsShown) >
+        clampWidth(basis, c.id, schema, prev, contextIds, iconsShown)
+      )
+        widened.push(c.id)
+    })
+    if (widened.length) setSliding((s) => new Set([...s, ...widened]))
+  }
   const dragShift = useMemo(() => {
     if (!colDrag) return null
     // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.

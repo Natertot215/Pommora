@@ -379,10 +379,6 @@
   /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
   --grip-top: 28px;
 }
-.mdpm-editor .cm-line.mdpm-embed-line .cm-widget-buffer {
-  height: 0;
-}
-
 .mdpm-embed-cycle {
   color: var(--label-secondary);
 }
