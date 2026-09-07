@@ -54,6 +54,7 @@ afterEach(() => {
   dropPageDetail(page.path)
   useSession.setState((s) => ({
     personalization: { ...s.personalization, previewPersistence: undefined },
+    selection: { kind: 'none' },
   }))
   for (const n of document.querySelectorAll('[data-picker-portal]')) n.remove()
 })
@@ -147,6 +148,22 @@ describe('the presenter', () => {
       vi.useRealTimers()
     }
     expect(spy).not.toHaveBeenCalled()
+  })
+})
+
+describe('the current-view guard', () => {
+  it('a target already in the active view arms nothing', () => {
+    act(() => useSession.setState({ selection: { kind: 'page', id: page.id, path: page.path } }))
+    present(link())
+    expect(paneOpen()).toBe(false)
+  })
+
+  it('a target for a different page still opens', () => {
+    act(() =>
+      useSession.setState({ selection: { kind: 'page', id: 'other', path: 'Notes/Other.md' } }),
+    )
+    present(link())
+    expect(paneOpen()).toBe(true)
   })
 })
 
