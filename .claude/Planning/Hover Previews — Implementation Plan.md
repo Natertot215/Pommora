@@ -384,9 +384,9 @@ onPointerLeave={() => cancelGlance()}
 ```
 
 **Verify — automated**
-- [ ] `npm run typecheck` green. `rg -F 'armPreview' Core/Navigation/NavList.tsx Core/Navigation/NavGallery.tsx` → ≥1.
-- [ ] Crossing test: `pageTargetFromNav`'s path equals `pagesByIdOf(tree).get(id).path` for a known page id — resolver and arm agree.
-- [ ] Degenerate: id absent from `pagesByIdOf` → null → no arm; non-page nav ref → null.
+- [x] `npm run typecheck` · `npm run lint` green. `rg -F 'armPreview' Core/Navigation/NavList.tsx Core/Navigation/NavGallery.tsx` → 4 (≥1). *(`pageTargetFromNav` lives in `navResolve.ts`, not `NavList.tsx` — it owns `ResolvedNav`, is a pure `.ts` beside the breadcrumb resolver F6 contrasts, and NavGallery + the test import it; see Deviations.)*
+- [x] Crossing test: `pageTargetFromNav`'s path equals `pagesByIdOf(tree).get(id).path` for a known page id (`navResolve.test.ts`).
+- [x] Degenerate: id absent from `pagesByIdOf` → null; non-page nav ref → null; tree null → null (`navResolve.test.ts`).
 
 **Verify — user**
 - [ ] Recents/pins page row → preview. *(Carries.)*
@@ -643,7 +643,7 @@ useEffect(() => {
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
   - [x] Task 5 — Sidebar (Shift) · `<glance-t5-commit>`
   - [x] Task 6 — Tabs · `<glance-t6-commit>`
-  - [ ] Task 7 — Nav views (pagesByIdOf resolve) · `<commit>`
+  - [x] Task 7 — Nav views (pagesByIdOf resolve) · `<glance-t7-commit>`
   - [ ] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `<commit>`
 - [ ] **Phase 4** — Lock + pinned multi-pane
   - [ ] Task 9 — `glanceSlice.ts` pin store · `<commit>`
@@ -663,6 +663,7 @@ useEffect(() => {
 ### Open Against Later Tasks
 
 ### Deviations
+- **Task 7 — `pageTargetFromNav` placed in `navResolve.ts`, not `NavList.tsx`.** The plan called it a "local helper," but both `NavList` (row) and `NavGallery` (card) need it and it wants a unit test, so "local" was already gone. `navResolve.ts` owns `ResolvedNav`, is a pure `.ts` that already imports from `treeIndex`, sits beside the breadcrumb resolver F6 contrasts it with, and already has `navResolve.test.ts` — the coherent home over a component file with a CSS side-effect. Nav rows read `tree` imperatively (`useSession.getState().tree`) in the hover handler — no per-row store subscription — matching `NavRowMenu`'s existing idiom. `NavRow` uses `MenuItem`'s `onMouseEnter`/`onMouseLeave` (it exposes those, not pointer-enter); `GalleryCard` uses `onPointerEnter`/`onPointerLeave` on `CardRoot`.
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
 - **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
 - **L1 fold — ambient `shiftDown()` tracker dropped for `e.shiftKey`** (Phase 1 attack review, Fable-advisor-adjudicated: reachable + subtractive, not additive). The tracker read stale Shift state after app-switch-with-Shift-held (no `blur` reset) and before its first call. The fix deletes the mechanism rather than guarding it: surfaces read `e.shiftKey` off the pointer-enter event, which is where F5 always said the read happens. Removed `shift`/`tracking`/`shiftDown` from `glanceLink.ts` and its test; retired the now-single-reader `LEAVE_GRACE_MS` in `GlancePane.tsx` in the same commit (`previewLingerMs(persistence === 'off' ? undefined : persistence)`). F5, Task 2, the Phase 3 preamble, and Tasks 5/8 fences updated to match. Cleanup commit `313cc9f85` on top of Task 2's `3a03a5ef6`.
