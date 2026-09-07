@@ -1,13 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-type Undo = typeof import('./valueUndo')
-
-let undo: Undo
-beforeEach(async () => {
-  vi.resetModules()
-  undo = await import('./valueUndo')
-})
+import { groupValueUndo, pushValueUndo } from './valueUndo'
 
 const cmdZ = (target: EventTarget = window): boolean => {
   const e = new KeyboardEvent('keydown', {
@@ -20,14 +13,18 @@ const cmdZ = (target: EventTarget = window): boolean => {
   return e.defaultPrevented
 }
 
+beforeEach(() => {
+  while (cmdZ()) {}
+})
+
 describe('pushValueUndo', () => {
   it('pops the most recent entry first', () => {
     const order: string[] = []
-    undo.pushValueUndo(() => {
+    pushValueUndo(() => {
       order.push('first')
       return true
     })
-    undo.pushValueUndo(() => {
+    pushValueUndo(() => {
       order.push('second')
       return true
     })
@@ -38,22 +35,22 @@ describe('pushValueUndo', () => {
 
   it('a stale entry drains through to the next one', () => {
     const applied = vi.fn(() => true)
-    undo.pushValueUndo(applied)
-    undo.pushValueUndo(() => false)
-    undo.pushValueUndo(() => false)
+    pushValueUndo(applied)
+    pushValueUndo(() => false)
+    pushValueUndo(() => false)
     expect(cmdZ()).toBe(true)
     expect(applied).toHaveBeenCalledTimes(1)
   })
 
   it('leaves the keypress alone when nothing applies', () => {
-    undo.pushValueUndo(() => false)
+    pushValueUndo(() => false)
     expect(cmdZ()).toBe(false)
     expect(cmdZ()).toBe(false)
   })
 
   it('ignores a keypress inside a text surface', () => {
     const revert = vi.fn(() => true)
-    undo.pushValueUndo(revert)
+    pushValueUndo(revert)
     const input = document.createElement('input')
     document.body.append(input)
     expect(cmdZ(input)).toBe(false)
@@ -71,9 +68,9 @@ describe('pushValueUndo', () => {
 describe('groupValueUndo', () => {
   it('collapses a run of pushes into one entry that replays in reverse', () => {
     const order: string[] = []
-    undo.groupValueUndo(() => {
+    groupValueUndo(() => {
       for (const name of ['a', 'b', 'c'])
-        undo.pushValueUndo(() => {
+        pushValueUndo(() => {
           order.push(name)
           return true
         })
@@ -84,19 +81,19 @@ describe('groupValueUndo', () => {
   })
 
   it('pushes nothing when the run collected no reverts', () => {
-    undo.groupValueUndo(() => {})
+    groupValueUndo(() => {})
     expect(cmdZ()).toBe(false)
   })
 
   it('applies when any member applies, and is stale when none do', () => {
-    undo.groupValueUndo(() => {
-      undo.pushValueUndo(() => false)
-      undo.pushValueUndo(() => true)
+    groupValueUndo(() => {
+      pushValueUndo(() => false)
+      pushValueUndo(() => true)
     })
     expect(cmdZ()).toBe(true)
-    undo.groupValueUndo(() => {
-      undo.pushValueUndo(() => false)
-      undo.pushValueUndo(() => false)
+    groupValueUndo(() => {
+      pushValueUndo(() => false)
+      pushValueUndo(() => false)
     })
     expect(cmdZ()).toBe(false)
   })

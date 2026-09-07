@@ -266,7 +266,6 @@ export function useViewHost(
     writer.current = {
       schema,
       mutate,
-      // `rows` is the pre-filter set: a value change that filters the row out of the pipeline must still be undoable.
       rowOf: (id) => rows.find((r) => r.id === id),
       apply: (id, fm, write) => patchOverride(setValueOverride, id, fm, write),
     }

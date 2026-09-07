@@ -55,7 +55,6 @@ beforeEach(() => {
       apply: apply as unknown as ValueWriter['apply'],
     },
   }
-  // Drain any entry a prior test left on the module-level stack.
   while (cmdZ()) {}
 })
 

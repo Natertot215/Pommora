@@ -2,7 +2,7 @@ import type { PropertyValue } from './propertyValue'
 import { urlValueFromEdit } from '@pommora/core/Connections/linkValue'
 import { resolveTitle } from './Cells/linkResolve'
 
-/** `null` clears (empty input); `undefined` means invalid — don't commit. A url edit rewrites the URL and rides `current`'s alias along. */
+/** `null` clears (empty input); `undefined` means invalid — don't commit. */
 export function parseEditorValue(
   type: string | undefined,
   raw: string,

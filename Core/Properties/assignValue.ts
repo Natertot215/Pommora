@@ -18,7 +18,6 @@ export interface ValueWriter {
   apply: (pageId: string, fm: PageFrontmatter, write: Promise<boolean>) => void
 }
 
-// loadValues never re-reads mid-session, so a context write patches the resolved ids onto the frontmatter's `contextValues` rider, which resolveFieldValue prefers while the commit is in flight.
 function write(
   w: ValueWriter,
   row: ViewRow,
@@ -70,7 +69,6 @@ export function assignValue(
   const resolved = resolveFieldValue(row, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
   if (!write(w, row, column, value)) return
-  // The revert writes directly, so undoing never pushes an entry of its own; re-resolving through `rowOf` keeps it O(1) and drops it once the surface is gone.
   pushValueUndo(() => {
     const live = writer.current
     const target = live?.rowOf(row.id)
