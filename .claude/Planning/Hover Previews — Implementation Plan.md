@@ -641,10 +641,10 @@ useEffect(() => {
 - [x] **Phase 2** — Dwell slots
   - [x] Task 4 — `detail`/`views` dwell values · `d7a88b66a`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
-  - [x] Task 5 — Sidebar (Shift) · `<glance-t5-commit>`
-  - [x] Task 6 — Tabs · `<glance-t6-commit>`
-  - [x] Task 7 — Nav views (pagesByIdOf resolve) · `<glance-t7-commit>`
-  - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `<glance-t8-commit>` *(CardsView edit uncommitted — parallel session; see Deviations)*
+  - [x] Task 5 — Sidebar (Shift) · `3e92af4e8`
+  - [x] Task 6 — Tabs · `530899fb5`
+  - [x] Task 7 — Nav views (pagesByIdOf resolve) · `c924dd6e4`
+  - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` *(CardsView edit uncommitted — parallel session; see Deviations)*
 - [ ] **Phase 4** — Lock + pinned multi-pane
   - [ ] Task 9 — `glanceSlice.ts` pin store · `<commit>`
   - [ ] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `<commit>`
@@ -663,7 +663,7 @@ useEffect(() => {
 ### Open Against Later Tasks
 
 ### Deviations
-- **Task 8 — CardsView edit applied but NOT committed (parallel session collision).** The card-row hover handler (`onPointerEnter` Shift-arm + `onPointerLeave` cancel) and the ghost `suppressed()` `|| glanceShown()` were edited in place, but `CardsView.tsx` carried uncommitted parallel PropertyPanel-session edits (a value-picker/add-picker refactor) throughout Phase 3, so per the run's commit discipline the file was left unstaged — Task 8's commit is `TableView.tsx` + `GlancePane.tsx` + the two tests + the plan only. The CardsView Task 8 wiring sits in the working tree for the eyeball; a human resolves commit ordering with the parallel session. `git diff Core/Views/Cards/CardsView.tsx` shows both sets of edits intermixed; the Task 8 additions are the two hover-handler lines and the one `glanceShown()` disjunction.
+- **Task 8 — CardsView edit applied but NOT committed (parallel session collision).** The card-row hover handler (`onPointerEnter` Shift-arm + `onPointerLeave` cancel) and the ghost `suppressed()` `|| glanceShown()` were edited in place, but `CardsView.tsx` carried uncommitted parallel PropertyPanel-session edits (a value-picker/add-picker refactor) throughout Phase 3, so per the run's commit discipline the file was left unstaged — Task 8's commit is `TableView.tsx` + `GlancePane.tsx` + `glancePane.test.tsx` + the plan only. The CardsView Task 8 wiring sits in the working tree for the eyeball; a human resolves commit ordering with the parallel session. `git diff Core/Views/Cards/CardsView.tsx` shows both sets of edits intermixed; the Task 8 additions are the two hover-handler lines and the one `glanceShown()` disjunction.
 - **Task 7 — `pageTargetFromNav` placed in `navResolve.ts`, not `NavList.tsx`.** The plan called it a "local helper," but both `NavList` (row) and `NavGallery` (card) need it and it wants a unit test, so "local" was already gone. `navResolve.ts` owns `ResolvedNav`, is a pure `.ts` that already imports from `treeIndex`, sits beside the breadcrumb resolver F6 contrasts it with, and already has `navResolve.test.ts` — the coherent home over a component file with a CSS side-effect. Nav rows read `tree` imperatively (`useSession.getState().tree`) in the hover handler — no per-row store subscription — matching `NavRowMenu`'s existing idiom. `NavRow` uses `MenuItem`'s `onMouseEnter`/`onMouseLeave` (it exposes those, not pointer-enter); `GalleryCard` uses `onPointerEnter`/`onPointerLeave` on `CardRoot`.
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
 - **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
