@@ -630,11 +630,11 @@ export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
 
 **Verify — automated**
 
-- [ ] New `PropertyPanel.test.tsx`, red first — expect 3 failures, module not found: an `onBack` panel seeds Context rows shown and one without seeds them hidden (B8); a committed value makes its row appear without a `revealed` write (the live predicate).
-- [ ] `rg -F "PagePropertyRows" Core` → 0 · `usePropertyRows` → 0 · `PropertyValueEditors` → 0 · `Properties/Page` → 0. Control: `rg -F "PropertyPanel" Core` → ≥ 4.
-- [ ] `rg -c "PickerMenu" Core/Properties/PropertyPanel.tsx` → 0 — the panel mounts none of its own (U1).
-- [ ] `ls Core/Properties/Page` exits non-zero.
-- [ ] `npm run typecheck`, `npm run test` (count = prior + 3), `npm run lint` green.
+- [x] New `PropertyPanel.test.tsx`, 3 green: an `onBack` panel seeds Context rows shown and one without seeds them hidden (B8); a valued property shows its row with no `revealed` write (the live predicate).
+- [x] `PagePropertyRows` → 0 · `usePropertyRows` → 0 · `PropertyValueEditors` → 0 · `Properties/Page` → 0. Control: `PropertyPanel` → 8.
+- [x] `PickerMenu` in `PropertyPanel.tsx` → 0 — the panel mounts none of its own (U1).
+- [x] `ls Core/Properties/Page` exits non-zero.
+- [x] `npm run typecheck`, `npm run test` (+3, suite 4082), `npm run lint` green.
 
 **Verify — user**
 
@@ -741,7 +741,7 @@ without deleting more than it grows is out of scope — report it under Sequence
   - [x] Task 2 — Cards converted; CardPickerHost + CardAddPicker deleted · `<commit>`
   - [x] Task 3 — Table's one mount; DatetimeCellPicker deleted · `<commit>`
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
-  - [ ] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
+  - [x] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
   - [ ] Task 5 — old PropertyPicker props removed · `<commit>`
 - [ ] **Phase 3** — The re-fold census
   - [ ] Task 6 — census dispatched, findings folded · `<commit>`
@@ -761,6 +761,8 @@ without deleting more than it grows is out of scope — report it under Sequence
 
 ### Open Against Later Tasks
 
+- **Task 4 truncation choice — verify at Gate 2.** The panel value sits in `MenuItem`'s `trailing` slot with a `globalStyle` on the row's trailing `side` (`flex 0 1 auto; minWidth 0`) to let a long value truncate — the plan's "smallest fix" fallback, chosen by reasoning (no live measurement): `value`/`detail` slots either don't let `side` shrink or impose the `detail` font. Confirm a long Select chip and a long link title truncate as they did.
+
 ### Deviations
 
 - **Task 1 — the pane test is +7, not the fenced +6.** The B28 "centres with `anchorX`, not without" behavior is two `it`s (one per branch) rather than one, for a legible failure. Coverage added, none removed; baseline is 4050 → 4057.
@@ -770,6 +772,8 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **Task 2 — the request types (`ValuePickerRequest`/`AddPickerRequest`) and `dependentKind` moved into `CardsView` unchanged**, since `CardPickerHost` (their only other home) is deleted and only `CardsView` reads them. `onReveal` looks a dependent entry up in the retained `addEntries: AddEntry[]` for its `type`, because `PickEntry` (now `icon: string`, since `propertyIcon` returns an arbitrary user-icon string) deliberately carries no `type`. The `code-simplifier` later inlined `dependentKind` into `onReveal` and de-`export`ed the request types (net −6, gates green), so the final `CardsView` is +155.
 - **Gate 1 — two review findings folded (both my regressions), one struck.** `feature-dev:code-reviewer` and `build-breaking-agent` both ran; the mandatory Fable advisor **timed out twice**, so I adjudicated each finding against the deleted oracle and recorded the reason (per the "record every fix and every rejection" rule). Folded: (a) the add-chooser's dependent-kind routing was dead — `PropertyPicker`'s onClick called `onDismiss()` after `onReveal?.(e)`, and Cards' `onReveal` reopens on the same mount, so the same React batch nulled it; fixed to `if (e.revealOnly) onDismiss()` (a removal), with a locking pane test. (b) Table dropped the per-cell `key`, so a datetime cell reopened within the previous pane's Bloom-out showed the prior date (CalendarPicker seeds state once at mount); restored `key={rowId:colId}` at `cellPicker` — Table-only, since Cards had no key pre-fold either. Struck: the Cards number field's `if (nv != null)` clear-guard — identical to the deleted `CardPickerHost` and ratified by **B16** ("an emptied number does not commit"); changing it would be a behavior change the plan forbids.
 - **Gate 1 — the multi-select add-drill regression fixed at Nathan's direction (he called the snapshot approach over-engineered, correctly).** The fold had frozen a full `PickTarget` into every `PickEntry`; when a drilled multi_select's first commit revealed (and so filtered) the column, the drilled pane read a stale snapshot — snap-back with latent corruption. Fix removes the snapshot: `PickEntry.target: PickTarget | null` → `drillable: boolean`, and `PropertyPicker` resolves the drilled pane's target LIVE through a new `resolveTarget?(entry)` callback (the mirror of the old `CardAddPicker.currentOf`), with the reset effect keyed off `[open, chooserInitial]` so the drill survives re-render. Cards passes `resolveTarget = pickTargetFor` by id, which reads the row regardless of the addable list. `PropertyPicker` got simpler; `CardsView` net rose to **+166** (the `resolveTarget`/`drillable` wiring). Task 4's panel passes non-drillable entries, so it is unaffected. Gate 1 stop waived by Nathan ("start Task 4 without me").
+
+- **Task 4 — `PropertyPanel.tsx` lands at 456, over its ≤320 ceiling by 136 (FLAGGED for Gate 2).** It folds three files — `PagePropertyRows` 341 + `usePropertyRows` 177 + `PropertyValueEditors` 77 = 595 — into one component, a real −139, but the ≤320 estimate assumed more evaporation than the behavior allows: the visibility predicates, both commit writers, the `editRow` click dispatch, `valueMenu`/`rowMenu`, the inline `PropertyEditor`-or-`Cell` value row, `panelTarget`, and the chooser entries are all irreducible behavior that has to live somewhere. No one-reader helper or new file was minted to pad it. `property-panel.css.ts` is 47 vs ≤45 — the extra is the `row` hook and `globalStyle` the truncation fix needs (dead `label`/`titleText` cut). The Gate 2 `code-simplifier` gets the cut attempt; the running net still lands in −400 to −590 (deletions ≈1226 vs additions ≈775), so the per-file estimate was optimistic, not the fold bloated.
 
 ### Lessons
 

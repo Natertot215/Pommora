@@ -14,7 +14,7 @@ import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
 import { useWindowTabConnections } from '../../Session/pageConnections'
 import { windowTargetOf, useEmbedScale, useSession, type WindowTarget } from '../../Session/store'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
-import { PagePropertyRows } from '../../Properties/Page/PagePropertyRows'
+import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import './page-window.css'
@@ -170,7 +170,7 @@ function PageWindowBody({
         className: 'page-window-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && <PagePropertyRows variant="panel" page={target} />}
+            {inspectorOpen && <PropertyPanel page={target} panelStyle="filled" />}
           </div>
         ),
       }}

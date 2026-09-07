@@ -94,7 +94,6 @@ export function PropertyPicker({
 }): React.JSX.Element | null {
   const held = useHeld(target ?? null, open)
   const [picked, setPicked] = useState<PickEntry | null>(null)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset only on open / pre-drill change; a fresh `chooser` array each render must not re-fire this and eject an in-flight drill.
   useEffect(() => {
     setPicked(open ? (chooser?.find((e) => e.id === chooserInitial) ?? null) : null)
   }, [open, chooserInitial])
