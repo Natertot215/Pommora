@@ -38,8 +38,8 @@ import {
 import { cx } from '@pommora/uix/Utilities/cx'
 import { assetUrl } from '../../Platform/assetScheme'
 import { useSession } from '../../Session/store'
-import { armPreview } from '../../Interface/Glance/glanceLink'
-import { cancelGlance, glanceShown } from '../../Interface/Glance/glanceAction'
+import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceLink'
+import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
@@ -1288,12 +1288,16 @@ const PageCard = memo(function PageCard({
       data-rid={row.id}
       onPointerEnter={(e) => {
         onHover(row.id, true)
-        if (e.shiftKey)
-          armPreview({ kind: 'page', id: row.id, path: row.path }, e.currentTarget, 'views')
+        hoverGlance(
+          { kind: 'page', id: row.id, path: row.path },
+          e.currentTarget,
+          'views',
+          e.shiftKey,
+        )
       }}
       onPointerLeave={() => {
         onHover(row.id, false)
-        cancelGlance()
+        leaveGlance()
       }}
       onClick={(e) => {
         if (drag?.isDragging || naming) return

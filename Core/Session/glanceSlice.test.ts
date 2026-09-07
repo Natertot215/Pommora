@@ -7,7 +7,7 @@ import { useSession } from './store'
 
 const SIZE: GlanceSize = { w: 260, h: 120 }
 
-const pin = (tabId: string, id: string, path: string): Omit<PinnedGlance, 'pinId'> => ({
+const pin = (tabId: string, id: string, path: string): Omit<PinnedGlance, 'pinId' | 'locked'> => ({
   tabId,
   target: { kind: 'page', id, path },
   anchorX: 10,
@@ -45,6 +45,17 @@ describe('the pin store', () => {
     useSession.getState().pinGlance(pin('B', 'p1', 'Notes/1.md'))
     expect(pins()).toHaveLength(2)
     expect(pins().map((p) => p.tabId)).toEqual(['A', 'B'])
+  })
+
+  it('is born locked, and setPinLocked flips it in place without removing it', () => {
+    useSession.getState().pinGlance(pin('A', 'p1', 'Notes/1.md'))
+    expect(pins()[0].locked).toBe(true)
+    const pinId = pins()[0].pinId
+    useSession.getState().setPinLocked(pinId, false)
+    expect(pins()).toHaveLength(1)
+    expect(pins()[0].locked).toBe(false)
+    useSession.getState().setPinLocked(pinId, true)
+    expect(pins()[0].locked).toBe(true)
   })
 
   it('unpins by pinId, and unpinning an unknown id is a no-op', () => {

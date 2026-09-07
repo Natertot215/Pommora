@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { bloomOpen } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menu-anchor'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
 import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
@@ -329,6 +330,35 @@ describe('pinned panes (Task 10)', () => {
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
     })
+  // A close begins a bloom-out; the store entry leaves only once that exit plays through, so these settle fake time.
+  const underFakeTime = (fire: () => void): void => {
+    vi.useFakeTimers()
+    try {
+      act(fire)
+      act(() => vi.advanceTimersByTime(500))
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+  const escapeAndSettle = (): void =>
+    underFakeTime(() =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+    )
+  const clickAwayAndSettle = (): void =>
+    underFakeTime(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })))
+  const clickAwayInside = (target: HTMLElement): void =>
+    underFakeTime(() => target.dispatchEvent(new Event('pointerdown', { bubbles: true })))
+
+  it('the live pane plays the enter bloom', () => {
+    present(link())
+    expect(document.querySelector(`[data-picker-portal] .${bloomOpen}`)).not.toBeNull()
+  })
+
+  it('a pinned pane appears without the enter bloom, so a lock cannot bloom in over the pane it replaced', () => {
+    addPin()
+    expect(document.querySelector('[data-picker-portal]')).not.toBeNull()
+    expect(document.querySelector(`[data-picker-portal] .${bloomOpen}`)).toBeNull()
+  })
 
   it('renders at its frozen anchor under the portal, not the inline branch', () => {
     addPin({ anchorX: 200, anchorY: 100, anchorHeight: 16 })
@@ -395,15 +425,51 @@ describe('pinned panes (Task 10)', () => {
     const pins = useSession.getState().pinnedGlances
     expect(pins).toHaveLength(1)
     expect(pins[0].tabId).toBe('tab-1')
+    expect(pins[0].locked).toBe(true)
     expect(pins[0].target).toEqual({ kind: 'page', id: page.id, path: page.path })
     expect(bodies()).toBe(1)
   })
 
-  it('Esc closes the newest active-tab pin when no live pane shows', () => {
-    addPin()
-    addPin({ anchorX: 300 })
+  it('unlocking a pin keeps it rendered rather than closing it', () => {
+    const id = addPin()
+    expect(bodies()).toBe(1)
+    act(() => useSession.getState().setPinLocked(id, false))
+    expect(pinCount()).toBe(1)
+    expect(bodies()).toBe(1)
+  })
+
+  it('a pin close blooms out before it leaves the store, not an instant unmount', () => {
+    const id = addPin()
+    act(() => useSession.getState().setPinLocked(id, false))
+    vi.useFakeTimers()
+    try {
+      act(() =>
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+      )
+      // Mid-exit: the pane is still mounted and the pin still in the store, blooming out.
+      expect(bodies()).toBe(1)
+      expect(pinCount()).toBe(1)
+      act(() => vi.advanceTimersByTime(500))
+      expect(bodies()).toBe(0)
+      expect(pinCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('Esc closes the newest unlocked active-tab pin, leaving locked ones', () => {
+    const locked = addPin()
+    const open = addPin({ anchorX: 300 })
+    act(() => useSession.getState().setPinLocked(open, false))
     expect(pinCount()).toBe(2)
-    pressEscape()
+    escapeAndSettle()
+    expect(pinCount()).toBe(1)
+    expect(useSession.getState().pinnedGlances[0].pinId).toBe(locked)
+  })
+
+  it('Esc leaves a locked pin standing', () => {
+    addPin()
+    escapeAndSettle()
     expect(pinCount()).toBe(1)
   })
 
@@ -412,6 +478,41 @@ describe('pinned panes (Task 10)', () => {
     addPin()
     pressEscape()
     expect(pinCount()).toBe(1)
+  })
+
+  it('a pointerdown outside every glance portal scrubs unlocked pins but spares locked ones', () => {
+    const locked = addPin()
+    const open = addPin({ anchorX: 300 })
+    act(() => useSession.getState().setPinLocked(open, false))
+    expect(pinCount()).toBe(2)
+    clickAwayAndSettle()
+    expect(pinCount()).toBe(1)
+    expect(useSession.getState().pinnedGlances[0].pinId).toBe(locked)
+  })
+
+  it('a pointerdown inside a glance portal spares unlocked pins', () => {
+    const id = addPin()
+    act(() => useSession.getState().setPinLocked(id, false))
+    const portal = document.querySelector('[data-picker-portal]') as HTMLElement
+    clickAwayInside(portal)
+    expect(pinCount()).toBe(1)
+  })
+
+  it('navigation scrubs unlocked pins while locked ones survive', () => {
+    const locked = addPin()
+    const open = addPin({ anchorX: 300 })
+    act(() => useSession.getState().setPinLocked(open, false))
+    vi.useFakeTimers()
+    try {
+      act(() =>
+        useSession.setState({ selection: { kind: 'page', id: 'other', path: 'Notes/Other.md' } }),
+      )
+      act(() => vi.advanceTimersByTime(500))
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(pinCount()).toBe(1)
+    expect(useSession.getState().pinnedGlances[0].pinId).toBe(locked)
   })
 
   it('unpins instantly with no unmount-while-open warning; a plain menu still warns', () => {

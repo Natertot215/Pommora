@@ -12,11 +12,13 @@ export type PinnedGlance = {
   anchorY: number
   anchorHeight: number
   size: GlanceSize
+  locked: boolean
 }
 
 export interface GlanceSlice {
   pinnedGlances: PinnedGlance[]
-  pinGlance: (p: Omit<PinnedGlance, 'pinId'>) => void
+  pinGlance: (p: Omit<PinnedGlance, 'pinId' | 'locked'>) => void
+  setPinLocked: (pinId: string, locked: boolean) => void
   unpinGlance: (pinId: string) => void
   scrubTabPins: (tabId: string) => void
   retagTabPins: (oldId: string, newId: string) => void
@@ -28,8 +30,15 @@ const PER_NEXUS = { pinnedGlances: [] } satisfies Partial<GlanceSlice>
 
 export const createGlanceSlice: Slice<GlanceSlice> = (set, get) => ({
   ...PER_NEXUS,
+  // A lock is the only way a pin is born, so it lands locked; unlock flips it in place rather than removing it.
   pinGlance: (p) =>
-    set((s) => ({ pinnedGlances: [...s.pinnedGlances, { ...p, pinId: makeTabId() }] })),
+    set((s) => ({
+      pinnedGlances: [...s.pinnedGlances, { ...p, pinId: makeTabId(), locked: true }],
+    })),
+  setPinLocked: (pinId, locked) =>
+    set((s) => ({
+      pinnedGlances: s.pinnedGlances.map((p) => (p.pinId === pinId ? { ...p, locked } : p)),
+    })),
   unpinGlance: (pinId) =>
     set((s) => ({ pinnedGlances: s.pinnedGlances.filter((p) => p.pinId !== pinId) })),
   scrubTabPins: (tabId) =>

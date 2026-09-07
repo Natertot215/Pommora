@@ -42,8 +42,8 @@ import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../../Session/store'
-import { armPreview } from '../Glance/glanceLink'
-import { cancelGlance, glanceShown } from '../Glance/glanceAction'
+import { hoverGlance, leaveGlance } from '../Glance/glanceLink'
+import { glanceShown } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
 import { RenamableTitle } from '../RenamableTitle'
@@ -438,12 +438,16 @@ function PageRow({
         id={page.id}
         onPointerEnter={(e) => {
           api?.onHover(page.id, true)
-          if (e.shiftKey)
-            armPreview({ kind: 'page', id: page.id, path: page.path }, e.currentTarget, 'detail')
+          hoverGlance(
+            { kind: 'page', id: page.id, path: page.path },
+            e.currentTarget,
+            'detail',
+            e.shiftKey,
+          )
         }}
         onPointerLeave={() => {
           api?.onHover(page.id, false)
-          cancelGlance()
+          leaveGlance()
         }}
       >
         <div ref={rowRef}>
