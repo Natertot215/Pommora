@@ -64,7 +64,8 @@ export function PickerMenu({
   triggerRef,
   solid = false,
   glass = 'surface',
-  bloom = true,
+  enter = true,
+  onExited,
   direction = 'down',
   origin = 'auto',
   anchorX,
@@ -87,8 +88,10 @@ export function PickerMenu({
   triggerRef?: RefObject<Element | null>
   solid?: boolean
   glass?: 'surface' | 'pane' | 'window'
-  /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced. */
-  bloom?: boolean
+  /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced; it still blooms out on close. */
+  enter?: boolean
+  /** Fired once a close has played out and the menu has unmounted itself — the cue to remove the entry that drove `open`. */
+  onExited?: () => void
   direction?: PickerDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
   anchorX?: number
@@ -129,6 +132,16 @@ export function PickerMenu({
     },
     [],
   )
+  // Fire onExited once a real close has played through: closing latches, then the mounted→false at the end of the exit is its completion. An instant unmount (never closing) stays silent, which is what a filtered-out point-anchored menu needs.
+  const wasClosing = useRef(false)
+  useEffect(() => {
+    if (closing) wasClosing.current = true
+    else if (!mounted && wasClosing.current) {
+      wasClosing.current = false
+      onExited?.()
+    }
+  }, [mounted, closing, onExited])
+
   const body = useHeld(children, open !== false)
 
   const glassRef = useRef<HTMLDivElement>(null)
@@ -317,7 +330,7 @@ export function PickerMenu({
         s.pane,
         !bareSurface && s.surface,
         contentClassName,
-        bloom ? (closing ? bloomClose : bloomOpen) : undefined,
+        closing ? bloomClose : enter ? bloomOpen : undefined,
       )}
       style={
         {

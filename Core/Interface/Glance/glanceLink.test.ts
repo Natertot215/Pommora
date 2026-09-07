@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { armPreview, glanceLink } from './glanceLink'
-import { cancelGlance, setGlancePresenter, type GlanceRequest } from './glanceAction'
+import { armPreview, glanceLink, hoverGlance, leaveGlance } from './glanceLink'
+import { setGlancePresenter, type GlanceRequest } from './glanceAction'
 import { useSession } from '../../Session/store'
 import type { PreviewPersistence } from '../../Settings/personalization'
 
@@ -22,11 +22,15 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  cancelGlance()
+  leaveGlance()
   setGlancePresenter(null)
   document.body.innerHTML = ''
   vi.useRealTimers()
 })
+
+const pressShift = (repeat = false): void => {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', repeat }))
+}
 
 describe('the Off gate', () => {
   it("'off' arms nothing", () => {
@@ -53,6 +57,60 @@ describe('the Off gate', () => {
   it('glanceLink routes the editor slot through the same gate', () => {
     setPersistence('off')
     glanceLink(page, el)
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+})
+
+describe('the hovered-Shift arm', () => {
+  it('arms the hovered surface when Shift is pressed at rest, no re-enter needed', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'detail', false)
+    expect(present).not.toHaveBeenCalled()
+    pressShift()
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledWith({ target: page, el })
+  })
+
+  it('ignores an auto-repeat keydown so the dwell is never reset out from under itself', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'detail', false)
+    pressShift(true)
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('armNow raises the preview immediately, without a keypress', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'detail', true)
+    vi.runAllTimers()
+    expect(present).toHaveBeenCalledWith({ target: page, el })
+  })
+
+  it('leaveGlance clears the hovered surface, so a later Shift arms nothing', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'detail', false)
+    leaveGlance()
+    pressShift()
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('honors the Off gate on the Shift arm', () => {
+    setPersistence('off')
+    hoverGlance(page, el, 'detail', false)
+    pressShift()
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+  })
+
+  it('a right-click cancels the pending dwell and clears the hovered surface', () => {
+    setPersistence('1s')
+    hoverGlance(page, el, 'detail', true)
+    window.dispatchEvent(new Event('contextmenu'))
+    vi.runAllTimers()
+    expect(present).not.toHaveBeenCalled()
+    pressShift()
     vi.runAllTimers()
     expect(present).not.toHaveBeenCalled()
   })
