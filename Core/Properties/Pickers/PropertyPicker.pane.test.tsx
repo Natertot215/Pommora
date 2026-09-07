@@ -39,6 +39,7 @@ function Host(props: {
   onCommit?: (value: unknown, entry?: PickEntry) => void
   onReveal?: (entry: PickEntry) => void
   onDismiss?: () => void
+  resolveTarget?: (entry: PickEntry) => PickTarget | null
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   return (
@@ -56,6 +57,7 @@ function Host(props: {
         onCommit={props.onCommit ?? (() => {})}
         onReveal={props.onReveal}
         onDismiss={props.onDismiss ?? (() => {})}
+        resolveTarget={props.resolveTarget}
       />
     </>
   )
@@ -131,7 +133,7 @@ describe('PropertyPicker panes', () => {
     const onReveal = vi.fn()
     const onCommit = vi.fn()
     const chooser: PickEntry[] = [
-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, target: null },
+      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
     ]
     await render({ chooser, onReveal, onCommit })
     const row = buttons().find((b) => b.textContent?.includes('Rank'))
@@ -149,8 +151,8 @@ describe('PropertyPicker panes', () => {
 
   it('a revealOnly entry dismisses here; a dependent entry hands back without dismissing (its caller reopens on this mount)', async () => {
     const chooser: PickEntry[] = [
-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, target: null },
-      { id: 'prop_d', name: 'Due', icon: 'square-dashed', revealOnly: false, target: null },
+      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
+      { id: 'prop_d', name: 'Due', icon: 'square-dashed', revealOnly: false, drillable: false },
     ]
     const revealOnlyDismiss = vi.fn()
     await render({ chooser, onReveal: vi.fn(), onDismiss: revealOnlyDismiss })
@@ -179,10 +181,15 @@ describe('PropertyPicker panes', () => {
         name: 'Stage',
         icon: 'square-dashed',
         revealOnly: false,
-        target: optionsTarget(),
+        drillable: true,
       },
     ]
-    await render({ chooser, chooserInitial: 'prop_sel', onCommit })
+    await render({
+      chooser,
+      chooserInitial: 'prop_sel',
+      onCommit,
+      resolveTarget: () => optionsTarget(),
+    })
     expect(portalText()).toContain('Alpha')
     const alpha = [
       ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
