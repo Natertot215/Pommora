@@ -5,6 +5,7 @@ import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from './layoutSlice'
 import { createConfigSlice } from './configSlice'
+import { createGlanceSlice } from './glanceSlice'
 import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
 import { createWindowSlice } from './windowSlice'
@@ -34,6 +35,7 @@ export const useSession = create<SessionState>()((...a) => ({
   ...createConfigSlice(...a),
   ...createRenameSlice(...a),
   ...createCacheSlice(...a),
+  ...createGlanceSlice(...a),
 }))
 
 /** Every surface that mounts an embed reads the nexus-wide scale HERE, so what an absent or out-of-range value means is settled once. */
