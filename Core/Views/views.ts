@@ -105,10 +105,8 @@ export interface SavedView {
   filter_enabled?: boolean
   group?: GroupConfig
   format?: ViewFormat
-  /** ONE flat set-id array covering every nesting level, view-level rather than on `group`: the structural GroupConfig decoder drops extra fields. */
   group_order?: string[]
   structural_order_mode?: StructuralOrderMode
-  /** Separate from the grouping order source, since a cards view can group structurally AND sort by Location and the two would otherwise shadow each other. */
   location_order_mode?: StructuralOrderMode
   sub_group?: SubGroupConfig
   ungrouped_placement?: EmptyPlacement
@@ -223,7 +221,6 @@ export const savedView = z.looseObject({
   hide_column_icons: z.boolean().optional(),
   hide_borders: z.boolean().optional(),
   sort: z.array(sortCriterion).optional(),
-  // Catch, not fail: a filter the schema no longer admits drops alone and the view survives unfiltered.
   filter: filterGroup.optional().catch(undefined),
   filter_enabled: z.boolean().optional(),
   group: z.unknown().transform(decodeGroupConfig).optional(),
