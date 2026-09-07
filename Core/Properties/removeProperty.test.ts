@@ -126,6 +126,19 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect((await sidecar())?.properties).toContain(propId)
   })
 
+  it('a page that regained the key itself keeps its own value; a page without it still gets the cached one', async () => {
+    await removeProperty(root, folder, propId)
+    const raw = await readFile(pageA, 'utf8')
+    await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.name}:\n  - done\n`))
+
+    const r = await assignProperty(root, folder, propId)
+    expect(r.ok).toBe(true)
+    expect(await pageValue(pageA)).toEqual(['done'])
+    expect(await pageValue(pageB)).toEqual(['done'])
+    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    expect(Object.values(block.values)).toEqual([['active']])
+  })
+
   it('a value whose option no longer exists stays cached; conforming siblings restore', async () => {
     await removeProperty(root, folder, propId)
     await editProperty(root, propId, {
