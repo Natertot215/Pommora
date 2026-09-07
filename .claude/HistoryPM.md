@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
 | 09-05-2026 → 09-06      | PM-129 | The Repo Restructure                                 |
 | 09-05-2026              | PM-128 | Tiles Framework                                      |
 | 09-04-2026              | PM-127 | The Resize Frame                                     |
@@ -132,6 +133,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-130 || The One Value Picker & Panel
+**DATE:** 09-06-2026
+
+Nine hand-rolled popup compositions that each assigned a property value collapsed onto one component. `Core/Properties/Pickers/PropertyPicker.tsx` took a `PickTarget` union — options, datetime, file — and an optional chooser pane that adds a property and drills into its value, so `CardPickerHost`, `CardAddPicker`, and Table's inline `DatetimeCellPicker` were deleted and Cards, Table, and the panel each drive the one picker by the `kind` they pass, while `TextPicker` stayed the shared text field, untouched. `Core/Properties/Page/` — its four files of page-property rows, their hook, the value editors, and the styles — was replaced by `Core/Properties/PropertyPanel.tsx`, whose rows are the design system's `MenuItem` with the value in a trailing slot, one visibility roster and a live predicate in place of the twin predicates, and one `PropertyPicker` serving both the value popup and the Add chooser. A re-fold census then swept the tree and found no residue — the picker is the only non-allowlisted `PickerMenu` that assigns a value, and every per-surface behavior held — surfacing three orphans (a dead `panelStyle` prop and two exports with no importers, all removed) and one latent bug: the add-flow revealed an empty column on a blank commit, fixed by a shared guard that reveals only on a real value while still committing, so an in-session deselect or date-clear keeps working. The fold shed the nine wrappers at a net of −267 source lines; the two surviving files sit above their optimistic per-file ceilings, reported as the fold's irreducible floor rather than cleared by an extraction the plan barred.
+
+- **Commits:** `af8e6db22^..7e50be7bd` (interleaved on `main` with the parallel Glance arc)
+- **Diff:** Net −267 (source, comments and tests excluded) over the fold's file set
 
 #### PM-129 || The Repo Restructure
 **DATE:** 09-05-2026 → 09-06

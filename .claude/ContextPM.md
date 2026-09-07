@@ -4,6 +4,8 @@
 
 **The restructure landed.** The app is filed as `Core`, `UIX`, and `Desktop`, with every Node and Electron call behind `Core/Platform` and the desktop host, and one channel table both sides derive from. Along the way the 26 menu channels collapsed to one, the editor took an `EditorHost` from its mounter, the two write-path bugs were fixed, and the line count fell. Gates run from the repo root: `npm run typecheck && npm run test && npm run lint && npm run build`. Dev is `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the root; the built binary is `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333`.
 
+**The property popups are one component.** Nine hand-rolled compositions that assigned a value folded onto `Core/Properties/Pickers/PropertyPicker.tsx` — options, datetime, file, and a chooser pane that adds a property and drills into its value — and `Core/Properties/Page/` became `Core/Properties/PropertyPanel.tsx`, `MenuItem` rows with the value in a trailing slot. Cards, Table, and the panel each drive the one picker; `TextPicker` stays the shared text field. The fold's plan is `// Planning`'s PropertyPanel plan; its net came to −267 source lines, under the −400 budget, because `PropertyPanel.tsx` and `CardsView.tsx` hold behavior the optimistic per-file ceilings underestimated — the fold's floor, not bloat.
+
 The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
