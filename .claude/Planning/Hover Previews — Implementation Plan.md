@@ -639,7 +639,7 @@ useEffect(() => {
   - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `3a03a5ef6`
   - [x] Task 3 — Picker replaces slider (hazard window) · `3fd05f8f3`
 - [x] **Phase 2** — Dwell slots
-  - [x] Task 4 — `detail`/`views` dwell values · `<glance-t4-commit>`
+  - [x] Task 4 — `detail`/`views` dwell values · `d7a88b66a`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
   - [ ] Task 5 — Sidebar (Shift) · `<commit>`
   - [ ] Task 6 — Tabs · `<commit>`
@@ -665,7 +665,7 @@ useEffect(() => {
 ### Deviations
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
 - **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
-- **L1 fold — ambient `shiftDown()` tracker dropped for `e.shiftKey`** (Phase 1 attack review, Fable-advisor-adjudicated: reachable + subtractive, not additive). The tracker read stale Shift state after app-switch-with-Shift-held (no `blur` reset) and before its first call. The fix deletes the mechanism rather than guarding it: surfaces read `e.shiftKey` off the pointer-enter event, which is where F5 always said the read happens. Removed `shift`/`tracking`/`shiftDown` from `glanceLink.ts` and its test; retired the now-single-reader `LEAVE_GRACE_MS` in `GlancePane.tsx` in the same commit (`previewLingerMs(persistence === 'off' ? undefined : persistence)`). F5, Task 2, the Phase 3 preamble, and Tasks 5/8 fences updated to match. Cleanup commit `<glance-l1-commit>` on top of Task 2's `3a03a5ef6`.
+- **L1 fold — ambient `shiftDown()` tracker dropped for `e.shiftKey`** (Phase 1 attack review, Fable-advisor-adjudicated: reachable + subtractive, not additive). The tracker read stale Shift state after app-switch-with-Shift-held (no `blur` reset) and before its first call. The fix deletes the mechanism rather than guarding it: surfaces read `e.shiftKey` off the pointer-enter event, which is where F5 always said the read happens. Removed `shift`/`tracking`/`shiftDown` from `glanceLink.ts` and its test; retired the now-single-reader `LEAVE_GRACE_MS` in `GlancePane.tsx` in the same commit (`previewLingerMs(persistence === 'off' ? undefined : persistence)`). F5, Task 2, the Phase 3 preamble, and Tasks 5/8 fences updated to match. Cleanup commit `313cc9f85` on top of Task 2's `3a03a5ef6`.
 
 ### Lessons
 
