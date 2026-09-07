@@ -638,9 +638,9 @@ export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })
 
 **Verify — user**
 
-- [ ] Inspector: values set and clear; un-checking a checkbox keeps its row (B1); right-clicking the **value** gives the file/link menu and right-clicking the **row** gives Clear vs Remove (B2, B23); clicking the label or icon does nothing (B24); Add ▸ anchors its picker to the new row, not the Add button (B7).
-- [ ] Page Settings ▸ Properties: Contexts pre-seeded, a set-aside Context returns from Add (B3), row entrance plays (B5), the pane keeps its 350px ceiling.
-- [ ] A long Select value and a long link title truncate as they do today (step 2).
+- [x] Inspector: values set and clear; un-checking a checkbox keeps its row (B1); right-clicking the **value** gives the file/link menu and right-clicking the **row** gives Clear vs Remove (B2, B23); clicking the label or icon does nothing (B24); Add ▸ anchors its picker to the new row, not the Add button (B7). *(Nathan: visuals pass.)*
+- [x] Page Settings ▸ Properties: Contexts pre-seeded, a set-aside Context returns from Add (B3), row entrance plays (B5), the pane keeps its 350px ceiling. *(Nathan: visuals pass.)*
+- [x] A long Select value and a long link title truncate as they do today (step 2). *(Nathan: visuals pass.)*
 
 #### Task 5: The old PropertyPicker props come off
 
