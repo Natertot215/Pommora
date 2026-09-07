@@ -59,7 +59,7 @@ import {
   isDepth1Set,
   parentPathOf,
 } from '../Nexus/treeIndex'
-import { cancelPageSave } from './saveScheduler'
+import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
@@ -216,7 +216,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       navStack: t.navStack.map(toNavRef),
       navIndex: t.navIndex,
     }))
-    void dialer().ask('tabs:save', { tabs, activeTabId: s.activeTabId })
+    scheduleTabsSave({ tabs, activeTabId: s.activeTabId })
   }
 
   // Silent when nothing goes: a fresh record would re-identify every page surface's host.

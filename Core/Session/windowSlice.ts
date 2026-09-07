@@ -18,7 +18,7 @@ import {
 import { clearWindowCache, dropWindowCache } from '../Interface/Windows/windowCache'
 import { stashWindowMorph } from '../Interface/Windows/windowMorph'
 import type { SessionState, Slice } from './sessionState'
-import { host } from '../Platform/dialer'
+import { scheduleWindowsSave } from './saveScheduler'
 
 export type WindowTarget = { id: string; path: string }
 
@@ -84,7 +84,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const saveWindowsFile = (file: WindowsFile): void => {
     set({ windowsFile: file })
-    void host().ask('windows:save', file)
+    scheduleWindowsSave(file)
   }
 
   const mirrorWindows = (retire?: string): void => {
