@@ -22,6 +22,7 @@ The behavioral half — correctness, performance, and the structural moves insid
 
 - [ ] **Neither view renderer virtualizes.** `@tanstack/react-virtual` is installed and used only by the icon picker. A 2,000-page Collection with eight columns contains around 18,000 elements, and every pipeline re-run reconciles them all. Group bands complicate it, so the scoped version virtualizes the flat, ungrouped case first, where the win is largest and the band machinery is absent.
 - [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy CRUD modules, where later ones were written inline, and each arm moves when its file is next touched.
+- [ ] **The value-picker fold's leftovers.** The PropertyPanel fold unified the popup hosts but deliberately left the layers beneath them: the `select | status | multi_select | context` options-kind test is written three times, two `optionsOf` disagree on precedence, and `FilterFrame`'s `ChipsField` re-implements `PropertyOptionRows`. Beneath those sit three value-write paths, four number parsers, and `openAddPicker`'s number/file partition gap. Each is pure DRY across files with no behavior riding on it, and each moves when its owner is next opened; the full list is the PropertyPanel plan's Sequenced After.
 
 #### II. Open Calls
 

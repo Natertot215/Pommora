@@ -34,7 +34,7 @@ SKIP_PREFIX = ["Showcase", "renderer/Showcase"]
 # (area, new prefixes, prefixes under the legacy root).
 AREAS = [
     ("Editor — MarkdownPM", ["Core/MarkdownPM"], ["renderer/MarkdownPM"]),
-    ("Design System", ["UIX"], ["renderer/DesignSystem"]),
+    ("Pommora UIX", ["UIX"], ["renderer/DesignSystem"]),
     (
         "Surfaces & Embeds",
         ["Core/Tiles", "Core/Web"],
@@ -75,14 +75,14 @@ AREAS = [
 ]
 
 # Areas that changed name with the tree, so a stored sample keyed by the old name still reads.
-RENAMED_FROM = {"Nexus & Data": "Main Process"}
+RENAMED_FROM = {"Nexus & Data": "Main Process", "Pommora UIX": "Design System"}
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
     "Views & Properties",
     "Nexus & Data",
     "Editor — MarkdownPM",
-    "Design System",
+    "Pommora UIX",
     "App Chrome",
     "Surfaces & Embeds",
     "Shared Contract",
@@ -99,7 +99,7 @@ COLORS = [
     "#0E7C86",
 ]
 
-SKIP_DIR = {"node_modules", "dist", "out", ".git", "testing"}
+SKIP_DIR = {"node_modules", "dist", "out", ".git"}
 EXT = (".ts", ".tsx", ".css")
 
 
@@ -125,6 +125,9 @@ def area_of(rel: str) -> str | None:
 # A file's kind, for the census beside the line count. Only `source` is measured in lines; the other
 # two are counted so the page states what the line total leaves out rather than hiding it.
 TEST_DIRS = {"Testing", "fixtures", "__tests__"}
+# A harness is scaffolding a test imports, wherever it sits: it carries no product behavior and is
+# named for what it stands in for, so the name is what places it rather than the folder.
+TEST_SUFFIX = "Harness.ts"
 CONFIG_NAMES = {"package.json", "biome.json", "vercel.json"}
 CONFIG_EXT = (".yml", ".yaml")
 
@@ -137,6 +140,7 @@ def classify(rel: str) -> str | None:
         any(p in TEST_DIRS for p in rel.split("/"))
         or ".test." in base
         or ".spec." in base
+        or base.endswith(TEST_SUFFIX)
         or base == "vitest.setup.ts"
     ):
         return "tests"
