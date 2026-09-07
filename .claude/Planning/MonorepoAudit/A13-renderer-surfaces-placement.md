@@ -31,11 +31,11 @@ Scope: `src/renderer/Properties/` (43 non-test files, 3,905 lines), `Tiles/` (33
 | `SpaceView.tsx` | 24 | component (shim) | 1 / ContentView | scaffold + TileHost | `Surfaces/Board` |
 | `Subfield/CitationsToggle.tsx` | 29 | component | 2 / ContentView, PageWindow | footnotes toggle | `Shell/Subfield` |
 | `Subfield/Subfield.tsx` | 51 | component | 2 / ContentView, PageWindow | footer bar | `Shell/Subfield` |
-| `Subfield/crumbs.ts` | 98 | pure (types from DesignSystem, store) | 2 / Subfield, Store/navigationSlice | crumb spine; `crumbDepthFor` | `crumbDepthFor` → `Store/navigation`; rest → `Shell/Subfield` |
+| `Subfield/crumbs.ts` | 98 | pure (types from PommoraUIX, store) | 2 / Subfield, Store/navigationSlice | crumb spine; `crumbDepthFor` | `crumbDepthFor` → `Store/navigation`; rest → `Shell/Subfield` |
 | `Subfield/subfield.css` | 103 | style + host-bound (L11, L55) | 1 | | `Shell/Subfield` |
 | `Subfield/subfieldItems.tsx` | 101 | component registry + store-glue | 4 | per-kind footer items | `Shell/Subfield` |
 | `Subfield/subfieldStats.ts` | 125 | pure (over MarkdownPM Detect + docCache) | 2 / Subfield items, CitationsToggle | page stats from the editor's own scan | `MarkdownPM` (it is a document derivation; Subfield is a consumer) |
-| `action-band.css.ts` | 122 | style | 2 / Tiles/Surfaces (ViewTile, view-tile.css) | segment row + settings button styles | `DesignSystem/Elements/ActionBand` |
+| `action-band.css.ts` | 122 | style | 2 / Tiles/Surfaces (ViewTile, view-tile.css) | segment row + settings button styles | `PommoraUIX/Elements/ActionBand` |
 | `content-banner.css` | 126 | style + host-bound (L124) | 2 / NavView, main.tsx | | `Surfaces/Header` |
 | `content-title.css` | 49 | style | 1 / DetailTitleHeader | | `Surfaces/Header` |
 | `nav-view.css` | 41 | style | 1 | | `Surfaces/Nav` |
@@ -63,12 +63,12 @@ Scope: `src/renderer/Properties/` (43 non-test files, 3,905 lines), `Tiles/` (33
 | `useWindowWarm.ts` | 65 | hook + store-glue | 2 / PageWindow, NavWindow | window-tab editor warmth | `Windows` (shared by both flavors) |
 | `WebWindow.tsx` | 147 | component + host-bound (`<webview>` L135–142, guest API L26–31, L66, L80–88; `openExternal` L125) | 3 / App, Actions ×2 (`openInAppBrowser`) | in-app browser | `Surfaces/Web` (Desktop implementation); `openInAppBrowser` → `Actions/openWebLink` |
 | `web-window.css` | 32 | style + host-bound (`webview` selector L8) | 1 | | Desktop |
-| `WindowActions.tsx` | 30 | component | 2 / PageWindow, NavWindow | settings + inspector pair | `DesignSystem/Window` |
+| `WindowActions.tsx` | 30 | component | 2 / PageWindow, NavWindow | settings + inspector pair | `PommoraUIX/Window` |
 | `WindowTabStrip.tsx` | 212 | component + store-glue (reads `pageWindow`) + Navigation resolve | 2 / PageWindow, NavWindow | tab strip with title morph | `Windows` (DS-grade only if fed by props instead of the store) |
-| `window-base.css` | 297 | style | 1 | chassis | `DesignSystem/Window` |
-| `window-base.tsx` | 249 | component | 7 / Windows ×4, Settings, Utilities, Showcase | chassis | `DesignSystem/Window` |
-| `window-panel.css` | 9 | style | 1 | | `DesignSystem/Window` |
-| `window-panel.tsx` | 92 | component | 2 / WindowBase, Settings | side panel + resize strip | `DesignSystem/Window` |
+| `window-base.css` | 297 | style | 1 | chassis | `PommoraUIX/Window` |
+| `window-base.tsx` | 249 | component | 7 / Windows ×4, Settings, Utilities, Showcase | chassis | `PommoraUIX/Window` |
+| `window-panel.css` | 9 | style | 1 | | `PommoraUIX/Window` |
+| `window-panel.tsx` | 92 | component | 2 / WindowBase, Settings | side panel + resize strip | `PommoraUIX/Window` |
 | `windowCache.ts` | 35 | module state (+ dev CDP probe) | 2 / Store/windowSlice, useWindowWarm | per-tab warm entries | `Store` |
 | `windowMorph.ts` | 15 | DOM stash (`querySelector('.page-window')`) | 2 / Store/windowSlice, NavWindow | FLIP rect stash | `Windows` (the store calls it; it reads Windows' DOM) |
 | `windowTabs.ts` | 68 | pure state model | 3 / Store, Actions, WindowTabStrip | tab set ops | `Store/windowTabs` |
@@ -90,19 +90,19 @@ Scope: `src/renderer/Properties/` (43 non-test files, 3,905 lines), `Tiles/` (33
 | `Surfaces/view-tile.css.ts` | 155 | style (imports `Interface/action-band.css`) | 1 | | `Surfaces/Board/Kinds` |
 | `Surfaces/WebTile.tsx` | 235 | component + host-bound (`<webview>` L193–202; `capturePage` L100–118; `getWebContentsId` L139–151; guest events L177–183) | 1 / MarkdownPM/embedWidget (lazy, L339) | webpage embed | `Surfaces/Web` (Desktop implementation behind a slot) |
 | `Surfaces/webRetention.ts` | 29 | pure (`capSet`) | 1 / WebTile | hidden guest cap | `Surfaces/Web` |
-| `TileGrid.tsx` | 564 | component (controlled, generic `renderTile`) | 2 / TileHost, Showcase/TileLab | drag + resize gestures | `DesignSystem/TileGrid` (or `Surfaces/Board/Grid`) |
+| `TileGrid.tsx` | 564 | component (controlled, generic `renderTile`) | 2 / TileHost, Showcase/TileLab | drag + resize gestures | `PommoraUIX/TileGrid` (or `Surfaces/Board/Grid`) |
 | `tile-grid.css` | 144 | style | 1 | | with TileGrid |
 | `TileHandleMenu.tsx` | 324 | component (in-DOM menu presenter) | 1 / TileHost | handle menu | `Surfaces/Board` |
 | `handle-menu.css.ts` | 61 | style | 1 | | `Surfaces/Board` |
 | `TileHost.tsx` | 410 | component + bridge (`tiles.*`) + host-bound (native path L213, L355 via `popRowMenu`) | 2 / SpaceView, HomepageView | host binding: doc, entries, menus, CRUD | `Surfaces/Board` |
 | `tileKinds.tsx` | 82 | component table | 2 / TileHost, ViewTile (type) | kind → surface | `Surfaces/Board` |
 | `tileCache.ts` | 35 | module state | 2 / MarkdownPM/embedWidget, MarkdownPM/index | nested-embed warmth + scroll heal | `MarkdownPM/Editor` (misfiled; no Tiles importer) |
-| `tileZoom.ts` | 35 | pure (over `SCALE_STEPS`) | 4 / Tiles ×2, MarkdownPM ×2 | scale steps + inline style | `DesignSystem/Tile` (or Core beside `SCALE_STEPS`) |
+| `tileZoom.ts` | 35 | pure (over `SCALE_STEPS`) | 4 / Tiles ×2, MarkdownPM ×2 | scale steps + inline style | `PommoraUIX/Tile` (or Core beside `SCALE_STEPS`) |
 | `useTileDoc.ts` | 173 | hook + bridge (`tiles.get/save`, `onTilesChanged`) + store-glue | 1 / TileHost | document session | `Surfaces/Board` |
 | `pageTileWrite.ts` | 54 | pure-ish (installs `beforeunload`) | 2 / Interface/pageFlush, MarkdownTile | debounced body writer | `Store/bodyWriter` |
 | `ViewTileScope.tsx` | 55 | React context + hook | 14 / Frames ×9, Views ×3, Toolbar, ViewTile | view-write scope (locked embed) | `Views` (its consumers are the view frames) |
-| `tile-base.css` | 187 | style + host-bound (`webview` selectors L147–161) | 6 / Tiles ×4, MarkdownPM/embedWidget, PageHistoryWindow | tile chassis + markdown/page/web body chrome | `DesignSystem/Tile`; `.web-tile*` → `Surfaces/Web` css |
-| `tile-title.css` | 32 | style | 2 / PageTile, WebTile | hover-revealed crumbs/title | `DesignSystem/Tile` |
+| `tile-base.css` | 187 | style + host-bound (`webview` selectors L147–161) | 6 / Tiles ×4, MarkdownPM/embedWidget, PageHistoryWindow | tile chassis + markdown/page/web body chrome | `PommoraUIX/Tile`; `.web-tile*` → `Surfaces/Web` css |
+| `tile-title.css` | 32 | style | 2 / PageTile, WebTile | hover-revealed crumbs/title | `PommoraUIX/Tile` |
 
 #### Properties/ (43 files)
 
@@ -121,7 +121,7 @@ Scope: `src/renderer/Properties/` (43 non-test files, 3,905 lines), `Tiles/` (33
 | `Assignment/checkboxLook.tsx` | 16 | component | 3 | | `Properties/Cells` |
 | `Assignment/columnLabel.ts` | 31 | mixed: pure + hook (`useCapitalizeMetadata`) | 13 / Frames ×5, CardView ×3, Properties ×3, TableView, Windows | labels | pure half → Core; hook → `Properties` |
 | `Assignment/filePick.ts` | 150 | host-bound (`pickFile` L49, `adoptFile` L60, `cellMenu` L148) + store-glue | 5 / Assignment ×2, CardView ×2, TableView | file value gesture | `Properties/Pickers` through the Host seam |
-| `Assignment/formatValue.ts` | 236 | pure (`pad` from DesignSystem/Util) | 11 / Frames ×2, Assignment ×2, Editors, Settings, Showcase, Views ×3, Windows | date/number formatting | `Core/format` |
+| `Assignment/formatValue.ts` | 236 | pure (`pad` from PommoraUIX/Util) | 11 / Frames ×2, Assignment ×2, Editors, Settings, Showcase, Views ×3, Windows | date/number formatting | `Core/format` |
 | `Assignment/massAssign.ts` | 27 | pure | 2 / MassPropertyPicker, PropertyPicker (type) | | Core or `Properties/Pickers` |
 | `Assignment/statusCycle.ts` | 24 | pure (`IconName` type) | 1 / OptionChip | status group glyph | `Properties/Cells` |
 | `Assignment/usePropertyRows.ts` | 204 | hook + store-glue (`mutate`) | 3 / PageProperties, PageWindow, PropertyValueEditors | page rows model | `Properties/Page` |
@@ -141,7 +141,7 @@ Scope: `src/renderer/Properties/` (43 non-test files, 3,905 lines), `Tiles/` (33
 | `OptionRow.tsx` | 162 | component | 3 / Editors ×2, PropertyFrame | | `Properties/Schema` |
 | `PageProperties.tsx` | 293 | component + host-bound (`propertyMenu` L120) | 1 / Frames/PageMenu | page rows (Settings leaf) | `Properties/Page`, merged with `PagePanel` |
 | `PropertyTypes.tsx` | 100 | mixed: pure type table + `PropertyTypeIcon` component | 11 / Frames ×5, CardView ×2, Properties, Settings, TableView, Windows | type metadata + glyphs | `Properties/Cells`; the `PROPERTY_TYPES` table → Core |
-| `contextIdentity.ts` | 92 | pure except `entityIcon` (DesignSystem/Symbols) L6 | 9 / Frames ×3, Assignment ×3, Properties ×2, Views | id → identity maps | Core once the kind → default-icon map moves to shared |
+| `contextIdentity.ts` | 92 | pure except `entityIcon` (PommoraUIX/Symbols) L6 | 9 / Frames ×3, Assignment ×3, Properties ×2, Views | id → identity maps | Core once the kind → default-icon map moves to shared |
 | `contextOptions.ts` | 52 | pure | 6 / CardView ×2, Frames, Assignment, TableView, Views | context → pick options | Core (same condition) |
 | `linkFormat.ts` | 11 | UI adapter (`PickerOption` type) | 2 / URLEditor, Settings/SettingsWindow | picker rows for `LINK_DISPLAYS` | `Properties/Schema` |
 | `option-edit-popup.css.ts` | 75 | style | 1 | | `Properties/Schema` |
@@ -178,7 +178,7 @@ Yes. Nothing in it shares an admission rule; its 35 files span four tiers and on
 
 One folder is wrong because it holds three tiers under one name:
 
-**Chassis (design-system grade):** `window-base.tsx` + `window-base.css`, `window-panel.tsx` + `window-panel.css`, `WindowActions.tsx`. `WindowBase` already has seven importers, three outside Windows (`Settings/SettingsWindow`, `Utilities/iteration-window`, `Showcase/Leaves/PanesLeaf`); `WindowPanel` is imported by Settings directly. Its own dependencies are DesignSystem (Buttons, Glass, Symbols), Interactions (ResizeFrame, revealBar), and Animation. That is a DesignSystem member by every measure. `WindowTabStrip.tsx` is chassis-shaped but reads `useSession((s) => s.pageWindow)` and resolves through `Navigation/navResolve`, so today it is a Windows feature component; hand it `tabs`/`activeTabId`/callbacks as props and it joins the chassis. `windowMorph.ts` reads `.page-window` out of the DOM and is called by the store; it is Windows-feature glue.
+**Chassis (design-system grade):** `window-base.tsx` + `window-base.css`, `window-panel.tsx` + `window-panel.css`, `WindowActions.tsx`. `WindowBase` already has seven importers, three outside Windows (`Settings/SettingsWindow`, `Utilities/iteration-window`, `Showcase/Leaves/PanesLeaf`); `WindowPanel` is imported by Settings directly. Its own dependencies are PommoraUIX (Buttons, Glass, Symbols), Interactions (ResizeFrame, revealBar), and Animation. That is a PommoraUIX member by every measure. `WindowTabStrip.tsx` is chassis-shaped but reads `useSession((s) => s.pageWindow)` and resolves through `Navigation/navResolve`, so today it is a Windows feature component; hand it `tabs`/`activeTabId`/callbacks as props and it joins the chassis. `windowMorph.ts` reads `.page-window` out of the DOM and is called by the store; it is Windows-feature glue.
 
 **Features on the chassis:** `PageWindow.tsx`, `NavWindow.tsx`, `PageHistoryWindow.tsx`, `WebWindow.tsx`, plus `useWindowWarm.ts` (shared by Page and Nav flavors), `page-window.css`, `nav-window.css`. `Settings/SettingsWindow.tsx` is the fifth feature window and lives in another folder for no structural reason.
 
@@ -201,8 +201,8 @@ One folder is wrong because it holds three tiers under one name:
 **Pure value logic vs `shared/`:** none of these duplicate `shared/propertyValue.ts`, `shared/contextResolve.ts`, or `shared/linkValue.ts`; they layer on them and belong beside them.
 
 - `value.ts` → `resolveFieldValue` is `decodeValue` plus the reserved-column branches (`_title`, stamps, Context patch rider) and a per-frontmatter `WeakMap` memo; `declaredType` is the schema-type switch. Zero renderer imports. Move to `shared/` beside `propertyValue.ts` (22 importers, the most-imported file in scope; Tables, Views/Pipeline, Frames all reach for it).
-- `formatValue.ts` → pure Intl formatting over `shared/columnStyles` types; its only renderer import is `pad` from `DesignSystem/Util`. Move to `shared/` with `pad`.
-- `contextIdentity.ts`, `contextOptions.ts`, `resolveContext.ts` → pure maps over the tree; the one blocker is `contextIdentity.ts` L6 importing `entityIcon` from `DesignSystem/Symbols` to fill default icon names. `DEFAULT_ENTITY_ICONS` is a kind → icon-name string table; move that table to `shared/` and all three are Core. They do not overlap `shared/contextResolve.ts` (which goes title → id on read/write); these go id → title/icon/color for display.
+- `formatValue.ts` → pure Intl formatting over `shared/columnStyles` types; its only renderer import is `pad` from `PommoraUIX/Util`. Move to `shared/` with `pad`.
+- `contextIdentity.ts`, `contextOptions.ts`, `resolveContext.ts` → pure maps over the tree; the one blocker is `contextIdentity.ts` L6 importing `entityIcon` from `PommoraUIX/Symbols` to fill default icon names. `DEFAULT_ENTITY_ICONS` is a kind → icon-name string table; move that table to `shared/` and all three are Core. They do not overlap `shared/contextResolve.ts` (which goes title → id on read/write); these go id → title/icon/color for display.
 - `valueClick.ts`, `massAssign.ts`, `cellResolve.findOption` → pure; Core.
 - `columnLabel.ts` → `RESERVED_LABEL`, `displayPropertyName`, `columnLabel` are pure; `useCapitalizeMetadata` is a store hook in the same file. Split.
 - `cardValueInput.ts` → `parseEditorValue` is pure apart from `resolveTitle` (which reads `useSession.getState().tree`); the rest (`addEntriesFor`, `shownColumnsFor`, `addColumn`, `orderAddableEntries`) is the card add-menu model and imports `Frames/hiddenFrameModel`. Four of its six importers are `Views/CardView`; it belongs there.
@@ -212,7 +212,7 @@ One folder is wrong because it holds three tiers under one name:
 
 ### 5. Tiles/
 
-**Core vs Surfaces: separable, and already nearly so.** `Core/` (649 lines) imports only `./model`, `@shared/clamp`, `@shared/tiles` (codec's zod schema), and one constant, `HYSTERESIS`, from `Interactions/shared` (`hitTest.ts` L1). Pass hysteresis as a parameter (it already takes `bandZonePx`) and `Core/` is a Core-workspace module with 14 test importers proving it runs headless. `TileGrid.tsx` is a controlled component (`layout` in, `onLayoutChange` out, `renderTile` injected) with no knowledge of kinds, hosts, or the store; its imports are Interactions (gesture, autoscroll, shared), Animation (feel), DesignSystem tokens, and Core. It is a layout primitive; `Showcase/TileLab` already drives it standalone. `tileKinds.tsx` is the kind → component table and `TileHost.tsx` is the binding (document hook, entry map, menus, create/remove/convert/duplicate); those, with `TileHandleMenu`, `useTileDoc`, `MarkdownTile`, `ViewTile`, are the board feature.
+**Core vs Surfaces: separable, and already nearly so.** `Core/` (649 lines) imports only `./model`, `@shared/clamp`, `@shared/tiles` (codec's zod schema), and one constant, `HYSTERESIS`, from `Interactions/shared` (`hitTest.ts` L1). Pass hysteresis as a parameter (it already takes `bandZonePx`) and `Core/` is a Core-workspace module with 14 test importers proving it runs headless. `TileGrid.tsx` is a controlled component (`layout` in, `onLayoutChange` out, `renderTile` injected) with no knowledge of kinds, hosts, or the store; its imports are Interactions (gesture, autoscroll, shared), Animation (feel), PommoraUIX tokens, and Core. It is a layout primitive; `Showcase/TileLab` already drives it standalone. `tileKinds.tsx` is the kind → component table and `TileHost.tsx` is the binding (document hook, entry map, menus, create/remove/convert/duplicate); those, with `TileHandleMenu`, `useTileDoc`, `MarkdownTile`, `ViewTile`, are the board feature.
 
 **Files that are not tile-engine or tile-kind:** `PageTile.tsx` has five importers and only one is Tiles; it is the page embed framework (`Surfaces/Page`). `tileCache.ts` has zero Tiles importers (both are MarkdownPM) and holds nested-embed warmth for the editor. `pageTileWrite.ts` is the debounced writer the page autosave runs on (`Interface/pageFlush` imports it from Tiles, an inverted dependency). `ViewTileScope.tsx` has 14 importers, nine of them `Frames/`; it is the view-write scope every view frame consults. `tileZoom.ts` is a `SCALE_STEPS` adapter used equally by MarkdownPM.
 
@@ -261,11 +261,11 @@ Every site in scope a Capacitor host could not reuse unchanged. Bridge data chan
 
 ### 7. Folder Verdicts
 
-**Interface/: dissolve.** No admission rule survives contact with its contents (a router, a toast, a tree index, a view mutation, and a segment stylesheet). Its files go to `Shell/`, `Surfaces/Header`, `Surfaces/Page`, `Surfaces/Board`, `Surfaces/Nav`, `Store/`, `Actions/`, `DesignSystem/`, and `MarkdownPM/` as tabled.
+**Interface/: dissolve.** No admission rule survives contact with its contents (a router, a toast, a tree index, a view mutation, and a segment stylesheet). Its files go to `Shell/`, `Surfaces/Header`, `Surfaces/Page`, `Surfaces/Board`, `Surfaces/Nav`, `Store/`, `Actions/`, `PommoraUIX/`, and `MarkdownPM/` as tabled.
 
-**Windows/: split three ways.** Chassis → `DesignSystem/Window/` (admission: "renders a floating window's frame, panel, or toolbar cluster and knows nothing about what it hosts"). Feature windows stay as `Windows/` (admission: "a component that mounts `WindowBase` and is toggled from the store"; SettingsWindow joins). `confirmations.ts` → `Actions/`, `ConfirmationWindow` → `Shell/`, `windowTabs`/`windowCache` → `Store/`, `WebWindow` → Desktop `Surfaces/Web`.
+**Windows/: split three ways.** Chassis → `PommoraUIX/Window/` (admission: "renders a floating window's frame, panel, or toolbar cluster and knows nothing about what it hosts"). Feature windows stay as `Windows/` (admission: "a component that mounts `WindowBase` and is toggled from the store"; SettingsWindow joins). `confirmations.ts` → `Actions/`, `ConfirmationWindow` → `Shell/`, `windowTabs`/`windowCache` → `Store/`, `WebWindow` → Desktop `Surfaces/Web`.
 
-**Tiles/: split.** `Core/` → Core workspace `TileLayout/` (admission: "a pure function over `TileLayout`"). `TileGrid` + `tile-grid.css` → `DesignSystem/TileGrid/` (admission: "gesture and geometry with an injected `renderTile`; no kinds, no store"). `tile-base.css`, `tile-title.css`, `tileZoom.ts` → `DesignSystem/Tile/` (the chassis every embed host keys onto). `TileHost`, `TileHandleMenu`, `tileKinds`, `useTileDoc`, `MarkdownTile`, `ViewTile`, `SpaceView`, `HomepageView` → `Surfaces/Board/` (admission: "reads or writes a host's `_tiles.json` document, or is a kind that document names"). `PageTile` → `Surfaces/Page/`. `WebTile` + `webRetention` → Desktop `Surfaces/Web/`. `tileCache` → `MarkdownPM/Editor`. `pageTileWrite` → `Store/bodyWriter`. `ViewTileScope` → `Views/`.
+**Tiles/: split.** `Core/` → Core workspace `TileLayout/` (admission: "a pure function over `TileLayout`"). `TileGrid` + `tile-grid.css` → `PommoraUIX/TileGrid/` (admission: "gesture and geometry with an injected `renderTile`; no kinds, no store"). `tile-base.css`, `tile-title.css`, `tileZoom.ts` → `PommoraUIX/Tile/` (the chassis every embed host keys onto). `TileHost`, `TileHandleMenu`, `tileKinds`, `useTileDoc`, `MarkdownTile`, `ViewTile`, `SpaceView`, `HomepageView` → `Surfaces/Board/` (admission: "reads or writes a host's `_tiles.json` document, or is a kind that document names"). `PageTile` → `Surfaces/Page/`. `WebTile` + `webRetention` → Desktop `Surfaces/Web/`. `tileCache` → `MarkdownPM/Editor`. `pageTileWrite` → `Store/bodyWriter`. `ViewTileScope` → `Views/`.
 
 **Properties/: keep, re-nest.** The name is right; the subfolders are wrong (`Assignment/` mixes cells, pickers, page rows, and pure logic; `Editors/` is really Schema). New shape: `Properties/Value/` (what stays in UIX of the pure layer after the Core moves: `parseEditorValue`, `useCapitalizeMetadata`), `Properties/Cells/`, `Properties/Pickers/`, `Properties/Page/`, `Properties/Schema/`. Admission for the folder: "renders, edits, or configures a property, independent of which view or window hosts it." `valueUndo.ts` and the card half of `cardValueInput.ts` fail that rule and leave.
 
@@ -282,7 +282,7 @@ Core/
                          parseEditorValue, PROPERTY_TYPES table              ~660
 
 UIX/
-  DesignSystem/
+  PommoraUIX/
     Window/              WindowBase(+css), WindowPanel(+css), WindowActions    677
     TileGrid/            TileGrid, tile-grid.css                               708
     Tile/                tile-base.css (minus web rules), tile-title.css,
@@ -336,9 +336,9 @@ Desktop/
 
 #### Collapsing the Renderer's Folders to Ten
 
-From this vantage the 23 directories under `renderer/` (Actions, Animation, Assets, Cards, DesignSystem, Frames, Interactions, Interface, MarkdownPM, Navigation, Properties, Settings, Showcase, Sidebar, Store, Tables, Tabs, Testing, Tiles, Toolbar, Utilities, Views, Windows) become:
+From this vantage the 23 directories under `renderer/` (Actions, Animation, Assets, Cards, PommoraUIX, Frames, Interactions, Interface, MarkdownPM, Navigation, Properties, Settings, Showcase, Sidebar, Store, Tables, Tabs, Testing, Tiles, Toolbar, Utilities, Views, Windows) become:
 
-1. **`DesignSystem/`** absorbs `Animation/`, `Interactions/`, `Utilities/EntityIcon`, `Assets/AssetImage`, `Tabs/tab-base.css`, the Windows chassis, TileGrid, the tile chassis css, and action-band. Admission: no store, no bridge, no entity knowledge.
+1. **`PommoraUIX/`** absorbs `Animation/`, `Interactions/`, `Utilities/EntityIcon`, `Assets/AssetImage`, `Tabs/tab-base.css`, the Windows chassis, TileGrid, the tile chassis css, and action-band. Admission: no store, no bridge, no entity knowledge.
 2. **`Store/`** absorbs `treeIndex.ts`, `Interface/scope.ts`, `Windows/windowTabs|windowCache`, `Interface/pageFlush` + `Tiles/pageTileWrite`, `Assets/assetUrl` resolution, and the `Notification`/`ConfirmRequest` types. Admission: state, caches, and pure derivations over state.
 3. **`Actions/`** absorbs `Windows/confirmations`, `Interface/restoreSnapshot`, the `notify*` posters, `restoreView`. Admission: an imperative verb a surface calls; no JSX.
 4. **`Host/`** (new) holds the host seam: native-menu presenter with the DOM fallback (`TileHandleMenu` is the model), dialogs, the web-surface slot. Desktop and Mobile each implement it in their workspace.
@@ -349,7 +349,7 @@ From this vantage the 23 directories under `renderer/` (Actions, Animation, Asse
 9. **`MarkdownPM/`** unchanged, plus `tileCache` and `subfieldStats`.
 10. **`Dev/`** for `Showcase/`, `Testing/`, `Utilities/iteration-window`; not product code.
 
-`Cards/` (two files) and `Tables/` are view-type internals and dissolve into `Surfaces/Container/`. `Assets/` splits between DesignSystem (the image component) and Store (URL resolution).
+`Cards/` (two files) and `Tables/` are view-type internals and dissolve into `Surfaces/Container/`. `Assets/` splits between PommoraUIX (the image component) and Store (URL resolution).
 
 ---
 
@@ -361,7 +361,7 @@ From this vantage the 23 directories under `renderer/` (Actions, Animation, Asse
 - **Views, not Tiles or Properties:** `Tiles/ViewTileScope.tsx` (9 of 14 importers are `Frames/`), `Properties/Assignment/valueUndo.ts` (one importer, `Views/TableView`), the card half of `Properties/Assignment/cardValueInput.ts` (imports `Frames/hiddenFrameModel`; four of six importers are `Views/CardView`), `cellResolve.groupLabel/buildSetNames/Icons/Paths`, `Interface/notifications.restoreView`, `Interface/viewSettingsScope.ts` (beside `Frames/SettingsMenu`).
 - **Store, not Interface or Windows:** `Interface/scope.ts`, `Interface/pageFlush.ts`, `Tiles/pageTileWrite.ts`, `Windows/windowTabs.ts`, `Windows/windowCache.ts`, `Subfield/crumbs.crumbDepthFor`, the `Notification` and `ConfirmRequest` types.
 - **Actions, not Windows or Interface:** `Windows/confirmations.ts`, `Interface/restoreSnapshot.ts`, `Interface/notifications.notify*`, `WebWindow.openInAppBrowser`.
-- **DesignSystem, not Interface or Windows or Tiles:** `Interface/action-band.css.ts`, `Windows/window-base.*`, `window-panel.*`, `WindowActions.tsx`, `Tiles/TileGrid.tsx` + `tile-grid.css`, `tile-base.css` (chassis half), `tile-title.css`.
+- **PommoraUIX, not Interface or Windows or Tiles:** `Interface/action-band.css.ts`, `Windows/window-base.*`, `window-panel.*`, `WindowActions.tsx`, `Tiles/TileGrid.tsx` + `tile-grid.css`, `tile-base.css` (chassis half), `tile-title.css`.
 - **Properties/Page, not Windows:** `PagePanel` inside `Windows/PageWindow.tsx` L235–507.
 - **Surfaces/Page, not Tiles:** `Tiles/Surfaces/PageTile.tsx`.
 

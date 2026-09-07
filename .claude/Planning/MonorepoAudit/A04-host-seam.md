@@ -206,7 +206,7 @@ Desktop's table = `{ ...contentAsks, ...chromeAsks, ...historyAsks, ...menuAsks,
 | `Toolbar/` | 3 | 8 | view menus, `views.*`, `container.configure`, `titleMenu` |
 | `Properties/` | 4 | 6 | `optionMenu` ×2, `propertyMenu`, `filePick.ts` (`pickFile`, `adoptFile`, `cellMenu`) |
 | `Tabs/` | 1 | 3 | `winDragBy`, `winZoom`, `tabMenu` |
-| `Utilities/` `Sidebar/` `DesignSystem/` `Navigation/` | 4 | 7 | `useNexusIcon` (`iconMenu`, `pickFile`), `Sidebar` `contextMenu` ×2, `ImagePicker` (`pickFile`, `pasteImage`), `useNavThumbnails` `capture.thumbnail`, `NavList` (wrapped) |
+| `Utilities/` `Sidebar/` `PommoraUIX/` `Navigation/` | 4 | 7 | `useNexusIcon` (`iconMenu`, `pickFile`), `Sidebar` `contextMenu` ×2, `ImagePicker` (`pickFile`, `pasteImage`), `useNavThumbnails` `capture.thumbnail`, `NavList` (wrapped) |
 
 Twenty-six of the 68 files touch only §1.1–1.4 channels and are host-neutral today. The rest mix a menu or shell channel into otherwise neutral UI — the coupling is in the *call*, not the component.
 

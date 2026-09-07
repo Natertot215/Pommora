@@ -37,7 +37,7 @@ Read-only audit of the build/tool/harness surface at `main` `7c7c7542`, 09-05-20
 | `.claude/hooks/post-commit` | Native git hook (`core.hooksPath` is set, absolute: `/Users/…/Project Pommora/.claude/hooks`). Runs `python3 .claude/scripts/loc.py --update` (l.20), amends `loc-history.json` + `Line-Ledger.html` into the commit unless HEAD is already on the upstream (l.22-33), then `node .claude/scripts/check-atlas.mjs` (l.35). | repo-root-relative `.claude/scripts/*` only |
 | `.claude/hooks/republish-ledger.mjs` | PostToolUse(Bash): on a `git commit`, `git diff --quiet HEAD~1 HEAD -- .claude/scripts/Line-Ledger.html` (l.25, 32); if the page moved, injects a "republish to artifact URL" instruction (l.26, 42-47). | `.claude/scripts/Line-Ledger.html` |
 | `src/renderer/Testing/setup.ts` | Four jsdom-gap stubs, each guarded by `typeof` (l.3, 10, 17, 27): `document.elementFromPoint`, `Range.prototype.getClientRects/getBoundingClientRect`, `ResizeObserver`, `Element.prototype.scrollIntoView`. Under `environment: node` every guard is false → a no-op. | — |
-| `src/renderer/env.d.ts` | `/// <reference types="vite/client" />` (l.1) — needed for `import.meta.env.DEV` (`renderer/main.tsx:32`, `Windows/windowCache.ts:33`, `DesignSystem/Pickers/picker-base.tsx:121`) and the Showcase's `.jpg`/`.png` imports (`Showcase/Leaves/GlassLeaf.tsx:4-6`); plus `declare module '@fontsource-variable/inter'` (l.5). | — |
+| `src/renderer/env.d.ts` | `/// <reference types="vite/client" />` (l.1) — needed for `import.meta.env.DEV` (`renderer/main.tsx:32`, `Windows/windowCache.ts:33`, `PommoraUIX/Pickers/picker-base.tsx:121`) and the Showcase's `.jpg`/`.png` imports (`Showcase/Leaves/GlassLeaf.tsx:4-6`); plus `declare module '@fontsource-variable/inter'` (l.5). | — |
 | `src/preload/index.d.ts` | `import type { NexusApi } from './index'` (l.1) → `declare global { interface Window { nexus: NexusApi } }`. `NexusApi = typeof api` (`preload/index.ts:196`), where `api` is built from `@shared/bridge`'s `Asks/Pushes/Tells` (`preload/index.ts:3`). Because tsconfig.web includes this file, tsc follows the type import into `src/preload/index.ts` and its `electron` import — the web project typechecks Electron's typings through the preload. | `./index` |
 
 Two harness pieces outside the repo also touch the layout:
@@ -72,12 +72,12 @@ Two harness pieces outside the repo also touch the layout:
 | `@codemirror/state` | dep | 48 | 0 | 0 | 0 | 48 | 3 files outside MarkdownPM (`Interface/{GlancePane,PageView,pageEditor}`) + `Testing/editorHarness.ts` |
 | `@codemirror/view` | dep | 58 | 0 | 0 | 0 | 58 | |
 | `@fontsource-variable/inter` | dep | 3 | 0 | 0 | 0 | 3 | side-effect import in the three entries (`renderer/main.tsx:5`, `Showcase/main.tsx:3`, `Showcase/Lab/main.tsx:3`) |
-| `@samasante/liquid-glass` | dep | 1 | 0 | 0 | 0 | 1 | `DesignSystem/Glass/glass-control.tsx:2` — used |
-| `@tabler/icons-react` | dep | 2 | 0 | 0 | 0 | 2 | `DesignSystem/Symbols/{customGlyphs.tsx:4, fileTypes.ts:6}` |
-| `@tanstack/react-virtual` | dep | 1 | 0 | 0 | 0 | 1 | `DesignSystem/Pickers/IconPicker/IconPicker.tsx:9` |
-| `@vanilla-extract/css` | dep | 55 | 0 | 0 | 0 | 55 | 29 in DesignSystem, 26 across 13 other renderer folders |
+| `@samasante/liquid-glass` | dep | 1 | 0 | 0 | 0 | 1 | `PommoraUIX/Glass/glass-control.tsx:2` — used |
+| `@tabler/icons-react` | dep | 2 | 0 | 0 | 0 | 2 | `PommoraUIX/Symbols/{customGlyphs.tsx:4, fileTypes.ts:6}` |
+| `@tanstack/react-virtual` | dep | 1 | 0 | 0 | 0 | 1 | `PommoraUIX/Pickers/IconPicker.tsx:9` |
+| `@vanilla-extract/css` | dep | 55 | 0 | 0 | 0 | 55 | 29 in PommoraUIX, 26 across 13 other renderer folders |
 | `chokidar` | dep | 1 | 1 | 0 | 0 | 0 | `main/watcher.ts:6` |
-| `lucide-react` | dep | 4 | 0 | 0 | 0 | 4 | all in `DesignSystem/Symbols/` |
+| `lucide-react` | dep | 4 | 0 | 0 | 0 | 4 | all in `PommoraUIX/Symbols/` |
 | `mdast-util-from-markdown` | dep | 1 | 0 | 0 | 0 | 1 | `MarkdownPM/Parser/index.ts:1` |
 | `mdast-util-gfm` | dep | 1 | 0 | 0 | 0 | 1 | `MarkdownPM/Parser/index.ts:3` |
 | `micromark-extension-gfm` | dep | 1 | 0 | 0 | 0 | 1 | `MarkdownPM/Parser/index.ts:2` |
@@ -125,13 +125,13 @@ Import edges are clean at the process level: renderer never imports `electron` o
 | Workspace | Runtime deps | Dev deps | Evidence |
 | --- | --- | --- | --- |
 | **Core** (`src/shared`, later engine) | `zod` | — | 6 shared files; the only external there. Also the 2 JSON fixtures in `shared/__fixtures__` (consumed by 2 renderer Pipeline tests). |
-| **UIX** (`DesignSystem`, `Interactions`, `Animation`) | `react`, `react-dom`, `@vanilla-extract/css`, `lucide-react`, `@tabler/icons-react`, `@tanstack/react-virtual`, `@samasante/liquid-glass`, `@fontsource-variable/inter` | `@types/react`, `@types/react-dom`, `@vanilla-extract/vite-plugin`, `jsdom` | 51/4/33/4/2/1/1 files respectively inside those three folders. Purity leaks a UIX package would have to resolve: `DesignSystem/Elements/PickerControl/PickerControl.tsx:6` → `@renderer/Actions/nativeMenus`; `DesignSystem/Pickers/ImagePicker/ImagePicker.tsx:14-17` → `@renderer/Assets/*`, `@renderer/store`, and `:130, 193` call `window.nexus.pasteImage/pickFile`; 15 DesignSystem files import `@shared/{theme,clamp,types,schemas,nexusPaths,cropGeometry}` (fine if UIX depends on Core). |
+| **UIX** (`PommoraUIX`, `Interactions`, `Animation`) | `react`, `react-dom`, `@vanilla-extract/css`, `lucide-react`, `@tabler/icons-react`, `@tanstack/react-virtual`, `@samasante/liquid-glass`, `@fontsource-variable/inter` | `@types/react`, `@types/react-dom`, `@vanilla-extract/vite-plugin`, `jsdom` | 51/4/33/4/2/1/1 files respectively inside those three folders. Purity leaks a UIX package would have to resolve: `PommoraUIX/Elements/PickerControl.tsx:6` → `@renderer/Actions/nativeMenus`; `PommoraUIX/Pickers/ImagePicker/ImagePicker.tsx:14-17` → `@renderer/Assets/*`, `@renderer/store`, and `:130, 193` call `window.nexus.pasteImage/pickFile`; 15 PommoraUIX files import `@shared/{theme,clamp,types,schemas,nexusPaths,cropGeometry}` (fine if UIX depends on Core). |
 | **Desktop — main + preload** | `electron`, `chokidar`, `ulidx`, `yaml`, `write-file-atomic`, `zod` (4 main files) | `electron`, `electron-vite`, `electron-builder`, `@types/node`, `@types/write-file-atomic` | census rows above; `node:sqlite` is a builtin. |
-| **Desktop — app renderer** (MarkdownPM, Views, Frames, Store, …) | `@codemirror/{state,view,commands,language,lang-markdown}`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`, `@lezer/highlight` (declare), `@types/mdast` (declare), `zustand`, plus the UIX set (26 non-DesignSystem files use `@vanilla-extract/css`; 179 use `react`) | `vite` (Showcase), `@vitejs/plugin-react`, `@vanilla-extract/vite-plugin`, `jsdom` | Whether MarkdownPM is Desktop or its own package is the open design question; its deps are self-contained (CodeMirror + micromark) and it is 14,025 lines. |
+| **Desktop — app renderer** (MarkdownPM, Views, Frames, Store, …) | `@codemirror/{state,view,commands,language,lang-markdown}`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`, `@lezer/highlight` (declare), `@types/mdast` (declare), `zustand`, plus the UIX set (26 non-PommoraUIX files use `@vanilla-extract/css`; 179 use `react`) | `vite` (Showcase), `@vitejs/plugin-react`, `@vanilla-extract/vite-plugin`, `jsdom` | Whether MarkdownPM is Desktop or its own package is the open design question; its deps are self-contained (CodeMirror + micromark) and it is 14,025 lines. |
 | **Root** | — | `@biomejs/biome`, `typescript`, `vitest`, `@vitejs/plugin-react`, `@vanilla-extract/vite-plugin`, `jsdom`, `@types/node` | whatever the root `vitest.config.ts`/`biome.json` import. |
 | **Nobody** | `react-markdown`, `remark-gfm`, `@codemirror/lang-json`, `@codemirror/lang-yaml`, `@codemirror/legacy-modes` | `pngjs` | zero importers. |
 
-Sizes for scale (non-test ts/tsx/css, `wc -l`): main 15,079 · preload 203 · shared 5,953 · renderer 66,709 (DesignSystem 7,722 · Interactions 3,593 · MarkdownPM 14,025 · Showcase 3,197).
+Sizes for scale (non-test ts/tsx/css, `wc -l`): main 15,079 · preload 203 · shared 5,953 · renderer 66,709 (PommoraUIX 7,722 · Interactions 3,593 · MarkdownPM 14,025 · Showcase 3,197).
 
 ### 4. The Monorepo Config Surface
 
@@ -141,7 +141,7 @@ Assume PascalCase workspaces at the root (`Core`, `UIX`, `Desktop`; `Mobile`/`Sy
 
 - `package.json` — new: `private: true`, `workspaces`, root scripts delegating (`npm run dev -w Desktop`), root devDeps = what root configs import. `P/package-lock.json` is regenerated; the current one carries no workspace data.
 - `biome.json` — **must move to the root**, not just because of `biome check .`: the Studio-level format hook `cd`s to the directory holding `node_modules/.bin/biome`, which becomes the root; Biome resolves config from the cwd upward, never downward, so a `Desktop/biome.json` would be invisible and every hooked write would be reformatted with Biome defaults (double quotes, semicolons). `includes` gains `"!**/out"`, `"!**/release"` only if `.gitignore` coverage is not relied on (`vcs.useIgnoreFile` reads the root ignore and, in Biome 2, nested ones — so moving `P/.gitignore`'s entries to the root ignore keeps it working).
-- `vitest.config.ts` — move to root. `include` and `setupFiles` are cwd-relative strings (l.17-18) and must become `Desktop/src/**`, `Core/**`, `UIX/**` (or, better, `test.projects` — §5). Aliases (l.22-23) re-point `@shared → Core/shared`, `@renderer → Desktop/src/renderer` (and `@uix` if the DesignSystem splits). Root vitest cache then lands in the root `node_modules/.vite`, which is where the stale one already is.
+- `vitest.config.ts` — move to root. `include` and `setupFiles` are cwd-relative strings (l.17-18) and must become `Desktop/src/**`, `Core/**`, `UIX/**` (or, better, `test.projects` — §5). Aliases (l.22-23) re-point `@shared → Core/shared`, `@renderer → Desktop/src/renderer` (and `@uix` if the PommoraUIX splits). Root vitest cache then lands in the root `node_modules/.vite`, which is where the stale one already is.
 - `tsconfig.json` — root solution file referencing each workspace's tsconfig; scripts switch to `tsc -b` or keep per-project `-p` (§6).
 - `vercel.json` — one file, root: `installCommand: npm install`, `buildCommand: npm run build:showcase` (delegating to Desktop), `outputDirectory: Desktop/dist`; delete `P/vercel.json`. The Vercel dashboard Root Directory must be `.` (the README notes either works today).
 - `.gitignore` — merge `P/.gitignore`'s `out/ dist/ release/ .vite/ coverage/ *.tsbuildinfo *.env` into the root's; drop `dist-app/` and `build/_dots.png`.
@@ -156,7 +156,7 @@ Assume PascalCase workspaces at the root (`Core`, `UIX`, `Desktop`; `Mobile`/`Sy
 - `design-system.html` — `/src/renderer/Showcase/main.tsx` is served relative to Vite's root (the Desktop folder), so it moves unchanged.
 - `package.json` — `@pommora/desktop`, `main: ./out/main/index.js`, the Electron scripts; deps per §3.
 
-**Core/**, **UIX/**: new `package.json` each (deps per §3), a tsconfig each (§6). Every cross-folder import already goes through `@shared`/`@renderer`, so **zero source lines change for a Core split**; a UIX split adds `@uix` and rewrites the `@renderer/DesignSystem|Interactions|Animation` specifiers (559 + 105 + 54 import sites in non-test renderer files, plus 96/16/15 inside those folders) — a mechanical sed, but the three purity leaks above need real decisions.
+**Core/**, **UIX/**: new `package.json` each (deps per §3), a tsconfig each (§6). Every cross-folder import already goes through `@shared`/`@renderer`, so **zero source lines change for a Core split**; a UIX split adds `@uix` and rewrites the `@renderer/PommoraUIX|Interactions|Animation` specifiers (559 + 105 + 54 import sites in non-test renderer files, plus 96/16/15 inside those folders) — a mechanical sed, but the three purity leaks above need real decisions.
 
 **The harness — what hard-codes the layout and what it reads after:**
 
@@ -173,9 +173,9 @@ Assume PascalCase workspaces at the root (`Core`, `UIX`, `Desktop`; `Mobile`/`Sy
 | | 54, 60, 92 | `git show`/`ls-files 'src/**'`/`readFileSync` in appRoot | same globs |
 | | 19 | default `base = '53b5d903'` — a pre-move commit whose `src/` paths will not match post-move files (every file reads as "new", nothing compares) | needs a post-move base or retirement |
 | `comment-baseline.json`, `comment-units.json` | all 952 / 923 keys | `src/main/…`, `src/renderer/…` | invalid until `--snapshot` reruns; units are a finished pass's partition |
-| `check-atlas.mjs` | 19-21 | `join(repoRoot, 'Pommora/src/renderer/DesignSystem', f)` for `Tokens/theme-vars.css.ts`, `Tokens/color.css.ts` | `Desktop/src/renderer/DesignSystem` or `UIX/DesignSystem` |
+| `check-atlas.mjs` | 19-21 | `join(repoRoot, 'Pommora/src/renderer/PommoraUIX', f)` for `Tokens/theme-vars.css.ts`, `Tokens/color.css.ts` | `Desktop/src/renderer/PommoraUIX` or `UIX/PommoraUIX` |
 | | 33, 35, 38 | `existsSync(join(repoRoot, s))` for each `` `path` `` on a Features `**SOURCE:**` line | the 31 `Pommora/src/…` paths across 16 tables in `.claude/Features/*.md` must be rewritten, or every table fails "source file missing" and the post-commit hook prints drift on every commit |
-| | 40 | `base.split('/src/')[0] + 'src/renderer/DesignSystem'` | still works for `Desktop/src/…`; breaks if DesignSystem moves to `UIX/` without a `src/` segment |
+| | 40 | `base.split('/src/')[0] + 'src/renderer/PommoraUIX'` | still works for `Desktop/src/…`; breaks if PommoraUIX moves to `UIX/` without a `src/` segment |
 | `loc.py` | 4, 121 | docstrings naming `Pommora/src` | text |
 | | 23 | `SRC = "Pommora/src"` — used by `measure_tree` (l.123) and `git archive sha Pommora/src` (l.159, 186) | becomes a list of roots (`Desktop/src`, `Core`, `UIX`); `--history`/`--rebuild` must try both old and new paths per commit, the way l.69-70 already folds `renderer/src/` → `renderer/` from the last rename |
 | | 28-50 | AREAS keyed `renderer/…`, `main`, `shared`, `preload` relative to SRC | "Shared Contract" (`shared` + `preload`) spans two roots; area keys need a root-aware mapping so `loc-history.json`'s seven series continue |

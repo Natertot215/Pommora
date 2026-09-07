@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '../Utilities/cx'
 import { text } from '../Theme/typography.css'
-import { OverScroll } from '../Elements/OverScroll'
+import { OverScroll } from '../Interactions/OverScroll'
 import { useDropSlot, type DragItem } from '../Interactions/drag'
 import { stack } from '../Theme/stack'
-import { NavTrail, type TrailSegment } from '../Elements/NavTrail/NavTrail'
+import { NavTrail, type TrailSegment } from '../Elements/NavTrail'
 import './cards.css'
 
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }

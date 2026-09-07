@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
 import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'

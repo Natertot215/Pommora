@@ -13,7 +13,7 @@ import {
 import { Icon, iconNameOr } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
-import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker/ColorPicker'
+import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { AccessoryButton, Menu, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'

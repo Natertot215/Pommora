@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { OverScroll } from '../Elements/OverScroll'
+import { OverScroll } from '../Interactions/OverScroll'
 import * as sr from './segment-run.css'
 import { FileLabel } from '../Labels/recipes'
 

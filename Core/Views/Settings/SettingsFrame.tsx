@@ -3,7 +3,7 @@ import { coerceScale, SCALE_STEPS } from '@pommora/core/Settings/personalization
 import type { OpenIn } from '@pommora/core/Views/viewRow'
 import { Icon, iconNameOr, type IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
-import { NavTrail } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf } from '../../Nexus/treeIndex'
 import { footerLock, ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'

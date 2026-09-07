@@ -4,7 +4,7 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base, field, borderedField, input } from '@pommora/uix/Fields/fields.css'
 import { FileLabel } from '@pommora/uix/Labels/recipes'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { NavTrail, pathSegments } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { NavTrail, pathSegments } from '@pommora/uix/Elements/NavTrail'
 import { Icon } from '@pommora/uix/Symbols'
 import { errorField, rows } from './fields-leaf.css'
 

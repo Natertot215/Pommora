@@ -15,7 +15,7 @@
 | # | Rule (quoted) | Source | Class | Restatement / evidence |
 | --- | --- | --- | --- | --- |
 | 1 | "Pommora is an **Electron** desktop app." | CLAUDE.md:21 | (c) | Pommora becomes an engine (Core) + interface (UIX) mounted by hosts; Electron is the Desktop host. |
-| 2 | "`lucide-react` (the curated icon registry — `DesignSystem/Symbols`…)" | CLAUDE.md:21 | (a) | Path restates to the UIX workspace; `src/renderer/DesignSystem/Symbols/` exists. |
+| 2 | "`lucide-react` (the curated icon registry — `PommoraUIX/Symbols`…)" | CLAUDE.md:21 | (a) | Path restates to the UIX workspace; `src/renderer/PommoraUIX/Symbols/` exists. |
 | 3 | "**No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Database//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`)" | CLAUDE.md:23 | (a) | Verified: `src/main/Database/driver.ts`, `src/main/IO/pageFile.ts`, `src/main/ids.ts` exist. These seams are exactly where a Mobile host swaps `node:sqlite`/`fs`. |
 | 4 | "**Main owns the filesystem.** All fs/Node lives in `src/main`, reached from the renderer only through the **narrow typed IPC** bridge in `src/preload` (contextBridge)." | CLAUDE.md:29 | (b) | *Core owns the filesystem behind one typed API; the interface reaches it only through a host adapter (Electron's is the preload/contextBridge).* Evidence: 0 `electron`/`node:` imports in `src/renderer`; 63 renderer files call `window.nexus.*` (218 sites); but the API type `NexusApi` is defined in `src/preload/index.ts:196` and the renderer compiles against `src/preload/index.d.ts` (`tsconfig.web.json:19`) — the contract's type currently lives inside the Electron host. |
 | 5 | "**`src/shared/types.ts` is the cross-process contract.** No fs, no React there." | CLAUDE.md:30 | (a) | Verified: `types.ts` imports only sibling `shared/*` modules; the whole of `src/shared` has zero `electron`/`node:`/`react` imports. Word "cross-process" → "cross-boundary". |
@@ -114,8 +114,8 @@
 | 83 | "**The database is off the read path and holds no content.**" | PRD:102 | (a) | — |
 | 84 | macOS Integration / Distribution | PRD:180–186 | (b) | Desktop workspace concerns. |
 | 85 | "the on-disk model… `.nexus/` … travels with the Nexus" | PRD:98 | (a) | Sync's payload boundary. |
-| 86 | "Pommora heavily *prefers* even-factored scaling for all geometrical applications" | DesignSystemPM:7 | (a) | UIX. |
-| 87 | "`src/renderer/Interactions/` (hoisted to the renderer root, outside the design system)… fields and labels depend down into it, nothing reaches up." | DesignSystemPM:353 | (a) | UIX layering rule; path restates. |
+| 86 | "Pommora heavily *prefers* even-factored scaling for all geometrical applications" | PommoraUIX:7 | (a) | UIX. |
+| 87 | "`src/renderer/Interactions/` (hoisted to the renderer root, outside the design system)… fields and labels depend down into it, nothing reaches up." | PommoraUIX:353 | (a) | UIX layering rule; path restates. |
 | 88 | "Every web surface is an Electron webview guest under one main-process governor, `src/main/webGuests.ts`… Exactly three renderer components mount a guest" | WebviewPM:3 | (b) | Desktop rule. Verified 3 `<webview` sites: `Tiles/Surfaces/WebTile.tsx`, `Interface/Glance/GlancePane.tsx`, `Windows/WebWindow.tsx`. |
 | 89 | "Every web surface shares one persistent session partition per machine" | WebviewPM:21 | (b) | Desktop. |
 | 90 | "Right-click anywhere in the editor opens the operating system's own menu… `src/main/editorMenu.ts` builds the native menu… The submenu models… are shared code both processes read" | MarkdownPM:83 | (b) | Popup is Desktop; models (`shared/pasteAsMenu.ts`, `gripMenu.ts`, `citationMenu.ts`) are Core. |
@@ -139,7 +139,7 @@
 
 ### 2. Path Surface
 
-Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/main/…` string counts under both `Pommora/src` and `src/main`; `renderer/<F>/` includes `src/renderer/<F>/`. **Bare-folder** = a backticked location starting with a known renderer/main/DesignSystem folder name without the `src/…` prefix (e.g. `` `Windows/PageWindow.tsx` ``).
+Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/main/…` string counts under both `Pommora/src` and `src/main`; `renderer/<F>/` includes `src/renderer/<F>/`. **Bare-folder** = a backticked location starting with a known renderer/main/PommoraUIX folder name without the `src/…` prefix (e.g. `` `Windows/PageWindow.tsx` ``).
 
 | doc | `Pommora/src` | `src/main` | `src/renderer` | `src/preload` | `src/shared` | `@shared` | `@renderer` | `renderer/<F>/` | `main/<F>/` | bare-folder |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -149,7 +149,7 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 | Features/ConfigurationPM.md | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
 | Features/ConnectionsPM.md | 0 | 1 | 0 | 0 | 3 | 0 | 0 | 0 | 1 | 1 |
 | Features/ContextsPM.md | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
-| Features/DesignSystemPM.md | 10 | 0 | 10 | 0 | 3 | 0 | 0 | 9 | 0 | 28 |
+| Features/PommoraUIX.md | 10 | 0 | 10 | 0 | 3 | 0 | 0 | 9 | 0 | 28 |
 | Features/InteractionPM.md | 5 | 0 | 5 | 0 | 0 | 0 | 0 | 4 | 0 | 11 |
 | Features/InterfacePM.md | 0 | 0 | 1 | 0 | 2 | 0 | 0 | 1 | 0 | 14 |
 | Features/MarkdownPM.md | 1 | 1 | 3 | 0 | 0 | 0 | 0 | 3 | 0 | 21 |
@@ -179,32 +179,32 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 | Finding | Evidence |
 | --- | --- |
 | The docs never use the code's own aliases. `@shared` / `@renderer` appear 0 times in any doc while code uses them 942 / 1,197 times. Docs anchor on filesystem prefixes; code anchors on aliases. A restructure that keeps the alias names (`@core`, `@uix`…) touches every `src/…` string in the docs and none in the imports. | `tsconfig.web.json:14–15`, `tsconfig.node.json:11`, `vite.config.ts:12`, `vite.config.app.ts:14`, `vitest.config.ts:21`, `electron.vite.config.ts:9,13,17` — the aliases are declared at **7 sites** in 6 config files. |
-| The hardest sweep class is the bare-folder token (120 occurrences), concentrated in DesignSystemPM (28), MarkdownPM (21), ContextPM (18), InterfacePM (14), InteractionPM (11). They carry no prefix, so a `sed s#src/renderer#…#` misses them; they only break if the folder itself is renamed or re-nested. | §2 table; token dump below. |
-| `Pommora/src/…` appears only inside `**SOURCE:**` lines (16 lines across 6 docs) and HandoffPM. Those SOURCE lines are machine-read by `.claude/scripts/check-atlas.mjs`, which also hardcodes `Pommora/src/renderer/DesignSystem` at line 20. | `grep -c "SOURCE:"`: ArchitecturePM 2 · InteractionPM 3 · DesignSystemPM 6 · MarkdownPM 1 · PommoraDND 2 · ViewTypesPM 2. |
+| The hardest sweep class is the bare-folder token (120 occurrences), concentrated in PommoraUIX (28), MarkdownPM (21), ContextPM (18), InterfacePM (14), InteractionPM (11). They carry no prefix, so a `sed s#src/renderer#…#` misses them; they only break if the folder itself is renamed or re-nested. | §2 table; token dump below. |
+| `Pommora/src/…` appears only inside `**SOURCE:**` lines (16 lines across 6 docs) and HandoffPM. Those SOURCE lines are machine-read by `.claude/scripts/check-atlas.mjs`, which also hardcodes `Pommora/src/renderer/PommoraUIX` at line 20. | `grep -c "SOURCE:"`: ArchitecturePM 2 · InteractionPM 3 · PommoraUIX 6 · MarkdownPM 1 · PommoraDND 2 · ViewTypesPM 2. |
 | Hidden sed surface outside the docs: `.claude/scripts/loc.py:23 SRC = "Pommora/src"` and its `AREAS` map (lines 28–48) keyed by `renderer/…`/`main` prefixes — including six dead prefixes kept for `--history` (`renderer/SurfacePM`, `renderer/Blocks`, `renderer/Embeds`, `renderer/PagePreview`, `renderer/Components`, `renderer/Detail`); `comment-ledger.mjs:12` and `comment-manifest.mjs:13` import `../../Pommora/node_modules/typescript`; `vitest.config.ts:18` `setupFiles: ['src/renderer/Testing/setup.ts']`; `tsconfig.web.json:19` includes `src/preload/index.d.ts`. | Verified by grep. |
-| Host vocabulary density (Electron · IPC · contextBridge · preload · main process · renderer · webview · BrowserWindow · native menu · main), per doc: ArchitecturePM 65 · ViewTypesPM 32 · Development-Environment 31 · CLAUDE.md 26 · Dependencies 19 · PRD 19 · DesignSystemPM 16 · MarkdownPM 14 · WebviewPM 14 · ContextPM 12 · InterfacePM 10 · Web-Guests 8 · SurfacePM 7 · Collections 6 · Configuration 6 · Framework 5 · Connections 5 · Interaction 5 · DND 4 · Pages 3 · NexusRecord 3 · Navigation 3 · Properties 3 · Contexts 2 · Editor-Internals 1 · Symbols 0 · scripts/README 0. (ViewTypesPM's 32 is almost entirely the word "renderer" meaning *view renderer*, a vocabulary collision worth renaming before "renderer" stops meaning the Electron process.) | grep counts. |
+| Host vocabulary density (Electron · IPC · contextBridge · preload · main process · renderer · webview · BrowserWindow · native menu · main), per doc: ArchitecturePM 65 · ViewTypesPM 32 · Development-Environment 31 · CLAUDE.md 26 · Dependencies 19 · PRD 19 · PommoraUIX 16 · MarkdownPM 14 · WebviewPM 14 · ContextPM 12 · InterfacePM 10 · Web-Guests 8 · SurfacePM 7 · Collections 6 · Configuration 6 · Framework 5 · Connections 5 · Interaction 5 · DND 4 · Pages 3 · NexusRecord 3 · Navigation 3 · Properties 3 · Contexts 2 · Editor-Internals 1 · Symbols 0 · scripts/README 0. (ViewTypesPM's 32 is almost entirely the word "renderer" meaning *view renderer*, a vocabulary collision worth renaming before "renderer" stops meaning the Electron process.) | grep counts. |
 
 **Bare-folder token dump (the exact strings a re-nesting must sweep)**
 
 | Doc | Tokens |
 | --- | --- |
-| CLAUDE.md | `renderer/Utilities/iteration-window` · `DesignSystem/Symbols` · `Database//driver.ts` |
+| CLAUDE.md | `renderer/Utilities/iteration-window` · `PommoraUIX/Symbols` · `Database//driver.ts` |
 | ArchitecturePM | `Windows/PageHistoryWindow.tsx` |
 | ConnectionsPM | `MarkdownPM/autocomplete.ts` |
-| DesignSystemPM | `Util/`×2 · `Tokens/`×2 · `Buttons/button-base.css.ts`×2 · `shared/types.ts` · `Windows/window-base.tsx` · `Toolbar/` · `Tokens/theme-vars.css.ts` · `Tiles/tile-base.css` · `Tabs/` · `Tables/` · `Symbols/` · `Switches/` · `Sidebar/` · `Settings/IconPicker` · `Properties/Assignment/` · `Menus/menu-base.css.ts` · `Menus/` · `Labels/` · `Interactions/dismissalStack.ts` · `Glass/` · `Fields/` · `Elements/` · `Controls/` · `Cards/` · `Buttons/` |
-| InteractionPM | `Animation/`×2 · `Sidebar/Sidebar.css` · `MarkdownPM/Styles.css` · `MarkdownPM/Editor/caret.ts` · `Interactions/` · `Interactions/ResizeFrame.tsx` · `DesignSystem/Menus/frame-slide.tsx` · `Animation/useEntrance.ts` · `Animation/motion.ts` · `Animation/Reveal.tsx` |
+| PommoraUIX | `Util/`×2 · `Tokens/`×2 · `Buttons/button-base.css.ts`×2 · `shared/types.ts` · `Windows/window-base.tsx` · `Toolbar/` · `Tokens/theme-vars.css.ts` · `Tiles/tile-base.css` · `Tabs/` · `Tables/` · `Symbols/` · `Switches/` · `Sidebar/` · `Settings/IconPicker` · `Properties/Assignment/` · `Menus/menu-base.css.ts` · `Menus/` · `Labels/` · `Interactions/dismissalStack.ts` · `Glass/` · `Fields/` · `Elements/` · `Controls/` · `Cards/` · `Buttons/` |
+| InteractionPM | `Animation/`×2 · `Sidebar/Sidebar.css` · `MarkdownPM/Styles.css` · `MarkdownPM/Editor/caret.ts` · `Interactions/` · `Interactions/ResizeFrame.tsx` · `PommoraUIX/Menus/frame-slide.tsx` · `Animation/useEntrance.ts` · `Animation/motion.ts` · `Animation/Reveal.tsx` |
 | InterfacePM | `Windows/`×2 · `Windows/confirmations.ts` · `Windows/PageWindow.tsx` · `Windows/ConfirmationWindow.tsx` · `Toolbar/` · `Toolbar/Toolbar.tsx` · `Settings/SettingsWindow.tsx` · `Interface/` · `Interface/Subfield/` · `Interface/NotificationLabel.tsx` · `Interface/Glance/glanceAction.ts` · `Interface/Glance/` · `Interface/Glance/GlancePane.tsx` |
 | MarkdownPM | `detect/`×4 · `input/`×2 · `tokens/` · `decorations/` · `connections/` · `editor/` · `editor/embedWidget.tsx` · `editor/embedRanges.ts` · `editor/citation*.ts` · `editor/blockModel.ts` · `editor/blockHandles.ts` · `editor/blockDrag.ts` · `shared/pasteAsMenu.ts` · `shared/gripMenu.ts` · `shared/citationMenu.ts` · `Tables/` · `MarkdownPM/Tables/` |
 | NavigationPM | `Windows/` · `Tabs/tabsModel.ts` · `Tabs/` · `Interface/NavView.tsx` |
 | PommoraDND | `Interactions/insertionDrag.tsx` · `Interactions/autoscroll.ts` |
 | SurfacePM | `Tiles/tile-base.css` · `Tiles/Surfaces/` |
-| SymbolsPM | `Symbols/index.tsx` · `Frames/SettingsFrame.tsx` · `Frames/LayoutFrame.tsx` · `DesignSystem/Symbols/` · `DesignSystem/Pickers/IconPicker` |
+| SymbolsPM | `Symbols/index.tsx` · `Frames/SettingsFrame.tsx` · `Frames/LayoutFrame.tsx` · `PommoraUIX/Symbols/` · `PommoraUIX/Pickers/IconPicker` |
 | ViewTypesPM | `Properties/Assignment/valueClick.ts` · `Interactions/ghostCreate.ts` |
 | WebviewPM | `Windows/WebWindow.tsx` · `Tiles/Surfaces/webRetention.ts` |
-| Dependencies | `interactions/drag.tsx` · `db//driver.ts` · `DesignSystem/Symbols/` |
+| Dependencies | `interactions/drag.tsx` · `db//driver.ts` · `PommoraUIX/Symbols/` |
 | Development-Environment | `Interactions/activate.ts` |
 | Editor-Internals | `Interface/Glance/glanceAction.ts` · `Interface/Glance/GlancePane` |
-| ContextPM | `renderer/Tiles/` · `main/index.ts` · `Windows/confirmations.ts` · `Windows/PageWindow.tsx` · `Windows/ConfirmationWindow.tsx` · `Utilities/NexusIconPicker` · `Tiles/` · `Sidebar/sidebarDndModel` · `Sidebar/` · `Settings/IconPicker` · `Properties/PageProperties.tsx` · `MarkdownPM/Tables/TableView.tsx` · `Interface/` · `Interface/NotificationLabel.tsx` · `Interactions/reorderModel` · `Interactions/gesture.ts` · `Interactions/ResizeFrame.tsx` · `DesignSystem/Util/capMap.ts` |
+| ContextPM | `renderer/Tiles/` · `main/index.ts` · `Windows/confirmations.ts` · `Windows/PageWindow.tsx` · `Windows/ConfirmationWindow.tsx` · `Utilities/NexusIconPicker` · `Tiles/` · `Sidebar/sidebarDndModel` · `Sidebar/` · `Settings/IconPicker` · `Properties/PageProperties.tsx` · `MarkdownPM/Tables/TableView.tsx` · `Interface/` · `Interface/NotificationLabel.tsx` · `Interactions/reorderModel` · `Interactions/gesture.ts` · `Interactions/ResizeFrame.tsx` · `PommoraUIX/Util/capMap.ts` |
 
 ---
 
@@ -212,8 +212,8 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 
 | Doc | Spine | Evidence | What a renderer re-nesting rewrites |
 | --- | --- | --- | --- |
-| **DesignSystemPM** | **BY FOLDER** (declared) | Line 3: "one section per folder, one row per thing". Sections: Token Atlas (`Tokens/`), Glass (`Glass/`), Labels & Chips (`Labels/`), Elements (`Elements/`), Components → Controls/Pickers/Fields (`Controls/`, `Pickers/`, `Fields/`), Menus (`Menus/`), Composite Shells (app folders `Tiles/`, `Windows/`, `Sidebar/`, `Toolbar/`, `Tabs/`, `Cards/`, `Tables/`), Interactions (`src/renderer/Interactions/`), Animation (`src/renderer/Animation/`), Symbols (`Symbols/`), Util (`Util/`). One heading names a folder that does not exist (`### Components`, line 258 — no `DesignSystem/Components/`). | The entire spine. Every H3 is a folder; the "hoisted to the renderer root" clauses (lines 3, 353, 373) describe today's nesting explicitly. |
-| **ArchitecturePM** | **BY PROCESS/FOLDER** for §The Shape of the App (7), §The Process Boundary (185–191), §The Renderer (193–205); **BY FEATURE** for §Nexus Layout and §Data Layer | §The Renderer's five paragraphs map 1:1 onto `Store/`, `Tabs/`+`Navigation/`, `Views/`, `MarkdownPM/`, `Tiles/`+`Windows/`, `DesignSystem/`. | §Shape, §Process Boundary, §The Renderer — roughly 40% of the doc. §Nexus Layout and §Data Layer survive intact (they are Core, organized by on-disk concern). |
+| **PommoraUIX** | **BY FOLDER** (declared) | Line 3: "one section per folder, one row per thing". Sections: Token Atlas (`Tokens/`), Glass (`Glass/`), Labels & Chips (`Labels/`), Elements (`Elements/`), Components → Controls/Pickers/Fields (`Controls/`, `Pickers/`, `Fields/`), Menus (`Menus/`), Composite Shells (app folders `Tiles/`, `Windows/`, `Sidebar/`, `Toolbar/`, `Tabs/`, `Cards/`, `Tables/`), Interactions (`src/renderer/Interactions/`), Animation (`src/renderer/Animation/`), Symbols (`Symbols/`), Util (`Util/`). One heading names a folder that does not exist (`### Components`, line 258 — no `PommoraUIX/Components/`). | The entire spine. Every H3 is a folder; the "hoisted to the renderer root" clauses (lines 3, 353, 373) describe today's nesting explicitly. |
+| **ArchitecturePM** | **BY PROCESS/FOLDER** for §The Shape of the App (7), §The Process Boundary (185–191), §The Renderer (193–205); **BY FEATURE** for §Nexus Layout and §Data Layer | §The Renderer's five paragraphs map 1:1 onto `Store/`, `Tabs/`+`Navigation/`, `Views/`, `MarkdownPM/`, `Tiles/`+`Windows/`, `PommoraUIX/`. | §Shape, §Process Boundary, §The Renderer — roughly 40% of the doc. §Nexus Layout and §Data Layer survive intact (they are Core, organized by on-disk concern). |
 | **MarkdownPM** | **BY FOLDER** for §Architecture (7); **BY FEATURE** for the rest | Line 7 walks each subfolder: `detect/`, `tokens/`, `decorations/`, `input/`, `Tables/`, `connections/`, `editor/` (all but `Tables/` spelled in the wrong case, and `Parser/` omitted). | One paragraph. |
 | **InterfacePM** | **BY FEATURE, coincident with folders** | Line 3 maps the doc onto `Sidebar/`, `Toolbar/`, `Interface/`, `Interface/Glance/`, `Windows/`; the H3s (Toolbar, Sidebar, Subfield, Floating Windows, Glance Pane) mirror them 1:1. | The intro sentence only — unless `Sidebar/` folds into `Interface/` (ContextPM:34's open call), which changes nothing in the sections. |
 | **NavigationPM** | **BY FEATURE, coincident with folders** | Line 3: "`src/renderer/Navigation/` for the layer, `Tabs/` for the tab model, and `Windows/` for the window." | Intro sentence only. |
@@ -222,13 +222,13 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 | **ViewTypesPM** | **BY FEATURE** with heavy path anchoring | Model / Creation / Pipeline / Surfaces / View Host / Table / Cards; 12 `src/renderer/…` references and two SOURCE tables. | Paths only; the H3s are user-visible things. |
 | CollectionsPM · ContextsPM · PagesPM · NexusRecordPM · PropertiesPM · ConnectionsPM · ConfigurationPM · SurfacePM · SymbolsPM · WebviewPM | **BY FEATURE** | Sections mirror what the user or the file system shows (Sidecar, Writes, Surfaces, Provenance, Type Catalog, Settings frames, Tile Document…); paths appear inline as citations. | Inline citations only. |
 
-**Net:** one doc's spine is the folder tree (DesignSystemPM), one doc is 40% folder-spined (ArchitecturePM), one has a single folder paragraph (MarkdownPM §Architecture). Two more (InterfacePM, NavigationPM) coincide with folders by naming rather than structure. The remaining 13 are feature-spined and survive any re-nesting with a path sweep.
+**Net:** one doc's spine is the folder tree (PommoraUIX), one doc is 40% folder-spined (ArchitecturePM), one has a single folder paragraph (MarkdownPM §Architecture). Two more (InterfacePM, NavigationPM) coincide with folders by naming rather than structure. The remaining 13 are feature-spined and survive any re-nesting with a path sweep.
 
 ---
 
 ### 4. Staleness Probe
 
-548 claims checked (files case-exact against the inventory; identifiers by fixed-string grep). Per doc the probe exceeded five claims everywhere (ArchitecturePM 55 · CollectionsPM 8 · ContextsPM 6 · PagesPM 5 · NexusRecordPM 6 · NavigationPM 6 · SurfacePM 13 · SymbolsPM 14 · WebviewPM 5 · PommoraDND 15 · ConnectionsPM 7 · InterfacePM 15 · InteractionPM 35 · PropertiesPM 11 · ConfigurationPM 64 · ViewTypesPM 32 · MarkdownPM 28 · DesignSystemPM 180). **38 misses.**
+548 claims checked (files case-exact against the inventory; identifiers by fixed-string grep). Per doc the probe exceeded five claims everywhere (ArchitecturePM 55 · CollectionsPM 8 · ContextsPM 6 · PagesPM 5 · NexusRecordPM 6 · NavigationPM 6 · SurfacePM 13 · SymbolsPM 14 · WebviewPM 5 · PommoraDND 15 · ConnectionsPM 7 · InterfacePM 15 · InteractionPM 35 · PropertiesPM 11 · ConfigurationPM 64 · ViewTypesPM 32 · MarkdownPM 28 · PommoraUIX 180). **38 misses.**
 
 #### 4.1 Misses by class
 
@@ -252,14 +252,14 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 | `src/renderer/Properties/PropertyFrame.tsx` | PropertiesPM:108 | `src/renderer/Frames/PropertyFrame.tsx` |
 | "the `src/Cards` chassis" · `src/Cards/cards.css` | ViewTypesPM:114, 130 | `src/renderer/Cards/cards.css` (line 132's SOURCE has it right) |
 | `db//driver.ts` | Dependencies:24 | `src/main/Database/driver.ts` (CLAUDE.md:23 has it right) |
-| `Settings/IconPicker` as a folder-shaped reference | DesignSystemPM:301 | A file: `src/renderer/Settings/IconPicker.tsx` (harmless as a module path; listed for the sweep) |
+| `Settings/IconPicker` as a folder-shaped reference | PommoraUIX:301 | A file: `src/renderer/Settings/IconPicker.tsx` (harmless as a module path; listed for the sweep) |
 
 **(iii) Names that do not exist** (7)
 
 | Claim | Doc:line | What grep found |
 | --- | --- | --- |
-| `### Components` — "`Components/` — grouped as the ledger reads" | DesignSystemPM:258 | No `DesignSystem/Components/` folder; Controls/Pickers/Fields are siblings of Glass/Labels/Menus. The heading is a doc grouping presented as a folder. |
-| `FooterMoreButton` | DesignSystemPM:327 | `FooterLockButton` and `FooterIconButton` exist (`Menus/menu-row.tsx:258, 282`); no `FooterMoreButton`. |
+| `### Components` — "`Components/` — grouped as the ledger reads" | PommoraUIX:258 | No `PommoraUIX/Components/` folder; Controls/Pickers/Fields are siblings of Glass/Labels/Menus. The heading is a doc grouping presented as a folder. |
+| `FooterMoreButton` | PommoraUIX:327 | `FooterLockButton` and `FooterIconButton` exist (`Menus/menu-row.tsx:258, 282`); no `FooterMoreButton`. |
 | `ungrouped_order` | ViewTypesPM:44 | `ungrouped_placement` (`src/shared/views.ts:153, 290`). |
 | `--ac-rows` on `.mdpm-ac` | MarkdownPM:174 | Neither `--ac-rows` nor `.mdpm-ac` in `Styles.css`; only `.mdpm-ac-slot` / `.mdpm-ac-match` (lines 949, 953). |
 | `revealPageOffset` | ContextPM:67 | No match in `src` for `reveal*Offset` / `revealPage*`. |
@@ -283,14 +283,14 @@ Occurrence counts (not line counts). Columns overlap by design: a `Pommora/src/m
 | `SCALE_STEPS` in `src/shared/types.ts`; `TILE_KINDS`, `TILE_SURFACES`, `copyEntry`, `mintSeed`, `_tiles.json`, `.tile-base` | SurfacePM:9, 17, 23 | All present. |
 | All 61 personalization / settings keys in the Configuration tables | ConfigurationPM:13–186 | All 61 present in `src` (probe OK 64/64). |
 | `serveBridge`, `rmwJsonStrict`, `noteValueWrite`, `replaceBody`, `capSet`, `webGuestMedia:pause`, `useHosts`, `armGlance`/`cancelGlance`/`GLANCE_DWELL` | ContextPM:19–91 | All present. |
-| 177 of 180 DesignSystemPM identifiers/files | DesignSystemPM | Present — the atlas hook (`check-atlas.mjs`) is doing its job on the SOURCE tables; the misses are in prose rows outside them. |
+| 177 of 180 PommoraUIX identifiers/files | PommoraUIX | Present — the atlas hook (`check-atlas.mjs`) is doing its job on the SOURCE tables; the misses are in prose rows outside them. |
 
 #### 4.3 Folders the Features docs never name as a location
 
 | Folder | Contents | Doc that should own it |
 | --- | --- | --- |
 | `src/renderer/Actions/` (13 files: `commands.ts`, `openWebLink.ts`, `nativeMenus.ts`, `selection.ts`, `pageMenuActions.ts`, …) | The renderer-side command/menu action layer | InterfacePM or ArchitecturePM §The Renderer — currently invisible; WebviewPM:17 mis-files its one member. |
-| `src/renderer/Assets/` (`AssetImage`, `assetUrl.ts`, `imageAspect.ts`) | Asset URL + image element | DesignSystemPM:260 names `AssetImage`/`imageAspect.ts` without the folder. |
+| `src/renderer/Assets/` (`AssetImage`, `assetUrl.ts`, `imageAspect.ts`) | Asset URL + image element | PommoraUIX:260 names `AssetImage`/`imageAspect.ts` without the folder. |
 | `src/renderer/Utilities/`, `Testing/`, `Showcase/` | Utilities · Vitest harnesses · deployed showcase | None; Showcase is ruled out of scope. |
 | `src/renderer/MarkdownPM/Parser/` | The micromark/mdast seam | MarkdownPM:7 describes "the parser/seam" without naming the folder. |
 | `src/renderer/Tiles/Core/` (`codec`, `edges`, `hitTest`, `model`, `ops`, `rects`, `snap`; all tested) | The pure split-tree engine | SurfacePM:3 describes it as "a pure split-tree model" without naming it — this is a Core-candidate module hiding in the renderer. |
@@ -319,7 +319,7 @@ Under a Core / UIX / Desktop / Mobile / Sync split. **Core** = engine + data mod
 | NavigationPM | `navigation.json` contract, `NavRef` | ● | — | Sync: pins/favorites travel, recents per machine | UIX (+ Core contract) |
 | InteractionPM | — | ● | — | Mobile: touch pass pending (PommoraDND:65) | UIX |
 | PommoraDND | — | ● | — | Mobile: "Chromium-only" assumption | UIX |
-| DesignSystemPM | `src/shared/theme.ts` (Spectrum, `DEFAULT_ACCENT`) | ● | — | — | UIX |
+| PommoraUIX | `src/shared/theme.ts` (Spectrum, `DEFAULT_ACCENT`) | ● | — | — | UIX |
 | SymbolsPM | — | ● | — | — | UIX |
 | WebviewPM | `src/shared/webpageEmbed.ts` (grammar) | tile/glance/window components | ● `main/webGuests.ts`, `<webview>`, sessions, Web Window | Mobile: a different web surface | **Desktop** |
 
@@ -346,4 +346,4 @@ Under a Core / UIX / Desktop / Mobile / Sync split. **Core** = engine + data mod
 
 ### Summary
 
-The docs carry 103 architecture rules; 55 survive a host-neutral monorepo unchanged, 38 restate by two word swaps (main → Core, renderer → UIX) plus path prefixes, and 10 go false — all of the shape "Pommora is Electron," "the OS affordance is universal" (right-click menus, `nexus-asset://`, `<webview>`), or "sync/mobile is later." Code evidence backs the split: `src/shared` imports nothing from Electron, Node, or React; the renderer has zero Electron imports but 218 `window.nexus` calls whose type is defined inside the preload; 85 of `src/main`'s 114 files are already host-neutral Node, the other 29 being menu adapters and the window/protocol/watcher residue. The path sweep is 199 prefixed occurrences plus 120 bare-folder tokens, concentrated in DesignSystemPM (the only folder-spined doc), MarkdownPM, InterfacePM, and ContextPM, plus hardcoded paths in `loc.py`, `check-atlas.mjs`, and the two comment scripts. Of 548 verified claims, 38 miss: 21 are casing errors invisible on macOS and fatal on Linux CI, 6 name the wrong folder, 7 name things that no longer exist, and the PRD still describes the retired `PageID`/`(Projects):` contract. Keep `Features/` flat with workspace tags; split ArchitecturePM at its own seams.
+The docs carry 103 architecture rules; 55 survive a host-neutral monorepo unchanged, 38 restate by two word swaps (main → Core, renderer → UIX) plus path prefixes, and 10 go false — all of the shape "Pommora is Electron," "the OS affordance is universal" (right-click menus, `nexus-asset://`, `<webview>`), or "sync/mobile is later." Code evidence backs the split: `src/shared` imports nothing from Electron, Node, or React; the renderer has zero Electron imports but 218 `window.nexus` calls whose type is defined inside the preload; 85 of `src/main`'s 114 files are already host-neutral Node, the other 29 being menu adapters and the window/protocol/watcher residue. The path sweep is 199 prefixed occurrences plus 120 bare-folder tokens, concentrated in PommoraUIX (the only folder-spined doc), MarkdownPM, InterfacePM, and ContextPM, plus hardcoded paths in `loc.py`, `check-atlas.mjs`, and the two comment scripts. Of 548 verified claims, 38 miss: 21 are casing errors invisible on macOS and fatal on Linux CI, 6 name the wrong folder, 7 name things that no longer exist, and the PRD still describes the retired `PageID`/`(Projects):` contract. Keep `Features/` flat with workspace tags; split ArchitecturePM at its own seams.

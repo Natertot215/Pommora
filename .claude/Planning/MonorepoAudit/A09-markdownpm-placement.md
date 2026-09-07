@@ -13,7 +13,7 @@ Legend for the tables below: **pure** = no CodeMirror, no React, no DOM, no host
 | `index.tsx` | 534 | React component; host — `window.nexus.setGripHot` L292, `useSession` L183/195/314/339, `Tiles/tileCache.registerScrollHeal` L34 | 5 · Interface/PageView, Tiles/Surfaces ×2, Windows/PageHistoryWindow, Testing/editorHarness | editor assembly | `MarkdownEditor.tsx` (package root) |
 | `autocomplete.ts` | 216 | pure query/commit model; store — `useSession.getState()` L137 (`pageAliases`, `forgetAlias`) | 4 · MD | autocomplete | `Autocomplete/query.ts`, alias source injected |
 | `useConnectionAutocomplete.ts` | 192 | React hook over CM view types; store ×3 L58–62 | 2 · MD | autocomplete | `Autocomplete/useConnectionAutocomplete.ts` |
-| `AutocompletePane.tsx` | 136 | React component; store (`tree` L41), `treeIndex.ancestryOf` L12, `Utilities/EntityIcon`, DesignSystem ×6, Interactions ×2 | 2 · MD | autocomplete | `Autocomplete/AutocompletePane.tsx`; row location/icon supplied by host |
+| `AutocompletePane.tsx` | 136 | React component; store (`tree` L41), `treeIndex.ancestryOf` L12, `Utilities/EntityIcon`, PommoraUIX ×6, Interactions ×2 | 2 · MD | autocomplete | `Autocomplete/AutocompletePane.tsx`; row location/icon supplied by host |
 | `PageHeader.tsx` | 102 | React component; host — `window.nexus.titleMenu` L63, `useSession`/`useAssetUrl` L2, `Interface/useBannerMenu`, `Interface/AddBannerButton`, `Interface/DetailTitleHeader`, `Assets/AssetImage` | 1 · MD (`index.tsx`) | page header (app chrome) | **out** → Interface (page surface) |
 | `warmSeam.ts` | 6 | pure type | 5 · Interface/Glance, Tiles ×2, Windows/useWindowWarm, MD | warmth/caching | `api.ts` (public contract) |
 | `zoom.ts` | 17 | pure | 1 · MD | zoom | collapse into `MarkdownEditor.tsx` as a `scale` prop (see §4) |
@@ -47,16 +47,16 @@ Legend for the tables below: **pure** = no CodeMirror, no React, no DOM, no host
 | `citationEdits.ts` | 227 | pure over `@codemirror/state` `ChangeSet`/`Text` | 4 · MD | footnotes model | `Citations/edits.ts` |
 | `citationGuard.ts` | 72 | CM transactionFilter | 1 · MD | guards | `Guards/citationGuard.ts` |
 | `citationPointer.ts` | 189 | CM; host — `window.nexus?.citationMenu` L121, L183; right-click, ⌘ | 2 · MD | footnotes pointer + menus | `Citations/pointer.ts` |
-| `codeGlyphs.ts` | 83 | pure data (SVG paths) | 1 · MD | code tag marks | `Render/codeGlyphs.ts` (candidate for DesignSystem/Symbols, §7) |
+| `codeGlyphs.ts` | 83 | pure data (SVG paths) | 1 · MD | code tag marks | `Render/codeGlyphs.ts` (candidate for PommoraUIX/Symbols, §7) |
 | `codeHighlight.ts` | 89 | CM language | 1 · MD | code highlighting | `Render/codeHighlight.ts` |
 | `connections.ts` | 101 | CM; ⌘ | 2 · MD | connection clicks | `Links/connectionClicks.ts` |
 | `decorations.ts` | 599 | CM ViewPlugin; host — `window.nexus.writeClipboard` L226 | 5 · MD | decorations | `Render/decorations.ts` |
-| `docCache.ts` | 68 | CM `Text`-keyed caches; `DesignSystem/Util/capMap` L4 | 22 · Interface/Subfield, MD ×21 | caching | `Render/docCache.ts` (`perText`/`scanOf` → `Model/docScan.ts`) |
+| `docCache.ts` | 68 | CM `Text`-keyed caches; `PommoraUIX/Util/capMap` L4 | 22 · Interface/Subfield, MD ×21 | caching | `Render/docCache.ts` (`perText`/`scanOf` → `Model/docScan.ts`) |
 | `dragChrome.ts` | 97 | CM | 3 · MD | drag chrome | `Gestures/dragChrome.ts` |
 | `editorGesture.ts` | 119 | CM; `Interactions/gesture`, `Interactions/autoscroll` | 2 · MD | drag gesture lifecycle | `Gestures/editorGesture.ts` |
 | `embedInsert.ts` | 72 | CM state helper | 3 · MD | embeds | `Embeds/insert.ts` |
 | `embedRanges.ts` | 85 | pure | 5 · MD | document model (embed claims) | `Model/embedRanges.ts` |
-| `embedWidget.tsx` | 954 | CM StateField + two `WidgetType`s mounting React; host — `Tiles/Surfaces/PageTile` L108, `Tiles/Surfaces/WebTile` L339 (lazy), `Tiles/tileCache` L38, `Tiles/tileZoom` L34, `Tiles/tile-base.css` L32; `Interactions/ResizeFrame`; DesignSystem size tokens | 5 · MD | embeds/tiles | split → `Embeds/embedField.ts` + `Widgets/reactWidget.ts` + host-supplied `renderTile` (§3) |
+| `embedWidget.tsx` | 954 | CM StateField + two `WidgetType`s mounting React; host — `Tiles/Surfaces/PageTile` L108, `Tiles/Surfaces/WebTile` L339 (lazy), `Tiles/tileCache` L38, `Tiles/tileZoom` L34, `Tiles/tile-base.css` L32; `Interactions/ResizeFrame`; PommoraUIX size tokens | 5 · MD | embeds/tiles | split → `Embeds/embedField.ts` + `Widgets/reactWidget.ts` + host-supplied `renderTile` (§3) |
 | `folding.ts` | 516 | CM StateField; `Animation` (`duration`, `ms`) L11 | 9 · Interface/pageEditor, Interface/Glance, Toolbar ×3, MD ×4 | folding, outline, citations disclosure | `Render/folding.ts`; outline API re-exported at root |
 | `formatKeymap.ts` | 18 | CM keymap | 2 · MD | shortcuts | `Input/keymap.ts` |
 | `formatState.ts` | 50 | pure | 1 · MD | menu state | `Input/formatState.ts` |
@@ -84,7 +84,7 @@ Legend for the tables below: **pure** = no CodeMirror, no React, no DOM, no host
 | --- | --- | --- | --- | --- | --- |
 | `index.ts` | 3 | barrel | 1 · MD | tables | `Tables/index.ts` |
 | `widget.tsx` | 549 | CM StateField + `WidgetType` mounting React; host — `window.nexus.writeClipboard` L245, `tableMenu` L252, `readClipboard` L318 | 1 · MD | table widget | `Tables/widget.tsx` over shared `Widgets/reactWidget.ts` |
-| `MarkdownTable.tsx` | 740 | React component; `Interactions/gesture`, `Interactions/autoscroll`, DesignSystem `Icon`, `glanceAction`; host reached only through props (`onCopyText`, `readClipboard`, `onMenu`) | 1 · MD (lazy) | table UI | `Tables/MarkdownTable.tsx` |
+| `MarkdownTable.tsx` | 740 | React component; `Interactions/gesture`, `Interactions/autoscroll`, PommoraUIX `Icon`, `glanceAction`; host reached only through props (`onCopyText`, `readClipboard`, `onMenu`) | 1 · MD (lazy) | table UI | `Tables/MarkdownTable.tsx` |
 | `CellEditor.tsx` | 284 | React + nested CM `EditorView`; `clipboardData` L135 | 1 · MD | cell editor | `Tables/CellEditor.tsx` |
 | `cellStatic.tsx` | 407 | React; store — `resolveLinkTitle` L398; `glanceAction`; ⌘ | 1 · MD | resting cell | `Tables/StaticCell.tsx` |
 | `cellCitations.ts` | 53 | CM ViewPlugin | 1 · MD | cell footnote numbering | `Tables/cellCitations.ts` |
@@ -116,7 +116,7 @@ Parser ← Detect ← Tokens ← Decorations/intent(scanDoc) ← Editor/docCache
 
 This layer is what `main/Connections/scan.ts`, `main/Connections/rewrite.ts`, `main/mutate.ts`, and `Interface/Subfield/subfieldStats.ts` need — and today the renderer-side pieces (`scanDoc`, `Detect`) are only reachable through the editor folder while main re-derives from `@shared/markdownCode` + `@shared/connections`. That's the case for a **`markdown-model` package** (Core-level, no CM, no React) consumed by main, the editor, and the word counter alike.
 
-The remaining ~8,600 lines are the **`markdownpm` editor package**: CM6 extensions, the React widgets, the autocomplete, the stylesheet. It depends on `markdown-model` and on UIX primitives (`Interactions/{gesture,autoscroll,ResizeFrame,HoverRemove,useKeepInView}`, `Animation/motion`, `DesignSystem/{Util/cx,Util/capMap,Tokens/size,Symbols,Pickers,Menus,Elements/NavTrail,Tokens/typography}`). Editor → UIX-primitives is a correct dependency direction; it's the reverse direction and the app-level imports below that need cutting.
+The remaining ~8,600 lines are the **`markdownpm` editor package**: CM6 extensions, the React widgets, the autocomplete, the stylesheet. It depends on `markdown-model` and on UIX primitives (`Interactions/{gesture,autoscroll,ResizeFrame,HoverRemove,useKeepInView}`, `Animation/motion`, `PommoraUIX/{Util/cx,Util/capMap,Tokens/size,Symbols,Pickers,Menus,Elements/NavTrail,Tokens/typography}`). Editor → UIX-primitives is a correct dependency direction; it's the reverse direction and the app-level imports below that need cutting.
 
 #### Every import FROM MarkdownPM into the rest of the renderer (non-test)
 
@@ -132,7 +132,7 @@ The remaining ~8,600 lines are the **`markdownpm` editor package**: CM6 extensio
 | `@renderer/Interface/{useBannerMenu,AddBannerButton,DetailTitleHeader}`, `@renderer/Assets/AssetImage` | 1 | 4 | `PageHeader.tsx:3–7` | Move `PageHeader.tsx` out (§4). |
 | `@shared/*` grammar (`connections`, `links`, `markdownCode`, `webpageEmbed`, `pasteLink`, `pasteAsMenu`, `linkValue`, `properties`, `clamp`) | 22 | ~40 | Pure grammar shared with main | Not entanglement — these are `markdown-model` / Core. `main/` imports the same five modules in 14 files. |
 | `@shared/*` menu contracts (`editorMenu`, `gripMenu`, `citationMenu`, `tableMenu`, `connMenu`) | 12 | ~18 | `ListKind` (grammar) rides in `gripMenu.ts`; the rest are the Electron wire types | `ListKind` → Core. The menu context/action types are editor-owned (the editor decides what a grip offers); export them from the editor package and let main import them. |
-| `@renderer/Interactions`, `@renderer/Animation`, `@renderer/DesignSystem` | 8 | ~20 | Pointer gesture engine, autoscroll, resize frame, motion tokens, menu/picker primitives | Legitimate editor → UIX dependency; keep. |
+| `@renderer/Interactions`, `@renderer/Animation`, `@renderer/PommoraUIX` | 8 | ~20 | Pointer gesture engine, autoscroll, resize frame, motion tokens, menu/picker primitives | Legitimate editor → UIX dependency; keep. |
 
 #### Every import INTO MarkdownPM from outside (non-test)
 
@@ -276,7 +276,7 @@ Model (≈2,430) + editor (≈10,000) + the ≈170 lines that leave reconcile to
 - **`Editor/gripMenu.ts` L45–54 (`embedPickTree`)** → host. Walks `NexusTree.collections[].sets[].pages[]`; the editor should ask the host for `PickNode[]`.
 - **`Editor/embedWidget.tsx` L283–336 (web-tile observers)** → Tiles/Surfaces/WebTile. Guest go-live rules belong with the guest.
 - **`zoom.ts` + `@shared/types.embedZoom`** → one place in Core. Two halves of one mapping in two packages.
-- **`Editor/codeGlyphs.ts`** (83 lines of brand SVG path data) — candidate for `DesignSystem/Symbols`, which is the curated icon registry. It is raw DOM because a `WidgetType` builds raw DOM, but the *asset* is design-system.
+- **`Editor/codeGlyphs.ts`** (83 lines of brand SVG path data) — candidate for `PommoraUIX/Symbols`, which is the curated icon registry. It is raw DOM because a `WidgetType` builds raw DOM, but the *asset* is design-system.
 - **`Styles.css` shell tokens** (`--sidebar-clearance`, `--inspector-clearance`, `--content-inset`, `--rail-inset`, `--toolbar-h`, `--app-inset`) → the host's mount wrapper (`Interface/PageView` CSS). The editor should be given its padding, not compute the app shell's.
 - **`Testing/editorHarness.ts`** (outside scope) → travels with the editor package; it is the editor's jsdom harness and seeds the store (L23–29), which becomes seeding `EditorHost`.
 - **Naming collision to resolve:** `renderer/Tables/` (top-level, the Views column-table: `ColumnHeader.tsx`, `tableDnd.tsx`, `columnWidths.ts`) versus `renderer/MarkdownPM/Tables/` (GFM tables). Two folders named `Tables` at two depths meaning two things. Rename the Views one (`Views/DataTable/` or `Views/Columns/`).

@@ -67,10 +67,10 @@ import { flattenBands } from '../Bands/bandDndModel'
 import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import type { ValueContext } from '../../Properties/valueContext'
-import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail/NavTrail'
+import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker/TextPicker'
+import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import {
   type PickEntry,

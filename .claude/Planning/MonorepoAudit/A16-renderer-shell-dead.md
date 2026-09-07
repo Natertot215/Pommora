@@ -32,7 +32,7 @@
 #### Showcase-Only
 
 - `Settings/SettingsWindow.tsx:63-64` `SETTINGS_WIN`, `SETTINGS_RAIL` — exported solely so `Showcase/Leaves/PanesLeaf.tsx:8` can replicate the window; app use is file-internal. 0 lines (drop `export`), High.
-- `Showcase/` as a whole: 28 files, ~2,550 lines TS/TSX plus `showcase.css` (648) and `Lab/interactions.css` (281) ≈ 3,480 lines. No importer outside the folder (`rg Showcase` over `src` excluding the folder returns nothing); it is its own Vite entry (`vite.config.ts` inputs `design-system.html`, `interactions.html`). `Showcase/Lab/` (Board, Interactions, Surfaces, main ≈ 760 lines with CSS) is a second sub-app whose `interactions.html` `vercel.json` does not even rewrite to. It pulls `@renderer/Tiles/Core/*`, `@renderer/Tiles/TileGrid`, `@renderer/Windows/window-base`, `@renderer/Settings/SettingsWindow`, `@renderer/Properties/Assignment/formatValue`, and the DesignSystem — meaning a monorepo split has to keep those app modules reachable from a browser build. High that it is dead for the app; what breaks is the Vercel site.
+- `Showcase/` as a whole: 28 files, ~2,550 lines TS/TSX plus `showcase.css` (648) and `Lab/interactions.css` (281) ≈ 3,480 lines. No importer outside the folder (`rg Showcase` over `src` excluding the folder returns nothing); it is its own Vite entry (`vite.config.ts` inputs `design-system.html`, `interactions.html`). `Showcase/Lab/` (Board, Interactions, Surfaces, main ≈ 760 lines with CSS) is a second sub-app whose `interactions.html` `vercel.json` does not even rewrite to. It pulls `@renderer/Tiles/Core/*`, `@renderer/Tiles/TileGrid`, `@renderer/Windows/window-base`, `@renderer/Settings/SettingsWindow`, `@renderer/Properties/Assignment/formatValue`, and the PommoraUIX — meaning a monorepo split has to keep those app modules reachable from a browser build. High that it is dead for the app; what breaks is the Vercel site.
 
 ### 2. Retired-Feature Remnants
 
@@ -44,7 +44,7 @@
 
 **Disk-persisted settings with no writer.** `windowsFile.navOverride` (§1) and `subfieldOrder` (§1) both round-trip through disk (`main/IO/windowState.ts:47`; `subfield:set` at `chromeSlice.ts:80`) with no in-app writer since 07-17-2026 and never, respectively.
 
-**Settings rows nothing reads:** none. Every `Personalization` key `SettingsWindow.tsx` writes has at least one reader (renderer, main, or the CSS-var table in `DesignSystem/Tokens/personalization.ts:43-77`); the census is in `scratchpad/pkeys.py`. What is stale is `SettingsWindow.tsx:681-692`: two frames (`automations`, `shortcuts`) with `sections: []`, plus `:783-785` rendering "Nothing to set here yet." — rail entries for features that do not exist, shown in the live window. 15 lines. Medium (Nathan may want the rail shape reserved).
+**Settings rows nothing reads:** none. Every `Personalization` key `SettingsWindow.tsx` writes has at least one reader (renderer, main, or the CSS-var table in `PommoraUIX/Tokens/personalization.ts:43-77`); the census is in `scratchpad/pkeys.py`. What is stale is `SettingsWindow.tsx:681-692`: two frames (`automations`, `shortcuts`) with `sections: []`, plus `:783-785` rendering "Nothing to set here yet." — rail entries for features that do not exist, shown in the live window. 15 lines. Medium (Nathan may want the rail shape reserved).
 
 **`Store/sessionState.ts` vs `Store/tabState.ts` vs `navigationSlice.ts`:** not an overlap of the kind suspected. `sessionState.ts` (21 lines) is the type intersection that breaks the slice↔store import cycle; `tabState.ts` is module-level caches, deliberately outside zustand. The real triplication is a page's detail living in three places (§4F). Every remaining store key has a reader outside its slice except `renameClaims` (slice-internal by design) and the items in §1.
 
@@ -64,7 +64,7 @@
 | `Navigation/navRecents.ts:9` | `RECENTS_CAP` | Exported and passed explicitly at `navigationSlice.ts:568,598` where it is already the default parameter (:22). | 1 | Low |
 | `Navigation/navResolve.ts:45-61` | `resolveRecents`, `resolveFavorites`, `resolvePins` | One caller each (`useNavData.ts:56,64,69`); the first two are byte-identical bodies. See §4. | ~10 | High |
 
-**Negatives:** `Settings/IconPicker.tsx` (10 lines) is the single icon-picker path — `DesignSystem/Pickers/IconPicker` has no direct importer besides `iconFavorites.ts` (type only); fifteen surfaces use the wrapper. Misplaced under `Settings/`, not duplicated. `Actions/nativeMenus.ts`, `linkResolve.ts`, `openWebLink.ts`, `pageMenuActions.ts`, `RenamableTitle.tsx` all have multiple readers.
+**Negatives:** `Settings/IconPicker.tsx` (10 lines) is the single icon-picker path — `PommoraUIX/Pickers/IconPicker` has no direct importer besides `iconFavorites.ts` (type only); fifteen surfaces use the wrapper. Misplaced under `Settings/`, not duplicated. `Actions/nativeMenus.ts`, `linkResolve.ts`, `openWebLink.ts`, `pageMenuActions.ts`, `RenamableTitle.tsx` all have multiple readers.
 
 ### 4. Duplicate Definitions
 

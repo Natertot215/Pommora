@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useEffect, useRef } from 'react'
 import { PickerMenu } from './picker-base'
-import { TextPicker } from './TextPicker/TextPicker'
+import { TextPicker } from './TextPicker'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {

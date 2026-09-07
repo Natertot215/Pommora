@@ -184,7 +184,7 @@ A behavior-preserving move. Baseline invariant: 318 test files / 3,981 tests, li
 ```js
 // .claude/scripts — the four that know the layout
 // comment-manifest.mjs:13,16,60 and comment-ledger.mjs:12,15,80,94 — `import ts from '../../Pommora/node_modules/typescript/lib/typescript.js'`; `appRoot = join(repoRoot, 'Pommora')`; `git ls-files 'src/**/*.ts' 'src/**/*.tsx'` in appRoot
-// check-atlas.mjs:20,40 — `join(repoRoot, 'Pommora/src/renderer/DesignSystem', f)`; a `base.split('/src/')[0]` guess
+// check-atlas.mjs:20,40 — `join(repoRoot, 'Pommora/src/renderer/PommoraUIX', f)`; a `base.split('/src/')[0]` guess
 // loc.py:23,69-70 — SRC = "Pommora/src"; per-area keys are the first segment under it, with `renderer/src/` folded into `renderer/`
 // .claude/hooks/republish-ledger.mjs and .claude/settings.json — no path but $CLAUDE_PROJECT_DIR; unchanged
 // .claude/*.md + .claude/Features/*.md — 128 mentions of `Pommora/src`, `src/main`, `src/renderer`, `src/shared`
@@ -227,7 +227,7 @@ Removed: Pommora/vite.config.app.ts, Pommora/vercel.json, the dev:app and build:
 ```
 .claude — its own step, since the hooks run on every Bash call and every commit of this arc
 scripts/comment-manifest.mjs, comment-ledger.mjs   ts from '../../node_modules/typescript/lib/typescript.js'; appRoot = repoRoot; git ls-files 'Desktop/src/**/*.ts' 'Desktop/src/**/*.tsx' 'Core/**/*.ts'
-scripts/check-atlas.mjs                            'Desktop/src/renderer/DesignSystem'; the '/src/' guess reads the same
+scripts/check-atlas.mjs                            'Desktop/src/renderer/PommoraUIX'; the '/src/' guess reads the same
 scripts/loc.py                                     SRC becomes the two roots Desktop/src and Core; the area key for Core/shared is 'shared' and for Desktop/src/<area> is <area>, so loc-history.json's series continue unbroken
 hooks/, settings.json                               unchanged
 CLAUDE.md, Guidelines/Development-Environment.md, Features/*.md, ContextPM.md, ArchitecturePM.md   `Pommora/src/` → `Desktop/src/`, then `Desktop/src/shared` → `Core/shared`; bare `src/main|preload|renderer` → `Desktop/src/…`; `src/shared` → `Core/shared`;
@@ -1013,7 +1013,7 @@ export interface Asks {
 
 **Declared stop, before implementation:** the sections' design is Nathan's. Execution stops here to ask; the row kinds below are the mechanism the design will use, and the section listing is the actions H-3 names, not a layout.
 
-**Now** — `src/renderer/Settings/SettingsWindow.tsx:203-230` General has one untitled section of two `picker` rows; `Row` kinds: `toggle | slider | device | path | exclusions | clear | color | picker | zoom`; the `clear` kind (`:108-113`) is label + hint + `clear: () => Promise<boolean>` rendered by `ClearActionRow.tsx` with the fixed verbs Clear / Cleared, used at two sites; `MenuCaption` is imported at `:6`; `DesignSystem/Fields/InputField.tsx` exists:
+**Now** — `src/renderer/Settings/SettingsWindow.tsx:203-230` General has one untitled section of two `picker` rows; `Row` kinds: `toggle | slider | device | path | exclusions | clear | color | picker | zoom`; the `clear` kind (`:108-113`) is label + hint + `clear: () => Promise<boolean>` rendered by `ClearActionRow.tsx` with the fixed verbs Clear / Cleared, used at two sites; `MenuCaption` is imported at `:6`; `PommoraUIX/Fields/InputField.tsx` exists:
 
 ```tsx
 // SettingsWindow.tsx:164-169

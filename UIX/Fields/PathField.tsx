@@ -1,5 +1,5 @@
 import { Button } from '../Buttons/Button'
-import { NavTrail, pathSegments } from '../Elements/NavTrail/NavTrail'
+import { NavTrail, pathSegments } from '../Elements/NavTrail'
 import { Icon } from '../Symbols'
 import { InputField } from './InputField'
 import { fieldTrail, placeholder } from './fields.css'

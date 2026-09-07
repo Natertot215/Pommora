@@ -4,8 +4,6 @@
 
 **The restructure landed.** The app is filed as `Core`, `UIX`, and `Desktop`, with every Node and Electron call behind `Core/Platform` and the desktop host, and one channel table both sides derive from. Along the way the 26 menu channels collapsed to one, the editor took an `EditorHost` from its mounter, the two write-path bugs were fixed, and the line count fell. Gates run from the repo root: `npm run typecheck && npm run test && npm run lint && npm run build`. Dev is `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the root; the built binary is `cd Desktop && env -u ELECTRON_RUN_AS_NODE ../node_modules/.bin/electron . --remote-debugging-port=9333`.
 
-**The property popups are one component.** Nine hand-rolled compositions that assigned a value folded onto `Core/Properties/Pickers/PropertyPicker.tsx` — options, datetime, file, and a chooser pane that adds a property and drills into its value — and `Core/Properties/Page/` became `Core/Properties/PropertyPanel.tsx`, `MenuItem` rows with the value in a trailing slot. Cards, Table, and the panel each drive the one picker; `TextPicker` stays the shared text field. The fold's plan is `// Planning`'s PropertyPanel plan; its net came to −267 source lines, under the −400 budget, because `PropertyPanel.tsx` and `CardsView.tsx` hold behavior the optimistic per-file ceilings underestimated — the fold's floor, not bloat.
-
 The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspector's tab strip mounting `TileHost` per tab on documents under `.nexus/inspector/<id>/`, and the panel kinds (properties, backlinks, list) those tabs would hold.
 
 ### Immediate Work
@@ -40,6 +38,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for tile embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
+- [ ] **Slash Commands** for MarkdownPM — PickerMenu for formatting actions, triggered via `//` so it doesn't conflict with the backslash syntax omitting behavior of CommonMark.
 - [ ] **TokenField — a typed value becomes a Label:** an InputField holding a run of labels beside a bare caret, where Enter turns the draft into a segment resolved against the field's picker (a Set title into an EntityIcon segment, a free string into a FileLabel) and Backspace on an empty caret removes the last. The pieces exist apart — `EditableInput` names an option chip in place, `SegmentRun` holds a field's values, the Filter pane's Location run is pick-only — and the showcase's capped field already sketches the shape. Its consumers are every location-shaped input: the Location filter, file properties, Context assignment.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
 

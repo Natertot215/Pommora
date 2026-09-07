@@ -10,7 +10,7 @@ import {
 import { createPortal } from 'react-dom'
 import { bloomOpen, bloomClose } from '../Animations/animations.css'
 import { useExitPresence } from '../Animations/useExitPresence'
-import { useHeld } from '../Animations/useHeld'
+import { useHeld } from '../Animations/useExitPresence'
 import { GlassPane } from '../Glass/glass-pane'
 import { GlassSurface } from '../Glass/glass-surface'
 import { GlassWindow } from '../Glass/glass-window'
@@ -64,6 +64,7 @@ export function PickerMenu({
   triggerRef,
   solid = false,
   glass = 'surface',
+  bloom = true,
   direction = 'down',
   origin = 'auto',
   anchorX,
@@ -86,6 +87,8 @@ export function PickerMenu({
   triggerRef?: RefObject<Element | null>
   solid?: boolean
   glass?: 'surface' | 'pane' | 'window'
+  /** A frozen replica (a pinned glance) passes false so it appears in place rather than blooming in over the pane it replaced. */
+  bloom?: boolean
   direction?: PickerDirection
   origin?: 'auto' | 'right' | 'center' | 'left'
   anchorX?: number
@@ -314,7 +317,7 @@ export function PickerMenu({
         s.pane,
         !bareSurface && s.surface,
         contentClassName,
-        closing ? bloomClose : bloomOpen,
+        bloom ? (closing ? bloomClose : bloomOpen) : undefined,
       )}
       style={
         {

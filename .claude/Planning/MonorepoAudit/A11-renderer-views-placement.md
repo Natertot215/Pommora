@@ -69,16 +69,16 @@ Scope measured: 74 non-test source files, 14,128 lines (CSS included, tests excl
 | `columnReorder.ts` | 24 | pure (over Interactions `reorder`) | – | 1: TableView | table column order | `UIX/Views/Table` |
 | `columnAlign.ts` | 30 | pure | – | 1: TableView | column alignment from view + type | `Core/Views` |
 | `columnStyles.ts` | 39 | pure `styleFor` + store hook `useStyleFor` | – | 5: PropertyFrame, FilterFrame, TableView, CardPickerHost, CardsView | view-wide column style resolve (NOT table-only) | `styleFor` → `Core/Views`; `useStyleFor` → `UIX/Views/Host` |
-| `tableDnd.tsx` | 168 | react (context + insertionDrag) | – | 2: TableView, Navigation/NavList | generic row insertion drag | `UIX/DesignSystem/Interactions` |
-| `Table.css` | 278 | style (global `.table .data-row .col-header …`) | – | main.tsx; classes used by TableView, Settings/TrashFrame, Showcase | shared table chrome | `UIX/DesignSystem/Table` |
-| `table-tokens.css` | 44 | style tokens | – | main.tsx | shared table chrome | `UIX/DesignSystem/Table` |
+| `tableDnd.tsx` | 168 | react (context + insertionDrag) | – | 2: TableView, Navigation/NavList | generic row insertion drag | `UIX/PommoraUIX/Interactions` |
+| `Table.css` | 278 | style (global `.table .data-row .col-header …`) | – | main.tsx; classes used by TableView, Settings/TrashFrame, Showcase | shared table chrome | `UIX/PommoraUIX/Table` |
+| `table-tokens.css` | 44 | style tokens | – | main.tsx | shared table chrome | `UIX/PommoraUIX/Table` |
 
 #### Cards/
 
 | File | Lines | Class | IPC | Importers | Concern | Home |
 |---|---|---|---|---|---|---|
-| `Card.tsx` | 127 | react primitives (Root/Body/Thumb/Placeholder/Text/Title/DropSlot/Trail) | – | 2: CardsView, Navigation/NavGallery | shared card primitive | `UIX/DesignSystem/Elements/Card` |
-| `cards.css` | 181 | style (global `.card*`) | – | Card.tsx and main.tsx (double import) | shared card primitive | `UIX/DesignSystem/Elements/Card` |
+| `Card.tsx` | 127 | react primitives (Root/Body/Thumb/Placeholder/Text/Title/DropSlot/Trail) | – | 2: CardsView, Navigation/NavGallery | shared card primitive | `UIX/PommoraUIX/Elements/Card` |
+| `cards.css` | 181 | style (global `.card*`) | – | Card.tsx and main.tsx (double import) | shared card primitive | `UIX/PommoraUIX/Elements/Card` |
 
 #### Frames/
 
@@ -101,9 +101,9 @@ Scope measured: 74 non-test source files, 14,128 lines (CSS included, tests excl
 | `HiddenFrame.tsx` | 184 | react (`VisibilityList`, `HiddenFrame`) | `:132 showError` | 2: LayoutFrame, SettingsFrame | visibility pane | `UIX/Views/Settings` |
 | `hiddenFrameModel.ts` | 113 | pure | – | 3: HiddenFrame, Properties/Assignment/cardValueInput, useViewHost | column visibility writes (`hiddenListIds`, `placeInShown`, `hideShown`, `unhide`) + DnD slot rule | writes → `Core/Views/columnVisibility`; `hiddenPaneSlot` stays with HiddenFrame |
 | `ViewItemMenu.tsx` | 79 | react | `:26 views.save`, `:34 views.reorder`, `:39 views.delete` | 1: LayoutFrame | view duplicate/delete | `UIX/Views/Settings` |
-| `frameDnd.tsx` | 180 | react (context + insertionDrag, two regions) | – | 3: PropertyFrame, HiddenFrame, Toolbar/ViewFrame | generic two-region list drag | `UIX/DesignSystem/Interactions` |
-| `frameDndModel.ts` | 87 | pure | – | 5: frameDnd, hiddenFrameModel, HiddenFrame, PropertyFrame, ViewFrame | two-region slot math | `UIX/DesignSystem/Interactions` |
-| `InlineEditHeader.tsx` | 69 | react | – | 5: PropertyFrame, LayoutFrame, SettingsFrame, PageMenu, Toolbar/SpaceMenu | generic icon+title menu header | `UIX/DesignSystem/Menus` |
+| `frameDnd.tsx` | 180 | react (context + insertionDrag, two regions) | – | 3: PropertyFrame, HiddenFrame, Toolbar/ViewFrame | generic two-region list drag | `UIX/PommoraUIX/Interactions` |
+| `frameDndModel.ts` | 87 | pure | – | 5: frameDnd, hiddenFrameModel, HiddenFrame, PropertyFrame, ViewFrame | two-region slot math | `UIX/PommoraUIX/Interactions` |
+| `InlineEditHeader.tsx` | 69 | react | – | 5: PropertyFrame, LayoutFrame, SettingsFrame, PageMenu, Toolbar/SpaceMenu | generic icon+title menu header | `UIX/PommoraUIX/Menus` |
 | `frames.css.ts` | 174 | style (three unrelated bundles) | – | 17: 10 Frames + 7 Properties (OptionRow, GhostOptionChip, Editors/Checkbox·Option·URL·File·Status) | menu header · two-region list · option-editor styles | split three ways (Section 6) |
 | `PropertyFrame.tsx` | 569 | react | 30 sites, `:244–:497` (`schema.add/rename/delete/assign/reorder`, `property.*`, `registry.reorder`, `propertyMenu`, `chooseAssetDir`, `showError`) | 1: SettingsFrame | schema + registry editor | `UIX/Properties/Schema` |
 | `PageMenu.tsx` | 117 | react | `:37 pageActionsMenu`, `:40 writeClipboard`, `:41 revealPath` | 1: SettingsMenu | page menu | `UIX/Surfaces/Page` |
@@ -137,7 +137,7 @@ Scope measured: 74 non-test source files, 14,128 lines (CSS included, tests excl
 
 #### Views and Frames are one domain
 
-`Frames/` has no chassis of its own. The pane machinery it renders into (`FrameSlide`, `MenuScrollFrame`, `MenuTopRow`, `MenuFooting`, `MenuIndex`) already lives in `DesignSystem/Menus`. What `Frames/` actually holds is "everything the toolbar's Settings button can show", filed by *where it opens* rather than what it is:
+`Frames/` has no chassis of its own. The pane machinery it renders into (`FrameSlide`, `MenuScrollFrame`, `MenuTopRow`, `MenuFooting`, `MenuIndex`) already lives in `PommoraUIX/Menus`. What `Frames/` actually holds is "everything the toolbar's Settings button can show", filed by *where it opens* rather than what it is:
 
 - View configuration (Filter, Group, Sort, Layout, Hidden, LayoutToggles, CardsOptions, ViewItemMenu, SettingsFrame root): 3,159 lines. They read the pipeline (`Pipeline/group`, `Pipeline/columns`, `Pipeline/filter`), the host's hooks (`useActiveView`, `useValuesEpoch`), and the band model (`bandDndModel`); the host reads back `hiddenFrameModel`. The import graph is already bidirectional Views ↔ Frames, which is the signature of one domain with a folder wall through it.
 - A schema editor (`PropertyFrame`, 569): edits the Collection's property assignment and the nexus-wide registry over ~30 IPC channels; touches no view field. It is a Properties surface that happens to be reachable from the view settings root.
@@ -158,7 +158,7 @@ Conversely `Toolbar/ViewMenu` + `ViewFrame` (293 lines) are the view switcher an
 
 #### Cards/Card.tsx alone in its folder
 
-Yes, for a real reason: `Navigation/NavGallery.tsx` renders the same eight primitives (`CardRoot/Body/Thumb/Placeholder/Text/Title/DropSlot/Trail`) as `CardsView`, and `cards.css` is a global stylesheet. It is a shared primitive that was separated from the Cards *view* so the nav gallery could use it. The reason is right; the top-level folder is wrong. A two-file shared primitive belongs under `DesignSystem/Elements/Card`, next to `NavTrail`, which it already imports. `cards.css` is also imported twice (from `Card.tsx:9` and `main.tsx:10`).
+Yes, for a real reason: `Navigation/NavGallery.tsx` renders the same eight primitives (`CardRoot/Body/Thumb/Placeholder/Text/Title/DropSlot/Trail`) as `CardsView`, and `cards.css` is a global stylesheet. It is a shared primitive that was separated from the Cards *view* so the nav gallery could use it. The reason is right; the top-level folder is wrong. A two-file shared primitive belongs under `PommoraUIX/Elements/Card`, next to `NavTrail`, which it already imports. `cards.css` is also imported twice (from `Card.tsx:9` and `main.tsx:10`).
 
 #### Toolbar/: app toolbar or view toolbar
 
@@ -176,7 +176,7 @@ Its data is `headingOutline(body)` from `MarkdownPM/Editor/folding`; its actions
 
 - `@shared/*`: `types`, `views`, `properties`, `propertyValue`, `schemas`, `identity`, `linkValue` — all of which import only each other plus `zod`. No Node, no fs.
 - `@renderer/Properties/value` (`declaredType`, `resolveFieldValue`, `fileName`): 90 lines, imports only `@shared/*`. Pure.
-- `@renderer/DesignSystem/Util/pad` (`pad`): a one-line `padStart`. Pure.
+- `@renderer/PommoraUIX/Util/pad` (`pad`): a one-line `padStart`. Pure.
 
 Runtime determinism for a server or phone: `sort.ts:23` uses `localeCompare(…, undefined, { sensitivity: 'accent' })`, so text ordering follows the host's default locale (a server should pin one). `group.ts:154–158` bucket dates through an explicit `utc` flag with local-time getters on the other branch; a server evaluating a date-grouped view bucket-for-bucket with a phone must agree on that flag. Week math at `:138–142` is UTC. Nothing else is environment-sensitive.
 
@@ -249,9 +249,9 @@ The contracts live in `shared/*Menu.ts` and are built main-side (`main/cardMenu.
 | Folder | Verdict | Admission rule a future file must meet |
 |---|---|---|
 | `Views/` | **Keep as the domain root, re-nest inside.** Pure stages leave for Core; the flat root splits into `Host/` and `Bands/`; `TableView/` → `Table/`, `CardView/` → `Cards/`; the view-settings frames and the two toolbar view files move in as `Settings/`. | It renders or configures a saved view's presentation of a container's Pages, or seats a renderer. It touches the bridge only through the store, `useSaveView`, or the Host folder. |
-| `Tables/` | **Dissolve.** Renderer-specific pieces → `Views/Table/`; `tableDnd` → Interactions; `styleFor` → Core, `useStyleFor` → `Views/Host`; `columnAlign` → Core; `Table.css` + tokens → `DesignSystem/Table/`. | (none; folder retired) |
-| `Cards/` | **Dissolve into `DesignSystem/Elements/Card/`.** | A card primitive with no knowledge of Pages, views, or the store. |
-| `Frames/` | **Dissolve.** View panes → `Views/Settings/`; `PropertyFrame` → `Properties/Schema/`; `PageMenu` → `Surfaces/Page/`; `SettingsScaffold` → `Surfaces/Homepage/HomepageSettings`; `SettingsMenu` → `Shell/Toolbar/`; `InlineEditHeader` + header styles → `DesignSystem/Menus/`; `frameDnd` + model + region styles → Interactions; option-editor styles → `Properties/Editors/`. | (none; folder retired) |
+| `Tables/` | **Dissolve.** Renderer-specific pieces → `Views/Table/`; `tableDnd` → Interactions; `styleFor` → Core, `useStyleFor` → `Views/Host`; `columnAlign` → Core; `Table.css` + tokens → `PommoraUIX/Table/`. | (none; folder retired) |
+| `Cards/` | **Dissolve into `PommoraUIX/Elements/Card/`.** | A card primitive with no knowledge of Pages, views, or the store. |
+| `Frames/` | **Dissolve.** View panes → `Views/Settings/`; `PropertyFrame` → `Properties/Schema/`; `PageMenu` → `Surfaces/Page/`; `SettingsScaffold` → `Surfaces/Homepage/HomepageSettings`; `SettingsMenu` → `Shell/Toolbar/`; `InlineEditHeader` + header styles → `PommoraUIX/Menus/`; `frameDnd` + model + region styles → Interactions; option-editor styles → `Properties/Editors/`. | (none; folder retired) |
 | `Toolbar/` | **Rename to `Shell/Toolbar/` and split.** Keeps `Toolbar`, `ToolbarTrio`, `NavMenu`, `SettingsMenu`, both css files. `ViewMenu`/`ViewFrame` → `Views/Settings/`; `SpaceMenu` → `Surfaces/Space/`; `Outline*` → `Editor/Outline/`. | Persistent app chrome that is present for every selection kind. A selection-scoped menu belongs to the surface that selection opens; the toolbar only seats it. |
 
 #### The Views domain in the new layout (line estimates, tests excluded)
@@ -283,7 +283,7 @@ UIX/Views/                                      ~9,300
                       ViewMenu · ViewFrame
 ```
 
-Leaving the domain (≈2,900): `PropertyFrame` 569 → `UIX/Properties/Schema`; `Toolbar`/`Trio`/`NavMenu`/`SettingsMenu`/two css ≈ 313 → `UIX/Shell/Toolbar`; `PageMenu` 117 → `UIX/Surfaces/Page`; `SettingsScaffold` 94 → `UIX/Surfaces/Homepage`; `SpaceMenu` 157 → `UIX/Surfaces/Space`; `Outline*` 311 → `UIX/Editor/Outline`; `Card.tsx` + `cards.css` 308 and `Table.css` + `table-tokens.css` 322 → `UIX/DesignSystem`; `InlineEditHeader` 69 + header styles ≈ 80 → `UIX/DesignSystem/Menus`; `frameDnd` + `frameDndModel` + `tableDnd` 435 + region styles → `UIX/DesignSystem/Interactions`; option-editor styles ≈ 90 → `UIX/Properties/Editors`.
+Leaving the domain (≈2,900): `PropertyFrame` 569 → `UIX/Properties/Schema`; `Toolbar`/`Trio`/`NavMenu`/`SettingsMenu`/two css ≈ 313 → `UIX/Shell/Toolbar`; `PageMenu` 117 → `UIX/Surfaces/Page`; `SettingsScaffold` 94 → `UIX/Surfaces/Homepage`; `SpaceMenu` 157 → `UIX/Surfaces/Space`; `Outline*` 311 → `UIX/Editor/Outline`; `Card.tsx` + `cards.css` 308 and `Table.css` + `table-tokens.css` 322 → `UIX/PommoraUIX`; `InlineEditHeader` 69 + header styles ≈ 80 → `UIX/PommoraUIX/Menus`; `frameDnd` + `frameDndModel` + `tableDnd` 435 + region styles → `UIX/PommoraUIX/Interactions`; option-editor styles ≈ 90 → `UIX/Properties/Editors`.
 
 #### The renderer's folders collapsed to ten
 
@@ -291,7 +291,7 @@ From this domain's vantage, using the same rule (file by what it is and who impo
 
 | # | Folder | Absorbs (today's folders) | Admission rule |
 |---|---|---|---|
-| 1 | `DesignSystem/` | DesignSystem, Animation, Interactions, Cards, Tables' chrome, `Utilities/EntityIcon`, `Settings/IconPicker`, `Actions/RenamableTitle` | Knows tokens, gestures, and motion; knows no Page, view, or store. |
+| 1 | `PommoraUIX/` | PommoraUIX, Animation, Interactions, Cards, Tables' chrome, `Utilities/EntityIcon`, `Settings/IconPicker`, `Actions/RenamableTitle` | Knows tokens, gestures, and motion; knows no Page, view, or store. |
 | 2 | `Session/` | store.ts, Store, treeIndex, Actions (commands, selection, nativeMenus, clipboard/external), `Interface/notifications`, `Windows/confirmations`, Assets (`assetUrl`, `AssetImage`), `Utilities/useNexusIcon`, `Settings/iconFavorites` | The renderer's one seam to the bridge and its cached state. A new `window.nexus` call lands here or nowhere. |
 | 3 | `Properties/` | Properties (+ `PropertyFrame` as `Schema/`, + option-editor styles) | Typed values, their editors and cells, and the schema/registry editor. |
 | 4 | `Views/` | Views, Frames' view panes, Tables' renderer pieces, `Toolbar/ViewMenu` + `ViewFrame` | Section 6 rule above. |
@@ -306,9 +306,9 @@ From this domain's vantage, using the same rule (file by what it is and who impo
 
 ### 7. Files That Belong to a Different Scope Entirely
 
-**Core (host-free, no React):** `Views/Pipeline/*` (8 files), `Views/viewMerge.ts`, `Views/creationOrder.ts`, `Views/TableView/reassign.ts`, `Tables/columnAlign.ts`, `Tables/columnStyles.ts` (`styleFor`), `Frames/hiddenFrameModel.ts` (the four writers), `Frames/filterModel.ts` (encode/decode), `Frames/viewIcon.ts`; dependencies that go with them: `Properties/value.ts`, `DesignSystem/Util/pad.ts`. Not in scope but in the same boat: `Sidebar/sidebarDndModel.ts` (pure geometry + `nextOrder`; imported by Views, Frames, Sidebar) is a generic drag model misfiled under Sidebar.
+**Core (host-free, no React):** `Views/Pipeline/*` (8 files), `Views/viewMerge.ts`, `Views/creationOrder.ts`, `Views/TableView/reassign.ts`, `Tables/columnAlign.ts`, `Tables/columnStyles.ts` (`styleFor`), `Frames/hiddenFrameModel.ts` (the four writers), `Frames/filterModel.ts` (encode/decode), `Frames/viewIcon.ts`; dependencies that go with them: `Properties/value.ts`, `PommoraUIX/Util/pad.ts`. Not in scope but in the same boat: `Sidebar/sidebarDndModel.ts` (pure geometry + `nextOrder`; imported by Views, Frames, Sidebar) is a generic drag model misfiled under Sidebar.
 
-**DesignSystem:** `Cards/Card.tsx` + `cards.css`; `Tables/Table.css` + `table-tokens.css`; `Frames/InlineEditHeader.tsx` with the header/iconButton/titleField/anchor/footerLock/ICON exports of `frames.css.ts`; `Tables/tableDnd.tsx`, `Frames/frameDnd.tsx`, `Frames/frameDndModel.ts` and the two-region styles of `frames.css.ts` (beside `Interactions/insertionDrag`).
+**PommoraUIX:** `Cards/Card.tsx` + `cards.css`; `Tables/Table.css` + `table-tokens.css`; `Frames/InlineEditHeader.tsx` with the header/iconButton/titleField/anchor/footerLock/ICON exports of `frames.css.ts`; `Tables/tableDnd.tsx`, `Frames/frameDnd.tsx`, `Frames/frameDndModel.ts` and the two-region styles of `frames.css.ts` (beside `Interactions/insertionDrag`).
 
 **Editor:** `Toolbar/OutlineMenu.tsx`, `OutlineDnd.tsx`, `outlineTree.ts`, `outline-menu.css.ts`, and `Interface/pageEditor.ts`.
 
@@ -324,6 +324,6 @@ From this domain's vantage, using the same rule (file by what it is and who impo
 
 ### Summary
 
-The five folders are one Views domain plus strays. `Views/` and the view panes in `Frames/` already import each other in both directions; `Toolbar/ViewMenu` + `ViewFrame` are the domain's toolbar entry. `Tables/` is 304 lines of table-renderer detail and 529 lines of generic or view-wide code (`tableDnd` is reused by NavList, `columnStyles` by Cards and Frames, `Table.css` by Trash and Showcase). `Cards/Card.tsx` is a shared primitive NavGallery also renders; it belongs in the design system. `Frames/` has no chassis of its own (that lives in `DesignSystem/Menus`) and is filed by where things open, so it also holds a schema editor, a page menu, homepage settings, and the shell's scope switch. `Toolbar/` is app shell, with `OutlineMenu` an editor feature (sole consumer of the live-editor registry) and `SpaceMenu` a Space surface.
+The five folders are one Views domain plus strays. `Views/` and the view panes in `Frames/` already import each other in both directions; `Toolbar/ViewMenu` + `ViewFrame` are the domain's toolbar entry. `Tables/` is 304 lines of table-renderer detail and 529 lines of generic or view-wide code (`tableDnd` is reused by NavList, `columnStyles` by Cards and Frames, `Table.css` by Trash and Showcase). `Cards/Card.tsx` is a shared primitive NavGallery also renders; it belongs in the design system. `Frames/` has no chassis of its own (that lives in `PommoraUIX/Menus`) and is filed by where things open, so it also holds a schema editor, a page menu, homepage settings, and the shell's scope switch. `Toolbar/` is app shell, with `OutlineMenu` an editor feature (sole consumer of the live-editor registry) and `SpaceMenu` a Space surface.
 
 The pipeline is genuinely pure and Core-ready once `Properties/value.ts` and `pad` move with it; nine more pure files should join it. Host-bound work for a WKWebView host is concentrated: nine native-menu call sites, three desktop-only bridge calls, right-click and ⌘-click as sole routes, hover-armed create ghosts, and every insertion-line drag lacking `touch-action: none`. Proposed: Core/Views ≈1.9k, UIX/Views ≈9.3k in five subfolders, and a ten-folder renderer.

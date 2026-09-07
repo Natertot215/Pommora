@@ -36,7 +36,7 @@ What breaks if wrong: nothing at runtime for `export`-keyword removals; `allStru
 |---|---|---|---|---|
 | `shared/views.ts:12-13, :256` | `VIEW_TYPES` lists six types; zod `.catch('table')` | **KEEP (placeholder).** `FrameworkPM.md:21` names these as the remaining renderers; on-disk views may carry the types. | 0 | H |
 | `renderer/Frames/LayoutFrame.tsx:32, :41, :209-219` | `TYPE_ORDER` (six), `IMPLEMENTED = new Set(['table','cards'])`, and the tile grid where `onClick={() => IMPLEMENTED.has(t) && setType(t)}` renders four buttons that do nothing | **KEEP (placeholder)** per `FrameworkPM.md:21` ("their picker tiles are inert"), but it is the *only* live remnant: 4 inert buttons. | 0 (owner's call) | H |
-| `renderer/Frames/LayoutFrame.tsx:36-39` | `TYPE_GLYPH` entries for `list`, `gallery`, `calendar`, `timeline` | Dead map entries feeding the inert tiles; `'list-rounded'` and `'chart-gantt'` are registered in `DesignSystem/Symbols/index.tsx:163, :168` with no other consumer anywhere in `renderer`/`shared`. | 4 + 2 registrations | H |
+| `renderer/Frames/LayoutFrame.tsx:36-39` | `TYPE_GLYPH` entries for `list`, `gallery`, `calendar`, `timeline` | Dead map entries feeding the inert tiles; `'list-rounded'` and `'chart-gantt'` are registered in `PommoraUIX/Symbols/index.tsx:163, :168` with no other consumer anywhere in `renderer`/`shared`. | 4 + 2 registrations | H |
 | `renderer/Frames/viewIcon.ts` (12 lines) + `viewIcon.test.ts` (28) | `iconForTypeSwitch(current, oldType, newType, glyphOf)`: "if the icon is unset or equals the old type's glyph, use the new type's glyph." One caller (`LayoutFrame.tsx:102`); the `glyphOf` parameter exists only to avoid importing `TYPE_GLYPH` from its caller. | Inline as two lines in `setType`. | 10 net | H |
 
 **Swift-parity leftovers.** None found in scope. The only "parity" mentions are two comments about on-disk format (`Pipeline/filter.ts:4`, `Pipeline/group.ts:269`); `Tables/columnWidths.ts:12-30` and `TableView.tsx:1116` reference "the Apple table model" as a design reference, not ported code. Git shows the predecessor layout (`renderer/src/Detail/Views/Table/GroupHeader.tsx`, `renderer/src/Components/ViewRowMenu.tsx`) was deleted, not left beside the current files.
@@ -109,7 +109,7 @@ Not wrappers despite one mount (substantive, keep): `SettingsMenu` (the scope sw
 | File | Lines | Reader | Verdict | Conf |
 |---|---|---|---|---|
 | `renderer/Views/CardView/cardsBand.ts` (+10-line test) | 7 | `ViewGroupBand.tsx:5, :74` — the *shared* band adapter, not Cards | Misfiled and a one-line predicate (`kind === 'structural-set'`). Inline. −6 net | H |
-| `renderer/Views/CardView/cardsOrder.ts` (+13-line test) | 12 | `CardsView.tsx:71` | Wraps `DesignSystem/Util/moveItem` with an index guard. Inline. −8 net | H |
+| `renderer/Views/CardView/cardsOrder.ts` (+13-line test) | 12 | `CardsView.tsx:71` | Wraps `PommoraUIX/Util/moveItem` with an index guard. Inline. −8 net | H |
 | `renderer/Views/viewMerge.ts` (+20-line test) | 14 | `useViewHost.ts:41` | Inline. −6 net | H |
 | `renderer/Frames/viewIcon.ts` (+28-line test) | 12 | `LayoutFrame.tsx:102` | Inline (see §2). −10 net | H |
 | `renderer/Views/contextCellWrite.ts` | 35 | `useViewHost.ts:40, :321` | Its header says "both container views share" it; only `useViewHost.commitValue` calls it now. Inline. −15 net | M |
@@ -139,7 +139,7 @@ What differs per surface is exactly the `take`/`resolve`/`commit`/`lineFor` spec
 
 **Band.** Three unrelated things: `renderer/Views/bandDndModel.ts:10 interface Band` (a group header), `renderer/Tiles/Core/model.ts:25 interface Band` (a mosaic row), `renderer/Interface/action-band.css` (a toolbar strip). Two same-named exported interfaces in one renderer. Rename one; no lines removed. H.
 
-**Switch rows.** Not a second switch. `renderer/Frames/switchRows.tsx:18-36` emits `MenuRow`s whose `trailing: { kind: 'switch' }` is `DesignSystem/Menus/menu-index.tsx:15`'s own trailing kind; `DesignSystem/Controls/Switches` is what `menu-index` renders for it. `switchRows` is a SavedView-boolean adapter with two callers (the two wrappers in §3). H.
+**Switch rows.** Not a second switch. `renderer/Frames/switchRows.tsx:18-36` emits `MenuRow`s whose `trailing: { kind: 'switch' }` is `PommoraUIX/Menus/menu-index.tsx:15`'s own trailing kind; `PommoraUIX/Controls/Switches` is what `menu-index` renders for it. `switchRows` is a SavedView-boolean adapter with two callers (the two wrappers in §3). H.
 
 **View icon lookups.** `LayoutFrame.tsx:33-40 TYPE_GLYPH` is the only type→glyph map and `viewIcon.ts` the only switch helper — but the *default view glyph* `'table'` is restated at seven sites with no `viewGlyph(view)` helper: `shared/views.ts:323` (`mintNewView` always writes `icon: 'table'`), `LayoutFrame.tsx:34`, and five `iconNameOr(v.icon, 'table')` calls at `Toolbar/ViewMenu.tsx:47`, `Toolbar/ViewFrame.tsx:162`, `Frames/SettingsFrame.tsx:159`, `Tiles/Surfaces/ViewTile.tsx:104`, `Tiles/TileHost.tsx:76`. Because the mint always stamps an icon, the fallback only fires for hand-edited JSON. One helper; −5 literals, M.
 

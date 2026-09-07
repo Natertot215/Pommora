@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useSession } from '../Session/store'
-import type { IconFavorites } from '@pommora/uix/Pickers/IconPicker/IconPicker'
+import type { IconFavorites } from '@pommora/uix/Pickers/IconPicker'
 import { popRowMenu } from '../Actions/nativeMenus'
 import { iconFavoriteMenuItems } from '@pommora/core/Actions/identityMenus'
 

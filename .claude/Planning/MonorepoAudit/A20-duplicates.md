@@ -19,7 +19,7 @@ Scope: `Pommora/src/{main,preload,shared,renderer}` (638 non-test TS/TSX files; 
 | `menu.ts` | `main/menu.ts` (application menu bar) · `renderer/MarkdownPM/Editor/menu.ts` (applies `mdpm:*` actions) | **Unrelated.** Rename both (`appMenu.ts`, `editorMenuActions.ts`). |
 | `selection.ts` | `renderer/Actions/selection.ts` (reconcile SelectionState) · `renderer/MarkdownPM/Editor/selection.ts` (CM6 selection layer) | **Unrelated.** Rename Actions one → `reconcileSelection.ts`. |
 | `linkFormat.ts` | `renderer/Properties/linkFormat.ts` (picker rows) · `renderer/MarkdownPM/Editor/linkFormat.ts` (URL link edits) | **Unrelated.** Rename Properties one → `linkFormatOptions.ts`. |
-| `IconPicker.tsx` | `renderer/Settings/IconPicker.tsx` (favorites-bound wrapper, exports `IconPicker`) · `renderer/DesignSystem/Pickers/IconPicker/IconPicker.tsx` | Same exported symbol name for wrapper and wrapped. Rename wrapper `NexusIconPicker`. |
+| `IconPicker.tsx` | `renderer/Settings/IconPicker.tsx` (favorites-bound wrapper, exports `IconPicker`) · `renderer/PommoraUIX/Pickers/IconPicker.tsx` | Same exported symbol name for wrapper and wrapped. Rename wrapper `NexusIconPicker`. |
 | `codec.ts`, `model.ts` | `renderer/Tiles/Core/*` · `renderer/MarkdownPM/Tables/*` | Folder-scoped, different domains. Fine. |
 | `tiles.ts` | `shared/tiles.ts` (zod + TILE_KINDS) · `main/tiles.ts` (fs ops) | Layered contract/implementation. Fine. |
 | `columnStyles.ts` | `shared/columnStyles.ts` (vocabulary + `defaultStyleFor`) · `renderer/Tables/columnStyles.ts` (`styleFor` + hook) | Layered. Fine. |
@@ -96,7 +96,7 @@ One `MD_EXT`/`stripMd`/`isMarkdownName` trio in `shared/nexusPaths.ts`; one `isC
 Survivor: one Core `walkEntities(tree)` (id, kind, title, path, ownIcon, parents/depth) with treeIndex, sidebar DnD, baseline, and context identity as projections. Saves ~50 (sidebar, independent) + ~40 (record.ts + contextIdentity, **monorepo-required** for record.ts since main can't import renderer/treeIndex today).
 
 **3.2 Bounded caches outside `capSet`.**
-`renderer/DesignSystem/Util/capMap.ts:4 capSet` has 3 callers (tabState, webRetention, docCache). Hand-rolled: `renderer/Interface/Glance/GlancePane.tsx:86-92` (delete/set/trim loop — literally `capSet`; ~6, independent); `main/IO/writeEcho.ts:16-22` (size>256 age-prune — main can't import a renderer util; **monorepo-enabled**, ~6); `renderer/Tiles/tileCache.ts:6` is unbounded (inconsistent, not a duplicate).
+`renderer/PommoraUIX/Util/capMap.ts:4 capSet` has 3 callers (tabState, webRetention, docCache). Hand-rolled: `renderer/Interface/Glance/GlancePane.tsx:86-92` (delete/set/trim loop — literally `capSet`; ~6, independent); `main/IO/writeEcho.ts:16-22` (size>256 age-prune — main can't import a renderer util; **monorepo-enabled**, ~6); `renderer/Tiles/tileCache.ts:6` is unbounded (inconsistent, not a duplicate).
 
 **3.3 Warm-state stores implementing `WarmSeam`, three times.**
 `renderer/Tiles/tileCache.ts:8` (Map, unbounded) · `GlancePane.tsx:80 glanceWarmSeam` (Map, cap 8) · `renderer/Windows/useWindowWarm.ts:21` + `windowCache.ts` (Map, liveness-gated). All three: `fenceWarm(map.get(key), readPageDetail(path)?.body)` then set. One `createWarmStore({cap?, live?})`. Saves ~25. Independent.

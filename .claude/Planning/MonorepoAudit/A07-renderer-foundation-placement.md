@@ -1,6 +1,6 @@
 ## A07 — Renderer Foundation Placement
 
-**Scope:** `src/renderer/DesignSystem/` (94 non-test files), `Animation/` (10), `Assets/` (4), `Interactions/` (29), `Utilities/` (5), `Testing/` (5), and the ten renderer root files. 157 files, ≈12,400 non-test lines (tests in scope add 3,971 and are excluded from every count below).
+**Scope:** `src/renderer/PommoraUIX/` (94 non-test files), `Animation/` (10), `Assets/` (4), `Interactions/` (29), `Utilities/` (5), `Testing/` (5), and the ten renderer root files. 157 files, ≈12,400 non-test lines (tests in scope add 3,971 and are excluded from every count below).
 
 **Method:** every import in `src/` was resolved by a script that handles both `@renderer/*`/`@shared/*` aliases and relative paths (including `.css` → `.css.ts` and `index` resolution), so importer counts are real edges, not grep hits. Test files and `Testing/` are counted separately as "test-only". Host-bound markers were grepped (`window.nexus`, `nexus-asset://`, `-webkit-app-region`/`WebkitAppRegion`, `EyeDropper`, `<webview>`), then confirmed by reading each file. Every classification below is from reading the file; comments were ignored as evidence.
 
@@ -10,7 +10,7 @@
 
 ### 1. File Table
 
-#### DesignSystem/Tokens (770 lines)
+#### PommoraUIX/Tokens (770 lines)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@
 | `personalization.ts` | L (DOM write) | 2 | Store/configSlice, Store/nexusSlice | the app's Personalization settings → root vars/classes (`hideChevrons`, `outlinerLines`, `pickerSelection`, `tabMinWidth`…) | **misfiled** → Store (beside configSlice, its only callers) |
 | `theme-vars.css.ts` | T bridge | 1 | Tokens/index | republishes tokens as `--*` for plain CSS; imports `Animation/motion` (line 21) and `Symbols/masks` | Kit/Tokens; the Animation import inverts layering (see §4) |
 
-#### DesignSystem/Util (45 lines)
+#### PommoraUIX/Util (45 lines)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -37,7 +37,7 @@
 | `moveItem.ts` | L | 6 | Interactions 2, Navigation, Tabs, Views, Windows | immutable reorder | **not UI** → Core |
 | `pad.ts` | L | 3 | Pickers/CalendarPicker, Properties/formatValue, Views/Pipeline/group | zero-pad | **not UI** → Core (a data-pipeline file importing from the design system is the wrong direction; `@shared/clamp` is the existing precedent) |
 
-#### DesignSystem/Buttons (359)
+#### PommoraUIX/Buttons (359)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -45,7 +45,7 @@
 | `Button.tsx` | C | 1 | index | Button + Segmented | Kit/Buttons |
 | `button-base.css.ts` | S | 3 | Buttons, Elements/eye-toggle, Tiles/ViewTile | size/type variants | Kit/Buttons |
 
-#### DesignSystem/Labels (334)
+#### PommoraUIX/Labels (334)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -55,31 +55,31 @@
 | `label-recipes.css.ts` | S | 1 | recipes | FileChip styles | Kit/Labels |
 | `recipes.tsx` | C | 2 | Fields/SegmentRun, index | `SpaceChip`, `FileChip`, `FileLabel`, `optionShapeFor` | Kit/Labels (`SpaceChip` is Pommora vocabulary on a neutral chip; rename-grade, not move-grade) |
 
-#### DesignSystem/Controls (503)
+#### PommoraUIX/Controls (503)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
 | `Checkbox.tsx` | C | 4 | Properties, Settings, Showcase, Windows | the checkbox | Kit/Controls |
 | `checkbox.css` | P | 1 | Checkbox | shared with the CM6 task widget by class name | Kit/Controls |
-| `Slider/Slider.tsx` | C | 3 | Menus/menu-index, Pickers/ImagePicker, Frames/LayoutFrame | slider on `usePointerGesture` | Kit/Controls |
-| `Slider/slider.css.ts` | S | 2 | Slider, Pickers/image-picker.css | | Kit/Controls |
-| `Switches/DualSwitch.tsx` | C | 6 | Showcase 2, Menus, Pickers, Frames, Properties | switch | Kit/Controls |
-| `Switches/dual-switch.css.ts` | S | 2 | DualSwitch, color-swatch.css | | Kit/Controls |
-| `Switches/ColorSwatch.tsx` | C | 1 | Menus/menu-index | swatch + ColorPicker pair | Kit/Controls |
-| `Switches/color-swatch.css.ts` | S | 1 | ColorSwatch | | Kit/Controls |
+| `Slider.tsx` | C | 3 | Menus/menu-index, Pickers/ImagePicker, Frames/LayoutFrame | slider on `usePointerGesture` | Kit/Controls |
+| `slider.css.ts` | S | 2 | Slider, Pickers/image-picker.css | | Kit/Controls |
+| `DualSwitch.tsx` | C | 6 | Showcase 2, Menus, Pickers, Frames, Properties | switch | Kit/Controls |
+| `dual-switch.css.ts` | S | 2 | DualSwitch, color-swatch.css | | Kit/Controls |
+| `ColorSwatch.tsx` | C | 1 | Menus/menu-index | swatch + ColorPicker pair | Kit/Controls |
+| `color-swatch.css.ts` | S | 1 | ColorSwatch | | Kit/Controls |
 
-#### DesignSystem/Elements (479)
+#### PommoraUIX/Elements (479)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
-| `EmptyValue/EmptyValue.tsx` + `.css.ts` | C, S | 4 | Pickers, Properties, Views, Windows | "—" glyph | Kit/Elements |
-| `EyeToggle/EyeToggle.tsx`, `index.ts`, `eye-toggle.css.ts` | C, S | 2 (index); css 3 | Frames 2 (+Frames/frames.css) | visibility eye | Kit/Elements; `eye-toggle.css.ts:4` composes `Menus/menu-base.css` `accessoryButton` — Elements reaching up into Menus; that class is a Button variant and should live in Buttons |
-| `NavTrail/NavTrail.tsx`, `index.ts`, `nav-trail.css.ts` | C, S | 15 (index) | Interface 2, Navigation 2, Windows 2, Cards, Fields, Frames, MarkdownPM, Settings, Showcase, Tiles, Views, root/treeIndex | breadcrumb trail | Kit/Elements |
-| `PickerControl/PickerControl.tsx`, `index.ts`, `picker-control.css.ts` | C, S, **HOST by import** | 11 (index) | Frames 6, Properties 3, Menus, Settings | fixed-option picker trigger; imports `@renderer/Actions/nativeMenus` (→ `useSession` + `window.nexus.rowMenu`) and `Pickers/picker-base` | **misfiled twice**: it is a Picker (opens a `PickerMenu`) → Kit/Pickers; and the native-menu branch is a kit → app → bridge dependency that should arrive as a prop or be lifted to the caller |
-| `ProgressBar/ProgressBar.tsx` + `.css.ts` | C, S | 3 | Controls/Slider, Interface/NotificationLabel, Properties/Cell | progress track | Kit/Elements |
-| `Segment/segment.css.ts` | S | 5 | Buttons, Fields, Menus, Pickers, Tabs | hairline divider | Kit/Elements |
+| `EmptyValue.tsx` + `.css.ts` | C, S | 4 | Pickers, Properties, Views, Windows | "—" glyph | Kit/Elements |
+| `EyeToggle.tsx`, `index.ts`, `eye-toggle.css.ts` | C, S | 2 (index); css 3 | Frames 2 (+Frames/frames.css) | visibility eye | Kit/Elements; `eye-toggle.css.ts:4` composes `Menus/menu-base.css` `accessoryButton` — Elements reaching up into Menus; that class is a Button variant and should live in Buttons |
+| `NavTrail.tsx`, `index.ts`, `nav-trail.css.ts` | C, S | 15 (index) | Interface 2, Navigation 2, Windows 2, Cards, Fields, Frames, MarkdownPM, Settings, Showcase, Tiles, Views, root/treeIndex | breadcrumb trail | Kit/Elements |
+| `PickerControl.tsx`, `index.ts`, `picker-control.css.ts` | C, S, **HOST by import** | 11 (index) | Frames 6, Properties 3, Menus, Settings | fixed-option picker trigger; imports `@renderer/Actions/nativeMenus` (→ `useSession` + `window.nexus.rowMenu`) and `Pickers/picker-base` | **misfiled twice**: it is a Picker (opens a `PickerMenu`) → Kit/Pickers; and the native-menu branch is a kit → app → bridge dependency that should arrive as a prop or be lifted to the caller |
+| `ProgressBar.tsx` + `.css.ts` | C, S | 3 | Controls/Slider, Interface/NotificationLabel, Properties/Cell | progress track | Kit/Elements |
+| `segment.css.ts` | S | 5 | Buttons, Fields, Menus, Pickers, Tabs | hairline divider | Kit/Elements |
 
-#### DesignSystem/Fields (681)
+#### PommoraUIX/Fields (681)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -94,7 +94,7 @@
 | `fields.css.ts` | S | 14 | Fields 5, Pickers 3, Properties 2, Elements, Menus, Frames, Showcase | field chrome; `fieldSizing: 'content'` (line 83) is Chromium-only | Kit/Fields |
 | `segment-run.css.ts` | S | 2 | SegmentRun, Frames/FilterFrame | | Kit/Fields |
 
-#### DesignSystem/Glass (448)
+#### PommoraUIX/Glass (448)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -105,7 +105,7 @@
 | `glass-surface.tsx` | C | 1 | index | notched menu glass | Kit/Glass |
 | `glass-window.tsx` | C | 1 | index | window glass | Kit/Glass |
 
-#### DesignSystem/Menus (1,298)
+#### PommoraUIX/Menus (1,298)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -121,20 +121,20 @@
 | `frame-slide.tsx` + `.css.ts` | C, S | 8 | Frames 4, MarkdownPM, Tiles, Toolbar, Views | two-slot push/back | Kit/Menus |
 | `frame-growth.ts` | L (style helper) | 2 | Frames/filter-frame.css, Properties/page-properties.css | Frame width rule | Kit/Menus |
 
-#### DesignSystem/Pickers (2,348)
+#### PommoraUIX/Pickers (2,348)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
 | `picker-base.tsx` | C | 23 | Properties 5, Pickers 4, Views 3, Frames 2, Tiles 2, Elements, Menus, Interface, MarkdownPM, Settings, Showcase, Windows | portalled `PickerMenu`, `PickerRow`; uses `Interactions/dismissalStack`, `useHeld`, `Animation/useExitPresence` | Kit/Pickers |
 | `picker-base.css.ts` | S | 6 | Tiles 2, Pickers, Frames, MarkdownPM, Toolbar | | Kit/Pickers |
-| `CalendarPicker/CalendarPicker.tsx` + `.css.ts` | C, S | 3 | Frames/FilterFrame, Properties/DatetimeValuePicker, Showcase | date/range/time picker; formatting arrives as a prop | Kit/Pickers |
-| `ColorPicker/ColorPicker.tsx` + `.css.ts` | C, S | 5 | Toolbar 2, Controls, Properties, Tiles | 8×8 grid | Kit/Pickers |
-| `TextPicker/TextPicker.tsx`, `index.ts`, `.css.ts` | C, S | 3 (index) | Views 2, Properties | text-entry pane | Kit/Pickers |
-| `IconPicker/IconPicker.tsx` + `.css.ts` | C, S | 2 | Settings/IconPicker, Settings/iconFavorites (type) | virtualized Lucide grid; favorites arrive as props | Kit/Pickers (already store-free; the binding in Settings is the misfile — see Utilities) |
+| `CalendarPicker.tsx` + `.css.ts` | C, S | 3 | Frames/FilterFrame, Properties/DatetimeValuePicker, Showcase | date/range/time picker; formatting arrives as a prop | Kit/Pickers |
+| `ColorPicker.tsx` + `.css.ts` | C, S | 5 | Toolbar 2, Controls, Properties, Tiles | 8×8 grid | Kit/Pickers |
+| `TextPicker.tsx`, `index.ts`, `.css.ts` | C, S | 3 (index) | Views 2, Properties | text-entry pane | Kit/Pickers |
+| `IconPicker.tsx` + `.css.ts` | C, S | 2 | Settings/IconPicker, Settings/iconFavorites (type) | virtualized Lucide grid; favorites arrive as props | Kit/Pickers (already store-free; the binding in Settings is the misfile — see Utilities) |
 | `ImagePicker/ImagePicker.tsx` | C, **HOST** | 8 | Interface 2, Frames, MarkdownPM, Showcase, Sidebar, Tiles, Views | crop editor: `useSession` (assetMap, tree.crops) lines 56–57; `window.nexus.pasteImage` 130, `pickFile` 193; `EyeDropper` 198 (Chromium-only, presence-guarded); `@shared/cropGeometry`, `Assets/*` | **misfiled** → Assets (feature UI over the Nexus asset map, not a library primitive) |
 | `ImagePicker/image-picker.css.ts` | S | 1 | ImagePicker | | follows ImagePicker |
 
-#### DesignSystem/Symbols (457)
+#### PommoraUIX/Symbols (457)
 
 | File | Class | Imp | Importer folders | Domain | Home |
 | --- | --- | --- | --- | --- | --- |
@@ -239,7 +239,7 @@
 - `Glass/glass-pane.tsx:23` `Surface` — a one-line App-only wrapper adding `surface-glass`. Owner: Shell.
 - `Util/` — four of five files (`capMap`, `checkSet`, `moveItem`, `pad`) are pure data helpers imported by Store, MarkdownPM, Views/Pipeline, Properties/formatValue, Settings, Windows. None touches the DOM. Owner: Core (`shared/`), following `@shared/clamp`. Only `cx` is a UI utility.
 
-**Kit-internal layering leaks worth fixing during the move** (not misfiles, but they show the sub-folders aren't ordered): `Elements/EyeToggle/eye-toggle.css.ts:4` composes `Menus/menu-base.css` `accessoryButton`; `Elements/PickerControl/picker-control.css.ts:4` composes `Menus` `footingBar`; `Tokens/theme-vars.css.ts:21` imports `Animation/motion`; `Labels/Label.tsx:3–4` imports `Interactions/HoverRemove` and `OverScroll`. After the merge into one `Kit/` these become intra-package edges, but the token file reaching into Animation and an Element composing a Menu class should still be inverted.
+**Kit-internal layering leaks worth fixing during the move** (not misfiles, but they show the sub-folders aren't ordered): `Elements/eye-toggle.css.ts:4` composes `Menus/menu-base.css` `accessoryButton`; `Elements/picker-control.css.ts:4` composes `Menus` `footingBar`; `Tokens/theme-vars.css.ts:21` imports `Animation/motion`; `Labels/Label.tsx:3–4` imports `Interactions/HoverRemove` and `OverScroll`. After the merge into one `Kit/` these become intra-package edges, but the token file reaching into Animation and an Element composing a Menu class should still be inverted.
 
 ### 3. Interactions: One Engine Plus Helpers?
 
@@ -267,7 +267,7 @@
 
 Yes — one concern, four reading paths:
 
-1. **Token values** live in `Animation/motion.ts` (`duration`, `easing`) and `Animation/feel.tsx` (drag feel). They are imported directly by `Tokens/theme-vars.css.ts:21` (Tokens depending on Animation), `Fields/fieldRing.ts:2`, `Controls/Switches/dual-switch.css.ts:4`, `Pickers/CalendarPicker/calendar-picker.css.ts:3`, `Menus/frame-slide.css.ts:2`, `Interactions/autoscroll.ts:1`, and `Interactions/engine.tsx:14`/`group.tsx:14` (feel).
+1. **Token values** live in `Animation/motion.ts` (`duration`, `easing`) and `Animation/feel.tsx` (drag feel). They are imported directly by `Tokens/theme-vars.css.ts:21` (Tokens depending on Animation), `Fields/fieldRing.ts:2`, `Controls/dual-switch.css.ts:4`, `Pickers/calendar-picker.css.ts:3`, `Menus/frame-slide.css.ts:2`, `Interactions/autoscroll.ts:1`, and `Interactions/engine.tsx:14`/`group.tsx:14` (feel).
 2. **Bridged vars** `--duration-*`/`--ease-*` published by `theme-vars.css.ts:128–133`, read by every plain `.css` (`resize-frame.css`, `reveal-bar.css`, `ghost-create.css`, `styles.css`, …).
 3. **Keyframes and named motions** in `Animation/animations.css.ts` (Bloom, window in/out, titleReveal) plus `Reveal.tsx`, `useExitPresence`, `useEntrance`.
 4. **Runtime reads** — `Interactions/OverScroll.tsx:86–87` reads `--duration-base` via `getComputedStyle` and falls back to **240ms**, while `motion.ts:4` says `base: '280ms'`; `autoscroll.ts:237` restates the snap curve as `easeOutQuint` in JS. The split already produced one drift.
@@ -299,21 +299,21 @@ The better reading: `EntityIcon`, `useNexusIcon`, `Settings/IconPicker` + `iconF
 **Bridge calls (`window.nexus`) inside my scope:**
 
 - `App.tsx:84, 88, 92, 98, 106, 110, 117, 123, 127, 130, 134–135, 139, 143` — fourteen subscriptions/calls.
-- `DesignSystem/Pickers/ImagePicker/ImagePicker.tsx:130` (`pasteImage`), `:193` (`pickFile`).
+- `PommoraUIX/Pickers/ImagePicker/ImagePicker.tsx:130` (`pasteImage`), `:193` (`pickFile`).
 - `Utilities/useNexusIcon.ts:17` (`iconMenu`), `:23` (`pickFile`).
-- `DesignSystem/Elements/PickerControl/PickerControl.tsx:6, 53, 65` via `Actions/nativeMenus.ts:20` (`window.nexus.rowMenu`) and `useSession` `devicePrefs.nativeMenus`.
+- `PommoraUIX/Elements/PickerControl.tsx:6, 53, 65` via `Actions/nativeMenus.ts:20` (`window.nexus.rowMenu`) and `useSession` `devicePrefs.nativeMenus`.
 - `Settings/iconFavorites.ts:15` (`iconFavoriteMenu`) — outside scope, but the proposed Utilities move drags it in.
 - `Store/*` — 38 call sites across `cacheSlice` (5), `chromeSlice` (2), `configSlice` (3), `navigationSlice` (6), `nexusSlice` (18), `renameSlice` (2), `tabState` (1), `windowSlice` (1) (e.g. `nexusSlice.ts:84, 88, 160–183`, `navigationSlice.ts:227, 290, 517, 648, 668, 694`). The store is bridge-bound by design; it is reusable only if the bridge itself is host-injected (the Decision Log's D-1), which makes `window.nexus` the seam rather than a defect.
 - `Testing/editorHarness.ts:40` writes the stub bridge — test host, fine.
 
 **Asset scheme:** `Assets/assetUrl.ts:11` — `` `nexus-asset://nexus/${…}` ``; every `resolveAssetUrl` caller (Properties ×2, Pickers, Navigation, Views, store) inherits it.
 
-**Electron drag regions (`-webkit-app-region`)** — ignored by WKWebView, so harmless at runtime, but Electron semantics living in kit CSS: `DesignSystem/Menus/menu-base.css.ts:166` (`WebkitAppRegion: 'no-drag'`), `Interactions/resize-frame.css:7`, `Interactions/reveal-bar.css:29`, `styles.css:114, 128, 160`.
+**Electron drag regions (`-webkit-app-region`)** — ignored by WKWebView, so harmless at runtime, but Electron semantics living in kit CSS: `PommoraUIX/Menus/menu-base.css.ts:166` (`WebkitAppRegion: 'no-drag'`), `Interactions/resize-frame.css:7`, `Interactions/reveal-bar.css:29`, `styles.css:114, 128, 160`.
 
 **Chromium-only APIs and CSS (engine-bound, not Electron-bound):**
 
 - `ImagePicker.tsx:198–199` — `window.EyeDropper`, presence-guarded; the pipette button silently does nothing on WebKit.
-- `DesignSystem/Fields/fields.css.ts:83` and `Pickers/TextPicker/text-picker.css.ts:84` — `fieldSizing: 'content'`; WebKit ignores it, so the press-to-edit caret and the rename field stop shrink-wrapping (`nativeCaret.ts:69–71` also assumes it).
+- `PommoraUIX/Fields/fields.css.ts:83` and `Pickers/text-picker.css.ts:84` — `fieldSizing: 'content'`; WebKit ignores it, so the press-to-edit caret and the rename field stop shrink-wrapping (`nativeCaret.ts:69–71` also assumes it).
 - `Interactions/over-scroll.css:68, 75` — `animation-timeline: scroll(self …)`; recent WebKit only, so the truncation fade needs verifying on the target iOS version.
 - `scrollbar-width: none` (`menu-base.css.ts:264`, `icon-picker.css.ts:40, 55`, `text-picker.css.ts:38`, `over-scroll.css:86`, `iteration-window.css:9`) — WebKit 18.2+; older targets show scrollbars.
 
@@ -323,13 +323,13 @@ The better reading: `EntityIcon`, `useNexusIcon`, `Settings/IconPicker` + `iconF
 
 | Folder | Verdict | Admission rule after the move |
 | --- | --- | --- |
-| `DesignSystem/` | **rename → `Kit/`**, absorbing `Interactions/` and `Animation/`; eject `ImagePicker`, `personalization.ts`, four `Util/` files, the entity-icon policy, the Tiles size knobs, `Surface` | renders or styles from props and tokens alone; no `@renderer/store`, no `window.nexus`, no `@shared/*` beyond value modules (`theme`, `clamp`); compiles in the Showcase build |
-| `DesignSystem/Tokens` | keep as `Kit/Tokens`, gaining `motion.ts` + `feel.tsx`, losing `personalization.ts` | a value or a bridge of values; exports no component |
-| `DesignSystem/Util` | **dissolve**: `cx` → `Kit/util`, the rest → Core | — |
-| `DesignSystem/Elements` | keep, minus `PickerControl` (→ Pickers), plus `OverScroll` | a leaf visual with no open/close state |
-| `DesignSystem/Pickers` | keep, plus `PickerControl`, minus `ImagePicker` | opens a `PickerMenu` to choose a value |
-| `DesignSystem/Menus` | keep, plus `dismissalStack` | a surface hung off a trigger, or the mechanics of one |
-| `DesignSystem/Labels` | keep, plus `HoverRemove` | a chip or its affordance |
+| `PommoraUIX/` | **rename → `Kit/`**, absorbing `Interactions/` and `Animation/`; eject `ImagePicker`, `personalization.ts`, four `Util/` files, the entity-icon policy, the Tiles size knobs, `Surface` | renders or styles from props and tokens alone; no `@renderer/store`, no `window.nexus`, no `@shared/*` beyond value modules (`theme`, `clamp`); compiles in the Showcase build |
+| `PommoraUIX/Tokens` | keep as `Kit/Tokens`, gaining `motion.ts` + `feel.tsx`, losing `personalization.ts` | a value or a bridge of values; exports no component |
+| `PommoraUIX/Util` | **dissolve**: `cx` → `Kit/util`, the rest → Core | — |
+| `PommoraUIX/Elements` | keep, minus `PickerControl` (→ Pickers), plus `OverScroll` | a leaf visual with no open/close state |
+| `PommoraUIX/Pickers` | keep, plus `PickerControl`, minus `ImagePicker` | opens a `PickerMenu` to choose a value |
+| `PommoraUIX/Menus` | keep, plus `dismissalStack` | a surface hung off a trigger, or the mechanics of one |
+| `PommoraUIX/Labels` | keep, plus `HoverRemove` | a chip or its affordance |
 | `Animation/` | **dissolve → `Kit/Tokens` (motion, feel) + `Kit/Motion` (keyframes, Reveal, presence hooks) + Shell (paneSlide, toolbar-slide)** | Motion: a named keyframe set or a mount/unmount hook with no domain knowledge |
 | `Interactions/` | **rename → `Kit/Gestures`**, losing dismissal, OverScroll, HoverRemove, activate, useHeld, useKeepInView, revealBar | a pointer or hover state machine, or the chrome a drag paints |
 | `Assets/` | **keep the name, widen the role**: the store-aware media + iconography domain (AssetImage, ImagePicker, EntityIcon, useNexusIcon, the IconPicker binding + favorites, useAssetUrl, the resolvers) | renders or edits a Nexus image or icon; may read the store |
@@ -341,7 +341,7 @@ The better reading: `EntityIcon`, `useNexusIcon`, `Settings/IconPicker` + `iconF
 
 | # | Folder | Composed of | ≈ lines | Admission rule |
 | --- | --- | --- | --- | --- |
-| 1 | `Kit/` | DesignSystem + Interactions + Animation as above, + the caret trio, − the ejections | 11,300 | host-neutral, store-free, props + tokens only |
+| 1 | `Kit/` | PommoraUIX + Interactions + Animation as above, + the caret trio, − the ejections | 11,300 | host-neutral, store-free, props + tokens only |
 | 2 | `Store/` | `Store/` + `store.ts` + `treeIndex.ts` + `Tokens/personalization.ts` + `Actions/selection`, `commands` | 2,700 | Zustand slices, tree projections, the settings→DOM applier; the one layer that speaks to the bridge |
 | 3 | `Shell/` | `App.tsx`, the `.shell` half of `styles.css`, Toolbar, Sidebar, Tabs, Windows (+ iteration window), Navigation, Interface's chrome (ContentView, InspectorPane, Glance, NotificationLabel), paneSlide, toolbar-slide, revealBar | 9,700 | frames content or moves the frame; owns no page or view semantics |
 | 4 | `Editor/` | MarkdownPM + Tiles + Interface's page surfaces (PageView, Banner, Subfield, pageFlush) | 19,600 | a CodeMirror surface, an embed inside one, or the page that hosts one |
@@ -356,8 +356,8 @@ The better reading: `EntityIcon`, `useNexusIcon`, `Settings/IconPicker` + `iconF
 
 ### 9. Files Owned by a Different Scope
 
-- **→ Core (`src/shared`):** `DesignSystem/Util/capMap.ts`, `checkSet.ts`, `moveItem.ts`, `pad.ts`; the resolvers in `Assets/assetUrl.ts` (`resolveAssetValue`, `resolveFileValue`, `AssetValue`/`FileValue` types — lines 13–50); `MarkdownPM/Connections` `buildPageIndex` as consumed by `treeIndex.ts:22–27` (title resolution is not an editor concern); arguably `Tokens/colorMap.ts` (it interprets the on-disk color grammar).
-- **→ Host (Desktop):** `Assets/assetUrl.ts:10–11`; `App.tsx:83–173`; `styles.css:106–132, 160`; `Interactions/resize-frame.css:7`; `Interactions/reveal-bar.css:29`; `DesignSystem/Menus/menu-base.css.ts:166`; `Actions/nativeMenus.ts` (pulled in by `PickerControl`); the two bridge calls in `Utilities/useNexusIcon.ts:17, 23` and `Settings/iconFavorites.ts:15` (menu channels the Decision Log's D-1 says the phone answers `null`).
+- **→ Core (`src/shared`):** `PommoraUIX/Util/capMap.ts`, `checkSet.ts`, `moveItem.ts`, `pad.ts`; the resolvers in `Assets/assetUrl.ts` (`resolveAssetValue`, `resolveFileValue`, `AssetValue`/`FileValue` types — lines 13–50); `MarkdownPM/Connections` `buildPageIndex` as consumed by `treeIndex.ts:22–27` (title resolution is not an editor concern); arguably `Tokens/colorMap.ts` (it interprets the on-disk color grammar).
+- **→ Host (Desktop):** `Assets/assetUrl.ts:10–11`; `App.tsx:83–173`; `styles.css:106–132, 160`; `Interactions/resize-frame.css:7`; `Interactions/reveal-bar.css:29`; `PommoraUIX/Menus/menu-base.css.ts:166`; `Actions/nativeMenus.ts` (pulled in by `PickerControl`); the two bridge calls in `Utilities/useNexusIcon.ts:17, 23` and `Settings/iconFavorites.ts:15` (menu channels the Decision Log's D-1 says the phone answers `null`).
 - **→ Store:** `Tokens/personalization.ts`; `store.ts`; `treeIndex.ts`; `store.useEmbedScale` stays; `store.wireViewAdopted` → Views or `nexusSlice`.
 - **→ Shell:** `Animation/paneSlide.ts` + `pane-slide.css.ts`; `Animation/toolbar-slide.css`; `Interactions/revealBar.ts` + `reveal-bar.css`; `Glass/glass-pane.tsx` `Surface`; `styles.css:59–105, 134–157`.
 - **→ Assets:** `Pickers/ImagePicker/*`; `Utilities/EntityIcon.tsx` + css; `Utilities/useNexusIcon.ts`; `Settings/IconPicker.tsx` + `iconFavorites.ts`; `Symbols/index.tsx:192–208`; `store.useAssetUrl`.
@@ -367,4 +367,4 @@ The better reading: `EntityIcon`, `useNexusIcon`, `Settings/IconPicker` + `iconF
 
 ### Summary
 
-The scoped foundation is mostly sound: 87 of the 94 DesignSystem files stay in the kit as store-free primitives (every barrel and component among them is imported from three or more unrelated feature folders), and Interactions holds a coherent gesture family. The filing failures are specific. `ImagePicker` and `Tokens/personalization.ts` are feature code inside the kit; `PickerControl` is a Picker under Elements that imports `Actions/nativeMenus`, the only kit → app → bridge edge. `Util/` is four Core helpers plus `cx`. Motion is one concern read four ways (`Animation/motion.ts` values, `theme-vars` bridge, `animations.css.ts` keyframes, and `OverScroll`'s runtime read with a 240ms fallback against a 280ms token), and two Animation files are Shell mechanics. Interactions carries seven non-gesture helpers, and its own two engines don't use its `gesture.ts` skeleton. `Utilities/` is a junk drawer whose contents, with `AssetImage`, `ImagePicker`, and the Settings IconPicker binding, form one store-aware media/iconography domain under `Assets/`. `store.ts` + `Store/` and `treeIndex.ts` are one Store. Host binding is narrow and enumerable: fourteen bridge call sites in `App.tsx`, four bridge calls in pickers, one asset scheme line, six drag-region lines, and three Chromium-only features (`EyeDropper`, `field-sizing`, scroll-driven timelines). Proposed shape: ten folders, `Kit/` ≈11,300 lines, `Host/` ≈200, Showcase out of the renderer.
+The scoped foundation is mostly sound: 87 of the 94 PommoraUIX files stay in the kit as store-free primitives (every barrel and component among them is imported from three or more unrelated feature folders), and Interactions holds a coherent gesture family. The filing failures are specific. `ImagePicker` and `Tokens/personalization.ts` are feature code inside the kit; `PickerControl` is a Picker under Elements that imports `Actions/nativeMenus`, the only kit → app → bridge edge. `Util/` is four Core helpers plus `cx`. Motion is one concern read four ways (`Animation/motion.ts` values, `theme-vars` bridge, `animations.css.ts` keyframes, and `OverScroll`'s runtime read with a 240ms fallback against a 280ms token), and two Animation files are Shell mechanics. Interactions carries seven non-gesture helpers, and its own two engines don't use its `gesture.ts` skeleton. `Utilities/` is a junk drawer whose contents, with `AssetImage`, `ImagePicker`, and the Settings IconPicker binding, form one store-aware media/iconography domain under `Assets/`. `store.ts` + `Store/` and `treeIndex.ts` are one Store. Host binding is narrow and enumerable: fourteen bridge call sites in `App.tsx`, four bridge calls in pickers, one asset scheme line, six drag-region lines, and three Chromium-only features (`EyeDropper`, `field-sizing`, scroll-driven timelines). Proposed shape: ten folders, `Kit/` ≈11,300 lines, `Host/` ≈200, Showcase out of the renderer.

@@ -88,7 +88,7 @@ CodeMirror extensions exported but never added to an array: none found. Every `E
 
 **L7. Two React-in-widget mounts.** `Editor/embedWidget.tsx:118-136 mountTile` + `:142-149 unmountIfDetached` (root parked on the DOM node, microtask connectivity check) and `Tables/widget.tsx:298-303,353-362` (root parked on the node and the instance, `destroyed` flag, deferred unmount). Same pattern, two lifecycles. A shared `widgetRoot(dom)` helper removes ~15 lines. Confidence: medium-low.
 
-**Not duplicates (checked).** `shared/links.ts`, `shared/connections.ts`, `main/Connections/scan.ts`: one grammar each; scan.ts consumes both without restating (only H7 duplicates). Two autocomplete panes: no; one `AutocompletePane` component and one `useConnectionAutocomplete` hook mounted twice. `Tokens/` vs `DesignSystem/Tokens`: unrelated (markdown tokens vs design tokens); only the folder name collides. Two table parsers: only in tests (H2). `shared/markdownCode.ts` vs `Detect/`: `Detect` consumes `fenceSpans`; the only inline overlap is M5.
+**Not duplicates (checked).** `shared/links.ts`, `shared/connections.ts`, `main/Connections/scan.ts`: one grammar each; scan.ts consumes both without restating (only H7 duplicates). Two autocomplete panes: no; one `AutocompletePane` component and one `useConnectionAutocomplete` hook mounted twice. `Tokens/` vs `PommoraUIX/Tokens`: unrelated (markdown tokens vs design tokens); only the folder name collides. Two table parsers: only in tests (H2). `shared/markdownCode.ts` vs `Detect/`: `Detect` consumes `fenceSpans`; the only inline overlap is M5.
 
 ---
 

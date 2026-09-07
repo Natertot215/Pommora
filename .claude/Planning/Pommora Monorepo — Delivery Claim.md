@@ -107,8 +107,8 @@ Each block gives the requirement as the plan states it, the task or tasks that d
 - `ls UIX` → `Animations Buttons Cards Caret Controls Elements Fields Glass Interactions Labels Menus Pickers Symbols Table Theme Utilities Windows` (17 categories at the root, plus `package.json`, `tsconfig.json`, `vitest.config.ts`, `vitest.setup.ts`). No `Primitives` folder: `test ! -d UIX/Primitives` → absent.
 - `rg -l "from '@pommora/core" UIX` → 0. Control: `rg -F '@pommora/uix' Core UIX Desktop Showcase` → 671 lines.
 - `rg -l 'useSession' UIX` → 0 · `rg -l 'window.nexus' UIX` → 0.
-- `rg -F 'getComputedStyle' UIX/Elements/OverScroll.tsx` → 0 (it reads the token). Control: `rg -F 'duration.base' UIX` → 8 lines.
-- `rg -c 'function useHeld\b' UIX` → one file, `UIX/Animations/useHeld.ts:1`; `useHeldPresence` still defined once at `UIX/Animations/useExitPresence.ts:30`.
+- `rg -F 'getComputedStyle' UIX/Interactions/OverScroll.tsx` → 0 (it reads the token). Control: `rg -F 'duration.base' UIX` → 8 lines.
+- `rg -c 'function useHeld\b' UIX` → one file, `UIX/Animations/useExitPresence.ts:1`; `useHeldPresence` still defined once at `UIX/Animations/useExitPresence.ts:30`.
 - `rg -n 'paneMaterial' UIX` → the export at `UIX/Glass/glass-base.tsx:91`, defined as `frostStyle({ ...SURFACE_FROST, brightness: 95 })`, and its one consumer at `UIX/Glass/glass-pane.tsx`.
 - One color file: `rg -n '#[0-9a-fA-F]{6}\b|rgb\(|hsl\(|oklch\(' Core UIX Desktop -g '!*.test.*' -g '!UIX/Theme/colors.ts'` → 0. Control: `rg -c '#[0-9a-fA-F]{6}\b|rgb\(|hsl\(|oklch\(' UIX/Theme/colors.ts` → 20. `ls UIX/Theme` → `color.css.ts colors.test.ts colors.ts index.ts ramp.test.ts ramp.ts stack.ts theme-vars.css.ts typography.css.ts`.
 
@@ -236,8 +236,8 @@ The fourteen files carrying `from 'electron`: `Desktop/Actions/appMenu.ts`, `Des
 | `Pommora/src/shared/columnMenu.test.ts` | `Core/Actions/columnMenu.test.ts` | Task 3 `30b897c9d` — `columnMenu` → `Core/Actions` |
 | `Pommora/src/renderer/Interface/Subfield/subfieldItems.test.ts` | `Core/Interface/Subfield/subfieldItems.test.ts` | Task 5 `7f8452c86` — the renderer moves |
 | `Pommora/src/renderer/MarkdownPM/zoom.test.ts` | `Core/MarkdownPM/zoom.test.ts` | Task 5 `7f8452c86` |
-| `Pommora/src/renderer/DesignSystem/Tokens/colorMap.test.ts` | `UIX/Theme/colors.test.ts` | Task 12 `50eded4fb` — two color tests become one |
-| `Pommora/src/renderer/DesignSystem/Tokens/solidColor.test.ts` | *(same file)* | Task 12 `50eded4fb` |
+| `Pommora/src/renderer/PommoraUIX/Tokens/colorMap.test.ts` | `UIX/Theme/colors.test.ts` | Task 12 `50eded4fb` — two color tests become one |
+| `Pommora/src/renderer/PommoraUIX/Tokens/solidColor.test.ts` | *(same file)* | Task 12 `50eded4fb` |
 | `Pommora/src/renderer/Tiles/TileCache.test.ts` | `Core/Pages/editorHost.test.ts` | Task 14 `d4369bd2a` — `tileCache` becomes the host's warm seam |
 
 No removal is unnamed and no test was weakened. Four tests were deleted with their subjects inside Task 15 (`setProfileSubtitle` ×2, `skipTopLevel`, `allStructuralIds`), and twenty were deleted with theirs at Task 4 (`assetMigrate`'s thirteen — later restored whole under ruling 46 — raw mode's three, the bare-Record reader's three, `ExistState`'s one); those are case-level, not file-level, and are recorded in the Task 4 and Task 15 Deviations entries.
@@ -254,7 +254,7 @@ No removal is unnamed and no test was weakened. Four tests were deleted with the
 | `@renderer/` | `Core UIX Desktop Showcase` | 0 | `@pommora/uix` | 671 |
 | `window.nexus.` | `Core` outside `Core/Platform` | 0 | `window.nexus` in `Core/Platform` | 1 |
 | `Pommora/src` | `.claude` registry (`CLAUDE.md`, Features, Guidelines, Context, Handoff, Framework) | 0 | `Core/` in `CorePM.md` | 15 |
-| `DesignSystem/` | `.claude/Features` | 0 | `UIX/Menus` in `DesignSystemPM.md` | 3 |
+| `PommoraUIX/` | `.claude/Features` | 0 | `UIX/Menus` in `PommoraUIX.md` | 3 |
 | `renderer/Interface` | `.claude/Features` | 0 | — | — |
 | `renderer/Actions` | `.claude/Features` | 0 | — | — |
 | `renderer/Utilities` | `.claude/Features` | 0 | — | — |

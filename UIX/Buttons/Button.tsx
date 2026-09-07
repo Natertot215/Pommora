@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes, forwardRef, Fragment, type ReactNode } from 'react'
-import { segment } from '../Elements/Segment/segment.css'
+import { segment } from '../Elements/segment.css'
 import { GlassControls } from '../Glass/glass-control'
 import { Icon } from '../Symbols'
 import { type ButtonSize, type IconSize, vars } from '../Theme'

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { overScrollEllipsis } from '@pommora/uix/Elements/OverScroll'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/window-base'
 import type { WindowBounds } from '@pommora/uix/Windows/window-base'

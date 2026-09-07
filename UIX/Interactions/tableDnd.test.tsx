@@ -2,7 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Testing/pointerHarness'
+import {
+  firePointer,
+  pressEscape,
+  stubPointerCapture,
+  stubRect,
+} from '../Interactions/pointerHarness'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The skeleton's `live` lock is module state with no reset seam, so every test loads a fresh module — the throwing-teardown test would otherwise strand the lock for the rest of the file.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { firePointer, stubPointerCapture } from '../Testing/pointerHarness'
+import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
 import type { PointerGestureSpec } from './gesture'
 
 stubPointerCapture()
