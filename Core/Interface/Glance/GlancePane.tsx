@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Connections/links'
 import { PickerMenu, type PickerDirection } from '@pommora/uix/Pickers/picker-base'
-import { Button } from '@pommora/uix/Buttons/Button'
+import { Icon } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import { mapWarmSeam, type WarmSeam } from '../../MarkdownPM/warmSeam'
@@ -372,26 +372,26 @@ export function GlancePane(): React.JSX.Element {
   }
   // The preventDefault holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
   const lockBtn = page && (
-    <Button
-      icon="lock-open"
-      revealOnHover
-      ghostRest
-      aria-label="Lock preview"
+    <button
+      type="button"
       className="glance-lock"
+      aria-label="Lock preview"
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
-    />
+    >
+      <Icon name="lock-open" size="control" />
+    </button>
   )
   const unlockBtn = (pinId: string): React.JSX.Element => (
-    <Button
-      icon="locked"
-      revealOnHover
-      ghostRest
+    <button
+      type="button"
+      className="glance-lock glance-lock-persist"
       aria-label="Unlock preview"
-      className="glance-lock"
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => unpinGlance(pinId)}
-    />
+    >
+      <Icon name="locked" size="control" />
+    </button>
   )
 
   // Esc closes the newest active-tab pin; bails when a live pane is shown (its own watchAnchor handles that) or another consumer already took the key.
