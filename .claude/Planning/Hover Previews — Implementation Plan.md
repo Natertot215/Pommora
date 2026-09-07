@@ -422,9 +422,9 @@ useEffect(() => { setGlanceShown(shown !== null); return () => setGlanceShown(fa
 #### Gate 3 — cross-surface behavior  **[DECLARED STOP]**
 
 - [x] Gates green (typecheck 0 · test 0, 4076 passed · lint 0). Every Phase 3 automated box ticked.
-- [ ] Simplification → review over `<base>..HEAD` (Sidebar, Navigation, Views, Glance); concerns fixed or ruled.
+- [x] Simplification (supervisor inline read, done AFTER attack — see Lessons) over the six surfaces: one cut folded (TabBar's byte-identical tab-hover pair → `tabHoverProps` helper, `ab8a70e66`); Sidebar/nav/navResolve clean. Attack review (build-breaking-agent): 0 High · 0 Medium · 1 Low · 2 Latent · 1 Unknown; the headline per-hover `pagesByIdOf` perf fear killed (WeakMap-memoized, O(1) after first build). Fable advisor gate: the one Low (create-ghost doesn't resume on a resting pointer after a preview linger-closes) DEFERRED to the eyeball, not folded — it's a shared-`ghostCreate` change outside the one sanctioned UIX line, and dropping the entry-time `blocked()` guard also gates the `travelHold` branch, so it is NOT a clean one-liner and would change every suppressor's resting-pointer behavior. Latents + R6 Unknown carried to the eyeball list.
 - [x] Trash/history untouched: `rg -F 'armPreview' Core/Trash Core/Settings/TrashFrame.tsx` → 0; `rg -F 'glance' Core/Interface/Windows/PageHistoryWindow.tsx` → 0. Control: `rg -F 'armPreview' Core/Navigation` → 7 (≥1).
-- [ ] **Halt.** User eyeballs on real data: dwell feel (the `detail`/`views` KNOBs), Shift arbitration, the "press Shift before entering" contract (F5), plain hover on tabs/nav, Off kills all. Record KNOB retunes under Rulings. Phase 4 opens only on the user's go.
+- [ ] **Halt.** User eyeballs on real data — see the eyeball list under Rulings. Phase 4 opens only on the user's go.
 
 ---
 
@@ -644,7 +644,7 @@ useEffect(() => {
   - [x] Task 5 — Sidebar (Shift) · `3e92af4e8`
   - [x] Task 6 — Tabs · `530899fb5`
   - [x] Task 7 — Nav views (pagesByIdOf resolve) · `c924dd6e4`
-  - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` *(CardsView edit uncommitted — parallel session; see Deviations)*
+  - [x] Task 8 — Cards + Tables (Shift) + over-pane + setGlanceShown · `a93b2f802` (Table+GlancePane) · `8496e2e16` (CardsView, landed once the parallel session's CardsView refactor was done) · current-view guard `ffffd3d17` · TabBar dedup `ab8a70e66`
 - [ ] **Phase 4** — Lock + pinned multi-pane
   - [ ] Task 9 — `glanceSlice.ts` pin store · `<commit>`
   - [ ] Task 10 — Lock button, pinned render, tab lifecycle, Esc · `<commit>`
@@ -659,17 +659,30 @@ useEffect(() => {
 - **Frozen anchor on window resize (known edge):** a pin freezes a viewport-space `anchorY` and PickerMenu applies no vertical clamp, so a pin locked in the lower band can fall partly off-screen if the window is later shrunk. Recoverable (Esc/tab-close still remove it). Named here against the v1 frozen-rect ruling; no machinery.
 - **Warm-cache aliasing (known edge):** the pin's editor *state* rides the id-keyed warm cache (`glanceWarmSeam`), so the same page pinned in two tabs shares one warm entry — scroll can race on tab-switch, and a pin's editor state (not the pin) can be evicted past `GLANCE_WARM_CAP=10` warm glances. The pin *object* is safe in `glanceSlice`; only its scroll/warmth is affected. Accepted; revisit only if it reads wrong at the eyeball.
 - **retag ≠ drop (divergence flag):** the warm cache is *dropped* on tab re-key at all four sites; pins must *survive* re-key (R8), so `retagTabPins` is deliberately NOT `dropCacheTab`. A later "reuse" pass must not collapse them.
+- **Current-view guard (Nathan, mid-Phase-3):** a preview never resolves for the location already in the active view. Placed at the presenter (fire time) reading the live `selection`, so it does double duty — hovering the current page's tab/row raises nothing, AND a dwell that fires after a click navigates onto that page voids itself ("2 solves 1"). `selection` is the **main content pane's** target; a page shown only in a split/secondary pane is not covered (flagged for the eyeball). One guard, `ffffd3d17`.
+
+**Phase 3 eyeball list (the declared stop):**
+1. Dwell feel — `detail`/`views` seeded at 600ms (KNOBs in `glanceAction.ts`); `link` stays 1000ms. Retune on sight.
+2. Shift arbitration on ghost surfaces (sidebar, cards, tables): plain hover = create-ghost, Shift+hover = preview.
+3. The press-Shift-before-entering contract (F5): pressing Shift mid-hover doesn't arm; leave+re-enter with Shift does. The ghost still blooms, so no dead zone.
+4. Plain hover on tabs + nav-view rows raises a preview; non-page tabs raise nothing.
+5. Off kills all — Preview Persistence = Off raises nothing on any surface.
+6. Current-view guard: hover the active tab → nothing; click a tab mid-hover → no floating preview left on the page you opened.
+7. **Ghost-resume gap (attack L1, deferred):** Shift-hover row A → glide to row B → rest without moving → wait ~1s for the preview to linger-close → does the missing create-ghost on B read as broken? If yes, the fix is a shared-`ghostCreate` change (NOT a clean one-liner — the entry `blocked()` guard also gates the `travelHold` branch, and it changes every suppressor's resting-pointer behavior). If no, leave it.
+8. **R6 (attack Unknown, 10s):** open a preview from a nav row, move the pointer onto the pane itself — confirm no second/flickering preview arms.
+9. **F10:** with 'Until Closed', an open preview keeps create-ghosts suppressed on every surface until it's closed/replaced/navigated — acceptable, or exempt 'always'?
 
 ### Open Against Later Tasks
 
 ### Deviations
-- **Task 8 — CardsView edit applied but NOT committed (parallel session collision).** The card-row hover handler (`onPointerEnter` Shift-arm + `onPointerLeave` cancel) and the ghost `suppressed()` `|| glanceShown()` were edited in place, but `CardsView.tsx` carried uncommitted parallel PropertyPanel-session edits (a value-picker/add-picker refactor) throughout Phase 3, so per the run's commit discipline the file was left unstaged — Task 8's commit is `TableView.tsx` + `GlancePane.tsx` + `glancePane.test.tsx` + the plan only. The CardsView Task 8 wiring sits in the working tree for the eyeball; a human resolves commit ordering with the parallel session. `git diff Core/Views/Cards/CardsView.tsx` shows both sets of edits intermixed; the Task 8 additions are the two hover-handler lines and the one `glanceShown()` disjunction.
+- **Task 8 — CardsView landed separately after a parallel collision (RESOLVED).** `CardsView.tsx` carried uncommitted parallel PropertyPanel-session edits throughout Phase 3, so Task 8's first commit (`a93b2f802`) was `TableView.tsx` + `GlancePane.tsx` + `glancePane.test.tsx` only. Once Nathan confirmed the parallel session was done, the three glance hunks (2 imports, the ghost `suppressed()` `|| glanceShown()`, and `PageCard`'s Shift-arm enter / cancel leave) were staged in isolation via `git apply --cached` of a hunk-scoped patch — leaving the parallel refactor in the working tree for its own session — and committed glance-only as `8496e2e16` (+13/−3). The parallel session then committed its CardsView refactor on top (`1d6cbf98c`); both coexist. Verified `8496e2e16` contains no parallel symbols.
 - **Task 7 — `pageTargetFromNav` placed in `navResolve.ts`, not `NavList.tsx`.** The plan called it a "local helper," but both `NavList` (row) and `NavGallery` (card) need it and it wants a unit test, so "local" was already gone. `navResolve.ts` owns `ResolvedNav`, is a pure `.ts` that already imports from `treeIndex`, sits beside the breadcrumb resolver F6 contrasts it with, and already has `navResolve.test.ts` — the coherent home over a component file with a CSS side-effect. Nav rows read `tree` imperatively (`useSession.getState().tree`) in the hover handler — no per-row store subscription — matching `NavRowMenu`'s existing idiom. `NavRow` uses `MenuItem`'s `onMouseEnter`/`onMouseLeave` (it exposes those, not pointer-enter); `GalleryCard` uses `onPointerEnter`/`onPointerLeave` on `CardRoot`.
 - **Task 1 shipped additive.** Task 1 added the `PreviewPersistence` type + resolvers but left `hoverPreviewLinger`/`coerceHoverLinger`/`HOVER_LINGER_MAX` alive; the whole removal rode Task 3's single hazard-window commit (as the Hazard Window paragraph describes). This keeps every commit's full typecheck green and let Task 2 land on its own — the plan's stated goal that the Task 1 "Becomes" field-removal note would have forced into a combined commit.
 - **`readNexus.test.ts` was the fourth `hoverPreviewLinger` reader** (a codec round-trip test); it was rewritten to a `previewPersistence` round-trip in Task 3's commit.
 - **L1 fold — ambient `shiftDown()` tracker dropped for `e.shiftKey`** (Phase 1 attack review, Fable-advisor-adjudicated: reachable + subtractive, not additive). The tracker read stale Shift state after app-switch-with-Shift-held (no `blur` reset) and before its first call. The fix deletes the mechanism rather than guarding it: surfaces read `e.shiftKey` off the pointer-enter event, which is where F5 always said the read happens. Removed `shift`/`tracking`/`shiftDown` from `glanceLink.ts` and its test; retired the now-single-reader `LEAVE_GRACE_MS` in `GlancePane.tsx` in the same commit (`previewLingerMs(persistence === 'off' ? undefined : persistence)`). F5, Task 2, the Phase 3 preamble, and Tasks 5/8 fences updated to match. Cleanup commit `313cc9f85` on top of Task 2's `3a03a5ef6`.
 
 ### Lessons
+- **Phase 3's gate ran attack before simplify — the wrong order.** The Standard is simplify → review, always; the supervisor dispatched the build-breaking-agent first and did the simplification read after (catching the TabBar dup the attacker had already noted as an aside). No harm here (the diff was small, the one cut was independent of the findings), but attacking an un-simplified diff risks findings against complexity you were about to cut. Simplify first, then attack — every phase.
 
 ### Closeout
 
