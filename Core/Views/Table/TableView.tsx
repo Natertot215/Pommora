@@ -18,7 +18,7 @@ import {
   type PropertyValue,
 } from '@pommora/core/Properties/propertyValue'
 import { parentOf } from '@pommora/core/Nexus/treePatch'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { type PropertyDefinition, isOptionsKind } from '@pommora/core/Properties/properties'
 import type { ContextOption } from '../../Contexts/contextOptions'
 import { frontmatterOf, subtreeIds } from '../Pipeline/group'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -845,7 +845,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   })
   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
     const t = col.kind === 'context' ? 'context' : declaredType(col.id, schema)
-    if (t !== 'status' && t !== 'select' && t !== 'multi_select' && t !== 'context') return false
+    if (!isOptionsKind(t)) return false
     if (e.button !== 0) return false
     cellSweep.begin(row.id, col.id, e)
     return true

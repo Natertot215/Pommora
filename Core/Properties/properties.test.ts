@@ -8,6 +8,8 @@ import {
   isRegisteredPropertyName,
   propertyNames,
   defaultStatusSeed,
+  isOptionsKind,
+  optionsOf,
 } from './properties'
 
 describe('propertyType', () => {
@@ -152,6 +154,43 @@ describe('isRegisteredPropertyName', () => {
     expect(isRegisteredPropertyName('tags', names)).toBe(true)
     expect(isRegisteredPropertyName('Tags', names)).toBe(false)
     expect(isRegisteredPropertyName('<tags>', names)).toBe(false)
+  })
+})
+
+describe('isOptionsKind', () => {
+  it('holds for the four option-bearing kinds and nothing else', () => {
+    for (const t of ['select', 'status', 'multi_select', 'context'])
+      expect(isOptionsKind(t)).toBe(true)
+    for (const t of ['number', 'checkbox', 'datetime', 'url', 'file', undefined])
+      expect(isOptionsKind(t)).toBe(false)
+  })
+})
+
+describe('optionsOf', () => {
+  it('reads a select def from select_options', () => {
+    const def = {
+      id: 'p',
+      name: 'x',
+      type: 'select' as const,
+      select_options: [{ value: 'a', label: 'A' }],
+    }
+    expect(optionsOf(def).map((o) => o.value)).toEqual(['a'])
+  })
+
+  it('returns [] for a def with no options and for undefined', () => {
+    expect(optionsOf({ type: 'number' })).toEqual([])
+    expect(optionsOf(undefined)).toEqual([])
+  })
+
+  it('reads a status def from its groups, ignoring a stale select_options left by a type change', () => {
+    const def = {
+      id: 'p',
+      name: 'x',
+      type: 'status' as const,
+      status_groups: defaultStatusSeed(),
+      select_options: [{ value: 'stale', label: 'Stale' }],
+    }
+    expect(optionsOf(def).map((o) => o.value)).toEqual(['Open', 'Active', 'Done'])
   })
 })
 

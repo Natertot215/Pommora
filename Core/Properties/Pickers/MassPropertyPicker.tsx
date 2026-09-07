@@ -1,10 +1,10 @@
 import type { RefObject } from 'react'
 import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { massPickCommits, massSelected } from './massAssign'
-import { type PickOption, pickShape, PropertyOptionRows, selectedValues } from './PropertyPicker'
+import { pickShape, PropertyOptionRows, selectedValues } from './PropertyPicker'
 
 export function MassPropertyPicker({
   def,

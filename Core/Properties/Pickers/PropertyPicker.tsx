@@ -1,6 +1,10 @@
 import { type RefObject, useEffect, useState } from 'react'
 import type { ColumnLook, ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
+import {
+  type PickOption,
+  type PropertyDefinition,
+  optionsOf,
+} from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
@@ -16,8 +20,6 @@ import { OptionChip } from '../Cells/OptionChip'
 import { chooserTop } from './property-picker.css'
 import { PathField } from '@pommora/uix/Fields/PathField'
 
-export type PickOption = { value: string; label: string; color?: string; icon?: string }
-
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
   | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
   | { kind: 'datetime'; dateFormat?: ColumnStyle['date_format'] }
@@ -30,11 +32,6 @@ export type PickEntry = {
   icon: string
   revealOnly: boolean
   drillable: boolean
-}
-
-/** An option is never filtered by what it's called: the starter options a new property seeds are ordinary values.*/
-const optionsOf = (def: PropertyDefinition): PickOption[] => {
-  return def.type === 'status' ? statusOptions(def) : (def.select_options ?? [])
 }
 
 export const selectedValues = (current: PropertyValue | null): string[] => {

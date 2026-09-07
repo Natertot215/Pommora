@@ -14,6 +14,7 @@ import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView } from '@pommora/core/Views/views'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import { isOptionsKind } from '@pommora/core/Properties/properties'
 import { confirmDelete } from '../../Interface/Confirm/confirmations'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -734,12 +735,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           ? propertyIcon(e.def)
                           : (propertyTypeIconName(e.type) ?? 'square-dashed'),
                         revealOnly: e.revealOnly,
-                        drillable:
-                          !e.revealOnly &&
-                          (e.type === 'select' ||
-                            e.type === 'status' ||
-                            e.type === 'multi_select' ||
-                            e.type === 'context'),
+                        drillable: !e.revealOnly && isOptionsKind(e.type),
                       }),
                     )
                   : undefined
