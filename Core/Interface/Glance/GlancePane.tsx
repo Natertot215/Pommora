@@ -16,6 +16,7 @@ import {
   GLANCE_BODY_ATTR,
   type GlanceRequest,
   setGlancePresenter,
+  setGlanceShown,
   watchAnchor,
 } from './glanceAction'
 import { host } from '../../Platform/dialer'
@@ -218,6 +219,12 @@ export function GlancePane(): React.JSX.Element {
   const activeTabId = useSession((s) => s.activeTabId)
   const pageWindow = useSession((s) => s.pageWindow)
   useEffect(dismiss, [dismiss, selection, activeTabId, pageWindow])
+
+  // Publish live-pane visibility for ghost suppression; `shown` is the single source, so this flips false on every hide path (dismiss and retarget-through-null both flow through it).
+  useEffect(() => {
+    setGlanceShown(shown !== null)
+    return () => setGlanceShown(false)
+  }, [shown])
 
   useEffect(() => {
     if (shown?.target.kind !== 'site' || !siteEl) return

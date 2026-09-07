@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
-import { armGlance, closeGlance, setGlancePresenter } from './glanceAction'
+import { armGlance, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
@@ -147,6 +147,31 @@ describe('the presenter', () => {
       vi.useRealTimers()
     }
     expect(spy).not.toHaveBeenCalled()
+  })
+})
+
+describe('the live-pane shown flag (ghost suppression, Task 8)', () => {
+  it('is true while a live pane shows and false once dismissed', () => {
+    expect(glanceShown()).toBe(false)
+    present(link())
+    expect(paneOpen()).toBe(true)
+    expect(glanceShown()).toBe(true)
+    act(() => closeGlance())
+    expect(glanceShown()).toBe(false)
+  })
+
+  it('flips false when navigation retargets the pane through null', () => {
+    present(link())
+    expect(glanceShown()).toBe(true)
+    vi.useFakeTimers()
+    try {
+      act(() => useSession.setState({ activeTabId: 'tab-2' }))
+      act(() => vi.advanceTimersByTime(500))
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(paneOpen()).toBe(false)
+    expect(glanceShown()).toBe(false)
   })
 })
 
