@@ -8,6 +8,7 @@ import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { isOptionsKind } from '../../Properties/properties'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
 import {
@@ -65,14 +66,7 @@ export function CardValue({
   const schemaDef = ctx.schema.find((d) => d.id === column.id)
   // Kinds a click on a blank value fills in place. A checkbox draws its own box; last-edited has no fill path, so it gets no "Empty" affordance.
   const canFillBlank =
-    t === 'status' ||
-    t === 'select' ||
-    t === 'multi_select' ||
-    t === 'context' ||
-    t === 'datetime' ||
-    t === 'number' ||
-    t === 'url' ||
-    t === 'file'
+    isOptionsKind(t) || t === 'datetime' || t === 'number' || t === 'url' || t === 'file'
 
   const onClick = (e: React.MouseEvent): void => {
     if (e.ctrlKey) return // macOS secondary-click — let the context menu win

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import { type PropertyDefinition, statusOptions } from '@pommora/core/Properties/properties'
+import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
 import type {
   DateGranularity,
   GroupConfig,
@@ -352,10 +352,6 @@ export function GroupFrame({
     </MenuScrollFrame>
   )
 }
-
-export const optionsOf = (
-  def: PropertyDefinition | undefined,
-): { value: string; label: string; color?: string }[] => def?.select_options ?? statusOptions(def)
 
 type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
