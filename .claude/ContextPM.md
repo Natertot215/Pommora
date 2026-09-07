@@ -16,11 +16,7 @@ The standing spec for what comes next is `// Planning`'s TilesV2-Spec: the inspe
 
 - [ ] **A property surface attached to the page itself**, rather than only inside the Settings dropdown's Properties leaf, so a page's values are visible and editable where the page is. The frame, the sources, and the decisions taken so far are in `// Planning`'s Decision Log; it runs parallel to the two arcs below and shares no files with them.
 
-#### Two — Glance Hosts
-
-- [ ] **A sidebar row, a tab, a view row, or a PropertyPanel value raising the glance** on dwell. The seam takes any element and a dwell row; a host wires pointer-enter to `armGlance` and pointer-leave to `cancelGlance`, adds its row to `GLANCE_DWELL`, and nothing pane-side changes.
-
-#### Three — The Codebase Cleanup
+#### Two — The Codebase Cleanup
 
 The behavioral half — correctness, performance, and the structural moves inside the processes. Each is a session of its own, each verified by something a typecheck cannot supply, and none of it is visible from the interface.
 
