@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { CacheSlice } from './cacheSlice'
 import type { ChromeSlice } from './chromeSlice'
+import type { GlanceSlice } from './glanceSlice'
 import type { LayoutSlice } from './layoutSlice'
 import type { ConfigSlice } from './configSlice'
 import type { NavigationSlice } from './navigationSlice'
@@ -16,6 +17,7 @@ export type SessionState = NexusSlice &
   LayoutSlice &
   ConfigSlice &
   RenameSlice &
-  CacheSlice
+  CacheSlice &
+  GlanceSlice
 
 export type Slice<T> = StateCreator<SessionState, [], [], T>
