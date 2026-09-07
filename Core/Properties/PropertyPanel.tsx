@@ -123,9 +123,7 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
     const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
     const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
     const links = resolveContextKeys(fm as Record<string, unknown>, registry, spacesByContext)
-    const rider = (fm as Record<string, unknown>).contextValues as
-      | Record<string, string[]>
-      | undefined
+    const rider = fm.contextValues as Record<string, string[]> | undefined
     return links.size || rider ? { ...Object.fromEntries(links), ...rider } : undefined
   }, [fm, tree])
   const row = useMemo<ViewRow | null>(
@@ -175,9 +173,8 @@ export function PropertyPanel(props: PropertyPanelProps): React.JSX.Element {
   const isShown = (f: Field): boolean =>
     f.def
       ? revealed.has(f.id) || (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined
-      : pageFrame
-        ? !setAside.has(f.id)
-        : revealed.has(f.id) || (contextValues?.[f.id]?.length ?? 0) > 0
+      : (contextValues?.[f.id]?.length ?? 0) > 0 ||
+        (pageFrame ? !setAside.has(f.id) : revealed.has(f.id))
   const shown = allFields.filter(isShown)
   const groups: [string, Field[]][] = [
     ['contexts', shown.filter((f) => !f.def)],
