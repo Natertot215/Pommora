@@ -296,8 +296,8 @@ export const GLANCE_DWELL = { link: 1000, detail: 600, views: 600 } as const
 **Assumed by:** Tasks 5–7 (pass `'detail'`/`'views'` to `armPreview`).
 
 **Verify — automated**
-- [ ] `npm run typecheck` green (`GlanceDwell` widens; `armPreview` accepts the new slots).
-- [ ] `rg -F 'GLANCE_DWELL' Core` shows the three keys.
+- [x] `npm run typecheck` green (`GlanceDwell` widens; `armPreview` accepts the new slots).
+- [x] `rg -F 'GLANCE_DWELL' Core` shows the three keys (`link: 1000, detail: 600, views: 600`).
 
 **Verify — user**
 - [ ] *(none.)*
@@ -305,8 +305,8 @@ export const GLANCE_DWELL = { link: 1000, detail: 600, views: 600 } as const
 
 #### Gate 2 — infrastructure ready
 
-- [ ] Gates green. Simplification/review folds into Phase 3's if the diff is trivial (record in the Log).
-- [ ] Not a declared stop; Phase 3 opens.
+- [x] Gates green (typecheck 0 · lint 0). Diff is a single KNOB line + comment — simplification/review folds into Phase 3's per this gate's provision; no separate pass.
+- [x] Not a declared stop; Phase 3 opens.
 
 ---
 
@@ -638,8 +638,8 @@ useEffect(() => {
   - [x] Task 1 — Persistence type + resolver (additive; field removal deferred to Task 3) · `c80e39af1`
   - [x] Task 2 — Widen `glanceLink.ts` (armPreview + predicates; export GlanceDwell) · `3a03a5ef6`
   - [x] Task 3 — Picker replaces slider (hazard window) · `3fd05f8f3`
-- [ ] **Phase 2** — Dwell slots
-  - [ ] Task 4 — `detail`/`views` dwell values · `<commit>`
+- [x] **Phase 2** — Dwell slots
+  - [x] Task 4 — `detail`/`views` dwell values · `<glance-t4-commit>`
 - [ ] **Phase 3** — Wire surfaces **[STOP]**
   - [ ] Task 5 — Sidebar (Shift) · `<commit>`
   - [ ] Task 6 — Tabs · `<commit>`
