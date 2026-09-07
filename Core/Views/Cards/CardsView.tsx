@@ -38,6 +38,8 @@ import {
 import { cx } from '@pommora/uix/Utilities/cx'
 import { assetUrl } from '../../Platform/assetScheme'
 import { useSession } from '../../Session/store'
+import { armPreview } from '../../Interface/Glance/glanceLink'
+import { cancelGlance, glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
@@ -249,7 +251,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     suppressed: () =>
       pickersOpenRef.current ||
       iconPickersOpen.current > 0 ||
-      useSession.getState().renamingPath !== null,
+      useSession.getState().renamingPath !== null ||
+      glanceShown(),
     travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
   const beginRename = useSession((s) => s.beginRename)
@@ -1296,8 +1299,15 @@ const PageCard = memo(function PageCard({
       drag={drag}
       active={active}
       data-rid={row.id}
-      onPointerEnter={() => onHover(row.id, true)}
-      onPointerLeave={() => onHover(row.id, false)}
+      onPointerEnter={(e) => {
+        onHover(row.id, true)
+        if (e.shiftKey)
+          armPreview({ kind: 'page', id: row.id, path: row.path }, e.currentTarget, 'views')
+      }}
+      onPointerLeave={() => {
+        onHover(row.id, false)
+        cancelGlance()
+      }}
       onClick={(e) => {
         if (drag?.isDragging || naming) return
         const hit = document.elementFromPoint(e.clientX, e.clientY)
