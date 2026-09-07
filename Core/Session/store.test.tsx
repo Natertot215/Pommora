@@ -638,4 +638,25 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
     expect(freshId).not.toBe(pinId)
     expect(tags()).toEqual([freshId])
   })
+
+  it('removing a nav pin from the list scrubs that pinned tab’s glance pins, leaving others', () => {
+    const pinId = pinTabId(P)
+    seed({
+      tabs: [uTab('t2', Q, [Q], 0)],
+      activeTabId: pinId,
+      pinned: [toNavRef(P)],
+      pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
+    })
+    useSession.getState().pinGlance(glancePin(pinId))
+    useSession.getState().pinGlance(glancePin('t2', Q))
+    useSession.getState().unpinTarget(navKey(P))
+    expect(tags()).toEqual(['t2'])
+  })
+
+  it('adding a nav pin scrubs no existing glance pins', () => {
+    seed({ tabs: [uTab('t1', P, [P], 0)], activeTabId: 't1', tabMru: ['t1'] })
+    useSession.getState().pinGlance(glancePin('t1'))
+    useSession.getState().pinTarget(Q)
+    expect(tags()).toEqual(['t1'])
+  })
 })
