@@ -1,5 +1,6 @@
 import { assetUrl } from '../Platform/assetScheme'
-import { normalizeTitle, parseConnectionText } from '@pommora/core/Connections/connections'
+import { parseConnectionText } from '@pommora/core/Connections/connections'
+import { resolveAssetName } from './assetMap'
 import { HAS_SCHEME } from '@pommora/core/Paths/url'
 import type { AssetMap } from '@pommora/core/Nexus/tree'
 
@@ -20,8 +21,8 @@ export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
 function namedAsset(raw: string, map: AssetMap): FileValue | null {
   const link = parseConnectionText(raw)
   if (!link) return null
-  const rel = map.files[normalizeTitle(link.title)]?.[0]
-  return rel ? { kind: 'asset', rel } : { kind: 'unresolved' }
+  const rel = resolveAssetName(map, link.title)
+  return typeof rel === 'string' ? { kind: 'asset', rel } : { kind: 'unresolved' }
 }
 
 type FileValue = Exclude<AssetValue, { kind: 'external' }>

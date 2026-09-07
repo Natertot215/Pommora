@@ -4,7 +4,6 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
 import {
   Menu,
-  MenuCaption,
   MenuItem,
   MenuRowView,
   MenuSeparator,
@@ -784,21 +783,17 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
         <Icon name={frame.icon} className="settings-heading-icon" />
         {frame.label}
       </h2>
-      {sections.length === 0 ? (
-        <MenuCaption>Nothing to set here yet.</MenuCaption>
-      ) : (
-        sections.map((section, i) => (
-          <div key={section.title ?? i} className="settings-section">
-            {section.title && (
-              <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
-            )}
-            {section.rows.map((row) => (
-              // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
-              <RowControl key={row.label} row={row} />
-            ))}
-          </div>
-        ))
-      )}
+      {sections.map((section, i) => (
+        <div key={section.title ?? i} className="settings-section">
+          {section.title && (
+            <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
+          )}
+          {section.rows.map((row) => (
+            // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
+            <RowControl key={row.label} row={row} />
+          ))}
+        </div>
+      ))}
     </div>
   )
 }

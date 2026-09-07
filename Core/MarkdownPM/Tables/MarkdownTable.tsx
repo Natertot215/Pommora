@@ -153,7 +153,6 @@ export function MarkdownTable({
 
   const [sel, setSel] = useState<{ a: GridPos; h: GridPos } | null>(null)
   const [sweeping, setSweeping] = useState(false)
-  const suppressClick = useRef(false)
   const [hover, setHover] = useState<GridPos | null>(null)
 
   const startSweep = (e: React.PointerEvent<HTMLTableElement>): void => {
@@ -194,19 +193,22 @@ export function MarkdownTable({
         setSel({ a: start, h: at })
       }
     }
-    const onMove = (ev: PointerEvent): void => {
-      last = { x: ev.clientX, y: ev.clientY }
-      resolveAt()
-    }
-    const onUp = (): void => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      stopScroll?.()
-      setSweeping(false)
-      if (engaged) suppressClick.current = true
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+    beginGesture({
+      el: e.currentTarget,
+      event: e,
+      capture: false,
+      onActivate: () => undefined,
+      onDragMove: (ev) => {
+        last = { x: ev.clientX, y: ev.clientY }
+        resolveAt()
+      },
+      onDrop: () => undefined,
+      teardown: () => {
+        stopScroll?.()
+        stopScroll = null
+        setSweeping(false)
+      },
+    })
   }
 
   const [addsHidden, setAddsHidden] = useState(false)
@@ -553,12 +555,6 @@ export function MarkdownTable({
       onMouseLeave={() => {
         setHover(null)
         setAddsHidden(false)
-      }}
-      onClickCapture={(e) => {
-        if (!suppressClick.current) return
-        suppressClick.current = false
-        e.preventDefault()
-        e.stopPropagation()
       }}
     >
       <table className="mdpm-tbl" ref={tableRef} onPointerDownCapture={startSweep}>
