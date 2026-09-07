@@ -100,7 +100,7 @@ organized as workspaces: `Core` (the app), `UIX` (the design kit), and `Desktop`
 ├── // Elements      | • Small composed display parts
 ├── // Fields        | • Text input, search, and renamable labels
 ├── // Glass         | • The frosted and liquid surface recipes
-├── // Interactions  | • Drag, drop, resize, autoscroll, activation
+├── // Interactions  | • Drag, drop, resize, autoscroll, activation, and the pointer harness
 ├── // Labels
 ├── // Menus         | • Menu frames and their growth and slide
 ├── // Pickers       | • The picker control and its typed variants
