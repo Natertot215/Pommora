@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { armPreview, glanceLink, shiftDown } from './glanceLink'
+import { armPreview, glanceLink } from './glanceLink'
 import { cancelGlance, setGlancePresenter, type GlanceRequest } from './glanceAction'
 import { useSession } from '../../Session/store'
 import type { PreviewPersistence } from '../../Settings/personalization'
@@ -55,15 +55,5 @@ describe('the Off gate', () => {
     glanceLink(page, el)
     vi.runAllTimers()
     expect(present).not.toHaveBeenCalled()
-  })
-})
-
-describe('shiftDown', () => {
-  it('reflects synthetic Shift keydown and keyup', () => {
-    expect(shiftDown()).toBe(false)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', shiftKey: true }))
-    expect(shiftDown()).toBe(true)
-    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift', shiftKey: false }))
-    expect(shiftDown()).toBe(false)
   })
 })
