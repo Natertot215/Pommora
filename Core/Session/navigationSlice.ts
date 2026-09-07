@@ -285,6 +285,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
     const next = derivePinnedTabs(pinned, index)
+    // A pinned tab whose id vanishes here is a tab close for the glance pins tagged to it (unpin, or its target deleted) — scrub them, the pinned-tab analog of closeTab. unpinTab retags before it reaches here, so its migration is already off the vanishing id.
+    for (const t of get().pinnedTabs) if (!next.some((n) => n.id === t.id)) get().scrubTabPins(t.id)
     set((s) => ({ pinned, pinnedTabs: sameTabs(s.pinnedTabs, next) ? s.pinnedTabs : next }))
   }
 
@@ -436,11 +438,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const pinnedTab = get().pinnedTabs.find((t) => t.id === pinId)
       if (!pinnedTab || pinnedTab.target.kind === 'newtab') return
       const target = pinnedTab.target
-      get().unpinTarget(navKey(target))
       const existing = get().tabs.find(
         (t) => t.target.kind !== 'newtab' && navKey(t.target) === navKey(target),
       )
       const tab: Tab = existing ?? { id: makeTabId(), target, navStack: [target], navIndex: 0 }
+      // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins on a dead tab), and BEFORE unpinTarget — its setPinned scrub drops the vanishing pin: id's pins, so the migration must already have moved them off it.
+      get().retagTabPins(pinId, tab.id)
+      get().unpinTarget(navKey(target))
       if (!existing) set((s) => ({ tabs: insertUnpinned(s.tabs, s.activeTabId, tab) }))
       if (get().activeTabId === pinId)
         set((s) => ({
@@ -451,8 +455,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           ),
         }))
       dropCacheTab(pinId)
-      // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins on a dead tab).
-      get().retagTabPins(pinId, tab.id)
       persistTabs()
     },
 
