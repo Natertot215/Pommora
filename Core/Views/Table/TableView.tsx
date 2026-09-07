@@ -25,7 +25,7 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
-import { pushValueUndo } from '../valueUndo'
+import { groupValueUndo } from '../../Properties/valueUndo'
 import {
   type PickTarget,
   PropertyPicker,
@@ -607,21 +607,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         look={colStyle(col.id).look}
         {...(contextOptions ? { contextOptions } : {})}
         onPick={(commits) => {
-          if (commits.length === 0) return
-          const prev = commits.map(({ index }) => ({
-            id: rows[index].id,
-            value: currents[index],
-          }))
-          const dispose = pushValueUndo(() => {
-            const liveCol = cellApiRef.current.columns.find((c) => c.id === col.id)
-            if (!liveCol) return
-            for (const { id, value } of prev) {
-              const row = cellApiRef.current.rowById.get(id)
-              if (row) cellApiRef.current.commitValue(row, liveCol, value)
-            }
-          })
-          undoDisposers.current.push(dispose)
-          for (const { index, next } of commits) commitValue(rows[index], col, next)
+          if (commits.length)
+            groupValueUndo(() => {
+              for (const { index, next } of commits) commitValue(rows[index], col, next)
+            })
         }}
         onDismiss={() => {
           setMassOpen(false)
@@ -838,14 +827,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setMassOpen(false)
     cellSweep.clear()
   })
-  const undoDisposers = useRef<Array<() => void>>([])
-  useEffect(
-    () => () => {
-      for (const dispose of undoDisposers.current) dispose()
-      undoDisposers.current = []
-    },
-    [source.path],
-  )
   const titleCol = columns.find((c) => c.kind === 'title')
   const cellApiRef = useRef({
     openCellMenu,
@@ -854,8 +835,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitValue,
     titleCol,
     startSweep,
-    columns,
-    rowById,
   })
   cellApiRef.current = {
     openCellMenu,
@@ -864,8 +843,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitValue,
     titleCol,
     startSweep,
-    columns,
-    rowById,
   }
   const editingRef = useRef(editing)
   editingRef.current = editing
