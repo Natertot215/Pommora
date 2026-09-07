@@ -171,7 +171,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         className: 'navwindow-inspector',
         children: (
           <div className="window-pane-scroll">
-            {inspectorOpen && pageTarget && <PropertyPanel page={pageTarget} panelStyle="filled" />}
+            {inspectorOpen && pageTarget && <PropertyPanel page={pageTarget} />}
           </div>
         ),
       }}

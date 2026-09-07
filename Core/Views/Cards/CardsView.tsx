@@ -361,7 +361,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const row = req && rowById.get(req.rowId)
     if (!row) return
     const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
-    if (entry || valuePicker?.revealOnCommit) revealProperty(column.id)
+    const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
+    if (creating && isBlankValue(v)) return
+    if (creating) revealProperty(column.id)
     commitValue(row, column, v)
   }
 
@@ -698,8 +700,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               accent={solidColorCss(vTarget?.def.link_color)}
               onCommit={(raw) => {
                 const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
-                if (nv !== undefined && (nv !== null || (!valuePicker?.revealOnCommit && vRaw)))
-                  commitPicked(nv)
+                if (nv !== undefined && (nv !== null || vRaw)) commitPicked(nv)
                 setValuePicker(null)
               }}
             />
@@ -710,8 +711,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               value={vTarget?.current?.kind === 'number' ? String(vTarget.current.value) : ''}
               leading={vTarget ? numberFormatGlyph(vTarget.def) : undefined}
               onCommit={(raw) => {
-                const nv = parseEditorValue('number', raw)
-                if (nv != null) commitPicked(nv)
+                commitPicked(parseEditorValue('number', raw) ?? null)
                 setValuePicker(null)
               }}
             />

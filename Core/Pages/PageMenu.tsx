@@ -102,9 +102,7 @@ export function PageMenu(): React.JSX.Element | null {
         <FrameSlide
           open={pane !== 'root'}
           root={root}
-          detail={
-            <PropertyPanel page={pageDetail} panelStyle="filled" onBack={() => setPane('root')} />
-          }
+          detail={<PropertyPanel page={pageDetail} onBack={() => setPane('root')} />}
           minWidth={225}
           minHeight={245}
         />

@@ -705,17 +705,17 @@ without deleting more than it grows is out of scope — report it under Sequence
 
 **Verify — automated**
 
-- [ ] Every Dead Vocabulary token → 0, each in its own command. Control: `PropertyPicker` → ≥ 19.
-- [ ] Census A returns zero unallowlisted `PickerMenu` mounts for property assignment.
-- [ ] Census B returns zero orphans.
-- [ ] Census C returns zero new divergences against the Behavior Ledger.
-- [ ] Net source reduction inside the Line Budget: **−400 to −590**, measured with `.claude/scripts/loc.py`. Every per-file ceiling respected.
-- [ ] Net source file count negative; no file created beyond the three the budget names.
-- [ ] All three gates green.
+- [x] Every Dead Vocabulary token → 0, each in its own command. Control: `PropertyPicker` → 24 (≥ 19).
+- [x] Census A returns zero unallowlisted `PickerMenu` mounts for property assignment.
+- [x] Census B returns zero orphans — three found (`panelStyle`/`PanelStyle` dead prop, `optionsOf` and `pickSemantics` dead exports); all three removed, re-swept to zero.
+- [x] Census C returns zero new divergences against the Behavior Ledger. Two caveats surfaced, both pre-existing, not fold regressions: the number/file card-menu pre-drill (recorded openAddPicker asymmetry) and the datetime add-flow null — the latter now hoisted to a shared creation-flow guard (see Deviations).
+- [ ] **NOT MET — recorded as a Deviation.** Net is **−268**, not the budgeted **−400 to −590**. The whole shortfall is the two per-file floors (`PropertyPanel.tsx` +118 over, `CardsView.tsx` +36 over); had the ceilings held, ≈ −420. No hidden build; extraction to hit the number is barred by the plan and would add moving parts. Measured with the loc.py counter over the fold's file set.
+- [x] Net source file count negative (−3); no file created beyond the three the budget names.
+- [x] All three gates green: `typecheck` 0, `test` 4106 passed, `lint` 0.
 
 **Verify — user**
 
-- [ ] `PropertiesPM.md` carries a paragraph describing the one value-assign surface.
+- [x] `PropertiesPM.md` carries a paragraph describing the one value-assign surface (**The Value Picker**, `PropertiesPM.md:111`).
 
 #### Gate — the fold closes
 
@@ -743,9 +743,9 @@ without deleting more than it grows is out of scope — report it under Sequence
 - [ ] **Phase 2** — PropertyPanel replaces Properties/Page/
   - [x] Task 4 — PropertyPanel ships; Page/ deleted · `<commit>`
   - [x] Task 5 — old PropertyPicker props removed · `<commit>`
-- [ ] **Phase 3** — The re-fold census
-  - [ ] Task 6 — census dispatched, findings folded · `<commit>`
-  - [ ] Gate
+- [x] **Phase 3** — The re-fold census
+  - [x] Task 6 — census dispatched, findings folded · `<commit>`
+  - [x] Gate
 
 ### Rulings
 
@@ -778,6 +778,14 @@ without deleting more than it grows is out of scope — report it under Sequence
 - **Task 4 — `PropertyPanel.tsx` lands at 456, over its ≤320 ceiling by 136 (FLAGGED for Gate 2).** It folds three files — `PagePropertyRows` 341 + `usePropertyRows` 177 + `PropertyValueEditors` 77 = 595 — into one component, a real −139, but the ≤320 estimate assumed more evaporation than the behavior allows: the visibility predicates, both commit writers, the `editRow` click dispatch, `valueMenu`/`rowMenu`, the inline `PropertyEditor`-or-`Cell` value row, `panelTarget`, and the chooser entries are all irreducible behavior that has to live somewhere. No one-reader helper or new file was minted to pad it. `property-panel.css.ts` is 47 vs ≤45 — the extra is the `row` hook and `globalStyle` the truncation fix needs (dead `label`/`titleText` cut). The Gate 2 `code-simplifier` gets the cut attempt; the running net still lands in −400 to −590 (deletions ≈1226 vs additions ≈775), so the per-file estimate was optimistic, not the fold bloated.
 
 - **Gate 2 — simplify + both reviews, clean.** `code-simplifier` cut `PropertyPanel` 456 → 438 (one `allFields`/`isShown` roster replacing the twin predicates + double label/icon passes; dropped the redundant `'date'` editing mode — datetime derives from `def.type`; removed a dead `entry?.id ?? editing?.id` branch since panel entries are never drillable; tidied the `contextValues` memo). Floor is ~438, still over the ≤320 ceiling by ~118 — the fold's irreducible behavior, no helper/sub-component minted (extraction barred). `feature-dev:code-reviewer` and `build-breaking-agent` both returned **zero findings** against the deleted-`Page/` oracle. The reviewers' one flag — `revealAndEdit`'s document-scoped `querySelector('[data-property-row]')` colliding across co-mounted panels — was killed: an addable property is value-less, hence hidden in every panel that hasn't revealed it, so the acting panel holds the sole match; co-mounted panels share one page and separate windows are separate documents. No fix (scoping it would add an unneeded mechanism). Fable advisor not consulted — nothing to fold.
+
+- **Task 6 — net lands at −268, under the budgeted −400 (Requirement 7 NOT met).** Measured over the fold's exact file set (verified complete against the union of the nine commits' touched files — no file missed) with loc.py's own comment/blank/test-excluding counter: deletions −1009, created +488, grown +257 (`PropertyPicker` +99, `CardsView` +166, `TableView` −5, `cards-view.css` −3). The entire shortfall is the two documented per-file floors — `PropertyPanel.tsx` at 438 (+118 over ≤320) and `CardsView.tsx` at +166 (+36 over ≤130); had the estimates held, ≈ −420. Both gates' simplify passes and a fresh read confirmed the only remaining cut is extraction into sub-components or a hook, which the plan bars harder than a shallow net ("do not clear the number by moving code into a file with headroom") and which Nathan directed against ("prioritize fewer moving parts, not an arbitrary line-count reduction"). The number is reported honestly, not laundered; line 27's stale "−250" is Nathan's text and left unedited.
+
+- **Task 6 — the mandated closeout agents were substituted.** `code-simplifier` and `build-breaking-agent` no longer exist. The census ran on `Explore` (still available); the Delivery-Claim verification and the adversarial attack ran on `general-purpose` agents under explicit verifier / attacker briefs, in separate dispatches. `feature-dev:code-reviewer` remains available. The Fable advisor was consulted at the decision point (net-target conflict + the census-B findings) and adjudicated; it did not time out this round.
+
+- **Task 6 — three census-B orphans removed (all removals, no additions).** (a) `panelStyle` / `PanelStyle` was a dead prop — declared in `PropertyPanelProps`, never read in the body (styling is driven by `pageFrame`), all four callers passed `'filled'`, the `'standard'` arm never constructed. Removed the prop, the type, and the four call-site + three test-site passes. This is a **deviation from Requirement 3** ("`PropertyPanel` takes `panelStyle`"): the prop proved inert once `groupStandard` was never needed (Rulings), and the plan's own Standard authorizes cutting a fence the code does not need. Returns when a caller passes `'standard'`. (b) `optionsOf` and (c) `pickSemantics` were exported with zero external importers (Table stopped importing them and `CardAddPicker` was deleted; `FilterFrame`/`SortFrame` import `GroupFrame`'s `optionsOf`, a different function) — `export` dropped, both now module-internal.
+
+- **Task 6 — B13 hoisted to one shared creation-flow guard (Nathan-directed).** The census found the datetime add-flow lacked the null guard that number and link had — a cleared datetime in the add-flow would reveal an empty column. Confirmed pre-existing against the deleted `CardPickerHost` oracle (its datetime `onCommit` was unguarded too), so it sat within the already-recorded "discarded null" ruling. Rather than add a fourth per-kind guard, the blank check moved into `CardsView.commitPicked` as `creating && isBlankValue(v)` (creating = a drilled `entry` or `revealOnCommit`), covering every kind at once; number's per-kind `nv != null` and link's `!revealOnCommit` clause were dropped as now-redundant. Edit-flow clearing (a link or datetime cleared outside the add-flow) is unchanged — the guard is scoped to creation. Table has no `revealOnCommit` flow and the panel reveals eagerly on Add by design (B7), so both are unaffected.
 
 ### Lessons
 

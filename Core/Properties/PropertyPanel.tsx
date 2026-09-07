@@ -56,15 +56,12 @@ import { popRowMenu } from '../Actions/nativeMenus'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenu'
 import * as s from './property-panel.css'
 
-export type PanelStyle = 'standard' | 'filled'
-
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
-export type PropertyPanelProps = { panelStyle: PanelStyle } & (
+export type PropertyPanelProps =
   | { page: PageDetail; onBack: () => void }
   | { page: WindowTarget; onBack?: never }
-)
 
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
   tree?.collections.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
