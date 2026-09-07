@@ -58,6 +58,7 @@ import {
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useStyleFor } from '../Host/useColumnStyles'
 import { groupKeyToValue } from '../reassign'
@@ -375,8 +376,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const feel = DEFAULT_FEEL
   const anyNaming = useSession((s) => s.renamingPath !== null)
   const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
-  const ghostLiveId =
-    ghostApi.ghost && !ghostApi.ghost.closing && !anyNaming ? ghostApi.ghost.anchorId : null
+  // Kept mounted through `closing` so its Reveal can collapse it out, matching the sidebar and table ghosts; it leaves render only once the ghost is truly gone.
+  const ghostLiveId = ghostApi.ghost && !anyNaming ? ghostApi.ghost.anchorId : null
   const [ghostShown, setGhostShown] = useState<string | null>(null)
   useLayoutEffect(() => {
     if (ghostLiveId === ghostShown) return
@@ -409,7 +410,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           })
       }
     }
-    if (ghostApi.ghost?.closing && ghostShown === null) ghostApi.closed()
   }, [ghostShown])
   useClearStrandedGhost(ghostApi, rowBand)
   const [pendingSeat, setPendingSeat] = useState<string | null>(null)
@@ -670,17 +670,24 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
                       return [
                         card,
-                        <GhostCard
+                        // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+                        <Reveal
                           key={`ghost-${row.id}`}
-                          banner={banner}
-                          view={liveView}
-                          columns={columns}
-                          ctx={ctx}
-                          iconName={entityIcon('page', undefined, defaultIcons)}
-                          onEnter={ghostApi.onGhostEnter}
-                          onLeave={ghostApi.onGhostLeave}
-                          onCreate={ghostCreate}
-                        />,
+                          open={!ghostApi.ghost?.closing}
+                          fill
+                          onCollapsed={ghostApi.closed}
+                        >
+                          <GhostCard
+                            banner={banner}
+                            view={liveView}
+                            columns={columns}
+                            ctx={ctx}
+                            iconName={entityIcon('page', undefined, defaultIcons)}
+                            onEnter={ghostApi.onGhostEnter}
+                            onLeave={ghostApi.onGhostLeave}
+                            onCreate={ghostCreate}
+                          />
+                        </Reveal>,
                       ]
                     })}
                   </SortableZone>
